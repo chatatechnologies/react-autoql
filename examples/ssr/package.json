@@ -1,0 +1,16 @@
+{
+  "name": "ssr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "chata-ai": "file:../..",
+    "express": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
+}

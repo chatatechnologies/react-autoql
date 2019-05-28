@@ -2,7 +2,9 @@
   "name": "chata-ai",
   "version": "1.0.0",
   "description": "Javascript widget library",
-  "main": "dist/index.js",
+  "main": "dist/bundle.cjs.js",
+  "module": "dist/bundle.esm.js",
+  "sideEffects": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prebuild": "rimraf dist",
@@ -37,7 +39,6 @@
   },
   "homepage": "https://github.com/chatatechnologies/chata-ai#readme",
   "dependencies": {},
-  "peerDependencies": {},
   "devDependencies": {
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
@@ -57,6 +58,13 @@
     "rollup": "^1.12.4",
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-node-resolve": "^5.0.0",
+    "rollup-plugin-string": "^3.0.0",
     "rollup-plugin-terser": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.2"
+  },
+  "engines": {
+    "node": ">=8"
   }
 }
