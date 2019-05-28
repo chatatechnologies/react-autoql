@@ -1,0 +1,17 @@
+{
+  "presets": [
+    [
+      "@babel/env",
+      {
+        // use rollup to transpile, not babel
+        "modules": false,
+        "targets": {
+          // https://browserl.ist/?q=%3E+0.25%25%2C+ie+11%2C+not+op_mini+all%2C+not+dead
+          "browsers": "> 0.25%, ie 11, not op_mini all, not dead",
+          "node": 8
+        }
+      }
+    ],
+    "@babel/react"
+  ]
+}

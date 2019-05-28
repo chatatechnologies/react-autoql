@@ -1,1 +1,5 @@
-console.log('hello' + ' Nikki')
+import React from 'react'
+
+const Spinner = props => <h1>Spinner</h1>
+
+export default Spinner
