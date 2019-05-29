@@ -15,7 +15,9 @@
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "storybook": "start-storybook -p 9001 -c storybook",
-    "storybook:build": "build-storybook -c storybook"
+    "storybook:build": "build-storybook -c storybook",
+    "predeploy": "npm run storybook:build",
+    "deploy": "gh-pages -d storybook-static"
   },
   "style": "dist/styles.css",
   "files": [
@@ -62,6 +64,7 @@
     "eslint-plugin-promise": "^4.1.1",
     "eslint-plugin-react": "^7.13.0",
     "eslint-plugin-standard": "^4.0.0",
+    "gh-pages": "^2.0.1",
     "husky": "^2.3.0",
     "jest": "^24.8.0",
     "lint-staged": "^8.1.7",
