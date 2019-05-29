@@ -14,6 +14,7 @@
     ],
     "@babel/react"
   ],
+  "plugins": ["@babel/plugin-proposal-class-properties"],
   // required for transpilation to work with jest
   "env": {
     "test": {

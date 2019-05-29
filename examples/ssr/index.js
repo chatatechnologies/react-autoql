@@ -7,7 +7,10 @@ const app = express()
 const port = 3000
 
 app.get('*', (req, res) => {
-  const html = ReactDOM.renderToString(React.createElement(ChatDrawer))
+  const props = {
+    test: 'THIS IS A TEST'
+  }
+  const html = ReactDOM.renderToString(React.createElement(ChatDrawer, props))
 
   res.send(`
     <!DOCTYPE html>

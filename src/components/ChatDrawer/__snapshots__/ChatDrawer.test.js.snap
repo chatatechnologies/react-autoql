@@ -9,7 +9,7 @@ Array [
     className="test"
   >
     <span>
-      This is the message drawer
+      Drawer
     </span>
   </div>,
 ]

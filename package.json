@@ -6,6 +6,7 @@
   "module": "dist/bundle.esm.js",
   "sideEffects": false,
   "scripts": {
+    "dev": "watch 'npm run build' src",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -17,7 +18,7 @@
     "storybook": "start-storybook -p 9001 -c storybook",
     "storybook:build": "build-storybook -c storybook",
     "predeploy": "npm run storybook:build",
-    "deploy": "gh-pages -d storybook-static"
+    "deploy:storybook": "gh-pages -d storybook-static"
   },
   "style": "dist/styles.css",
   "files": [
@@ -49,6 +50,7 @@
   "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@babel/preset-env": "^7.4.5",
     "@babel/preset-react": "^7.0.0",
     "@storybook/addon-options": "^5.0.11",
@@ -78,7 +80,8 @@
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-node-resolve": "^5.0.0",
     "rollup-plugin-string": "^3.0.0",
-    "rollup-plugin-terser": "^5.0.0"
+    "rollup-plugin-terser": "^5.0.0",
+    "watch": "^1.0.2"
   },
   "peerDependencies": {
     "react": ">=16.2"

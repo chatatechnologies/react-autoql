@@ -5,7 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "npx nodemon --watch '../../src' --delay 10  --exec 'node index.js'"
   },
   "dependencies": {
     "chata-ai": "file:../..",
