@@ -3,7 +3,7 @@ import styles from './ChatDrawer.css'
 
 const ChatDrawer = props => (
   <Fragment>
-    <style>${styles}</style>
+    <style>{`${styles}`}</style>
     <div className="test">
       <span>This is the message drawer</span>
     </div>
