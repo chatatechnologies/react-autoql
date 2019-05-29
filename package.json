@@ -45,7 +45,7 @@
   "bugs": {
     "url": "https://github.com/chatatechnologies/chata-ai/issues"
   },
-  "homepage": "https://github.com/chatatechnologies/chata-ai#readme",
+  "homepage": "https://chatatechnologies.github.io/chata-ai/",
   "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.4.5",
