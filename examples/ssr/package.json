@@ -13,5 +13,8 @@
     "express": "latest",
     "react": "latest",
     "react-dom": "latest"
+  },
+  "nodemon": {
+    "debug": true
   }
 }

@@ -1,16 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders correctly 1`] = `
-Array [
-  <style>
-    [object Object]
-  </style>,
-  <div
-    className="test"
-  >
-    <span>
-      Drawer
-    </span>
-  </div>,
-]
-`;
+exports[`renders correctly 1`] = `ShallowWrapper {}`;

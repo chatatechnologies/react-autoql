@@ -1,7 +1,20 @@
 .test {
-  width: 100%;
+  width: auto;
   height: auto;
   border: 1px solid midnightblue;
   padding: 10px;
   background-color: lightcoral;
+}
+
+.drawer-content {
+  background: white;
+}
+
+.drawer-handle {
+  top: 72px;
+  background: #fff;
+}
+
+.drawer-handle-icon {
+  background: #333;
 }
