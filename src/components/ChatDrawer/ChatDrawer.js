@@ -1,11 +1,14 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
 
 import Drawer from 'rc-drawer'
 
-import styles from './ChatDrawer.css'
+import { ChatBar } from '../ChatBar'
+import { ChatMessage } from '../ChatMessage'
+
 import rcStyles from 'rc-drawer/assets/index.css'
+import styles from './ChatDrawer.css'
 
 export default class ChatDrawer extends React.Component {
   static propTypes = {
@@ -33,7 +36,19 @@ export default class ChatDrawer extends React.Component {
     onVisibleChange: () => {}
   }
 
-  state = {}
+  state = {
+    messages: [
+      {
+        isResponse: true,
+        text:
+          "Hi there! I'm here to help you access, search and analyze your data."
+      },
+      {
+        isResponse: false,
+        text: 'What is my current cash balance?'
+      }
+    ]
+  }
 
   getHandlerProp = () => {
     if (this.props.customHandle !== undefined) {
@@ -93,11 +108,21 @@ export default class ChatDrawer extends React.Component {
     this.props.onHandleClick()
   }
 
+  addMessage = newMessage => {
+    this.setState({
+      messages: [...this.state.messages, newMessage]
+    })
+  }
+
+  clearMessages = () => {
+    this.setState({ messages: [] })
+  }
+
   render = () => {
-    console.log(this.props)
     return (
-      <div>
-        <div>The drawer should appear on the {this.getPlacementProp()}</div>
+      <Fragment>
+        <style>{`${rcStyles}`}</style>
+        <style>{`${styles}`}</style>
         <Drawer
           // prefixCls={prefixCls}
           // style={this.getRcDrawerStyle()}
@@ -113,15 +138,25 @@ export default class ChatDrawer extends React.Component {
           afterVisibleChange={this.props.onVisibleChange}
           handler={this.getHandlerProp()}
         >
-          <div>
-            <style>{`${rcStyles}`}</style>
-            <style>{`${styles}`}</style>
-            <div className="test">
-              <span>Drawer EWOFIJEWOFIEJF</span>
+          <div className="chat-drawer-content-container">
+            <div className="chat-header-container" />
+            <div className="chat-message-container">
+              {this.state.messages.length > 0 &&
+                this.state.messages.map(message => {
+                  return (
+                    <ChatMessage
+                      isResponse={message.isResponse}
+                      text={message.text}
+                    />
+                  )
+                })}
+            </div>
+            <div className="chat-bar-container">
+              <ChatBar className="chat-drawer-chat-bar" />
             </div>
           </div>
         </Drawer>
-      </div>
+      </Fragment>
     )
   }
 }

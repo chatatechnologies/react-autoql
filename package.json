@@ -5,6 +5,9 @@
   "main": "dist/bundle.cjs.js",
   "module": "dist/bundle.esm.js",
   "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "watch 'npm run build' src",
     "test": "jest",
@@ -17,13 +20,11 @@
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "storybook": "start-storybook -p 9001 -c storybook",
     "storybook:build": "build-storybook -c storybook",
-    "predeploy": "npm run storybook:build",
-    "deploy:storybook": "gh-pages -d storybook-static"
+    "predeploy:storybook": "npm run storybook:build",
+    "deploy:storybook": "gh-pages -d storybook-static",
+    "prepublish": "npm run build"
   },
   "style": "dist/styles.css",
-  "files": [
-    "dist"
-  ],
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
@@ -48,21 +49,22 @@
   },
   "homepage": "https://chatatechnologies.github.io/chata-ai/",
   "dependencies": {
+    "babel-plugin-external-helpers": "^6.22.0",
     "prop-types": "^15.6.2",
     "rc-drawer": "^1.9.8"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
-    "@babel/plugin-proposal-class-properties": "^7.4.4",
-    "@babel/preset-env": "^7.4.5",
-    "@babel/preset-react": "^7.0.0",
     "@storybook/addon-options": "^5.0.11",
     "@storybook/react": "^5.0.11",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-jest": "^24.8.0",
-    "babel-loader": "^8.0.5",
-    "enzyme": "^3.9.0",
-    "enzyme-adapter-react-16": "^1.13.2",
+    "babel-cli": "https://registry.npmjs.org/babel-cli/-/babel-cli-6.26.0.tgz",
+    "babel-core": "https://registry.npmjs.org/babel-core/-/babel-core-6.26.0.tgz",
+    "babel-jest": "^23.6.0",
+    "babel-loader": "https://registry.npmjs.org/babel-loader/-/babel-loader-7.1.2.tgz",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "https://registry.npmjs.org/babel-preset-env/-/babel-preset-env-1.6.1.tgz",
+    "babel-preset-react": "^6.24.1",
+    "enzyme": "^3.7.0",
+    "enzyme-adapter-react-16": "^1.6.0",
     "eslint": "^5.16.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.17.3",
@@ -73,19 +75,23 @@
     "eslint-plugin-standard": "^4.0.0",
     "gh-pages": "^2.0.1",
     "husky": "^2.3.0",
-    "jest": "^24.8.0",
+    "jest": "^23.6.0",
+    "jest-css-modules": "^2.0.0",
     "lint-staged": "^8.1.7",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1",
     "react-test-renderer": "^16.8.6",
     "rimraf": "^2.6.3",
     "rollup": "^1.12.4",
-    "rollup-plugin-babel": "^4.3.2",
+    "rollup-plugin-babel": "^3.0.7",
     "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-css-only": "^1.0.0",
     "rollup-plugin-less": "^1.1.2",
     "rollup-plugin-less-loader": "^0.2.1",
     "rollup-plugin-node-resolve": "^5.0.0",
+    "rollup-plugin-scss": "^1.0.1",
     "rollup-plugin-string": "^3.0.0",
+    "rollup-plugin-svg": "^1.0.1",
     "rollup-plugin-terser": "^5.0.0",
     "rollup-plugin-typescript2": "^0.21.1",
     "watch": "^1.0.2"
@@ -96,10 +102,5 @@
   },
   "engines": {
     "node": ">=8"
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "\\.css$": "<rootDir>/mocks/styles.js"
-    }
   }
 }

@@ -4,5 +4,5 @@ import { Button } from '@storybook/react/demo'
 import { ChatDrawer } from '../src'
 
 storiesOf('Chat Components', module)
-  .add('Chat Drawer', () => <ChatDrawer />)
+  .add('Chat Drawer', () => <ChatDrawer isVisible />)
   .add('Chat Embedded', () => <div />)

@@ -2,6 +2,8 @@ import babel from 'rollup-plugin-babel'
 import resolve from 'rollup-plugin-node-resolve'
 import { terser } from 'rollup-plugin-terser'
 import { string } from 'rollup-plugin-string'
+import svg from 'rollup-plugin-svg'
+import css from 'rollup-plugin-css-only'
 
 import pkg from './package.json'
 
@@ -28,16 +30,17 @@ const common = {
   // external: makeExternalPredicate(external),
   plugins: [
     resolve(),
-    babel({
-      exclude: 'node_modules/**'
-      // presets: ['@babel/env', '@babel/preset-react']
-    }),
     string({
       include: '**/*.css'
+    }),
+    svg(),
+    babel({
+      exclude: 'node_modules/**'
     })
+
     // production && terser()
   ],
-  external: ['react', 'react-dom', 'antd', 'rc-drawer', 'prop-types']
+  external: ['react', 'react-dom', 'rc-drawer', 'prop-types']
 }
 
 const outputs = [
@@ -57,8 +60,7 @@ const outputs = [
     globals: {
       react: 'React',
       'prop-types': 'PropTypes',
-      // 'rc-drawer': 'Drawer',
-      antd: 'Drawer'
+      'rc-drawer': 'Drawer'
     }
   }
 ]

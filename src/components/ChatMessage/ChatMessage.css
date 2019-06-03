@@ -1,0 +1,32 @@
+/* @import url("https://fonts.googleapis.com/css?family=Titillium+Web"); */
+
+.chat-single-message-container:not(:first-of-type) {
+  margin-top: 10px;
+}
+.chat-single-message-container.response {
+  display: flex;
+  justify-content: flex-start;
+}
+.chat-single-message-container.request {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-single-message-container .chat-message-bubble {
+  padding: 13px;
+  border-radius: 10px;
+  max-width: 70%;
+  word-wrap: break-word;
+  font-family: "Titillium Web", sans-serif;
+  letter-spacing: 0.04em;
+}
+.chat-single-message-container.response .chat-message-bubble {
+  background: white;
+  color: #5d5d5d;
+  box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1);
+}
+.chat-single-message-container.request .chat-message-bubble {
+  background: #28a8e0;
+  color: white;
+  box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1);
+}

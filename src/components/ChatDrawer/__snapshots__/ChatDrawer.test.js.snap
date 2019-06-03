@@ -1,3 +1,621 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders correctly 1`] = `ShallowWrapper {}`;
+exports[`renders correctly 1`] = `
+ShallowWrapper {
+  Symbol(enzyme.__root__): [Circular],
+  Symbol(enzyme.__unrendered__): <ChatDrawer
+    handleStyles={Object {}}
+    height="300px"
+    isVisible={false}
+    maskClosable={true}
+    onHandleClick={[Function]}
+    onVisibleChange={[Function]}
+    placement="right"
+    showHandle={true}
+    theme="light"
+    width="500px"
+  />,
+  Symbol(enzyme.__renderer__): Object {
+    "batchedUpdates": [Function],
+    "checkPropTypes": [Function],
+    "getNode": [Function],
+    "render": [Function],
+    "simulateError": [Function],
+    "simulateEvent": [Function],
+    "unmount": [Function],
+  },
+  Symbol(enzyme.__node__): Object {
+    "instance": null,
+    "key": undefined,
+    "nodeType": "function",
+    "props": Object {
+      "children": Array [
+        <style>
+          [object Object]
+        </style>,
+        <style>
+          [object Object]
+        </style>,
+        <Drawer
+          afterVisibleChange={[Function]}
+          className="chata-drawer"
+          duration=".3s"
+          ease="cubic-bezier(0.78, 0.14, 0.15, 0.86)"
+          firstEnter={false}
+          getContainer="body"
+          handler={
+            <div
+              className="drawer-handle"
+              style={Object {}}
+            >
+              <i
+                className="drawer-handle-icon"
+              />
+            </div>
+          }
+          height={null}
+          keyboard={true}
+          level="all"
+          maskStyle={Object {}}
+          onChange={[Function]}
+          onHandleClick={[Function]}
+          onMaskClick={[Function]}
+          open={false}
+          placement="right"
+          prefixCls="drawer"
+          showMask={true}
+          width="500px"
+          wrapperClassName=""
+        >
+          <div
+            className="chat-drawer-content-container"
+          >
+            <div
+              className="chat-header-container"
+            />
+            <div
+              className="chat-message-container"
+            >
+              <ChatBar
+                isResponse={true}
+                text="Hi there! I'm here to help you access, search and analyze your data."
+              />
+              <ChatBar
+                isResponse={false}
+                text="What is my current cash balance?"
+              />
+            </div>
+            <div
+              className="chat-bar-container"
+            >
+              <ChatBar
+                className="chat-drawer-chat-bar"
+                enableVoiceRecord={true}
+              />
+            </div>
+          </div>
+        </Drawer>,
+      ],
+    },
+    "ref": null,
+    "rendered": Array [
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": "[object Object]",
+        },
+        "ref": null,
+        "rendered": "[object Object]",
+        "type": "style",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "host",
+        "props": Object {
+          "children": "[object Object]",
+        },
+        "ref": null,
+        "rendered": "[object Object]",
+        "type": "style",
+      },
+      Object {
+        "instance": null,
+        "key": undefined,
+        "nodeType": "class",
+        "props": Object {
+          "afterVisibleChange": [Function],
+          "children": <div
+            className="chat-drawer-content-container"
+          >
+            <div
+              className="chat-header-container"
+            />
+            <div
+              className="chat-message-container"
+            >
+              <ChatBar
+                isResponse={true}
+                text="Hi there! I'm here to help you access, search and analyze your data."
+              />
+              <ChatBar
+                isResponse={false}
+                text="What is my current cash balance?"
+              />
+            </div>
+            <div
+              className="chat-bar-container"
+            >
+              <ChatBar
+                className="chat-drawer-chat-bar"
+                enableVoiceRecord={true}
+              />
+            </div>
+          </div>,
+          "className": "chata-drawer",
+          "duration": ".3s",
+          "ease": "cubic-bezier(0.78, 0.14, 0.15, 0.86)",
+          "firstEnter": false,
+          "getContainer": "body",
+          "handler": <div
+            className="drawer-handle"
+            style={Object {}}
+          >
+            <i
+              className="drawer-handle-icon"
+            />
+          </div>,
+          "height": null,
+          "keyboard": true,
+          "level": "all",
+          "maskStyle": Object {},
+          "onChange": [Function],
+          "onHandleClick": [Function],
+          "onMaskClick": [Function],
+          "open": false,
+          "placement": "right",
+          "prefixCls": "drawer",
+          "showMask": true,
+          "width": "500px",
+          "wrapperClassName": "",
+        },
+        "ref": null,
+        "rendered": Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": Array [
+              <div
+                className="chat-header-container"
+              />,
+              <div
+                className="chat-message-container"
+              >
+                <ChatBar
+                  isResponse={true}
+                  text="Hi there! I'm here to help you access, search and analyze your data."
+                />
+                <ChatBar
+                  isResponse={false}
+                  text="What is my current cash balance?"
+                />
+              </div>,
+              <div
+                className="chat-bar-container"
+              >
+                <ChatBar
+                  className="chat-drawer-chat-bar"
+                  enableVoiceRecord={true}
+                />
+              </div>,
+            ],
+            "className": "chat-drawer-content-container",
+          },
+          "ref": null,
+          "rendered": Array [
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "className": "chat-header-container",
+              },
+              "ref": null,
+              "rendered": null,
+              "type": "div",
+            },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": Array [
+                  <ChatBar
+                    isResponse={true}
+                    text="Hi there! I'm here to help you access, search and analyze your data."
+                  />,
+                  <ChatBar
+                    isResponse={false}
+                    text="What is my current cash balance?"
+                  />,
+                ],
+                "className": "chat-message-container",
+              },
+              "ref": null,
+              "rendered": Array [
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "class",
+                  "props": Object {
+                    "isResponse": true,
+                    "text": "Hi there! I'm here to help you access, search and analyze your data.",
+                  },
+                  "ref": null,
+                  "rendered": null,
+                  "type": [Function],
+                },
+                Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "class",
+                  "props": Object {
+                    "isResponse": false,
+                    "text": "What is my current cash balance?",
+                  },
+                  "ref": null,
+                  "rendered": null,
+                  "type": [Function],
+                },
+              ],
+              "type": "div",
+            },
+            Object {
+              "instance": null,
+              "key": undefined,
+              "nodeType": "host",
+              "props": Object {
+                "children": <ChatBar
+                  className="chat-drawer-chat-bar"
+                  enableVoiceRecord={true}
+                />,
+                "className": "chat-bar-container",
+              },
+              "ref": null,
+              "rendered": Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "class",
+                "props": Object {
+                  "className": "chat-drawer-chat-bar",
+                  "enableVoiceRecord": true,
+                },
+                "ref": null,
+                "rendered": null,
+                "type": [Function],
+              },
+              "type": "div",
+            },
+          ],
+          "type": "div",
+        },
+        "type": [Function],
+      },
+    ],
+    "type": Symbol(react.fragment),
+  },
+  Symbol(enzyme.__nodes__): Array [
+    Object {
+      "instance": null,
+      "key": undefined,
+      "nodeType": "function",
+      "props": Object {
+        "children": Array [
+          <style>
+            [object Object]
+          </style>,
+          <style>
+            [object Object]
+          </style>,
+          <Drawer
+            afterVisibleChange={[Function]}
+            className="chata-drawer"
+            duration=".3s"
+            ease="cubic-bezier(0.78, 0.14, 0.15, 0.86)"
+            firstEnter={false}
+            getContainer="body"
+            handler={
+              <div
+                className="drawer-handle"
+                style={Object {}}
+              >
+                <i
+                  className="drawer-handle-icon"
+                />
+              </div>
+            }
+            height={null}
+            keyboard={true}
+            level="all"
+            maskStyle={Object {}}
+            onChange={[Function]}
+            onHandleClick={[Function]}
+            onMaskClick={[Function]}
+            open={false}
+            placement="right"
+            prefixCls="drawer"
+            showMask={true}
+            width="500px"
+            wrapperClassName=""
+          >
+            <div
+              className="chat-drawer-content-container"
+            >
+              <div
+                className="chat-header-container"
+              />
+              <div
+                className="chat-message-container"
+              >
+                <ChatBar
+                  isResponse={true}
+                  text="Hi there! I'm here to help you access, search and analyze your data."
+                />
+                <ChatBar
+                  isResponse={false}
+                  text="What is my current cash balance?"
+                />
+              </div>
+              <div
+                className="chat-bar-container"
+              >
+                <ChatBar
+                  className="chat-drawer-chat-bar"
+                  enableVoiceRecord={true}
+                />
+              </div>
+            </div>
+          </Drawer>,
+        ],
+      },
+      "ref": null,
+      "rendered": Array [
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": "[object Object]",
+          },
+          "ref": null,
+          "rendered": "[object Object]",
+          "type": "style",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "host",
+          "props": Object {
+            "children": "[object Object]",
+          },
+          "ref": null,
+          "rendered": "[object Object]",
+          "type": "style",
+        },
+        Object {
+          "instance": null,
+          "key": undefined,
+          "nodeType": "class",
+          "props": Object {
+            "afterVisibleChange": [Function],
+            "children": <div
+              className="chat-drawer-content-container"
+            >
+              <div
+                className="chat-header-container"
+              />
+              <div
+                className="chat-message-container"
+              >
+                <ChatBar
+                  isResponse={true}
+                  text="Hi there! I'm here to help you access, search and analyze your data."
+                />
+                <ChatBar
+                  isResponse={false}
+                  text="What is my current cash balance?"
+                />
+              </div>
+              <div
+                className="chat-bar-container"
+              >
+                <ChatBar
+                  className="chat-drawer-chat-bar"
+                  enableVoiceRecord={true}
+                />
+              </div>
+            </div>,
+            "className": "chata-drawer",
+            "duration": ".3s",
+            "ease": "cubic-bezier(0.78, 0.14, 0.15, 0.86)",
+            "firstEnter": false,
+            "getContainer": "body",
+            "handler": <div
+              className="drawer-handle"
+              style={Object {}}
+            >
+              <i
+                className="drawer-handle-icon"
+              />
+            </div>,
+            "height": null,
+            "keyboard": true,
+            "level": "all",
+            "maskStyle": Object {},
+            "onChange": [Function],
+            "onHandleClick": [Function],
+            "onMaskClick": [Function],
+            "open": false,
+            "placement": "right",
+            "prefixCls": "drawer",
+            "showMask": true,
+            "width": "500px",
+            "wrapperClassName": "",
+          },
+          "ref": null,
+          "rendered": Object {
+            "instance": null,
+            "key": undefined,
+            "nodeType": "host",
+            "props": Object {
+              "children": Array [
+                <div
+                  className="chat-header-container"
+                />,
+                <div
+                  className="chat-message-container"
+                >
+                  <ChatBar
+                    isResponse={true}
+                    text="Hi there! I'm here to help you access, search and analyze your data."
+                  />
+                  <ChatBar
+                    isResponse={false}
+                    text="What is my current cash balance?"
+                  />
+                </div>,
+                <div
+                  className="chat-bar-container"
+                >
+                  <ChatBar
+                    className="chat-drawer-chat-bar"
+                    enableVoiceRecord={true}
+                  />
+                </div>,
+              ],
+              "className": "chat-drawer-content-container",
+            },
+            "ref": null,
+            "rendered": Array [
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "className": "chat-header-container",
+                },
+                "ref": null,
+                "rendered": null,
+                "type": "div",
+              },
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": Array [
+                    <ChatBar
+                      isResponse={true}
+                      text="Hi there! I'm here to help you access, search and analyze your data."
+                    />,
+                    <ChatBar
+                      isResponse={false}
+                      text="What is my current cash balance?"
+                    />,
+                  ],
+                  "className": "chat-message-container",
+                },
+                "ref": null,
+                "rendered": Array [
+                  Object {
+                    "instance": null,
+                    "key": undefined,
+                    "nodeType": "class",
+                    "props": Object {
+                      "isResponse": true,
+                      "text": "Hi there! I'm here to help you access, search and analyze your data.",
+                    },
+                    "ref": null,
+                    "rendered": null,
+                    "type": [Function],
+                  },
+                  Object {
+                    "instance": null,
+                    "key": undefined,
+                    "nodeType": "class",
+                    "props": Object {
+                      "isResponse": false,
+                      "text": "What is my current cash balance?",
+                    },
+                    "ref": null,
+                    "rendered": null,
+                    "type": [Function],
+                  },
+                ],
+                "type": "div",
+              },
+              Object {
+                "instance": null,
+                "key": undefined,
+                "nodeType": "host",
+                "props": Object {
+                  "children": <ChatBar
+                    className="chat-drawer-chat-bar"
+                    enableVoiceRecord={true}
+                  />,
+                  "className": "chat-bar-container",
+                },
+                "ref": null,
+                "rendered": Object {
+                  "instance": null,
+                  "key": undefined,
+                  "nodeType": "class",
+                  "props": Object {
+                    "className": "chat-drawer-chat-bar",
+                    "enableVoiceRecord": true,
+                  },
+                  "ref": null,
+                  "rendered": null,
+                  "type": [Function],
+                },
+                "type": "div",
+              },
+            ],
+            "type": "div",
+          },
+          "type": [Function],
+        },
+      ],
+      "type": Symbol(react.fragment),
+    },
+  ],
+  Symbol(enzyme.__options__): Object {
+    "adapter": ReactSixteenAdapter {
+      "options": Object {
+        "enableComponentDidUpdateOnSetState": true,
+        "legacyContextMode": "parent",
+        "lifecycles": Object {
+          "componentDidUpdate": Object {
+            "onSetState": true,
+          },
+          "getChildContext": Object {
+            "calledByRenderer": false,
+          },
+          "getDerivedStateFromError": true,
+          "getDerivedStateFromProps": Object {
+            "hasShouldComponentUpdateBug": false,
+          },
+          "getSnapshotBeforeUpdate": true,
+          "setState": Object {
+            "skipsComponentDidUpdateOnNullish": true,
+          },
+        },
+      },
+    },
+  },
+  Symbol(enzyme.__childContext__): null,
+}
+`;
