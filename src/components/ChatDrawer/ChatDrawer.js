@@ -19,19 +19,21 @@ export default class ChatDrawer extends React.Component {
     showHandle: PropTypes.bool,
     // customHandle: PropTypes.ReactElement,
     theme: PropTypes.string,
-    handleStyles: PropTypes.shape({})
+    handleStyles: PropTypes.shape({}),
+    shiftScreen: PropTypes.bool
   }
 
   static defaultProps = {
     placement: 'right',
     maskClosable: true,
     isVisible: false,
-    width: '500px',
-    height: '300px',
+    width: 500,
+    height: 350,
     // customHandle: undefined, // not working atm
     showHandle: true,
     theme: 'light',
     handleStyles: {},
+    shiftScreen: false,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -39,11 +41,13 @@ export default class ChatDrawer extends React.Component {
   state = {
     messages: [
       {
+        id: 0,
         isResponse: true,
         text:
           "Hi there! I'm here to help you access, search and analyze your data."
       },
       {
+        id: 1,
         isResponse: false,
         text: 'What is my current cash balance?'
       }
@@ -52,7 +56,6 @@ export default class ChatDrawer extends React.Component {
 
   getHandlerProp = () => {
     if (this.props.customHandle !== undefined) {
-      console.log('using custom handle')
       return this.props.customHandle
     } else if (this.props.showHandle) {
       return (
@@ -124,9 +127,6 @@ export default class ChatDrawer extends React.Component {
         <style>{`${rcStyles}`}</style>
         <style>{`${styles}`}</style>
         <Drawer
-          // prefixCls={prefixCls}
-          // style={this.getRcDrawerStyle()}
-          // className={classNames(wrapClassName, className, haveMask)}
           className="chata-drawer"
           open={this.props.isVisible}
           showMask={this.props.showMask}
@@ -137,6 +137,7 @@ export default class ChatDrawer extends React.Component {
           onHandleClick={this.props.onHandleClick}
           afterVisibleChange={this.props.onVisibleChange}
           handler={this.getHandlerProp()}
+          level={this.props.shiftScreen ? 'all' : null}
         >
           <div className="chat-drawer-content-container">
             <div className="chat-header-container" />
@@ -147,6 +148,7 @@ export default class ChatDrawer extends React.Component {
                     <ChatMessage
                       isResponse={message.isResponse}
                       text={message.text}
+                      key={message.id}
                     />
                   )
                 })}

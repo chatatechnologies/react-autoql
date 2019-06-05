@@ -1,35 +1,26 @@
 import React, { Component } from 'react'
 import { ChatDrawer } from 'chata-ai'
 
-class App extends Component {
+export default class App extends Component {
   state = {
     isVisible: false
   }
 
   render = () => {
     return (
-      <ChatDrawer
-        isVisible={this.state.isVisible}
-        onHandleClick={() =>
-          this.setState({ isVisible: !this.state.isVisible })
-        }
-        placement="right"
-        // maskClosable
-        // showMask
-        // onVisibleChange={() => {
-        //   console.log('on visible change triggered')
-        // }}
-        // showHandle
-        // width="100px"
-        // handleStyles={{ left: '25px' }}
-        // customHandle={
-        //   <div style={{ width: '100px', height: '100px', background: 'red' }}>
-        //     HANDLE
-        //   </div>
-        // }
-      />
+      <div>
+        JLEWKFJLEWFKJEW:FLKEJF
+        <ChatDrawer
+          isVisible={this.state.isVisible}
+          onHandleClick={() =>
+            this.setState({ isVisible: !this.state.isVisible })
+          }
+          placement="bottom"
+          showMask
+          width="700px"
+          handleStyles={{ right: '25px' }}
+        />
+      </div>
     )
   }
 }
-
-export default App

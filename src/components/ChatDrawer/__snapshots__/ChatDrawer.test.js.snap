@@ -5,15 +5,16 @@ ShallowWrapper {
   Symbol(enzyme.__root__): [Circular],
   Symbol(enzyme.__unrendered__): <ChatDrawer
     handleStyles={Object {}}
-    height="300px"
+    height={350}
     isVisible={false}
     maskClosable={true}
     onHandleClick={[Function]}
     onVisibleChange={[Function]}
     placement="right"
+    shiftScreen={false}
     showHandle={true}
     theme="light"
-    width="500px"
+    width={500}
   />,
   Symbol(enzyme.__renderer__): Object {
     "batchedUpdates": [Function],
@@ -55,7 +56,7 @@ ShallowWrapper {
           }
           height={null}
           keyboard={true}
-          level="all"
+          level={null}
           maskStyle={Object {}}
           onChange={[Function]}
           onHandleClick={[Function]}
@@ -64,7 +65,7 @@ ShallowWrapper {
           placement="right"
           prefixCls="drawer"
           showMask={true}
-          width="500px"
+          width={500}
           wrapperClassName=""
         >
           <div
@@ -169,7 +170,7 @@ ShallowWrapper {
           </div>,
           "height": null,
           "keyboard": true,
-          "level": "all",
+          "level": null,
           "maskStyle": Object {},
           "onChange": [Function],
           "onHandleClick": [Function],
@@ -178,7 +179,7 @@ ShallowWrapper {
           "placement": "right",
           "prefixCls": "drawer",
           "showMask": true,
-          "width": "500px",
+          "width": 500,
           "wrapperClassName": "",
         },
         "ref": null,
@@ -248,7 +249,7 @@ ShallowWrapper {
               "rendered": Array [
                 Object {
                   "instance": null,
-                  "key": undefined,
+                  "key": "0",
                   "nodeType": "class",
                   "props": Object {
                     "isResponse": true,
@@ -260,7 +261,7 @@ ShallowWrapper {
                 },
                 Object {
                   "instance": null,
-                  "key": undefined,
+                  "key": "1",
                   "nodeType": "class",
                   "props": Object {
                     "isResponse": false,
@@ -339,7 +340,7 @@ ShallowWrapper {
             }
             height={null}
             keyboard={true}
-            level="all"
+            level={null}
             maskStyle={Object {}}
             onChange={[Function]}
             onHandleClick={[Function]}
@@ -348,7 +349,7 @@ ShallowWrapper {
             placement="right"
             prefixCls="drawer"
             showMask={true}
-            width="500px"
+            width={500}
             wrapperClassName=""
           >
             <div
@@ -453,7 +454,7 @@ ShallowWrapper {
             </div>,
             "height": null,
             "keyboard": true,
-            "level": "all",
+            "level": null,
             "maskStyle": Object {},
             "onChange": [Function],
             "onHandleClick": [Function],
@@ -462,7 +463,7 @@ ShallowWrapper {
             "placement": "right",
             "prefixCls": "drawer",
             "showMask": true,
-            "width": "500px",
+            "width": 500,
             "wrapperClassName": "",
           },
           "ref": null,
@@ -532,7 +533,7 @@ ShallowWrapper {
                 "rendered": Array [
                   Object {
                     "instance": null,
-                    "key": undefined,
+                    "key": "0",
                     "nodeType": "class",
                     "props": Object {
                       "isResponse": true,
@@ -544,7 +545,7 @@ ShallowWrapper {
                   },
                   Object {
                     "instance": null,
-                    "key": undefined,
+                    "key": "1",
                     "nodeType": "class",
                     "props": Object {
                       "isResponse": false,
