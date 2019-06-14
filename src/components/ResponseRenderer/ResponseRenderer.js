@@ -117,7 +117,7 @@ export default class ChatMessage extends React.Component {
         columns={columns}
         data={data}
         onRowDblClick={(row, columns) => {
-          if (!this.props.isDrilldown) {
+          if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
           }
         }}

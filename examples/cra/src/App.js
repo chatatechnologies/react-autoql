@@ -91,7 +91,7 @@ export default class App extends Component {
           placement={this.state.placement}
           showMask
           height="500px"
-          token="3a1ffc82-c265-4189-a80b-5be8e89ebf4e"
+          token="669a8d47-ce6d-4617-bdd3-19fdedb007c6"
           // width="700px"
           // handleStyles={{ right: '25px' }}
         />

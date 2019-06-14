@@ -213,7 +213,7 @@ export default class ChatDrawer extends React.Component {
       runDrilldown(bodyJSON, this.props.token)
         .then(response => {
           // this.addResponseMessage({ type: 'drilldown', text: '' })
-          this.addResponseMessage({ ...response, isDrilldown: true })
+          this.addResponseMessage({ ...response, isDrilldownDisabled: true })
           this.setState({ isChataThinking: false })
         })
         .catch(() => {
@@ -250,7 +250,7 @@ export default class ChatDrawer extends React.Component {
         <ResponseRenderer
           processDrilldown={this.processDrilldown}
           response={response}
-          isDrilldown={!!response.isDrilldown}
+          isDrilldownDisabled={!!response.isDrilldownDisabled}
         />
       ),
       id: uuid.v4(),
