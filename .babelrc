@@ -14,12 +14,20 @@
     ],
     "react"
   ],
-  "plugins": ["babel-plugin-transform-class-properties"],
+  "plugins": [
+    "babel-plugin-transform-class-properties",
+    "babel-plugin-syntax-object-rest-spread",
+    "babel-plugin-transform-object-rest-spread"
+  ],
   // required for transpilation to work with jest
   "env": {
     "test": {
-      "presets": ["env", "react"],
-      "plugins": ["babel-plugin-transform-class-properties"]
+      "presets": ["env", "react", "es2015"],
+      "plugins": [
+        "babel-plugin-transform-class-properties",
+        "babel-plugin-syntax-object-rest-spread",
+        "babel-plugin-transform-object-rest-spread"
+      ]
     }
   }
 }
