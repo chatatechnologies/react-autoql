@@ -49,15 +49,19 @@ const CHART_TYPES = [
   'contrast_line'
 ]
 
-export default class ChatMessage extends React.Component {
+export default class ResponseRenderer extends React.Component {
   static propTypes = {
     supportsSuggestions: PropTypes.bool,
     processDrilldown: PropTypes.func,
-    response: PropTypes.shape({}).isRequired
+    response: PropTypes.shape({}).isRequired,
+    onSuggestionClick: PropTypes.func,
+    isQueryRunning: PropTypes.bool
   }
 
   static defaultProps = {
     supportsSuggestions: true,
+    isQueryRunning: false,
+    onSuggestionClick: () => {},
     processDrilldown: () => {}
   }
 
@@ -66,12 +70,31 @@ export default class ChatMessage extends React.Component {
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
 
-  createSuggestionMessage = () => {
-    return null
+  createSuggestionMessage = (userInput, suggestions) => {
+    return (
+      <div>
+        I'm not sure what you mean by "{userInput}". Did you mean:
+        <br />
+        {suggestions.map(suggestion => {
+          return (
+            <Fragment>
+              <button
+                // disabled={this.props.isQueryRunning}
+                onClick={() => this.props.onSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </button>
+              <br />
+            </Fragment>
+          )
+        })}
+      </div>
+    )
   }
 
-  renderSuggestionMessage = () => {
+  renderSuggestionMessage = response => {
     // There is actually a suggestion for this case
+    const responseBody = response.data
     if (
       responseBody.display_type === 'suggestion' &&
       responseBody.data.length !== 0
@@ -81,23 +104,33 @@ export default class ChatMessage extends React.Component {
       if (finalRow === '') {
         suggestions.splice(-1)
       }
-      this.createSuggestionMessage(
-        responseBody.query_id,
+
+      console.log('user input:')
+      const theUserInput = getParameterByName(
+        'q',
+        response.config && response.config.url
+      )
+      console.log(responseBody)
+      console.log(theUserInput)
+      return this.createSuggestionMessage(
+        // responseBody.query_id,
         theUserInput,
         suggestions
       )
+      console.log('suggesionts:')
+      console.log(suggestions)
     }
     // No suggestions
     else if (
       responseBody.display_type === 'suggestion' &&
       responseBody.data.length === 0
     ) {
-      this.createSuggestionMessage(responseBody.query_id, theUserInput)
+      this.createSuggestionMessage()
       return
     }
     // We don't understand the query, no suggestions
     else if (responseBody.display_type === 'unknown_words') {
-      this.createSuggestionMessage(responseBody.query_id, theUserInput)
+      this.createSuggestionMessage()
       return
     }
   }
@@ -198,7 +231,7 @@ export default class ChatMessage extends React.Component {
         responseBody.display_type === 'suggestion' ||
         responseBody.display_type === 'unknown_words'
       ) {
-        return this.renderSuggestionMessage()
+        return this.renderSuggestionMessage(this.props.response)
       } else if (this.isTableType(self.displayType)) {
         return this.renderTable()
       } else if (this.isChartType(self.displayType)) {

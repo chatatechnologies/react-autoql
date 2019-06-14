@@ -13,7 +13,7 @@ import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { ChataTable } from '../ChataTable'
 import { ResponseRenderer } from '../ResponseRenderer'
-import { runDrilldown } from '../../js/queryService'
+import { runQuery, runDrilldown } from '../../js/queryService'
 
 import rcStyles from 'rc-drawer/assets/index.css'
 import chataTableStyles from '../ChataTable/ChataTable.css'
@@ -149,9 +149,30 @@ export default class ChatDrawer extends React.Component {
     }, 50)
   }
 
-  onInputSubmit = newMessage => {
-    this.addRequestMessage(newMessage)
+  onInputSubmit = text => {
+    this.addRequestMessage(text)
     this.setState({ isChataThinking: true })
+  }
+
+  onSuggestionClick = suggestion => {
+    this.addRequestMessage(suggestion)
+    this.setState({ isChataThinking: true })
+
+    if (suggestion === 'None of these') {
+      setTimeout(() => {
+        this.addResponseMessage('Thank you for your feedback.')
+        this.setState({ isChataThinking: false })
+      }, 1000)
+      return
+    }
+
+    runQuery(suggestion, this.props.token)
+      .then(response => {
+        this.onResponse(response)
+      })
+      .catch(error => {
+        this.onResponse(error)
+      })
   }
 
   onResponse = response => {
@@ -193,16 +214,14 @@ export default class ChatDrawer extends React.Component {
 
   processDrilldown = (rowData, columns, queryID) => {
     if (this.props.isDrilldownEnabled) {
-      // make drilldowncall
-
       const groupByArray = this.getGroupByArrayFromTable(rowData, columns, true)
-      console.log('group by array')
-      console.log(groupByArray)
       const bodyJSON = {
         id: queryID,
         group_bys: groupByArray
       }
 
+      // This doesnt always work very nicely.
+      // How do we get the right text?? Can we make an api call to get the text first?
       const drilldownText = `Drill down on ${Object.keys(groupByArray)[0]} ${
         groupByArray[Object.keys(groupByArray)[0]]
       }`
@@ -212,7 +231,6 @@ export default class ChatDrawer extends React.Component {
 
       runDrilldown(bodyJSON, this.props.token)
         .then(response => {
-          // this.addResponseMessage({ type: 'drilldown', text: '' })
           this.addResponseMessage({ ...response, isDrilldownDisabled: true })
           this.setState({ isChataThinking: false })
         })
@@ -245,26 +263,34 @@ export default class ChatDrawer extends React.Component {
   }
 
   createMessage = response => {
-    return {
-      content: (
+    let content
+    if (typeof response === 'string') {
+      content = response
+    } else {
+      content = (
         <ResponseRenderer
           processDrilldown={this.processDrilldown}
           response={response}
           isDrilldownDisabled={!!response.isDrilldownDisabled}
+          onSuggestionClick={suggestion => this.onSuggestionClick(suggestion)}
+          isQueryRunning={this.state.isChataThinking}
         />
-      ),
+      )
+    }
+    return {
+      content,
       id: uuid.v4(),
-      type: response.data.display_type,
+      type: response && response.data && response.data.display_type,
       isResponse: true
     }
   }
 
-  addRequestMessage = newMessage => {
+  addRequestMessage = text => {
     if (this.state.messages.length > 10) {
       // shift item from beginning of messages array
     }
     const message = {
-      content: newMessage,
+      content: text,
       id: uuid.v4(),
       isResponse: false
     }
@@ -301,6 +327,22 @@ export default class ChatDrawer extends React.Component {
     this.chatBarRef = ref
   }
 
+  renderHeaderContent = () => {
+    return (
+      <button
+        onClick={() => {
+          this.clearMessages()
+          if (this.chatBarRef) {
+            this.chatBarRef.focus()
+          }
+        }}
+        className="chata-button"
+      >
+        Clear All
+      </button>
+    )
+  }
+
   render = () => {
     return (
       <Fragment>
@@ -331,6 +373,7 @@ export default class ChatDrawer extends React.Component {
                   <button className="chata-drawer-header-button">D</button>
                 </Fragment>
               )}
+              {this.renderHeaderContent()}
             </div>
             <Scrollbars
               ref={c => {

@@ -23,54 +23,35 @@ export default class ChatBar extends React.Component {
     onSubmit: PropTypes.func,
     onResponseCallback: PropTypes.func,
     className: PropTypes.string,
-    token: PropTypes.string.isRequired
+    token: PropTypes.string.isRequired,
+    supportsAutoComplete: PropTypes.bool
   }
 
   static defaultProps = {
     enableVoiceRecord: false,
     isDisabled: false,
+    supportsAutoComplete: true,
+    className: null,
     onSubmit: () => {},
-    onResponseCallback: () => {},
-    className: null
+    onResponseCallback: () => {}
   }
 
   state = {
     inputValue: ''
   }
 
-  // setS2TRef = ref => {
-  //   this.S2TRef = ref
-  // }
-
   submitQuery = () => {
     if (this.state.inputValue.trim()) {
       this.props.onSubmit(this.state.inputValue)
-      this.processQuery()
+      runQuery(this.state.inputValue, this.props.token)
         .then(response => {
           this.props.onResponseCallback(response)
         })
-        .catch(error => {
+        .catch(() => {
           this.props.onResponseCallback(error)
         })
     }
     this.setState({ inputValue: '' })
-  }
-
-  processQuery = () => {
-    // send this.state.inputValue to query endpoint
-    // along with this.props.apiKey and this.props.dataSourceKey
-    return runQuery(this.state.inputValue, this.props.token)
-      .then(response => {
-        return Promise.resolve(response)
-      })
-      .catch(() => {
-        return Promise.reject()
-      })
-    // return new Promise((resolve, reject) =>
-    //   setTimeout(() => {
-    //     resolve(reviewData)
-    //   }, 500)
-    // )
   }
 
   onKeyPress = e => {
@@ -102,6 +83,9 @@ export default class ChatBar extends React.Component {
       <Fragment>
         <style>{`${styles}`}</style>
         <div className={`chata-bar-container ${this.props.className}`}>
+          {
+            // use Awesomplete for autocomplete library
+          }
           <input
             className="chata-input"
             placeholder="Type a query"
