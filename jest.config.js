@@ -1,4 +1,6 @@
 module.exports = {
+  setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
+  setupFiles: ['<rootDir>/test/globals.js'],
   verbose: true,
   transform: {
     '^.+\\.js$': 'babel-jest',

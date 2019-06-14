@@ -9,47 +9,24 @@
   padding: 10px;
   padding-left: 20px;
   margin: 10px;
+  height: 18px;
   border-radius: 24px;
   font-size: 16px;
   font-family: "Titillium Web", sans-serif;
   letter-spacing: 0.04em;
   outline: none !important;
 
-  border: 1px solid transparent;
-  box-shadow: 1px 3px 6px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid #00000017;
   transition: box-shadow 0.2s ease;
 
   flex: 1;
 }
-.chata-input:hover {
-  box-shadow: 1px 3px 6px 2px rgba(0, 0, 0, 0.15);
+.chata-input:disabled {
+  background: rgba(0, 0, 0, 0.03);
+}
+.chata-input:not(:disabled):hover {
+  box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-input::placeholder {
   color: rgba(0, 0, 0, 0.3);
-}
-
-.chat-voice-record-button {
-  width: 43px;
-  height: 43px;
-  border-radius: 24px;
-  margin: 10px;
-  margin-left: 0;
-  font-size: 18px;
-  outline: none !important;
-  cursor: pointer;
-
-  background: #28a8e0;
-  color: white;
-  border: 1px solid transparent;
-  box-shadow: 1px 3px 6px 2px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s ease;
-
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-.chat-voice-record-button:hover {
-  box-shadow: 1px 3px 6px 2px rgba(0, 0, 0, 0.15);
-}
-.chat-voice-recor-icon {
-  margin-top: 3px;
 }

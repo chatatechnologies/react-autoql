@@ -1,0 +1,18 @@
+.chata-table-container {
+  height: 100%;
+}
+
+.chata-table {
+  margin-bottom: 0;
+}
+
+/* tabulator */
+.chata-table.tabulator {
+  height: 100%;
+}
+.tabulator-row {
+  user-select: none;
+}
+.tabulator-tableHolder {
+  max-height: calc(100% - 38px) !important;
+}
