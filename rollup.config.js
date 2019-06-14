@@ -27,7 +27,6 @@ const makeExternalPredicate = externalArr => {
 
 const common = {
   input: 'src/index.js',
-  // external: makeExternalPredicate(external),
   plugins: [
     resolve(),
     string({
@@ -40,7 +39,7 @@ const common = {
 
     // production && terser()
   ],
-  external: ['react', 'react-dom', 'rc-drawer', 'prop-types']
+  external: makeExternalPredicate(external)
 }
 
 const outputs = [
