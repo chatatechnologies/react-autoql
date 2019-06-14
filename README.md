@@ -12,10 +12,6 @@ $ yarn add chata-ai
 
 #### Import in Browser
 
-# Environment Support
-
-Modern browsers and IE11+
-
 # Usage
 
 ```
@@ -23,6 +19,10 @@ import { ChatDrawer } from 'chata-ai';
 
 ReactDOM.render(<ChatDrawer />, mountNode);
 ```
+
+# Environment Support
+
+Modern browsers and IE11+
 
 # Components
 
