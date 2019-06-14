@@ -3,11 +3,11 @@
 #### Using npm or yarn
 
 ```
-$ npm install chata-ai
+$ npm install @chata-ai/core
 ```
 
 ```
-$ yarn add chata-ai
+$ yarn add @chata-ai/core
 ```
 
 #### Import in Browser
