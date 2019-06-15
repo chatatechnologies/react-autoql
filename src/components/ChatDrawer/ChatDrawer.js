@@ -31,6 +31,7 @@ export default class ChatDrawer extends React.Component {
     handleStyles: PropTypes.shape({}),
     shiftScreen: PropTypes.bool,
     isDrilldownEnabled: PropTypes.bool,
+    customerName: PropTypes.string,
     token: PropTypes.string.isRequired
   }
 
@@ -46,6 +47,7 @@ export default class ChatDrawer extends React.Component {
     handleStyles: {},
     shiftScreen: false,
     isDrilldownEnabled: true,
+    customerName: 'there',
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -56,8 +58,7 @@ export default class ChatDrawer extends React.Component {
         id: uuid.v4(),
         isResponse: true,
         type: 'text',
-        content:
-          "Hi there! I'm here to help you access, search and analyze your data."
+        content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
       }
       // {
       //   content: 'My Response will go here! I will let you view the data in a few different ways. You can also choose to drilldown on the data for more insights!',

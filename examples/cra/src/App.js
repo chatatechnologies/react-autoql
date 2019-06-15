@@ -89,6 +89,7 @@ export default class App extends Component {
           onMaskClick={() => this.setState({ isVisible: false })}
           showHandle={this.state.showHandle}
           placement={this.state.placement}
+          customerName="Nikki"
           showMask
           height="500px"
           token="f601c87d-384c-4118-b2ae-250f52a9c654"
