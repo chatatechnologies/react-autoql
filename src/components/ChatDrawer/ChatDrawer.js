@@ -183,10 +183,9 @@ export default class ChatDrawer extends React.Component {
     }
   }
 
-  getGroupByArrayFromTable = (origRowData, origColumns, forceDateAxis) => {
+  getGroupByArrayFromTable = (rowData, origColumns, forceDateAxis) => {
     const jsonData = {}
     let columns = [...origColumns]
-    const rowData = origRowData.getData()
 
     if (forceDateAxis) {
       // swap first two columns if second one is DATE and first is not
@@ -212,19 +211,18 @@ export default class ChatDrawer extends React.Component {
     return jsonData
   }
 
-  processDrilldown = (rowData, columns, queryID) => {
+  processDrilldown = (origRowData, columns, queryID) => {
     if (this.props.isDrilldownEnabled) {
+      const rowData = origRowData.getData()
       const groupByArray = this.getGroupByArrayFromTable(rowData, columns, true)
       const bodyJSON = {
         id: queryID,
         group_bys: groupByArray
       }
 
-      // This doesnt always work very nicely.
+      // This is a hack.
       // How do we get the right text?? Can we make an api call to get the text first?
-      const drilldownText = `Drill down on ${Object.keys(groupByArray)[0]} ${
-        groupByArray[Object.keys(groupByArray)[0]]
-      }`
+      const drilldownText = `Drill down on ${columns[0].title} "${rowData[0]}"`
 
       this.addRequestMessage(drilldownText)
       this.setState({ isChataThinking: true })
