@@ -47,7 +47,7 @@ export default class ChatBar extends React.Component {
         .then(response => {
           this.props.onResponseCallback(response)
         })
-        .catch(() => {
+        .catch(error => {
           this.props.onResponseCallback(error)
         })
     }

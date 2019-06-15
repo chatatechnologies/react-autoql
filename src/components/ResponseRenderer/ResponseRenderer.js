@@ -104,21 +104,11 @@ export default class ResponseRenderer extends React.Component {
       if (finalRow === '') {
         suggestions.splice(-1)
       }
-
-      console.log('user input:')
       const theUserInput = getParameterByName(
         'q',
         response.config && response.config.url
       )
-      console.log(responseBody)
-      console.log(theUserInput)
-      return this.createSuggestionMessage(
-        // responseBody.query_id,
-        theUserInput,
-        suggestions
-      )
-      console.log('suggesionts:')
-      console.log(suggestions)
+      return this.createSuggestionMessage(theUserInput, suggestions)
     }
     // No suggestions
     else if (
@@ -241,6 +231,9 @@ export default class ResponseRenderer extends React.Component {
       // console.log(schemaDataArray)
     } else {
       console.log('there is no display type.... why? Was there an error?')
+      if (responseBody.data && !responseBody.data.length) {
+        return 'No data found.'
+      }
       // not sure what all this is for....?
       // self.queryType = body.type;
       // self.multiIndex = body.multi_index;
