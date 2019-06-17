@@ -84,6 +84,23 @@ export default class ChatDrawer extends React.Component {
         this.chatBarRef.focus()
       }
     }
+    if (
+      !this.props.isVisible &&
+      prevProps.isVisible &&
+      this.props.clearOnClose
+    ) {
+      // Do we want to do this? Or just clear all?
+      this.setState({
+        messages: [
+          {
+            id: uuid.v4(),
+            isResponse: true,
+            type: 'text',
+            content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
+          }
+        ]
+      })
+    }
   }
 
   getHandlerProp = () => {

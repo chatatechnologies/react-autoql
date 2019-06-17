@@ -97,7 +97,7 @@ export default class App extends Component {
           // enableVoiceRecord
           // width="700px"
           // handleStyles={{ right: '25px' }}
-          // clearOnClose
+          clearOnClose
           // inputStyles
           // autocompleteStyles
           // maxMessages
