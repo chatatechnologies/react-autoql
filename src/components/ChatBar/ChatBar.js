@@ -22,13 +22,13 @@ export default class ChatBar extends React.Component {
     onResponseCallback: PropTypes.func,
     className: PropTypes.string,
     token: PropTypes.string.isRequired,
-    isAutoCompleteEnabled: PropTypes.bool
+    enableAutocomplete: PropTypes.bool
   }
 
   static defaultProps = {
     enableVoiceRecord: false,
     isDisabled: false,
-    isAutoCompleteEnabled: true,
+    enableAutocomplete: true,
     className: null,
     onSubmit: () => {},
     onResponseCallback: () => {}
@@ -75,6 +75,11 @@ export default class ChatBar extends React.Component {
   focus = () => {
     if (this.inputRef) {
       this.inputRef.focus()
+    } else {
+      const autoSuggestElement = document.getElementsByClassName('chata-input')
+      if (autoSuggestElement && autoSuggestElement[0]) {
+        autoSuggestElement[0].focus()
+      }
     }
   }
 
@@ -130,7 +135,7 @@ export default class ChatBar extends React.Component {
       return // return to let the component handle it...
     }
 
-    if (e && e.target && e.target.value) {
+    if (e && e.target && (e.target.value || e.target.value === '')) {
       this.setState({ inputValue: e.target.value })
     } else {
       // User clicked on autosuggest item
@@ -143,7 +148,7 @@ export default class ChatBar extends React.Component {
       <Fragment>
         <style>{`${styles}`}</style>
         <div className={`chata-bar-container ${this.props.className}`}>
-          {this.props.isAutoCompleteEnabled ? (
+          {this.props.enableAutocomplete ? (
             <Autosuggest
               onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
               onSuggestionsClearRequested={this.onSuggestionsClearRequested}
@@ -162,7 +167,7 @@ export default class ChatBar extends React.Component {
                 onChange: this.onInputChange,
                 onKeyPress: this.onKeyPress,
                 value: this.state.inputValue,
-                ref: this.setInputRef,
+                // ref: this.setInputRef,
                 autoFocus: true
               }}
             />

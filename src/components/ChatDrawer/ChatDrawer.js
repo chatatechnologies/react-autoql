@@ -6,12 +6,10 @@ import uuid from 'uuid'
 
 import Drawer from 'rc-drawer'
 
-import ScrollToBottom from 'react-scroll-to-bottom'
 import { Scrollbars } from 'react-custom-scrollbars'
 
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
-import { ChataTable } from '../ChataTable'
 import { ResponseRenderer } from '../ResponseRenderer'
 import { runQuery, runDrilldown } from '../../js/queryService'
 
@@ -33,7 +31,8 @@ export default class ChatDrawer extends React.Component {
     isDrilldownEnabled: PropTypes.bool,
     customerName: PropTypes.string,
     token: PropTypes.string.isRequired,
-    isAutoCompleteEnabled: PropTypes.bool
+    enableAutocomplete: PropTypes.bool,
+    clearOnClose: PropTypes.bool
   }
 
   static defaultProps = {
@@ -49,7 +48,8 @@ export default class ChatDrawer extends React.Component {
     shiftScreen: false,
     isDrilldownEnabled: true,
     customerName: 'there',
-    isAutoCompleteEnabled: true,
+    enableAutocomplete: true,
+    clearOnClose: false,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -195,7 +195,7 @@ export default class ChatDrawer extends React.Component {
     }
 
     if (forceDateAxis) {
-      // swap first two columns if second one is DATE and first is not
+      // Swap first two columns if second one is DATE and first is not
       // rowData is already swapped here if necessary so don't swap again.
       if (
         (columns[0].type !== 'DATE' && columns[1].type === 'DATE') ||
@@ -431,7 +431,7 @@ export default class ChatDrawer extends React.Component {
                 onResponseCallback={this.onResponse}
                 isDisabled={this.state.isChataThinking}
                 token={this.props.token}
-                isAutoCompleteEnabled={this.props.isAutoCompleteEnabled}
+                enableAutocomplete={this.props.enableAutocomplete}
                 enableVoiceRecord
               />
             </div>

@@ -93,9 +93,14 @@ export default class App extends Component {
           showMask
           height="500px"
           token="288036d0-a487-44a7-9178-5ff13ef7d04f"
-          isAutoCompleteEnabled={false}
+          enableAutocomplete={true}
+          // enableVoiceRecord
           // width="700px"
           // handleStyles={{ right: '25px' }}
+          // clearOnClose
+          // inputStyles
+          // autocompleteStyles
+          // maxMessages
         />
       </div>
     )
