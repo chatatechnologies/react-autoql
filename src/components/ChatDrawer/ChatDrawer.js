@@ -32,7 +32,8 @@ export default class ChatDrawer extends React.Component {
     shiftScreen: PropTypes.bool,
     isDrilldownEnabled: PropTypes.bool,
     customerName: PropTypes.string,
-    token: PropTypes.string.isRequired
+    token: PropTypes.string.isRequired,
+    isAutoCompleteEnabled: PropTypes.bool
   }
 
   static defaultProps = {
@@ -48,6 +49,7 @@ export default class ChatDrawer extends React.Component {
     shiftScreen: false,
     isDrilldownEnabled: true,
     customerName: 'there',
+    isAutoCompleteEnabled: true,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -184,9 +186,13 @@ export default class ChatDrawer extends React.Component {
     }
   }
 
-  getGroupByArrayFromTable = (rowData, origColumns, forceDateAxis) => {
+  getgroupByObjectFromTable = (rowData, origColumns, forceDateAxis) => {
     const jsonData = {}
     let columns = [...origColumns]
+
+    if (!columns[0] || !columns[1]) {
+      return
+    }
 
     if (forceDateAxis) {
       // swap first two columns if second one is DATE and first is not
@@ -215,10 +221,22 @@ export default class ChatDrawer extends React.Component {
   processDrilldown = (origRowData, columns, queryID) => {
     if (this.props.isDrilldownEnabled) {
       const rowData = origRowData.getData()
-      const groupByArray = this.getGroupByArrayFromTable(rowData, columns, true)
+      const groupByObject = this.getgroupByObjectFromTable(
+        rowData,
+        columns,
+        true
+      )
+
+      if (
+        !groupByObject ||
+        JSON.stringify(groupByObject) === JSON.stringify({})
+      ) {
+        return
+      }
+
       const bodyJSON = {
         id: queryID,
-        group_bys: groupByArray
+        group_bys: groupByObject
       }
 
       // This is a hack.
@@ -413,6 +431,7 @@ export default class ChatDrawer extends React.Component {
                 onResponseCallback={this.onResponse}
                 isDisabled={this.state.isChataThinking}
                 token={this.props.token}
+                isAutoCompleteEnabled={this.props.isAutoCompleteEnabled}
                 enableVoiceRecord
               />
             </div>

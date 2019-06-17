@@ -81,6 +81,7 @@ export default class ResponseRenderer extends React.Component {
               <button
                 // disabled={this.props.isQueryRunning}
                 onClick={() => this.props.onSuggestionClick(suggestion)}
+                className="chata-suggestion-btn"
               >
                 {suggestion}
               </button>
@@ -127,7 +128,6 @@ export default class ResponseRenderer extends React.Component {
 
   renderTable = () => {
     const self = this
-
     const columns = this.formatColumnsForTable(self.columns)
     const data = PapaParse.parse(self.data).data
 

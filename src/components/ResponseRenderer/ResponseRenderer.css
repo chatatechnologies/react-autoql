@@ -1,3 +1,19 @@
 .chata-response-content-container {
   height: 100%;
 }
+
+.chata-suggestion-btn {
+  padding: 5px 17px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  font-family: "Titillium Web", sans-serif;
+  font-size: 12px;
+  margin-top: 5px;
+  outline: none !important;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.chata-suggestion-btn:hover {
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}

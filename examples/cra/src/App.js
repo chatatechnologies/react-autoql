@@ -92,7 +92,8 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="f601c87d-384c-4118-b2ae-250f52a9c654"
+          token="288036d0-a487-44a7-9178-5ff13ef7d04f"
+          isAutoCompleteEnabled={false}
           // width="700px"
           // handleStyles={{ right: '25px' }}
         />

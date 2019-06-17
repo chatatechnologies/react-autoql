@@ -125,16 +125,12 @@ export default class ChataTable extends React.Component {
     e.preventDefault()
     e.stopPropagation()
     this.props.onRowDblClick(row, this.props.columns)
-    // console.log('ref table: ', this.ref.table) // this is the Tabulator table instance
-    // console.log('rowClick id: ${row.getData().id}', row, e)
   }
 
   render = () => {
     const options = {
       layout: 'fitDataFill',
-      textSize: '9px',
-      progressiveRender: true
-      // movableRows: true
+      textSize: '9px'
     }
     return (
       <div className="chata-table-container">
@@ -147,6 +143,10 @@ export default class ChataTable extends React.Component {
           options={options}
           data-custom-attr="test-custom-attribute"
           className="chata-table"
+          progressiveRender={true}
+          progressiveRenderSize={5}
+          progressiveRenderMargin={100}
+          height="100%"
         />
       </div>
     )
