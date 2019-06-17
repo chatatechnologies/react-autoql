@@ -75,20 +75,22 @@ export default class ResponseRenderer extends React.Component {
       <div>
         I'm not sure what you mean by "{userInput}". Did you mean:
         <br />
-        {suggestions.map(suggestion => {
-          return (
-            <Fragment>
-              <button
-                // disabled={this.props.isQueryRunning}
-                onClick={() => this.props.onSuggestionClick(suggestion)}
-                className="chata-suggestion-btn"
-              >
-                {suggestion}
-              </button>
-              <br />
-            </Fragment>
-          )
-        })}
+        <div className="chata-suggestions-container">
+          {suggestions.map(suggestion => {
+            return (
+              <Fragment>
+                <button
+                  // disabled={this.props.isQueryRunning}
+                  onClick={() => this.props.onSuggestionClick(suggestion)}
+                  className="chata-suggestion-btn"
+                >
+                  {suggestion}
+                </button>
+                <br />
+              </Fragment>
+            )
+          })}
+        </div>
       </div>
     )
   }

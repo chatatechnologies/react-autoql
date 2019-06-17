@@ -16,68 +16,68 @@ export default class App extends Component {
         </button>
         <br />
         <br />
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="placement"
             value="top"
             checked={this.state.placement === 'top'}
-            onClick={e => this.setState({ placement: e.target.value })}
+            onChange={e => this.setState({ placement: e.target.value })}
           />
           Top
         </label>
         <br />
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="placement"
             value="bottom"
             checked={this.state.placement === 'bottom'}
-            onClick={e => this.setState({ placement: e.target.value })}
+            onChange={e => this.setState({ placement: e.target.value })}
           />
           Bottom
         </label>
         <br />
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="placement"
             value="left"
             checked={this.state.placement === 'left'}
-            onClick={e => this.setState({ placement: e.target.value })}
+            onChange={e => this.setState({ placement: e.target.value })}
           />
           Left
         </label>
         <br />
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="placement"
             value="right"
             checked={this.state.placement === 'right'}
-            onClick={e => this.setState({ placement: e.target.value })}
+            onChange={e => this.setState({ placement: e.target.value })}
           />
           Right
         </label>
         <br />
         <br />
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="handle"
             value={true}
             checked={this.state.showHandle}
-            onClick={e => this.setState({ showHandle: true })}
+            onChange={e => this.setState({ showHandle: true })}
           />
           Show handle
         </label>
-        <label class="radio">
+        <label className="radio">
           <input
             type="radio"
             name="handle"
             value={false}
             checked={!this.state.showHandle}
-            onClick={e => this.setState({ showHandle: false })}
+            onChange={e => this.setState({ showHandle: false })}
           />
           Hide Handle
         </label>

@@ -167,7 +167,6 @@ export default class ChatBar extends React.Component {
                 onChange: this.onInputChange,
                 onKeyPress: this.onKeyPress,
                 value: this.state.inputValue,
-                // ref: this.setInputRef,
                 autoFocus: true
               }}
             />
