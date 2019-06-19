@@ -1,9 +1,9 @@
 import babel from 'rollup-plugin-babel'
 import resolve from 'rollup-plugin-node-resolve'
 import { terser } from 'rollup-plugin-terser'
-import { string } from 'rollup-plugin-string'
 import svg from 'rollup-plugin-svg'
-import css from 'rollup-plugin-css-only'
+import autoprefixer from 'autoprefixer'
+import postcss from 'rollup-plugin-postcss'
 
 import pkg from './package.json'
 
@@ -29,16 +29,17 @@ const common = {
   input: 'src/index.js',
   plugins: [
     resolve(),
-    string({
-      include: '**/*.css'
+    postcss({
+      plugins: [autoprefixer],
+      extensions: ['.css']
     }),
     svg(),
     babel({
       exclude: 'node_modules/**'
-    })
-
-    // production && terser()
+    }),
+    production && terser()
   ],
+  preprocessors: [autoprefixer],
   external: makeExternalPredicate(external)
 }
 
