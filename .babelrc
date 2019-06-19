@@ -22,7 +22,7 @@
   // required for transpilation to work with jest
   "env": {
     "test": {
-      "presets": ["env", "react", "es2015"],
+      "presets": ["env", "react"],
       "plugins": [
         "babel-plugin-transform-class-properties",
         "babel-plugin-syntax-object-rest-spread",

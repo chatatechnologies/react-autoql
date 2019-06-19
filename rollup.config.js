@@ -35,11 +35,11 @@ const common = {
     }),
     svg(),
     babel({
+      plugins: ['external-helpers'],
       exclude: 'node_modules/**'
     }),
     production && terser()
   ],
-  preprocessors: [autoprefixer],
   external: makeExternalPredicate(external)
 }
 
@@ -60,7 +60,15 @@ const outputs = [
     globals: {
       react: 'React',
       'prop-types': 'PropTypes',
-      'rc-drawer': 'Drawer'
+      'rc-drawer': 'Drawer',
+      uuid: 'uuid',
+      'react-custom-scrollbars': 'Scrollbars',
+      axios: 'axios',
+      'react-autosuggest': 'Autosuggest',
+      'react-speech-recognition': 'SpeechRecognition',
+      papaparse: 'PapaParse',
+      'react-tabulator': 'reactTabulator',
+      'rc-drawer/assets/index.css': 'rcStyles'
     }
   }
 ]
