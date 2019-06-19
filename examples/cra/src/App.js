@@ -5,7 +5,8 @@ export default class App extends Component {
   state = {
     isVisible: false,
     placement: 'bottom',
-    showHandle: true
+    showHandle: true,
+    theme: 'dark'
   }
 
   render = () => {
@@ -81,6 +82,28 @@ export default class App extends Component {
           />
           Hide Handle
         </label>
+        <br />
+        <br />
+        <label className="radio">
+          <input
+            type="radio"
+            name="theme"
+            value="light"
+            checked={this.state.theme === 'light'}
+            onChange={e => this.setState({ theme: e.target.value })}
+          />
+          Light Theme
+        </label>
+        <label className="radio">
+          <input
+            type="radio"
+            name="theme"
+            value="dark"
+            checked={this.state.theme === 'dark'}
+            onChange={e => this.setState({ theme: e.target.value })}
+          />
+          Dark Theme
+        </label>
         <ChatDrawer
           isVisible={this.state.isVisible}
           onHandleClick={() =>
@@ -92,17 +115,17 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="259e010a-14bf-429f-a3f2-62b90283b2a0"
+          token="d3fe99b7-b3de-48b4-893a-f0fa70e3f589"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"
           // handleStyles={{ right: '25px' }}
-          clearOnClose
+          // clearOnClose
           // inputStyles
           // autocompleteStyles
           // maxMessages
           // accentColor="#28a8e0"
-          theme="dark"
+          theme={this.state.theme}
         />
       </div>
     )

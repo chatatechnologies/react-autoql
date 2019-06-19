@@ -5,12 +5,13 @@
   margin: 10px;
   margin-left: 0;
   font-size: 18px;
+  line-height: 24px;
   outline: none !important;
   position: relative;
   cursor: pointer;
   overflow: hidden;
 
-  background: var(--accent-color);
+  background: var(--chata-drawer-accent-color);
   color: white;
   border: none;
   /* transition: box-shadow 0.2s ease; */
@@ -43,7 +44,7 @@
   );
 } */
 .chat-voice-record-icon {
-  margin-top: 3px;
+  vertical-align: top;
 }
 
 @keyframes slide {

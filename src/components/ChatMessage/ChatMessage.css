@@ -38,14 +38,14 @@
 }
 .chat-single-message-container.response .chat-message-bubble {
   background: transparent;
-  color: var(--text-color-primary);
+  color: var(--chata-drawer-text-color-primary);
   border: 1px solid #d3d3d352;
   /* box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1); */
 }
 .chat-single-message-container.request .chat-message-bubble {
-  background: var(--accent-color);
+  background: var(--chata-drawer-accent-color);
   color: white;
-  border: 1px solid var(--accent-color);
+  border: 1px solid var(--chata-drawer-accent-color);
   /* box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1); */
 }
 .toolbar {

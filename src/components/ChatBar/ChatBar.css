@@ -17,9 +17,9 @@
   letter-spacing: 0.04em;
   outline: none !important;
   width: calc(100% - 20px);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--chata-drawer-border-color);
   background: transparent;
-  color: var(--text-color-primary);
+  color: var(--chata-drawer-text-color-primary);
 }
 .chata-input:disabled {
   background: rgba(0, 0, 0, 0.03);
@@ -28,7 +28,7 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-input::placeholder {
-  color: var(--text-color-placeholder);
+  color: var(--chata-drawer-text-color-placeholder);
 }
 
 /* autosuggest */
@@ -49,19 +49,22 @@
 }
 .react-autosuggest__suggestions-container--open {
   position: absolute;
+  top: unset;
   bottom: 45px;
   margin: 10px;
   padding-top: 5px;
   padding-bottom: 5px;
   display: block;
   width: calc(100% - 20px);
+  height: unset;
   border-radius: 24px;
   font-family: "Titillium Web", sans-serif;
   font-size: 15px;
   font-weight: normal;
   z-index: 2;
-  background-color: #fff;
-  color: black;
+  background-color: var(--chata-drawer-background-color);
+  border: 1px solid var(--chata-drawer-border-color);
+  color: var(--chata-drawer-text-color-primary);
   overflow: hidden;
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
@@ -77,7 +80,7 @@
   padding: 2px;
   padding-left: 18px;
   letter-spacing: 0.05em;
-  color: #525252;
+  color: var(--chata-drawer-text-color-primary);
 }
 
 .react-autosuggest__suggestion--highlighted {

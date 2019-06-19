@@ -55,12 +55,14 @@ export default class ResponseRenderer extends React.Component {
     processDrilldown: PropTypes.func,
     response: PropTypes.shape({}).isRequired,
     onSuggestionClick: PropTypes.func,
-    isQueryRunning: PropTypes.bool
+    isQueryRunning: PropTypes.bool,
+    tableBorderColor: PropTypes.string
   }
 
   static defaultProps = {
     supportsSuggestions: true,
     isQueryRunning: false,
+    tableBorderColor: undefined,
     onSuggestionClick: () => {},
     processDrilldown: () => {}
   }
@@ -141,6 +143,7 @@ export default class ResponseRenderer extends React.Component {
       <ChataTable
         columns={columns}
         data={data}
+        borderColor={this.props.tableBorderColor}
         onRowDblClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)

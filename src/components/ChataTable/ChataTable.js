@@ -20,14 +20,36 @@ export default class ChataTable extends React.Component {
   static propTypes = {
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onRowDblClick: PropTypes.func,
-    data: PropTypes.arrayOf(PropTypes.array).isRequired
+    data: PropTypes.arrayOf(PropTypes.array).isRequired,
+    borderColor: PropTypes.string
   }
 
   static defaultProps = {
+    borderColor: '#ddd',
     onRowDblClick: () => {}
   }
 
   state = {}
+
+  componentDidMount = () => {
+    this.setStyles()
+  }
+
+  componentDidUpdate = prevProps => {
+    if (
+      this.props.borderColor &&
+      this.props.borderColor !== prevProps.borderColor
+    ) {
+      this.setStyles()
+    }
+  }
+
+  setStyles = () => {
+    document.documentElement.style.setProperty(
+      '--chata-table-border-color',
+      this.props.borderColor
+    )
+  }
 
   rowClick = (e, row) => {
     e.preventDefault()
