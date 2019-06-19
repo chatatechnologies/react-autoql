@@ -425,14 +425,6 @@ export default class ChatDrawer extends React.Component {
         >
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
-              {!!this.state.activeMessageId && (
-                <Fragment>
-                  <button className="chata-drawer-header-button">A</button>
-                  <button className="chata-drawer-header-button">B</button>
-                  <button className="chata-drawer-header-button">C</button>
-                  <button className="chata-drawer-header-button">D</button>
-                </Fragment>
-              )}
               {this.renderHeaderContent()}
             </div>
             <Scrollbars
