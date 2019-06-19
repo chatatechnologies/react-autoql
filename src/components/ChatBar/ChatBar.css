@@ -17,7 +17,9 @@
   letter-spacing: 0.04em;
   outline: none !important;
   width: calc(100% - 20px);
-  border: 1px solid #00000017;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color-primary);
 }
 .chata-input:disabled {
   background: rgba(0, 0, 0, 0.03);
@@ -26,7 +28,7 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-input::placeholder {
-  color: rgba(0, 0, 0, 0.3);
+  color: var(--text-color-placeholder);
 }
 
 /* autosuggest */

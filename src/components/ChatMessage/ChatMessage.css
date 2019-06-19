@@ -37,15 +37,15 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: white;
-  color: #5d5d5d;
+  background: transparent;
+  color: var(--text-color-primary);
   border: 1px solid #d3d3d352;
   /* box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1); */
 }
 .chat-single-message-container.request .chat-message-bubble {
-  background: #28a8e0;
+  background: var(--accent-color);
   color: white;
-  border: 1px solid #28a8e0;
+  border: 1px solid var(--accent-color);
   /* box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1); */
 }
 .toolbar {

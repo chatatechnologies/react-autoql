@@ -23,5 +23,5 @@
 .chata-suggestion-btn:hover {
   border: 1px solid transparent;
   color: white;
-  background: #28a8e0;
+  background: var(--accent-color);
 }

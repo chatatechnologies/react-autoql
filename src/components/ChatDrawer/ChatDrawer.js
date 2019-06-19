@@ -18,6 +18,22 @@ import chataTableStyles from '../ChataTable/ChataTable.css'
 import styles from './ChatDrawer.css'
 
 export default class ChatDrawer extends React.Component {
+  LIGHT_THEME = {
+    '--accent-color': '#28a8e0',
+    '--background-color': '#fff',
+    '--border-color': '#d3d3d352',
+    '--text-color-primary': '#5d5d5d',
+    '--text-color-placeholder': '#0009c'
+  }
+
+  DARK_THEME = {
+    '--accent-color': '#527788',
+    '--background-color': '#636363',
+    '--border-color': '#d3d3d329',
+    '--text-color-primary': '#fff',
+    '--text-color-placeholder': '#ffffff9c'
+  }
+
   static propTypes = {
     placement: PropTypes.string,
     maskClosable: PropTypes.bool,
@@ -32,7 +48,8 @@ export default class ChatDrawer extends React.Component {
     customerName: PropTypes.string,
     token: PropTypes.string.isRequired,
     enableAutocomplete: PropTypes.bool,
-    clearOnClose: PropTypes.bool
+    clearOnClose: PropTypes.bool,
+    accentColor: PropTypes.bool
   }
 
   static defaultProps = {
@@ -50,6 +67,7 @@ export default class ChatDrawer extends React.Component {
     customerName: 'there',
     enableAutocomplete: true,
     clearOnClose: false,
+    accentColor: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -62,20 +80,13 @@ export default class ChatDrawer extends React.Component {
         type: 'text',
         content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
       }
-      // {
-      //   content: 'My Response will go here! I will let you view the data in a few different ways. You can also choose to drilldown on the data for more insights!',
-      // },
-      // {
-      //   id: 1,
-      //   isResponse: true,
-      //   content: <ChataTable />
-      // },
-      // {
-      //   id: 1,
-      //   isResponse: false,
-      //   text: 'What is my current cash balance?'
-      // }
     ]
+  }
+
+  componentDidMount = () => {
+    const themeStyles =
+      this.props.theme === 'light' ? this.LIGHT_THEME : this.DARK_THEME
+    this.setStyles(themeStyles)
   }
 
   componentDidUpdate = prevProps => {
@@ -100,6 +111,21 @@ export default class ChatDrawer extends React.Component {
           }
         ]
       })
+    }
+  }
+
+  setStyles = themeStyles => {
+    for (let property in themeStyles) {
+      document.documentElement.style.setProperty(
+        property,
+        themeStyles[property]
+      )
+    }
+    if (this.props.accentColor) {
+      document.documentElement.style.setProperty(
+        '--accent-color',
+        this.props.accentColor
+      )
     }
   }
 

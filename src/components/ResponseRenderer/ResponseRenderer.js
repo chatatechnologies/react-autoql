@@ -229,19 +229,17 @@ export default class ResponseRenderer extends React.Component {
       } else if (this.isChartType(self.displayType)) {
         return this.renderChart(self.displayType)
       }
-      // self.schemaDataArray = PapaParse.parse(responseBody.data).data
-      // console.log(schemaDataArray)
     } else {
       console.log('there is no display type.... why? Was there an error?')
       if (responseBody.data && !responseBody.data.length) {
         return 'No data found.'
       }
-      // not sure what all this is for....?
+      // // not sure what all this is for....?
       // self.queryType = body.type;
       // self.multiIndex = body.multi_index;
       // self.activeColumns = body.active_columns;
       // // save off the queryID for chained queries...
-      // // console.log('ChatApp::runQuery() - returned queryID is: ' + body.query_id)
+      // console.log('ChatApp::runQuery() - returned queryID is: ' + body.query_id)
       // self.previousQueryID = body.query_id;
       // self.queryID = body.query_id;
     }

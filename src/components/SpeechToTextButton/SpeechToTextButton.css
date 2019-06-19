@@ -10,7 +10,7 @@
   cursor: pointer;
   overflow: hidden;
 
-  background: #28a8e0;
+  background: var(--accent-color);
   color: white;
   border: none;
   /* transition: box-shadow 0.2s ease; */

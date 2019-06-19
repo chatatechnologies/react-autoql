@@ -92,7 +92,7 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="288036d0-a487-44a7-9178-5ff13ef7d04f"
+          token="259e010a-14bf-429f-a3f2-62b90283b2a0"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"
@@ -101,6 +101,8 @@ export default class App extends Component {
           // inputStyles
           // autocompleteStyles
           // maxMessages
+          // accentColor="#28a8e0"
+          theme="dark"
         />
       </div>
     )

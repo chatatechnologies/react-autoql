@@ -1,7 +1,16 @@
+:root {
+  --accent-color: #28a8e0;
+  --accent-color: #28a8e0;
+  --background-color: #fff;
+  --text-color-primary: #5d5d5d;
+  --text-color-placeholder: #ffffff9c;
+}
+
 .chata-drawer-content-container {
   width: 100%;
   height: 100%;
   display: flex;
+  background: var(--background-color);
   flex-direction: column;
   justify-content: stretch;
 }
@@ -9,7 +18,7 @@
 .chat-header-container {
   width: 100%;
   height: 60px;
-  background: #28a8e0;
+  background: var(--accent-color);
   box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
   flex-grow: 0;
   flex-shrink: 0;
