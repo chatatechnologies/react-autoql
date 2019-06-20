@@ -3,10 +3,10 @@ import { ChatDrawer } from 'chata-ai'
 
 export default class App extends Component {
   state = {
-    isVisible: false,
-    placement: 'bottom',
+    isVisible: true,
+    placement: 'right',
     showHandle: true,
-    theme: 'dark'
+    theme: 'light'
   }
 
   render = () => {
@@ -115,7 +115,7 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="d3fe99b7-b3de-48b4-893a-f0fa70e3f589"
+          token="5d1832e4-6cc0-498f-a6b2-0b0d73028b2d"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"

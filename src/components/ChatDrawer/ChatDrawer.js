@@ -6,11 +6,13 @@ import uuid from 'uuid'
 
 import Drawer from 'rc-drawer'
 
+import ReactTooltip from 'react-tooltip'
+
 import { Scrollbars } from 'react-custom-scrollbars'
+import { MdClearAll } from 'react-icons/md'
 
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
-import { ResponseRenderer } from '../ResponseRenderer'
 import { runQuery, runDrilldown } from '../../js/queryService'
 
 import rcStyles from 'rc-drawer/assets/index.css'
@@ -209,7 +211,7 @@ export default class ChatDrawer extends React.Component {
 
     if (suggestion === 'None of these') {
       setTimeout(() => {
-        this.addResponseMessage('Thank you for your feedback.')
+        this.addResponseMessage({ content: 'Thank you for your feedback.' })
         this.setState({ isChataThinking: false })
       }, 1000)
       return
@@ -225,7 +227,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   onResponse = response => {
-    this.addResponseMessage(response)
+    this.addResponseMessage({ response })
     this.setState({ isChataThinking: false })
     if (this.chatBarRef) {
       this.chatBarRef.focus()
@@ -294,7 +296,9 @@ export default class ChatDrawer extends React.Component {
 
       runDrilldown(bodyJSON, this.props.token)
         .then(response => {
-          this.addResponseMessage({ ...response, isDrilldownDisabled: true })
+          this.addResponseMessage({
+            response: { ...response, isDrilldownDisabled: true }
+          })
           this.setState({ isChataThinking: false })
         })
         .catch(() => {
@@ -316,41 +320,29 @@ export default class ChatDrawer extends React.Component {
     }
   }
 
-  createDrilldownMessage = () => {
+  createMessage = (response, content) => {
     return {
-      content: 'Drilldown Response goes here.',
+      content,
+      response,
       id: uuid.v4(),
-      type: 'drilldown',
-      isResponse: true
+      type: response && response.data && response.data.display_type,
+      isResponse: true,
+      supportedDisplayTypes:
+        response && response.data && response.data.supported_display_types
     }
   }
 
-  createMessage = response => {
-    let content
-    if (typeof response === 'string') {
-      content = response
-    } else {
-      content = (
-        <ResponseRenderer
-          processDrilldown={this.processDrilldown}
-          response={response}
-          isDrilldownDisabled={!!response.isDrilldownDisabled}
-          onSuggestionClick={suggestion => this.onSuggestionClick(suggestion)}
-          isQueryRunning={this.state.isChataThinking}
-          tableBorderColor={
-            this.props.theme === 'light'
-              ? this.LIGHT_THEME['--chata-drawer-border-color']
-              : this.DARK_THEME['--chata-drawer-border-color']
-          }
-        />
-      )
-    }
-    return {
-      content,
-      id: uuid.v4(),
-      type: response && response.data && response.data.display_type,
-      isResponse: true
-    }
+  updateMessageDisplayType = (id, displayType) => {
+    const newMessages = this.state.messages.map(message => {
+      if (message.id === id) {
+        return {
+          ...message,
+          displayType
+        }
+      }
+      return message
+    })
+    this.setState({ messages: newMessages })
   }
 
   addRequestMessage = text => {
@@ -368,18 +360,18 @@ export default class ChatDrawer extends React.Component {
     this.scrollToBottom()
   }
 
-  addResponseMessage = response => {
+  addResponseMessage = ({ response, content }) => {
     if (this.state.messages.length > 10) {
       // shift item from beginning of messages array
     }
     let message = {}
-    if (!response) {
+    if (!response && !content) {
       console.log(
         'something went wrong.... probably a network error displaying general error message'
       )
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage(response)
+      message = this.createMessage(response, content)
     }
     this.setState({
       messages: [...this.state.messages, message]
@@ -397,17 +389,27 @@ export default class ChatDrawer extends React.Component {
 
   renderHeaderContent = () => {
     return (
-      <button
-        onClick={() => {
-          this.clearMessages()
-          if (this.chatBarRef) {
-            this.chatBarRef.focus()
-          }
-        }}
-        className="chata-button"
-      >
-        Clear All
-      </button>
+      <Fragment>
+        <button
+          onClick={() => {
+            this.clearMessages()
+            if (this.chatBarRef) {
+              this.chatBarRef.focus()
+            }
+          }}
+          className="chata-button"
+          data-tip="Clear Messages"
+          data-for="clear-messages-tooltip"
+        >
+          <MdClearAll />
+        </button>
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="clear-messages-tooltip"
+          effect="solid"
+          delayShow={800}
+        />
+      </Fragment>
     )
   }
 
@@ -445,10 +447,26 @@ export default class ChatDrawer extends React.Component {
                 this.state.messages.map(message => {
                   return (
                     <ChatMessage
+                      supportedDisplayTypes={message.supportedDisplayTypes}
                       setActiveMessage={this.setActiveMessage}
                       isActive={this.state.activeMessageId === message.id}
+                      processDrilldown={this.processDrilldown}
                       isResponse={message.isResponse}
+                      isChataThinking={this.state.isChataThinking}
+                      onSuggestionClick={this.onSuggestionClick}
                       content={message.content}
+                      tableBorderColor={
+                        this.props.theme === 'light'
+                          ? this.LIGHT_THEME['--chata-drawer-border-color']
+                          : this.DARK_THEME['--chata-drawer-border-color']
+                      }
+                      displayType={
+                        message.displayType ||
+                        (message.response &&
+                          message.response.data &&
+                          message.response.data.display_type)
+                      }
+                      response={message.response}
                       type={message.type}
                       key={message.id}
                       id={message.id}

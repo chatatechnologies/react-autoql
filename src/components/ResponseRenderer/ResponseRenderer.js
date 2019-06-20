@@ -1,6 +1,8 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import PapaParse from 'papaparse'
+import uuid from 'uuid'
+import { IoIosGlobe } from 'react-icons/io'
 
 import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
@@ -56,18 +58,37 @@ export default class ResponseRenderer extends React.Component {
     response: PropTypes.shape({}).isRequired,
     onSuggestionClick: PropTypes.func,
     isQueryRunning: PropTypes.bool,
-    tableBorderColor: PropTypes.string
+    tableBorderColor: PropTypes.string,
+    displayType: PropTypes.string
   }
 
   static defaultProps = {
     supportsSuggestions: true,
     isQueryRunning: false,
     tableBorderColor: undefined,
+    displayType: undefined,
     onSuggestionClick: () => {},
     processDrilldown: () => {}
   }
 
-  state = {}
+  state = {
+    activeDisplayType:
+      this.props.displayType ||
+      (this.props.response &&
+        this.props.response.data &&
+        this.props.response.data.display_type)
+  }
+
+  componentDidMount = () => {}
+
+  componentDidUpdate = prevProps => {
+    if (
+      this.props.displayType &&
+      this.props.displayType !== prevProps.displayType
+    ) {
+      this.setState({ activeDisplayType: this.props.displayType })
+    }
+  }
 
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
@@ -80,7 +101,7 @@ export default class ResponseRenderer extends React.Component {
         <div className="chata-suggestions-container">
           {suggestions.map(suggestion => {
             return (
-              <Fragment>
+              <div key={uuid.v4()}>
                 <button
                   // disabled={this.props.isQueryRunning}
                   onClick={() => this.props.onSuggestionClick(suggestion)}
@@ -89,7 +110,7 @@ export default class ResponseRenderer extends React.Component {
                   {suggestion}
                 </button>
                 <br />
-              </Fragment>
+              </div>
             )
           })}
         </div>
@@ -101,7 +122,7 @@ export default class ResponseRenderer extends React.Component {
     // There is actually a suggestion for this case
     const responseBody = response.data
     if (
-      responseBody.display_type === 'suggestion' &&
+      this.state.activeDisplayType === 'suggestion' &&
       responseBody.data.length !== 0
     ) {
       const suggestions = responseBody.data.split('\n')
@@ -117,16 +138,28 @@ export default class ResponseRenderer extends React.Component {
     }
     // No suggestions
     else if (
-      responseBody.display_type === 'suggestion' &&
+      this.state.activeDisplayType === 'suggestion' &&
       responseBody.data.length === 0
     ) {
       this.createSuggestionMessage()
       return
     }
     // We don't understand the query, no suggestions
-    else if (responseBody.display_type === 'unknown_words') {
+    else if (this.state.activeDisplayType === 'unknown_words') {
       this.createSuggestionMessage()
       return
+    }
+  }
+
+  copyTableToClipboard = () => {
+    if (this.tableRef) {
+      this.tableRef.copyToClipboard()
+    }
+  }
+
+  saveTableAsCSV = () => {
+    if (this.tableRef) {
+      this.tableRef.saveAsCSV()
     }
   }
 
@@ -142,6 +175,7 @@ export default class ResponseRenderer extends React.Component {
     return (
       <ChataTable
         columns={columns}
+        ref={ref => (this.tableRef = ref)}
         data={data}
         borderColor={this.props.tableBorderColor}
         onRowDblClick={(row, columns) => {
@@ -154,8 +188,38 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderChart = () => {
-    const columns = this.formatColumnsForTable(this.columns)
-    const data = PapaParse.parse(this.data).data
+    // const columns = this.formatColumnsForTable(this.columns)
+    // const data = PapaParse.parse(this.data).data
+    console.log('rendering chart now')
+  }
+
+  renderHelpResponse = () => {
+    const url = this.data
+    const hasHashTag = url.includes('#')
+    let linkText = url
+    if (hasHashTag) {
+      const endOfUrl = url.split('#')[1].replace(/-/g, ' ')
+      linkText = endOfUrl.charAt(0).toUpperCase() + endOfUrl.substr(1)
+    }
+
+    return (
+      <div className="no-results-response">
+        <Fragment>
+          Great news, I can help with that:
+          <br />
+          {
+            <button
+              className="chata-help-link-btn"
+              target="_blank"
+              onClick={() => window.open(url, '_blank')}
+            >
+              <IoIosGlobe className="chata-help-link-icon" />
+              {url}
+            </button>
+          }
+        </Fragment>
+      </div>
+    )
   }
 
   renderSingleValueResponse = () => {}
@@ -165,9 +229,7 @@ export default class ResponseRenderer extends React.Component {
       col.field = `${i}`
       col.align = 'center'
       col.formatter = undefined
-      // if (col.name.toLowerCase().includes('score')) {
-      //   col.formatter = 'star'
-      // }
+      // col.download = true
 
       const nameFragments = col.name.split('___')
       if (nameFragments.length === 2) {
@@ -206,16 +268,10 @@ export default class ResponseRenderer extends React.Component {
       console.log('no data in the response.....')
       return
     }
-    // const theUserInput = getParameterByName(
-    //   'q',
-    //   response && response.config && response.config.url
-    // )
-    // if body is undefined, we shouldn't have made it this far anyway
 
-    if (responseBody.display_type) {
-      // what is the case where there is no display type?
-      self.displayType = responseBody.display_type
-      self.supportedDisplayTypes = responseBody.supported_display_types
+    if (this.state.activeDisplayType) {
+      self.displayType = this.state.activeDisplayType
+      // self.supportedDisplayTypes = responseBody.supported_display_types
       self.columns = responseBody.columns
       self.queryID = responseBody.query_id
       self.filters = responseBody.filters
@@ -223,31 +279,21 @@ export default class ResponseRenderer extends React.Component {
       self.data = responseBody.data
 
       if (
-        responseBody.display_type === 'suggestion' ||
-        responseBody.display_type === 'unknown_words'
+        self.displayType === 'suggestion' ||
+        self.displayType === 'unknown_words'
       ) {
         return this.renderSuggestionMessage(this.props.response)
+      } else if (self.displayType === 'help') {
+        return this.renderHelpResponse()
       } else if (this.isTableType(self.displayType)) {
         return this.renderTable()
       } else if (this.isChartType(self.displayType)) {
-        return this.renderChart(self.displayType)
+        return this.renderChart()
       }
-    } else {
-      console.log('there is no display type.... why? Was there an error?')
-      if (responseBody.data && !responseBody.data.length) {
-        return 'No data found.'
-      }
-      // // not sure what all this is for....?
-      // self.queryType = body.type;
-      // self.multiIndex = body.multi_index;
-      // self.activeColumns = body.active_columns;
-      // // save off the queryID for chained queries...
-      // console.log('ChatApp::runQuery() - returned queryID is: ' + body.query_id)
-      // self.previousQueryID = body.query_id;
-      // self.queryID = body.query_id;
+    } else if (responseBody.data && !responseBody.data.length) {
+      return 'No data found.'
     }
-
-    // If you reached this, the query did not fail, processing the results now
+    console.log('No render type was found... why? Was there an error?')
   }
 
   render = () => {

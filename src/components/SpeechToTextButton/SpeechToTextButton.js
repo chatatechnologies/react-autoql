@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
-
+import ReactTooltip from 'react-tooltip'
 import SpeechRecognition from 'react-speech-recognition'
 
 import microphoneIconSVG from '../../images/microphone-voice-interface-symbol.svg'
@@ -39,6 +39,11 @@ class Dictaphone extends React.Component {
     }
   }
 
+  onMouseDown = () => {
+    ReactTooltip.hide()
+    this.props.startListening()
+  }
+
   render = () => {
     const {
       transcript,
@@ -60,9 +65,12 @@ class Dictaphone extends React.Component {
         <button
           id="chata-voice-record-button"
           className={`chat-voice-record-button${listening ? ' listening' : ''}`}
-          onMouseDown={startListening}
+          onMouseDown={this.onMouseDown}
           onMouseUp={stopListening}
           onMouseLeave={this.props.listening ? stopListening : undefined}
+          data-tip="Hold to Use Voice"
+          data-for="chata-speech-to-text-tooltip"
+          data-tip-disable={this.props.listening}
         >
           <img
             className="chat-voice-record-icon"
@@ -73,6 +81,12 @@ class Dictaphone extends React.Component {
             draggable="false"
           />
         </button>
+        <ReactTooltip
+          className="chata-tooltip"
+          id="chata-speech-to-text-tooltip"
+          effect="solid"
+          delayShow={800}
+        />
       </Fragment>
     )
   }

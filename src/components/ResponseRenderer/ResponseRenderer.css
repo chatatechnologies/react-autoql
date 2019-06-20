@@ -25,3 +25,26 @@
   color: white;
   background: var(--chata-drawer-accent-color);
 }
+.chata-help-link-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border-radius: 5px;
+  font-family: "Titillium Web", sans-serif;
+  font-size: 12px;
+  margin-top: 5px;
+  outline: none !important;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+  border-color: #e2e2e26e;
+  color: inherit;
+}
+.chata-help-link-btn:hover {
+  opacity: 0.7;
+}
+.chata-help-link-icon {
+  width: 15px;
+  height: 15px;
+  margin-bottom: -3px;
+  margin-right: 3px;
+}

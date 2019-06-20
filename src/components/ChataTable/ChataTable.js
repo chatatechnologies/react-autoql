@@ -57,10 +57,31 @@ export default class ChataTable extends React.Component {
     this.props.onRowDblClick(row, this.props.columns)
   }
 
+  copyToClipboard = () => {
+    if (this.ref && this.ref.table) {
+      this.ref.table.copyToClipboard('active', true)
+    }
+  }
+
+  saveAsCSV = () => {
+    if (this.ref && this.ref.table) {
+      this.ref.table.download('csv', 'table.csv', {
+        delimeter: ','
+      })
+    }
+  }
+
   render = () => {
     const options = {
       layout: 'fitDataFill',
-      textSize: '9px'
+      textSize: '9px',
+      downloadConfig: {
+        columnGroups: false,
+        rowGroups: false,
+        columnCalcs: false
+      },
+      downloadDataFormatter: data => data,
+      downloadReady: (fileContents, blob) => blob
     }
     return (
       <div className="chata-table-container">
@@ -77,6 +98,9 @@ export default class ChataTable extends React.Component {
           progressiveRenderSize={5}
           progressiveRenderMargin={100}
           height="100%"
+          // selectable
+          clipboard
+          download
         />
       </div>
     )

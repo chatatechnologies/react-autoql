@@ -22,7 +22,7 @@
   height: 100%;
 }
 .chata-table .tabulator-row {
-  user-select: none;
+  /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--chata-table-border-color);
 }
 .chata-table .tabulator-tableHolder {
