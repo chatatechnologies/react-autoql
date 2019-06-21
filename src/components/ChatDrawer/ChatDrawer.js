@@ -17,6 +17,7 @@ import { runQuery, runDrilldown } from '../../js/queryService'
 
 import rcStyles from 'rc-drawer/assets/index.css'
 import chataTableStyles from '../ChataTable/ChataTable.css'
+import messageStyles from '../ChatMessage/ChatMessage.css'
 import styles from './ChatDrawer.css'
 
 export default class ChatDrawer extends React.Component {
@@ -419,6 +420,7 @@ export default class ChatDrawer extends React.Component {
         <style>{`${rcStyles}`}</style>
         <style>{`${styles}`}</style>
         <style>{`${chataTableStyles}`}</style>
+        <style>{`${messageStyles}`}</style>
         <Drawer
           data-test="chata-drawer-test"
           className="chata-drawer"

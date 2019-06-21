@@ -1,7 +1,9 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
+import { MdContentCopy, MdFileDownload } from 'react-icons/md'
+import ReactTooltip from 'react-tooltip'
+
 import { ResponseRenderer } from '../ResponseRenderer'
-import styles from './ChatMessage.css'
 
 export default class ChatMessage extends React.Component {
   static propTypes = {
@@ -81,8 +83,28 @@ export default class ChatMessage extends React.Component {
     ) {
       return (
         <div className="chat-message-toolbar right">
-          <button onClick={this.copyTableToClipboard}>Copy</button>
-          <button onClick={this.saveTableAsCSV}>Save CSV</button>
+          <button
+            onClick={this.copyTableToClipboard}
+            className="chata-toolbar-btn"
+            data-tip="Copy to Clipboard"
+            data-for="chata-toolbar-btn-tooltip"
+          >
+            <MdContentCopy />
+          </button>
+          <button
+            onClick={this.saveTableAsCSV}
+            className="chata-toolbar-btn"
+            data-tip="Download as CSV"
+            data-for="chata-toolbar-btn-tooltip"
+          >
+            <MdFileDownload />
+          </button>
+          <ReactTooltip
+            className="chata-drawer-tooltip"
+            id="chata-toolbar-btn-tooltip"
+            effect="solid"
+            delayShow={800}
+          />
         </div>
       )
     }
@@ -104,7 +126,6 @@ export default class ChatMessage extends React.Component {
   render = () => {
     return (
       <Fragment>
-        <style>{`${styles}`}</style>
         <div
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}

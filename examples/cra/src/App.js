@@ -115,7 +115,7 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="5d1832e4-6cc0-498f-a6b2-0b0d73028b2d"
+          token="6add67eb-2646-48e1-90e5-66f98d9191a4"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"

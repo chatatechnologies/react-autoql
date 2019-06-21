@@ -54,7 +54,7 @@
   position: absolute;
   background: var(--chata-drawer-background-color);
   top: -22px;
-  padding: 5px 16px;
+  padding: 5px 10px;
   border-radius: 6px;
   line-height: 28px;
   border: 1px solid var(--chata-drawer-border-color);
@@ -67,6 +67,16 @@
 }
 .chat-message-bubble:hover .chat-message-toolbar {
   display: block;
+}
+.chata-toolbar-btn {
+  height: 28px;
+  width: 28px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 28px;
+  vertical-align: top;
+  color: var(--chata-drawer-text-color-primary);
 }
 /* animations */
 @keyframes scale-up-br {

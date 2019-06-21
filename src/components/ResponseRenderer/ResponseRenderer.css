@@ -10,7 +10,6 @@
 .chata-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   font-family: "Titillium Web", sans-serif;
   font-size: 12px;
@@ -19,9 +18,12 @@
   cursor: pointer;
   letter-spacing: 0.05em;
   transition: all 0.1s ease;
+  /* border: 1px solid rgba(0, 0, 0, 0.15); */
+  border-color: #e2e2e26e;
+  color: inherit;
 }
 .chata-suggestion-btn:hover {
-  border: 1px solid transparent;
+  border-color: transparent;
   color: white;
   background: var(--chata-drawer-accent-color);
 }
