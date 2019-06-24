@@ -22,13 +22,15 @@ export default class ChatBar extends React.Component {
     onResponseCallback: PropTypes.func,
     className: PropTypes.string,
     token: PropTypes.string.isRequired,
-    enableAutocomplete: PropTypes.bool
+    enableAutocomplete: PropTypes.bool,
+    enableSafetyNet: PropTypes.bool
   }
 
   static defaultProps = {
     enableVoiceRecord: false,
     isDisabled: false,
     enableAutocomplete: true,
+    enableSafetyNet: true,
     className: null,
     onSubmit: () => {},
     onResponseCallback: () => {}
@@ -43,7 +45,7 @@ export default class ChatBar extends React.Component {
     const query = queryText || this.state.inputValue
     if (query.trim()) {
       this.props.onSubmit(query)
-      runQuery(query, this.props.token)
+      runQuery(query, this.props.token, this.props.enableSafetyNet)
         .then(response => {
           this.props.onResponseCallback(response)
         })

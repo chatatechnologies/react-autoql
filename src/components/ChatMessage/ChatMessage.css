@@ -54,7 +54,7 @@
   position: absolute;
   background: var(--chata-drawer-background-color);
   top: -22px;
-  padding: 5px 10px;
+  padding: 5px;
   border-radius: 6px;
   line-height: 28px;
   border: 1px solid var(--chata-drawer-border-color);
@@ -77,6 +77,11 @@
   line-height: 28px;
   vertical-align: top;
   color: var(--chata-drawer-text-color-primary);
+  cursor: pointer;
+  outline: none !important;
+}
+.chata-toolbar-btn:hover {
+  opacity: 0.7;
 }
 /* animations */
 @keyframes scale-up-br {

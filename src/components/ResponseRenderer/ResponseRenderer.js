@@ -2,7 +2,8 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import PapaParse from 'papaparse'
 import uuid from 'uuid'
-import { IoIosGlobe } from 'react-icons/io'
+import { IoIosGlobe, IoIosCloseCircleOutline } from 'react-icons/io'
+import { MdPlayCircleOutline } from 'react-icons/md'
 
 import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
@@ -72,6 +73,7 @@ export default class ResponseRenderer extends React.Component {
   }
 
   state = {
+    safetyNetQueryArray: [],
     activeDisplayType:
       this.props.displayType ||
       (this.props.response &&
@@ -79,7 +81,15 @@ export default class ResponseRenderer extends React.Component {
         this.props.response.data.display_type)
   }
 
-  componentDidMount = () => {}
+  componentDidMount = () => {
+    if (
+      this.props.response &&
+      this.props.response.data &&
+      this.props.response.data.full_suggestion
+    ) {
+      this.initializeSafetyNetOptions(this.props.response.data)
+    }
+  }
 
   componentDidUpdate = prevProps => {
     if (
@@ -92,6 +102,100 @@ export default class ResponseRenderer extends React.Component {
 
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
+
+  initializeSafetyNetOptions = responseBody => {
+    const queryArray = []
+    let lastEndIndex = 0
+    const { full_suggestion: fullSuggestions, query } = responseBody
+
+    // const sortedFullSuggestions = fullSuggestions.sortBy(['start']).value();
+    const sortedFullSuggestions = fullSuggestions
+    sortedFullSuggestions.forEach((fullSuggestion, index) => {
+      if (
+        fullSuggestion.suggestion_list &&
+        fullSuggestion.suggestion_list.length > 0
+      ) {
+        const suggestionList = fullSuggestion.suggestion_list
+        queryArray.push({
+          type: 'text',
+          value: query.slice(lastEndIndex, fullSuggestion.start)
+        })
+
+        const replaceWord = query.slice(
+          fullSuggestion.start,
+          fullSuggestion.end
+        )
+
+        queryArray.push({
+          type: 'suggestion',
+          value: replaceWord,
+          valueLabel: suggestionList[0].value_label
+        })
+
+        if (index === sortedFullSuggestions.length - 1) {
+          queryArray.push({
+            type: 'text',
+            value: query.slice(fullSuggestion.end, query.length)
+          })
+        }
+
+        lastEndIndex = fullSuggestion.end
+      } else {
+        queryArray.push({
+          type: 'text',
+          value: query.slice(lastEndIndex, fullSuggestion.start)
+        })
+
+        const replaceWord = query.slice(
+          fullSuggestion.start,
+          fullSuggestion.end
+        )
+        queryArray.push({
+          type: 'suggestion',
+          value: replaceWord
+        })
+
+        if (index === sortedFullSuggestions.length - 1) {
+          queryArray.push({
+            type: 'text',
+            value: query.slice(fullSuggestion.end, query.length)
+          })
+        }
+
+        lastEndIndex = fullSuggestion.end
+      }
+    })
+
+    const newSafetyNetQueryArray = queryArray.map((element, index) => {
+      if (index > 0 && index % 2 !== 0) {
+        const fullSuggestionIndex = Math.floor(index / 2)
+        if (
+          fullSuggestions &&
+          fullSuggestions[fullSuggestionIndex] &&
+          fullSuggestions[fullSuggestionIndex].suggestion_list
+        ) {
+          return {
+            ...element,
+            value:
+              fullSuggestions[fullSuggestionIndex].suggestion_list[0] &&
+              fullSuggestions[fullSuggestionIndex].suggestion_list[0].text
+          }
+        }
+        return {
+          ...element,
+          value:
+            fullSuggestions &&
+            fullSuggestions[fullSuggestionIndex] &&
+            fullSuggestions[fullSuggestionIndex].suggestion
+        }
+      }
+      return element
+    })
+
+    this.setState({
+      safetyNetQueryArray: newSafetyNetQueryArray
+    })
+  }
 
   createSuggestionMessage = (userInput, suggestions) => {
     return (
@@ -118,8 +222,9 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
-  renderSuggestionMessage = response => {
+  renderSuggestionMessage = () => {
     // There is actually a suggestion for this case
+    const { response } = this.props
     const responseBody = response.data
     if (
       this.state.activeDisplayType === 'suggestion' &&
@@ -203,33 +308,192 @@ export default class ResponseRenderer extends React.Component {
     }
 
     return (
-      <div className="no-results-response">
-        <Fragment>
-          Great news, I can help with that:
-          <br />
-          {
-            <button
-              className="chata-help-link-btn"
-              target="_blank"
-              onClick={() => window.open(url, '_blank')}
-            >
-              <IoIosGlobe className="chata-help-link-icon" />
-              {url}
-            </button>
-          }
-        </Fragment>
-      </div>
+      <Fragment>
+        Great news, I can help with that:
+        <br />
+        {
+          <button
+            className="chata-help-link-btn"
+            target="_blank"
+            onClick={() => window.open(url, '_blank')}
+          >
+            <IoIosGlobe className="chata-help-link-icon" />
+            {linkText}
+          </button>
+        }
+      </Fragment>
     )
   }
 
-  renderSingleValueResponse = () => {}
+  onChangeSafetyNetSelectOption = (suggestion, suggestionIndex) => {
+    const newSafetyNetQueryArray = this.state.safetyNetQueryArray.map(
+      (element, index) => {
+        if (index === suggestionIndex) {
+          return {
+            ...element,
+            value: JSON.parse(suggestion).text,
+            valueLabel: JSON.parse(suggestion).value_label
+          }
+        }
+        return element
+      }
+    )
+
+    this.setState({
+      safetyNetQueryArray: newSafetyNetQueryArray
+    })
+  }
+
+  deleteSafetyNetSuggestion = suggestionIndex => {
+    const newSafetyNetQueryArray = this.state.safetyNetQueryArray.map(
+      (element, index) => {
+        if (index === suggestionIndex) {
+          return {
+            ...element,
+            value: ''
+          }
+        }
+        return element
+      }
+    )
+
+    this.setState({
+      safetyNetQueryArray: newSafetyNetQueryArray
+    })
+  }
+
+  renderSafetyNetMessage = () => {
+    const { response } = this.props
+    const fullSuggestions = response.data.full_suggestion
+    const { query } = response.data
+    const queryArray = this.state.safetyNetQueryArray
+
+    const safetyNetQuery = (
+      <span>
+        {queryArray.map((element, index) => {
+          if (element.type === 'text' || element.value === '') {
+            return (
+              <span
+                // className="chata-safety-net-text"
+                key={`query-element-${index}`}
+              >
+                {element.value}
+              </span>
+            )
+          }
+
+          const fullSuggestionIndex = Math.floor(index / 2)
+          const suggestion = fullSuggestions[fullSuggestionIndex]
+
+          if (suggestion) {
+            const replaceWord = query.slice(suggestion.start, suggestion.end)
+            const safetyNetSelectUniqueId = uuid.v4()
+
+            const suggestionText = `${element.value}${
+              element.valueLabel ? ` (${element.valueLabel})` : ''
+            }`
+
+            const suggestionValue = suggestion.suggestion_list.find(
+              suggestion => suggestion.text === element.value
+            ) || { text: replaceWord }
+
+            const suggestionDiv = document.createElement('DIV')
+            suggestionDiv.innerHTML = suggestionText
+            suggestionDiv.style.display = 'inline-block'
+            suggestionDiv.style.position = 'absolute'
+            suggestionDiv.style.visibility = 'hidden'
+            document.body.appendChild(suggestionDiv)
+            const selectWidth = suggestionDiv.clientWidth + 28
+
+            return (
+              <div
+                className="chata-safety-net-selector-container"
+                key={`query-element-${index}`}
+              >
+                <select
+                  key={uuid.v4()}
+                  value={JSON.stringify(suggestionValue)}
+                  className="chata-safetynet-select"
+                  style={{ width: selectWidth }}
+                  onChange={e =>
+                    this.onChangeSafetyNetSelectOption(e.target.value, index)
+                  }
+                >
+                  {suggestion.suggestion_list.map(
+                    (suggestionItem, suggIndex) => {
+                      return (
+                        <option
+                          key={`option-${suggIndex}`}
+                          value={JSON.stringify(suggestionItem)}
+                        >
+                          {`${
+                            suggestionItem.text
+                          }${suggestionItem.value_label &&
+                            ` (${suggestionItem.value_label})`}`}
+                        </option>
+                      )
+                    }
+                  )}
+                  <option
+                    key="original-option"
+                    value={JSON.stringify({ text: replaceWord })}
+                  >
+                    {replaceWord}
+                  </option>
+                </select>
+                <IoIosCloseCircleOutline
+                  className="chata-safety-net-delete-button"
+                  onClick={() => {
+                    this.deleteSafetyNetSuggestion(index)
+                  }}
+                />
+              </div>
+            )
+          }
+          return null
+        })}
+      </span>
+    )
+
+    return (
+      <Fragment>
+        <span
+        // className="chata-safety-net-response-template"
+        >
+          Before I can try to find your answer, I need your help understanding a
+          term you used that I don't see in your data. Click the dropdown to
+          view suggestions so I can ensure you get the right data!
+        </span>
+        <br />
+        <br />
+        <span
+        // className="chata-safety-net-result"
+        >
+          {safetyNetQuery}
+          <br />
+          <button
+            className="chata-safety-net-execute-btn"
+            onClick={() => {
+              let safetyNetQuery = ''
+              this.state.safetyNetQueryArray.forEach(element => {
+                safetyNetQuery = safetyNetQuery.concat(element.value)
+              })
+              this.props.onSuggestionClick(safetyNetQuery)
+            }}
+          >
+            <MdPlayCircleOutline className="chata-execute-query-icon" />
+            Run Query
+          </button>
+        </span>
+      </Fragment>
+    )
+  }
 
   formatColumnsForTable = columns => {
     const formattedColumns = columns.map((col, i) => {
       col.field = `${i}`
       col.align = 'center'
       col.formatter = undefined
-      // col.download = true
 
       const nameFragments = col.name.split('___')
       if (nameFragments.length === 2) {
@@ -269,7 +533,11 @@ export default class ResponseRenderer extends React.Component {
       return
     }
 
-    if (this.state.activeDisplayType) {
+    if (responseBody.full_suggestion) {
+      // process safety net response
+      // this.initializeSafetyNetOptions(responseBody)
+      return this.renderSafetyNetMessage()
+    } else if (this.state.activeDisplayType) {
       self.displayType = this.state.activeDisplayType
       // self.supportedDisplayTypes = responseBody.supported_display_types
       self.columns = responseBody.columns
@@ -282,7 +550,7 @@ export default class ResponseRenderer extends React.Component {
         self.displayType === 'suggestion' ||
         self.displayType === 'unknown_words'
       ) {
-        return this.renderSuggestionMessage(this.props.response)
+        return this.renderSuggestionMessage()
       } else if (self.displayType === 'help') {
         return this.renderHelpResponse()
       } else if (this.isTableType(self.displayType)) {

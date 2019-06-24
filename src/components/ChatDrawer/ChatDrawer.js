@@ -6,6 +6,8 @@ import uuid from 'uuid'
 
 import Drawer from 'rc-drawer'
 
+import * as d3 from 'd3'
+
 import ReactTooltip from 'react-tooltip'
 
 import { Scrollbars } from 'react-custom-scrollbars'
@@ -52,7 +54,10 @@ export default class ChatDrawer extends React.Component {
     token: PropTypes.string.isRequired,
     enableAutocomplete: PropTypes.bool,
     clearOnClose: PropTypes.bool,
-    accentColor: PropTypes.bool
+    accentColor: PropTypes.bool,
+    enableSafetyNet: PropTypes.bool,
+    enableAutocomplete: PropTypes.bool,
+    enableVoiceRecord: PropTypes.bool
   }
 
   static defaultProps = {
@@ -71,6 +76,9 @@ export default class ChatDrawer extends React.Component {
     enableAutocomplete: true,
     clearOnClose: false,
     accentColor: undefined,
+    enableSafetyNet: true,
+    enableAutocomplete: true,
+    enableVoiceRecord: true,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -218,7 +226,7 @@ export default class ChatDrawer extends React.Component {
       return
     }
 
-    runQuery(suggestion, this.props.token)
+    runQuery(suggestion, this.props.token, this.props.enableSafetyNet)
       .then(response => {
         this.onResponse(response)
       })
@@ -391,22 +399,26 @@ export default class ChatDrawer extends React.Component {
   renderHeaderContent = () => {
     return (
       <Fragment>
-        <button
-          onClick={() => {
-            this.clearMessages()
-            if (this.chatBarRef) {
-              this.chatBarRef.focus()
-            }
-          }}
-          className="chata-button"
-          data-tip="Clear Messages"
-          data-for="clear-messages-tooltip"
-        >
-          <MdClearAll />
-        </button>
+        <div className="chata-header-left-container">
+          <button
+            onClick={() => {
+              this.clearMessages()
+              if (this.chatBarRef) {
+                this.chatBarRef.focus()
+              }
+            }}
+            className="chata-button"
+            data-tip="Clear Messages"
+            data-for="chata-header-tooltip"
+          >
+            <MdClearAll />
+          </button>
+        </div>
+        <div className="chata-header-center-container">Title</div>
+        <div className="chata-header-right-container"></div>
         <ReactTooltip
           className="chata-drawer-tooltip"
-          id="clear-messages-tooltip"
+          id="chata-header-tooltip"
           effect="solid"
           delayShow={800}
         />
@@ -495,7 +507,8 @@ export default class ChatDrawer extends React.Component {
                 isDisabled={this.state.isChataThinking}
                 token={this.props.token}
                 enableAutocomplete={this.props.enableAutocomplete}
-                enableVoiceRecord
+                enableSafetyNet={this.props.enableSafetyNet}
+                enableVoiceRecord={this.props.enableVoiceRecord}
               />
             </div>
           </div>

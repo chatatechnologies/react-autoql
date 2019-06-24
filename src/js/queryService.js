@@ -2,7 +2,7 @@
 import axios from 'axios'
 import uuid from 'uuid'
 
-export const runQuery = (query, token) => {
+export const runQueryOnly = (query, token) => {
   const queryString = query
   const axiosInstance = axios.create({
     headers: {
@@ -20,6 +20,39 @@ export const runQuery = (query, token) => {
     .catch(error => {
       return Promise.reject()
     })
+}
+
+export const runQuery = (query, token, useSafetyNet, skipSafetyNetCallback) => {
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+  if (useSafetyNet) {
+    return axiosInstance
+      .get(
+        `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
+          query
+        )}&projectId=7077&unified_query_id=${uuid.v4()}`
+      )
+      .then(response => {
+        if (
+          response &&
+          response.data &&
+          response.data.full_suggestion &&
+          response.data.full_suggestion.length > 0
+          // && !this.state.skipSafetyNet
+        ) {
+          return Promise.resolve(response)
+        }
+        return runQueryOnly(query, token)
+      })
+      .catch(() => {
+        return runQueryOnly(query, token)
+      })
+  }
+
+  return runQueryOnly(query, token)
 }
 
 export const runDrilldown = (data, token) => {
@@ -48,7 +81,7 @@ export const fetchSuggestions = (suggestion, token) => {
     }
   })
 
-  const theURL = `https://backend-staging.chata.ai/api/v1/autocomplete?apiId=1&q=${encodeURIComponent(
+  const theURL = `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
     suggestion
   )}&projectid=7077`
 
