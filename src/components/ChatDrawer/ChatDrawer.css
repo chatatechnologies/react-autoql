@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css?family=Titillium+Web");
 
-body {
+.chata-drawer {
   font-family: "Titillium Web", sans-serif;
 }
 
@@ -33,6 +33,9 @@ body {
   font-size: 18px;
   letter-spacing: 0.05em;
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .chata-header-left-container {
   width: 100px;

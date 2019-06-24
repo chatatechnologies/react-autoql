@@ -57,7 +57,8 @@ export default class ChatDrawer extends React.Component {
     accentColor: PropTypes.bool,
     enableSafetyNet: PropTypes.bool,
     enableAutocomplete: PropTypes.bool,
-    enableVoiceRecord: PropTypes.bool
+    enableVoiceRecord: PropTypes.bool,
+    title: PropTypes.string
   }
 
   static defaultProps = {
@@ -79,6 +80,7 @@ export default class ChatDrawer extends React.Component {
     enableSafetyNet: true,
     enableAutocomplete: true,
     enableVoiceRecord: true,
+    title: 'chata.ai',
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -414,7 +416,7 @@ export default class ChatDrawer extends React.Component {
             <MdClearAll />
           </button>
         </div>
-        <div className="chata-header-center-container">Title</div>
+        <div className="chata-header-center-container">{this.props.title}</div>
         <div className="chata-header-right-container"></div>
         <ReactTooltip
           className="chata-drawer-tooltip"

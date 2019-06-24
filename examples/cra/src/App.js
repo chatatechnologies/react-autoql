@@ -115,7 +115,7 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="6add67eb-2646-48e1-90e5-66f98d9191a4"
+          token="454317d6-f803-488b-8a8f-5a618b0b67f5"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"
@@ -125,6 +125,8 @@ export default class App extends Component {
           // autocompleteStyles
           // maxMessages
           // accentColor="#28a8e0"
+          title="Chat with your data"
+          enableSafetyNet
           theme={this.state.theme}
         />
       </div>
