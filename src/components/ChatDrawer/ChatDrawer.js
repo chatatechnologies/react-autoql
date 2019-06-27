@@ -6,7 +6,7 @@ import uuid from 'uuid'
 
 import Drawer from 'rc-drawer'
 
-import * as d3 from 'd3'
+// import * as d3 from 'd3'
 
 import ReactTooltip from 'react-tooltip'
 
