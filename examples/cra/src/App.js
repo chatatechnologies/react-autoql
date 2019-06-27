@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ChatDrawer } from 'chata-ai'
+import { ChatDrawer } from '@chata-ai/core'
 
 export default class App extends Component {
   state = {
