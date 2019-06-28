@@ -2,7 +2,7 @@
 import axios from 'axios'
 import uuid from 'uuid'
 
-export const runQueryOnly = (query, token) => {
+export const runQueryOnly = (query, token, projectId) => {
   const queryString = query
   const axiosInstance = axios.create({
     headers: {
@@ -12,7 +12,7 @@ export const runQueryOnly = (query, token) => {
 
   return axiosInstance
     .get(
-      `https://backend-staging.chata.ai/api/v1/query?q=${queryString}&project=7077&unified_query_id=${uuid.v4()}`
+      `https://backend-staging.chata.ai/api/v1/query?q=${queryString}&project=${projectId}&unified_query_id=${uuid.v4()}`
     )
     .then(response => {
       return Promise.resolve(response)
@@ -22,7 +22,13 @@ export const runQueryOnly = (query, token) => {
     })
 }
 
-export const runQuery = (query, token, useSafetyNet, skipSafetyNetCallback) => {
+export const runQuery = (
+  query,
+  token,
+  projectId,
+  useSafetyNet,
+  skipSafetyNetCallback
+) => {
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${token}`
@@ -33,7 +39,7 @@ export const runQuery = (query, token, useSafetyNet, skipSafetyNetCallback) => {
       .get(
         `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
           query
-        )}&projectId=7077&unified_query_id=${uuid.v4()}`
+        )}&projectId=${projectId}&unified_query_id=${uuid.v4()}`
       )
       .then(response => {
         if (
@@ -45,17 +51,17 @@ export const runQuery = (query, token, useSafetyNet, skipSafetyNetCallback) => {
         ) {
           return Promise.resolve(response)
         }
-        return runQueryOnly(query, token)
+        return runQueryOnly(query, token, projectId)
       })
       .catch(() => {
-        return runQueryOnly(query, token)
+        return runQueryOnly(query, token, projectId)
       })
   }
 
-  return runQueryOnly(query, token)
+  return runQueryOnly(query, token, projectId)
 }
 
-export const runDrilldown = (data, token) => {
+export const runDrilldown = (data, token, projectId) => {
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${token}`
@@ -63,7 +69,7 @@ export const runDrilldown = (data, token) => {
   })
   return axiosInstance
     .post(
-      `https://backend-staging.chata.ai/api/v1/query/drilldown?&project=7077&unified_query_id=${uuid.v4()}`,
+      `https://backend-staging.chata.ai/api/v1/query/drilldown?&project=${projectId}&unified_query_id=${uuid.v4()}`,
       data
     )
     .then(response => {
@@ -74,7 +80,7 @@ export const runDrilldown = (data, token) => {
     })
 }
 
-export const fetchSuggestions = (suggestion, token) => {
+export const fetchSuggestions = (suggestion, token, projectId) => {
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${token}`
@@ -83,7 +89,7 @@ export const fetchSuggestions = (suggestion, token) => {
 
   const theURL = `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
     suggestion
-  )}&projectid=7077`
+  )}&projectid=${projectId}`
 
   return axiosInstance
     .get(theURL)

@@ -16,12 +16,13 @@ export default class ChatBar extends React.Component {
   static propTypes = {
     // apiKey: PropTypes.string.isRequired,
     // dataSourceKey: PropTypes.string.isRequired,
+    token: PropTypes.string.isRequired,
+    projectId: PropTypes.number.isRequired,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
     onResponseCallback: PropTypes.func,
     className: PropTypes.string,
-    token: PropTypes.string.isRequired,
     enableAutocomplete: PropTypes.bool,
     enableSafetyNet: PropTypes.bool
   }
@@ -45,7 +46,12 @@ export default class ChatBar extends React.Component {
     const query = queryText || this.state.inputValue
     if (query.trim()) {
       this.props.onSubmit(query)
-      runQuery(query, this.props.token, this.props.enableSafetyNet)
+      runQuery(
+        query,
+        this.props.token,
+        this.props.projectId,
+        this.props.enableSafetyNet
+      )
         .then(response => {
           this.props.onResponseCallback(response)
         })
@@ -97,32 +103,34 @@ export default class ChatBar extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    fetchSuggestions(value, this.props.token).then(response => {
-      const body = response.data
-      const sortingArray = []
-      let suggestionsMatchArray = []
-      autoCompleteArray = []
-      suggestionsMatchArray = body.matches
-      for (let i = 0; i < suggestionsMatchArray.length; i++) {
-        sortingArray.push(suggestionsMatchArray[i])
+    fetchSuggestions(value, this.props.token, this.props.projectId).then(
+      response => {
+        const body = response.data
+        const sortingArray = []
+        let suggestionsMatchArray = []
+        autoCompleteArray = []
+        suggestionsMatchArray = body.matches
+        for (let i = 0; i < suggestionsMatchArray.length; i++) {
+          sortingArray.push(suggestionsMatchArray[i])
 
-        if (i === 4) {
-          break
+          if (i === 4) {
+            break
+          }
         }
-      }
 
-      sortingArray.sort((a, b) => b.length - a.length)
-      for (let idx = 0; idx < sortingArray.length; idx++) {
-        const anObject = {
-          name: sortingArray[idx]
+        sortingArray.sort((a, b) => b.length - a.length)
+        for (let idx = 0; idx < sortingArray.length; idx++) {
+          const anObject = {
+            name: sortingArray[idx]
+          }
+          autoCompleteArray.push(anObject)
         }
-        autoCompleteArray.push(anObject)
-      }
 
-      this.setState({
-        suggestions: autoCompleteArray
-      })
-    })
+        this.setState({
+          suggestions: autoCompleteArray
+        })
+      }
+    )
   }
 
   onSuggestionsClearRequested = () => {

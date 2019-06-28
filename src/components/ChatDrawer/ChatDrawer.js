@@ -40,6 +40,8 @@ export default class ChatDrawer extends React.Component {
   }
 
   static propTypes = {
+    token: PropTypes.string.isRequired,
+    projectId: PropTypes.number.isRequired,
     placement: PropTypes.string,
     maskClosable: PropTypes.bool,
     onVisibleChange: PropTypes.func,
@@ -51,7 +53,6 @@ export default class ChatDrawer extends React.Component {
     shiftScreen: PropTypes.bool,
     isDrilldownEnabled: PropTypes.bool,
     customerName: PropTypes.string,
-    token: PropTypes.string.isRequired,
     enableAutocomplete: PropTypes.bool,
     clearOnClose: PropTypes.bool,
     accentColor: PropTypes.bool,
@@ -228,7 +229,12 @@ export default class ChatDrawer extends React.Component {
       return
     }
 
-    runQuery(suggestion, this.props.token, this.props.enableSafetyNet)
+    runQuery(
+      suggestion,
+      this.props.token,
+      this.props.projectId,
+      this.props.enableSafetyNet
+    )
       .then(response => {
         this.onResponse(response)
       })
@@ -305,7 +311,7 @@ export default class ChatDrawer extends React.Component {
       this.addRequestMessage(drilldownText)
       this.setState({ isChataThinking: true })
 
-      runDrilldown(bodyJSON, this.props.token)
+      runDrilldown(bodyJSON, this.props.token, this.props.projectId)
         .then(response => {
           this.addResponseMessage({
             response: { ...response, isDrilldownDisabled: true }
@@ -503,11 +509,12 @@ export default class ChatDrawer extends React.Component {
             <div className="chat-bar-container">
               <ChatBar
                 ref={this.setChatBarRef}
+                token={this.props.token}
+                projectId={this.props.projectId}
                 className="chat-drawer-chat-bar"
                 onSubmit={this.onInputSubmit}
                 onResponseCallback={this.onResponse}
                 isDisabled={this.state.isChataThinking}
-                token={this.props.token}
                 enableAutocomplete={this.props.enableAutocomplete}
                 enableSafetyNet={this.props.enableSafetyNet}
                 enableVoiceRecord={this.props.enableVoiceRecord}

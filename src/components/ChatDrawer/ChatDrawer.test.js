@@ -17,6 +17,7 @@ const defaultProps = {
   shiftScreen: false,
   showMask: true,
   token: 'test-token',
+  projectId: 500,
   onHandleClick: () => {},
   onVisibleChange: () => {}
 }

@@ -105,6 +105,8 @@ export default class App extends Component {
           Dark Theme
         </label>
         <ChatDrawer
+          token="6f52a98e-e31f-4730-9dc6-f54df3a0d92e" // required
+          projectId={7077} // required
           isVisible={this.state.isVisible}
           onHandleClick={() =>
             this.setState({ isVisible: !this.state.isVisible })
@@ -115,7 +117,6 @@ export default class App extends Component {
           customerName="Nikki"
           showMask
           height="500px"
-          token="454317d6-f803-488b-8a8f-5a618b0b67f5"
           enableAutocomplete={true}
           // enableVoiceRecord
           // width="700px"
