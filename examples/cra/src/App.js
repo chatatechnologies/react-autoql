@@ -105,8 +105,8 @@ export default class App extends Component {
           Dark Theme
         </label>
         <ChatDrawer
-          token="6f52a98e-e31f-4730-9dc6-f54df3a0d92e" // required
-          projectId={7077} // required
+          // token="6f52a98e-e31f-4730-9dc6-f54df3a0d92e" // required
+          // projectId={7077} // required
           isVisible={this.state.isVisible}
           onHandleClick={() =>
             this.setState({ isVisible: !this.state.isVisible })

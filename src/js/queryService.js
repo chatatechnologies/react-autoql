@@ -2,11 +2,11 @@
 import axios from 'axios'
 import uuid from 'uuid'
 
-export const runQueryOnly = (query, token, projectId) => {
+export const runQueryOnly = (query, token, projectId = 1) => {
   const queryString = query
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: token ? `Bearer ${token}` : undefined
     }
   })
 
@@ -25,13 +25,13 @@ export const runQueryOnly = (query, token, projectId) => {
 export const runQuery = (
   query,
   token,
-  projectId,
+  projectId = 1,
   useSafetyNet,
   skipSafetyNetCallback
 ) => {
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: token ? `Bearer ${token}` : undefined
     }
   })
   if (useSafetyNet) {
@@ -61,10 +61,10 @@ export const runQuery = (
   return runQueryOnly(query, token, projectId)
 }
 
-export const runDrilldown = (data, token, projectId) => {
+export const runDrilldown = (data, token, projectId = 1) => {
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: token ? `Bearer ${token}` : undefined
     }
   })
   return axiosInstance
@@ -80,10 +80,10 @@ export const runDrilldown = (data, token, projectId) => {
     })
 }
 
-export const fetchSuggestions = (suggestion, token, projectId) => {
+export const fetchSuggestions = (suggestion, token, projectId = 1) => {
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: token ? `Bearer ${token}` : undefined
     }
   })
 
