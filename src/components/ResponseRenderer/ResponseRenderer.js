@@ -27,13 +27,10 @@ String.prototype.toProperCase = function() {
 }
 
 const TABLE_TYPES = [
-  'csv',
   'pivot_column',
   'table',
-  'text',
   'compare_table_budget',
-  'date_pivot',
-  'compare_table'
+  'date_pivot'
 ]
 
 const CHART_TYPES = [
