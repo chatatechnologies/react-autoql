@@ -1,0 +1,54 @@
+.chata-bar-chart-container .axis line {
+  stroke-width: 1px;
+  stroke: #eee;
+  shape-rendering: crispedges;
+}
+.chata-bar-chart-container .axis text {
+  fill: #888;
+}
+
+.chata-bar-chart-container .bar {
+  fill: #28a8e0;
+  fill-opacity: 0.7;
+  transition: all 0.2s ease;
+}
+.chata-bar-chart-container .bar:hover {
+  fill-opacity: 1;
+}
+
+.chata-bar-chart-container .y.axis path {
+  display: none;
+}
+
+.d3-tip {
+  position: absolute;
+  line-height: 1;
+  font-size: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  font-family: "Titillium Web", sans-serif;
+  z-index: 9999;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}

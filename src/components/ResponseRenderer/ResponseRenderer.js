@@ -4,10 +4,13 @@ import PapaParse from 'papaparse'
 import uuid from 'uuid'
 import { IoIosGlobe, IoIosCloseCircleOutline } from 'react-icons/io'
 import { MdPlayCircleOutline } from 'react-icons/md'
+import Numbro from 'numbro'
+import dayjs from 'dayjs'
 
 import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
 import { ChataTable } from '../ChataTable'
+import ChataBarChart from '../ChataBarChart/ChataBarChart'
 
 String.prototype.replaceAll = function(target, replacement) {
   return this.split(target).join(replacement)
@@ -29,6 +32,7 @@ String.prototype.toProperCase = function() {
 const TABLE_TYPES = [
   'pivot_column',
   'table',
+  'compare_table',
   'compare_table_budget',
   'date_pivot'
 ]
@@ -71,21 +75,35 @@ export default class ResponseRenderer extends React.Component {
 
   state = {
     safetyNetQueryArray: [],
-    activeDisplayType:
+    activeDisplayType: undefined
+  }
+
+  componentDidMount = () => {
+    const activeDisplayType =
       this.props.displayType ||
       (this.props.response &&
         this.props.response.data &&
         this.props.response.data.display_type)
-  }
 
-  componentDidMount = () => {
-    if (
-      this.props.response &&
-      this.props.response.data &&
-      this.props.response.data.full_suggestion
-    ) {
-      this.initializeSafetyNetOptions(this.props.response.data)
+    if (this.props.response && this.props.response.data) {
+      const responseBody = this.props.response.data
+      // do we need this stuff?
+      // this.queryID = responseBody.query_id
+      // this.filters = responseBody.filters
+      // this.answer = responseBody.answer
+      this.data = responseBody.data
+      if (this.props.response.data.full_suggestion) {
+        this.initializeSafetyNetOptions(this.props.response.data)
+      } else if (
+        this.isTableType(activeDisplayType) ||
+        this.isChartType(activeDisplayType)
+      ) {
+        this.tableColumns = this.formatColumnsForTable(responseBody.columns)
+        this.tableData = PapaParse.parse(this.data).data
+        this.chartData = this.formatChartData()
+      }
     }
+    this.setState({ activeDisplayType })
   }
 
   componentDidUpdate = prevProps => {
@@ -105,6 +123,7 @@ export default class ResponseRenderer extends React.Component {
     let lastEndIndex = 0
     const { full_suggestion: fullSuggestions, query } = responseBody
 
+    // Do we need to sort or will it always be sent sorted?
     // const sortedFullSuggestions = fullSuggestions.sortBy(['start']).value();
     const sortedFullSuggestions = fullSuggestions
     sortedFullSuggestions.forEach((fullSuggestion, index) => {
@@ -267,18 +286,18 @@ export default class ResponseRenderer extends React.Component {
 
   renderTable = () => {
     const self = this
-    const columns = this.formatColumnsForTable(self.columns)
-    const data = PapaParse.parse(self.data).data
+    // const columns = this.formatColumnsForTable(self.columns)
+    // const data = PapaParse.parse(self.data).data
 
-    if (data.length === 1 && data[0].length === 1) {
-      return data
+    if (this.tableData.length === 1 && this.tableData[0].length === 1) {
+      return this.tableData
     }
 
     return (
       <ChataTable
-        columns={columns}
+        columns={this.tableColumns}
         ref={ref => (this.tableRef = ref)}
-        data={data}
+        data={this.tableData}
         borderColor={this.props.tableBorderColor}
         onRowDblClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
@@ -290,9 +309,30 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderChart = () => {
-    // const columns = this.formatColumnsForTable(this.columns)
-    // const data = PapaParse.parse(this.data).data
-    console.log('rendering chart now')
+    let chartWidth = 0
+    let chartHeight = 0
+    const chatContainer = document.querySelector('.chat-message-container')
+    if (chatContainer) {
+      chartWidth = 0.7 * chatContainer.clientWidth - 40 // 70% of chat width minus margins
+      chartHeight = 0.88 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
+    }
+
+    return (
+      <ChataBarChart
+        data={this.chartData}
+        // container={document.querySelector()}
+        size={[chartWidth, chartHeight]}
+        // dataValue="value"
+        // labelValue="label"
+        tooltipFormatter={data => {
+          return `<div>
+              <span><strong>Name:</strong> ${data.label}</span>
+              <br />
+              <span><strong>Value:</strong> ${data.value}</span>
+            </div>`
+        }}
+      />
+    )
   }
 
   renderHelpResponse = () => {
@@ -486,11 +526,76 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
+  formatElement = (element, column) => {
+    if (!column) {
+      return
+    }
+    switch (column.type) {
+      case 'STRING': {
+        return element
+      }
+      case 'DOLLAR_AMT': {
+        // We will need to grab the actual currency symbol here. Will that be returned in the query response?
+        return Numbro(element).formatCurrency({
+          thousandSeparated: true,
+          mantissa: 2
+        })
+      }
+      case 'QUANTITY': {
+        if (Number(element) % 1 !== 0) {
+          return Numbro(element).format('0,0.0')
+        }
+        return element
+      }
+      case 'DATE': {
+        const title = column.title
+        if (title && title.includes('Year')) {
+          return dayjs.unix(element).format('YYYY')
+        } else if (title && title.includes('Month')) {
+          return dayjs.unix(element).format('MMMM YYYY')
+        }
+        return dayjs.unix(element).format('MMMM D, YYYY')
+      }
+      case 'PERCENT': {
+        if (Number(element)) {
+          return Numbro(element).format('0.00%')
+        }
+        return element
+      }
+      default: {
+        return element
+      }
+    }
+  }
+
+  formatChartData = () => {
+    const columns = this.tableColumns
+
+    // Is there a more efficient way to do this?
+    // const formattedData = this.tableData.map(row => {
+    //   return row.map((element, index) => {
+    //     return this.formatElement(element, columns[index])
+    //   })
+    // })
+
+    return this.tableData.map(row => {
+      return {
+        label: row[0],
+        value: row[1],
+        formatter: (value, column) => {
+          return this.formatElement(value, column)
+        }
+      }
+    })
+  }
+
   formatColumnsForTable = columns => {
     const formattedColumns = columns.map((col, i) => {
       col.field = `${i}`
       col.align = 'center'
-      col.formatter = undefined
+      col.formatter = (cell, formatterParams, onRendered) => {
+        return this.formatElement(cell.getValue(), col)
+      }
 
       const nameFragments = col.name.split('___')
       if (nameFragments.length === 2) {
@@ -519,46 +624,34 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderResponse = () => {
-    const self = this
+    const { activeDisplayType } = this.state
     if (!this.props.response) {
-      console.log('no response was provided....')
       return
     }
     const responseBody = this.props.response.data
     if (!responseBody) {
-      console.log('no data in the response.....')
       return
     }
 
     if (responseBody.full_suggestion) {
-      // process safety net response
-      // this.initializeSafetyNetOptions(responseBody)
       return this.renderSafetyNetMessage()
     } else if (this.state.activeDisplayType) {
-      self.displayType = this.state.activeDisplayType
-      // self.supportedDisplayTypes = responseBody.supported_display_types
-      self.columns = responseBody.columns
-      self.queryID = responseBody.query_id
-      self.filters = responseBody.filters
-      self.answer = responseBody.answer
-      self.data = responseBody.data
-
       if (
-        self.displayType === 'suggestion' ||
-        self.displayType === 'unknown_words'
+        activeDisplayType === 'suggestion' ||
+        activeDisplayType === 'unknown_words'
       ) {
         return this.renderSuggestionMessage()
-      } else if (self.displayType === 'help') {
+      } else if (activeDisplayType === 'help') {
         return this.renderHelpResponse()
-      } else if (this.isTableType(self.displayType)) {
+      } else if (this.isTableType(activeDisplayType)) {
         return this.renderTable()
-      } else if (this.isChartType(self.displayType)) {
+        return this.renderChart()
+      } else if (this.isChartType(activeDisplayType)) {
         return this.renderChart()
       }
     } else if (responseBody.data && !responseBody.data.length) {
       return 'No data found.'
     }
-    console.log('No render type was found... why? Was there an error?')
   }
 
   render = () => {

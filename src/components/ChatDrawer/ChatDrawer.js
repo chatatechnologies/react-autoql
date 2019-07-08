@@ -384,7 +384,7 @@ export default class ChatDrawer extends React.Component {
     let message = {}
     if (!response && !content) {
       console.log(
-        'something went wrong.... probably a network error displaying general error message'
+        'something went wrong.... probably a network error, displaying general error message'
       )
       message = this.createErrorMessage()
     } else {
