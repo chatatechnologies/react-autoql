@@ -4,6 +4,7 @@ import { terser } from 'rollup-plugin-terser'
 import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
+import css from 'rollup-plugin-css-only'
 
 import pkg from './package.json'
 
@@ -46,12 +47,39 @@ const common = {
 const outputs = [
   {
     file: `${dist}/${bundle}.cjs.js`,
-    format: 'cjs'
+    format: 'cjs',
+    plugins: [
+      resolve(),
+      // postcss({
+      //   plugins: [autoprefixer],
+      //   extensions: ['.css']
+      // }),
+      css({ output: 'bundle.cjs.css' }),
+      svg(),
+      babel({
+        plugins: ['external-helpers'],
+        exclude: 'node_modules/**'
+      }),
+      production && terser()
+    ]
   },
   {
     file: `${dist}/${bundle}.esm.js`,
     // use ES modules to support tree-shaking
-    format: 'esm'
+    format: 'esm',
+    plugins: [
+      resolve(),
+      postcss({
+        plugins: [autoprefixer],
+        extensions: ['.css']
+      }),
+      svg(),
+      babel({
+        plugins: ['external-helpers'],
+        exclude: 'node_modules/**'
+      }),
+      production && terser()
+    ]
   },
   {
     name: 'ChataAI',
@@ -68,7 +96,17 @@ const outputs = [
       'react-speech-recognition': 'SpeechRecognition',
       papaparse: 'PapaParse',
       'react-tabulator': 'reactTabulator',
-      'rc-drawer/assets/index.css': 'rcStyles'
+      'rc-drawer/assets/index.css': 'rcStyles',
+      'react-tooltip': 'ReactTooltip',
+      'react-icons/md': 'md',
+      'react-icons/io': 'io',
+      'react-icons/fa': 'fa',
+      numbro: 'Numbro',
+      dayjs: 'dayjs',
+      'd3-selection': 'd3Selection',
+      'd3-axis': 'd3Axis',
+      'd3-scale': 'd3Scale',
+      'd3-array': 'd3Array'
     }
   }
 ]

@@ -6,6 +6,7 @@ export const runQueryOnly = (query, token, projectId = 1) => {
   const queryString = query
   const axiosInstance = axios.create({
     headers: {
+      'Access-Control-Allow-Origin': '*',
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })
@@ -31,6 +32,7 @@ export const runQuery = (
 ) => {
   const axiosInstance = axios.create({
     headers: {
+      'Access-Control-Allow-Origin': '*',
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })
@@ -64,6 +66,7 @@ export const runQuery = (
 export const runDrilldown = (data, token, projectId = 1) => {
   const axiosInstance = axios.create({
     headers: {
+      'Access-Control-Allow-Origin': '*',
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })
@@ -83,6 +86,7 @@ export const runDrilldown = (data, token, projectId = 1) => {
 export const fetchSuggestions = (suggestion, token, projectId = 1) => {
   const axiosInstance = axios.create({
     headers: {
+      'Access-Control-Allow-Origin': '*',
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })

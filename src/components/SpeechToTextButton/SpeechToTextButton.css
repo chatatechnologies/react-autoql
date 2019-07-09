@@ -31,7 +31,7 @@
 .chata-tooltip {
   font-family: "Titillium Web", sans-serif;
   letter-spacing: 0.04em;
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 @keyframes slide {

@@ -40,8 +40,8 @@ export default class ChatDrawer extends React.Component {
   }
 
   static propTypes = {
-    token: PropTypes.string.isRequired,
-    projectId: PropTypes.number.isRequired,
+    token: PropTypes.string,
+    projectId: PropTypes.number,
     placement: PropTypes.string,
     maskClosable: PropTypes.bool,
     onVisibleChange: PropTypes.func,
@@ -63,9 +63,11 @@ export default class ChatDrawer extends React.Component {
   }
 
   static defaultProps = {
+    token: undefined,
+    projectId: undefined,
     placement: 'right',
     maskClosable: true,
-    isVisible: false,
+    isVisible: true,
     width: 500,
     height: 350,
     // customHandle: undefined, // not working atm
@@ -477,6 +479,7 @@ export default class ChatDrawer extends React.Component {
                       isChataThinking={this.state.isChataThinking}
                       onSuggestionClick={this.onSuggestionClick}
                       content={message.content}
+                      scrollToBottom={this.scrollToBottom}
                       tableBorderColor={
                         this.props.theme === 'light'
                           ? this.LIGHT_THEME['--chata-drawer-border-color']

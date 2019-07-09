@@ -16,8 +16,8 @@ export default class ChatBar extends React.Component {
   static propTypes = {
     // apiKey: PropTypes.string.isRequired,
     // dataSourceKey: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
-    projectId: PropTypes.number.isRequired,
+    token: PropTypes.string,
+    projectId: PropTypes.number,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
@@ -33,6 +33,8 @@ export default class ChatBar extends React.Component {
     enableAutocomplete: true,
     enableSafetyNet: true,
     className: null,
+    token: undefined,
+    projectId: undefined,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }

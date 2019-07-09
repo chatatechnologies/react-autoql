@@ -9,7 +9,7 @@
     "dev": "npx nodemon --watch '../../src' --delay 10  --exec 'node index.js'"
   },
   "dependencies": {
-    "chata-ai": "file:../..",
+    "@chata-ai/core": "file:../..",
     "express": "latest",
     "react": "latest",
     "react-dom": "latest"

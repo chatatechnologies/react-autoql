@@ -12,6 +12,7 @@ const request = options => {
     // data: options.data,
     headers: {
       // options.headers,
+      'Access-Control-Allow-Origin': '*',
       Authorization: `Bearer ${options.token}`
     }
   }

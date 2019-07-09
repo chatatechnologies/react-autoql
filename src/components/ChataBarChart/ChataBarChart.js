@@ -1,13 +1,21 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
-import { scaleLinear, scaleOrdinal, scaleBand, rangeRound } from 'd3-scale'
+// import uuid from 'uuid'
+import {
+  scaleLinear,
+  // scaleOrdinal,
+  scaleBand
+  // rangeRound
+} from 'd3-scale'
 import { axisLeft, axisBottom } from 'd3-axis'
-import { max, range, extent } from 'd3-array'
+import {
+  max,
+  min,
+  // range,
+  extent
+} from 'd3-array'
 import { select, selectAll, event } from 'd3-selection'
-import d3Tip from 'd3-tip'
-// import 'd3-transition'
-import { transition } from 'd3-transition'
+// import d3Tip from 'd3-tip'
 // import { transition } from 'd3-transition'
 
 import styles from './ChatabarChart.css'
@@ -18,6 +26,7 @@ export default class ChataBarChart extends Component {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     type: PropTypes.string, // bar or column
     margin: PropTypes.shape({}),
+    labelValue: PropTypes.string,
     dataValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     size: PropTypes.arrayOf(PropTypes.number)
@@ -53,14 +62,8 @@ export default class ChataBarChart extends Component {
     const width = this.props.size[0] - margin.left - margin.right
     const height = this.props.size[1] - margin.top - margin.bottom
 
-    console.log('height:')
-    console.log(height)
-
     // const yScale = scaleLinear().range([height, 0]).domain()
     const yScale = scaleLinear()
-
-    console.log('y scale')
-    console.log(yScale)
 
     const xScale = scaleBand()
       .rangeRound([0, width - margin.left - margin.right])
@@ -109,11 +112,8 @@ export default class ChataBarChart extends Component {
     xScale.domain(data.map(d => d[self.props.labelValue]))
     yScale
       .domain(extent(data.map(d => d[self.props.dataValue])))
-      .range([height - margin.top - margin.bottom, 0])
+      .range([height - margin.bottom, margin.top])
     // .nice()
-
-    console.log('y axis:')
-    console.log(yAxis)
 
     svg
       .append('g')
@@ -135,17 +135,17 @@ export default class ChataBarChart extends Component {
       .attr('class', 'y axis')
       .call(yAxis)
 
-    const tooltip = d3Tip()
-      .attr('class', 'd3-tip')
-      .offset([-10, 0])
-      .html(d => {
-        if (self.props.tooltipFormatter) {
-          return self.props.tooltipFormatter(d)
-        }
-        return d[self.props.dataValue]
-      })
+    // const tooltip = d3Tip()
+    //   .attr('class', 'd3-tip')
+    //   .offset([-10, 0])
+    //   .html(d => {
+    //     if (self.props.tooltipFormatter) {
+    //       return self.props.tooltipFormatter(d)
+    //     }
+    //     return d[self.props.dataValue]
+    //   })
 
-    svg.call(tooltip)
+    // svg.call(tooltip)
 
     // add bars
     svg
@@ -166,14 +166,14 @@ export default class ChataBarChart extends Component {
       .attr('height', function(d, i) {
         return Math.abs(Y(d) - Y0())
       })
-      .on('mouseover', function(d, i, e) {
-        const x = event.x
-        const y = event.y
-        tooltip.show(d, e[i])
-        tooltip.style('top', y)
-        tooltip.style('left', x)
-      })
-      .on('mouseout', tooltip.hide)
+      // .on('mouseover', function(d, i, e) {
+      //   const x = event.x
+      //   const y = event.y
+      //   tooltip.show(d, e[i])
+      //   tooltip.style('top', y)
+      //   tooltip.style('left', x)
+      // })
+      // .on('mouseout', tooltip.hide)
       .on('click', (d, i, e) => {
         selectAll('rect') //<-- or slap a class name on the bars and use that
           .style('fill', '#339CFF')

@@ -2,19 +2,15 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import PapaParse from 'papaparse'
 import uuid from 'uuid'
-import { IoIosGlobe, IoIosCloseCircleOutline } from 'react-icons/io'
-import { MdPlayCircleOutline } from 'react-icons/md'
+import { IoIosGlobe } from 'react-icons/io'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
 
 import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
 import { ChataTable } from '../ChataTable'
-import ChataBarChart from '../ChataBarChart/ChataBarChart'
-
-String.prototype.replaceAll = function(target, replacement) {
-  return this.split(target).join(replacement)
-}
+import { ChataChart } from '../ChataChart'
+import { SafetyNetMessage } from '../SafetyNetMessage'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -61,10 +57,12 @@ export default class ResponseRenderer extends React.Component {
     onSuggestionClick: PropTypes.func,
     isQueryRunning: PropTypes.bool,
     tableBorderColor: PropTypes.string,
-    displayType: PropTypes.string
+    displayType: PropTypes.string,
+    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string)
   }
 
   static defaultProps = {
+    supportedDisplayTypes: [],
     supportsSuggestions: true,
     isQueryRunning: false,
     tableBorderColor: undefined,
@@ -74,7 +72,6 @@ export default class ResponseRenderer extends React.Component {
   }
 
   state = {
-    safetyNetQueryArray: [],
     activeDisplayType: undefined
   }
 
@@ -92,15 +89,14 @@ export default class ResponseRenderer extends React.Component {
       // this.filters = responseBody.filters
       // this.answer = responseBody.answer
       this.data = responseBody.data
-      if (this.props.response.data.full_suggestion) {
-        this.initializeSafetyNetOptions(this.props.response.data)
-      } else if (
+      if (
         this.isTableType(activeDisplayType) ||
         this.isChartType(activeDisplayType)
       ) {
         this.tableColumns = this.formatColumnsForTable(responseBody.columns)
         this.tableData = PapaParse.parse(this.data).data
-        this.chartData = this.formatChartData()
+        if (responseBody.columns && responseBody.columns.length <= 3)
+          this.chartData = this.formatChartData()
       }
     }
     this.setState({ activeDisplayType })
@@ -118,105 +114,11 @@ export default class ResponseRenderer extends React.Component {
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
 
-  initializeSafetyNetOptions = responseBody => {
-    const queryArray = []
-    let lastEndIndex = 0
-    const { full_suggestion: fullSuggestions, query } = responseBody
-
-    // Do we need to sort or will it always be sent sorted?
-    // const sortedFullSuggestions = fullSuggestions.sortBy(['start']).value();
-    const sortedFullSuggestions = fullSuggestions
-    sortedFullSuggestions.forEach((fullSuggestion, index) => {
-      if (
-        fullSuggestion.suggestion_list &&
-        fullSuggestion.suggestion_list.length > 0
-      ) {
-        const suggestionList = fullSuggestion.suggestion_list
-        queryArray.push({
-          type: 'text',
-          value: query.slice(lastEndIndex, fullSuggestion.start)
-        })
-
-        const replaceWord = query.slice(
-          fullSuggestion.start,
-          fullSuggestion.end
-        )
-
-        queryArray.push({
-          type: 'suggestion',
-          value: replaceWord,
-          valueLabel: suggestionList[0].value_label
-        })
-
-        if (index === sortedFullSuggestions.length - 1) {
-          queryArray.push({
-            type: 'text',
-            value: query.slice(fullSuggestion.end, query.length)
-          })
-        }
-
-        lastEndIndex = fullSuggestion.end
-      } else {
-        queryArray.push({
-          type: 'text',
-          value: query.slice(lastEndIndex, fullSuggestion.start)
-        })
-
-        const replaceWord = query.slice(
-          fullSuggestion.start,
-          fullSuggestion.end
-        )
-        queryArray.push({
-          type: 'suggestion',
-          value: replaceWord
-        })
-
-        if (index === sortedFullSuggestions.length - 1) {
-          queryArray.push({
-            type: 'text',
-            value: query.slice(fullSuggestion.end, query.length)
-          })
-        }
-
-        lastEndIndex = fullSuggestion.end
-      }
-    })
-
-    const newSafetyNetQueryArray = queryArray.map((element, index) => {
-      if (index > 0 && index % 2 !== 0) {
-        const fullSuggestionIndex = Math.floor(index / 2)
-        if (
-          fullSuggestions &&
-          fullSuggestions[fullSuggestionIndex] &&
-          fullSuggestions[fullSuggestionIndex].suggestion_list
-        ) {
-          return {
-            ...element,
-            value:
-              fullSuggestions[fullSuggestionIndex].suggestion_list[0] &&
-              fullSuggestions[fullSuggestionIndex].suggestion_list[0].text
-          }
-        }
-        return {
-          ...element,
-          value:
-            fullSuggestions &&
-            fullSuggestions[fullSuggestionIndex] &&
-            fullSuggestions[fullSuggestionIndex].suggestion
-        }
-      }
-      return element
-    })
-
-    this.setState({
-      safetyNetQueryArray: newSafetyNetQueryArray
-    })
-  }
-
   createSuggestionMessage = (userInput, suggestions) => {
     return (
       <div>
-        I'm not sure what you mean by "{userInput}". Did you mean:
+        I'm not sure what you mean by <strong>"{userInput}"</strong>. Did you
+        mean:
         <br />
         <div className="chata-suggestions-container">
           {suggestions.map(suggestion => {
@@ -262,13 +164,11 @@ export default class ResponseRenderer extends React.Component {
       this.state.activeDisplayType === 'suggestion' &&
       responseBody.data.length === 0
     ) {
-      this.createSuggestionMessage()
-      return
+      return this.createSuggestionMessage()
     }
     // We don't understand the query, no suggestions
     else if (this.state.activeDisplayType === 'unknown_words') {
-      this.createSuggestionMessage()
-      return
+      return this.createSuggestionMessage()
     }
   }
 
@@ -285,10 +185,6 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderTable = () => {
-    const self = this
-    // const columns = this.formatColumnsForTable(self.columns)
-    // const data = PapaParse.parse(self.data).data
-
     if (this.tableData.length === 1 && this.tableData[0].length === 1) {
       return this.tableData
     }
@@ -313,26 +209,42 @@ export default class ResponseRenderer extends React.Component {
     let chartHeight = 0
     const chatContainer = document.querySelector('.chat-message-container')
     if (chatContainer) {
-      chartWidth = 0.7 * chatContainer.clientWidth - 40 // 70% of chat width minus margins
-      chartHeight = 0.88 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
+      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
+      chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
     }
 
     return (
-      <ChataBarChart
+      <ChataChart
+        type={this.state.activeDisplayType}
         data={this.chartData}
-        // container={document.querySelector()}
-        size={[chartWidth, chartHeight]}
-        // dataValue="value"
-        // labelValue="label"
-        tooltipFormatter={data => {
-          return `<div>
-              <span><strong>Name:</strong> ${data.label}</span>
-              <br />
-              <span><strong>Value:</strong> ${data.value}</span>
-            </div>`
-        }}
+        columns={this.tableColumns}
+        height={chartHeight}
+        width={chartWidth}
+        valueFormatter={this.formatElement}
       />
     )
+
+    // return (
+    //   <ChataBarChartNew
+    //     data={this.chartData}
+    //     columns={this.tableColumns}
+    //     height={chartHeight}
+    //     width={chartWidth}
+    //     dataValue="yValue"
+    //     labelValue="xValue"
+    //     tooltipFormatter={data => {
+    //       return `<div>
+    //           <span><strong>${this.tableColumns[0].title}:</strong> ${
+    //         data.xValue
+    //       }</span>
+    //           <br />
+    //           <span><strong>${
+    //             this.tableColumns[1].title
+    //           }:</strong> ${self.formatElement(data.yValue)}</span>
+    //         </div>`
+    //     }}
+    //   />
+    // )
   }
 
   renderHelpResponse = () => {
@@ -362,173 +274,9 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
-  onChangeSafetyNetSelectOption = (suggestion, suggestionIndex) => {
-    const newSafetyNetQueryArray = this.state.safetyNetQueryArray.map(
-      (element, index) => {
-        if (index === suggestionIndex) {
-          return {
-            ...element,
-            value: JSON.parse(suggestion).text,
-            valueLabel: JSON.parse(suggestion).value_label
-          }
-        }
-        return element
-      }
-    )
-
-    this.setState({
-      safetyNetQueryArray: newSafetyNetQueryArray
-    })
-  }
-
-  deleteSafetyNetSuggestion = suggestionIndex => {
-    const newSafetyNetQueryArray = this.state.safetyNetQueryArray.map(
-      (element, index) => {
-        if (index === suggestionIndex) {
-          return {
-            ...element,
-            value: ''
-          }
-        }
-        return element
-      }
-    )
-
-    this.setState({
-      safetyNetQueryArray: newSafetyNetQueryArray
-    })
-  }
-
-  renderSafetyNetMessage = () => {
-    const { response } = this.props
-    const fullSuggestions = response.data.full_suggestion
-    const { query } = response.data
-    const queryArray = this.state.safetyNetQueryArray
-
-    const safetyNetQuery = (
-      <span>
-        {queryArray.map((element, index) => {
-          if (element.type === 'text' || element.value === '') {
-            return (
-              <span
-                // className="chata-safety-net-text"
-                key={`query-element-${index}`}
-              >
-                {element.value}
-              </span>
-            )
-          }
-
-          const fullSuggestionIndex = Math.floor(index / 2)
-          const suggestion = fullSuggestions[fullSuggestionIndex]
-
-          if (suggestion) {
-            const replaceWord = query.slice(suggestion.start, suggestion.end)
-            const safetyNetSelectUniqueId = uuid.v4()
-
-            const suggestionText = `${element.value}${
-              element.valueLabel ? ` (${element.valueLabel})` : ''
-            }`
-
-            const suggestionValue = suggestion.suggestion_list.find(
-              suggestion => suggestion.text === element.value
-            ) || { text: replaceWord }
-
-            const suggestionDiv = document.createElement('DIV')
-            suggestionDiv.innerHTML = suggestionText
-            suggestionDiv.style.display = 'inline-block'
-            suggestionDiv.style.position = 'absolute'
-            suggestionDiv.style.visibility = 'hidden'
-            document.body.appendChild(suggestionDiv)
-            const selectWidth = suggestionDiv.clientWidth + 28
-
-            return (
-              <div
-                className="chata-safety-net-selector-container"
-                key={`query-element-${index}`}
-              >
-                <select
-                  key={uuid.v4()}
-                  value={JSON.stringify(suggestionValue)}
-                  className="chata-safetynet-select"
-                  style={{ width: selectWidth }}
-                  onChange={e =>
-                    this.onChangeSafetyNetSelectOption(e.target.value, index)
-                  }
-                >
-                  {suggestion.suggestion_list.map(
-                    (suggestionItem, suggIndex) => {
-                      return (
-                        <option
-                          key={`option-${suggIndex}`}
-                          value={JSON.stringify(suggestionItem)}
-                        >
-                          {`${
-                            suggestionItem.text
-                          }${suggestionItem.value_label &&
-                            ` (${suggestionItem.value_label})`}`}
-                        </option>
-                      )
-                    }
-                  )}
-                  <option
-                    key="original-option"
-                    value={JSON.stringify({ text: replaceWord })}
-                  >
-                    {replaceWord}
-                  </option>
-                </select>
-                <IoIosCloseCircleOutline
-                  className="chata-safety-net-delete-button"
-                  onClick={() => {
-                    this.deleteSafetyNetSuggestion(index)
-                  }}
-                />
-              </div>
-            )
-          }
-          return null
-        })}
-      </span>
-    )
-
-    return (
-      <Fragment>
-        <span
-        // className="chata-safety-net-response-template"
-        >
-          Before I can try to find your answer, I need your help understanding a
-          term you used that I don't see in your data. Click the dropdown to
-          view suggestions so I can ensure you get the right data!
-        </span>
-        <br />
-        <br />
-        <span
-        // className="chata-safety-net-result"
-        >
-          {safetyNetQuery}
-          <br />
-          <button
-            className="chata-safety-net-execute-btn"
-            onClick={() => {
-              let safetyNetQuery = ''
-              this.state.safetyNetQueryArray.forEach(element => {
-                safetyNetQuery = safetyNetQuery.concat(element.value)
-              })
-              this.props.onSuggestionClick(safetyNetQuery)
-            }}
-          >
-            <MdPlayCircleOutline className="chata-execute-query-icon" />
-            Run Query
-          </button>
-        </span>
-      </Fragment>
-    )
-  }
-
-  formatElement = (element, column) => {
+  formatElement = (element, column = this.tableColumns[1]) => {
     if (!column) {
-      return
+      return element
     }
     switch (column.type) {
       case 'STRING': {
@@ -580,8 +328,10 @@ export default class ResponseRenderer extends React.Component {
 
     return this.tableData.map(row => {
       return {
-        label: row[0],
-        value: row[1],
+        xValue: row[0],
+        yValue: Number(row[1]),
+        xCol: columns[0],
+        yCol: columns[1],
         formatter: (value, column) => {
           return this.formatElement(value, column)
         }
@@ -634,7 +384,12 @@ export default class ResponseRenderer extends React.Component {
     }
 
     if (responseBody.full_suggestion) {
-      return this.renderSafetyNetMessage()
+      return (
+        <SafetyNetMessage
+          response={this.props.response}
+          onSuggestionClick={this.props.onSuggestionClick}
+        />
+      )
     } else if (this.state.activeDisplayType) {
       if (
         activeDisplayType === 'suggestion' ||

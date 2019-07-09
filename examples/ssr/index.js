@@ -1,7 +1,7 @@
 const React = require('react')
 const express = require('express')
 const ReactDOM = require('react-dom/server')
-const { ChatDrawer } = require('chata-ai')
+const { ChatDrawer } = require('@chata-ai/core')
 
 const app = express()
 const port = 3000
