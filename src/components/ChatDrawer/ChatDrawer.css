@@ -121,6 +121,7 @@
 .chata-drawer-tooltip {
   font-family: "Titillium Web", sans-serif;
   letter-spacing: 0.04em;
+  padding: 7px 15px;
   /* font-weight: bold; */
   transition: all 0.2s ease;
 }
