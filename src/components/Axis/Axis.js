@@ -50,6 +50,7 @@ export default class Axis extends Component {
         mantissa: 0
       })
     }
+    return d
   }
 
   renderXAxis = () => {
