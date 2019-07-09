@@ -13,6 +13,8 @@ import ReactTooltip from 'react-tooltip'
 import { Scrollbars } from 'react-custom-scrollbars'
 import { MdClearAll } from 'react-icons/md'
 
+import chataBubblesSVG from '../../images/chata-bubbles.svg'
+
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { runQuery, runDrilldown } from '../../js/queryService'
@@ -154,7 +156,14 @@ export default class ChatDrawer extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div className="drawer-handle" style={this.props.handleStyles}>
-          <i className="drawer-handle-icon" />
+          <img
+            className="chata-bubbles-icon"
+            src={chataBubblesSVG}
+            alt="chata.ai"
+            height="22px"
+            width="22px"
+            draggable="false"
+          />
         </div>
       )
     }
