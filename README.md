@@ -24,6 +24,8 @@ ReactDOM.render(<ChatDrawer />, mountNode);
 
 Modern browsers and IE11+
 
+Support for voice to text button in Google Chrome only. Will fail silently in other browsers.
+
 # Components
 
 ### ChatDrawer
@@ -55,6 +57,7 @@ A chat panel that slides open from the edge of the screen.
 | autocompleteStyles | Object with css to style the auto-complete popup                                                                      |                                    Object                                    |                       -                       |
 | enableSafetyNet    | If query is not understood, suggestions are returned for the user to choose from instead                              |                                   Boolean                                    |                     true                      |
 | isDrilldownEnabled | A new query will be sent when double clicking on a table or chart element to "drill down" into the data               |                                   Boolean                                    |                     true                      |
+| customerName       | Name used in the intro message (ie. "Hi John! I am here...")                                                          |                                    String                                    |                    'there'                    |
 
 #### Example
 
