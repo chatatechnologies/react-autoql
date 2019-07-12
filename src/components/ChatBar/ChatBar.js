@@ -24,6 +24,8 @@ export default class ChatBar extends React.Component {
     onResponseCallback: PropTypes.func,
     className: PropTypes.string,
     enableAutocomplete: PropTypes.bool,
+    autoCompletePlacement: PropTypes.string,
+    showLoadingDots: PropTypes.bool,
     enableSafetyNet: PropTypes.bool
   }
 
@@ -31,21 +33,26 @@ export default class ChatBar extends React.Component {
     enableVoiceRecord: false,
     isDisabled: false,
     enableAutocomplete: true,
+    autoCompletePlacement: 'top',
     enableSafetyNet: true,
     className: null,
     token: undefined,
     projectId: undefined,
+    showLoadingDots: false,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
 
   state = {
     inputValue: '',
-    suggestions: []
+    suggestions: [],
+    isQueryRunning: false
   }
 
   submitQuery = queryText => {
+    this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
+
     if (query.trim()) {
       this.props.onSubmit(query)
       runQuery(
@@ -56,9 +63,11 @@ export default class ChatBar extends React.Component {
       )
         .then(response => {
           this.props.onResponseCallback(response)
+          this.setState({ isQueryRunning: false })
         })
         .catch(error => {
           this.props.onResponseCallback(error)
+          this.setState({ isQueryRunning: false })
         })
     }
     this.setState({ inputValue: '' })
@@ -159,9 +168,16 @@ export default class ChatBar extends React.Component {
     return (
       <Fragment>
         <style>{`${styles}`}</style>
-        <div className={`chata-bar-container ${this.props.className}`}>
+        <div
+          className={`chata-bar-container ${this.props.className} ${
+            this.props.autoCompletePlacement === 'bottom'
+              ? 'autosuggest-bottom'
+              : 'autosuggest-top'
+          }`}
+        >
           {this.props.enableAutocomplete ? (
             <Autosuggest
+              className="auto-complete-chata"
               onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
               onSuggestionsClearRequested={this.onSuggestionsClearRequested}
               getSuggestionValue={this.userSelectedSuggestionHandler}
@@ -174,7 +190,7 @@ export default class ChatBar extends React.Component {
               )}
               inputProps={{
                 className: 'chata-input',
-                placeholder: 'Type a query',
+                placeholder: 'Ask me anything',
                 disabled: this.props.isDisabled,
                 onChange: this.onInputChange,
                 onKeyPress: this.onKeyPress,
@@ -186,7 +202,7 @@ export default class ChatBar extends React.Component {
             <div className="chata-input-container">
               <input
                 className="chata-input"
-                placeholder="Type a query"
+                placeholder="Ask me anything"
                 value={this.state.inputValue}
                 onChange={e => this.setState({ inputValue: e.target.value })}
                 onKeyPress={this.onKeyPress}
@@ -194,6 +210,16 @@ export default class ChatBar extends React.Component {
                 ref={this.setInputRef}
                 autoFocus
               />
+            </div>
+          )}
+          {this.props.showLoadingDots && this.state.isQueryRunning && (
+            <div className="input-response-loading-container">
+              <div className="response-loading">
+                <div />
+                <div />
+                <div />
+                <div />
+              </div>
             </div>
           )}
           {this.props.enableVoiceRecord && (

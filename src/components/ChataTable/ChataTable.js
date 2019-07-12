@@ -54,7 +54,7 @@ export default class ChataTable extends React.Component {
   rowClick = (e, row) => {
     e.preventDefault()
     e.stopPropagation()
-    this.props.onRowDblClick(row, this.props.columns)
+    this.props.onRowDblClick(row.getData(), this.props.columns)
   }
 
   copyToClipboard = () => {

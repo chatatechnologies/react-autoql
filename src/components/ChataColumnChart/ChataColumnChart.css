@@ -1,0 +1,35 @@
+.chata-bar-chart-container .axis line {
+  stroke-width: 1px;
+  stroke: #ddd;
+  shape-rendering: crispedges;
+}
+.chata-bar-chart-container .axis text {
+  fill: #888;
+}
+
+.chata-bar-chart-container .bar {
+  fill: #28a8e0;
+  fill-opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.chata-bar-chart-container .bar:hover {
+  fill-opacity: 1;
+}
+
+.chata-bar-chart-container .bar.active {
+  fill: #a5cd39;
+}
+
+.chata-bar-chart-container .axis-Left path {
+  display: none;
+}
+
+.chata-bar-chart-container .axis-Bottom path {
+  color: #ddd;
+}
+
+.chata-bar-chart-container .axis-Bottom.rotated text {
+  transform: rotate(-45deg);
+  text-anchor: end;
+}

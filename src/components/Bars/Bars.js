@@ -9,6 +9,7 @@ export default class Bars extends Component {
   //   .domain([0, this.props.maxValue])
   //   .range(['#F3E5F5', '#7B1FA2'])
   //   .interpolate(interpolateLab)
+  static propTypes = {}
 
   state = {
     activeKey: null
@@ -35,7 +36,8 @@ export default class Bars extends Component {
         onClick={() => this.setState({ activeKey: d[labelValue] })}
         onDoubleClick={() => {
           this.setState({ activeKey: d[labelValue] })
-          this.props.onDoubleClick()
+          console.log(d)
+          this.props.onDoubleClick(d.origRow, d.origColumns)
         }}
         data-tip={this.props.tooltipFormatter(d)}
         data-for="chart-element-tooltip"

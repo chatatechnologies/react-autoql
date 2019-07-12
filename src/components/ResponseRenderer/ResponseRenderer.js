@@ -84,8 +84,9 @@ export default class ResponseRenderer extends React.Component {
 
     if (this.props.response && this.props.response.data) {
       const responseBody = this.props.response.data
+      // We need queryID for drilldowns
+      this.queryID = responseBody.query_id
       // do we need this stuff?
-      // this.queryID = responseBody.query_id
       // this.filters = responseBody.filters
       // this.answer = responseBody.answer
       this.data = responseBody.data
@@ -205,46 +206,53 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderChart = () => {
-    let chartWidth = 0
-    let chartHeight = 0
-    const chatContainer = document.querySelector('.chat-message-container')
-    if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
-    }
+    // let chartWidth = 0
+    // let chartHeight = 0
+    // const chatContainer = document.querySelector('.chat-message-container')
+    // if (chatContainer) {
+    //   chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
+    //   chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+    // }
+
+    const height =
+      this.props.height ||
+      (document.querySelector(`#${this.props.key}`) &&
+        document.querySelector(`#${this.props.key}`).parent() &&
+        document
+          .querySelector(`#${this.props.key}`)
+          .parent()
+          .height()) ||
+      300
+
+    const width =
+      this.props.width ||
+      (document.querySelector(`#${this.props.key}`) &&
+        document.querySelector(`#${this.props.key}`).parent() &&
+        document
+          .querySelector(`#${this.props.key}`)
+          .parent()
+          .width()) ||
+      500
+
+    console.log('height and width:')
+    console.log(height)
+    console.log(width)
 
     return (
       <ChataChart
         type={this.state.activeDisplayType}
         data={this.chartData}
         columns={this.tableColumns}
-        height={chartHeight}
-        width={chartWidth}
+        height={this.props.height}
+        width={this.props.width}
         valueFormatter={this.formatElement}
+        onDoubleClick={(row, columns) => {
+          if (!this.props.isDrilldownDisabled) {
+            this.props.processDrilldown(row, columns, this.queryID)
+          }
+        }}
       />
     )
-
-    // return (
-    //   <ChataBarChartNew
-    //     data={this.chartData}
-    //     columns={this.tableColumns}
-    //     height={chartHeight}
-    //     width={chartWidth}
-    //     dataValue="yValue"
-    //     labelValue="xValue"
-    //     tooltipFormatter={data => {
-    //       return `<div>
-    //           <span><strong>${this.tableColumns[0].title}:</strong> ${
-    //         data.xValue
-    //       }</span>
-    //           <br />
-    //           <span><strong>${
-    //             this.tableColumns[1].title
-    //           }:</strong> ${self.formatElement(data.yValue)}</span>
-    //         </div>`
-    //     }}
-    //   />
-    // )
   }
 
   renderHelpResponse = () => {
@@ -328,8 +336,12 @@ export default class ResponseRenderer extends React.Component {
 
     return this.tableData.map(row => {
       return {
+        origColumns: columns,
+        origRow: row,
+        // Don't think we need to do x and y separately. Can just use origRow
         xValue: row[0],
         yValue: Number(row[1]),
+        // Don't think we need to do x and y separately. Can just use origColumns
         xCol: columns[0],
         yCol: columns[1],
         formatter: (value, column) => {
@@ -413,7 +425,7 @@ export default class ResponseRenderer extends React.Component {
     return (
       <Fragment>
         <style>{`${styles}`}</style>
-        <div className="chata-response-content-container">
+        <div id={this.props.key} className="chata-response-content-container">
           {this.renderResponse()}
         </div>
       </Fragment>

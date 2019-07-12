@@ -70,11 +70,12 @@ export const runDrilldown = (data, token, projectId = 1) => {
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })
+
+  const url = `https://backend-staging.chata.ai/api/v1/query${
+    projectId === 1 ? '/demo' : ''
+  }/drilldown?&project=${projectId}&unified_query_id=${uuid.v4()}`
   return axiosInstance
-    .post(
-      `https://backend-staging.chata.ai/api/v1/query/drilldown?&project=${projectId}&unified_query_id=${uuid.v4()}`,
-      data
-    )
+    .post(url, data)
     .then(response => {
       return Promise.resolve(response)
     })

@@ -93,12 +93,13 @@ export default class ChatDrawer extends React.Component {
   state = {
     messages: [
       {
-        id: uuid.v4(),
+        id: 'intro',
         isResponse: true,
         type: 'text',
         content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
       }
-    ]
+    ],
+    lastMessageId: 'intro'
   }
 
   componentDidMount = () => {
@@ -294,9 +295,8 @@ export default class ChatDrawer extends React.Component {
     return jsonData
   }
 
-  processDrilldown = (origRowData, columns, queryID) => {
+  processDrilldown = (rowData, columns, queryID) => {
     if (this.props.isDrilldownEnabled) {
-      const rowData = origRowData.getData()
       const groupByObject = this.getgroupByObjectFromTable(
         rowData,
         columns,
@@ -349,10 +349,12 @@ export default class ChatDrawer extends React.Component {
   }
 
   createMessage = (response, content) => {
+    const id = uuid.v4()
+    this.setState({ lastMessageId: id })
     return {
       content,
       response,
-      id: uuid.v4(),
+      id,
       type: response && response.data && response.data.display_type,
       isResponse: true,
       supportedDisplayTypes:
@@ -489,6 +491,7 @@ export default class ChatDrawer extends React.Component {
                       onSuggestionClick={this.onSuggestionClick}
                       content={message.content}
                       scrollToBottom={this.scrollToBottom}
+                      lastMessageId={this.state.lastMessageId}
                       tableBorderColor={
                         this.props.theme === 'light'
                           ? this.LIGHT_THEME['--chata-drawer-border-color']
@@ -530,6 +533,7 @@ export default class ChatDrawer extends React.Component {
                 enableAutocomplete={this.props.enableAutocomplete}
                 enableSafetyNet={this.props.enableSafetyNet}
                 enableVoiceRecord={this.props.enableVoiceRecord}
+                autoCompletePlacement="top"
               />
             </div>
           </div>
