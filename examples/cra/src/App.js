@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ChatDrawer } from '@chata-ai/core'
+import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
 
 export default class App extends Component {
   state = {
@@ -12,6 +12,27 @@ export default class App extends Component {
   render = () => {
     return (
       <div>
+        <ChatBar
+          autoCompletePlacement="bottom"
+          onResponseCallback={response => this.setState({ response })}
+          showLoadingDots
+        />
+        {this.state.response && (
+          <div
+            style={{
+              height: '300px',
+              width: 'auto',
+              padding: '30px',
+              fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
+              color: '#565656' // Text, tables, and charts will inherit text color
+            }}
+          >
+            <ResponseRenderer
+              // displayType="column"
+              response={this.state.response}
+            />
+          </div>
+        )}
         <button onClick={() => this.setState({ isVisible: true })}>
           Open Drawer
         </button>
@@ -124,7 +145,7 @@ export default class App extends Component {
           // clearOnClose
           // inputStyles
           // autocompleteStyles
-          // maxMessages
+          // maxMessages={5}
           // accentColor="#28a8e0"
           title="Chat with your data"
           enableSafetyNet

@@ -98,3 +98,10 @@
   cursor: pointer;
   margin-bottom: -2px;
 }
+
+.chata-chart-tooltip {
+  font-family: "Titillium Web", sans-serif;
+  letter-spacing: 0.04em;
+  padding: 7px 15px;
+  transition: translate 0.2s ease;
+}

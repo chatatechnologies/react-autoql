@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css?family=Titillium+Web:100,200,300,400,500,600,700,800,900");
 
 .chata-bar-container {
+  position: relative;
   display: flex;
   flex-direction: row;
 }
@@ -37,20 +38,20 @@
   position: relative;
   flex: 1;
 }
-.react-autosuggest__input--focused {
+.chata-bar-container .react-autosuggest__input--focused {
   outline: none;
   border: 1px solid #a5cd39 !important;
 }
-.react-autosuggest__input::-ms-clear {
+.chata-bar-container .react-autosuggest__input::-ms-clear {
   display: none;
 }
-.react-autosuggest__suggestions-container {
+.chata-bar-container .react-autosuggest__suggestions-container {
   display: none;
 }
-.react-autosuggest__suggestions-container--open {
+.chata-bar-container .react-autosuggest__suggestions-container--open {
   position: absolute;
-  top: unset;
-  bottom: 45px;
+  top: 45px;
+  bottom: unset;
   margin: 10px;
   padding-top: 5px;
   padding-bottom: 5px;
@@ -69,13 +70,25 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 
-.react-autosuggest__suggestions-list {
+.chata-bar-container.autosuggest-top
+  .react-autosuggest__suggestions-container--open {
+  top: unset;
+  bottom: 45px;
+}
+
+.chata-bar-container.autosuggest-bottom
+  .react-autosuggest__suggestions-container--open {
+  top: 45px;
+  bottom: unset;
+}
+
+.chata-bar-container .react-autosuggest__suggestions-list {
   margin: 0;
   padding: 0;
   list-style-type: none;
 }
 
-.react-autosuggest__suggestion {
+.chata-bar-container .react-autosuggest__suggestion {
   cursor: pointer;
   padding: 2px;
   padding-left: 18px;
@@ -83,12 +96,50 @@
   color: var(--chata-drawer-text-color-primary);
 }
 
-.react-autosuggest__suggestion--highlighted {
+.chata-bar-container .react-autosuggest__suggestion--highlighted {
   background-color: rgba(0, 0, 0, 0.1) !important;
 }
 
-.react-autosuggest__section-title {
+.chata-bar-container .react-autosuggest__section-title {
   padding: 10px 0 0 10px;
   font-size: 12px;
   color: #777;
+}
+
+/* response loading dots */
+.input-response-loading-container {
+  position: absolute;
+  right: 23px;
+  top: -2px;
+}
+.response-loading {
+  display: inline-block;
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+.response-loading div {
+  position: absolute;
+  top: 27px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #e2e2e2;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.response-loading div:nth-child(1) {
+  left: 6px;
+  animation: response-loading1 0.6s infinite;
+}
+.response-loading div:nth-child(2) {
+  left: 6px;
+  animation: response-loading2 0.6s infinite;
+}
+.response-loading div:nth-child(3) {
+  left: 26px;
+  animation: response-loading2 0.6s infinite;
+}
+.response-loading div:nth-child(4) {
+  left: 45px;
+  animation: response-loading3 0.6s infinite;
 }
