@@ -13,15 +13,19 @@ export default class App extends Component {
     return (
       <div>
         <ChatBar
+          ref={r => (this.chatBarRef = r)}
           autoCompletePlacement="bottom"
-          onResponseCallback={response => this.setState({ response })}
+          onResponseCallback={response => {
+            this.setState({ response })
+          }}
+          showChataIcon
           showLoadingDots
         />
         {this.state.response && (
           <div
             style={{
-              height: '300px',
-              width: 'auto',
+              maxHeight: '300px',
+              maxWidth: '100%',
               padding: '30px',
               fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
               color: '#565656' // Text, tables, and charts will inherit text color
@@ -29,6 +33,7 @@ export default class App extends Component {
           >
             <ResponseRenderer
               // displayType="column"
+              chatBarRef={this.chatBarRef}
               response={this.state.response}
             />
           </div>

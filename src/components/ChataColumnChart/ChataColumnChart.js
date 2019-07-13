@@ -4,6 +4,7 @@ import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import { select, node } from 'd3-selection'
 import { max, min } from 'd3-array'
 
 import styles from './ChataColumnChart.css'
@@ -32,27 +33,51 @@ export default class ChataBarChart extends Component {
   }
 
   state = {
-    // margins: this.props.margin,
-    // activeBar: null
+    leftMargin: this.props.margins.left,
+    rightMargin: this.props.margins.right,
+    topMargin: this.props.margins.top,
+    bottomMargin: this.props.margins.bottom
   }
 
   componentDidMount = () => {
-    // const self = this
-    // find max label size and use that as left and bottom margins
-    // this.maxLabelLength = this.props.data.sort((a, b) => {
-    //   return b[self.props.labelValue].length - a[self.props.labelValue].length
-    // })[0][self.props.labelValue]
-    // this.maxDataLength = this.props.data.sort((a, b) => {
-    //   return (
-    //     String.toString(b[self.props.dataValue]).length -
-    //     String.toString(a[self.props.dataValue]).length
-    //   )
-    // })[0][self.props.dataValue]
+    this.updateMargins()
+  }
+
+  componentDidUpdate = () => {}
+
+  updateMargins = () => {
+    const xAxisBBox = select(this.chartRef)
+      .select('.axis-Bottom')
+      .node()
+      .getBBox()
+
+    const yAxisLabels = select(this.chartRef)
+      .select('.axis-Left')
+      .selectAll('text')
+    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+      n.getComputedTextLength()
+    )
+
+    const bottomMargin = Math.ceil(xAxisBBox.height)
+    let leftMargin = Math.ceil(maxYLabelWidth) + 10
+
+    // If the rotated labels in the x axis exceed the width of the chart, use that instead
+    if (xAxisBBox.width > this.props.width) {
+      leftMargin =
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 10
+    }
+
+    this.setState({
+      leftMargin: leftMargin,
+      bottomMargin: bottomMargin
+    })
   }
 
   render = () => {
     const self = this
-    const { data, margins, width, height } = this.props
+    const { data, width, height } = this.props
+    const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
+
     const maxValue = max(data, d => d[self.props.dataValue])
     let minValue = min(data, d => d[self.props.dataValue])
     // Make sure 0 is always visible on the y axis
@@ -62,12 +87,12 @@ export default class ChataBarChart extends Component {
 
     const xScale = this.xScale
       .domain(data.map(d => d[this.props.labelValue]))
-      .rangeRound([margins.left, width - margins.right])
+      .rangeRound([leftMargin, width - rightMargin])
       .paddingInner(0.1)
 
     const yScale = this.yScale
       .domain([minValue, maxValue])
-      .range([height - margins.bottom, margins.top])
+      .range([height - bottomMargin, topMargin])
     // .nice()
 
     const barWidth = width / data.length
@@ -84,12 +109,17 @@ export default class ChataBarChart extends Component {
 
     return (
       <div className="chata-bar-chart-container">
-        <svg width={width} height={height}>
+        <svg ref={r => (this.chartRef = r)} width={width} height={height}>
           <style>{`${styles}`}</style>
           <Axes
             // data={this.props.data}
             scales={{ xScale, yScale }}
-            margins={this.props.margins}
+            margins={{
+              left: leftMargin,
+              right: rightMargin,
+              bottom: bottomMargin,
+              top: topMargin
+            }}
             width={this.props.width}
             height={this.props.height}
             ticks={xTickValues}
@@ -98,7 +128,12 @@ export default class ChataBarChart extends Component {
           />
           <Bars
             scales={{ xScale, yScale }}
-            margins={this.props.margins}
+            margins={{
+              left: leftMargin,
+              right: rightMargin,
+              bottom: bottomMargin,
+              top: topMargin
+            }}
             data={data}
             maxValue={maxValue}
             width={this.props.width}

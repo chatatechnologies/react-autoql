@@ -2,8 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 
-// import * as d3Axis from 'd3-axis'
-import { select as d3Select } from 'd3-selection'
+import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
 
 import './Axis.css'
@@ -54,13 +53,6 @@ export default class Axis extends Component {
   }
 
   renderXAxis = () => {
-    // const axisType = `axis${this.props.orient}`
-    // const axis = d3Axis[axisType]()
-    //   .scale(this.props.scale)
-    //   .tickSizeOuter(0)
-    //   .ticks([this.props.ticks])
-    //   .tickSizeInner(this.props.tickSizeInner)
-
     const axis = axisBottom()
       .scale(this.props.scale)
       .tickSizeOuter(0)
@@ -70,11 +62,7 @@ export default class Axis extends Component {
       axis.tickValues(this.props.tickValues)
     }
 
-    // if (this.props.rotateLabels) {
-    //   axis.selectAll('text').attr('transform', 'rotate(-45')
-    // }
-
-    d3Select(this.axisElement).call(axis)
+    select(this.axisElement).call(axis)
   }
 
   renderYAxis = () => {
@@ -88,7 +76,7 @@ export default class Axis extends Component {
         return self.formatLabel(d)
       })
 
-    d3Select(this.axisElement).call(axis)
+    select(this.axisElement).call(axis)
   }
 
   render = () => {

@@ -7,6 +7,7 @@ import { runQuery, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
+import chataBubblesSVG from '../../images/chata-bubbles.svg'
 
 import styles from './ChatBar.css'
 
@@ -26,7 +27,8 @@ export default class ChatBar extends React.Component {
     enableAutocomplete: PropTypes.bool,
     autoCompletePlacement: PropTypes.string,
     showLoadingDots: PropTypes.bool,
-    enableSafetyNet: PropTypes.bool
+    enableSafetyNet: PropTypes.bool,
+    showChataIcon: PropTypes.bool
   }
 
   static defaultProps = {
@@ -39,6 +41,7 @@ export default class ChatBar extends React.Component {
     token: undefined,
     projectId: undefined,
     showLoadingDots: false,
+    showChataIcon: true,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -189,7 +192,9 @@ export default class ChatBar extends React.Component {
                 <Fragment>{suggestion.name}</Fragment>
               )}
               inputProps={{
-                className: 'chata-input',
+                className: `chata-input${
+                  this.props.showChataIcon ? ' left-padding' : ''
+                }`,
                 placeholder: 'Ask me anything',
                 disabled: this.props.isDisabled,
                 onChange: this.onInputChange,
@@ -201,7 +206,9 @@ export default class ChatBar extends React.Component {
           ) : (
             <div className="chata-input-container">
               <input
-                className="chata-input"
+                className={`chata-input${
+                  this.props.showChataIcon ? ' left-padding' : ''
+                }`}
                 placeholder="Ask me anything"
                 value={this.state.inputValue}
                 onChange={e => this.setState({ inputValue: e.target.value })}
@@ -209,6 +216,18 @@ export default class ChatBar extends React.Component {
                 disabled={this.props.isDisabled}
                 ref={this.setInputRef}
                 autoFocus
+              />
+            </div>
+          )}
+          {this.props.showChataIcon && (
+            <div className="chat-bar-input-icon">
+              <img
+                className="chata-bubbles-icon"
+                src={chataBubblesSVG}
+                alt="chata.ai"
+                height="22px"
+                width="22px"
+                draggable="false"
               />
             </div>
           )}

@@ -52,6 +52,17 @@ export default class ChatMessage extends React.Component {
 
   getSupportedDisplayTypes = () => {
     const { response } = this.props
+
+    if (
+      response &&
+      response.data &&
+      (response.data.display_type === 'suggestion' ||
+        response.data.display_type === 'unknown_words' ||
+        response.data.display_type === 'help')
+    ) {
+      this.setState({ displayType: response.data.display_type })
+      return
+    }
     const columns = response && response.data && response.data.columns
 
     if (!columns) {
@@ -121,9 +132,7 @@ export default class ChatMessage extends React.Component {
           response={response}
           displayType={this.state.displayType}
           isDrilldownDisabled={!!response.isDrilldownDisabled}
-          onSuggestionClick={suggestion =>
-            this.props.onSuggestionClick(suggestion)
-          }
+          onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           tableBorderColor={this.props.tableBorderColor}
           copyToClipboard={this.copyToClipboard}

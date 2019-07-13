@@ -216,11 +216,12 @@ export default class ChatDrawer extends React.Component {
     this.props.onHandleClick()
   }
 
-  // Required to make animation smooth
   scrollToBottom = () => {
-    const self = this
+    // Required to make animation smooth
     setTimeout(() => {
-      self.scrollComponent.scrollToBottom()
+      if (this.scrollComponent) {
+        this.scrollComponent.scrollToBottom()
+      }
     }, 50)
   }
 
@@ -341,7 +342,7 @@ export default class ChatDrawer extends React.Component {
 
   createErrorMessage = () => {
     return {
-      content: 'This is an error message.',
+      content: 'Network Error',
       id: uuid.v4(),
       type: 'error',
       isResponse: true
@@ -379,6 +380,7 @@ export default class ChatDrawer extends React.Component {
     if (this.state.messages.length > 10) {
       // shift item from beginning of messages array
     }
+
     const message = {
       content: text,
       id: uuid.v4(),
@@ -534,6 +536,7 @@ export default class ChatDrawer extends React.Component {
                 enableSafetyNet={this.props.enableSafetyNet}
                 enableVoiceRecord={this.props.enableVoiceRecord}
                 autoCompletePlacement="top"
+                showChataIcon={false}
               />
             </div>
           </div>

@@ -10,6 +10,7 @@ import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
+import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 
 String.prototype.isUpperCase = function() {
@@ -55,6 +56,7 @@ export default class ResponseRenderer extends React.Component {
     processDrilldown: PropTypes.func,
     response: PropTypes.shape({}).isRequired,
     onSuggestionClick: PropTypes.func,
+    chatBarRef: PropTypes.instanceOf(ChatBar),
     isQueryRunning: PropTypes.bool,
     tableBorderColor: PropTypes.string,
     displayType: PropTypes.string,
@@ -67,21 +69,46 @@ export default class ResponseRenderer extends React.Component {
     isQueryRunning: false,
     tableBorderColor: undefined,
     displayType: undefined,
-    onSuggestionClick: () => {},
+    chatBarRef: undefined,
+    onSuggestionClick: undefined,
     processDrilldown: () => {}
   }
 
   state = {
-    activeDisplayType: undefined
-  }
-
-  componentDidMount = () => {
-    const activeDisplayType =
+    displayType:
       this.props.displayType ||
       (this.props.response &&
         this.props.response.data &&
-        this.props.response.data.display_type)
+        this.props.response.data.data &&
+        this.props.response.data.data.display_type)
+  }
 
+  componentWillMount = () => {
+    this.setResponseData(this.state.displayType)
+  }
+
+  componentDidUpdate = prevProps => {
+    if (
+      this.props.displayType &&
+      this.props.displayType !== prevProps.displayType
+    ) {
+      this.setState({ displayType: this.props.displayType })
+    } else if (
+      !this.props.onSuggestionClick &&
+      this.props.response &&
+      this.props.response.data &&
+      this.props.response.data.display_type &&
+      prevProps.response &&
+      prevProps.response.data &&
+      !prevProps.response.data.data
+    ) {
+      // User clicked on suggestion
+      this.setState({ displayType: this.props.response.data.display_type })
+      this.setResponseData(this.props.response.data.display_type)
+    }
+  }
+
+  setResponseData = displayType => {
     if (this.props.response && this.props.response.data) {
       const responseBody = this.props.response.data
       // We need queryID for drilldowns
@@ -90,25 +117,12 @@ export default class ResponseRenderer extends React.Component {
       // this.filters = responseBody.filters
       // this.answer = responseBody.answer
       this.data = responseBody.data
-      if (
-        this.isTableType(activeDisplayType) ||
-        this.isChartType(activeDisplayType)
-      ) {
+      if (this.isTableType(displayType) || this.isChartType(displayType)) {
         this.tableColumns = this.formatColumnsForTable(responseBody.columns)
         this.tableData = PapaParse.parse(this.data).data
         if (responseBody.columns && responseBody.columns.length <= 3)
           this.chartData = this.formatChartData()
       }
-    }
-    this.setState({ activeDisplayType })
-  }
-
-  componentDidUpdate = prevProps => {
-    if (
-      this.props.displayType &&
-      this.props.displayType !== prevProps.displayType
-    ) {
-      this.setState({ activeDisplayType: this.props.displayType })
     }
   }
 
@@ -127,7 +141,7 @@ export default class ResponseRenderer extends React.Component {
               <div key={uuid.v4()}>
                 <button
                   // disabled={this.props.isQueryRunning}
-                  onClick={() => this.props.onSuggestionClick(suggestion)}
+                  onClick={() => this.onSuggestionClick(suggestion)}
                   className="chata-suggestion-btn"
                 >
                   {suggestion}
@@ -146,7 +160,7 @@ export default class ResponseRenderer extends React.Component {
     const { response } = this.props
     const responseBody = response.data
     if (
-      this.state.activeDisplayType === 'suggestion' &&
+      this.state.displayType === 'suggestion' &&
       responseBody.data.length !== 0
     ) {
       const suggestions = responseBody.data.split('\n')
@@ -162,15 +176,17 @@ export default class ResponseRenderer extends React.Component {
     }
     // No suggestions
     else if (
-      this.state.activeDisplayType === 'suggestion' &&
+      this.state.displayType === 'suggestion' &&
       responseBody.data.length === 0
     ) {
       return this.createSuggestionMessage()
     }
     // We don't understand the query, no suggestions
-    else if (this.state.activeDisplayType === 'unknown_words') {
+    else if (this.state.displayType === 'unknown_words') {
       return this.createSuggestionMessage()
     }
+    // this shouldn't happen...
+    return this.renderErrorMessage()
   }
 
   copyTableToClipboard = () => {
@@ -206,45 +222,41 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderChart = () => {
-    // let chartWidth = 0
-    // let chartHeight = 0
-    // const chatContainer = document.querySelector('.chat-message-container')
-    // if (chatContainer) {
-    //   chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-    //   chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
-    // }
+    let chartWidth = 0
+    let chartHeight = 0
+    const chatContainer = document.querySelector('.chat-message-container')
+    if (chatContainer) {
+      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
+      chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+    }
 
-    const height =
-      this.props.height ||
-      (document.querySelector(`#${this.props.key}`) &&
-        document.querySelector(`#${this.props.key}`).parent() &&
-        document
-          .querySelector(`#${this.props.key}`)
-          .parent()
-          .height()) ||
-      300
+    // const height =
+    //   this.props.height ||
+    //   (document.querySelector(`#${this.props.key}`) &&
+    //     document.querySelector(`#${this.props.key}`).parent() &&
+    //     document
+    //       .querySelector(`#${this.props.key}`)
+    //       .parent()
+    //       .height()) ||
+    //   300
 
-    const width =
-      this.props.width ||
-      (document.querySelector(`#${this.props.key}`) &&
-        document.querySelector(`#${this.props.key}`).parent() &&
-        document
-          .querySelector(`#${this.props.key}`)
-          .parent()
-          .width()) ||
-      500
-
-    console.log('height and width:')
-    console.log(height)
-    console.log(width)
+    // const width =
+    //   this.props.width ||
+    //   (document.querySelector(`#${this.props.key}`) &&
+    //     document.querySelector(`#${this.props.key}`).parent() &&
+    //     document
+    //       .querySelector(`#${this.props.key}`)
+    //       .parent()
+    //       .width()) ||
+    //   500
 
     return (
       <ChataChart
-        type={this.state.activeDisplayType}
+        type={this.state.displayType}
         data={this.chartData}
         columns={this.tableColumns}
-        height={this.props.height}
-        width={this.props.width}
+        height={chartHeight}
+        width={chartWidth}
         valueFormatter={this.formatElement}
         onDoubleClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
@@ -385,40 +397,62 @@ export default class ResponseRenderer extends React.Component {
     return formattedColumns
   }
 
+  onSuggestionClick = suggestion => {
+    if (this.props.onSuggestionClick) {
+      this.props.onSuggestionClick(suggestion)
+    } else if (this.props.chatBarRef) {
+      if (suggestion === 'None of these') {
+        this.setState({ customResponse: 'Thank you for your feedback.' })
+      } else {
+        this.props.chatBarRef.submitQuery(suggestion)
+      }
+    }
+  }
+
+  renderErrorMessage = message => {
+    if (message) {
+      return message
+    }
+    return 'Something went wrong, please try again'
+  }
+
   renderResponse = () => {
-    const { activeDisplayType } = this.state
+    const { displayType } = this.state
+    if (this.state.customResponse) {
+      return this.state.customResponse
+    }
     if (!this.props.response) {
-      return
+      return this.renderErrorMessage('no response object supplied')
     }
     const responseBody = this.props.response.data
     if (!responseBody) {
-      return
+      return this.renderErrorMessage('no response body from query endpoint')
     }
 
     if (responseBody.full_suggestion) {
       return (
         <SafetyNetMessage
           response={this.props.response}
-          onSuggestionClick={this.props.onSuggestionClick}
+          onSuggestionClick={this.onSuggestionClick}
         />
       )
-    } else if (this.state.activeDisplayType) {
-      if (
-        activeDisplayType === 'suggestion' ||
-        activeDisplayType === 'unknown_words'
-      ) {
+    } else if (this.state.displayType) {
+      if (displayType === 'suggestion' || displayType === 'unknown_words') {
         return this.renderSuggestionMessage()
-      } else if (activeDisplayType === 'help') {
+      } else if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (this.isTableType(activeDisplayType)) {
+      } else if (this.isTableType(displayType)) {
         return this.renderTable()
         return this.renderChart()
-      } else if (this.isChartType(activeDisplayType)) {
+      } else if (this.isChartType(displayType)) {
         return this.renderChart()
       }
+      return this.renderErrorMessage('display type not recognized')
     } else if (responseBody.data && !responseBody.data.length) {
+      // This is not an error. There is just no data in the DB
       return 'No data found.'
     }
+    return this.renderErrorMessage('no display type')
   }
 
   render = () => {

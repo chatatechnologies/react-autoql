@@ -36,7 +36,6 @@ export default class Bars extends Component {
         onClick={() => this.setState({ activeKey: d[labelValue] })}
         onDoubleClick={() => {
           this.setState({ activeKey: d[labelValue] })
-          console.log(d)
           this.props.onDoubleClick(d.origRow, d.origColumns)
         }}
         data-tip={this.props.tooltipFormatter(d)}
