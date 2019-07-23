@@ -7,8 +7,10 @@ export default ({
   height,
   width,
   ticks,
+  tickValues,
   rotateLabels,
-  columns
+  xCol,
+  yCol
 }) => {
   const xProps = {
     orient: 'Bottom',
@@ -17,7 +19,11 @@ export default ({
     rotateLabels: rotateLabels,
     tickSizeInner: 0,
     ticks,
-    col: columns ? columns[0] : {}
+    tickValues,
+    height,
+    width,
+    margins,
+    col: xCol
   }
 
   const yProps = {
@@ -26,13 +32,36 @@ export default ({
     translate: `translate(${margins.left}, 0)`,
     tickSizeInner: -width + margins.left + margins.right,
     ticks,
-    col: columns ? columns[1] : {}
+    tickValues,
+    height,
+    width,
+    margins,
+    col: yCol
   }
 
   return (
     <g>
+      <text
+        className="y-axis-label"
+        textAnchor="middle"
+        transform="rotate(-90)"
+        fontWeight="bold"
+        y={10}
+        x={-((yProps.height - yProps.margins.bottom) / 2)}
+      >
+        {yProps.col.title}
+      </text>
       <Axis {...xProps} />
       <Axis {...yProps} />
+      <text
+        className="x-axis-label"
+        textAnchor="middle"
+        fontWeight="bold"
+        y={xProps.height - 10}
+        x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
+      >
+        {xProps.col.title}
+      </text>
     </g>
   )
 }

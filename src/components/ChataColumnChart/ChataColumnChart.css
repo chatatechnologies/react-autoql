@@ -3,7 +3,9 @@
   stroke: #ddd;
   shape-rendering: crispedges;
 }
-.chata-bar-chart-container .axis text {
+.chata-bar-chart-container .axis text,
+text.x-axis-label,
+text.y-axis-label {
   fill: #888;
 }
 
@@ -29,7 +31,14 @@
   color: #ddd;
 }
 
-.chata-bar-chart-container .axis-Bottom.rotated text {
+.chata-bar-chart-container
+  .axis-Bottom.rotated
+  text:not(.x-axis-label):not(.y-axis-label) {
   transform: rotate(-45deg);
   text-anchor: end;
+}
+
+.y-axis-label,
+.x-axis-label {
+  font-size: 12px;
 }

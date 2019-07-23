@@ -295,56 +295,76 @@ export default class ResponseRenderer extends React.Component {
   }
 
   formatElement = (element, column = this.tableColumns[1]) => {
-    if (!column) {
-      return element
+    let formattedElement = element
+    if (column) {
+      switch (column.type) {
+        case 'STRING': {
+          // do nothing
+          break
+        }
+        case 'DOLLAR_AMT': {
+          // We will need to grab the actual currency symbol here. Will that be returned in the query response?
+          formattedElement = Numbro(element).formatCurrency({
+            thousandSeparated: true,
+            mantissa: 2
+          })
+          break
+        }
+        case 'QUANTITY': {
+          if (Number(element) % 1 !== 0) {
+            formattedElement = Numbro(element).format('0,0.0')
+          }
+          break
+        }
+        case 'DATE': {
+          const title = column.title
+          if (title && title.includes('Year')) {
+            formattedElement = dayjs.unix(element).format('YYYY')
+          } else if (title && title.includes('Month')) {
+            formattedElement = dayjs.unix(element).format('MMMM YYYY')
+          }
+          formattedElement = dayjs.unix(element).format('MMMM D, YYYY')
+          break
+        }
+        case 'PERCENT': {
+          if (Number(element)) {
+            formattedElement = Numbro(element).format('0.00%')
+          }
+          break
+        }
+        default: {
+          break
+        }
+      }
     }
-    switch (column.type) {
-      case 'STRING': {
-        return element
-      }
-      case 'DOLLAR_AMT': {
-        // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-        return Numbro(element).formatCurrency({
-          thousandSeparated: true,
-          mantissa: 2
-        })
-      }
-      case 'QUANTITY': {
-        if (Number(element) % 1 !== 0) {
-          return Numbro(element).format('0,0.0')
-        }
-        return element
-      }
-      case 'DATE': {
-        const title = column.title
-        if (title && title.includes('Year')) {
-          return dayjs.unix(element).format('YYYY')
-        } else if (title && title.includes('Month')) {
-          return dayjs.unix(element).format('MMMM YYYY')
-        }
-        return dayjs.unix(element).format('MMMM D, YYYY')
-      }
-      case 'PERCENT': {
-        if (Number(element)) {
-          return Numbro(element).format('0.00%')
-        }
-        return element
-      }
-      default: {
-        return element
-      }
-    }
+    return formattedElement
   }
 
   formatChartData = () => {
     const columns = this.tableColumns
 
-    // Is there a more efficient way to do this?
-    // const formattedData = this.tableData.map(row => {
-    //   return row.map((element, index) => {
-    //     return this.formatElement(element, columns[index])
-    //   })
-    // })
+    return Object.values(
+      this.tableData.reduce((chartDataObject, row) => {
+        if (!chartDataObject[row[0]]) {
+          chartDataObject[row[0]] = {
+            origColumns: columns,
+            origRow: row,
+            // Don't think we need to do x and y separately. Can just use origRow
+            xValue: row[0],
+            yValue: Number(row[1]),
+            // Don't think we need to do x and y separately. Can just use origColumns
+            xCol: columns[0],
+            yCol: columns[1],
+            formatter: (value, column) => {
+              return this.formatElement(value, column)
+            }
+          }
+        } else {
+          chartDataObject[row[1]].yValue += Number(row[1])
+        }
+        return chartDataObject
+      }, {})
+    )
 
     return this.tableData.map(row => {
       return {

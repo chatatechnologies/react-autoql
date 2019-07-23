@@ -4,7 +4,7 @@ import ReactTooltip from 'react-tooltip'
 // import { scaleLinear } from 'd3-scale'
 // import { interpolateLab } from 'd3-interpolate'
 
-export default class Bars extends Component {
+export default class Columns extends Component {
   // colorScale = scaleLinear()
   //   .domain([0, this.props.maxValue])
   //   .range(['#F3E5F5', '#7B1FA2'])
@@ -15,8 +15,8 @@ export default class Bars extends Component {
     activeKey: null
   }
 
-  Y0 = () => this.props.scales.xScale(0)
-  Y = d => this.props.scales.xScale(d[this.props.dataValue])
+  Y0 = () => this.props.scales.yScale(0)
+  Y = d => this.props.scales.yScale(d[this.props.dataValue])
 
   render() {
     const { scales, margins, data, height, labelValue, dataValue } = this.props
@@ -28,10 +28,11 @@ export default class Bars extends Component {
         className={`bar${
           this.state.activeKey === d[labelValue] ? ' active' : ''
         }`}
-        y={yScale(d[labelValue])}
-        x={d[dataValue] < 0 ? this.Y0() : this.Y(d)}
-        width={Math.abs(this.Y(d) - this.Y0())}
-        height={yScale.bandwidth()}
+        x={xScale(d[labelValue])}
+        y={d[dataValue] < 0 ? this.Y0() : this.Y(d)}
+        // height={height - margins.bottom - Math.abs(this.Y(d) - this.Y0())}
+        height={Math.abs(this.Y(d) - this.Y0())}
+        width={xScale.bandwidth()}
         onClick={() => this.setState({ activeKey: d[labelValue] })}
         onDoubleClick={() => {
           this.setState({ activeKey: d[labelValue] })

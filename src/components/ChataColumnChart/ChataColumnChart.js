@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
-import { Bars } from '../Bars'
+import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import { select, node } from 'd3-selection'
 import { max, min } from 'd3-array'
@@ -58,13 +58,13 @@ export default class ChataBarChart extends Component {
       n.getComputedTextLength()
     )
 
-    const bottomMargin = Math.ceil(xAxisBBox.height)
-    let leftMargin = Math.ceil(maxYLabelWidth) + 10
+    const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+    let leftMargin = Math.ceil(maxYLabelWidth) + 24 // margin to include axis label
 
     // If the rotated labels in the x axis exceed the width of the chart, use that instead
     if (xAxisBBox.width > this.props.width) {
       leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 10
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 24
     }
 
     this.setState({
@@ -96,9 +96,9 @@ export default class ChataBarChart extends Component {
     // .nice()
 
     const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 14) / width)
+    const interval = Math.ceil((data.length * 16) / width)
     let xTickValues
-    if (barWidth < 14) {
+    if (barWidth < 16) {
       xTickValues = []
       data.forEach((element, index) => {
         if (index % interval === 0) {
@@ -114,6 +114,8 @@ export default class ChataBarChart extends Component {
           <Axes
             // data={this.props.data}
             scales={{ xScale, yScale }}
+            xCol={this.props.columns[0]}
+            yCol={this.props.columns[1]}
             margins={{
               left: leftMargin,
               right: rightMargin,
@@ -124,9 +126,8 @@ export default class ChataBarChart extends Component {
             height={this.props.height}
             ticks={xTickValues}
             rotateLabels={barWidth < 100}
-            columns={this.props.columns}
           />
-          <Bars
+          <Columns
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,

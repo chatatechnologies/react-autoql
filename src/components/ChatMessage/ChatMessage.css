@@ -84,6 +84,10 @@
 .chata-toolbar-btn:hover {
   opacity: 0.7;
 }
+
+.chart-icon-svg-0 {
+  fill: currentColor;
+}
 /* animations */
 @keyframes scale-up-br {
   0% {

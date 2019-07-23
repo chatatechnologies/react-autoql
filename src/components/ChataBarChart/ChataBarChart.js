@@ -1,200 +1,158 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-// import uuid from 'uuid'
-import {
-  scaleLinear,
-  // scaleOrdinal,
-  scaleBand
-  // rangeRound
-} from 'd3-scale'
-import { axisLeft, axisBottom } from 'd3-axis'
-import {
-  max,
-  min,
-  // range,
-  extent
-} from 'd3-array'
-import { select, selectAll, event } from 'd3-selection'
-// import d3Tip from 'd3-tip'
-// import { transition } from 'd3-transition'
+import ReactTooltip from 'react-tooltip'
+import { Axes } from '../Axes'
+import { Bars } from '../Bars'
+import { scaleLinear, scaleBand } from 'd3-scale'
+import { select, node } from 'd3-selection'
+import { max, min } from 'd3-array'
 
-import styles from './ChatabarChart.css'
+import styles from './ChataBarChart.css'
 
 export default class ChataBarChart extends Component {
-  // dataArray = []
+  xScale = scaleLinear()
+  yScale = scaleBand()
+
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    type: PropTypes.string, // bar or column
+    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     margin: PropTypes.shape({}),
-    labelValue: PropTypes.string,
     dataValue: PropTypes.string,
+    labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    size: PropTypes.arrayOf(PropTypes.number)
+    size: PropTypes.arrayOf(PropTypes.number),
+    width: PropTypes.number,
+    height: PropTypes.number
   }
 
   static defaultProps = {
-    type: 'column',
-    margin: { left: 25, right: 25, top: 25, bottom: 50 },
+    margins: { left: 50, right: 10, top: 10, bottom: 100 },
     dataValue: 'value',
     labelValue: 'label',
-    tooltipFormatter: undefined
+    tooltipFormatter: () => {}
   }
 
   state = {
-    margin: this.props.margin,
-    activeBar: null
+    leftMargin: this.props.margins.left,
+    rightMargin: this.props.margins.right,
+    topMargin: this.props.margins.top,
+    bottomMargin: this.props.margins.bottom
   }
 
   componentDidMount = () => {
-    // this.chartKey = `chata-bar-chart-${uuid.v4()}`
-    this.createBarChart()
+    this.updateMargins()
   }
 
-  componentDidUpdate = () => {
-    // this.createBarChart()
-  }
+  componentDidUpdate = () => {}
 
-  createBarChart = () => {
-    const self = this
-    const node = this.node
-    const { data } = this.props
-    const { margin } = this.state
-    const width = this.props.size[0] - margin.left - margin.right
-    const height = this.props.size[1] - margin.top - margin.bottom
+  updateMargins = () => {
+    const xAxisBBox = select(this.chartRef)
+      .select('.axis-Bottom')
+      .node()
+      .getBBox()
 
-    // const yScale = scaleLinear().range([height, 0]).domain()
-    const yScale = scaleLinear()
+    const yAxisLabels = select(this.chartRef)
+      .select('.axis-Left')
+      .selectAll('text')
+    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+      n.getComputedTextLength()
+    )
 
-    const xScale = scaleBand()
-      .rangeRound([0, width - margin.left - margin.right])
-      .paddingInner(0.1) // space between bars
+    const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+    let leftMargin = Math.ceil(maxYLabelWidth) + 30 // margin to include axis label
 
-    const X = d => xScale(d[self.props.labelValue])
-    const Y0 = () => yScale(0)
-    const Y = d => yScale(d[self.props.dataValue])
-
-    const yAxis = axisLeft()
-      .scale(yScale)
-      .ticks(6)
-      .tickSizeOuter(0)
-      .tickSizeInner(-width + margin.left + margin.right)
-
-    const xAxis = axisBottom()
-      .scale(xScale)
-      .tickSizeOuter(0)
-
-    const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 30) / width)
-    if (barWidth < 30) {
-      let tickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          tickValues.push(element[self.props.labelValue])
-        }
-      })
-      xAxis.tickValues(tickValues)
+    // If the rotated labels in the x axis exceed the width of the chart, use that instead
+    if (xAxisBBox.width > this.props.width) {
+      leftMargin =
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 30
     }
 
-    // initialize svg
-    const svg = select(node)
-      .append('svg')
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
-      .style('border', '1px solid red')
-      // .attr('width', width)
-      // .attr('height', height)
-      // .attr('viewBox', '0 0 ' + Math.min(100, 200) + ' ' + Math.min(200, 400))
-      // .attr('preserveAspectRatio', 'xMinYMin')
-      .append('g')
-      .attr('transform', `translate(${margin.left}, ${margin.top})`)
-
-    // append axes
-    xScale.domain(data.map(d => d[self.props.labelValue]))
-    yScale
-      .domain(extent(data.map(d => d[self.props.dataValue])))
-      .range([height - margin.bottom, margin.top])
-    // .nice()
-
-    svg
-      .append('g')
-      .attr('class', 'x axis')
-      .attr('transform', `translate(0, ${height})`)
-      .call(xAxis)
-    if (barWidth < 100) {
-      svg
-        .call(xAxis)
-        .selectAll('text')
-        .style('text-anchor', 'end')
-        .attr('dx', '-.8em')
-        .attr('dy', '.15em')
-        .attr('transform', 'rotate(-45)')
-    }
-
-    svg
-      .append('g')
-      .attr('class', 'y axis')
-      .call(yAxis)
-
-    // const tooltip = d3Tip()
-    //   .attr('class', 'd3-tip')
-    //   .offset([-10, 0])
-    //   .html(d => {
-    //     if (self.props.tooltipFormatter) {
-    //       return self.props.tooltipFormatter(d)
-    //     }
-    //     return d[self.props.dataValue]
-    //   })
-
-    // svg.call(tooltip)
-
-    // add bars
-    svg
-      .selectAll('.bar')
-      .data(data)
-      .enter()
-      .append('rect')
-      .attr('class', function(d, i) {
-        return d[self.props.dataValue] < 0 ? 'bar negative' : 'bar positive'
-      })
-      .attr('x', d => xScale(d[self.props.labelValue]))
-      .attr('width', xScale.bandwidth())
-      // .attr('y', d => yScale(d[self.props.dataValue]) + 1) // removes gap between bar and x axis
-      .attr('y', function(d, i) {
-        return d[self.props.dataValue] < 0 ? Y0() : Y(d)
-      })
-      // .attr('height', d => height - yScale(d[self.props.dataValue]))
-      .attr('height', function(d, i) {
-        return Math.abs(Y(d) - Y0())
-      })
-      // .on('mouseover', function(d, i, e) {
-      //   const x = event.x
-      //   const y = event.y
-      //   tooltip.show(d, e[i])
-      //   tooltip.style('top', y)
-      //   tooltip.style('left', x)
-      // })
-      // .on('mouseout', tooltip.hide)
-      .on('click', (d, i, e) => {
-        selectAll('rect') //<-- or slap a class name on the bars and use that
-          .style('fill', '#339CFF')
-
-        select(event.target).style('fill', '#A5CD39')
-        this.setState({ activeBar: d[self.props.labelValue] })
-      })
+    this.setState({
+      leftMargin: leftMargin,
+      bottomMargin: bottomMargin
+    })
   }
 
   render = () => {
+    const self = this
+    const { data, width, height } = this.props
+    const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
+
+    const maxValue = max(data, d => d[self.props.dataValue])
+    let minValue = min(data, d => d[self.props.dataValue])
+    // Make sure 0 is always visible on the y axis
+    if (minValue > 0) {
+      minValue = 0
+    }
+
+    const xScale = this.xScale
+      .domain([minValue, maxValue])
+      .range([height - bottomMargin, topMargin])
+    // .nice()
+
+    const yScale = this.yScale
+      .domain(data.map(d => d[this.props.labelValue]))
+      .rangeRound([leftMargin, width - rightMargin])
+      .paddingInner(0.1)
+
+    const barHeight = height / data.length
+    const interval = Math.ceil((data.length * 16) / height)
+    let yTickValues
+    if (barHeight < 16) {
+      yTickValues = []
+      data.forEach((element, index) => {
+        if (index % interval === 0) {
+          yTickValues.push(element[self.props.labelValue])
+        }
+      })
+    }
+
     return (
       <div className="chata-bar-chart-container">
-        <style>{`${styles}`}</style>
-        {
-          // <svg
-          //   ref={node => (this.node = node)}
-          //   width={this.props.size[0]}
-          //   height={this.props.size[1]}
-          // />
-        }
-        <div ref={node => (this.node = node)} />
+        <svg ref={r => (this.chartRef = r)} width={width} height={height}>
+          <style>{`${styles}`}</style>
+          <Axes
+            // data={this.props.data}
+            scales={{ xScale, yScale }}
+            xCol={this.props.columns[1]}
+            yCol={this.props.columns[0]}
+            margins={{
+              left: leftMargin,
+              right: rightMargin,
+              bottom: bottomMargin,
+              top: topMargin
+            }}
+            width={this.props.width}
+            height={this.props.height}
+            ticks={yTickValues}
+            rotateLabels={barHeight < 100}
+          />
+          {
+            // <Bars
+            //   scales={{ xScale, yScale }}
+            //   margins={{
+            //     left: leftMargin,
+            //     right: rightMargin,
+            //     bottom: bottomMargin,
+            //     top: topMargin
+            //   }}
+            //   data={data}
+            //   maxValue={maxValue}
+            //   width={this.props.width}
+            //   height={this.props.height}
+            //   dataValue={this.props.dataValue}
+            //   labelValue={this.props.labelValue}
+            //   onDoubleClick={this.props.onDoubleClick}
+            //   tooltipFormatter={this.props.tooltipFormatter}
+            // />
+          }
+        </svg>
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
       </div>
     )
   }
