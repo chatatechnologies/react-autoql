@@ -53,8 +53,8 @@ export default class ChataChart extends Component {
         height={this.props.height}
         width={this.props.width}
         onDoubleClick={this.props.onDoubleClick}
-        dataValue="yValue"
-        labelValue="xValue"
+        dataValue="value"
+        labelValue="label"
         tooltipFormatter={data => {
           if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
             return null
@@ -63,11 +63,11 @@ export default class ChataChart extends Component {
             <div>
               <strong>${
                 self.props.columns[this.X_AXIS_INDICES[0]].title
-              }:</strong> ${data.xValue}
+              }:</strong> ${data.label}
             </div>
             <div><strong>${
               self.props.columns[this.Y_AXIS_INDICES[0]].title
-            }:</strong> ${self.props.valueFormatter(data.yValue)}
+            }:</strong> ${self.props.valueFormatter(data.value)}
             </div>
           </div>`
         }}
@@ -84,8 +84,8 @@ export default class ChataChart extends Component {
         height={this.props.height}
         width={this.props.width}
         onDoubleClick={this.props.onDoubleClick}
-        dataValue="xValue"
-        labelValue="yValue"
+        dataValue="value"
+        labelValue="label"
         tooltipFormatter={data => {
           if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
             return null
@@ -94,11 +94,11 @@ export default class ChataChart extends Component {
             <div>
               <strong>${
                 self.props.columns[this.Y_AXIS_INDICES[0]].title
-              }:</strong> ${data.yValue}
+              }:</strong> ${data.label}
             </div>
             <div><strong>${
               self.props.columns[this.X_AXIS_INDICES[0]].title
-            }:</strong> ${self.props.valueFormatter(data.xValue)}
+            }:</strong> ${self.props.valueFormatter(data.value)}
             </div>
           </div>`
         }}

@@ -6,24 +6,26 @@ export default ({
   margins,
   height,
   width,
-  ticks,
-  tickValues,
+  xTicks,
+  yTicks,
   rotateLabels,
   xCol,
-  yCol
+  yCol,
+  xGridLines,
+  yGridLines
 }) => {
   const xProps = {
     orient: 'Bottom',
     scale: scales.xScale,
     translate: `translate(0, ${height - margins.bottom})`,
     rotateLabels: rotateLabels,
-    tickSizeInner: 0,
-    ticks,
-    tickValues,
+    tickSizeInner: -height + margins.top + margins.bottom,
+    ticks: xTicks,
     height,
     width,
     margins,
-    col: xCol
+    col: xCol,
+    showGridLines: xGridLines
   }
 
   const yProps = {
@@ -31,12 +33,12 @@ export default ({
     scale: scales.yScale,
     translate: `translate(${margins.left}, 0)`,
     tickSizeInner: -width + margins.left + margins.right,
-    ticks,
-    tickValues,
+    ticks: yTicks,
     height,
     width,
     margins,
-    col: yCol
+    col: yCol,
+    showGridLines: yGridLines
   }
 
   return (

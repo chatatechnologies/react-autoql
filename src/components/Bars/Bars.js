@@ -15,33 +15,35 @@ export default class Bars extends Component {
     activeKey: null
   }
 
-  Y0 = () => this.props.scales.xScale(0)
-  Y = d => this.props.scales.xScale(d[this.props.dataValue])
+  X0 = () => this.props.scales.xScale(0)
+  X = d => this.props.scales.xScale(d[this.props.dataValue])
 
   render() {
     const { scales, margins, data, height, labelValue, dataValue } = this.props
     const { xScale, yScale } = scales
 
-    const bars = data.map(d => (
-      <rect
-        key={d[labelValue]}
-        className={`bar${
-          this.state.activeKey === d[labelValue] ? ' active' : ''
-        }`}
-        y={yScale(d[labelValue])}
-        x={d[dataValue] < 0 ? this.Y0() : this.Y(d)}
-        width={Math.abs(this.Y(d) - this.Y0())}
-        height={yScale.bandwidth()}
-        onClick={() => this.setState({ activeKey: d[labelValue] })}
-        onDoubleClick={() => {
-          this.setState({ activeKey: d[labelValue] })
-          this.props.onDoubleClick(d.origRow, d.origColumns)
-        }}
-        data-tip={this.props.tooltipFormatter(d)}
-        data-for="chart-element-tooltip"
-        // fill={this.colorScale(datum.value)}
-      />
-    ))
+    const bars = data.map(d => {
+      return (
+        <rect
+          key={d[labelValue]}
+          className={`bar${
+            this.state.activeKey === d[labelValue] ? ' active' : ''
+          }`}
+          y={yScale(d[labelValue])}
+          x={d[dataValue] > 0 ? this.X0() : this.X(d)}
+          width={Math.abs(this.X(d) - this.X0())}
+          height={yScale.bandwidth()}
+          onClick={() => this.setState({ activeKey: d[labelValue] })}
+          onDoubleClick={() => {
+            this.setState({ activeKey: d[labelValue] })
+            this.props.onDoubleClick(d.origRow, d.origColumns)
+          }}
+          data-tip={this.props.tooltipFormatter(d)}
+          data-for="chart-element-tooltip"
+          // fill={this.colorScale(datum.value)}
+        />
+      )
+    })
 
     return <g>{bars}</g>
   }

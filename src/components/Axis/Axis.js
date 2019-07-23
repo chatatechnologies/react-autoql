@@ -16,7 +16,6 @@ export default class Axis extends Component {
     translate: PropTypes.string,
     scale: PropTypes.func,
     ticks: PropTypes.array,
-    tickValues: PropTypes.array,
     rotateLabels: PropTypes.bool,
     type: PropTypes.string,
     col: PropTypes.shape({})
@@ -63,9 +62,10 @@ export default class Axis extends Component {
         break
       }
       case 'QUANTITY': {
-        if (Number(d) % 1 !== 0) {
-          formattedLabel = Numbro(d).format('0,0.0')
-        }
+        console.log('inside quantity formatter')
+        // if (Number(d) % 1 !== 0) {
+        //   formattedLabel = Numbro(d).format('0,0.0')
+        // }
         break
       }
       case 'DATE': {
@@ -100,14 +100,17 @@ export default class Axis extends Component {
     const axis = axisBottom()
       .scale(this.props.scale)
       .tickSizeOuter(0)
-      .tickValues(this.props.ticks)
       .tickFormat(d => {
         return self.formatLabel(d)
       })
 
-    // if (this.props.tickValues) {
-    //   axis.tickValues(this.props.tickValues)
-    // }
+    if (this.props.ticks) {
+      axis.tickValues(this.props.ticks)
+    }
+
+    if (this.props.showGridLines) {
+      axis.tickSizeInner(this.props.tickSizeInner)
+    }
 
     select(this.axisElement).call(axis)
 
@@ -119,6 +122,7 @@ export default class Axis extends Component {
         .attr('dx', '-0.5em')
     }
 
+    // old way of doing axis labels, delete if not used soon
     // select(this.axisElement)
     //   .selectAll('.x-axis-label')
     //   .remove()
@@ -143,14 +147,21 @@ export default class Axis extends Component {
     const axis = axisLeft()
       .scale(this.props.scale)
       .tickSizeOuter(0)
-      .ticks(6)
-      .tickSizeInner(this.props.tickSizeInner)
       .tickFormat(d => {
         return self.formatLabel(d)
       })
 
+    if (this.props.ticks) {
+      axis.tickValues(this.props.ticks)
+    }
+
+    if (this.props.showGridLines) {
+      axis.tickSizeInner(this.props.tickSizeInner)
+    }
+
     select(this.axisElement).call(axis)
 
+    // old way of doing axis labels, delete if not used soon
     // select(this.axisElement)
     //   .selectAll('.y-axis-label')
     //   .remove()
@@ -169,9 +180,9 @@ export default class Axis extends Component {
   render = () => {
     return (
       <g
-        className={`axis axis-${this.props.orient}${
-          this.props.rotateLabels ? ' rotated' : ''
-        }`}
+        className={`axis axis-${this.props.orient}
+        ${this.props.rotateLabels ? ' rotated' : ''}
+        ${this.props.showGridLines ? ' hide-axis-line' : ''}`}
         ref={el => {
           this.axisElement = el
         }}

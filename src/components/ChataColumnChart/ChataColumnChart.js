@@ -59,12 +59,12 @@ export default class ChataBarChart extends Component {
     )
 
     const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
-    let leftMargin = Math.ceil(maxYLabelWidth) + 24 // margin to include axis label
+    let leftMargin = Math.ceil(maxYLabelWidth) + 30 // margin to include axis label
 
     // If the rotated labels in the x axis exceed the width of the chart, use that instead
     if (xAxisBBox.width > this.props.width) {
       leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 24
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 30
     }
 
     this.setState({
@@ -74,6 +74,8 @@ export default class ChataBarChart extends Component {
   }
 
   render = () => {
+    console.log('data for column chart')
+    console.log(this.props.data)
     const self = this
     const { data, width, height } = this.props
     const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
@@ -93,7 +95,6 @@ export default class ChataBarChart extends Component {
     const yScale = this.yScale
       .domain([minValue, maxValue])
       .range([height - bottomMargin, topMargin])
-    // .nice()
 
     const barWidth = width / data.length
     const interval = Math.ceil((data.length * 16) / width)
@@ -124,8 +125,9 @@ export default class ChataBarChart extends Component {
             }}
             width={this.props.width}
             height={this.props.height}
-            ticks={xTickValues}
-            rotateLabels={barWidth < 100}
+            xTicks={xTickValues}
+            rotateLabels={barWidth < 125}
+            yGridLines
           />
           <Columns
             scales={{ xScale, yScale }}

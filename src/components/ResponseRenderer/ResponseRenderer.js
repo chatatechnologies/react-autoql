@@ -350,37 +350,21 @@ export default class ResponseRenderer extends React.Component {
             origColumns: columns,
             origRow: row,
             // Don't think we need to do x and y separately. Can just use origRow
-            xValue: row[0],
-            yValue: Number(row[1]),
+            label: row[0],
+            value: Number(row[1]) || row[1],
             // Don't think we need to do x and y separately. Can just use origColumns
-            xCol: columns[0],
-            yCol: columns[1],
+            labelCol: columns[0],
+            valueCol: columns[1],
             formatter: (value, column) => {
               return this.formatElement(value, column)
             }
           }
         } else {
-          chartDataObject[row[1]].yValue += Number(row[1])
+          chartDataObject[row[1]].value += Number(row[1])
         }
         return chartDataObject
       }, {})
     )
-
-    return this.tableData.map(row => {
-      return {
-        origColumns: columns,
-        origRow: row,
-        // Don't think we need to do x and y separately. Can just use origRow
-        xValue: row[0],
-        yValue: Number(row[1]),
-        // Don't think we need to do x and y separately. Can just use origColumns
-        xCol: columns[0],
-        yCol: columns[1],
-        formatter: (value, column) => {
-          return this.formatElement(value, column)
-        }
-      }
-    })
   }
 
   formatColumnsForTable = columns => {

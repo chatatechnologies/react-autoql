@@ -50,21 +50,26 @@ export default class ChataBarChart extends Component {
       .select('.axis-Bottom')
       .node()
       .getBBox()
+    const innerTickSize =
+      this.props.height - this.props.margins.top - this.props.margins.bottom
 
     const yAxisLabels = select(this.chartRef)
       .select('.axis-Left')
       .selectAll('text')
+
     const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
       n.getComputedTextLength()
     )
 
-    const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
-    let leftMargin = Math.ceil(maxYLabelWidth) + 30 // margin to include axis label
+    let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+    // only for bar charts (vertical grid lines mess with the axis size)
+    bottomMargin = bottomMargin - innerTickSize
 
+    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
     // If the rotated labels in the x axis exceed the width of the chart, use that instead
     if (xAxisBBox.width > this.props.width) {
       leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 30
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
     }
 
     this.setState({
@@ -74,6 +79,8 @@ export default class ChataBarChart extends Component {
   }
 
   render = () => {
+    console.log('data for bar chart')
+    console.log(this.props.data)
     const self = this
     const { data, width, height } = this.props
     const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
@@ -87,18 +94,20 @@ export default class ChataBarChart extends Component {
 
     const xScale = this.xScale
       .domain([minValue, maxValue])
-      .range([height - bottomMargin, topMargin])
-    // .nice()
+      .range([leftMargin, width - rightMargin])
 
     const yScale = this.yScale
       .domain(data.map(d => d[this.props.labelValue]))
-      .rangeRound([leftMargin, width - rightMargin])
+      .rangeRound([height - bottomMargin, topMargin])
       .paddingInner(0.1)
 
+    const tickWidth =
+      (width - this.props.margins.left - this.props.margins.right) / 6
+
     const barHeight = height / data.length
-    const interval = Math.ceil((data.length * 16) / height)
+    const interval = Math.ceil((data.length * 14) / height)
     let yTickValues
-    if (barHeight < 16) {
+    if (barHeight < 14) {
       yTickValues = []
       data.forEach((element, index) => {
         if (index % interval === 0) {
@@ -124,27 +133,28 @@ export default class ChataBarChart extends Component {
             }}
             width={this.props.width}
             height={this.props.height}
-            ticks={yTickValues}
-            rotateLabels={barHeight < 100}
+            yTicks={yTickValues}
+            rotateLabels={tickWidth < 125}
+            xGridLines
           />
           {
-            // <Bars
-            //   scales={{ xScale, yScale }}
-            //   margins={{
-            //     left: leftMargin,
-            //     right: rightMargin,
-            //     bottom: bottomMargin,
-            //     top: topMargin
-            //   }}
-            //   data={data}
-            //   maxValue={maxValue}
-            //   width={this.props.width}
-            //   height={this.props.height}
-            //   dataValue={this.props.dataValue}
-            //   labelValue={this.props.labelValue}
-            //   onDoubleClick={this.props.onDoubleClick}
-            //   tooltipFormatter={this.props.tooltipFormatter}
-            // />
+            <Bars
+              scales={{ xScale, yScale }}
+              margins={{
+                left: leftMargin,
+                right: rightMargin,
+                bottom: bottomMargin,
+                top: topMargin
+              }}
+              data={data}
+              maxValue={maxValue}
+              width={this.props.width}
+              height={this.props.height}
+              dataValue={this.props.dataValue}
+              labelValue={this.props.labelValue}
+              onDoubleClick={this.props.onDoubleClick}
+              tooltipFormatter={this.props.tooltipFormatter}
+            />
           }
         </svg>
         <ReactTooltip

@@ -23,11 +23,11 @@ text.y-axis-label {
   fill: #a5cd39;
 }
 
-.chata-bar-chart-container .axis-Left path {
+.chata-bar-chart-container .axis.hide-axis-line path {
   display: none;
 }
 
-.chata-bar-chart-container .axis-Bottom path {
+.chata-bar-chart-container .axis:not(.hide-axis-line) path {
   color: #ddd;
 }
 
