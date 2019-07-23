@@ -26,19 +26,11 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
-    if (this.props.orient === 'Bottom') {
-      this.renderXAxis()
-    } else {
-      this.renderYAxis()
-    }
+    this.renderAxis()
   }
 
   componentDidUpdate = () => {
-    if (this.props.orient === 'Bottom') {
-      this.renderXAxis()
-    } else {
-      this.renderYAxis()
-    }
+    this.renderAxis()
   }
 
   formatLabel = d => {
@@ -62,7 +54,6 @@ export default class Axis extends Component {
         break
       }
       case 'QUANTITY': {
-        console.log('inside quantity formatter')
         // if (Number(d) % 1 !== 0) {
         //   formattedLabel = Numbro(d).format('0,0.0')
         // }
@@ -95,9 +86,11 @@ export default class Axis extends Component {
     return formattedLabel
   }
 
-  renderXAxis = () => {
+  renderAxis = () => {
     const self = this
-    const axis = axisBottom()
+    const axis = this.props.orient === 'Bottom' ? axisBottom() : axisLeft()
+
+    axis
       .scale(this.props.scale)
       .tickSizeOuter(0)
       .tickFormat(d => {
@@ -114,67 +107,13 @@ export default class Axis extends Component {
 
     select(this.axisElement).call(axis)
 
-    if (this.props.rotateLabels) {
+    if (this.props.orient === 'Bottom' && this.props.rotateLabels) {
       // translate labels slightly to line up with ticks once rotated
       select(this.axisElement)
         .selectAll('text')
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
     }
-
-    // old way of doing axis labels, delete if not used soon
-    // select(this.axisElement)
-    //   .selectAll('.x-axis-label')
-    //   .remove()
-
-    // select(this.axisElement)
-    //   .append('text')
-    //   .attr('class', 'x-axis-label')
-    //   .attr('text-anchor', 'middle')
-    //   .attr('font-weight', 'bold')
-    //   .attr(
-    //     'x',
-    //     // (this.props.width - this.props.margins.left) / 2 +
-    //     //   this.props.margins.left
-    //     this.props.width / 2
-    //   )
-    //   .attr('y', this.props.margins.bottom - 15) // height minus font height
-    //   .text(this.props.col.title)
-  }
-
-  renderYAxis = () => {
-    const self = this
-    const axis = axisLeft()
-      .scale(this.props.scale)
-      .tickSizeOuter(0)
-      .tickFormat(d => {
-        return self.formatLabel(d)
-      })
-
-    if (this.props.ticks) {
-      axis.tickValues(this.props.ticks)
-    }
-
-    if (this.props.showGridLines) {
-      axis.tickSizeInner(this.props.tickSizeInner)
-    }
-
-    select(this.axisElement).call(axis)
-
-    // old way of doing axis labels, delete if not used soon
-    // select(this.axisElement)
-    //   .selectAll('.y-axis-label')
-    //   .remove()
-
-    // select(this.axisElement)
-    //   .append('text')
-    //   .attr('class', 'y-axis-label')
-    //   .attr('text-anchor', 'middle')
-    //   .attr('transform', 'rotate(-90)')
-    //   .attr('font-weight', 'bold')
-    //   .attr('y', -this.props.margins.left + 10) // This needs to be improved........
-    //   .attr('x', -((this.props.height - this.props.margins.bottom) / 2))
-    //   .text(this.props.col.title)
   }
 
   render = () => {

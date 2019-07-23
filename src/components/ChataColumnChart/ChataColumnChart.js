@@ -74,8 +74,6 @@ export default class ChataBarChart extends Component {
   }
 
   render = () => {
-    console.log('data for column chart')
-    console.log(this.props.data)
     const self = this
     const { data, width, height } = this.props
     const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
