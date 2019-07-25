@@ -1,15 +1,10 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { MdContentCopy, MdFileDownload } from 'react-icons/md'
-import { FaChartBar, FaTable } from 'react-icons/fa'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 
 import { ResponseRenderer } from '../ResponseRenderer'
-
-import barChartIconSVG from '../../images/icon-bar-chart.svg'
-import columnChartIconSVG from '../../images/icon-column-chart.svg'
-import lineChartIconSVG from '../../images/icon-line-chart.svg'
 
 export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
@@ -257,25 +252,21 @@ L14.9,6.5z"
               data-tip="Column Chart"
               data-for="chata-toolbar-btn-tooltip"
             >
-              {
-                // import from file
-                <svg
-                  x="0px"
-                  y="0px"
-                  width="16px"
-                  height="16px"
-                  viewBox="0 0 16 16"
-                >
-                  <path
-                    // fill="currentColor"
-                    className="chart-icon-svg-0"
-                    d="M12.6,0h-2.4C9.4,0,8.8,0.6,8.8,1.4v2.7c0,0,0,0,0,0H6.3c-0.8,0-1.4,0.6-1.4,1.4v3.2c0,0-0.1,0-0.1,0H2.4
+              <svg
+                x="0px"
+                y="0px"
+                width="16px"
+                height="16px"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  className="chart-icon-svg-0"
+                  d="M12.6,0h-2.4C9.4,0,8.8,0.6,8.8,1.4v2.7c0,0,0,0,0,0H6.3c-0.8,0-1.4,0.6-1.4,1.4v3.2c0,0-0.1,0-0.1,0H2.4
                     C1.6,8.7,1,9.4,1,10.1v4.5C1,15.4,1.6,16,2.4,16h2.4c0,0,0.1,0,0.1,0h1.3c0,0,0.1,0,0.1,0h2.4c0,0,0.1,0,0.1,0H10c0,0,0.1,0,0.1,0
                     h2.4c0.8,0,1.4-0.6,1.4-1.4V1.4C14,0.6,13.3,0,12.6,0z M6.3,5.5h2.4v9.1H6.3V5.5z M2.4,10.1h2.4v4.5H2.4V10.1z M12.6,14.6h-2.4V1.4
                     h2.4V14.6z"
-                  />
-                </svg>
-              }
+                />
+              </svg>
             </button>
           )}
           {this.showDisplayTypeButton('bar') && (
@@ -293,11 +284,33 @@ L14.9,6.5z"
                 viewBox="0 0 16 16"
               >
                 <path
-                  // fill="currentColor"
                   className="chart-icon-svg-0"
                   d="M14.6,1.6H1.4C0.6,1.6,0,2.2,0,3v2.4v0.1v1.2v0.1v2.4v0.1v1.3v0.1v2.4c0,0.8,0.6,1.4,1.4,1.4h4.5
                   c0.7,0,1.4-0.6,1.4-1.4v-2.4v-0.1h3.2c0.8,0,1.4-0.6,1.4-1.4V6.7l0,0h2.7c0.8,0,1.4-0.6,1.4-1.4V2.9C16,2.2,15.4,1.5,14.6,1.6z
                    M1.4,9.2V6.8h9.1v2.4H1.4z M1.4,13.1v-2.4h4.5v2.4H1.4z M14.6,2.9v2.4H1.4V2.9H14.6z"
+                />
+              </svg>
+            </button>
+          )}
+          {this.showDisplayTypeButton('line') && (
+            <button
+              onClick={() => this.switchView('line')}
+              className="chata-toolbar-btn"
+              data-tip="Line Chart"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <svg
+                x="0px"
+                y="0px"
+                width="16px"
+                height="16px"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  className="chart-icon-svg-0"
+                  d="M1,12.2c-0.2,0-0.3-0.1-0.5-0.2c-0.3-0.3-0.3-0.7,0-1l3.8-3.9C4.5,7,4.7,7,4.9,7s0.4,0.1,0.5,0.3l2.3,3l6.8-7.1
+            c0.3-0.3,0.7-0.3,1,0c0.3,0.3,0.3,0.7,0,1l-7.3,7.7C8,11.9,7.8,12,7.6,12s-0.4-0.1-0.5-0.3l-2.3-3L1.5,12C1.4,12.2,1.2,12.2,1,12.2z
+            "
                 />
               </svg>
             </button>

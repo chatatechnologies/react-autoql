@@ -2,16 +2,16 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
-import { Bars } from '../Bars'
+import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 import { max, min } from 'd3-array'
 
-import styles from './ChataBarChart.css'
+import styles from './ChataLineChart.css'
 
-export default class ChataBarChart extends Component {
-  xScale = scaleLinear()
-  yScale = scaleBand()
+export default class ChataLineChart extends Component {
+  xScale = scaleBand()
+  yScale = scaleLinear()
 
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -50,26 +50,21 @@ export default class ChataBarChart extends Component {
       .select('.axis-Bottom')
       .node()
       .getBBox()
-    const innerTickSize =
-      this.props.height - this.props.margins.top - this.props.margins.bottom
 
     const yAxisLabels = select(this.chartRef)
       .select('.axis-Left')
       .selectAll('text')
-
     const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
       n.getComputedTextLength()
     )
 
-    let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
-    // only for bar charts (vertical grid lines mess with the axis size)
-    bottomMargin = bottomMargin - innerTickSize
+    const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+    let leftMargin = Math.ceil(maxYLabelWidth) + 30 // margin to include axis label
 
-    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
     // If the rotated labels in the x axis exceed the width of the chart, use that instead
     if (xAxisBBox.width > this.props.width) {
       leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 30
     }
 
     this.setState({
@@ -91,25 +86,22 @@ export default class ChataBarChart extends Component {
     }
 
     const xScale = this.xScale
-      .domain([minValue, maxValue])
-      .range([leftMargin, width - rightMargin])
-
-    const yScale = this.yScale
       .domain(data.map(d => d[this.props.labelValue]))
-      .rangeRound([height - bottomMargin, topMargin])
+      .rangeRound([leftMargin, width - rightMargin])
       .paddingInner(0.1)
 
-    const tickWidth =
-      (width - this.props.margins.left - this.props.margins.right) / 6
+    const yScale = this.yScale
+      .domain([minValue, maxValue])
+      .range([height - bottomMargin, topMargin])
 
-    const barHeight = height / data.length
-    const interval = Math.ceil((data.length * 14) / height)
-    let yTickValues
-    if (barHeight < 14) {
-      yTickValues = []
+    const barWidth = width / data.length
+    const interval = Math.ceil((data.length * 16) / width)
+    let xTickValues
+    if (barWidth < 16) {
+      xTickValues = []
       data.forEach((element, index) => {
         if (index % interval === 0) {
-          yTickValues.push(element[self.props.labelValue])
+          xTickValues.push(element[self.props.labelValue])
         }
       })
     }
@@ -121,8 +113,8 @@ export default class ChataBarChart extends Component {
           <Axes
             // data={this.props.data}
             scales={{ xScale, yScale }}
-            xCol={this.props.columns[1]}
-            yCol={this.props.columns[0]}
+            xCol={this.props.columns[0]}
+            yCol={this.props.columns[1]}
             margins={{
               left: leftMargin,
               right: rightMargin,
@@ -131,29 +123,27 @@ export default class ChataBarChart extends Component {
             }}
             width={this.props.width}
             height={this.props.height}
-            yTicks={yTickValues}
-            rotateLabels={tickWidth < 125}
-            xGridLines
+            xTicks={xTickValues}
+            rotateLabels={barWidth < 125}
+            yGridLines
           />
-          {
-            <Bars
-              scales={{ xScale, yScale }}
-              margins={{
-                left: leftMargin,
-                right: rightMargin,
-                bottom: bottomMargin,
-                top: topMargin
-              }}
-              data={data}
-              maxValue={maxValue}
-              width={this.props.width}
-              height={this.props.height}
-              dataValue={this.props.dataValue}
-              labelValue={this.props.labelValue}
-              onDoubleClick={this.props.onDoubleClick}
-              tooltipFormatter={this.props.tooltipFormatter}
-            />
-          }
+          <Line
+            scales={{ xScale, yScale }}
+            margins={{
+              left: leftMargin,
+              right: rightMargin,
+              bottom: bottomMargin,
+              top: topMargin
+            }}
+            data={data}
+            maxValue={maxValue}
+            width={this.props.width}
+            height={this.props.height}
+            dataValue={this.props.dataValue}
+            labelValue={this.props.labelValue}
+            onDoubleClick={this.props.onDoubleClick}
+            tooltipFormatter={this.props.tooltipFormatter}
+          />
         </svg>
         <ReactTooltip
           className="chata-chart-tooltip"

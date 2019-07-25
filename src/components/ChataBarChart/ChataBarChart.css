@@ -7,12 +7,14 @@
   fill: #888;
 }
 
-.chata-bar-chart-container .bar {
+.chata-bar-chart-container .bar,
+.chata-bar-chart-container .line-dot {
   fill: #28a8e0;
   fill-opacity: 0.7;
   /* transition: all 0.2s ease; */
 }
-.chata-bar-chart-container .bar:hover {
+.chata-bar-chart-container .bar:hover,
+.chata-bar-chart-container .line-dot:hover {
   fill-opacity: 1;
 }
 

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
+import { ChataLineChart } from '../ChataLineChart'
 
 export default class ChataChart extends Component {
   X_AXIS_INDICES = []
@@ -107,7 +108,34 @@ export default class ChataChart extends Component {
   }
 
   renderLineChart = () => {
-    return null
+    const self = this
+    return (
+      <ChataLineChart
+        data={this.props.data}
+        columns={this.props.columns}
+        height={this.props.height}
+        width={this.props.width}
+        onDoubleClick={this.props.onDoubleClick}
+        dataValue="value"
+        labelValue="label"
+        tooltipFormatter={data => {
+          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+            return null
+          }
+          return `<div>
+          <div>
+            <strong>${
+              self.props.columns[this.X_AXIS_INDICES[0]].title
+            }:</strong> ${data.label}
+          </div>
+          <div><strong>${
+            self.props.columns[this.Y_AXIS_INDICES[0]].title
+          }:</strong> ${self.props.valueFormatter(data.value)}
+          </div>
+        </div>`
+        }}
+      />
+    )
   }
 
   renderPieChart = () => {

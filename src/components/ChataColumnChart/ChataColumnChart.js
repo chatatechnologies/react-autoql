@@ -4,7 +4,7 @@ import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
-import { select, node } from 'd3-selection'
+import { select } from 'd3-selection'
 import { max, min } from 'd3-array'
 
 import styles from './ChataColumnChart.css'
