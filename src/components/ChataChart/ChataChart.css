@@ -4,6 +4,7 @@
   opacity: 0.15;
   shape-rendering: crispedges;
 }
+
 .chata-chart-container .axis text,
 text.x-axis-label,
 text.y-axis-label {
@@ -11,15 +12,16 @@ text.y-axis-label {
   fill-opacity: 0.7;
 }
 
+.chata-chart-container .bar,
 .chata-chart-container .line-dot {
   fill: #28a8e0;
   fill-opacity: 0.7;
 }
-
+.chata-chart-container .bar:hover,
 .chata-chart-container .line-dot:hover {
   fill-opacity: 1;
 }
-
+.chata-chart-container .bar.active,
 .chata-chart-container .line-dot.active {
   fill: #a5cd39;
 }

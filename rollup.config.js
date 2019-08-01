@@ -106,7 +106,9 @@ const outputs = [
       'd3-selection': 'd3Selection',
       'd3-axis': 'd3Axis',
       'd3-scale': 'd3Scale',
-      'd3-array': 'd3Array'
+      'd3-array': 'd3Array',
+      'd3-shape': 'd3Shape',
+      'd3-collection': 'd3Collection'
     }
   }
 ]

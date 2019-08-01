@@ -107,7 +107,7 @@ export default class ChataBarChart extends Component {
     }
 
     return (
-      <div className="chata-bar-chart-container">
+      <div className="chata-chart-container">
         <svg ref={r => (this.chartRef = r)} width={width} height={height}>
           <style>{`${styles}`}</style>
           <Axes

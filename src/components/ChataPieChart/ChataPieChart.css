@@ -11,31 +11,20 @@ text.y-axis-label {
   fill-opacity: 0.7;
 }
 
+.chata-chart-container .bar,
 .chata-chart-container .line-dot {
   fill: #28a8e0;
   fill-opacity: 0.7;
 }
-
+.chata-chart-container .bar:hover,
 .chata-chart-container .line-dot:hover {
   fill-opacity: 1;
 }
 
-.chata-chart-container .line-dot.active {
-  fill: #a5cd39;
-}
-
-.chata-chart-container .axis path {
+.chata-chart-container .y.axis path {
   display: none;
 }
 
-.chata-chart-container
-  .axis-Bottom.rotated
-  text:not(.x-axis-label):not(.y-axis-label) {
-  transform: rotate(-45deg);
-  text-anchor: end;
-}
-
-.y-axis-label,
-.x-axis-label {
-  font-size: 12px;
+.chata-chart-container path.slice {
+  /* transition: transform 0.5s ease; */
 }

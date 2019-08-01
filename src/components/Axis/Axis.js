@@ -120,8 +120,7 @@ export default class Axis extends Component {
     return (
       <g
         className={`axis axis-${this.props.orient}
-        ${this.props.rotateLabels ? ' rotated' : ''}
-        ${this.props.showGridLines ? ' hide-axis-line' : ''}`}
+        ${this.props.rotateLabels ? ' rotated' : ''}`}
         ref={el => {
           this.axisElement = el
         }}

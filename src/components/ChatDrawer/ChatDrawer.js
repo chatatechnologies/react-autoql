@@ -11,7 +11,7 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 
 import { Scrollbars } from 'react-custom-scrollbars'
-import { MdClearAll } from 'react-icons/md'
+import { MdClearAll, MdClose } from 'react-icons/md'
 
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 
@@ -40,6 +40,29 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-text-color-primary': '#fff',
     '--chata-drawer-text-color-placeholder': '#ffffff9c'
   }
+
+  // move this to new file
+  bubblesIcon = (
+    <svg x="0px" y="0px" width="14px" height="13px" viewBox="0 0 16 14">
+      <path
+        className="chata-icon-svg-0"
+        d="M15.1,13.5c0,0-0.5-0.3-0.5-1.7V9.6c0-1.9-1.1-3.7-2.9-4.4C11.5,5.1,11.3,5,11,5c-0.1-0.3-0.2-0.5-0.3-0.7l0,0
+C9.9,2.5,8.2,1.4,6.3,1.4c0,0,0,0-0.1,0C5,1.4,3.8,1.9,2.8,2.8C1.9,3.6,1.4,4.8,1.4,6.1c0,0.1,0,0.1,0,0.2v2.2
+c0,1.3-0.4,1.7-0.4,1.7h0l-1,0.7l1.2,0.1c0.8,0,1.7-0.2,2.3-0.7c0.2,0.2,0.5,0.3,0.8,0.4c0.2,0.1,0.5,0.2,0.8,0.2
+c0.1,0.2,0.1,0.5,0.2,0.7c0.8,1.7,2.5,2.8,4.4,2.8c0,0,0.1,0,0.1,0c1,0,2-0.3,2.7-0.7c0.7,0.5,1.6,0.8,2.4,0.7l1.1-0.1L15.1,13.5z
+M10.4,6.2c0,0.9-0.3,1.8-0.9,2.5C9.2,9,8.9,9.3,8.6,9.5C8.3,9.6,8.1,9.7,7.9,9.8C7.6,9.9,7.3,10,7.1,10c-0.3,0.1-0.6,0.1-0.8,0.1
+c-0.1,0-0.3,0-0.4,0c0,0-0.1,0-0.1,0c0,0,0-0.1,0-0.1c0-0.1,0-0.2,0-0.4c0-0.8,0.2-1.6,0.7-2.2C6.5,7.2,6.7,7,6.9,6.8
+C7,6.7,7.1,6.6,7.2,6.5c0.2-0.2,0.4-0.3,0.7-0.4C8.1,6,8.3,5.9,8.6,5.8C9,5.7,9.4,5.6,9.8,5.6c0.1,0,0.3,0,0.4,0c0,0,0.1,0,0.1,0
+C10.4,5.8,10.4,6,10.4,6.2z M3.8,9.3L3.5,9.1L3.2,9.3C2.9,9.7,2.4,9.9,2,10c0.1-0.4,0.2-0.8,0.2-1.5l0-2.2c0,0,0-0.1,0-0.1
+c0-1.1,0.5-2,1.2-2.8c0.7-0.7,1.7-1.1,2.7-1.1c0,0,0.1,0,0.1,0c1.6,0,3.1,0.9,3.8,2.3c0,0.1,0.1,0.2,0.1,0.3c-0.1,0-0.2,0-0.3,0
+c-0.5,0-1,0.1-1.5,0.2C8.1,5.1,7.8,5.2,7.5,5.4C7.2,5.5,6.9,5.7,6.7,5.9C6.6,6,6.4,6.1,6.3,6.2C6.1,6.4,5.9,6.7,5.7,6.9
+C5.2,7.7,4.9,8.6,4.9,9.6c0,0.1,0,0.2,0,0.3c-0.1,0-0.2-0.1-0.3-0.1C4.3,9.7,4,9.5,3.8,9.3z M12.8,12.7l-0.3-0.3l-0.3,0.3
+c-0.5,0.5-1.4,0.8-2.4,0.8c-1.6,0.1-3.1-0.9-3.8-2.3c0-0.1-0.1-0.2-0.1-0.3c0.1,0,0.2,0,0.3,0c0.3,0,0.7,0,1-0.1
+c0.3-0.1,0.6-0.1,0.9-0.3c0.3-0.1,0.6-0.3,0.8-0.4C9.4,9.9,9.7,9.6,10,9.2c0.7-0.8,1.1-1.9,1.1-3c0-0.1,0-0.3,0-0.4
+c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13.3,13.2,13.1,12.8,12.7z"
+      />
+    </svg>
+  )
 
   static propTypes = {
     token: PropTypes.string,
@@ -156,7 +179,10 @@ export default class ChatDrawer extends React.Component {
       return this.props.customHandle
     } else if (this.props.showHandle) {
       return (
-        <div className="drawer-handle" style={this.props.handleStyles}>
+        <div
+          className={`drawer-handle${this.props.isVisible ? ' hide' : ''}`}
+          style={this.props.handleStyles}
+        >
           <img
             className="chata-bubbles-icon"
             src={chataBubblesSVG}
@@ -424,21 +450,30 @@ export default class ChatDrawer extends React.Component {
       <Fragment>
         <div className="chata-header-left-container">
           <button
+            onClick={this.props.onHandleClick}
+            className="chata-button close"
+            data-tip="Close Drawer"
+            data-for="chata-header-tooltip"
+          >
+            <MdClose />
+          </button>
+        </div>
+        <div className="chata-header-center-container">{this.props.title}</div>
+        <div className="chata-header-right-container">
+          <button
             onClick={() => {
               this.clearMessages()
               if (this.chatBarRef) {
                 this.chatBarRef.focus()
               }
             }}
-            className="chata-button"
+            className="chata-button clear-all"
             data-tip="Clear Messages"
             data-for="chata-header-tooltip"
           >
             <MdClearAll />
           </button>
         </div>
-        <div className="chata-header-center-container">{this.props.title}</div>
-        <div className="chata-header-right-container"></div>
         <ReactTooltip
           className="chata-drawer-tooltip"
           id="chata-header-tooltip"
@@ -524,6 +559,9 @@ export default class ChatDrawer extends React.Component {
               </div>
             )}
             <div className="chat-bar-container">
+              <div className="watermark">
+                {this.bubblesIcon} We run on Chata
+              </div>
               <ChatBar
                 ref={this.setChatBarRef}
                 token={this.props.token}
