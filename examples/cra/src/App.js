@@ -4,9 +4,10 @@ import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
 export default class App extends Component {
   state = {
     isVisible: true,
-    placement: 'right',
+    placement: 'bottom',
     showHandle: true,
-    theme: 'light'
+    theme: 'dark',
+    response: null
   }
 
   render = () => {
@@ -15,17 +16,17 @@ export default class App extends Component {
         <ChatBar
           ref={r => (this.chatBarRef = r)}
           autoCompletePlacement="bottom"
+          onSubmit={() => this.setState({ response: null })}
           onResponseCallback={response => {
             this.setState({ response })
           }}
           showChataIcon
           showLoadingDots
         />
-        {this.state.response && (
+        {this.state.response ? (
           <div
             style={{
-              maxHeight: '300px',
-              maxWidth: '100%',
+              height: '300px',
               padding: '30px',
               fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
               color: '#565656' // Text, tables, and charts will inherit text color
@@ -36,6 +37,20 @@ export default class App extends Component {
               chatBarRef={this.chatBarRef}
               response={this.state.response}
             />
+          </div>
+        ) : (
+          <div
+            style={{
+              height: '75px',
+              width: 'calc(100% - 60px)',
+              padding: '30px',
+              fontFamily: 'Helvetica, Arial, Sans-Serif',
+              color: '#999',
+              textAlign: 'center',
+              fontSize: '14px'
+            }}
+          >
+            <em>The response will go here</em>
           </div>
         )}
         <button onClick={() => this.setState({ isVisible: true })}>

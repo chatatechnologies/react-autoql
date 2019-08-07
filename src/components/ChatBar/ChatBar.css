@@ -18,9 +18,11 @@
   letter-spacing: 0.04em;
   outline: none !important;
   width: calc(100% - 20px);
-  border: 1px solid var(--chata-drawer-border-color);
   background: transparent;
-  color: var(--chata-drawer-text-color-primary);
+
+  /* Default styles outside of chat drawer */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #5d5d5d;
 }
 .chata-input.left-padding {
   padding-left: 54px;
@@ -32,7 +34,8 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-input::placeholder {
-  color: var(--chata-drawer-text-color-placeholder);
+  /* Default color outside of chat drawer */
+  color: #999;
 }
 
 /* autosuggest */
@@ -43,7 +46,6 @@
 }
 .chata-bar-container .react-autosuggest__input--focused {
   outline: none;
-  border: 1px solid #a5cd39 !important;
 }
 .chata-bar-container .react-autosuggest__input::-ms-clear {
   display: none;
@@ -66,11 +68,12 @@
   font-size: 15px;
   font-weight: normal;
   z-index: 2;
-  background-color: var(--chata-drawer-background-color);
-  border: 1px solid var(--chata-drawer-border-color);
-  color: var(--chata-drawer-text-color-primary);
   overflow: hidden;
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+
+  /* Default styles outside of chat drawer */
+  background-color: white;
+  color: #5d5d5d;
 }
 
 .chata-bar-container.autosuggest-top
@@ -96,7 +99,7 @@
   padding: 2px;
   padding-left: 18px;
   letter-spacing: 0.05em;
-  color: var(--chata-drawer-text-color-primary);
+  /* color: var(--chata-drawer-text-color-primary); */
 }
 
 .chata-bar-container .react-autosuggest__suggestion--highlighted {

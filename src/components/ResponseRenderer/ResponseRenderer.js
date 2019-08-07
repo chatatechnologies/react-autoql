@@ -79,8 +79,7 @@ export default class ResponseRenderer extends React.Component {
       this.props.displayType ||
       (this.props.response &&
         this.props.response.data &&
-        this.props.response.data.data &&
-        this.props.response.data.data.display_type)
+        this.props.response.data.display_type)
   }
 
   componentWillMount = () => {
@@ -456,7 +455,7 @@ export default class ResponseRenderer extends React.Component {
       // This is not an error. There is just no data in the DB
       return 'No data found.'
     }
-    return this.renderErrorMessage('no display type')
+    return this.renderErrorMessage('No display type')
   }
 
   render = () => {

@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css?family=Titillium+Web:100,200,300,400,500,600,700,800,900");
 
 .chata-response-content-container {
+  font-size: 14px;
   height: 100%;
 }
 
@@ -70,14 +71,15 @@
   transition: all 0.2s ease;
 }
 .chata-safety-net-execute-btn:hover {
-  /* opacity: 0.7; */
-  border-color: var(--chata-drawer-accent-color);
+  border-color: #28a8e0;
+  /* border-color: var(--chata-drawer-accent-color); */
 }
 .chata-execute-query-icon {
   height: 15px;
   width: 24px;
   vertical-align: top;
-  fill: var(--chata-drawer-accent-color);
+  fill: #28a8e0;
+  /* fill: var(--chata-drawer-accent-color); */
 }
 .chata-safetynet-select {
   position: relative;
@@ -86,10 +88,12 @@
   background: none;
   outline: none !important;
   border: none;
-  color: var(--chata-drawer-accent-color);
   font-family: "Titillium Web", sans-serif;
-  font-size: 14px;
   letter-spacing: 0.05em;
+
+  /* Default style outside of drawer */
+  color: #28a8e0;
+  font-size: inherit;
 }
 .chata-safetynet-select:hover {
 }
