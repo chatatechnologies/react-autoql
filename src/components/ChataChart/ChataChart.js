@@ -1,16 +1,18 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
 import { ChataPieChart } from '../ChataPieChart'
+import { ChataHeatmapChart } from '../ChataHeatmapChart'
 
 import styles from './ChataChart.css'
 
 export default class ChataChart extends Component {
   X_AXIS_INDICES = []
   Y_AXIS_INDICES = []
+  Z_AXIS_INDEX = null
 
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -42,6 +44,10 @@ export default class ChataChart extends Component {
       this.X_AXIS_INDICES = [1, 2]
       this.Y_AXIS_INDICES = [0]
     } else if (type === 'word_cloud') {
+    } else if (type === 'heatmap') {
+      this.X_AXIS_INDICES = [1]
+      this.Y_AXIS_INDICES = [0]
+      this.Z_AXIS_INDEX = 2
     }
 
     // Find longest xaxis label and longest yaxis label
@@ -172,11 +178,39 @@ export default class ChataChart extends Component {
     )
   }
 
-  renderBubbleChart = () => {
-    return null
+  renderHeatmapChart = () => {
+    const self = this
+    return (
+      <ChataHeatmapChart
+        data={this.props.data}
+        columns={this.props.columns}
+        height={this.props.height}
+        width={this.props.width}
+        onDoubleClick={this.props.onDoubleClick}
+        dataValue="value"
+        labelValueX="labelX"
+        labelValueY="labelY"
+        tooltipFormatter={data => {
+          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+            return null
+          }
+          return `<div>
+          <div>
+            <strong>${self.props.columns[this.X_AXIS_INDICES[0]].title}:</strong> ${data.labelX}
+          </div>
+          <div>
+            <strong>${self.props.columns[this.Y_AXIS_INDICES[0]].title}:</strong> ${data.labelY}
+          </div>
+          <div>
+            <strong>${self.props.columns[this.Z_AXIS_INDEX].title}:</strong> ${data.value}
+          </div>
+        </div>`
+        }}
+      />
+    )
   }
 
-  renderHeatmapChart = () => {
+  renderBubbleChart = () => {
     return null
   }
 
@@ -201,43 +235,62 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
+    let chart
     switch (this.props.type) {
       case 'column': {
-        return this.renderColumnChart()
+        chart = this.renderColumnChart()
+        break
       }
       case 'bar': {
-        return this.renderBarChart()
+        chart = this.renderBarChart()
+        break
       }
       case 'line': {
-        return this.renderLineChart()
+        chart = this.renderLineChart()
+        break
       }
       case 'pie': {
-        return this.renderPieChart()
+        chart = this.renderPieChart()
+        break
       }
       case 'bubble': {
-        return this.renderBubbleChart()
+        chart = this.renderBubbleChart()
+        break
       }
       case 'heatmap': {
-        return this.renderHeatmapChart()
+        chart = this.renderHeatmapChart()
+        break
       }
       case 'stacked_column': {
-        return this.renderStackedColumnChart()
+        chart = this.renderStackedColumnChart()
+        break
       }
       case 'stacked_bar': {
-        return this.renderStackedBarChart()
+        chart = this.renderStackedBarChart()
+        break
       }
       case 'contrast_column': {
-        return this.renderContrastColumnChart()
+        chart = this.renderContrastColumnChart()
+        break
       }
       case 'contrast_bar': {
-        return this.renderContrastBarChart()
+        chart = this.renderContrastBarChart()
+        break
       }
       case 'contrast_line': {
-        return this.renderContrastLineChart()
+        chart = this.renderContrastLineChart()
+        break
       }
       default: {
-        return 'Unknown Display Type'
+        chart = 'Unknown Display Type'
+        break
       }
     }
+    return (
+      <Fragment>
+        <style>{`${styles}`}</style>
+        {chart}
+      </Fragment>
+    )
   }
 }

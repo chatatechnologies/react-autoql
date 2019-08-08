@@ -342,28 +342,43 @@ export default class ResponseRenderer extends React.Component {
   formatChartData = () => {
     const columns = this.tableColumns
 
-    return Object.values(
-      this.tableData.reduce((chartDataObject, row) => {
-        if (!chartDataObject[row[0]]) {
-          chartDataObject[row[0]] = {
-            origColumns: columns,
-            origRow: row,
-            // Don't think we need to do x and y separately. Can just use origRow
-            label: row[0],
-            value: Number(row[1]) || row[1],
-            // Don't think we need to do x and y separately. Can just use origColumns
-            labelCol: columns[0],
-            valueCol: columns[1],
-            formatter: (value, column) => {
-              return this.formatElement(value, column)
+    if (columns.length === 2) {
+      return Object.values(
+        this.tableData.reduce((chartDataObject, row) => {
+          if (!chartDataObject[row[0]]) {
+            chartDataObject[row[0]] = {
+              origColumns: columns,
+              origRow: row,
+              // Don't think we need to do x and y separately. Can just use origRow
+              label: row[0],
+              value: Number(row[1]) || row[1],
+              // Don't think we need to do x and y separately. Can just use origColumns
+              // labelCol: columns[0],
+              // valueCol: columns[1],
+              formatter: (value, column) => {
+                return this.formatElement(value, column)
+              }
             }
+          } else {
+            chartDataObject[row[1]].value += Number(row[1])
           }
-        } else {
-          chartDataObject[row[1]].value += Number(row[1])
+          return chartDataObject
+        }, {})
+      )
+    } else if (columns.length === 3) {
+      return this.tableData.map(row => {
+        return {
+          origColumns: columns,
+          origRow: row,
+          labelX: row[1],
+          labelY: row[0],
+          value: Number(row[2]) || row[2],
+          formatter: (value, column) => {
+            return this.formatElement(value, column)
+          }
         }
-        return chartDataObject
-      }, {})
-    )
+      })
+    }
   }
 
   formatColumnsForTable = columns => {

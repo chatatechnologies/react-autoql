@@ -5,10 +5,6 @@ import ReactTooltip from 'react-tooltip'
 // import { interpolateLab } from 'd3-interpolate'
 
 export default class Bars extends Component {
-  // colorScale = scaleLinear()
-  //   .domain([0, this.props.maxValue])
-  //   .range(['#F3E5F5', '#7B1FA2'])
-  //   .interpolate(interpolateLab)
   static propTypes = {}
 
   state = {
@@ -40,7 +36,6 @@ export default class Bars extends Component {
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
-          // fill={this.colorScale(datum.value)}
         />
       )
     })

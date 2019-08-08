@@ -18,10 +18,12 @@ text.y-axis-label {
   fill-opacity: 0.7;
 }
 .chata-chart-container .bar:hover,
+.chata-chart-container .square:hover,
 .chata-chart-container .line-dot:hover {
   fill-opacity: 1;
 }
 .chata-chart-container .bar.active,
+.chata-chart-container .square.active,
 .chata-chart-container .line-dot.active {
   fill: #a5cd39;
 }

@@ -2,14 +2,14 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
-import { Columns } from '../Columns'
-import { scaleLinear, scaleBand } from 'd3-scale'
+import { Squares } from '../Squares'
+import { scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 import { max, min } from 'd3-array'
 
-export default class ChataBarChart extends Component {
+export default class ChataHeatmapChart extends Component {
   xScale = scaleBand()
-  yScale = scaleLinear()
+  yScale = scaleBand()
 
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -56,6 +56,9 @@ export default class ChataBarChart extends Component {
       n.getComputedTextLength()
     )
 
+    console.log('max Y label width')
+    console.log(maxYLabelWidth)
+
     const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
     let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
 
@@ -65,10 +68,19 @@ export default class ChataBarChart extends Component {
         xAxisBBox.width - this.props.width + this.state.leftMargin + 45
     }
 
+    console.log('bbox width')
+    console.log(xAxisBBox.width)
+
+    console.log('props width:')
+    console.log(this.props.width)
     this.setState({
-      leftMargin: leftMargin,
-      bottomMargin: bottomMargin
+      leftMargin,
+      bottomMargin
     })
+  }
+
+  onlyUnique = (value, index, self) => {
+    return self.indexOf(value) === index
   }
 
   render = () => {
@@ -76,30 +88,51 @@ export default class ChataBarChart extends Component {
     const { data, width, height } = this.props
     const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
 
+    // const maxValue = max(data, d => {
+    //   return max(d[self.props.dataValue], el => el[self.props.labelValueX])
+    // })
     const maxValue = max(data, d => d[self.props.dataValue])
-    let minValue = min(data, d => d[self.props.dataValue])
-    // Make sure 0 is always visible on the y axis
-    if (minValue > 0) {
-      minValue = 0
-    }
+
+    const uniqueXLabels = data
+      .map(d => d[this.props.labelValueX])
+      .filter(self.onlyUnique)
+      .sort()
+      .reverse() // sorts dates correctly
 
     const xScale = this.xScale
-      .domain(data.map(d => d[this.props.labelValue]))
-      .range([leftMargin, width - rightMargin])
-      .paddingInner(0.1)
+      .domain(uniqueXLabels)
+      .range([width - rightMargin, leftMargin])
+      .paddingInner(0)
 
+    const uniqueYLabels = data
+      .map(d => d[this.props.labelValueY])
+      .filter(self.onlyUnique)
     const yScale = this.yScale
-      .domain([minValue, maxValue])
+      .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
+      .paddingInner(0)
 
-    const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 16) / width)
+    const squareHeight = height / uniqueYLabels.length
+    const squareWidth = width / uniqueXLabels.length
+
+    const intervalHeight = Math.ceil((uniqueYLabels.length * 14) / height)
+    const intervalWidth = Math.ceil((uniqueXLabels.length * 14) / width)
+
     let xTickValues
-    if (barWidth < 16) {
+    if (squareWidth < 14) {
       xTickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          xTickValues.push(element[self.props.labelValue])
+      uniqueXLabels.forEach((element, index) => {
+        if (index % intervalWidth === 0) {
+          xTickValues.push(element)
+        }
+      })
+    }
+    let yTickValues
+    if (squareHeight < 14) {
+      yTickValues = []
+      uniqueYLabels.forEach((element, index) => {
+        if (index % intervalHeight === 0) {
+          yTickValues.push(element)
         }
       })
     }
@@ -108,10 +141,10 @@ export default class ChataBarChart extends Component {
       <div className="chata-chart-container">
         <svg ref={r => (this.chartRef = r)} width={width} height={height}>
           <Axes
-            // data={this.props.data}
             scales={{ xScale, yScale }}
-            xCol={this.props.columns[0]}
-            yCol={this.props.columns[1]}
+            xCol={this.props.columns[1]}
+            yCol={this.props.columns[0]}
+            valueCol={this.props.columns[2]}
             margins={{
               left: leftMargin,
               right: rightMargin,
@@ -120,27 +153,30 @@ export default class ChataBarChart extends Component {
             }}
             width={this.props.width}
             height={this.props.height}
+            yTicks={yTickValues}
             xTicks={xTickValues}
-            rotateLabels={barWidth < 125}
-            yGridLines
+            rotateLabels={squareWidth < 125}
           />
-          <Columns
-            scales={{ xScale, yScale }}
-            margins={{
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-              top: topMargin
-            }}
-            data={data}
-            maxValue={maxValue}
-            width={this.props.width}
-            height={this.props.height}
-            dataValue={this.props.dataValue}
-            labelValue={this.props.labelValue}
-            onDoubleClick={this.props.onDoubleClick}
-            tooltipFormatter={this.props.tooltipFormatter}
-          />
+          {
+            <Squares
+              scales={{ xScale, yScale }}
+              margins={{
+                left: leftMargin,
+                right: rightMargin,
+                bottom: bottomMargin,
+                top: topMargin
+              }}
+              data={data}
+              maxValue={maxValue}
+              width={this.props.width}
+              height={this.props.height}
+              dataValue={this.props.dataValue}
+              labelValueX={this.props.labelValueX}
+              labelValueY={this.props.labelValueY}
+              onDoubleClick={this.props.onDoubleClick}
+              tooltipFormatter={this.props.tooltipFormatter}
+            />
+          }
         </svg>
         <ReactTooltip
           className="chata-chart-tooltip"

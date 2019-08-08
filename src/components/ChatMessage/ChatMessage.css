@@ -85,10 +85,41 @@
   opacity: 0.7;
 }
 
+/* Chart icon styles */
 .chart-icon-svg-0,
 .chata-icon-svg-0 {
   fill: currentColor;
 }
+.hm0 {
+  opacity: 0.5;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm1 {
+  fill: currentColor;
+}
+.hm2 {
+  opacity: 0.15;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm3 {
+  opacity: 0.6;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm4 {
+  opacity: 0.65;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm5 {
+  fill: currentColor;
+}
+.hm6 {
+  fill: currentColor;
+}
+
 /* animations */
 @keyframes scale-up-br {
   0% {

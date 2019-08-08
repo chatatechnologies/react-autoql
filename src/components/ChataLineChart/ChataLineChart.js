@@ -7,8 +7,6 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 import { max, min } from 'd3-array'
 
-import styles from './ChataLineChart.css'
-
 export default class ChataLineChart extends Component {
   xScale = scaleBand()
   yScale = scaleLinear()
@@ -59,12 +57,12 @@ export default class ChataLineChart extends Component {
     )
 
     const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
-    let leftMargin = Math.ceil(maxYLabelWidth) + 30 // margin to include axis label
+    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
 
     // If the rotated labels in the x axis exceed the width of the chart, use that instead
     if (xAxisBBox.width > this.props.width) {
       leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 30
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
     }
 
     this.setState({
@@ -87,7 +85,7 @@ export default class ChataLineChart extends Component {
 
     const xScale = this.xScale
       .domain(data.map(d => d[this.props.labelValue]))
-      .rangeRound([leftMargin, width - rightMargin])
+      .range([leftMargin, width - rightMargin])
       .paddingInner(0.1)
 
     const yScale = this.yScale
@@ -109,7 +107,6 @@ export default class ChataLineChart extends Component {
     return (
       <div className="chata-chart-container">
         <svg ref={r => (this.chartRef = r)} width={width} height={height}>
-          <style>{`${styles}`}</style>
           <Axes
             // data={this.props.data}
             scales={{ xScale, yScale }}

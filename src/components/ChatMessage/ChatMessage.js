@@ -67,17 +67,17 @@ export default class ChatMessage extends React.Component {
     if (columns.length === 2) {
       // Is direct key-value query (ie. Avg days to pay per customer)
       this.supportedDisplayTypes = ['bar', 'column', 'pie', 'line', 'table']
-    } else if (
-      columns.length === 3
-      // && !this.hasMultipleValuesPerLabel()
-    ) {
-      // Is contrast query (ie. Total sales and gross profit per month)
-      this.supportedDisplayTypes = [
-        'contrast_line',
-        'contrast_bar',
-        'contrast_column',
-        'table'
-      ]
+      // } else if (
+      //   columns.length === 3
+      //   // && !this.hasMultipleValuesPerLabel()
+      // ) {
+      //   // Is contrast query (ie. Total sales and gross profit per month)
+      //   this.supportedDisplayTypes = [
+      //     'contrast_line',
+      //     'contrast_bar',
+      //     'contrast_column',
+      //     'table'
+      //   ]
     } else if (
       columns.length === 3
       // && this.hasMultipleValuesPerLabel()
@@ -343,6 +343,68 @@ L14.9,6.5z"
               c0,0.4,0.3,0.7,0.7,0.7h6c0.4,0,0.7-0.3,0.7-0.7C16,5.8,15.8,4.9,15.5,4.1z M10,6V1.5c1.1,0.2,2.2,0.7,3,1.5c0.8,0.8,1.3,1.8,1.5,3
               H10z"
                 />
+              </svg>
+            </button>
+          )}
+          {this.showDisplayTypeButton('heatmap') && (
+            <button
+              onClick={() => this.switchView('heatmap')}
+              className="chata-toolbar-btn"
+              data-tip="Heatmap"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <svg
+                x="0px"
+                y="0px"
+                width="16px"
+                height="16px"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  className="hm0"
+                  d="M12,16h2.5c0.8,0,1.5-0.7,1.5-1.5v-2.4l-4,0V16z"
+                />
+                <polygon className="hm1" points="8,4.1 8,0 4,0 4,4.1 " />
+                <path
+                  className="hm2"
+                  d="M4,4.1V0L1.5,0C0.7,0,0,0.7,0,1.5l0,2.6h0l0,0L4,4.1z"
+                />
+                <polygon
+                  className="hm3"
+                  points="8,4.1 8,4.1 8,4.1 4,4.1 4,8.1 8,8.2 "
+                />
+                <polygon className="hm2" points="0,4.1 0,8.1 4,8.1 4,4.1 " />
+                <polygon className="hm1" points="4,4.1 8,4.1 8,4.1 " />
+                <polygon className="hm1" points="4,16 8,16 8,12.1 4,12.1 " />
+                <path
+                  className="hm0"
+                  d="M0,12.1v2.5C0,15.3,0.7,16,1.5,16H4v-3.9L0,12.1z"
+                />
+                <polygon className="hm0" points="0,12.1 4,12.1 4,8.2 0,8.2 " />
+                <polygon className="hm4" points="8,12.1 8,8.2 4,8.2 4,12.1 " />
+                <polygon
+                  className="hm2"
+                  points="16,4.1 16,4.1 16,4.1 12,4.1 12,8.2 16,8.2 "
+                />
+                <path
+                  className="hm0"
+                  d="M16,4.1l0-2.6C16,0.7,15.3,0,14.5,0L12,0v4.1L16,4.1z"
+                />
+                <polygon
+                  className="hm4"
+                  points="12,4.1 12,0 8,0 8,4.1 8,4.1 8,4.1 "
+                />
+                <polygon className="hm5" points="12,4.1 8,4.1 8,4.1 " />
+                <polygon className="hm6" points="12,4.1 16,4.1 16,4.1 " />
+                <polygon
+                  className="hm2"
+                  points="12,12.1 16,12.1 16,8.2 12,8.2 "
+                />
+                <polygon
+                  className="hm1"
+                  points="12,8.2 8,8.2 8,12.1 12,12.1 "
+                />
+                <polygon className="hm1" points="8,12.1 8,16 12,16 12,12.1 " />
               </svg>
             </button>
           )}

@@ -7,8 +7,6 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
 import { max, min } from 'd3-array'
 
-import styles from './ChataBarChart.css'
-
 export default class ChataBarChart extends Component {
   xScale = scaleLinear()
   yScale = scaleBand()
@@ -73,8 +71,8 @@ export default class ChataBarChart extends Component {
     }
 
     this.setState({
-      leftMargin: leftMargin,
-      bottomMargin: bottomMargin
+      leftMargin,
+      bottomMargin
     })
   }
 
@@ -96,7 +94,7 @@ export default class ChataBarChart extends Component {
 
     const yScale = this.yScale
       .domain(data.map(d => d[this.props.labelValue]))
-      .rangeRound([height - bottomMargin, topMargin])
+      .range([height - bottomMargin, topMargin])
       .paddingInner(0.1)
 
     const tickWidth =
@@ -117,7 +115,6 @@ export default class ChataBarChart extends Component {
     return (
       <div className="chata-chart-container">
         <svg ref={r => (this.chartRef = r)} width={width} height={height}>
-          <style>{`${styles}`}</style>
           <Axes
             // data={this.props.data}
             scales={{ xScale, yScale }}
