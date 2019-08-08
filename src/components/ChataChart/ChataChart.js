@@ -6,6 +6,7 @@ import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
 import { ChataPieChart } from '../ChataPieChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
+import { ChataBubbleChart } from '../ChataBubbleChart'
 
 import styles from './ChataChart.css'
 
@@ -44,14 +45,11 @@ export default class ChataChart extends Component {
       this.X_AXIS_INDICES = [1, 2]
       this.Y_AXIS_INDICES = [0]
     } else if (type === 'word_cloud') {
-    } else if (type === 'heatmap') {
+    } else if (type === 'heatmap' || type === 'bubble') {
       this.X_AXIS_INDICES = [1]
       this.Y_AXIS_INDICES = [0]
       this.Z_AXIS_INDEX = 2
     }
-
-    // Find longest xaxis label and longest yaxis label
-    // This will be used to create left and bottom margins
   }
 
   renderColumnChart = () => {
@@ -211,7 +209,35 @@ export default class ChataChart extends Component {
   }
 
   renderBubbleChart = () => {
-    return null
+    const self = this
+    return (
+      <ChataBubbleChart
+        data={this.props.data}
+        columns={this.props.columns}
+        height={this.props.height}
+        width={this.props.width}
+        onDoubleClick={this.props.onDoubleClick}
+        dataValue="value"
+        labelValueX="labelX"
+        labelValueY="labelY"
+        tooltipFormatter={data => {
+          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+            return null
+          }
+          return `<div>
+          <div>
+            <strong>${self.props.columns[this.X_AXIS_INDICES[0]].title}:</strong> ${data.labelX}
+          </div>
+          <div>
+            <strong>${self.props.columns[this.Y_AXIS_INDICES[0]].title}:</strong> ${data.labelY}
+          </div>
+          <div>
+            <strong>${self.props.columns[this.Z_AXIS_INDEX].title}:</strong> ${data.value}
+          </div>
+        </div>`
+        }}
+      />
+    )
   }
 
   renderStackedColumnChart = () => {

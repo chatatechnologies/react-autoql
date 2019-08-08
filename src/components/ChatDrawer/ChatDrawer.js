@@ -34,7 +34,8 @@ export default class ChatDrawer extends React.Component {
   }
 
   DARK_THEME = {
-    '--chata-drawer-accent-color': '#525252',
+    '--chata-drawer-accent-color': '#525252', // dark gray
+    // '--chata-drawer-accent-color': '#193a48', // dark blue
     '--chata-drawer-background-color': '#636363',
     '--chata-drawer-border-color': '#d3d3d329',
     '--chata-drawer-text-color-primary': '#fff',

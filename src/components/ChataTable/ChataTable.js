@@ -83,6 +83,7 @@ export default class ChataTable extends React.Component {
       downloadDataFormatter: data => data,
       downloadReady: (fileContents, blob) => blob
     }
+
     return (
       <div className="chata-table-container">
         <ReactTabulator

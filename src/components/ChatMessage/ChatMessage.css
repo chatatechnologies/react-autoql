@@ -11,7 +11,7 @@
   display: flex;
   justify-content: flex-start;
   margin-left: 20px;
-  max-height: 88%;
+  max-height: 85%;
 
   animation: scale-up-bl 0.4s cubic-bezier(0.39, 0.575, 0.565, 1) both;
 }

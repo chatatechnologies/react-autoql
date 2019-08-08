@@ -116,13 +116,13 @@ export default class ResponseRenderer extends React.Component {
       this.data = responseBody.data
 
       if (this.isTableType(displayType) || this.isChartType(displayType)) {
-        // this will change once the query response is refactored
-        if (typeof this.data === 'string') {
-          this.tableData = PapaParse.parse(this.data).data
-          this.tableColumns = this.formatColumnsForTable(responseBody.columns)
-          if (responseBody.columns && responseBody.columns.length <= 3) {
-            this.chartData = this.formatChartData()
-          }
+        this.tableData =
+          typeof this.data === 'string' // this will change once the query response is refactored
+            ? PapaParse.parse(this.data).data
+            : this.data
+        this.tableColumns = this.formatColumnsForTable(responseBody.columns)
+        if (responseBody.columns && responseBody.columns.length <= 3) {
+          this.chartData = this.formatChartData()
         }
       }
     }
@@ -228,7 +228,7 @@ export default class ResponseRenderer extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+      chartHeight = 0.85 * chatContainer.clientHeight - 20 // 85% of chat height minus message margins
     }
 
     // const height =
@@ -456,6 +456,9 @@ export default class ResponseRenderer extends React.Component {
           onSuggestionClick={this.onSuggestionClick}
         />
       )
+    } else if (responseBody.data && !responseBody.data.length) {
+      // This is not an error. There is just no data in the DB
+      return 'No data found.'
     } else if (this.state.displayType) {
       if (displayType === 'suggestion' || displayType === 'unknown_words') {
         return this.renderSuggestionMessage()
@@ -466,10 +469,9 @@ export default class ResponseRenderer extends React.Component {
       } else if (this.isChartType(displayType) && this.chartData) {
         return this.renderChart()
       }
-      return this.renderErrorMessage('display type not recognized')
-    } else if (responseBody.data && !responseBody.data.length) {
-      // This is not an error. There is just no data in the DB
-      return 'No data found.'
+      return this.renderErrorMessage(
+        `display type not recognized: ${this.state.displayType}`
+      )
     }
     return this.renderErrorMessage('No display type')
   }
@@ -478,7 +480,7 @@ export default class ResponseRenderer extends React.Component {
     return (
       <Fragment>
         <style>{`${styles}`}</style>
-        <div id={this.props.key} className="chata-response-content-container">
+        <div className="chata-response-content-container">
           {this.renderResponse()}
         </div>
       </Fragment>

@@ -115,7 +115,7 @@ export default class ChatMessage extends React.Component {
       const chatContainer = document.querySelector('.chat-message-container')
       if (chatContainer) {
         chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-        chartHeight = 0.88 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+        chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
       }
 
       return (
@@ -405,6 +405,47 @@ L14.9,6.5z"
                   points="12,8.2 8,8.2 8,12.1 12,12.1 "
                 />
                 <polygon className="hm1" points="8,12.1 8,16 12,16 12,12.1 " />
+              </svg>
+            </button>
+          )}
+          {this.showDisplayTypeButton('bubble') && (
+            <button
+              onClick={() => this.switchView('bubble')}
+              className="chata-toolbar-btn"
+              data-tip="Bubble Chart"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <svg
+                x="0px"
+                y="0px"
+                width="16px"
+                height="16px"
+                viewBox="0 0 16 16"
+              >
+                <circle
+                  className="chart-icon-svg-0"
+                  cx="7.7"
+                  cy="11.1"
+                  r="1.2"
+                />
+                <circle
+                  className="chart-icon-svg-0"
+                  cx="2.6"
+                  cy="8.8"
+                  r="2.6"
+                />
+                <circle
+                  className="chart-icon-svg-0"
+                  cx="11.7"
+                  cy="4.3"
+                  r="4.3"
+                />
+                <circle
+                  className="chart-icon-svg-0"
+                  cx="1.8"
+                  cy="14.8"
+                  r="1.2"
+                />
               </svg>
             </button>
           )}
