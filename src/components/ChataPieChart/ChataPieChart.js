@@ -223,6 +223,7 @@ export default class Axis extends Component {
       .append('text')
       .attr('dy', '.35em')
       .style('fill', 'currentColor')
+      .style('fill-opacity', 0.7)
       .text(function(d) {
         return d.data.value[self.props.labelValue]
       })
@@ -301,6 +302,7 @@ export default class Axis extends Component {
       .attr('stroke', 'currentColor')
       .style('fill', 'none')
       .attr('stroke-width', 1)
+      .style('stroke-opacity', 0.7)
       .attr('points', function(d) {
         var posA = arcForLabels.centroid(d) // line insertion in the slice
         var posB = self.outerArc.centroid(d) // line break: we use the other arc generator that has been built only for that
@@ -321,7 +323,8 @@ export default class Axis extends Component {
     const labelMargin = 100
 
     const { data, width, height, margin } = this.props
-    this.outerRadius = Math.min(width - labelMargin * 2, height) / 2 - margin
+    this.outerRadius =
+      Math.min(width - labelMargin * 2, height - 25) / 2 - margin
     this.innerRadius = this.outerRadius - 100 > 40 ? this.outerRadius - 100 : 40
     this.outerArc = arc()
       .innerRadius(self.outerRadius * 1.1)
