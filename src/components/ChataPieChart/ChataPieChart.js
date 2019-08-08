@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 
-import { select, selectAll } from 'd3-selection'
+import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'

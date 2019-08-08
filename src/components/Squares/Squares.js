@@ -5,6 +5,7 @@ import { scaleLinear } from 'd3-scale'
 import ReactTooltip from 'react-tooltip'
 
 export default class Squares extends Component {
+  // blue for positive values and red for negative values
   colorScalePositive = scaleLinear()
     .domain([0, this.props.maxValue])
     .range(['rgba(40,168,224,0)', 'rgba(40,168,224,1)'])

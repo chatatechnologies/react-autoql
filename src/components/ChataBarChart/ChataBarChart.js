@@ -101,9 +101,9 @@ export default class ChataBarChart extends Component {
       (width - this.props.margins.left - this.props.margins.right) / 6
 
     const barHeight = height / data.length
-    const interval = Math.ceil((data.length * 14) / height)
+    const interval = Math.ceil((data.length * 16) / height)
     let yTickValues
-    if (barHeight < 14) {
+    if (barHeight < 16) {
       yTickValues = []
       data.forEach((element, index) => {
         if (index % interval === 0) {
@@ -116,7 +116,6 @@ export default class ChataBarChart extends Component {
       <div className="chata-chart-container">
         <svg ref={r => (this.chartRef = r)} width={width} height={height}>
           <Axes
-            // data={this.props.data}
             scales={{ xScale, yScale }}
             xCol={this.props.columns[1]}
             yCol={this.props.columns[0]}

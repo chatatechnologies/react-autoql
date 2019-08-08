@@ -24,7 +24,8 @@ export default class ChataHeatmapChart extends Component {
   }
 
   static defaultProps = {
-    margins: { left: 50, right: 10, top: 10, bottom: 100 },
+    // start at max margin and adjust accordingly
+    margins: { left: 150, right: 10, top: 10, bottom: 120 },
     dataValue: 'value',
     labelValue: 'label',
     tooltipFormatter: () => {}
@@ -56,9 +57,6 @@ export default class ChataHeatmapChart extends Component {
       n.getComputedTextLength()
     )
 
-    console.log('max Y label width')
-    console.log(maxYLabelWidth)
-
     const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
     let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
 
@@ -68,11 +66,6 @@ export default class ChataHeatmapChart extends Component {
         xAxisBBox.width - this.props.width + this.state.leftMargin + 45
     }
 
-    console.log('bbox width')
-    console.log(xAxisBBox.width)
-
-    console.log('props width:')
-    console.log(this.props.width)
     this.setState({
       leftMargin,
       bottomMargin
@@ -115,11 +108,11 @@ export default class ChataHeatmapChart extends Component {
     const squareHeight = height / uniqueYLabels.length
     const squareWidth = width / uniqueXLabels.length
 
-    const intervalHeight = Math.ceil((uniqueYLabels.length * 14) / height)
-    const intervalWidth = Math.ceil((uniqueXLabels.length * 14) / width)
+    const intervalHeight = Math.ceil((uniqueYLabels.length * 16) / height)
+    const intervalWidth = Math.ceil((uniqueXLabels.length * 16) / width)
 
     let xTickValues
-    if (squareWidth < 14) {
+    if (squareWidth < 16) {
       xTickValues = []
       uniqueXLabels.forEach((element, index) => {
         if (index % intervalWidth === 0) {
@@ -128,7 +121,7 @@ export default class ChataHeatmapChart extends Component {
       })
     }
     let yTickValues
-    if (squareHeight < 14) {
+    if (squareHeight < 16) {
       yTickValues = []
       uniqueYLabels.forEach((element, index) => {
         if (index % intervalHeight === 0) {

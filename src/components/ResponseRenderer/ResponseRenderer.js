@@ -110,17 +110,20 @@ export default class ResponseRenderer extends React.Component {
   setResponseData = displayType => {
     if (this.props.response && this.props.response.data) {
       const responseBody = this.props.response.data
-      // We need queryID for drilldowns
+      // We need queryID for drilldowns (for now)
       this.queryID = responseBody.query_id
-      // do we need this stuff?
-      // this.filters = responseBody.filters
-      // this.answer = responseBody.answer
+      // this.interpretation = responseBody.interpretation
       this.data = responseBody.data
+
       if (this.isTableType(displayType) || this.isChartType(displayType)) {
-        this.tableColumns = this.formatColumnsForTable(responseBody.columns)
-        this.tableData = PapaParse.parse(this.data).data
-        if (responseBody.columns && responseBody.columns.length <= 3)
-          this.chartData = this.formatChartData()
+        // this will change once the query response is refactored
+        if (typeof this.data === 'string') {
+          this.tableData = PapaParse.parse(this.data).data
+          this.tableColumns = this.formatColumnsForTable(responseBody.columns)
+          if (responseBody.columns && responseBody.columns.length <= 3) {
+            this.chartData = this.formatChartData()
+          }
+        }
       }
     }
   }
@@ -204,7 +207,6 @@ export default class ResponseRenderer extends React.Component {
     if (this.tableData.length === 1 && this.tableData[0].length === 1) {
       return this.tableData
     }
-
     return (
       <ChataTable
         columns={this.tableColumns}
@@ -459,10 +461,9 @@ export default class ResponseRenderer extends React.Component {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (this.isTableType(displayType)) {
+      } else if (this.isTableType(displayType) && this.tableData) {
         return this.renderTable()
-        return this.renderChart()
-      } else if (this.isChartType(displayType)) {
+      } else if (this.isChartType(displayType) && this.chartData) {
         return this.renderChart()
       }
       return this.renderErrorMessage('display type not recognized')

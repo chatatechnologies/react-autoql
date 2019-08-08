@@ -108,7 +108,8 @@ const outputs = [
       'd3-scale': 'd3Scale',
       'd3-array': 'd3Array',
       'd3-shape': 'd3Shape',
-      'd3-collection': 'd3Collection'
+      'd3-collection': 'd3Collection',
+      'd3-interpolate': 'd3Interpolate'
     }
   }
 ]
