@@ -2,6 +2,8 @@
 import axios from 'axios'
 import uuid from 'uuid'
 
+var autoCompleteCall = null
+
 export const runQueryOnly = (query, token, projectId = 1) => {
   const queryString = query
   const axiosInstance = axios.create({
@@ -92,12 +94,21 @@ export const fetchSuggestions = (suggestion, token, projectId = 1) => {
     }
   })
 
+  // Cancel current autocomplete call if there is one
+  if (autoCompleteCall) {
+    autoCompleteCall.cancel('Operation canceled by the user.')
+  }
+
+  autoCompleteCall = axios.CancelToken.source()
+
   const theURL = `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
     suggestion
   )}&projectid=${projectId}`
 
   return axiosInstance
-    .get(theURL)
+    .get(theURL, {
+      cancelToken: autoCompleteCall.token
+    })
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
