@@ -117,8 +117,8 @@ export default class ChatBar extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    fetchSuggestions(value, this.props.token, this.props.projectId).then(
-      response => {
+    fetchSuggestions(value, this.props.token, this.props.projectId)
+      .then(response => {
         const body = response.data
         const sortingArray = []
         let suggestionsMatchArray = []
@@ -143,8 +143,10 @@ export default class ChatBar extends React.Component {
         this.setState({
           suggestions: autoCompleteArray
         })
-      }
-    )
+      })
+      .catch(() => {
+        console.warn('Operation canceled by the user.')
+      })
   }
 
   onSuggestionsClearRequested = () => {
