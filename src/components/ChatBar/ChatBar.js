@@ -29,6 +29,7 @@ export default class ChatBar extends React.Component {
     showLoadingDots: PropTypes.bool,
     enableSafetyNet: PropTypes.bool,
     showChataIcon: PropTypes.bool
+    // clearQueryOnSubmit: PropTypes.bool
   }
 
   static defaultProps = {
