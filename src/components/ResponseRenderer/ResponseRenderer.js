@@ -12,7 +12,7 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
-import { onlyUnique, formatElement } from '../../js/Util.js'
+import { onlyUnique, formatElement, makeEmptyArray } from '../../js/Util.js'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -86,6 +86,8 @@ export default class ResponseRenderer extends React.Component {
 
   componentWillMount = () => {
     this.setResponseData(this.state.displayType)
+    this.tableID = uuid.v4()
+    this.pivotTableID = uuid.v4()
   }
 
   componentDidUpdate = prevProps => {
@@ -247,7 +249,7 @@ export default class ResponseRenderer extends React.Component {
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
-          key={uuid.v4()} // this needs to be changed
+          key={this.pivotTableID}
           ref={ref => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
@@ -264,6 +266,7 @@ export default class ResponseRenderer extends React.Component {
 
     return (
       <ChataTable
+        key={this.tableID}
         ref={ref => (this.tableRef = ref)}
         columns={this.tableColumns}
         data={this.tableData}
@@ -500,33 +503,29 @@ export default class ResponseRenderer extends React.Component {
       .map(d => d[0])
       .filter(onlyUnique)
       .sort()
-    // .map((d, i) => {
-    //   return {
-    //     [d]: i
-    //   }
-    // })
+      .reduce((map, title, i) => {
+        map[title] = i
+        return map
+      }, {})
 
     const uniqueValues1 = this.tableData
       .map(d => d[1])
       .filter(onlyUnique)
       .sort()
-    // .map((d, i) => {
-    //   return {
-    //     [d]: i
-    //   }
-    // })
+      .reduce((map, title, i) => {
+        map[title] = i + 1
+        return map
+      }, {})
 
     // Generate new column array
     const pivotTableColumns = [
       {
         ...this.tableColumns[0],
-        // headerSort: false
-        // name: '',
-        // title: '',
         frozen: true
       }
     ]
-    uniqueValues1.forEach((columnName, i) => {
+
+    Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement(
         columnName,
         this.tableColumns[1]
@@ -539,29 +538,20 @@ export default class ResponseRenderer extends React.Component {
       })
     })
 
-    // Generate table data map
-    const pivotJSON = {}
-    this.tableData.forEach(row => {
-      pivotJSON[row[0]] = {
-        ...pivotJSON[row[0]],
-        [row[1]]: row[2]
-      }
-    })
+    const pivotData = makeEmptyArray(
+      Object.keys(uniqueValues1).length,
+      Object.keys(uniqueValues0).length
+    )
 
-    // Generate table data array
-    const pivotTableData = []
-    uniqueValues0.forEach(rowValue => {
-      let newRow = [rowValue]
-      uniqueValues1.forEach(colValue => {
-        const value =
-          (pivotJSON[rowValue] && pivotJSON[rowValue][colValue]) || ''
-        newRow.push(value)
-      })
-      pivotTableData.push(newRow)
+    this.tableData.forEach(row => {
+      // Populate first column
+      pivotData[uniqueValues0[row[0]]][0] = row[0]
+      // Populate data for remaining columns
+      pivotData[uniqueValues0[row[0]]][uniqueValues1[row[1]]] = row[2]
     })
 
     this.pivotTableColumns = pivotTableColumns
-    this.pivotTableData = pivotTableData
+    this.pivotTableData = pivotData
   }
 
   onSuggestionClick = suggestion => {

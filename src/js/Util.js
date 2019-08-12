@@ -36,6 +36,17 @@ export const onlyUnique = (value, index, self) => {
 //   return false
 // }
 
+export const makeEmptyArray = (w, h) => {
+  var arr = []
+  for (let i = 0; i < h; i++) {
+    arr[i] = []
+    for (let j = 0; j < w; j++) {
+      arr[i][j] = null
+    }
+  }
+  return arr
+}
+
 export const formatChartLabel = (d, col) => {
   if (!col || !col.type) {
     return d
