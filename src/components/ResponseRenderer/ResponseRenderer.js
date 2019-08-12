@@ -264,7 +264,7 @@ export default class ResponseRenderer extends React.Component {
 
   renderPivotTable = () => {
     return (
-      <ChataPivotTable
+      <ChataTable
         columns={this.tableColumns}
         ref={ref => (this.tableRef = ref)}
         data={this.tableData}

@@ -66,7 +66,18 @@ export default class ChatMessage extends React.Component {
 
     if (columns.length === 2) {
       // Is direct key-value query (ie. Avg days to pay per customer)
-      this.supportedDisplayTypes = ['bar', 'column', 'pie', 'line', 'table']
+      this.supportedDisplayTypes = [
+        'bar',
+        'column',
+        // 'pie',
+        'line',
+        'table'
+      ]
+
+      // create pivot based on month and year
+      if (columns[0].type === 'DATE') {
+        this.supportedDisplayTypes.push('pivot_table')
+      }
       // } else if (
       //   columns.length === 3
       //   // && !this.hasMultipleValuesPerLabel()
@@ -121,7 +132,6 @@ export default class ChatMessage extends React.Component {
       return (
         <ResponseRenderer
           ref={ref => (this.responseRef = ref)}
-          key={uuid.v4()}
           supportedDisplayTypes={this.supportedDisplayTypes}
           processDrilldown={this.props.processDrilldown}
           response={response}
@@ -241,6 +251,30 @@ L10,13.8L10,13.8z M11,13.8h4v-2.7h-4V13.8L11,13.8z M1.1,7.5v2.7h4V7.5H1.1L1.1,7.
 c0.1,0,0.2-0.1,0.2-0.2c0-0.8,0-1.7,0-2.5h-4C11,8.4,11,9.3,11,10.2L11,10.2z M6,10.1h4V7.5H6V10.1L6,10.1z M5,6.6V3.9H1
 c0,0.8,0,1.6,0,2.4c0,0.1,0.2,0.2,0.3,0.2C2.5,6.6,3.7,6.6,5,6.6L5,6.6z M6,6.5h4V3.9H6V6.5L6,6.5z M14.9,6.5V3.9h-4v2.7L14.9,6.5
 L14.9,6.5z"
+                />
+              </svg>
+            </button>
+          )}
+          {this.showDisplayTypeButton('pivot_table') && (
+            <button
+              onClick={() => this.switchView('pivot_table')}
+              className="chata-toolbar-btn"
+              data-tip="Pivot Table"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <svg
+                x="0px"
+                y="0px"
+                width="16px"
+                height="16px"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  className="chart-icon-svg-0"
+                  d="M8,0.7c2.3,0,4.6,0,6.9,0C15.7,0.7,16,1,16,1.8c0,4,0,7.9,0,11.9c0,0.8-0.3,1.1-1.1,1.1c-4.6,0-9.3,0-13.9,0
+	c-0.7,0-1-0.3-1-1c0-4,0-8,0-12c0-0.7,0.3-1,1-1C3.4,0.7,5.7,0.7,8,0.7L8,0.7z M5.1,6.4h4.4V3.8H5.1V6.4L5.1,6.4z M14.9,6.4V3.8
+	h-4.4v2.7L14.9,6.4L14.9,6.4z M5.1,10.1h4.4V7.4H5.1V10.1L5.1,10.1z M14.9,10.1V7.4h-4.4v2.7H14.9L14.9,10.1z M5.1,13.7h4.4V11H5.1
+	V13.7L5.1,13.7z M14.9,13.7V11h-4.4v2.7L14.9,13.7L14.9,13.7z"
                 />
               </svg>
             </button>
