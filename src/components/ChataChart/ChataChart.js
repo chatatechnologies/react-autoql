@@ -52,6 +52,47 @@ export default class ChataChart extends Component {
     }
   }
 
+  tooltipFormatter2Columns = data => {
+    if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+      return null
+    }
+
+    const { columns, valueFormatter } = this.props
+    const xCol = columns[this.X_AXIS_INDICES[0]]
+    const yCol = columns[this.Y_AXIS_INDICES[0]]
+
+    return `<div>
+      <div>
+        <strong>${xCol.title}:</strong> ${valueFormatter(data.label, xCol)}
+      </div>
+      <div><strong>${yCol.title}:</strong> ${valueFormatter(data.value, yCol)}
+      </div>
+    </div>`
+  }
+
+  tooltipFormatter3Columns = data => {
+    if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+      return null
+    }
+
+    const { columns, valueFormatter } = this.props
+    const xCol = columns[this.X_AXIS_INDICES[0]]
+    const yCol = columns[this.Y_AXIS_INDICES[0]]
+    const zCol = columns[this.Z_AXIS_INDEX]
+
+    return `<div>
+    <div>
+      <strong>${xCol.title}:</strong> ${valueFormatter(data.labelX, xCol)}
+    </div>
+    <div>
+      <strong>${yCol.title}:</strong> ${valueFormatter(data.labelY, yCol)}
+    </div>
+    <div>
+      <strong>${zCol.title}:</strong> ${valueFormatter(data.value, zCol)}
+    </div>
+  </div>`
+  }
+
   renderColumnChart = () => {
     const self = this
     return (
@@ -63,22 +104,7 @@ export default class ChataChart extends Component {
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-            <div>
-              <strong>${
-                self.props.columns[this.X_AXIS_INDICES[0]].title
-              }:</strong> ${data.label}
-            </div>
-            <div><strong>${
-              self.props.columns[this.Y_AXIS_INDICES[0]].title
-            }:</strong> ${self.props.valueFormatter(data.value)}
-            </div>
-          </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter2Columns}
       />
     )
   }
@@ -94,22 +120,7 @@ export default class ChataChart extends Component {
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-            <div>
-              <strong>${
-                self.props.columns[this.Y_AXIS_INDICES[0]].title
-              }:</strong> ${data.label}
-            </div>
-            <div><strong>${
-              self.props.columns[this.X_AXIS_INDICES[0]].title
-            }:</strong> ${self.props.valueFormatter(data.value)}
-            </div>
-          </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter2Columns}
       />
     )
   }
@@ -125,22 +136,7 @@ export default class ChataChart extends Component {
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-          <div>
-            <strong>${
-              self.props.columns[this.X_AXIS_INDICES[0]].title
-            }:</strong> ${data.label}
-          </div>
-          <div><strong>${
-            self.props.columns[this.Y_AXIS_INDICES[0]].title
-          }:</strong> ${self.props.valueFormatter(data.value)}
-          </div>
-        </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter2Columns}
       />
     )
   }
@@ -156,22 +152,7 @@ export default class ChataChart extends Component {
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-          <div>
-            <strong>${
-              self.props.columns[this.X_AXIS_INDICES[0]].title
-            }:</strong> ${data.label}
-          </div>
-          <div><strong>${
-            self.props.columns[this.Y_AXIS_INDICES[0]].title
-          }:</strong> ${self.props.valueFormatter(data.value)}
-          </div>
-        </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter2Columns}
       />
     )
   }
@@ -188,22 +169,7 @@ export default class ChataChart extends Component {
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-          <div>
-            <strong>${self.props.columns[this.X_AXIS_INDICES[0]].title}:</strong> ${data.labelX}
-          </div>
-          <div>
-            <strong>${self.props.columns[this.Y_AXIS_INDICES[0]].title}:</strong> ${data.labelY}
-          </div>
-          <div>
-            <strong>${self.props.columns[this.Z_AXIS_INDEX].title}:</strong> ${data.value}
-          </div>
-        </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter3Columns}
       />
     )
   }
@@ -220,22 +186,7 @@ export default class ChataChart extends Component {
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"
-        tooltipFormatter={data => {
-          if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
-            return null
-          }
-          return `<div>
-          <div>
-            <strong>${self.props.columns[this.X_AXIS_INDICES[0]].title}:</strong> ${data.labelX}
-          </div>
-          <div>
-            <strong>${self.props.columns[this.Y_AXIS_INDICES[0]].title}:</strong> ${data.labelY}
-          </div>
-          <div>
-            <strong>${self.props.columns[this.Z_AXIS_INDEX].title}:</strong> ${data.value}
-          </div>
-        </div>`
-        }}
+        tooltipFormatter={self.tooltipFormatter3Columns}
       />
     )
   }

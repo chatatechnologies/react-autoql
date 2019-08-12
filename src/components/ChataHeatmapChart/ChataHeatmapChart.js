@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
+import { onlyUnique } from '../../js/Util.js'
 import { Squares } from '../Squares'
 import { scaleBand } from 'd3-scale'
 import { select } from 'd3-selection'
@@ -72,10 +73,6 @@ export default class ChataHeatmapChart extends Component {
     })
   }
 
-  onlyUnique = (value, index, self) => {
-    return self.indexOf(value) === index
-  }
-
   render = () => {
     const self = this
     const { data, width, height } = this.props
@@ -88,7 +85,7 @@ export default class ChataHeatmapChart extends Component {
 
     const uniqueXLabels = data
       .map(d => d[this.props.labelValueX])
-      .filter(self.onlyUnique)
+      .filter(onlyUnique)
       .sort()
       .reverse() // sorts dates correctly
 
@@ -99,7 +96,7 @@ export default class ChataHeatmapChart extends Component {
 
     const uniqueYLabels = data
       .map(d => d[this.props.labelValueY])
-      .filter(self.onlyUnique)
+      .filter(onlyUnique)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])

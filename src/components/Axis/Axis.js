@@ -7,6 +7,8 @@ import { axisLeft, axisBottom } from 'd3-axis'
 
 import dayjs from 'dayjs'
 
+import { formatChartLabel } from '../../js/Util.js'
+
 import './Axis.css'
 
 export default class Axis extends Component {
@@ -81,7 +83,7 @@ export default class Axis extends Component {
     }
 
     if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
-      return `${formattedLabel.substring(0, 25)}...`
+      return `${formattedLabel.substring(0, 18)}...`
     }
     return formattedLabel
   }
@@ -94,7 +96,7 @@ export default class Axis extends Component {
       .scale(this.props.scale)
       .tickSizeOuter(0)
       .tickFormat(d => {
-        return self.formatLabel(d)
+        return formatChartLabel(d, this.props.col)
       })
 
     if (this.props.ticks) {

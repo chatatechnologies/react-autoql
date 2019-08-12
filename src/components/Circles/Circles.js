@@ -21,7 +21,7 @@ export default class Squares extends Component {
       return (
         <circle
           key={`${d[labelValueX]}-${d[labelValueY]}`}
-          className={`bar${
+          className={`circle${
             this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
               ? ' active'
               : ''

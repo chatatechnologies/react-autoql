@@ -12,6 +12,7 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
+import { onlyUnique, formatElement } from '../../js/Util.js'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -418,7 +419,7 @@ export default class ResponseRenderer extends React.Component {
               // labelCol: columns[0],
               // valueCol: columns[1],
               formatter: (value, column) => {
-                return this.formatElement(value, column)
+                return formatElement(value, column)
               }
             }
           } else {
@@ -436,7 +437,7 @@ export default class ResponseRenderer extends React.Component {
           labelY: row[0],
           value: Number(row[2]) || row[2],
           formatter: (value, column) => {
-            return this.formatElement(value, column)
+            return formatElement(value, column)
           }
         }
       })
@@ -451,7 +452,7 @@ export default class ResponseRenderer extends React.Component {
       col.field = `${i}`
       col.align = 'center'
       col.formatter = (cell, formatterParams, onRendered) => {
-        return this.formatElement(cell.getValue(), col)
+        return formatElement(cell.getValue(), col)
       }
 
       const nameFragments = col.name.split('___')

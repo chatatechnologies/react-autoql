@@ -13,19 +13,29 @@ text.y-axis-label {
 }
 
 .chata-chart-container .bar,
+.chata-chart-container .circle,
 .chata-chart-container .line-dot {
   fill: #28a8e0;
   fill-opacity: 0.7;
 }
 .chata-chart-container .bar:hover,
+.chata-chart-container .circle:hover,
 .chata-chart-container .square:hover,
 .chata-chart-container .line-dot:hover {
   fill-opacity: 1;
 }
 .chata-chart-container .bar.active,
+.chata-chart-container .circle.active,
 .chata-chart-container .square.active,
 .chata-chart-container .line-dot.active {
   fill: #a5cd39;
+}
+
+.chata-chart-container .circle,
+.chata-chart-container .line-dot {
+  /* Make invisible thick stroke so hover is triggered more easily */
+  stroke: transparent;
+  stroke-width: 10px;
 }
 
 .chata-chart-container .axis path {
