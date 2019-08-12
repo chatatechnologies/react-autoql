@@ -148,7 +148,7 @@ export default class ChataHeatmapChart extends Component {
             height={this.props.height}
             yTicks={yTickValues}
             xTicks={xTickValues}
-            rotateLabels={squareWidth < 125}
+            rotateLabels={squareWidth < 135}
           />
           {
             <Squares

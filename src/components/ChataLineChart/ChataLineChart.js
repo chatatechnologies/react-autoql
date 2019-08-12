@@ -121,7 +121,7 @@ export default class ChataLineChart extends Component {
             width={this.props.width}
             height={this.props.height}
             xTicks={xTickValues}
-            rotateLabels={barWidth < 125}
+            rotateLabels={barWidth < 135}
             yGridLines
           />
           <Line

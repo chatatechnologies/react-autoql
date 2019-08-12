@@ -128,7 +128,7 @@ export default class ChataBarChart extends Component {
             width={this.props.width}
             height={this.props.height}
             yTicks={yTickValues}
-            rotateLabels={tickWidth < 125}
+            rotateLabels={tickWidth < 135}
             xGridLines
           />
           {
