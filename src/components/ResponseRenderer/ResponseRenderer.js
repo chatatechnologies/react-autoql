@@ -27,11 +27,10 @@ String.prototype.toProperCase = function() {
 }
 
 const TABLE_TYPES = [
-  'pivot_column',
+  'pivot_table',
   'table',
   'compare_table',
-  'compare_table_budget',
-  'date_pivot'
+  'compare_table_budget'
 ]
 
 const CHART_TYPES = [
@@ -92,44 +91,68 @@ export default class ResponseRenderer extends React.Component {
       this.props.displayType !== prevProps.displayType
     ) {
       this.setState({ displayType: this.props.displayType })
-    } else if (
-      !this.props.onSuggestionClick &&
-      this.props.response &&
-      this.props.response.data &&
-      this.props.response.data.display_type &&
-      prevProps.response &&
-      prevProps.response.data &&
-      !prevProps.response.data.data
-    ) {
-      // User clicked on suggestion
-      this.setState({ displayType: this.props.response.data.display_type })
-      this.setResponseData(this.props.response.data.display_type)
     }
+    // else if (
+    //   !this.props.onSuggestionClick &&
+    //   this.props.response &&
+    //   this.props.response.data &&
+    //   this.props.response.data.display_type &&
+    //   prevProps.response &&
+    //   prevProps.response.data &&
+    //   !prevProps.response.data.data
+    // ) {
+    //   // User clicked on suggestion
+    //   this.setState({ displayType: this.props.response.data.display_type })
+    //   this.setResponseData(this.props.response.data.display_type)
+    // }
   }
+
+  isChartType = type => CHART_TYPES.includes(type)
+  isTableType = type => TABLE_TYPES.includes(type)
 
   setResponseData = displayType => {
     if (this.props.response && this.props.response.data) {
       const responseBody = this.props.response.data
-      // We need queryID for drilldowns (for now)
-      this.queryID = responseBody.query_id
-      // this.interpretation = responseBody.interpretation
+      this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
+      this.interpretation = responseBody.interpretation // Where should we display this?
       this.data = responseBody.data
 
-      if (this.isTableType(displayType) || this.isChartType(displayType)) {
-        this.tableData =
-          typeof this.data === 'string' // this will change once the query response is refactored
-            ? PapaParse.parse(this.data).data
-            : this.data
-        this.tableColumns = this.formatColumnsForTable(responseBody.columns)
+      if (
+        this.isTableType(displayType) ||
+        this.isChartType(displayType)
+        // responseBody.columns &&
+        // responseBody.data
+      ) {
+        this.generateTableData()
+        if (this.props.supportedDisplayTypes.includes('pivot_table')) {
+          this.generatePivotData()
+        }
         if (responseBody.columns && responseBody.columns.length <= 3) {
-          this.chartData = this.formatChartData()
+          this.generateChartData()
         }
       }
     }
   }
 
-  isChartType = type => CHART_TYPES.includes(type)
-  isTableType = type => TABLE_TYPES.includes(type)
+  generateTableData = () => {
+    this.tableColumns = this.formatColumnsForTable(
+      this.props.response.data.columns
+    )
+    this.tableData =
+      typeof this.data === 'string' // This will change once the query response is refactored
+        ? PapaParse.parse(this.data).data
+        : this.data
+  }
+
+  generatePivotData = () => {
+    if (this.tableColumns.length === 2) {
+      this.pivotTableData = this.formatDatePivotData()
+      this.pivotTableColumns = this.formatDatePivotColumns()
+    } else {
+      this.pivotTableData = this.formatPivotData()
+      this.pivotTableColumns = this.formatPivotColumns()
+    }
+  }
 
   createSuggestionMessage = (userInput, suggestions) => {
     return (
@@ -204,11 +227,44 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderTable = () => {
+    if (
+      !this.tableData ||
+      (this.state.displayType === 'pivot_table' && !this.pivotTableData)
+    ) {
+      return 'Error: There was no data supplied for this table'
+    }
+
     if (this.tableData.length === 1 && this.tableData[0].length === 1) {
+      // This is a single cell of data
       return this.tableData
     }
+
     return (
       <ChataTable
+        ref={ref => (this.tableRef = ref)}
+        columns={
+          this.state.displayType === 'pivot_table'
+            ? this.pivotTableColumns
+            : this.tableColumns
+        }
+        data={
+          this.state.displayType === 'pivot_table'
+            ? this.pivotTableData
+            : this.tableData
+        }
+        borderColor={this.props.tableBorderColor}
+        onRowDblClick={(row, columns) => {
+          if (!this.props.isDrilldownDisabled) {
+            this.props.processDrilldown(row, columns, this.queryID)
+          }
+        }}
+      />
+    )
+  }
+
+  renderPivotTable = () => {
+    return (
+      <ChataPivotTable
         columns={this.tableColumns}
         ref={ref => (this.tableRef = ref)}
         data={this.tableData}
@@ -223,6 +279,9 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderChart = () => {
+    if (!this.chartData) {
+      return 'Error: There was no data supplied for this chart'
+    }
     let chartWidth = 0
     let chartHeight = 0
     const chatContainer = document.querySelector('.chat-message-container')
@@ -318,6 +377,7 @@ export default class ResponseRenderer extends React.Component {
           break
         }
         case 'DATE': {
+          // This will change when the query response is refactored
           const title = column.title
           if (title && title.includes('Year')) {
             formattedElement = dayjs.unix(element).format('YYYY')
@@ -341,11 +401,11 @@ export default class ResponseRenderer extends React.Component {
     return formattedElement
   }
 
-  formatChartData = () => {
+  generateChartData = () => {
     const columns = this.tableColumns
 
     if (columns.length === 2) {
-      return Object.values(
+      this.chartData = Object.values(
         this.tableData.reduce((chartDataObject, row) => {
           if (!chartDataObject[row[0]]) {
             chartDataObject[row[0]] = {
@@ -368,7 +428,7 @@ export default class ResponseRenderer extends React.Component {
         }, {})
       )
     } else if (columns.length === 3) {
-      return this.tableData.map(row => {
+      this.chartData = this.tableData.map(row => {
         return {
           origColumns: columns,
           origRow: row,
@@ -384,6 +444,9 @@ export default class ResponseRenderer extends React.Component {
   }
 
   formatColumnsForTable = columns => {
+    if (!columns) {
+      return null
+    }
     const formattedColumns = columns.map((col, i) => {
       col.field = `${i}`
       col.align = 'center'
@@ -417,6 +480,33 @@ export default class ResponseRenderer extends React.Component {
     return formattedColumns
   }
 
+  formatDatePivotData = () => {
+    const { tableData } = this
+    let datePivotData = []
+
+    tableData.forEach(row => {
+      datePivotData.push([
+        dayjs.unix(row[0]).format('MMMM'),
+        dayjs.unix(row[0]).format('YYYY'),
+        row[1]
+      ])
+    })
+
+    return datePivotData
+  }
+
+  formatDatePivotColumns = () => {
+    this.pivotTableColumns = this.tableColumns
+  }
+
+  formatPivotData = () => {
+    this.pivotTableData = this.tableData
+  }
+
+  formatPivotColumns = () => {
+    this.pivotTableColumns = this.tableColumns
+  }
+
   onSuggestionClick = suggestion => {
     if (this.props.onSuggestionClick) {
       this.props.onSuggestionClick(suggestion)
@@ -442,11 +532,11 @@ export default class ResponseRenderer extends React.Component {
       return this.state.customResponse
     }
     if (!this.props.response) {
-      return this.renderErrorMessage('no response object supplied')
+      return this.renderErrorMessage('Error: No response object supplied')
     }
     const responseBody = this.props.response.data
     if (!responseBody) {
-      return this.renderErrorMessage('no response body from query endpoint')
+      return this.renderErrorMessage('Error: No response body supplied')
     }
 
     if (responseBody.full_suggestion) {
@@ -456,31 +546,38 @@ export default class ResponseRenderer extends React.Component {
           onSuggestionClick={this.onSuggestionClick}
         />
       )
-    } else if (responseBody.data && !responseBody.data.length) {
+    }
+
+    if (responseBody.data && !responseBody.data.length) {
       // This is not an error. There is just no data in the DB
       return 'No data found.'
-    } else if (this.state.displayType) {
+    }
+
+    if (displayType) {
       if (displayType === 'suggestion' || displayType === 'unknown_words') {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (this.isTableType(displayType) && this.tableData) {
+      } else if (this.isTableType(displayType)) {
         return this.renderTable()
-      } else if (this.isChartType(displayType) && this.chartData) {
+      } else if (this.isChartType(displayType)) {
         return this.renderChart()
       }
       return this.renderErrorMessage(
         `display type not recognized: ${this.state.displayType}`
       )
     }
-    return this.renderErrorMessage('No display type')
+    return this.renderErrorMessage('Error: No Display Type')
   }
 
   render = () => {
     return (
       <Fragment>
         <style>{`${styles}`}</style>
-        <div className="chata-response-content-container">
+        <div
+          data-test="query-response-wrapper"
+          className="chata-response-content-container"
+        >
           {this.renderResponse()}
         </div>
       </Fragment>
