@@ -20,6 +20,7 @@ export default class ChatMessage extends React.Component {
     id: PropTypes.string.isRequired,
     displayType: PropTypes.string,
     tableBorderColor: PropTypes.string.isRequired,
+    tableHoverColor: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func.isRequired,
     response: PropTypes.shape({}),
     content: PropTypes.string,
@@ -140,6 +141,7 @@ export default class ChatMessage extends React.Component {
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           tableBorderColor={this.props.tableBorderColor}
+          tableHoverColor={this.props.tableHoverColor}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
           width={chartWidth}

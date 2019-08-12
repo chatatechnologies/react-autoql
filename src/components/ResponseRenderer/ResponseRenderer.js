@@ -59,6 +59,7 @@ export default class ResponseRenderer extends React.Component {
     chatBarRef: PropTypes.instanceOf(ChatBar),
     isQueryRunning: PropTypes.bool,
     tableBorderColor: PropTypes.string,
+    tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string)
   }
@@ -67,7 +68,8 @@ export default class ResponseRenderer extends React.Component {
     supportedDisplayTypes: [],
     supportsSuggestions: true,
     isQueryRunning: false,
-    tableBorderColor: undefined,
+    tableBorderColor: undefined, // this should be what it is in light theme by default
+    tableHoverColor: undefined, // this should be what it is in light theme by default
     displayType: undefined,
     chatBarRef: undefined,
     onSuggestionClick: undefined,
@@ -147,11 +149,9 @@ export default class ResponseRenderer extends React.Component {
 
   generatePivotData = () => {
     if (this.tableColumns.length === 2) {
-      this.pivotTableData = this.formatDatePivotData()
-      this.pivotTableColumns = this.formatDatePivotColumns()
+      this.generateDatePivotData()
     } else {
-      this.pivotTableData = this.formatPivotData()
-      this.pivotTableColumns = this.formatPivotColumns()
+      this.generatePivotData()
     }
   }
 
@@ -216,14 +216,18 @@ export default class ResponseRenderer extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.tableRef) {
+    if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.copyToClipboard()
+    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+      this.pivotTableRef.copyToClipboard()
     }
   }
 
   saveTableAsCSV = () => {
-    if (this.tableRef) {
+    if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.saveAsCSV()
+    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+      this.pivotTableRef.saveAsCSV()
     }
   }
 
@@ -240,36 +244,31 @@ export default class ResponseRenderer extends React.Component {
       return this.tableData
     }
 
-    return (
-      <ChataTable
-        ref={ref => (this.tableRef = ref)}
-        columns={
-          this.state.displayType === 'pivot_table'
-            ? this.pivotTableColumns
-            : this.tableColumns
-        }
-        data={
-          this.state.displayType === 'pivot_table'
-            ? this.pivotTableData
-            : this.tableData
-        }
-        borderColor={this.props.tableBorderColor}
-        onRowDblClick={(row, columns) => {
-          if (!this.props.isDrilldownDisabled) {
-            this.props.processDrilldown(row, columns, this.queryID)
-          }
-        }}
-      />
-    )
-  }
+    if (this.state.displayType === 'pivot_table') {
+      return (
+        <ChataTable
+          key={uuid.v4()} // this needs to be changed
+          ref={ref => (this.pivotTableRef = ref)}
+          columns={this.pivotTableColumns}
+          data={this.pivotTableData}
+          borderColor={this.props.tableBorderColor}
+          hoverColor={this.props.tableHoverColor}
+          // onRowDblClick={(row, columns) => {
+          //   if (!this.props.isDrilldownDisabled) {
+          //     this.props.processDrilldown(row, columns, this.queryID)
+          //   }
+          // }}
+        />
+      )
+    }
 
-  renderPivotTable = () => {
     return (
       <ChataTable
-        columns={this.tableColumns}
         ref={ref => (this.tableRef = ref)}
+        columns={this.tableColumns}
         data={this.tableData}
         borderColor={this.props.tableBorderColor}
+        hoverColor={this.props.tableHoverColor}
         onRowDblClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
@@ -318,7 +317,7 @@ export default class ResponseRenderer extends React.Component {
         columns={this.tableColumns}
         height={chartHeight}
         width={chartWidth}
-        valueFormatter={this.formatElement}
+        valueFormatter={formatElement}
         onDoubleClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
@@ -372,7 +371,7 @@ export default class ResponseRenderer extends React.Component {
           break
         }
         case 'QUANTITY': {
-          if (Number(element) % 1 !== 0) {
+          if (Number(element) && Number(element) % 1 !== 0) {
             formattedElement = Numbro(element).format('0,0.0')
           }
           break
@@ -481,7 +480,7 @@ export default class ResponseRenderer extends React.Component {
     return formattedColumns
   }
 
-  formatDatePivotData = () => {
+  generateDatePivotData = () => {
     const { tableData } = this
     let datePivotData = []
 
@@ -496,16 +495,73 @@ export default class ResponseRenderer extends React.Component {
     return datePivotData
   }
 
-  formatDatePivotColumns = () => {
-    this.pivotTableColumns = this.tableColumns
-  }
+  generatePivotData = () => {
+    const uniqueValues0 = this.tableData
+      .map(d => d[0])
+      .filter(onlyUnique)
+      .sort()
+    // .map((d, i) => {
+    //   return {
+    //     [d]: i
+    //   }
+    // })
 
-  formatPivotData = () => {
-    this.pivotTableData = this.tableData
-  }
+    const uniqueValues1 = this.tableData
+      .map(d => d[1])
+      .filter(onlyUnique)
+      .sort()
+    // .map((d, i) => {
+    //   return {
+    //     [d]: i
+    //   }
+    // })
 
-  formatPivotColumns = () => {
-    this.pivotTableColumns = this.tableColumns
+    // Generate new column array
+    const pivotTableColumns = [
+      {
+        ...this.tableColumns[0],
+        // headerSort: false
+        // name: '',
+        // title: '',
+        frozen: true
+      }
+    ]
+    uniqueValues1.forEach((columnName, i) => {
+      const formattedColumnName = formatElement(
+        columnName,
+        this.tableColumns[1]
+      )
+      pivotTableColumns.push({
+        ...this.tableColumns[2], // value column
+        name: formattedColumnName,
+        title: formattedColumnName,
+        field: `${i + 1}`
+      })
+    })
+
+    // Generate table data map
+    const pivotJSON = {}
+    this.tableData.forEach(row => {
+      pivotJSON[row[0]] = {
+        ...pivotJSON[row[0]],
+        [row[1]]: row[2]
+      }
+    })
+
+    // Generate table data array
+    const pivotTableData = []
+    uniqueValues0.forEach(rowValue => {
+      let newRow = [rowValue]
+      uniqueValues1.forEach(colValue => {
+        const value =
+          (pivotJSON[rowValue] && pivotJSON[rowValue][colValue]) || ''
+        newRow.push(value)
+      })
+      pivotTableData.push(newRow)
+    })
+
+    this.pivotTableColumns = pivotTableColumns
+    this.pivotTableData = pivotTableData
   }
 
   onSuggestionClick = suggestion => {

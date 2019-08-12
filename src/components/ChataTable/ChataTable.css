@@ -1,5 +1,6 @@
 .chata-table-container {
   height: 100%;
+  background-color: inherit;
 }
 
 .chata-table {
@@ -10,15 +11,20 @@
 .chata-table.tabulator,
 .chata-table.tabulator .tabulator-row,
 .chata-table.tabulator .tabulator-header,
+.chata-table.tabulator .tabulator-headers,
 .chata-table.tabulator .tabulator-header .tabulator-col,
 .chata-table.tabulator .tabulator-tableHolder .tabulator-table {
-  background: inherit;
+  background-color: inherit;
+}
+.chata-table.tabulator .tabulator-header .tabulator-col,
+.chata-table.tabulator .tabulator-cell {
+  border-color: var(--chata-table-border-color);
 }
 .chata-table.tabulator .tabulator-header {
   border-bottom: 2px solid var(--chata-table-border-color);
 }
 .chata-table.tabulator {
-  background: inherit;
+  background-color: inherit;
   height: 100%;
 }
 .chata-table .tabulator-row {
@@ -33,7 +39,8 @@
 .chata-table.tabulator
   .tabulator-header
   .tabulator-col.tabulator-sortable:hover {
-  background-color: rgba(0, 0, 0, 0.1) !important;
+  /* background-color: rgba(0, 0, 0, 0.1) !important; */
+  background-color: var(--chata-table-hover-color) !important;
 }
 .chata-table.tabulator
   .tabulator-header

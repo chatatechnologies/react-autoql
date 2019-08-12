@@ -39,7 +39,7 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: transparent;
+  background: var(--chata-drawer-background-color);
   color: var(--chata-drawer-text-color-primary);
   border: 1px solid #d3d3d352;
   /* box-shadow: 2px 3px 8px 1px rgba(0, 0, 0, 0.1); */

@@ -21,11 +21,14 @@ export default class ChataTable extends React.Component {
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onRowDblClick: PropTypes.func,
     data: PropTypes.arrayOf(PropTypes.array).isRequired,
-    borderColor: PropTypes.string
+    borderColor: PropTypes.string,
+    hoverColor: PropTypes.string
   }
 
   static defaultProps = {
     borderColor: '#ddd',
+    // hoverColor: '#5a5a5a',
+    hoverColor: '#ececec',
     onRowDblClick: () => {}
   }
 
@@ -48,6 +51,10 @@ export default class ChataTable extends React.Component {
     document.documentElement.style.setProperty(
       '--chata-table-border-color',
       this.props.borderColor
+    )
+    document.documentElement.style.setProperty(
+      '--chata-table-hover-color',
+      this.props.hoverColor
     )
   }
 

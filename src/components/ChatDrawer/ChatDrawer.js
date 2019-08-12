@@ -29,6 +29,7 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-accent-color': '#28a8e0',
     '--chata-drawer-background-color': '#fff',
     '--chata-drawer-border-color': '#d3d3d352',
+    '--chata-drawer-hover-color': '#ececec',
     '--chata-drawer-text-color-primary': '#5d5d5d',
     '--chata-drawer-text-color-placeholder': '#0000009c'
   }
@@ -38,6 +39,7 @@ export default class ChatDrawer extends React.Component {
     // '--chata-drawer-accent-color': '#193a48', // dark blue
     '--chata-drawer-background-color': '#636363',
     '--chata-drawer-border-color': '#d3d3d329',
+    '--chata-drawer-hover-color': '#5a5a5a',
     '--chata-drawer-text-color-primary': '#fff',
     '--chata-drawer-text-color-placeholder': '#ffffff9c'
   }
@@ -531,6 +533,11 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
                         this.props.theme === 'light'
                           ? this.LIGHT_THEME['--chata-drawer-border-color']
                           : this.DARK_THEME['--chata-drawer-border-color']
+                      }
+                      tableHoverColor={
+                        this.props.theme === 'light'
+                          ? this.LIGHT_THEME['--chata-drawer-hover-color']
+                          : this.DARK_THEME['--chata-drawer-hover-color']
                       }
                       displayType={
                         message.displayType ||
