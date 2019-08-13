@@ -27,6 +27,7 @@ export default class Line extends Component {
           }
           y2={d2 ? yScale(d2[dataValue]) : yScale(d[dataValue])}
           stroke="#28a8e0"
+          opacity={0.7}
         />
       )
     })
@@ -48,7 +49,7 @@ export default class Line extends Component {
           cx={xScale(d[labelValue]) + xShift}
           stroke="transparent"
           strokeWidth={5}
-          r={2}
+          r={3}
           onClick={() => this.setState({ activeKey: d[labelValue] })}
           onDoubleClick={() => {
             this.setState({ activeKey: d[labelValue] })

@@ -1,12 +1,10 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import { Axes } from '../Axes'
 import { onlyUnique } from '../../js/Util.js'
 import { Circles } from '../Circles'
 import { scaleBand } from 'd3-scale'
-import { select } from 'd3-selection'
-import { max, min } from 'd3-array'
+import { max } from 'd3-array'
 
 export default class ChataBubbleChart extends Component {
   xScale = scaleBand()
@@ -15,76 +13,46 @@ export default class ChataBubbleChart extends Component {
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    margin: PropTypes.shape({}),
+    width: PropTypes.number.isRequired,
+    height: PropTypes.number.isRequired,
+    leftMargin: PropTypes.number.isRequired,
+    rightMargin: PropTypes.number.isRequired,
+    topMargin: PropTypes.number.isRequired,
+    bottomMargin: PropTypes.number.isRequired,
     dataValue: PropTypes.string,
-    labelValue: PropTypes.string,
-    tooltipFormatter: PropTypes.func,
-    size: PropTypes.arrayOf(PropTypes.number),
-    width: PropTypes.number,
-    height: PropTypes.number
+    labelValueX: PropTypes.string,
+    labelValueY: PropTypes.string,
+    tooltipFormatter: PropTypes.func
   }
 
   static defaultProps = {
-    // start at max margin and adjust accordingly
-    margins: { left: 150, right: 10, top: 10, bottom: 120 },
     dataValue: 'value',
-    labelValue: 'label',
+    labelValueX: 'labelX',
+    labelValueY: 'labelY',
     tooltipFormatter: () => {}
   }
 
-  state = {
-    leftMargin: this.props.margins.left,
-    rightMargin: this.props.margins.right,
-    topMargin: this.props.margins.top,
-    bottomMargin: this.props.margins.bottom
-  }
-
-  componentDidMount = () => {
-    this.updateMargins()
-  }
-
-  componentDidUpdate = () => {}
-
-  updateMargins = () => {
-    const xAxisBBox = select(this.chartRef)
-      .select('.axis-Bottom')
-      .node()
-      .getBBox()
-
-    const yAxisLabels = select(this.chartRef)
-      .select('.axis-Left')
-      .selectAll('text')
-    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
-      n.getComputedTextLength()
-    )
-
-    const bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
-    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
-
-    // If the rotated labels in the x axis exceed the width of the chart, use that instead
-    if (xAxisBBox.width > this.props.width) {
-      leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
-    }
-
-    this.setState({
-      leftMargin,
-      bottomMargin
-    })
-  }
-
   render = () => {
-    const self = this
-    const { data, width, height } = this.props
-    const { leftMargin, rightMargin, bottomMargin, topMargin } = this.state
+    const {
+      tooltipFormatter,
+      onDoubleClick,
+      bottomMargin,
+      rightMargin,
+      labelValueY,
+      labelValueX,
+      leftMargin,
+      topMargin,
+      dataValue,
+      columns,
+      height,
+      width,
+      data
+    } = this.props
 
-    // const maxValue = max(data, d => {
-    //   return max(d[self.props.dataValue], el => el[self.props.labelValueX])
-    // })
-    const maxValue = max(data, d => d[self.props.dataValue])
+    const maxValue = max(data, d => d[dataValue])
 
     const uniqueXLabels = data
-      .map(d => d[this.props.labelValueX])
+      .map(d => d[labelValueX])
       .filter(onlyUnique)
       .sort()
       .reverse() // sorts dates correctly
@@ -94,9 +62,7 @@ export default class ChataBubbleChart extends Component {
       .rangeRound([width - rightMargin, leftMargin])
       .paddingInner(0)
 
-    const uniqueYLabels = data
-      .map(d => d[this.props.labelValueY])
-      .filter(onlyUnique)
+    const uniqueYLabels = data.map(d => d[labelValueY]).filter(onlyUnique)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .rangeRound([height - bottomMargin, topMargin])
@@ -128,58 +94,45 @@ export default class ChataBubbleChart extends Component {
     }
 
     return (
-      <div className="chata-chart-container">
-        <svg
-          ref={r => (this.chartRef = r)}
-          xmlns="http://www.w3.org/2000/svg"
+      <g>
+        <Axes
+          scales={{ xScale, yScale }}
+          xCol={columns[1]}
+          yCol={columns[0]}
+          valueCol={columns[2]}
+          margins={{
+            left: leftMargin,
+            right: rightMargin,
+            bottom: bottomMargin,
+            top: topMargin
+          }}
           width={width}
           height={height}
-        >
-          <Axes
+          yTicks={yTickValues}
+          xTicks={xTickValues}
+          rotateLabels={squareWidth < 135}
+        />
+        {
+          <Circles
             scales={{ xScale, yScale }}
-            xCol={this.props.columns[1]}
-            yCol={this.props.columns[0]}
-            valueCol={this.props.columns[2]}
             margins={{
               left: leftMargin,
               right: rightMargin,
               bottom: bottomMargin,
               top: topMargin
             }}
-            width={this.props.width}
-            height={this.props.height}
-            yTicks={yTickValues}
-            xTicks={xTickValues}
-            rotateLabels={squareWidth < 135}
+            data={data}
+            maxValue={maxValue}
+            width={width}
+            height={height}
+            dataValue={dataValue}
+            labelValueX={labelValueX}
+            labelValueY={labelValueY}
+            onDoubleClick={onDoubleClick}
+            tooltipFormatter={tooltipFormatter}
           />
-          {
-            <Circles
-              scales={{ xScale, yScale }}
-              margins={{
-                left: leftMargin,
-                right: rightMargin,
-                bottom: bottomMargin,
-                top: topMargin
-              }}
-              data={data}
-              maxValue={maxValue}
-              width={this.props.width}
-              height={this.props.height}
-              dataValue={this.props.dataValue}
-              labelValueX={this.props.labelValueX}
-              labelValueY={this.props.labelValueY}
-              onDoubleClick={this.props.onDoubleClick}
-              tooltipFormatter={this.props.tooltipFormatter}
-            />
-          }
-        </svg>
-        <ReactTooltip
-          className="chata-chart-tooltip"
-          id="chart-element-tooltip"
-          effect="solid"
-          html
-        />
-      </div>
+        }
+      </g>
     )
   }
 }

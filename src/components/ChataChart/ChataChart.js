@@ -1,5 +1,9 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
+import ReactTooltip from 'react-tooltip'
+
+import { select } from 'd3-selection'
+import { max } from 'd3-array'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -28,7 +32,12 @@ export default class ChataChart extends Component {
 
   static defaultProps = {}
 
-  state = {}
+  state = {
+    leftMargin: 50,
+    rightMargin: 10,
+    topMargin: 10,
+    bottomMargin: 100
+  }
 
   componentWillMount = () => {
     const { type } = this.props
@@ -52,6 +61,53 @@ export default class ChataChart extends Component {
       this.Y_AXIS_INDICES = [0]
       this.Z_AXIS_INDEX = 2
     }
+  }
+
+  componentDidMount = () => {
+    this.updateMargins()
+  }
+
+  componentDidUpdate = prevProps => {
+    if (this.props.type && this.props.type !== prevProps.type) {
+      this.updateMargins()
+      ReactTooltip.rebuild()
+    }
+  }
+
+  updateMargins = () => {
+    const xAxisBBox = select(this.chartRef)
+      .select('.axis-Bottom')
+      .node()
+      .getBBox()
+
+    const yAxisLabels = select(this.chartRef)
+      .select('.axis-Left')
+      .selectAll('text')
+
+    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+      n.getComputedTextLength()
+    )
+
+    let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+
+    if (this.props.type === 'bar') {
+      // only for bar charts (vertical grid lines mess with the axis size)
+      const innerTickSize =
+        this.props.height - this.state.topMargin - this.state.bottomMargin
+      bottomMargin = bottomMargin - innerTickSize
+    }
+
+    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
+    // If the rotated labels in the x axis exceed the width of the chart, use that instead
+    if (xAxisBBox.width > this.props.width) {
+      leftMargin =
+        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
+    }
+
+    this.setState({
+      leftMargin,
+      bottomMargin
+    })
   }
 
   tooltipFormatter2Columns = data => {
@@ -96,7 +152,7 @@ export default class ChataChart extends Component {
   }
 
   saveAsPNG = () => {
-    const svgElement = this.chartRef && this.chartRef.chartRef
+    const svgElement = this.chartRef
     if (!svgElement) {
       return
     }
@@ -129,11 +185,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataColumnChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
@@ -146,11 +205,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataBarChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
@@ -163,11 +225,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataLineChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
@@ -180,11 +245,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataPieChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValue="label"
@@ -197,11 +265,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataHeatmapChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValueX="labelX"
@@ -215,11 +286,14 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataBubbleChart
-        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
         width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
         onDoubleClick={this.props.onDoubleClick}
         dataValue="value"
         labelValueX="labelX"
@@ -304,7 +378,22 @@ export default class ChataChart extends Component {
     return (
       <Fragment>
         <style>{`${styles}`}</style>
-        {chart}
+        <div className="chata-chart-container">
+          <svg
+            ref={r => (this.chartRef = r)}
+            xmlns="http://www.w3.org/2000/svg"
+            width={this.props.width}
+            height={this.props.height}
+          >
+            {chart}
+          </svg>
+          <ReactTooltip
+            className="chata-chart-tooltip"
+            id="chart-element-tooltip"
+            effect="solid"
+            html
+          />
+        </div>
       </Fragment>
     )
   }
