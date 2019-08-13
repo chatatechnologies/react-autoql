@@ -230,7 +230,7 @@ export default class ChatMessage extends React.Component {
     )
   }
 
-  createDisplayTypeButton = (displayType, name, icon) => {
+  createVisButton = (displayType, name, icon) => {
     if (this.showDisplayTypeButton(displayType)) {
       return (
         <button
@@ -258,77 +258,14 @@ export default class ChatMessage extends React.Component {
     ) {
       return (
         <div className="chat-message-toolbar left">
-          {this.createDisplayTypeButton('table', 'Table', tableIcon)}
-          {this.showDisplayTypeButton('pivot_table') && (
-            <button
-              onClick={() => this.switchView('pivot_table')}
-              className="chata-toolbar-btn"
-              data-tip="Pivot Table"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {pivotTableIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('column') && (
-            <button
-              onClick={() => this.switchView('column')}
-              className="chata-toolbar-btn"
-              data-tip="Column Chart"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {columnChartIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('bar') && (
-            <button
-              onClick={() => this.switchView('bar')}
-              className="chata-toolbar-btn"
-              data-tip="Bar Chart"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {barChartIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('line') && (
-            <button
-              onClick={() => this.switchView('line')}
-              className="chata-toolbar-btn"
-              data-tip="Line Chart"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {lineChartIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('pie') && (
-            <button
-              onClick={() => this.switchView('pie')}
-              className="chata-toolbar-btn"
-              data-tip="Pie Chart"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {pieChartIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('heatmap') && (
-            <button
-              onClick={() => this.switchView('heatmap')}
-              className="chata-toolbar-btn"
-              data-tip="Heatmap"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {heatmapIcon}
-            </button>
-          )}
-          {this.showDisplayTypeButton('bubble') && (
-            <button
-              onClick={() => this.switchView('bubble')}
-              className="chata-toolbar-btn"
-              data-tip="Bubble Chart"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              {bubbleChartIcon}
-            </button>
-          )}
+          {this.createVisButton('table', 'Table', tableIcon)}
+          {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
+          {this.createVisButton('column', 'Column Chart', columnChartIcon)}
+          {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
+          {this.createVisButton('line', 'Line Chart', lineChartIcon)}
+          {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
+          {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
+          {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
         </div>
       )
     }
