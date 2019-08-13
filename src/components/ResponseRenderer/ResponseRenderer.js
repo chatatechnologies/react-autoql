@@ -153,7 +153,7 @@ export default class ResponseRenderer extends React.Component {
     if (this.tableColumns.length === 2) {
       this.generateDatePivotData()
     } else {
-      this.generatePivotData()
+      this.generatePivotTableData()
     }
   }
 
@@ -484,21 +484,67 @@ export default class ResponseRenderer extends React.Component {
   }
 
   generateDatePivotData = () => {
-    const { tableData } = this
-    let datePivotData = []
+    const uniqueMonths = {
+      January: 0,
+      February: 1,
+      March: 2,
+      April: 3,
+      May: 4,
+      June: 5,
+      July: 6,
+      August: 7,
+      September: 8,
+      October: 9,
+      November: 10,
+      December: 11
+    }
 
-    tableData.forEach(row => {
-      datePivotData.push([
-        dayjs.unix(row[0]).format('MMMM'),
-        dayjs.unix(row[0]).format('YYYY'),
-        row[1]
-      ])
+    const uniqueYears = this.tableData
+      .map(d => Number(dayjs.unix(d[0]).format('YYYY')))
+      .filter(onlyUnique)
+      .sort()
+      .reduce((map, title, i) => {
+        map[title] = i + 1
+        return map
+      }, {})
+
+    // Generate new column array
+    const pivotTableColumns = [
+      {
+        title: 'Month',
+        name: 'Month',
+        field: '0',
+        // sorter: 'date',
+        frozen: true
+      }
+    ]
+    Object.keys(uniqueYears).forEach((year, i) => {
+      pivotTableColumns.push({
+        ...this.tableColumns[1], // value column
+        name: year,
+        title: year,
+        field: `${i + 1}`
+      })
     })
 
-    return datePivotData
+    const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
+
+    // Populate first column
+    Object.keys(uniqueMonths).forEach((month, i) => {
+      pivotTableData[i][0] = month
+    })
+    // Populate remaining columns
+    this.tableData.forEach(row => {
+      const year = dayjs.unix(row[0]).format('YYYY')
+      const month = dayjs.unix(row[0]).format('MMMM')
+      pivotTableData[uniqueMonths[month]][uniqueYears[year]] = row[1]
+    })
+
+    this.pivotTableColumns = pivotTableColumns
+    this.pivotTableData = pivotTableData
   }
 
-  generatePivotData = () => {
+  generatePivotTableData = () => {
     const uniqueValues0 = this.tableData
       .map(d => d[0])
       .filter(onlyUnique)
@@ -524,7 +570,6 @@ export default class ResponseRenderer extends React.Component {
         frozen: true
       }
     ]
-
     Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement(
         columnName,
@@ -538,20 +583,19 @@ export default class ResponseRenderer extends React.Component {
       })
     })
 
-    const pivotData = makeEmptyArray(
+    const pivotTableData = makeEmptyArray(
       Object.keys(uniqueValues1).length,
       Object.keys(uniqueValues0).length
     )
-
     this.tableData.forEach(row => {
       // Populate first column
-      pivotData[uniqueValues0[row[0]]][0] = row[0]
+      pivotTableData[uniqueValues0[row[0]]][0] = row[0]
       // Populate data for remaining columns
-      pivotData[uniqueValues0[row[0]]][uniqueValues1[row[1]]] = row[2]
+      pivotTableData[uniqueValues0[row[0]]][uniqueValues1[row[1]]] = row[2]
     })
 
     this.pivotTableColumns = pivotTableColumns
-    this.pivotTableData = pivotData
+    this.pivotTableData = pivotTableData
   }
 
   onSuggestionClick = suggestion => {
