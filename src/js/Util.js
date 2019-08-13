@@ -155,16 +155,15 @@ export const formatElement = (element, column) => {
  * @param {string} [fill] optionally backgrund canvas fill
  * @return {Promise} a promise to the bas64 png image
  */
-export const svgToPng = (svg, margin = 0, fill) => {
+export const svgToPng = (svgElement, margin = 0, fill) => {
   return new Promise(function (resolve, reject) {
     try {
       const domUrl = window.URL || window.webkitURL || window
       if (!domUrl) {
         throw new Error('(browser doesnt support this)')
+      } else if (!svgElement) {
+        throw new Error('(svg element does not exist)')
       }
-
-      // create copy of svg
-      const svgElement = svg
 
       // get svg data
       var xml = new XMLSerializer().serializeToString(svgElement)
@@ -174,26 +173,15 @@ export const svgToPng = (svg, margin = 0, fill) => {
       // prepend a "header"
       var image64 = b64Start + svg64
 
-      // figure out the height and width from svg text
-      var match = svgElement.outerHTML.match(/height=\"(\d+)/m)
-      var height = match && match[1] ? parseInt(match[1], 10) : 200
-      var match = svgElement.outerHTML.match(/width=\"(\d+)/m)
-      var width = match && match[1] ? parseInt(match[1], 10) : 200
-
-      // it needs a namespace
-      if (!svgElement.outerHTML.match(/xmlns=\"/im)) {
-        svgElement.outerHTML = svgElement.outerHTML.replace(
-          '<svg ',
-          '<svg xmlns="http://www.w3.org/2000/svg" '
-        )
-      }
+      const width = svgElement.getBBox().width * 2
+      const height = svgElement.getBBox().height * 2
 
       // create a canvas element to pass through
       var canvas = document.createElement('canvas')
-      canvas.width = height + margin * 2
-      canvas.height = width + margin * 2
+      canvas.width = height + margin
+      canvas.height = width + margin
       var ctx = canvas.getContext('2d')
-      ctx.imageSmoothingEnabled = true
+      // ctx.imageSmoothingEnabled = true
 
       // create a new image to hold it the converted type
       var img = new Image()
@@ -201,7 +189,7 @@ export const svgToPng = (svg, margin = 0, fill) => {
       // when the image is loaded we can get it as base64 url
       img.onload = function () {
         // draw it to the canvas
-        ctx.drawImage(this, margin, margin)
+        ctx.drawImage(this, margin, margin, width, height)
 
         // if it needs some styling, we need a new canvas
         if (fill) {

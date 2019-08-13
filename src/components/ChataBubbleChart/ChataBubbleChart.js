@@ -129,7 +129,12 @@ export default class ChataBubbleChart extends Component {
 
     return (
       <div className="chata-chart-container">
-        <svg ref={r => (this.chartRef = r)} width={width} height={height}>
+        <svg
+          ref={r => (this.chartRef = r)}
+          xmlns="http://www.w3.org/2000/svg"
+          width={width}
+          height={height}
+        >
           <Axes
             scales={{ xScale, yScale }}
             xCol={this.props.columns[1]}
