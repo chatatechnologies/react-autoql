@@ -1,6 +1,8 @@
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
 
+var href
+
 export const getParameterByName = (
   parameterName,
   url = window.location.href
@@ -41,7 +43,7 @@ export const makeEmptyArray = (w, h) => {
   for (let i = 0; i < h; i++) {
     arr[i] = []
     for (let j = 0; j < w; j++) {
-      arr[i][j] = null
+      arr[i][j] = ''
     }
   }
   return arr
@@ -144,4 +146,87 @@ export const formatElement = (element, column) => {
     }
   }
   return formattedElement
+}
+
+/**
+ * converts an svg string to base64 png using the domUrl
+ * @param {string} svgElement the svgElement
+ * @param {number} [margin=0] the width of the border - the image size will be height+margin by width+margin
+ * @param {string} [fill] optionally backgrund canvas fill
+ * @return {Promise} a promise to the bas64 png image
+ */
+export const svgToPng = (svg, margin = 0, fill) => {
+  return new Promise(function (resolve, reject) {
+    try {
+      const domUrl = window.URL || window.webkitURL || window
+      if (!domUrl) {
+        throw new Error('(browser doesnt support this)')
+      }
+
+      // create copy of svg
+      const svgElement = svg
+
+      // get svg data
+      var xml = new XMLSerializer().serializeToString(svgElement)
+      // make it base64
+      var svg64 = btoa(xml)
+      var b64Start = 'data:image/svg+xml;base64,'
+      // prepend a "header"
+      var image64 = b64Start + svg64
+
+      // figure out the height and width from svg text
+      var match = svgElement.outerHTML.match(/height=\"(\d+)/m)
+      var height = match && match[1] ? parseInt(match[1], 10) : 200
+      var match = svgElement.outerHTML.match(/width=\"(\d+)/m)
+      var width = match && match[1] ? parseInt(match[1], 10) : 200
+
+      // it needs a namespace
+      if (!svgElement.outerHTML.match(/xmlns=\"/im)) {
+        svgElement.outerHTML = svgElement.outerHTML.replace(
+          '<svg ',
+          '<svg xmlns="http://www.w3.org/2000/svg" '
+        )
+      }
+
+      // create a canvas element to pass through
+      var canvas = document.createElement('canvas')
+      canvas.width = height + margin * 2
+      canvas.height = width + margin * 2
+      var ctx = canvas.getContext('2d')
+      ctx.imageSmoothingEnabled = true
+
+      // create a new image to hold it the converted type
+      var img = new Image()
+
+      // when the image is loaded we can get it as base64 url
+      img.onload = function () {
+        // draw it to the canvas
+        ctx.drawImage(this, margin, margin)
+
+        // if it needs some styling, we need a new canvas
+        if (fill) {
+          var styled = document.createElement('canvas')
+          styled.width = canvas.width
+          styled.height = canvas.height
+          var styledCtx = styled.getContext('2d')
+          styledCtx.save()
+          styledCtx.fillStyle = fill
+          styledCtx.fillRect(0, 0, canvas.width, canvas.height)
+          styledCtx.strokeRect(0, 0, canvas.width, canvas.height)
+          styledCtx.restore()
+          styledCtx.drawImage(canvas, 0, 0)
+          canvas = styled
+        }
+        resolve(canvas.toDataURL('image/png', 1))
+      }
+      img.onerror = function (error) {
+        reject('failed to load image with that url' + url)
+      }
+
+      // load image
+      img.src = image64
+    } catch (err) {
+      reject('failed to convert svg to png ' + err)
+    }
+  })
 }

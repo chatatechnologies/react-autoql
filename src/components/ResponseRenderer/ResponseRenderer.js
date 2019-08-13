@@ -13,6 +13,7 @@ import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { onlyUnique, formatElement, makeEmptyArray } from '../../js/Util.js'
+import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -26,29 +27,6 @@ String.prototype.toProperCase = function() {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
   })
 }
-
-const TABLE_TYPES = [
-  'pivot_table',
-  'table',
-  'compare_table',
-  'compare_table_budget'
-]
-
-const CHART_TYPES = [
-  'bar',
-  'bubble',
-  'chart',
-  'column',
-  'heatmap',
-  'line',
-  'pie',
-  'stacked_bar',
-  'stacked_column',
-  'word_cloud',
-  'contrast_bar',
-  'contrast_column',
-  'contrast_line'
-]
 
 export default class ResponseRenderer extends React.Component {
   static propTypes = {
@@ -218,18 +196,26 @@ export default class ResponseRenderer extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.state.displayType === 'table' && this.tableRef) {
+    if (this.tableRef) {
       this.tableRef.copyToClipboard()
-    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
-      this.pivotTableRef.copyToClipboard()
     }
+    // else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+    //   this.pivotTableRef.copyToClipboard()
+    // }
   }
 
   saveTableAsCSV = () => {
-    if (this.state.displayType === 'table' && this.tableRef) {
+    if (this.tableRef) {
       this.tableRef.saveAsCSV()
-    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
-      this.pivotTableRef.saveAsCSV()
+    }
+    // else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+    //   this.pivotTableRef.saveAsCSV()
+    // }
+  }
+
+  saveChartAsPNG = () => {
+    if (this.chartRef) {
+      this.chartRef.saveAsPNG()
     }
   }
 
@@ -250,7 +236,7 @@ export default class ResponseRenderer extends React.Component {
       return (
         <ChataTable
           key={this.pivotTableID}
-          ref={ref => (this.pivotTableRef = ref)}
+          ref={ref => (this.tableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           borderColor={this.props.tableBorderColor}
@@ -315,6 +301,7 @@ export default class ResponseRenderer extends React.Component {
 
     return (
       <ChataChart
+        ref={ref => (this.chartRef = ref)}
         type={this.state.displayType}
         data={this.chartData}
         columns={this.tableColumns}

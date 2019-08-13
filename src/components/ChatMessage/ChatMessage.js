@@ -6,6 +6,8 @@ import uuid from 'uuid'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 
+import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+
 import {
   tableIcon,
   pivotTableIcon,
@@ -176,10 +178,17 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  saveChartAsPNG = () => {
+    if (this.responseRef) {
+      this.responseRef.saveChartAsPNG()
+    }
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
-      showCopyButton: this.state.displayType === 'table',
-      showSaveAsCSVButton: this.state.displayType === 'table'
+      showCopyButton: TABLE_TYPES.includes(this.state.displayType),
+      showSaveAsCSVButton: TABLE_TYPES.includes(this.state.displayType),
+      showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType)
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -212,6 +221,16 @@ export default class ChatMessage extends React.Component {
               onClick={this.saveTableAsCSV}
               className="chata-toolbar-btn"
               data-tip="Download as CSV"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <MdFileDownload />
+            </button>
+          )}
+          {shouldShowButton.showSaveAsPNGButton && (
+            <button
+              onClick={this.saveChartAsPNG}
+              className="chata-toolbar-btn"
+              data-tip="Download as PNG"
               data-for="chata-toolbar-btn-tooltip"
             >
               <MdFileDownload />

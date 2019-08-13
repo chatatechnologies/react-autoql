@@ -4,9 +4,9 @@ import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
 export default class App extends Component {
   state = {
     isVisible: true,
-    placement: 'bottom',
+    placement: 'right',
     showHandle: true,
-    theme: 'dark',
+    theme: 'light',
     response: null
   }
 

@@ -8,6 +8,8 @@ import { ChataPieChart } from '../ChataPieChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 
+import { svgToPng } from '../../js/Util.js'
+
 import styles from './ChataChart.css'
 
 export default class ChataChart extends Component {
@@ -93,10 +95,41 @@ export default class ChataChart extends Component {
   </div>`
   }
 
+  saveAsPNG = () => {
+    const svgElement = this.chartRef && this.chartRef.chartRef
+    if (!svgElement) {
+      return
+    }
+
+    svgToPng(svgElement)
+      .then(data => {
+        let dt = data // << this fails in IE/Edge...
+        dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream')
+        dt = dt.replace(
+          /^data:application\/octet-stream/,
+          'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=Canvas.png'
+        )
+
+        // Create link and simulate click for download
+        const link = document.createElement('a')
+        link.setAttribute('href', dt)
+        link.setAttribute('download', 'Chart.png')
+        link.setAttribute('target', '_blank')
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
   renderColumnChart = () => {
     const self = this
     return (
       <ChataColumnChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
@@ -113,6 +146,7 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataBarChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
@@ -129,6 +163,7 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataLineChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
@@ -145,6 +180,7 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataPieChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
@@ -161,6 +197,7 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataHeatmapChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
@@ -178,6 +215,7 @@ export default class ChataChart extends Component {
     const self = this
     return (
       <ChataBubbleChart
+        ref={ref => (this.chartRef = ref)}
         data={this.props.data}
         columns={this.props.columns}
         height={this.props.height}
