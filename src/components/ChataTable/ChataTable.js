@@ -83,6 +83,9 @@ export default class ChataTable extends React.Component {
       layout: 'fitDataFill',
       textSize: '9px',
       movableColumns: true,
+      progressiveRender: true,
+      progressiveRenderSize: 5,
+      progressiveRenderMargin: 100,
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
@@ -103,9 +106,6 @@ export default class ChataTable extends React.Component {
           options={options}
           data-custom-attr="test-custom-attribute"
           className="chata-table"
-          progressiveRender={true}
-          progressiveRenderSize={5}
-          progressiveRenderMargin={100}
           height="100%"
           // selectable
           clipboard
