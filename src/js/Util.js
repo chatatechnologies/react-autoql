@@ -218,3 +218,36 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
     }
   })
 }
+
+// Lodash get function and dependencies
+// function get(object, path, defaultValue) {
+//   var result = object == null ? undefined : baseGet(object, path);
+//   return result === undefined ? defaultValue : result;
+// }
+
+// function baseGet(object, path) {
+//   path = castPath(path, object);
+
+//   var index = 0,
+//       length = path.length;
+
+//   while (object != null && index < length) {
+//     object = object[toKey(path[index++])];
+//   }
+//   return (index && index == length) ? object : undefined;
+// }
+
+// function castPath(value, object) {
+//   if (isArray(value)) {
+//     return value;
+//   }
+//   return isKey(value, object) ? [value] : stringToPath(toString(value));
+// }
+
+// function toKey(value) {
+//   if (typeof value == 'string' || isSymbol(value)) {
+//     return value;
+//   }
+//   var result = (value + '');
+//   return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+// }

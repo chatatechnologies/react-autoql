@@ -146,7 +146,7 @@ export default class ChatBar extends React.Component {
         })
       })
       .catch(() => {
-        console.warn('Operation canceled by the user.')
+        console.warn('Autocomplete operation cancelled by the user.')
       })
   }
 

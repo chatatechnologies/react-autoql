@@ -1,8 +1,24 @@
-// import request from './request'
 import axios from 'axios'
 import uuid from 'uuid'
 
-var autoCompleteCall = null
+var unifiedQueryId = uuid.v4()
+
+var autoCompleteCall = axios.CancelToken.source()
+var queryCall = axios.CancelToken.source()
+var safetyNetCall = axios.CancelToken.source()
+var drilldownCall = axios.CancelToken.source()
+
+export const cancelQuery = () => {
+  if (queryCall) {
+    queryCall.cancel('Query operation cancelled by the user.')
+  }
+  if (safetyNetCall) {
+    safetyNetCall.cancel('Safetynet operation cancelled by the user.')
+  }
+  if (drilldownCall) {
+    drilldownCall.cancel('Drilldown operation cancelled by the user.')
+  }
+}
 
 export const runQueryOnly = (query, token, projectId = 1) => {
   const queryString = query
@@ -13,16 +29,28 @@ export const runQueryOnly = (query, token, projectId = 1) => {
     }
   })
 
-  return axiosInstance
-    .get(
-      `https://backend-staging.chata.ai/api/v1/query?q=${queryString}&project=${projectId}&unified_query_id=${uuid.v4()}`
-    )
-    .then(response => {
-      return Promise.resolve(response)
-    })
-    .catch(error => {
-      return Promise.reject()
-    })
+  if (!queryCall) {
+    queryCall = axios.CancelToken.source()
+
+    const url = `https://backend-staging.chata.ai/api/v1/query?q=${queryString}&project=${projectId}&unified_query_id=${unifiedQueryId}`
+
+    return axiosInstance
+      .get(url, {
+        cancelToken: queryCall.token
+      })
+      .then(response => {
+        return Promise.resolve(response)
+      })
+      .catch(error => {
+        if (axios.isCancel(error)) {
+          return Promise.reject('cancelled')
+        }
+        return Promise.reject(error)
+      })
+  } else {
+    queryCall = null
+    return Promise.reject('cancelled')
+  }
 }
 
 export const runQuery = (
@@ -38,13 +66,17 @@ export const runQuery = (
       Authorization: token ? `Bearer ${token}` : undefined
     }
   })
+
+  // Reset unified query ID
+  unifiedQueryId = uuid.v4()
+
   if (useSafetyNet) {
+    safetyNetCall = axios.CancelToken.source()
+    const url = `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
+      query
+    )}&projectId=${projectId}&unified_query_id=${unifiedQueryId}`
     return axiosInstance
-      .get(
-        `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
-          query
-        )}&projectId=${projectId}&unified_query_id=${uuid.v4()}`
-      )
+      .get(url, { cancelToken: safetyNetCall.token })
       .then(response => {
         if (
           response &&
@@ -73,17 +105,15 @@ export const runDrilldown = (data, token, projectId = 1) => {
     }
   })
 
+  drilldownCall = axios.CancelToken.source()
+
   const url = `https://backend-staging.chata.ai/api/v1/query${
     projectId === 1 ? '/demo' : ''
-  }/drilldown?&project=${projectId}&unified_query_id=${uuid.v4()}`
+  }/drilldown?&project=${projectId}&unified_query_id=${unifiedQueryId}`
   return axiosInstance
-    .post(url, data)
-    .then(response => {
-      return Promise.resolve(response)
-    })
-    .catch(error => {
-      return Promise.reject()
-    })
+    .post(url, data, { cancelToken: drilldownCall.token })
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
 }
 
 export const fetchSuggestions = (suggestion, token, projectId = 1) => {
@@ -96,17 +126,17 @@ export const fetchSuggestions = (suggestion, token, projectId = 1) => {
 
   // Cancel current autocomplete call if there is one
   if (autoCompleteCall) {
-    autoCompleteCall.cancel('Operation canceled by the user.')
+    autoCompleteCall.cancel('Autocomplete operation cancelled by the user.')
   }
 
   autoCompleteCall = axios.CancelToken.source()
 
-  const theURL = `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
+  const url = `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
     suggestion
   )}&projectid=${projectId}`
 
   return axiosInstance
-    .get(theURL, {
+    .get(url, {
       cancelToken: autoCompleteCall.token
     })
     .then(response => Promise.resolve(response))

@@ -17,7 +17,7 @@ import chataBubblesSVG from '../../images/chata-bubbles.svg'
 
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
-import { runQuery, runDrilldown } from '../../js/queryService'
+import { runQuery, runDrilldown, cancelQuery } from '../../js/queryService'
 
 import rcStyles from 'rc-drawer/assets/index.css'
 import chataTableStyles from '../ChataTable/ChataTable.css'
@@ -130,6 +130,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
 
   componentDidMount = () => {
     this.setStyles()
+    document.addEventListener('keydown', this.escFunction, false)
   }
 
   componentDidUpdate = prevProps => {
@@ -157,6 +158,16 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
     }
     if (this.props.theme && this.props.theme !== prevProps.theme) {
       this.setStyles()
+    }
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.escFunction, false)
+  }
+
+  escFunction = event => {
+    if (this.props.isVisible && event.keyCode === 27) {
+      cancelQuery()
     }
   }
 
@@ -372,9 +383,9 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
     })
   }
 
-  createErrorMessage = () => {
+  createErrorMessage = content => {
     return {
-      content: 'Network Error',
+      content: content || 'Network Error',
       id: uuid.v4(),
       type: 'error',
       isResponse: true
@@ -429,7 +440,11 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
       // shift item from beginning of messages array
     }
     let message = {}
-    if (!response && !content) {
+    if (response === 'cancelled') {
+      message = this.createErrorMessage(
+        'You successfully cancelled this query by pressing "esc".'
+      )
+    } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
       message = this.createMessage(response, content)
@@ -465,7 +480,8 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
         <div className="chata-header-right-container">
           <button
             onClick={() => {
-              this.clearMessages()
+              // this.clearMessages()
+              this.escFunction()
               if (this.chatBarRef) {
                 this.chatBarRef.focus()
               }
@@ -501,6 +517,8 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
           afterVisibleChange={this.props.onVisibleChange}
           handler={this.getHandlerProp()}
           level={this.props.shiftScreen ? 'all' : null}
+          keyboard={false}
+          // onKeyDown={this.escFunction}
         >
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">

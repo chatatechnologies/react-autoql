@@ -311,13 +311,6 @@ export default class ChatMessage extends React.Component {
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
           </div>
-          <ReactTooltip
-            className="chata-drawer-tooltip"
-            id="chata-toolbar-btn-tooltip"
-            effect="solid"
-            delayShow={800}
-            html
-          />
         </div>
       </Fragment>
     )
