@@ -3,10 +3,10 @@ import uuid from 'uuid'
 
 var unifiedQueryId = uuid.v4()
 
-var autoCompleteCall = axios.CancelToken.source()
-var queryCall = axios.CancelToken.source()
-var safetyNetCall = axios.CancelToken.source()
-var drilldownCall = axios.CancelToken.source()
+var autoCompleteCall = null
+var queryCall = null
+var safetyNetCall = null
+var drilldownCall = null
 
 export const cancelQuery = () => {
   if (queryCall) {
