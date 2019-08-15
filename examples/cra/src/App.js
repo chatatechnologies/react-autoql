@@ -125,6 +125,7 @@ export default class App extends Component {
   renderPropOptions = () => {
     return (
       <div>
+        <h1>Drawer Props</h1>
         <button onClick={() => this.setState({ componentKey: uuid.v4() })}>
           Reload Drawer
         </button>
