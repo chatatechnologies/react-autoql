@@ -477,12 +477,6 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
             <MdClearAll />
           </button>
         </div>
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-header-tooltip"
-          effect="solid"
-          delayShow={800}
-        />
       </Fragment>
     )
   }
@@ -587,6 +581,19 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
             </div>
           </div>
         </Drawer>
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-header-tooltip"
+          effect="solid"
+          delayShow={500}
+        />
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-toolbar-btn-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
       </Fragment>
     )
   }

@@ -109,4 +109,5 @@
   letter-spacing: 0.04em;
   padding: 7px 15px;
   transition: all 0.2s ease;
+  z-index: 99999; /* necessary to show up on top of rc drawer */
 }

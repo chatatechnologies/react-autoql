@@ -59,6 +59,10 @@ export default class ChatMessage extends React.Component {
     this.getSupportedDisplayTypes()
   }
 
+  componentDidUpdate = () => {
+    ReactTooltip.rebuild()
+  }
+
   getSupportedDisplayTypes = () => {
     const { response } = this.props
 
