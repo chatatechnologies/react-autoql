@@ -105,7 +105,7 @@ export default class ChataTable extends React.Component {
           className="chata-table"
           progressiveRender={true}
           progressiveRenderSize={5}
-          progressiveRenderMargin={10}
+          progressiveRenderMargin={100}
           height="100%"
           // selectable
           clipboard
