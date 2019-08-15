@@ -1,16 +1,81 @@
 import React, { Component } from 'react'
 import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
+import uuid from 'uuid'
 
 export default class App extends Component {
   state = {
+    componentKey: uuid.v4(),
     isVisible: true,
     placement: 'right',
     showHandle: true,
     theme: 'light',
-    response: null
+    response: null,
+    showMask: true,
+    customerName: 'Nikki',
+    enableAutocomplete: true,
+    enableSafetyNet: true,
+    enableVoiceRecord: true,
+    clearOnClose: false,
+    height: 500,
+    width: 500,
+    title: 'Chat with your data',
+    lightAccentColor: '#28a8e0',
+    darkAccentColor: '#525252'
   }
 
-  render = () => {
+  createRadioInputGroup = (propName, propValues = []) => {
+    return (
+      <div>
+        <br />
+        {propName}
+        {propValues.map(propValue => {
+          return (
+            <div key={`${propName}-${propValue}`}>
+              <label className="radio">
+                <input
+                  type="radio"
+                  name={propName}
+                  value={propValue}
+                  checked={this.state[propName] === propValue}
+                  onChange={e => this.setState({ [propName]: e.target.value })}
+                />
+                {propValue.toString()}
+              </label>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  createBooleanRadioGroup = (propName, propValues = []) => {
+    return (
+      <div>
+        <br />
+        {propName}
+        {propValues.map(propValue => {
+          return (
+            <div key={`${propName}-${propValue}`}>
+              <label className="radio">
+                <input
+                  type="radio"
+                  name={propName}
+                  value={propValue}
+                  checked={this.state[propName] === propValue}
+                  onChange={e =>
+                    this.setState({ [propName]: e.target.value === 'true' })
+                  }
+                />
+                {propValue.toString()}
+              </label>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  renderChatBarAndResponse = () => {
     return (
       <div>
         <ChatBar
@@ -53,101 +118,113 @@ export default class App extends Component {
             <em>The response will go here</em>
           </div>
         )}
+      </div>
+    )
+  }
+
+  renderPropOptions = () => {
+    return (
+      <div>
+        <button onClick={() => this.setState({ componentKey: uuid.v4() })}>
+          Reload Drawer
+        </button>
+        <br />
         <button onClick={() => this.setState({ isVisible: true })}>
           Open Drawer
         </button>
+        {this.createBooleanRadioGroup('showHandle', [true, false])}
+        {this.createBooleanRadioGroup('showMask', [true, false])}
+        {this.createRadioInputGroup('theme', ['light', 'dark'])}
+        {this.createRadioInputGroup('placement', [
+          'top',
+          'bottom',
+          'left',
+          'right'
+        ])}
+        <br />
+        customerName (must click 'reload drawer' to apply this)
+        <br />
+        <input
+          type="text"
+          onChange={e => {
+            this.setState({ customerName: e.target.value })
+          }}
+          value={this.state.customerName}
+        />
+        {this.createBooleanRadioGroup('enableAutocomplete', [true, false])}
+        {this.createBooleanRadioGroup('enableSafetyNet', [true, false])}
+        {this.createBooleanRadioGroup('enableVoiceRecord', [true, false])}
+        {this.createBooleanRadioGroup('clearOnClose', [true, false])}
         <br />
         <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="placement"
-            value="top"
-            checked={this.state.placement === 'top'}
-            onChange={e => this.setState({ placement: e.target.value })}
-          />
-          Top
-        </label>
+        height: only for top/bottom placement (must reload drawer to apply)
         <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="placement"
-            value="bottom"
-            checked={this.state.placement === 'bottom'}
-            onChange={e => this.setState({ placement: e.target.value })}
-          />
-          Bottom
-        </label>
-        <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="placement"
-            value="left"
-            checked={this.state.placement === 'left'}
-            onChange={e => this.setState({ placement: e.target.value })}
-          />
-          Left
-        </label>
-        <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="placement"
-            value="right"
-            checked={this.state.placement === 'right'}
-            onChange={e => this.setState({ placement: e.target.value })}
-          />
-          Right
-        </label>
+        <input
+          type="number"
+          onChange={e => {
+            this.setState({ height: e.target.value })
+          }}
+          value={this.state.height}
+        />
         <br />
         <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="handle"
-            value={true}
-            checked={this.state.showHandle}
-            onChange={e => this.setState({ showHandle: true })}
-          />
-          Show handle
-        </label>
-        <label className="radio">
-          <input
-            type="radio"
-            name="handle"
-            value={false}
-            checked={!this.state.showHandle}
-            onChange={e => this.setState({ showHandle: false })}
-          />
-          Hide Handle
-        </label>
+        width: only for left/right placement (must reload drawer to apply)
+        <br />
+        <input
+          type="number"
+          onChange={e => {
+            this.setState({ width: e.target.value })
+          }}
+          value={this.state.width}
+        />
         <br />
         <br />
-        <label className="radio">
-          <input
-            type="radio"
-            name="theme"
-            value="light"
-            checked={this.state.theme === 'light'}
-            onChange={e => this.setState({ theme: e.target.value })}
-          />
-          Light Theme
-        </label>
-        <label className="radio">
-          <input
-            type="radio"
-            name="theme"
-            value="dark"
-            checked={this.state.theme === 'dark'}
-            onChange={e => this.setState({ theme: e.target.value })}
-          />
-          Dark Theme
-        </label>
+        title
+        <br />
+        <input
+          type="text"
+          onChange={e => {
+            this.setState({ title: e.target.value })
+          }}
+          value={this.state.title}
+        />
+        <br />
+        <br />
+        light theme accent color: for production version, the user will just
+        choose "accentColor" and it will be applied to whatever theme. If not
+        provided, the default color will be used (must reload drawer to apply)
+        <br />
+        <input
+          type="color"
+          onChange={e => {
+            this.setState({ lightAccentColor: e.target.value })
+          }}
+          value={this.state.lightAccentColor}
+        />
+        <br />
+        <br />
+        dark theme accent color (must reload drawer to apply)
+        <br />
+        <input
+          type="color"
+          onChange={e => {
+            this.setState({ darkAccentColor: e.target.value })
+          }}
+          value={this.state.darkAccentColor}
+        />
+      </div>
+    )
+  }
+
+  render = () => {
+    return (
+      <div>
+        {this.renderChatBarAndResponse()}
+        {this.renderPropOptions()}
         <ChatDrawer
           // token="6f52a98e-e31f-4730-9dc6-f54df3a0d92e" // required
           // projectId={7077} // required
+          key={this.state.componentKey}
           isVisible={this.state.isVisible}
           onHandleClick={() =>
             this.setState({ isVisible: !this.state.isVisible })
@@ -155,21 +232,25 @@ export default class App extends Component {
           onMaskClick={() => this.setState({ isVisible: false })}
           showHandle={this.state.showHandle}
           placement={this.state.placement}
-          customerName="Nikki"
-          showMask
-          height="500px"
-          enableAutocomplete={true}
-          // enableVoiceRecord
-          // width="700px"
-          // handleStyles={{ right: '25px' }}
-          // clearOnClose
+          customerName={this.state.customerName}
+          showMask={this.state.showMask}
+          enableAutocomplete={this.state.enableAutocomplete}
+          enableVoiceRecord={this.state.enableVoiceRecord}
+          clearOnClose={this.state.clearOnClose}
+          width={this.state.width}
+          height={this.state.height}
+          title={this.state.title}
+          enableSafetyNet={this.state.enableSafetyNet}
+          theme={this.state.theme}
+          accentColor={
+            this.state.theme === 'light'
+              ? this.state.lightAccentColor
+              : this.state.darkAccentColor
+          }
+          // maxMessages={5}
           // inputStyles
           // autocompleteStyles
-          // maxMessages={5}
-          // accentColor="#28a8e0"
-          title="Chat with your data"
-          enableSafetyNet
-          theme={this.state.theme}
+          // handleStyles={{ right: '25px' }}
         />
       </div>
     )
