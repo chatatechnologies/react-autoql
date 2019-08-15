@@ -44,6 +44,12 @@ export default class Squares extends Component {
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
+          style={{
+            stroke: 'transparent',
+            strokeWidth: 10,
+            fill: '#28a8e0',
+            fillOpacity: 0.7
+          }}
         />
       )
     })

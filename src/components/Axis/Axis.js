@@ -113,9 +113,28 @@ export default class Axis extends Component {
       // translate labels slightly to line up with ticks once rotated
       select(this.axisElement)
         .selectAll('text')
+        .style('transform', 'rotate(-45deg)')
+        .style('text-anchor', 'end')
+
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
     }
+
+    select(this.axisElement)
+      .selectAll('text')
+      .style('fill', 'currentColor')
+      .style('fill-opacity', '0.7')
+
+    select(this.axisElement)
+      .selectAll('.axis path')
+      .style('display', 'none')
+
+    select(this.axisElement)
+      .selectAll('.axis line')
+      .style('stroke-width', '1px')
+      .style('stroke', 'currentColor')
+      .style('opacity', '0.15')
+      .style('shape-rendering', 'crispedges')
   }
 
   render = () => {

@@ -40,7 +40,7 @@ export default class Columns extends Component {
         }}
         data-tip={this.props.tooltipFormatter(d)}
         data-for="chart-element-tooltip"
-        // fill={this.colorScale(datum.value)}
+        style={{ fill: '#28a8e0', fillOpacity: 0.7 }}
       />
     ))
 

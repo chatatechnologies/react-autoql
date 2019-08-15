@@ -50,6 +50,7 @@ export default ({
         fontWeight="bold"
         y={10}
         x={-((yProps.height - yProps.margins.bottom) / 2)}
+        style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
       >
         {yProps.col.title}
       </text>
@@ -61,6 +62,7 @@ export default ({
         fontWeight="bold"
         y={xProps.height - 10}
         x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
+        style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
       >
         {xProps.col.title}
       </text>

@@ -82,6 +82,7 @@ export default class ChataTable extends React.Component {
     const options = {
       layout: 'fitDataFill',
       textSize: '9px',
+      movableColumns: true,
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,

@@ -15,7 +15,7 @@ $ yarn add @chata-ai/core
 # Usage
 
 ```
-import { ChatDrawer } from 'chata-ai';
+import { ChatDrawer } from '@chata-ai/core';
 
 ReactDOM.render(<ChatDrawer />, mountNode);
 ```

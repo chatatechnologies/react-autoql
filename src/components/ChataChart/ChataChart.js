@@ -157,7 +157,7 @@ export default class ChataChart extends Component {
       return
     }
 
-    svgToPng(svgElement)
+    svgToPng(svgElement, 20)
       .then(data => {
         let dt = data // << this fails in IE/Edge...
         dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream')
@@ -384,6 +384,10 @@ export default class ChataChart extends Component {
             xmlns="http://www.w3.org/2000/svg"
             width={this.props.width}
             height={this.props.height}
+            style={{
+              fontFamily: '"Titillium Web", sans-serif',
+              background: 'inherit'
+            }}
           >
             {chart}
           </svg>

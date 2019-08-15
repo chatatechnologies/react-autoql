@@ -1,55 +1,58 @@
 .chata-chart-container .axis line {
-  stroke-width: 1px;
+  /* stroke-width: 1px;
   stroke: currentColor;
   opacity: 0.15;
-  shape-rendering: crispedges;
+  shape-rendering: crispedges; */
 }
 
 .chata-chart-container .axis text,
 text.x-axis-label,
 text.y-axis-label {
-  fill: currentColor;
-  fill-opacity: 0.7;
+  /* fill: currentColor;
+  fill-opacity: 0.7; */
 }
 
 .chata-chart-container .bar,
 .chata-chart-container .circle,
 .chata-chart-container .line-dot {
-  fill: #28a8e0;
-  fill-opacity: 0.7;
+  /* fill: #28a8e0;
+  fill-opacity: 0.7; */
 }
+
+/* This is not inline styles since they do not apply to saved PNG charts */
 .chata-chart-container .bar:hover,
 .chata-chart-container .circle:hover,
 .chata-chart-container .square:hover,
 .chata-chart-container .line-dot:hover {
-  fill-opacity: 1;
+  fill-opacity: 1 !important;
 }
+
 .chata-chart-container .bar.active,
 .chata-chart-container .circle.active,
 .chata-chart-container .square.active,
 .chata-chart-container .line-dot.active {
-  fill: #a5cd39;
+  fill: #a5cd39 !important;
 }
 
 .chata-chart-container .circle,
 .chata-chart-container .line-dot {
   /* Make invisible thick stroke so hover is triggered more easily */
-  stroke: transparent;
-  stroke-width: 10px;
+  /* stroke: transparent;
+  stroke-width: 10px; */
 }
 
 .chata-chart-container .axis path {
-  display: none;
+  /* display: none; */
 }
 
 .chata-chart-container
   .axis-Bottom.rotated
   text:not(.x-axis-label):not(.y-axis-label) {
-  transform: rotate(-45deg);
-  text-anchor: end;
+  /* transform: rotate(-45deg);
+  text-anchor: end; */
 }
 
 .y-axis-label,
 .x-axis-label {
-  font-size: 12px;
+  /* font-size: 12px; */
 }
