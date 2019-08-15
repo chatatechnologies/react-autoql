@@ -42,6 +42,22 @@
   /* background-color: rgba(0, 0, 0, 0.1) !important; */
   background-color: var(--chata-table-hover-color) !important;
 }
+
+.chata-table.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-content
+  .tabulator-arrow {
+  opacity: 0;
+}
+.chata-table.tabulator
+  .tabulator-header
+  .tabulator-col:hover
+  .tabulator-col-content
+  .tabulator-arrow {
+  opacity: 1 !important;
+}
+
 .chata-table.tabulator
   .tabulator-header
   .tabulator-col.tabulator-sortable[aria-sort="desc"]
@@ -56,6 +72,7 @@
   .tabulator-arrow {
   border-bottom: 6px solid rgba(0, 0, 0, 0.2);
 }
+
 .chata-table .tabulator-tableHolder::-webkit-scrollbar {
   display: unset;
   background-color: transparent;
