@@ -29,10 +29,9 @@ export default class Bars extends Component {
           x={d[dataValue] > 0 ? this.X0() : this.X(d)}
           width={Math.abs(this.X(d) - this.X0())}
           height={yScale.bandwidth()}
-          onClick={() => this.setState({ activeKey: d[labelValue] })}
-          onDoubleClick={() => {
+          onClick={() => {
             this.setState({ activeKey: d[labelValue] })
-            this.props.onDoubleClick(d.origRow, d.origColumns)
+            this.props.onChartClick(d.origRow, d.origColumns)
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"

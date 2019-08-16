@@ -191,7 +191,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2Columns}
@@ -211,7 +211,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2Columns}
@@ -231,7 +231,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2Columns}
@@ -251,7 +251,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2Columns}
@@ -271,7 +271,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"
@@ -292,7 +292,7 @@ export default class ChataChart extends Component {
         bottomMargin={this.state.bottomMargin}
         rightMargin={this.state.rightMargin}
         leftMargin={this.state.leftMargin}
-        onDoubleClick={this.props.onDoubleClick}
+        onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"

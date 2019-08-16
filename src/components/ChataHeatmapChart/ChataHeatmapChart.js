@@ -35,7 +35,7 @@ export default class ChataHeatmapChart extends Component {
   render = () => {
     const {
       tooltipFormatter,
-      onDoubleClick,
+      onChartClick,
       bottomMargin,
       rightMargin,
       labelValueY,
@@ -128,7 +128,7 @@ export default class ChataHeatmapChart extends Component {
             dataValue={dataValue}
             labelValueX={labelValueX}
             labelValueY={labelValueY}
-            onDoubleClick={onDoubleClick}
+            onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}
           />
         }

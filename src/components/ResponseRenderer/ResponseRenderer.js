@@ -308,7 +308,7 @@ export default class ResponseRenderer extends React.Component {
         height={chartHeight}
         width={chartWidth}
         valueFormatter={formatElement}
-        onDoubleClick={(row, columns) => {
+        onChartClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
           }

@@ -33,10 +33,9 @@ export default class Columns extends Component {
         // height={height - margins.bottom - Math.abs(this.Y(d) - this.Y0())}
         height={Math.abs(this.Y(d) - this.Y0())}
         width={xScale.bandwidth()}
-        onClick={() => this.setState({ activeKey: d[labelValue] })}
-        onDoubleClick={() => {
+        onClick={() => {
           this.setState({ activeKey: d[labelValue] })
-          this.props.onDoubleClick(d.origRow, d.origColumns)
+          this.props.onChartClick(d.origRow, d.origColumns)
         }}
         data-tip={this.props.tooltipFormatter(d)}
         data-for="chart-element-tooltip"

@@ -36,11 +36,11 @@ export default class Squares extends Component {
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
           }
-          onDoubleClick={() => {
+          onClick={() => {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
-            this.props.onDoubleClick(d.origRow, d.origColumns)
+            this.props.onChartClick(d.origRow, d.origColumns)
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"

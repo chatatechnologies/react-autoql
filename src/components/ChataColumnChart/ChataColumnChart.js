@@ -32,7 +32,7 @@ export default class ChataBarChart extends Component {
   render = () => {
     const {
       tooltipFormatter,
-      onDoubleClick,
+      onChartClick,
       bottomMargin,
       rightMargin,
       leftMargin,
@@ -105,7 +105,7 @@ export default class ChataBarChart extends Component {
           height={height}
           dataValue={dataValue}
           labelValue={labelValue}
-          onDoubleClick={onDoubleClick}
+          onChartClick={onChartClick}
           tooltipFormatter={tooltipFormatter}
         />
       </g>

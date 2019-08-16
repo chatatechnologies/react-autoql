@@ -51,9 +51,9 @@ export default class Line extends Component {
           strokeWidth={5}
           r={3}
           onClick={() => this.setState({ activeKey: d[labelValue] })}
-          onDoubleClick={() => {
+          onClick={() => {
             this.setState({ activeKey: d[labelValue] })
-            this.props.onDoubleClick(d.origRow, d.origColumns)
+            this.props.onChartClick(d.origRow, d.origColumns)
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
