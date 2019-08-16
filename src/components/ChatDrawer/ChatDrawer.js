@@ -6,8 +6,6 @@ import uuid from 'uuid'
 
 import Drawer from 'rc-drawer'
 
-// import * as d3 from 'd3'
-
 import ReactTooltip from 'react-tooltip'
 
 import { Scrollbars } from 'react-custom-scrollbars'
@@ -15,6 +13,7 @@ import { MdClose } from 'react-icons/md'
 import { FaRegTrashAlt } from 'react-icons/fa'
 
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
+import { bubblesIcon } from '../../svgIcons.js'
 
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
@@ -581,9 +580,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
               </div>
             )}
             <div className="chat-bar-container">
-              <div className="watermark">
-                {this.bubblesIcon} We run on Chata
-              </div>
+              <div className="watermark">{bubblesIcon} We run on Chata</div>
               <ChatBar
                 ref={this.setChatBarRef}
                 token={this.props.token}
