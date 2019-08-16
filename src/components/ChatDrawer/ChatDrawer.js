@@ -11,7 +11,8 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 
 import { Scrollbars } from 'react-custom-scrollbars'
-import { MdClearAll, MdClose } from 'react-icons/md'
+import { MdClose } from 'react-icons/md'
+import { FaRegTrashAlt } from 'react-icons/fa'
 
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 
@@ -491,7 +492,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
             data-tip="Clear Messages"
             data-for="chata-header-tooltip"
           >
-            <MdClearAll />
+            <FaRegTrashAlt />
           </button>
         </div>
       </Fragment>

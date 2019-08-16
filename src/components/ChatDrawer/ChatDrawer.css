@@ -52,6 +52,11 @@
   position: absolute;
   right: 10px;
 }
+.chata-button.clear-all svg {
+  width: 20px;
+  height: 20px;
+  padding-top: 8px;
+}
 
 .chat-message-container {
   max-height: calc(100% - 140px);
