@@ -87,7 +87,8 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
     enableSafetyNet: PropTypes.bool,
     enableAutocomplete: PropTypes.bool,
     enableVoiceRecord: PropTypes.bool,
-    title: PropTypes.string
+    title: PropTypes.string,
+    maxMessages: PropTypes.number
   }
 
   static defaultProps = {
@@ -112,6 +113,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
     enableAutocomplete: true,
     enableVoiceRecord: true,
     title: 'chata.ai',
+    maxMessages: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -148,17 +150,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
       prevProps.isVisible &&
       this.props.clearOnClose
     ) {
-      // Do we want to do this? Or just clear all?
-      this.setState({
-        messages: [
-          {
-            id: uuid.v4(),
-            isResponse: true,
-            type: 'text',
-            content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
-          }
-        ]
-      })
+      this.clearMessages()
     }
     if (this.props.theme && this.props.theme !== prevProps.theme) {
       this.setStyles()
@@ -382,7 +374,14 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
 
   clearMessages = () => {
     this.setState({
-      messages: [this.state.messages[0]],
+      messages: [
+        {
+          id: 'intro',
+          isResponse: true,
+          type: 'text',
+          content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
+        }
+      ],
       lastMessageId: 'intro'
     })
   }
@@ -424,8 +423,13 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
   }
 
   addRequestMessage = text => {
-    if (this.state.messages.length > 10) {
+    let currentMessages = this.state.messages
+    if (
+      this.props.maxMessages > 1 &&
+      this.state.messages.length === this.props.maxMessages
+    ) {
       // shift item from beginning of messages array
+      currentMessages.shift()
     }
 
     const message = {
@@ -434,15 +438,20 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
       isResponse: false
     }
     this.setState({
-      messages: [...this.state.messages, message]
+      messages: [...currentMessages, message]
     })
     this.scrollToBottom()
   }
 
   addResponseMessage = ({ response, content }) => {
-    if (this.state.messages.length > 10) {
-      // shift item from beginning of messages array
+    let currentMessages = this.state.messages
+    if (
+      this.props.maxMessages > 1 &&
+      this.state.messages.length === this.props.maxMessages
+    ) {
+      currentMessages.shift()
     }
+
     let message = {}
     if (response === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
@@ -452,7 +461,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
       message = this.createMessage(response, content)
     }
     this.setState({
-      messages: [...this.state.messages, message]
+      messages: [...currentMessages, message]
     })
     this.scrollToBottom()
   }

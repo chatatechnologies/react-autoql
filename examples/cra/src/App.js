@@ -20,7 +20,8 @@ export default class App extends Component {
     width: 500,
     title: 'Chat with your data',
     lightAccentColor: '#28a8e0',
-    darkAccentColor: '#525252'
+    darkAccentColor: '#525252',
+    maxMessages: 6
   }
 
   createRadioInputGroup = (propName, propValues = []) => {
@@ -213,6 +214,17 @@ export default class App extends Component {
           }}
           value={this.state.darkAccentColor}
         />
+        <br />
+        <br />
+        maxMessages
+        <br />
+        <input
+          type="number"
+          onChange={e => {
+            this.setState({ maxMessages: e.target.value })
+          }}
+          value={this.state.maxMessages}
+        />
       </div>
     )
   }
@@ -248,7 +260,7 @@ export default class App extends Component {
               ? this.state.lightAccentColor
               : this.state.darkAccentColor
           }
-          // maxMessages={5}
+          maxMessages={this.state.maxMessages}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
