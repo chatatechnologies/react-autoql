@@ -445,9 +445,7 @@ c0.1,0,0.2,0.1,0.3,0.1c1.5,0.6,2.4,2.1,2.4,3.7v2.2c0,0.7,0.1,1.2,0.3,1.6C13.6,13
     }
     let message = {}
     if (response === 'cancelled') {
-      message = this.createErrorMessage(
-        'You successfully cancelled this query by pressing "esc".'
-      )
+      message = this.createErrorMessage('Query Cancelled.')
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
