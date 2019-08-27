@@ -1,15 +1,15 @@
-body {
+.test-page-container {
   padding: 20px;
   padding-right: 500px;
   text-align: center;
   height: auto;
 }
 
-input {
-  max-width: 200px;
-}
-
-h4 {
+.test-page-container h4 {
   margin-bottom: 5px;
   margin-top: 15px;
+}
+
+.test-page-container input {
+  max-width: 200px;
 }
