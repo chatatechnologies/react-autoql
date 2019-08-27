@@ -34,7 +34,7 @@ export default class App extends Component {
 
   createRadioInputGroup = (title, propName, propValues = []) => {
     return (
-      <p>
+      <div>
         <h4>{title}</h4>
         <Radio.Group
           defaultValue={this.state[propName]}
@@ -43,26 +43,26 @@ export default class App extends Component {
         >
           {propValues.map(propValue => {
             return (
-              <Radio.Button value={propValue}>
+              <Radio.Button value={propValue} key={`${propName}-${propValue}`}>
                 {propValue.toString()}
               </Radio.Button>
             )
           })}
         </Radio.Group>
-      </p>
+      </div>
     )
   }
 
   createBooleanRadioGroup = (title, propName, propValues = []) => {
     return (
-      <p>
+      <div>
         <h4>{title}</h4>
         <Switch
           defaultChecked={this.state[propName]}
           checked={this.state[propName] === true}
           onChange={e => this.setState({ [propName]: e })}
         />
-      </p>
+      </div>
     )
   }
 
