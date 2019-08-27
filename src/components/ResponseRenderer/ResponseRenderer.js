@@ -235,7 +235,7 @@ export default class ResponseRenderer extends React.Component {
           data={this.pivotTableData}
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
-          // onRowDblClick={(row, columns) => {
+          // onRowClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
           //     this.props.processDrilldown(row, columns, this.queryID)
           //   }
@@ -252,7 +252,7 @@ export default class ResponseRenderer extends React.Component {
         data={this.tableData}
         borderColor={this.props.tableBorderColor}
         hoverColor={this.props.tableHoverColor}
-        onRowDblClick={(row, columns) => {
+        onRowClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
           }

@@ -19,7 +19,7 @@ export default class ChataTable extends React.Component {
 
   static propTypes = {
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    onRowDblClick: PropTypes.func,
+    onRowClick: PropTypes.func,
     data: PropTypes.arrayOf(PropTypes.array).isRequired,
     borderColor: PropTypes.string,
     hoverColor: PropTypes.string
@@ -29,7 +29,7 @@ export default class ChataTable extends React.Component {
     borderColor: '#ddd',
     // hoverColor: '#5a5a5a',
     hoverColor: '#ececec',
-    onRowDblClick: () => {}
+    onRowClick: () => {}
   }
 
   state = {}
@@ -59,9 +59,10 @@ export default class ChataTable extends React.Component {
   }
 
   rowClick = (e, row) => {
+    console.log('row CLICKED')
     e.preventDefault()
     e.stopPropagation()
-    this.props.onRowDblClick(row.getData(), this.props.columns)
+    this.props.onRowClick(row.getData(), this.props.columns)
   }
 
   copyToClipboard = () => {
@@ -101,8 +102,7 @@ export default class ChataTable extends React.Component {
           ref={ref => (this.ref = ref)}
           columns={this.props.columns}
           data={this.props.data}
-          // rowClick={this.rowClick}
-          rowDblClick={this.rowClick}
+          rowClick={this.rowClick}
           options={options}
           data-custom-attr="test-custom-attribute"
           className="chata-table"
