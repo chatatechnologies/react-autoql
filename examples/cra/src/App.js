@@ -191,7 +191,7 @@ export default class App extends Component {
         <InputNumber
           // type="number"
           onChange={e => {
-            this.setState({ height: e.target.value })
+            this.setState({ height: e })
           }}
           value={this.state.height}
         />
@@ -201,7 +201,7 @@ export default class App extends Component {
         <InputNumber
           type="number"
           onChange={e => {
-            this.setState({ width: e.target.value })
+            this.setState({ width: e })
           }}
           value={this.state.width}
         />
@@ -242,7 +242,7 @@ export default class App extends Component {
         <InputNumber
           type="number"
           onChange={e => {
-            this.setState({ maxMessages: e.target.value })
+            this.setState({ maxMessages: e })
           }}
           value={this.state.maxMessages}
         />
