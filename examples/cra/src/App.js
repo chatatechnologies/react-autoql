@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
 import uuid from 'uuid'
 
@@ -21,7 +21,11 @@ export default class App extends Component {
     title: 'Chat with your data',
     lightAccentColor: '#28a8e0',
     darkAccentColor: '#525252',
-    maxMessages: 6
+    maxMessages: 2,
+    demo: true,
+    apiKey: '',
+    customerId: '',
+    userId: ''
   }
 
   createRadioInputGroup = (propName, propValues = []) => {
@@ -126,6 +130,42 @@ export default class App extends Component {
   renderPropOptions = () => {
     return (
       <div>
+        <h1>Authentication</h1>
+        {this.createBooleanRadioGroup('demo', [true, false])}
+        {!this.state.demo && (
+          <Fragment>
+            API key
+            <br />
+            <input
+              type="text"
+              onChange={e => {
+                this.setState({ apiKey: e.target.value })
+              }}
+              value={this.state.apiKey}
+            />
+            <br />
+            Customer ID
+            <br />
+            <input
+              type="text"
+              onChange={e => {
+                this.setState({ customerId: e.target.value })
+              }}
+              value={this.state.customerId}
+            />
+            <br />
+            user ID (email)
+            <br />
+            <input
+              type="text"
+              onChange={e => {
+                this.setState({ userId: e.target.value })
+              }}
+              value={this.state.userId}
+            />
+            <br />
+          </Fragment>
+        )}
         <h1>Drawer Props</h1>
         <button onClick={() => this.setState({ componentKey: uuid.v4() })}>
           Reload Drawer
@@ -235,8 +275,9 @@ export default class App extends Component {
         {this.renderChatBarAndResponse()}
         {this.renderPropOptions()}
         <ChatDrawer
-          // token="6f52a98e-e31f-4730-9dc6-f54df3a0d92e" // required
-          // projectId={7077} // required
+          apiKey={this.state.apiKey} // required if demo is false
+          customerId={this.state.customerId} // required if demo is false
+          userId={this.state.userId} // required if demo is false
           key={this.state.componentKey}
           isVisible={this.state.isVisible}
           onHandleClick={() =>
@@ -261,6 +302,7 @@ export default class App extends Component {
               : this.state.darkAccentColor
           }
           maxMessages={this.state.maxMessages}
+          demo={this.state.demo}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}

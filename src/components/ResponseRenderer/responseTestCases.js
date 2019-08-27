@@ -1,1 +1,1 @@
-export default [{}, { display_type: 'table' }]
+export default [{}, { data: { displayType: 'table' } }]

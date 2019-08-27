@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
 
-import { reviewData } from '../../testData/reviews.js'
 import { runQuery, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
@@ -15,10 +14,9 @@ let autoCompleteArray = []
 
 export default class ChatBar extends React.Component {
   static propTypes = {
-    // apiKey: PropTypes.string.isRequired,
-    // dataSourceKey: PropTypes.string.isRequired,
-    token: PropTypes.string,
-    projectId: PropTypes.number,
+    apiKey: PropTypes.string,
+    customerId: PropTypes.string,
+    userId: PropTypes.string,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
@@ -28,21 +26,24 @@ export default class ChatBar extends React.Component {
     autoCompletePlacement: PropTypes.string,
     showLoadingDots: PropTypes.bool,
     enableSafetyNet: PropTypes.bool,
-    showChataIcon: PropTypes.bool
+    showChataIcon: PropTypes.bool,
+    demo: PropTypes.bool
     // clearQueryOnSubmit: PropTypes.bool
   }
 
   static defaultProps = {
+    apiKey: undefined,
+    customerId: undefined,
+    userId: undefined,
     enableVoiceRecord: false,
     isDisabled: false,
     enableAutocomplete: true,
     autoCompletePlacement: 'top',
     enableSafetyNet: true,
     className: null,
-    token: undefined,
-    projectId: undefined,
     showLoadingDots: false,
     showChataIcon: true,
+    demo: false,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -61,8 +62,10 @@ export default class ChatBar extends React.Component {
       this.props.onSubmit(query)
       runQuery(
         query,
-        this.props.token,
-        this.props.projectId,
+        this.props.demo,
+        this.props.apiKey,
+        this.props.customerId,
+        this.props.userId,
         this.props.enableSafetyNet
       )
         .then(response => {
@@ -118,7 +121,13 @@ export default class ChatBar extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    fetchSuggestions(value, this.props.token, this.props.projectId)
+    fetchSuggestions(
+      value,
+      this.props.demo,
+      this.props.apiKey,
+      this.props.customerId,
+      this.props.userId
+    )
       .then(response => {
         const body = response.data
         const sortingArray = []

@@ -69,14 +69,19 @@ export default class ChatMessage extends React.Component {
     if (
       response &&
       response.data &&
-      (response.data.display_type === 'suggestion' ||
-        response.data.display_type === 'unknown_words' ||
-        response.data.display_type === 'help')
+      response.data.data &&
+      (response.data.data.displayType === 'suggestion' ||
+        response.data.data.displayType === 'unknown_words' ||
+        response.data.data.displayType === 'help')
     ) {
-      this.setState({ displayType: response.data.display_type })
+      this.setState({ displayType: response.data.data.displayType })
       return
     }
-    const columns = response && response.data && response.data.columns
+    const columns =
+      response &&
+      response.data &&
+      response.data.data &&
+      response.data.data.columns
 
     if (!columns) {
       return
@@ -166,7 +171,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return 'Something went wrong.. this should never happen. Why did this happen?'
+    return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
   }
 
   // todo: put all right toolbar functions into separate component

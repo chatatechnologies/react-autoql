@@ -59,7 +59,8 @@ export default class ResponseRenderer extends React.Component {
       this.props.displayType ||
       (this.props.response &&
         this.props.response.data &&
-        this.props.response.data.display_type)
+        this.props.response.data.data &&
+        this.props.response.data.data.displayType)
   }
 
   componentWillMount = () => {
@@ -75,30 +76,21 @@ export default class ResponseRenderer extends React.Component {
     ) {
       this.setState({ displayType: this.props.displayType })
     }
-    // else if (
-    //   !this.props.onSuggestionClick &&
-    //   this.props.response &&
-    //   this.props.response.data &&
-    //   this.props.response.data.display_type &&
-    //   prevProps.response &&
-    //   prevProps.response.data &&
-    //   !prevProps.response.data.data
-    // ) {
-    //   // User clicked on suggestion
-    //   this.setState({ displayType: this.props.response.data.display_type })
-    //   this.setResponseData(this.props.response.data.display_type)
-    // }
   }
 
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
 
   setResponseData = displayType => {
-    if (this.props.response && this.props.response.data) {
-      const responseBody = this.props.response.data
-      this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
+    if (
+      this.props.response &&
+      this.props.response.data &&
+      this.props.response.data.data
+    ) {
+      const responseBody = this.props.response.data.data
+      this.queryID = responseBody.queryId // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation // Where should we display this?
-      this.data = responseBody.data
+      this.data = responseBody.rows
 
       if (
         this.isTableType(displayType) ||
@@ -107,10 +99,17 @@ export default class ResponseRenderer extends React.Component {
         // responseBody.data
       ) {
         this.generateTableData()
-        if (this.props.supportedDisplayTypes.includes('pivot_table')) {
+        if (
+          this.tableData &&
+          this.props.supportedDisplayTypes.includes('pivot_table')
+        ) {
           this.generatePivotData()
         }
-        if (responseBody.columns && responseBody.columns.length <= 3) {
+        if (
+          this.tableData &&
+          responseBody.columns &&
+          responseBody.columns.length <= 3
+        ) {
           this.generateChartData()
         }
       }
@@ -119,11 +118,11 @@ export default class ResponseRenderer extends React.Component {
 
   generateTableData = () => {
     this.tableColumns = this.formatColumnsForTable(
-      this.props.response.data.columns
+      this.props.response.data.data.columns
     )
     this.tableData =
       typeof this.data === 'string' // This will change once the query response is refactored
-        ? PapaParse.parse(this.data).data
+        ? undefined
         : this.data
   }
 
@@ -167,13 +166,9 @@ export default class ResponseRenderer extends React.Component {
     const responseBody = response.data
     if (
       this.state.displayType === 'suggestion' &&
-      responseBody.data.length !== 0
+      responseBody.data.rows.length !== 0
     ) {
-      const suggestions = responseBody.data.split('\n')
-      const finalRow = suggestions[suggestions.length - 1] // strip out trailing newline
-      if (finalRow === '') {
-        suggestions.splice(-1)
-      }
+      const suggestions = responseBody.data.rows
       const theUserInput = getParameterByName(
         'q',
         response.config && response.config.url
@@ -459,7 +454,7 @@ export default class ResponseRenderer extends React.Component {
       } else if (nameFragments.length === 1) {
         // all good
       } else {
-        console.log(`unexpected nameFragments.length ${nameFragments.length}`)
+        console.error(`unexpected nameFragments.length ${nameFragments.length}`)
       }
       col.title = col.name.replace(/_/g, ' ')
       if (!col.title.isUpperCase()) {
@@ -601,7 +596,7 @@ export default class ResponseRenderer extends React.Component {
     if (message) {
       return message
     }
-    return 'Something went wrong, please try again'
+    return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
   }
 
   renderResponse = () => {
@@ -626,7 +621,7 @@ export default class ResponseRenderer extends React.Component {
       )
     }
 
-    if (responseBody.data && !responseBody.data.length) {
+    if (responseBody.rows && !responseBody.rows.length) {
       // This is not an error. There is just no data in the DB
       return 'No data found.'
     }
