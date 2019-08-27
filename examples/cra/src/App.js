@@ -272,7 +272,9 @@ export default class App extends Component {
   render = () => {
     return (
       <div>
-        {this.renderChatBarAndResponse()}
+        {
+          // this.renderChatBarAndResponse()
+        }
         {this.renderPropOptions()}
         <ChatDrawer
           apiKey={this.state.apiKey} // required if demo is false

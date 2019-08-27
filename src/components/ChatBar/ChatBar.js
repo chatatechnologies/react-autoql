@@ -2,6 +2,8 @@ import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
 
+import uuid from 'uuid'
+
 import { runQuery, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
@@ -13,6 +15,8 @@ import styles from './ChatBar.css'
 let autoCompleteArray = []
 
 export default class ChatBar extends React.Component {
+  UNIQUE_ID = uuid.v4()
+
   static propTypes = {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
@@ -102,7 +106,9 @@ export default class ChatBar extends React.Component {
     if (this.inputRef) {
       this.inputRef.focus()
     } else {
-      const autoSuggestElement = document.getElementsByClassName('chata-input')
+      const autoSuggestElement = document.getElementsByClassName(
+        `${this.UNIQUE_ID}`
+      )
       if (autoSuggestElement && autoSuggestElement[0]) {
         autoSuggestElement[0].focus()
       }
@@ -204,7 +210,7 @@ export default class ChatBar extends React.Component {
                 <Fragment>{suggestion.name}</Fragment>
               )}
               inputProps={{
-                className: `chata-input${
+                className: `${this.UNIQUE_ID} chata-input${
                   this.props.showChataIcon ? ' left-padding' : ''
                 }`,
                 placeholder: 'Ask me anything',

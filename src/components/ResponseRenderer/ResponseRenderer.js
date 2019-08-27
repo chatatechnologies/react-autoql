@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import PapaParse from 'papaparse'
 import uuid from 'uuid'
 import { IoIosGlobe } from 'react-icons/io'
 import Numbro from 'numbro'
