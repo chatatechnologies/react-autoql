@@ -25,7 +25,7 @@ export default class App extends Component {
     title: 'Chat with your data',
     lightAccentColor: '#28a8e0',
     darkAccentColor: '#525252',
-    maxMessages: 2,
+    maxMessages: 6,
     demo: true,
     apiKey: '',
     customerId: '',
