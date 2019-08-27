@@ -2,6 +2,10 @@ import React, { Component, Fragment } from 'react'
 import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
 import uuid from 'uuid'
 
+import { Radio, Input, InputNumber, Switch, Button } from 'antd'
+import 'antd/dist/antd.css'
+import './index.css'
+
 export default class App extends Component {
   state = {
     componentKey: uuid.v4(),
@@ -28,55 +32,37 @@ export default class App extends Component {
     userId: ''
   }
 
-  createRadioInputGroup = (propName, propValues = []) => {
+  createRadioInputGroup = (title, propName, propValues = []) => {
     return (
-      <div>
-        <br />
-        {propName}
-        {propValues.map(propValue => {
-          return (
-            <div key={`${propName}-${propValue}`}>
-              <label className="radio">
-                <input
-                  type="radio"
-                  name={propName}
-                  value={propValue}
-                  checked={this.state[propName] === propValue}
-                  onChange={e => this.setState({ [propName]: e.target.value })}
-                />
+      <p>
+        <h4>{title}</h4>
+        <Radio.Group
+          defaultValue={this.state[propName]}
+          onChange={e => this.setState({ [propName]: e.target.value })}
+          buttonStyle="solid"
+        >
+          {propValues.map(propValue => {
+            return (
+              <Radio.Button value={propValue}>
                 {propValue.toString()}
-              </label>
-            </div>
-          )
-        })}
-      </div>
+              </Radio.Button>
+            )
+          })}
+        </Radio.Group>
+      </p>
     )
   }
 
-  createBooleanRadioGroup = (propName, propValues = []) => {
+  createBooleanRadioGroup = (title, propName, propValues = []) => {
     return (
-      <div>
-        <br />
-        {propName}
-        {propValues.map(propValue => {
-          return (
-            <div key={`${propName}-${propValue}`}>
-              <label className="radio">
-                <input
-                  type="radio"
-                  name={propName}
-                  value={propValue}
-                  checked={this.state[propName] === propValue}
-                  onChange={e =>
-                    this.setState({ [propName]: e.target.value === 'true' })
-                  }
-                />
-                {propValue.toString()}
-              </label>
-            </div>
-          )
-        })}
-      </div>
+      <p>
+        <h4>{title}</h4>
+        <Switch
+          defaultChecked={this.state[propName]}
+          checked={this.state[propName] === true}
+          onChange={e => this.setState({ [propName]: e })}
+        />
+      </p>
     )
   }
 
@@ -130,146 +116,156 @@ export default class App extends Component {
   renderPropOptions = () => {
     return (
       <div>
-        <h1>Authentication</h1>
-        {this.createBooleanRadioGroup('demo', [true, false])}
+        <h1>Data Source</h1>
+        {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
         {!this.state.demo && (
           <Fragment>
-            API key
-            <br />
-            <input
-              type="text"
+            <h4>API key</h4>
+            <Input
+              // type="text"
               onChange={e => {
                 this.setState({ apiKey: e.target.value })
               }}
               value={this.state.apiKey}
             />
-            <br />
-            Customer ID
-            <br />
-            <input
-              type="text"
+            <h4>Customer ID</h4>
+            <Input
+              // type="text"
               onChange={e => {
                 this.setState({ customerId: e.target.value })
               }}
               value={this.state.customerId}
             />
-            <br />
-            user ID (email)
-            <br />
-            <input
-              type="text"
+            <h4>User ID (email)</h4>
+            <Input
+              // type="text"
               onChange={e => {
                 this.setState({ userId: e.target.value })
               }}
               value={this.state.userId}
             />
-            <br />
           </Fragment>
         )}
         <h1>Drawer Props</h1>
-        <button onClick={() => this.setState({ componentKey: uuid.v4() })}>
+        <Button
+          onClick={() => this.setState({ componentKey: uuid.v4() })}
+          style={{ marginRight: '10px' }}
+        >
           Reload Drawer
-        </button>
-        <br />
-        <button onClick={() => this.setState({ isVisible: true })}>
+        </Button>
+        <Button
+          onClick={() => this.setState({ isVisible: true })}
+          type="primary"
+        >
           Open Drawer
-        </button>
-        {this.createBooleanRadioGroup('showHandle', [true, false])}
-        {this.createBooleanRadioGroup('showMask', [true, false])}
-        {this.createRadioInputGroup('theme', ['light', 'dark'])}
-        {this.createRadioInputGroup('placement', [
+        </Button>
+        {this.createBooleanRadioGroup('Show Drawer Handle', 'showHandle', [
+          true,
+          false
+        ])}
+        {this.createBooleanRadioGroup('Show Mask', 'showMask', [true, false])}
+        {this.createRadioInputGroup('Theme', 'theme', ['light', 'dark'])}
+        {this.createRadioInputGroup('Drawer Placement', 'placement', [
           'top',
           'bottom',
           'left',
           'right'
         ])}
-        <br />
-        customerName (must click 'reload drawer' to apply this)
-        <br />
-        <input
+        <h4>Customer Name</h4>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <Input
           type="text"
           onChange={e => {
             this.setState({ customerName: e.target.value })
           }}
           value={this.state.customerName}
         />
-        {this.createBooleanRadioGroup('enableAutocomplete', [true, false])}
-        {this.createBooleanRadioGroup('enableSafetyNet', [true, false])}
-        {this.createBooleanRadioGroup('enableVoiceRecord', [true, false])}
-        {this.createBooleanRadioGroup('clearOnClose', [true, false])}
-        <br />
-        <br />
-        height: only for top/bottom placement (must reload drawer to apply)
-        <br />
-        <input
-          type="number"
+        {this.createBooleanRadioGroup(
+          'Clear All Messages on Close',
+          'clearOnClose',
+          [true, false]
+        )}
+        <h4>Height</h4>
+        <h5>Only for top/bottom placement</h5>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <InputNumber
+          // type="number"
           onChange={e => {
             this.setState({ height: e.target.value })
           }}
           value={this.state.height}
         />
-        <br />
-        <br />
-        width: only for left/right placement (must reload drawer to apply)
-        <br />
-        <input
+        <h4>Width</h4>
+        <h5>Only for left/right placement</h5>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <InputNumber
           type="number"
           onChange={e => {
             this.setState({ width: e.target.value })
           }}
           value={this.state.width}
         />
-        <br />
-        <br />
-        title
-        <br />
-        <input
+        <h4>Title</h4>
+        <Input
           type="text"
           onChange={e => {
             this.setState({ title: e.target.value })
           }}
           value={this.state.title}
         />
-        <br />
-        <br />
-        light theme accent color: for production version, the user will just
-        choose "accentColor" and it will be applied to whatever theme. If not
-        provided, the default color will be used (must reload drawer to apply)
-        <br />
-        <input
+        <h4>Light Theme Accent Color</h4>
+        <h5>
+          For production version, the user will just choose "accentColor" and it
+          <br />
+          will be applied to whatever theme. If not provided, the default color
+          <br />
+          will be used
+        </h5>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <Input
           type="color"
           onChange={e => {
             this.setState({ lightAccentColor: e.target.value })
           }}
           value={this.state.lightAccentColor}
         />
-        <br />
-        <br />
-        dark theme accent color (must reload drawer to apply)
-        <br />
-        <input
+        <h4>Dark Theme Accent Color</h4>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <Input
           type="color"
           onChange={e => {
             this.setState({ darkAccentColor: e.target.value })
           }}
           value={this.state.darkAccentColor}
         />
-        <br />
-        <br />
-        maxMessages
-        <br />
-        <input
+        <h4>Maximum Number of Messages</h4>
+        <InputNumber
           type="number"
           onChange={e => {
             this.setState({ maxMessages: e.target.value })
           }}
           value={this.state.maxMessages}
         />
+        {this.createBooleanRadioGroup(
+          'Enable Autocomplete',
+          'enableAutocomplete',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup('Enable Safety Net', 'enableSafetyNet', [
+          true,
+          false
+        ])}
+        {this.createBooleanRadioGroup(
+          'Enable Speech to Text',
+          'enableVoiceRecord',
+          [true, false]
+        )}
       </div>
     )
   }
 
   render = () => {
+    console.log(this.state.demo)
     return (
       <div>
         {
