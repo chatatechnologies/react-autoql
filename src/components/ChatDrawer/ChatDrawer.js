@@ -18,6 +18,7 @@ import { bubblesIcon } from '../../svgIcons.js'
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { runQuery, runDrilldown, cancelQuery } from '../../js/queryService'
+import { formatElement } from '../../js/Util'
 
 import rcStyles from 'rc-drawer/assets/index.css'
 import chataTableStyles from '../ChataTable/ChataTable.css'
@@ -306,9 +307,9 @@ export default class ChatDrawer extends React.Component {
       if (column.groupable) {
         const columnName = column.name
         if (column.type === 'DATE') {
-          jsonData[columnName] = rowData[index]
+          jsonData[columnName] = `${rowData[index]}`
         } else {
-          jsonData[columnName.toLowerCase()] = rowData[index]
+          jsonData[columnName.toLowerCase()] = `${rowData[index]}`
         }
       }
     })
@@ -330,20 +331,19 @@ export default class ChatDrawer extends React.Component {
         return
       }
 
-      const bodyJSON = {
-        id: queryID,
-        group_bys: groupByObject
-      }
-
       // This is a hack.
       // How do we get the right text?? Can we make an api call to get the text first?
-      const drilldownText = `Drill down on ${columns[0].title} "${rowData[0]}"`
+      const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
+        rowData[0],
+        columns[0]
+      )}"`
 
       this.addRequestMessage(drilldownText)
       this.setState({ isChataThinking: true })
 
       runDrilldown(
-        bodyJSON,
+        queryID,
+        groupByObject,
         this.props.demo,
         this.props.apiKey,
         this.props.customerId,

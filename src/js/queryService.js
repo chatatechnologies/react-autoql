@@ -111,13 +111,27 @@ export const runQuery = (
   return runQueryOnly(query, demo, apiKey, customerId, userId)
 }
 
-export const runDrilldown = (data, demo, apiKey, customerId, userId) => {
+export const runDrilldown = (
+  queryID,
+  groupByObject,
+  demo,
+  apiKey,
+  customerId,
+  userId
+) => {
   const axiosInstance = axios.create({})
 
   drilldownCall = axios.CancelToken.source()
 
+  const data = {
+    queryId: queryID,
+    groupBys: groupByObject,
+    customerId: customerId,
+    userId: userId
+  }
+
   const url = demo
-    ? `https://backend-staging.chata.ai/api/v1/query/demo/drilldown?&project=1&unified_query_id=${unifiedQueryId}`
+    ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
     : `https://backend-staging.chata.ai/api/v1/query/demo/drilldown?&project=1&unified_query_id=${unifiedQueryId}`
 
   return axiosInstance
