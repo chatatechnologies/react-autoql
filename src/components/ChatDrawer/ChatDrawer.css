@@ -176,15 +176,15 @@
 }
 
 /* Safetynet styles */
-.chata-drawer .chata-safetynet-select {
-  /* color: var(--chata-drawer-accent-color); */
+/* .chata-drawer .chata-safetynet-select {
+  color: var(--chata-drawer-accent-color);
 }
 .chata-drawer .chata-safety-net-execute-btn:hover {
-  /* border-color: var(--chata-drawer-accent-color); */
+  border-color: var(--chata-drawer-accent-color);
 }
 .chata-drawer .chata-execute-query-icon {
-  /* fill: var(--chata-drawer-accent-color); */
-}
+  fill: var(--chata-drawer-accent-color);
+} */
 
 /* animations */
 @keyframes response-loading1 {
