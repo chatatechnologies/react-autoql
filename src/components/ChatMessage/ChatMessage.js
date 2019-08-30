@@ -7,6 +7,7 @@ import uuid from 'uuid'
 import { ResponseRenderer } from '../ResponseRenderer'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import { getNumberOfGroupables } from '../../js/Util.js'
 
 import {
   tableIcon,
@@ -91,7 +92,7 @@ export default class ChatMessage extends React.Component {
       return
     }
 
-    if (columns.length === 2) {
+    if (getNumberOfGroupables(columns) === 1) {
       // Is direct key-value query (ie. Avg days to pay per customer)
       this.supportedDisplayTypes = [
         'bar',
@@ -116,10 +117,7 @@ export default class ChatMessage extends React.Component {
       //     'contrast_column',
       //     'table'
       //   ]
-    } else if (
-      columns.length === 3
-      // && this.hasMultipleValuesPerLabel()
-    ) {
+    } else if (getNumberOfGroupables(columns) === 2) {
       // Is pivot query (ie. Sale per customer per month)
       this.supportedDisplayTypes = [
         'multi_line',
@@ -131,6 +129,8 @@ export default class ChatMessage extends React.Component {
         'pivot_table'
       ]
     }
+
+    // Default to table display type.
     this.setState({ displayType: 'table' })
   }
 

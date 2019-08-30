@@ -219,6 +219,19 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
   })
 }
 
+export const getNumberOfGroupables = columns => {
+  if (columns) {
+    let numberOfGroupables = 0
+    columns.forEach(col => {
+      if (col.groupable) {
+        numberOfGroupables += 1
+      }
+    })
+    return numberOfGroupables
+  }
+  return null
+}
+
 // Lodash get function and dependencies
 // function get(object, path, defaultValue) {
 //   var result = object == null ? undefined : baseGet(object, path);

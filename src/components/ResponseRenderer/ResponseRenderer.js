@@ -12,7 +12,12 @@ import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { ChataForecast } from '../ChataForecast'
-import { onlyUnique, formatElement, makeEmptyArray } from '../../js/Util.js'
+import {
+  onlyUnique,
+  formatElement,
+  makeEmptyArray,
+  getNumberOfGroupables
+} from '../../js/Util.js'
 import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
 
 String.prototype.isUpperCase = function() {
@@ -112,11 +117,7 @@ export default class ResponseRenderer extends React.Component {
   }
 
   shouldGenerateChartData = () => {
-    return (
-      this.tableData &&
-      this.props.response.data.data.columns &&
-      this.props.response.data.data.columns.length <= 3
-    )
+    return !!getNumberOfGroupables(this.tableColumns) && this.tableData
   }
 
   generateForecastData = () => {
@@ -405,19 +406,15 @@ export default class ResponseRenderer extends React.Component {
   generateChartData = () => {
     const columns = this.tableColumns
 
-    if (columns.length === 2) {
+    if (getNumberOfGroupables(this.tableColumns) === 1) {
       this.chartData = Object.values(
         this.tableData.reduce((chartDataObject, row) => {
           if (!chartDataObject[row[0]]) {
             chartDataObject[row[0]] = {
               origColumns: columns,
               origRow: row,
-              // Don't think we need to do x and y separately. Can just use origRow
               label: row[0],
               value: Number(row[1]) || row[1],
-              // Don't think we need to do x and y separately. Can just use origColumns
-              // labelCol: columns[0],
-              // valueCol: columns[1],
               formatter: (value, column) => {
                 return formatElement(value, column)
               }
@@ -428,7 +425,7 @@ export default class ResponseRenderer extends React.Component {
           return chartDataObject
         }, {})
       )
-    } else if (columns.length === 3) {
+    } else if (getNumberOfGroupables(this.tableColumns) === 2) {
       this.chartData = this.tableData.map(row => {
         return {
           origColumns: columns,

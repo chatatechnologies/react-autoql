@@ -22,4 +22,6 @@ export const CHART_TYPES = [
   'contrast_line'
 ]
 
+export const CONTRAST_TYPES = ['compare_table', 'compare_table_budget']
+
 export const FORECAST_TYPES = ['forecasting', 'status_forecasting']
