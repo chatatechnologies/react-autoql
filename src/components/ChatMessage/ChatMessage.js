@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { MdContentCopy, MdFileDownload } from 'react-icons/md'
+import { MdContentCopy, MdFileDownload, MdFilterList } from 'react-icons/md'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 
@@ -52,7 +52,8 @@ export default class ChatMessage extends React.Component {
   }
 
   state = {
-    displayType: undefined
+    displayType: undefined,
+    isFilteringTable: false
   }
 
   componentWillMount = () => {
@@ -130,13 +131,17 @@ export default class ChatMessage extends React.Component {
     this.setState({ displayType: 'table' })
   }
 
-  switchView = displayType => {
-    this.setState({ displayType })
-    // If its the last message, scroll to bottom.
-    // There is a bug that makes it jump to the top if its the only message
+  scrollToBottomIfLastMessage = () => {
     if (this.props.lastMessageId === this.props.id) {
       this.props.scrollToBottom()
     }
+  }
+
+  switchView = displayType => {
+    this.setState({ displayType, isFilteringTable: false })
+    // If its the last message, scroll to bottom.
+    // There is a bug that makes it jump to the top if its the only message
+    this.scrollToBottomIfLastMessage()
   }
 
   renderContent = () => {
@@ -166,12 +171,18 @@ export default class ChatMessage extends React.Component {
           tableHoverColor={this.props.tableHoverColor}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
+          isFilteringTable={this.state.isFilteringTable}
           width={chartWidth}
           height={chartHeight}
         />
       )
     }
     return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
+  }
+
+  toggleTableFilter = () => {
+    this.setState({ isFilteringTable: !this.state.isFilteringTable })
+    this.scrollToBottomIfLastMessage()
   }
 
   // todo: put all right toolbar functions into separate component
@@ -195,6 +206,7 @@ export default class ChatMessage extends React.Component {
 
   renderRightToolbar = () => {
     const shouldShowButton = {
+      showFilterButton: TABLE_TYPES.includes(this.state.displayType),
       showCopyButton: TABLE_TYPES.includes(this.state.displayType),
       showSaveAsCSVButton: TABLE_TYPES.includes(this.state.displayType),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType)
@@ -215,6 +227,18 @@ export default class ChatMessage extends React.Component {
     ) {
       return (
         <div className="chat-message-toolbar right">
+          {shouldShowButton.showFilterButton && (
+            <button
+              onClick={this.toggleTableFilter}
+              className="chata-toolbar-btn"
+              data-tip={
+                this.state.isFilteringTable ? 'Stop Filtering' : 'Filter Table'
+              }
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <MdFilterList />
+            </button>
+          )}
           {shouldShowButton.showCopyButton && (
             <button
               onClick={this.copyTableToClipboard}
@@ -305,7 +329,8 @@ export default class ChatMessage extends React.Component {
       <Fragment>
         <div
           className={`chat-single-message-container
-          ${this.props.isResponse ? ' response' : ' request'}`}
+          ${this.props.isResponse ? ' response' : ' request'}
+          ${this.state.isFilteringTable ? ' filtering-table' : ''}`}
         >
           <div
             className={`chat-message-bubble

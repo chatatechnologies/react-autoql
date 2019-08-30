@@ -38,7 +38,8 @@ export default class ResponseRenderer extends React.Component {
     tableBorderColor: PropTypes.string,
     tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
-    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string)
+    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string),
+    isFilteringTable: PropTypes.bool
   }
 
   static defaultProps = {
@@ -50,6 +51,7 @@ export default class ResponseRenderer extends React.Component {
     displayType: undefined,
     chatBarRef: undefined,
     onSuggestionClick: undefined,
+    isFilteringTable: false,
     processDrilldown: () => {}
   }
 
@@ -235,6 +237,7 @@ export default class ResponseRenderer extends React.Component {
           data={this.pivotTableData}
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
+          isFilteringTable={this.props.isFilteringTable}
           // onRowClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
           //     this.props.processDrilldown(row, columns, this.queryID)
@@ -257,6 +260,7 @@ export default class ResponseRenderer extends React.Component {
             this.props.processDrilldown(row, columns, this.queryID)
           }
         }}
+        isFilteringTable={this.props.isFilteringTable}
       />
     )
   }
@@ -338,6 +342,15 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
+  formatDateElement = (title, value) => {
+    if (title && title.includes('Year')) {
+      return dayjs.unix(value).format('YYYY')
+    } else if (title && title.includes('Month')) {
+      return dayjs.unix(value).format('MMMM YYYY')
+    }
+    return dayjs.unix(value).format('MMMM D, YYYY')
+  }
+
   formatElement = (element, column = this.tableColumns[1]) => {
     let formattedElement = element
     if (column) {
@@ -362,13 +375,7 @@ export default class ResponseRenderer extends React.Component {
         }
         case 'DATE': {
           // This will change when the query response is refactored
-          const title = column.title
-          if (title && title.includes('Year')) {
-            formattedElement = dayjs.unix(element).format('YYYY')
-          } else if (title && title.includes('Month')) {
-            formattedElement = dayjs.unix(element).format('MMMM YYYY')
-          }
-          formattedElement = dayjs.unix(element).format('MMMM D, YYYY')
+          formattedElement = this.formatDateElement(column.title, element)
           break
         }
         case 'PERCENT': {
@@ -427,6 +434,25 @@ export default class ResponseRenderer extends React.Component {
     }
   }
 
+  setFilterFunction = col => {
+    const self = this
+    if (col.type === 'DATE') {
+      return (headerValue, rowValue, rowData, filterParams) => {
+        // headerValue - the value of the header filter element
+        // rowValue - the value of the column in this row
+        // rowData - the data for the row being filtered
+        // filterParams - params object passed to the headerFilterFuncParams property
+
+        const formattedElement = self
+          .formatDateElement(col.title, rowValue)
+          .toLowerCase()
+
+        return formattedElement.includes(headerValue.toLowerCase())
+      }
+    }
+    return undefined
+  }
+
   formatColumnsForTable = columns => {
     if (!columns) {
       return null
@@ -455,10 +481,20 @@ export default class ResponseRenderer extends React.Component {
       } else {
         console.error(`unexpected nameFragments.length ${nameFragments.length}`)
       }
+
       col.title = col.name.replace(/_/g, ' ')
       if (!col.title.isUpperCase()) {
         col.title = col.title.toProperCase()
       }
+
+      // Always have filtering enabled, but only
+      // display if filtering is toggled by user
+      col.headerFilter = 'input'
+
+      // Need to set custom filters for cells that are
+      // displayed differently than the data (ie. dates)
+      col.headerFilterFunc = this.setFilterFunction(col)
+
       return col
     })
     return formattedColumns

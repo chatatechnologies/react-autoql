@@ -150,12 +150,14 @@ export default class App extends Component {
         <Button
           onClick={() => this.setState({ componentKey: uuid.v4() })}
           style={{ marginRight: '10px' }}
+          icon="reload"
         >
           Reload Drawer
         </Button>
         <Button
           onClick={() => this.setState({ isVisible: true })}
           type="primary"
+          icon="menu-unfold"
         >
           Open Drawer
         </Button>

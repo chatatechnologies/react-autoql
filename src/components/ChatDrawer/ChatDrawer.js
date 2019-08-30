@@ -235,6 +235,9 @@ export default class ChatDrawer extends React.Component {
   }
 
   scrollToBottom = () => {
+    if (this.scrollComponent) {
+      this.scrollComponent.scrollToBottom()
+    }
     // Required to make animation smooth
     setTimeout(() => {
       if (this.scrollComponent) {

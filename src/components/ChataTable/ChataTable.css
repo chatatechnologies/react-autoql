@@ -89,3 +89,27 @@
   border-radius: 7px;
   border: 0px;
 }
+.chata-table .tabulator-header-filter input {
+  border: 1px solid var(--chata-table-border-color);
+  border-radius: 4px;
+  padding: 4px 9px !important;
+  outline: none !important;
+}
+.chata-table .tabulator-header-filter input:focus {
+  border: 1px solid #28a8e0;
+}
+/* These are necessary because we are always rendering the
+filter (just display: none when not used) instead of re-rendering
+the whole table when the filter button is clicked */
+.chata-table-container.filtering .chata-table .tabulator-header-filter {
+  display: inline-block;
+}
+.chata-table-container:not(.filtering) .chata-table .tabulator-header-filter {
+  display: none;
+}
+.chata-table-container:not(.filtering) .chata-table .tabulator-col {
+  height: 37px !important;
+}
+.chata-table-container.filtering .chata-table .tabulator-col {
+  height: 72px !important;
+}
