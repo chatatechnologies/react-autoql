@@ -11,8 +11,9 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
+import { ChataForecast } from '../ChataForecast'
 import { onlyUnique, formatElement, makeEmptyArray } from '../../js/Util.js'
-import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -81,6 +82,7 @@ export default class ResponseRenderer extends React.Component {
 
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
+  isForecastType = type => FORECAST_TYPES.includes(type)
 
   setResponseData = displayType => {
     if (
@@ -93,28 +95,34 @@ export default class ResponseRenderer extends React.Component {
       this.interpretation = responseBody.interpretation // Where should we display this?
       this.data = responseBody.rows
 
-      if (
-        this.isTableType(displayType) ||
-        this.isChartType(displayType)
-        // responseBody.columns &&
-        // responseBody.data
-      ) {
+      if (this.isTableType(displayType) || this.isChartType(displayType)) {
         this.generateTableData()
-        if (
-          this.tableData &&
-          this.props.supportedDisplayTypes.includes('pivot_table')
-        ) {
-          this.generatePivotData()
-        }
-        if (
-          this.tableData &&
-          responseBody.columns &&
-          responseBody.columns.length <= 3
-        ) {
-          this.generateChartData()
-        }
+        this.shouldGeneratePivotData() && this.generatePivotData()
+        this.shouldGenerateChartData() && this.generateChartData()
+      } else if (this.isForecastType(displayType)) {
+        this.generateForecastData()
       }
     }
+  }
+
+  shouldGeneratePivotData = () => {
+    return (
+      this.tableData && this.props.supportedDisplayTypes.includes('pivot_table')
+    )
+  }
+
+  shouldGenerateChartData = () => {
+    return (
+      this.tableData &&
+      this.props.response.data.data.columns &&
+      this.props.response.data.data.columns.length <= 3
+    )
+  }
+
+  generateForecastData = () => {
+    // This is temporary until we create the forecast vis
+    this.generateTableData()
+    this.shouldGenerateChartData() && this.generateChartData()
   }
 
   generateTableData = () => {
@@ -176,6 +184,7 @@ export default class ResponseRenderer extends React.Component {
       )
       return this.createSuggestionMessage(theUserInput, suggestions)
     }
+
     // No suggestions
     else if (
       this.state.displayType === 'suggestion' &&
@@ -183,11 +192,7 @@ export default class ResponseRenderer extends React.Component {
     ) {
       return this.createSuggestionMessage()
     }
-    // We don't understand the query, no suggestions
-    else if (this.state.displayType === 'unknown_words') {
-      return this.createSuggestionMessage()
-    }
-    // this shouldn't happen...
+
     return this.renderErrorMessage()
   }
 
@@ -213,6 +218,11 @@ export default class ResponseRenderer extends React.Component {
     if (this.chartRef) {
       this.chartRef.saveAsPNG()
     }
+  }
+
+  renderForecastVis = () => {
+    return this.renderTable()
+    // return <ChataForecast />
   }
 
   renderTable = () => {
@@ -666,6 +676,8 @@ export default class ResponseRenderer extends React.Component {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
         return this.renderHelpResponse()
+      } else if (this.isForecastType(displayType)) {
+        return this.renderForecastVis()
       } else if (this.isTableType(displayType)) {
         return this.renderTable()
       } else if (this.isChartType(displayType)) {

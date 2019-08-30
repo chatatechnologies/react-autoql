@@ -21,3 +21,5 @@ export const CHART_TYPES = [
   'contrast_column',
   'contrast_line'
 ]
+
+export const FORECAST_TYPES = ['forecasting', 'status_forecasting']

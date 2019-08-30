@@ -67,17 +67,20 @@ export default class ChatMessage extends React.Component {
   getSupportedDisplayTypes = () => {
     const { response } = this.props
 
+    // These queries only have one display type option
     if (
       response &&
       response.data &&
       response.data.data &&
       (response.data.data.displayType === 'suggestion' ||
         response.data.data.displayType === 'unknown_words' ||
-        response.data.data.displayType === 'help')
+        response.data.data.displayType === 'help' ||
+        response.data.data.displayType === 'forecasting')
     ) {
       this.setState({ displayType: response.data.data.displayType })
       return
     }
+
     const columns =
       response &&
       response.data &&
