@@ -409,17 +409,27 @@ export default class ResponseRenderer extends React.Component {
     if (getNumberOfGroupables(this.tableColumns) === 1) {
       this.chartData = Object.values(
         this.tableData.reduce((chartDataObject, row) => {
+          // Loop through columns and create a series for each
+          const values = []
+          row.forEach((value, i) => {
+            if (i > 0) {
+              values.push(Number(value) || value)
+            }
+          })
+
+          // Make sure the row label doesn't exist already
           if (!chartDataObject[row[0]]) {
             chartDataObject[row[0]] = {
               origColumns: columns,
               origRow: row,
               label: row[0],
-              value: Number(row[1]) || row[1],
+              values,
               formatter: (value, column) => {
                 return formatElement(value, column)
               }
             }
           } else {
+            // If this label already exists, just add the values together
             chartDataObject[row[1]].value += Number(row[1])
           }
           return chartDataObject

@@ -18,13 +18,13 @@ export default class ChataBarChart extends Component {
     rightMargin: PropTypes.number.isRequired,
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
-    dataValue: PropTypes.string,
+    dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func
   }
 
   static defaultProps = {
-    dataValue: 'value',
+    dataValues: 'values',
     labelValue: 'label',
     tooltipFormatter: () => {}
   }
@@ -32,21 +32,32 @@ export default class ChataBarChart extends Component {
   render = () => {
     const {
       tooltipFormatter,
-      onChartClick,
       bottomMargin,
+      onChartClick,
       rightMargin,
+      dataValues,
       leftMargin,
       labelValue,
       topMargin,
-      dataValue,
       columns,
       height,
       width,
       data
     } = this.props
 
-    const maxValue = max(data, d => d[dataValue])
-    let minValue = min(data, d => d[dataValue])
+    // Get max and min values from all series
+    const numberOfSeries = data[0][dataValues].length
+    const maxValuesFromArrays = []
+    const minValuesFromArrays = []
+
+    for (let i = 0; i < numberOfSeries; i++) {
+      maxValuesFromArrays.push(max(data, d => d[dataValues][i]))
+      minValuesFromArrays.push(min(data, d => d[dataValues][i]))
+    }
+
+    const maxValue = max(maxValuesFromArrays)
+    let minValue = min(minValuesFromArrays)
+
     // Make sure 0 is always visible on the y axis
     if (minValue > 0) {
       minValue = 0
@@ -106,7 +117,7 @@ export default class ChataBarChart extends Component {
             maxValue={maxValue}
             width={width}
             height={height}
-            dataValue={dataValue}
+            dataValues={dataValues}
             labelValue={labelValue}
             onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}

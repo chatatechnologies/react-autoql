@@ -1,14 +1,12 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 
-import ReactTooltip from 'react-tooltip'
-// import { scaleLinear } from 'd3-scale'
-// import { interpolateLab } from 'd3-interpolate'
+import { scaleOrdinal } from 'd3-scale'
 
 export default class Columns extends Component {
-  // colorScale = scaleLinear()
-  //   .domain([0, this.props.maxValue])
-  //   .range(['#F3E5F5', '#7B1FA2'])
-  //   .interpolate(interpolateLab)
+  colorScale = scaleOrdinal()
+    .domain([...Array(10).keys()])
+    .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+
   static propTypes = {}
 
   state = {
@@ -16,33 +14,49 @@ export default class Columns extends Component {
   }
 
   Y0 = () => this.props.scales.yScale(0)
-  Y = d => this.props.scales.yScale(d[this.props.dataValue])
+  Y = (d, i) => this.props.scales.yScale(d[this.props.dataValues][i])
 
   render() {
-    const { scales, margins, data, height, labelValue, dataValue } = this.props
+    const { scales, margins, data, height, labelValue, dataValues } = this.props
     const { xScale, yScale } = scales
 
-    const bars = data.map(d => (
-      <rect
-        key={d[labelValue]}
-        className={`bar${
-          this.state.activeKey === d[labelValue] ? ' active' : ''
-        }`}
-        x={xScale(d[labelValue])}
-        y={d[dataValue] < 0 ? this.Y0() : this.Y(d)}
-        // height={height - margins.bottom - Math.abs(this.Y(d) - this.Y0())}
-        height={Math.abs(this.Y(d) - this.Y0())}
-        width={xScale.bandwidth()}
-        onClick={() => {
-          this.setState({ activeKey: d[labelValue] })
-          this.props.onChartClick(d.origRow, d.origColumns)
-        }}
-        data-tip={this.props.tooltipFormatter(d)}
-        data-for="chart-element-tooltip"
-        style={{ fill: '#28a8e0', fillOpacity: 0.7 }}
-      />
-    ))
+    const numberOfSeries = data[0][dataValues].length
+    const barWidth = xScale.bandwidth() / numberOfSeries
 
-    return <g>{bars}</g>
+    // Loop through each data value to make each series
+    const allBars = []
+    for (let i = 0; i < numberOfSeries; i++) {
+      allBars.push(
+        data.map(d => {
+          // x0 - position of first bar
+          // cX - adjustment for position of bar number 2+
+          const x0 = xScale(d[labelValue])
+          const dX = i * barWidth
+          const finalBarXPosition = x0 + dX
+
+          return (
+            <rect
+              key={d[labelValue]}
+              className={`bar${
+                this.state.activeKey === d[labelValue] ? ' active' : ''
+              }`}
+              x={finalBarXPosition}
+              y={d[dataValues][i] < 0 ? this.Y0() : this.Y(d, i)}
+              height={Math.abs(this.Y(d, i) - this.Y0())}
+              width={barWidth}
+              onClick={() => {
+                this.setState({ activeKey: d[labelValue] })
+                this.props.onChartClick(d.origRow, d.origColumns)
+              }}
+              data-tip={this.props.tooltipFormatter(d)}
+              data-for="chart-element-tooltip"
+              style={{ fill: this.colorScale(i), fillOpacity: 0.7 }}
+            />
+          )
+        })
+      )
+    }
+
+    return <g>{allBars}</g>
   }
 }
