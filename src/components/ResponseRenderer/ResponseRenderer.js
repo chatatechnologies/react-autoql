@@ -160,7 +160,7 @@ export default class ResponseRenderer extends React.Component {
               <div key={uuid.v4()}>
                 <button
                   // disabled={this.props.isQueryRunning}
-                  onClick={() => this.onSuggestionClick(suggestion)}
+                  onClick={() => this.onSuggestionClick(suggestion[0])}
                   className="chata-suggestion-btn"
                 >
                   {suggestion}
