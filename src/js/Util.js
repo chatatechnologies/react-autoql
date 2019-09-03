@@ -100,11 +100,6 @@ export const formatChartLabel = (d, col) => {
 
 export const formatElement = (element, column) => {
   let formattedElement = element
-  console.log('inside format element function')
-  console.log(column)
-  if (!column) {
-    console.log('NO COLUMN PROVIDED TO FORMAT ELEMENT FUNCTION')
-  }
   if (column) {
     switch (column.type) {
       case 'STRING': {

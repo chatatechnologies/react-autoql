@@ -657,17 +657,29 @@ export default class ResponseRenderer extends React.Component {
 
   renderResponse = () => {
     const { displayType } = this.state
+    const { response } = this.props
+
+    // This is used for "Thank you for your feedback" response
+    // when user clicks on "None of these" in the suggestion list
+    // Eventually we will want to send this info to the BE
     if (this.state.customResponse) {
       return this.state.customResponse
     }
-    if (!this.props.response) {
-      return this.renderErrorMessage('Error: No response object supplied')
-    }
-    const responseBody = this.props.response.data
-    if (!responseBody) {
-      return this.renderErrorMessage('Error: No response body supplied')
+
+    // No response prop was provided to <ResponseRenderer />
+    if (!response) {
+      console.error('Error: No response object supplied')
+      return this.renderErrorMessage()
     }
 
+    // Response prop was provided, but it has no response data
+    const responseBody = response.data
+    if (!responseBody) {
+      console.error('Error: No response body supplied')
+      return this.renderErrorMessage()
+    }
+
+    // Safetynet was triggered, display safetynet message
     if (responseBody.full_suggestion) {
       return (
         <SafetyNetMessage
@@ -677,7 +689,14 @@ export default class ResponseRenderer extends React.Component {
       )
     }
 
-    if (responseBody.rows && !responseBody.rows.length) {
+    // Response is not a suggestion list, but no query data object was provided
+    const responseData = responseBody.data
+    if (!responseData) {
+      console.error('Error: No response data supplied')
+      return this.renderErrorMessage()
+    }
+
+    if (!responseData.rows || !responseData.rows.length) {
       // This is not an error. There is just no data in the DB
       return 'No data found.'
     }
