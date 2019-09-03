@@ -92,6 +92,7 @@
 .chata-table .tabulator-header-filter input {
   border: 1px solid var(--chata-table-border-color);
   border-radius: 4px;
+  background: transparent;
   padding: 4px 9px !important;
   outline: none !important;
 }
