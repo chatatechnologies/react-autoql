@@ -12,19 +12,14 @@ import { ChataPieChart } from '../ChataPieChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 
-import { svgToPng } from '../../js/Util.js'
+import { svgToPng, formatElement } from '../../js/Util.js'
 
 import styles from './ChataChart.css'
 
 export default class ChataChart extends Component {
-  X_AXIS_INDICES = []
-  Y_AXIS_INDICES = []
-  Z_AXIS_INDEX = null
-
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    valueFormatter: PropTypes.func.isRequired,
     type: PropTypes.string.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired
@@ -37,30 +32,6 @@ export default class ChataChart extends Component {
     rightMargin: 10,
     topMargin: 10,
     bottomMargin: 100
-  }
-
-  componentWillMount = () => {
-    const { type } = this.props
-    // Set index of columns and data that correspond to each axis
-    if (type === 'column' || type === 'line') {
-      this.X_AXIS_INDICES = [0]
-      this.Y_AXIS_INDICES = [1]
-    } else if (type === 'bar') {
-      this.X_AXIS_INDICES = [1]
-      this.Y_AXIS_INDICES = [0]
-    } else if (type === 'pie') {
-    } else if (type === 'contrast_column' || type === 'contrast_line') {
-      this.X_AXIS_INDICES = [0]
-      this.Y_AXIS_INDICES = [1, 2]
-    } else if (type === 'contrast_bar') {
-      this.X_AXIS_INDICES = [1, 2]
-      this.Y_AXIS_INDICES = [0]
-    } else if (type === 'word_cloud') {
-    } else if (type === 'heatmap' || type === 'bubble') {
-      this.X_AXIS_INDICES = [1]
-      this.Y_AXIS_INDICES = [0]
-      this.Z_AXIS_INDEX = 2
-    }
   }
 
   componentDidMount = () => {
@@ -110,43 +81,55 @@ export default class ChataChart extends Component {
     })
   }
 
-  tooltipFormatter2Columns = data => {
-    if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+  tooltipFormatter2D = (data, colIndex) => {
+    const { columns } = this.props
+    const labelCol = columns[0]
+    const valueCols = columns.slice(1) // Supports multi-series
+
+    if (!labelCol || !valueCols || !(colIndex >= 0)) {
       return null
     }
 
-    const { columns, valueFormatter } = this.props
-    const xCol = columns[this.X_AXIS_INDICES[0]]
-    const yCol = columns[this.Y_AXIS_INDICES[0]]
-
     return `<div>
       <div>
-        <strong>${xCol.title}:</strong> ${valueFormatter(data.label, xCol)}
+        <strong>${labelCol.title}:</strong> ${formatElement(
+      data.label,
+      labelCol
+    )}
       </div>
-      <div><strong>${yCol.title}:</strong> ${valueFormatter(data.value, yCol)}
+      <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement(
+      data.values[colIndex],
+      valueCols[colIndex]
+    )}
       </div>
     </div>`
   }
 
-  tooltipFormatter3Columns = data => {
-    if (!this.X_AXIS_INDICES.length || !this.Y_AXIS_INDICES.length) {
+  tooltipFormatter3D = data => {
+    const { columns } = this.props
+    const labelColX = columns[1]
+    const labelColY = columns[0]
+    const valueCol = columns[2] // Only one value - does not support multi-series
+
+    if (!labelColX || !labelColY || !valueCol) {
       return null
     }
 
-    const { columns, valueFormatter } = this.props
-    const xCol = columns[this.X_AXIS_INDICES[0]]
-    const yCol = columns[this.Y_AXIS_INDICES[0]]
-    const zCol = columns[this.Z_AXIS_INDEX]
-
     return `<div>
     <div>
-      <strong>${xCol.title}:</strong> ${valueFormatter(data.labelX, xCol)}
+      <strong>${labelColY.title}:</strong> ${formatElement(
+      data.labelY,
+      labelColY
+    )}
     </div>
     <div>
-      <strong>${yCol.title}:</strong> ${valueFormatter(data.labelY, yCol)}
+      <strong>${labelColX.title}:</strong> ${formatElement(
+      data.labelX,
+      labelColX
+    )}
     </div>
     <div>
-      <strong>${zCol.title}:</strong> ${valueFormatter(data.value, zCol)}
+      <strong>${valueCol.title}:</strong> ${formatElement(data.value, valueCol)}
     </div>
   </div>`
   }
@@ -194,7 +177,7 @@ export default class ChataChart extends Component {
         onChartClick={this.props.onChartClick}
         dataValue="values"
         labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2Columns}
+        tooltipFormatter={self.tooltipFormatter2D}
       />
     )
   }
@@ -214,7 +197,7 @@ export default class ChataChart extends Component {
         onChartClick={this.props.onChartClick}
         dataValues="values"
         labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2Columns}
+        tooltipFormatter={self.tooltipFormatter2D}
       />
     )
   }
@@ -234,7 +217,7 @@ export default class ChataChart extends Component {
         onChartClick={this.props.onChartClick}
         dataValues="values"
         labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2Columns}
+        tooltipFormatter={self.tooltipFormatter2D}
       />
     )
   }
@@ -254,7 +237,7 @@ export default class ChataChart extends Component {
         onChartClick={this.props.onChartClick}
         dataValue="value"
         labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2Columns}
+        tooltipFormatter={self.tooltipFormatter2D}
       />
     )
   }
@@ -275,7 +258,7 @@ export default class ChataChart extends Component {
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"
-        tooltipFormatter={self.tooltipFormatter3Columns}
+        tooltipFormatter={self.tooltipFormatter3D}
       />
     )
   }
@@ -296,7 +279,7 @@ export default class ChataChart extends Component {
         dataValue="value"
         labelValueX="labelX"
         labelValueY="labelY"
-        tooltipFormatter={self.tooltipFormatter3Columns}
+        tooltipFormatter={self.tooltipFormatter3D}
       />
     )
   }
@@ -389,12 +372,6 @@ export default class ChataChart extends Component {
           >
             {chart}
           </svg>
-          <ReactTooltip
-            className="chata-chart-tooltip"
-            id="chart-element-tooltip"
-            effect="solid"
-            html
-          />
         </div>
       </Fragment>
     )

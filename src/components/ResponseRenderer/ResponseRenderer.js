@@ -4,6 +4,7 @@ import uuid from 'uuid'
 import { IoIosGlobe } from 'react-icons/io'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
+import ReactTooltip from 'react-tooltip'
 
 import styles from './ResponseRenderer.css'
 import { getParameterByName } from '../../js/Util'
@@ -45,7 +46,8 @@ export default class ResponseRenderer extends React.Component {
     tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string),
-    isFilteringTable: PropTypes.bool
+    isFilteringTable: PropTypes.bool,
+    renderTooltips: PropTypes.bool
   }
 
   static defaultProps = {
@@ -58,6 +60,7 @@ export default class ResponseRenderer extends React.Component {
     chatBarRef: undefined,
     onSuggestionClick: undefined,
     isFilteringTable: false,
+    renderTooltips: true,
     processDrilldown: () => {}
   }
 
@@ -83,6 +86,7 @@ export default class ResponseRenderer extends React.Component {
     ) {
       this.setState({ displayType: this.props.displayType })
     }
+    ReactTooltip.rebuild()
   }
 
   isChartType = type => CHART_TYPES.includes(type)
@@ -316,7 +320,7 @@ export default class ResponseRenderer extends React.Component {
         columns={this.tableColumns}
         height={chartHeight}
         width={chartWidth}
-        valueFormatter={formatElement}
+        // valueFormatter={formatElement}
         onChartClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
             this.props.processDrilldown(row, columns, this.queryID)
@@ -707,6 +711,14 @@ export default class ResponseRenderer extends React.Component {
         >
           {this.renderResponse()}
         </div>
+        {this.props.renderTooltips && (
+          <ReactTooltip
+            className="chata-chart-tooltip"
+            id="chart-element-tooltip"
+            effect="solid"
+            html
+          />
+        )}
       </Fragment>
     )
   }

@@ -75,7 +75,7 @@ export default class Line extends Component {
               this.setState({ activeKey: d[labelValue] })
               this.props.onChartClick(d.origRow, d.origColumns)
             }}
-            data-tip={this.props.tooltipFormatter(d)}
+            data-tip={this.props.tooltipFormatter(d, series)}
             data-for="chart-element-tooltip"
             style={{
               stroke: 'transparent',

@@ -175,6 +175,9 @@ export default class ChatMessage extends React.Component {
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
           isFilteringTable={this.state.isFilteringTable}
+          // We want to render our own in the parent component
+          // so the tooltip doesn't get clipped by the drawer
+          renderTooltips={false}
           width={chartWidth}
           height={chartHeight}
         />
@@ -207,11 +210,29 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  isSingleValueResponse = () => {
+    const { response } = this.props
+    return (
+      response &&
+      response.data &&
+      response.data.data &&
+      response.data.data.rows &&
+      response.data.data.rows.length === 1 &&
+      response.data.data.rows[0].length === 1
+    )
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
-      showFilterButton: TABLE_TYPES.includes(this.state.displayType),
-      showCopyButton: TABLE_TYPES.includes(this.state.displayType),
-      showSaveAsCSVButton: TABLE_TYPES.includes(this.state.displayType),
+      showFilterButton:
+        TABLE_TYPES.includes(this.state.displayType) &&
+        !this.isSingleValueResponse(),
+      showCopyButton:
+        TABLE_TYPES.includes(this.state.displayType) &&
+        !this.isSingleValueResponse(),
+      showSaveAsCSVButton:
+        TABLE_TYPES.includes(this.state.displayType) &&
+        !this.isSingleValueResponse(),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType)
     }
 

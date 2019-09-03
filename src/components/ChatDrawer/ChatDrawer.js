@@ -622,6 +622,12 @@ export default class ChatDrawer extends React.Component {
           delayShow={500}
           html
         />
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
       </Fragment>
     )
   }
