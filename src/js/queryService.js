@@ -4,64 +4,64 @@ import uuid from 'uuid'
 var unifiedQueryId = uuid.v4()
 
 var autoCompleteCall = null
-var queryCall = null
-var safetyNetCall = null
-var drilldownCall = null
+// var queryCall = null
+// var safetyNetCall = null
+// var drilldownCall = null
 
 export const cancelQuery = () => {
-  if (queryCall) {
-    queryCall.cancel('Query operation cancelled by the user.')
-  }
-  if (safetyNetCall) {
-    safetyNetCall.cancel('Safetynet operation cancelled by the user.')
-  }
-  if (drilldownCall) {
-    drilldownCall.cancel('Drilldown operation cancelled by the user.')
-  }
+  // if (queryCall) {
+  //   queryCall.cancel('Query operation cancelled by the user.')
+  // }
+  // if (safetyNetCall) {
+  //   safetyNetCall.cancel('Safetynet operation cancelled by the user.')
+  // }
+  // if (drilldownCall) {
+  //   drilldownCall.cancel('Drilldown operation cancelled by the user.')
+  // }
 }
 
 export const runQueryOnly = (query, demo, apiKey, customerId, userId) => {
   const text = query
   const axiosInstance = axios.create({})
 
-  if (!queryCall) {
-    queryCall = axios.CancelToken.source()
+  // if (!queryCall) {
+  // queryCall = axios.CancelToken.source()
 
-    const url = demo
-      ? `https://backend-staging.chata.ai/api/v1/chata/query`
-      : `http://spira-test-api.endpoints.staging-245514.cloud.goog/api/v1/chata/query?key=${apiKey}`
+  const url = demo
+    ? `https://backend-staging.chata.ai/api/v1/chata/query`
+    : `http://spira-test-api.endpoints.staging-245514.cloud.goog/api/v1/chata/query?key=${apiKey}`
 
-    const data = {
-      text,
-      customerId,
-      userId
-    }
-
-    return axiosInstance
-      .post(url, data, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        cancelToken: queryCall.token
-      })
-      .then(response => {
-        if (response.data && typeof response.data === 'string') {
-          // There was an error parsing the json
-          queryCall = null
-          return Promise.reject({ error: 'parse error' })
-        }
-        return Promise.resolve(response)
-      })
-      .catch(error => {
-        if (axios.isCancel(error)) {
-          return Promise.reject({ error: 'cancelled' })
-        }
-        return Promise.reject(error)
-      })
-  } else {
-    queryCall = null
-    return Promise.reject()
+  const data = {
+    text,
+    customerId,
+    userId
   }
+
+  return axiosInstance
+    .post(url, data, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+      // cancelToken: queryCall.token
+    })
+    .then(response => {
+      if (response.data && typeof response.data === 'string') {
+        // There was an error parsing the json
+        // queryCall = null
+        return Promise.reject({ error: 'parse error' })
+      }
+      return Promise.resolve(response)
+    })
+    .catch(error => {
+      if (axios.isCancel(error)) {
+        return Promise.reject({ error: 'cancelled' })
+      }
+      return Promise.reject(error)
+    })
+  // } else {
+  //   queryCall = null
+  //   return Promise.reject()
+  // }
 }
 
 export const runQuery = (
@@ -79,7 +79,7 @@ export const runQuery = (
   unifiedQueryId = uuid.v4()
 
   if (useSafetyNet) {
-    safetyNetCall = axios.CancelToken.source()
+    // safetyNetCall = axios.CancelToken.source()
 
     const url = demo
       ? `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
@@ -90,7 +90,10 @@ export const runQuery = (
       )}&projectId=1&unified_query_id=${unifiedQueryId}`
 
     return axiosInstance
-      .get(url, { cancelToken: safetyNetCall.token })
+      .get(
+        url
+        // { cancelToken: safetyNetCall.token }
+      )
       .then(response => {
         if (
           response &&
@@ -121,7 +124,7 @@ export const runDrilldown = (
 ) => {
   const axiosInstance = axios.create({})
 
-  drilldownCall = axios.CancelToken.source()
+  // drilldownCall = axios.CancelToken.source()
 
   const data = {
     queryId: queryID,
@@ -135,7 +138,11 @@ export const runDrilldown = (
     : `https://backend-staging.chata.ai/api/v1/query/demo/drilldown?&project=1&unified_query_id=${unifiedQueryId}`
 
   return axiosInstance
-    .post(url, data, { cancelToken: drilldownCall.token })
+    .post(
+      url,
+      data
+      // { cancelToken: drilldownCall.token }
+    )
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
