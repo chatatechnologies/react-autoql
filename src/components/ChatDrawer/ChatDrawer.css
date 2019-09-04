@@ -149,6 +149,10 @@
 .drawer-top .drawer-content-wrapper {
   left: 0;
 }
+.drawer-content-wrapper {
+  max-height: 100vh !important;
+  max-width: 100vw !important;
+}
 
 .response-loading-container {
   position: absolute;
