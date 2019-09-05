@@ -1,6 +1,7 @@
 export const TABLE_TYPES = [
   'pivot_table',
   'pivot_column',
+  'date_pivot',
   'table',
   'compare_table',
   'compare_table_budget'

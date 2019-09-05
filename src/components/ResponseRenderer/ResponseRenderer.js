@@ -65,28 +65,38 @@ export default class ResponseRenderer extends React.Component {
   }
 
   state = {
-    displayType:
-      this.props.displayType ||
-      (this.props.response &&
-        this.props.response.data &&
-        this.props.response.data.data &&
-        this.props.response.data.data.displayType)
+    displayType: null
   }
 
-  componentWillMount = () => {
-    this.getSupportedDisplayTypes(this.props.response)
-    this.setResponseData(this.state.displayType)
-    this.tableID = uuid.v4()
-    this.pivotTableID = uuid.v4()
+  componentDidMount = () => {
+    // Determine the supported visualization types based on the response data
+    this.supportedDisplayTypes = this.getSupportedDisplayTypes(
+      this.props.response
+    )
+
+    // Set the initial display type based on prop value, response, and supported display types
+    this.setState({
+      displayType: this.getInitialDisplayType(this.supportedDisplayTypes)
+    })
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps, prevState) => {
+    // Initial display type has been determined, set the table and chart data now
+    if (!prevState.displayType && this.state.displayType) {
+      this.setResponseData(this.state.displayType)
+    }
+
+    // Detected a display type change from props. We must make sure
+    // the display type is valid before updating the state
     if (
       this.props.displayType &&
-      this.props.displayType !== prevProps.displayType
+      this.props.displayType !== prevProps.displayType &&
+      this.supportedDisplayTypes &&
+      this.supportedDisplayTypes.includes(this.props.displayType)
     ) {
       this.setState({ displayType: this.props.displayType })
     }
+
     ReactTooltip.rebuild()
   }
 
@@ -94,7 +104,64 @@ export default class ResponseRenderer extends React.Component {
   isTableType = type => TABLE_TYPES.includes(type)
   isForecastType = type => FORECAST_TYPES.includes(type)
 
+  getInitialDisplayType = supportedDisplayTypes => {
+    // If display type is a provided prop and it is valid
+    if (
+      this.props.displayType &&
+      supportedDisplayTypes.includes(this.props.displayType)
+    ) {
+      return this.props.displayType
+    }
+
+    // If there is no display type in the response, default to table
+    if (
+      !this.props.response ||
+      !this.props.response.data ||
+      !this.props.response.data.data ||
+      !this.props.response.data.data.displayType
+    ) {
+      return 'table'
+    }
+
+    const displayType = this.props.response.data.data.displayType
+
+    // If the display type is a recognized non-chart or non-table type
+    if (displayType === 'suggestion' || displayType === 'help') {
+      return displayType
+    }
+
+    // If the display type is a recognized table type
+    if (this.isTableType(displayType)) {
+      return 'table'
+    }
+
+    // If the display type is a recognized chart type
+    // This probably won't happen with chata.io, it is
+    // usually returned as a table type initially
+    if (this.isChartType(displayType)) {
+      return displayType
+    }
+
+    // Default to table type
+    return 'table'
+  }
+
   getSupportedDisplayTypes = response => {
+    if (
+      !response ||
+      !response.data ||
+      !response.data.data ||
+      !response.data.data.displayType
+    ) {
+      return []
+    }
+
+    const displayType = response.data.data.displayType
+
+    if (displayType === 'suggestion' || displayType === 'help') {
+      return [displayType]
+    }
+
     const columns =
       response &&
       response.data &&
@@ -102,12 +169,12 @@ export default class ResponseRenderer extends React.Component {
       response.data.data.columns
 
     if (!columns) {
-      return
+      return []
     }
 
     if (getNumberOfGroupables(columns) === 1) {
       // Is direct key-value query (ie. Avg days to pay per customer)
-      this.supportedDisplayTypes = [
+      const supportedDisplayTypes = [
         'bar',
         'column',
         // 'pie',
@@ -117,11 +184,12 @@ export default class ResponseRenderer extends React.Component {
 
       // create pivot based on month and year
       if (columns[0].type === 'DATE') {
-        this.supportedDisplayTypes.push('pivot_table')
+        supportedDisplayTypes.push('pivot_table')
       }
+      return supportedDisplayTypes
     } else if (getNumberOfGroupables(columns) === 2) {
       // Is pivot query (ie. Sale per customer per month)
-      this.supportedDisplayTypes = [
+      return [
         'multi_line',
         'stacked_bar',
         'stacked_column',
@@ -131,18 +199,19 @@ export default class ResponseRenderer extends React.Component {
         'pivot_table'
       ]
     }
-
-    // Default to table display type.
-    this.setState({ displayType: 'table' })
+    return []
   }
 
-  setResponseData = displayType => {
-    if (
-      this.props.response &&
-      this.props.response.data &&
-      this.props.response.data.data
-    ) {
-      const responseBody = this.props.response.data.data
+  setResponseData = () => {
+    // Initialize ID's of tables
+    this.tableID = uuid.v4()
+    this.pivotTableID = uuid.v4()
+
+    const { displayType } = this.state
+    const { response } = this.props
+
+    if (response && response.data && response.data.data) {
+      const responseBody = response.data.data
       this.queryID = responseBody.queryId // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation // Where should we display this?
       this.data = responseBody.rows
@@ -370,6 +439,10 @@ export default class ResponseRenderer extends React.Component {
 
   renderHelpResponse = () => {
     const url = this.data
+    if (!url) {
+      return null
+    }
+
     const hasHashTag = url.includes('#')
     let linkText = url
     if (hasHashTag) {
@@ -739,7 +812,7 @@ export default class ResponseRenderer extends React.Component {
       return 'No data found.'
     }
 
-    if (displayType) {
+    if (displayType && this.data) {
       if (displayType === 'suggestion' || displayType === 'unknown_words') {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
@@ -755,7 +828,8 @@ export default class ResponseRenderer extends React.Component {
         `display type not recognized: ${this.state.displayType}`
       )
     }
-    return this.renderErrorMessage('Error: No Display Type')
+    // return this.renderErrorMessage('Error: No Display Type')
+    return null
   }
 
   render = () => {

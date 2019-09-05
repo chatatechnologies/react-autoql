@@ -1,6 +1,8 @@
 import axios from 'axios'
 import uuid from 'uuid'
 
+import { TABLE_TYPES } from './Constants'
+
 var unifiedQueryId = uuid.v4()
 
 var autoCompleteCall = null
@@ -50,7 +52,21 @@ export const runQueryOnly = (query, demo, apiKey, customerId, userId) => {
         // queryCall = null
         return Promise.reject({ error: 'parse error' })
       }
-      return Promise.resolve(response)
+
+      // We don't want to return the detailed table types here because
+      // these will not be returned in the response in the future
+      // We can delete this when the detailed types are no longer returned
+      let queryResponse = { ...response }
+      if (
+        response &&
+        response.data &&
+        response.data.data &&
+        TABLE_TYPES.includes(response.data.data.displayType)
+      ) {
+        queryResponse.data.data.displayType = 'table'
+      }
+
+      return Promise.resolve(queryResponse)
     })
     .catch(error => {
       if (axios.isCancel(error)) {

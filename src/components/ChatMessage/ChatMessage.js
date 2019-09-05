@@ -2,12 +2,10 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { MdContentCopy, MdFileDownload, MdFilterList } from 'react-icons/md'
 import ReactTooltip from 'react-tooltip'
-import uuid from 'uuid'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import { getNumberOfGroupables } from '../../js/Util.js'
 
 import {
   tableIcon,
@@ -53,7 +51,11 @@ export default class ChatMessage extends React.Component {
   }
 
   state = {
-    displayType: undefined,
+    displayType:
+      this.props.response &&
+      this.props.response.data &&
+      this.props.response.data.data &&
+      this.props.response.data.data.displayType,
     isFilteringTable: false
   }
 
