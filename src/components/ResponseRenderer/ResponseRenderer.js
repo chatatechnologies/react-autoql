@@ -35,23 +35,23 @@ String.prototype.toProperCase = function() {
 }
 
 export default class ResponseRenderer extends React.Component {
+  supportedDisplayTypes = []
+
   static propTypes = {
+    response: PropTypes.shape({}).isRequired,
+    chatBarRef: PropTypes.instanceOf(ChatBar),
     supportsSuggestions: PropTypes.bool,
     processDrilldown: PropTypes.func,
-    response: PropTypes.shape({}).isRequired,
     onSuggestionClick: PropTypes.func,
-    chatBarRef: PropTypes.instanceOf(ChatBar),
     isQueryRunning: PropTypes.bool,
     tableBorderColor: PropTypes.string,
     tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
-    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string),
     isFilteringTable: PropTypes.bool,
     renderTooltips: PropTypes.bool
   }
 
   static defaultProps = {
-    supportedDisplayTypes: [],
     supportsSuggestions: true,
     isQueryRunning: false,
     tableBorderColor: undefined, // this should be what it is in light theme by default
@@ -74,6 +74,7 @@ export default class ResponseRenderer extends React.Component {
   }
 
   componentWillMount = () => {
+    this.getSupportedDisplayTypes(this.props.response)
     this.setResponseData(this.state.displayType)
     this.tableID = uuid.v4()
     this.pivotTableID = uuid.v4()
@@ -92,6 +93,48 @@ export default class ResponseRenderer extends React.Component {
   isChartType = type => CHART_TYPES.includes(type)
   isTableType = type => TABLE_TYPES.includes(type)
   isForecastType = type => FORECAST_TYPES.includes(type)
+
+  getSupportedDisplayTypes = response => {
+    const columns =
+      response &&
+      response.data &&
+      response.data.data &&
+      response.data.data.columns
+
+    if (!columns) {
+      return
+    }
+
+    if (getNumberOfGroupables(columns) === 1) {
+      // Is direct key-value query (ie. Avg days to pay per customer)
+      this.supportedDisplayTypes = [
+        'bar',
+        'column',
+        // 'pie',
+        'line',
+        'table'
+      ]
+
+      // create pivot based on month and year
+      if (columns[0].type === 'DATE') {
+        this.supportedDisplayTypes.push('pivot_table')
+      }
+    } else if (getNumberOfGroupables(columns) === 2) {
+      // Is pivot query (ie. Sale per customer per month)
+      this.supportedDisplayTypes = [
+        'multi_line',
+        'stacked_bar',
+        'stacked_column',
+        'bubble',
+        'heatmap',
+        'table',
+        'pivot_table'
+      ]
+    }
+
+    // Default to table display type.
+    this.setState({ displayType: 'table' })
+  }
 
   setResponseData = displayType => {
     if (
@@ -115,9 +158,7 @@ export default class ResponseRenderer extends React.Component {
   }
 
   shouldGeneratePivotData = () => {
-    return (
-      this.tableData && this.props.supportedDisplayTypes.includes('pivot_table')
-    )
+    return this.tableData && this.supportedDisplayTypes.includes('pivot_table')
   }
 
   shouldGenerateChartData = () => {

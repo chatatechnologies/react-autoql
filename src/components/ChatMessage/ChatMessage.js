@@ -57,81 +57,8 @@ export default class ChatMessage extends React.Component {
     isFilteringTable: false
   }
 
-  componentWillMount = () => {
-    this.getSupportedDisplayTypes()
-  }
-
   componentDidUpdate = () => {
     ReactTooltip.rebuild()
-  }
-
-  getSupportedDisplayTypes = () => {
-    const { response } = this.props
-
-    // These queries only have one display type option
-    if (
-      response &&
-      response.data &&
-      response.data.data &&
-      (response.data.data.displayType === 'suggestion' ||
-        response.data.data.displayType === 'unknown_words' ||
-        response.data.data.displayType === 'help' ||
-        response.data.data.displayType === 'forecasting')
-    ) {
-      this.setState({ displayType: response.data.data.displayType })
-      return
-    }
-
-    const columns =
-      response &&
-      response.data &&
-      response.data.data &&
-      response.data.data.columns
-
-    if (!columns) {
-      return
-    }
-
-    if (getNumberOfGroupables(columns) === 1) {
-      // Is direct key-value query (ie. Avg days to pay per customer)
-      this.supportedDisplayTypes = [
-        'bar',
-        'column',
-        // 'pie',
-        'line',
-        'table'
-      ]
-
-      // create pivot based on month and year
-      if (columns[0].type === 'DATE') {
-        this.supportedDisplayTypes.push('pivot_table')
-      }
-      // } else if (
-      //   columns.length === 3
-      //   // && !this.hasMultipleValuesPerLabel()
-      // ) {
-      //   // Is contrast query (ie. Total sales and gross profit per month)
-      //   this.supportedDisplayTypes = [
-      //     'contrast_line',
-      //     'contrast_bar',
-      //     'contrast_column',
-      //     'table'
-      //   ]
-    } else if (getNumberOfGroupables(columns) === 2) {
-      // Is pivot query (ie. Sale per customer per month)
-      this.supportedDisplayTypes = [
-        'multi_line',
-        'stacked_bar',
-        'stacked_column',
-        'bubble',
-        'heatmap',
-        'table',
-        'pivot_table'
-      ]
-    }
-
-    // Default to table display type.
-    this.setState({ displayType: 'table' })
   }
 
   scrollToBottomIfLastMessage = () => {
@@ -163,7 +90,6 @@ export default class ChatMessage extends React.Component {
       return (
         <ResponseRenderer
           ref={ref => (this.responseRef = ref)}
-          supportedDisplayTypes={this.supportedDisplayTypes}
           processDrilldown={this.props.processDrilldown}
           response={response}
           displayType={this.state.displayType}
@@ -301,7 +227,9 @@ export default class ChatMessage extends React.Component {
 
   showDisplayTypeButton = displayType => {
     return (
-      this.supportedDisplayTypes.includes(displayType) &&
+      this.responseRef &&
+      this.responseRef.supportedDisplayTypes &&
+      this.responseRef.supportedDisplayTypes.includes(displayType) &&
       this.state.displayType !== displayType
     )
   }
@@ -323,7 +251,11 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    if (!this.supportedDisplayTypes || this.supportedDisplayTypes.length <= 1) {
+    if (
+      !this.responseRef ||
+      !this.responseRef.supportedDisplayTypes ||
+      this.responseRef.supportedDisplayTypes.length <= 1
+    ) {
       return null
     }
     if (
