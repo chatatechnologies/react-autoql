@@ -73,14 +73,13 @@
 }
 .chata-safety-net-execute-btn:hover {
   border-color: #28a8e0;
-  /* border-color: var(--chata-drawer-accent-color); */
 }
 .chata-execute-query-icon {
   height: 15px;
   width: 24px;
+  margin-top: 3px;
   vertical-align: top;
   fill: #28a8e0;
-  /* fill: var(--chata-drawer-accent-color); */
 }
 .chata-safetynet-select {
   position: relative;
