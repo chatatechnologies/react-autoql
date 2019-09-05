@@ -216,10 +216,11 @@ export default class SafetyNetMessage extends React.Component {
                           key={`option-${suggIndex}`}
                           value={JSON.stringify(suggestionItem)}
                         >
-                          {`${
-                            suggestionItem.text
-                          }${suggestionItem.value_label &&
-                            ` (${suggestionItem.value_label})`}`}
+                          {`${suggestionItem.text}${
+                            suggestionItem.value_label
+                              ? ` (${suggestionItem.value_label})`
+                              : ''
+                          }`}
                         </option>
                       )
                     }
