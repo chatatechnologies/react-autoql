@@ -17,6 +17,7 @@ export default class App extends Component {
     showMask: true,
     shiftScreen: false,
     customerName: 'Nikki',
+    introMessage: undefined,
     enableAutocomplete: true,
     enableSafetyNet: true,
     enableVoiceRecord: true,
@@ -188,6 +189,15 @@ export default class App extends Component {
           }}
           value={this.state.customerName}
         />
+        <h4>Intro Message</h4>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ introMessage: e.target.value })
+          }}
+          value={this.state.introMessage}
+        />
         {this.createBooleanRadioGroup(
           'Clear All Messages on Close',
           'clearOnClose',
@@ -292,6 +302,7 @@ export default class App extends Component {
           showHandle={this.state.showHandle}
           placement={this.state.placement}
           customerName={this.state.customerName}
+          introMessage={this.state.introMessage}
           showMask={this.state.showMask}
           shiftScreen={this.state.shiftScreen}
           enableAutocomplete={this.state.enableAutocomplete}

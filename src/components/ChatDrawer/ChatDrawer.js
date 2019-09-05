@@ -151,7 +151,8 @@ export default class ChatDrawer extends React.Component {
       type: 'text',
       content: this.props.introMessage
         ? `${this.props.introMessage}`
-        : `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
+        : `Hi ${this.props.customerName ||
+            'there'}! I'm here to help you access, search and analyze your data.`
     }
     this.setState({ messages: [this.introMessageObject] })
   }

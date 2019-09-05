@@ -123,4 +123,7 @@ describe('props', () => {
       // expect(drawerProps.height).toBe(300)
     })
   })
+
+  // If empty string is passed as customerName, we should render 'there'
+  // If customerName is not provided, we should render 'there'
 })
