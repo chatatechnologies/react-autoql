@@ -224,10 +224,7 @@ export default class ResponseRenderer extends React.Component {
       responseBody.data.rows.length !== 0
     ) {
       const suggestions = responseBody.data.rows
-      const theUserInput = getParameterByName(
-        'q',
-        response.config && response.config.url
-      )
+      const theUserInput = JSON.parse(response.config.data).text
       return this.createSuggestionMessage(theUserInput, suggestions)
     }
 
