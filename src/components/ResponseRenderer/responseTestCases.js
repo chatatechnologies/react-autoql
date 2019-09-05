@@ -59,5 +59,41 @@ export default [
     },
     message: '',
     referenceId: '1.1.0'
+  },
+  {
+    data: {
+      columns: [
+        {
+          type: 'STRING',
+          groupable: false,
+          active: false,
+          name: 'query_suggestion'
+        }
+      ],
+      displayType: 'suggestion',
+      interpretation: '',
+      queryId: 'q_3Kh8CIxGS5SYwmIt4aqeuQ',
+      rows: [
+        ['All invoices in this year'],
+        ['All expenses in this year'],
+        ['Show me all invoices in this month'],
+        ['List all customers'],
+        ['None of these']
+      ]
+    },
+    message: '',
+    referenceId: '1.1.0'
+  },
+  {
+    full_suggestion: [
+      {
+        start: 10,
+        suggestion_list: [
+          { text: 'Jane Johnson', value_label: 'customer name' }
+        ],
+        end: 14
+      }
+    ],
+    query: 'sales for john'
   }
 ]
