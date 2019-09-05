@@ -15,6 +15,7 @@ export default class App extends Component {
     theme: 'light',
     response: null,
     showMask: true,
+    shiftScreen: false,
     customerName: 'Nikki',
     enableAutocomplete: true,
     enableSafetyNet: true,
@@ -166,6 +167,11 @@ export default class App extends Component {
           false
         ])}
         {this.createBooleanRadioGroup('Show Mask', 'showMask', [true, false])}
+        {this.createBooleanRadioGroup(
+          'Shift Screen on Open/Close',
+          'shiftScreen',
+          [true, false]
+        )}
         {this.createRadioInputGroup('Theme', 'theme', ['light', 'dark'])}
         {this.createRadioInputGroup('Drawer Placement', 'placement', [
           'top',
@@ -287,6 +293,7 @@ export default class App extends Component {
           placement={this.state.placement}
           customerName={this.state.customerName}
           showMask={this.state.showMask}
+          shiftScreen={this.state.shiftScreen}
           enableAutocomplete={this.state.enableAutocomplete}
           enableVoiceRecord={this.state.enableVoiceRecord}
           clearOnClose={this.state.clearOnClose}
