@@ -45,7 +45,7 @@ export default class ChatBar extends React.Component {
     autoCompletePlacement: 'top',
     enableSafetyNet: true,
     className: null,
-    showLoadingDots: false,
+    showLoadingDots: true,
     showChataIcon: true,
     demo: false,
     onSubmit: () => {},

@@ -58,7 +58,7 @@ export default class ChatDrawer extends React.Component {
     theme: PropTypes.string,
     handleStyles: PropTypes.shape({}),
     shiftScreen: PropTypes.bool,
-    isDrilldownEnabled: PropTypes.bool,
+    enableDrilldowns: PropTypes.bool,
     customerName: PropTypes.string,
     enableAutocomplete: PropTypes.bool,
     clearOnClose: PropTypes.bool,
@@ -85,7 +85,7 @@ export default class ChatDrawer extends React.Component {
     theme: 'light',
     handleStyles: {},
     shiftScreen: false,
-    isDrilldownEnabled: true,
+    enableDrilldowns: true,
     customerName: 'there',
     enableAutocomplete: true,
     clearOnClose: false,
@@ -96,24 +96,19 @@ export default class ChatDrawer extends React.Component {
     title: 'chata.ai',
     maxMessages: undefined,
     demo: false,
+    introMessage: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
 
   state = {
-    messages: [
-      {
-        id: 'intro',
-        isResponse: true,
-        type: 'text',
-        content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
-      }
-    ],
+    messages: [{}],
     lastMessageId: 'intro'
   }
 
   componentDidMount = () => {
     this.setStyles()
+    this.setIntroMessageObject()
     document.addEventListener('keydown', this.escFunction, false)
     // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
     setTimeout(() => {
@@ -147,6 +142,18 @@ export default class ChatDrawer extends React.Component {
     if (this.props.isVisible && event.keyCode === 27) {
       cancelQuery()
     }
+  }
+
+  setIntroMessageObject = () => {
+    this.introMessageObject = {
+      id: 'intro',
+      isResponse: true,
+      type: 'text',
+      content: this.props.introMessage
+        ? `${this.props.introMessage}`
+        : `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
+    }
+    this.setState({ messages: [this.introMessageObject] })
   }
 
   setStyles = () => {
@@ -320,7 +327,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   processDrilldown = (rowData, columns, queryID) => {
-    if (this.props.isDrilldownEnabled) {
+    if (this.props.enableDrilldowns) {
       const groupByObject = this.getgroupByObjectFromTable(
         rowData,
         columns,
@@ -366,14 +373,7 @@ export default class ChatDrawer extends React.Component {
 
   clearMessages = () => {
     this.setState({
-      messages: [
-        {
-          id: 'intro',
-          isResponse: true,
-          type: 'text',
-          content: `Hi ${this.props.customerName}! I'm here to help you access, search and analyze your data.`
-        }
-      ],
+      messages: [this.introMessageObject],
       lastMessageId: 'intro'
     })
   }
@@ -543,7 +543,6 @@ export default class ChatDrawer extends React.Component {
                 this.state.messages.map(message => {
                   return (
                     <ChatMessage
-                      supportedDisplayTypes={message.supportedDisplayTypes}
                       setActiveMessage={this.setActiveMessage}
                       isActive={this.state.activeMessageId === message.id}
                       processDrilldown={this.processDrilldown}
@@ -605,6 +604,7 @@ export default class ChatDrawer extends React.Component {
                 enableVoiceRecord={this.props.enableVoiceRecord}
                 autoCompletePlacement="top"
                 showChataIcon={false}
+                showLoadingDots={false}
               />
             </div>
           </div>
