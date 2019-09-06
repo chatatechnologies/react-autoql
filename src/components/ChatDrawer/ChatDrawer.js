@@ -45,6 +45,13 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-text-color-placeholder': '#ffffff9c'
   }
 
+  introMessageObject = {
+    id: 'intro',
+    isResponse: true,
+    type: 'text',
+    content: ''
+  }
+
   static propTypes = {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
@@ -102,14 +109,17 @@ export default class ChatDrawer extends React.Component {
   }
 
   state = {
-    messages: [{}],
+    messages: [this.introMessageObject],
     lastMessageId: 'intro'
   }
 
   componentDidMount = () => {
     this.setStyles()
     this.setIntroMessageObject()
+
+    // Listen for esc press to cancel queries while they are running
     document.addEventListener('keydown', this.escFunction, false)
+
     // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
     setTimeout(() => {
       ReactTooltip.rebuild()
@@ -145,15 +155,11 @@ export default class ChatDrawer extends React.Component {
   }
 
   setIntroMessageObject = () => {
-    this.introMessageObject = {
-      id: 'intro',
-      isResponse: true,
-      type: 'text',
-      content: this.props.introMessage
-        ? `${this.props.introMessage}`
-        : `Hi ${this.props.customerName ||
-            'there'}! I'm here to help you access, search and analyze your data.`
-    }
+    this.introMessageObject.content = this.props.introMessage
+      ? `${this.props.introMessage}`
+      : `Hi ${this.props.customerName ||
+          'there'}! I'm here to help you access, search and analyze your data.`
+
     this.setState({ messages: [this.introMessageObject] })
   }
 

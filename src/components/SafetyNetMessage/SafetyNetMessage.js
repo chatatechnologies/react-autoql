@@ -177,7 +177,6 @@ export default class SafetyNetMessage extends React.Component {
 
           if (suggestion) {
             const replaceWord = query.slice(suggestion.start, suggestion.end)
-            const safetyNetSelectUniqueId = uuid.v4()
 
             const suggestionText = `${element.value}${
               element.valueLabel ? ` (${element.valueLabel})` : ''
