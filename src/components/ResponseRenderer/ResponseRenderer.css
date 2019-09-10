@@ -112,3 +112,13 @@
   opacity: 1 !important;
   z-index: 99999; /* necessary to show up on top of rc drawer */
 }
+
+.single-value-response {
+  color: inherit;
+}
+
+.single-value-response:hover {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 600;
+}

@@ -2,23 +2,23 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import { IoIosGlobe } from 'react-icons/io'
-import Numbro from 'numbro'
 import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
 
 import styles from './ResponseRenderer.css'
-import { getParameterByName } from '../../js/Util'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { ChataForecast } from '../ChataForecast'
+
 import {
   onlyUnique,
   formatElement,
   makeEmptyArray,
   getNumberOfGroupables
 } from '../../js/Util.js'
+
 import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
 
 String.prototype.isUpperCase = function() {
@@ -177,9 +177,9 @@ export default class ResponseRenderer extends React.Component {
       const supportedDisplayTypes = [
         'bar',
         'column',
-        // 'pie',
         'line',
         'table'
+        // 'pie',
       ]
 
       // create pivot based on month and year
@@ -308,22 +308,34 @@ export default class ResponseRenderer extends React.Component {
     return this.renderErrorMessage()
   }
 
+  renderSingleValueResponse = () => {
+    return (
+      <a
+        className="single-value-response"
+        onClick={() => {
+          this.props.processDrilldown(
+            this.tableData[0],
+            this.tableColumns,
+            this.queryID,
+            true
+          )
+        }}
+      >
+        {formatElement(this.tableData[0], this.tableColumns[0])}
+      </a>
+    )
+  }
+
   copyTableToClipboard = () => {
     if (this.tableRef) {
       this.tableRef.copyToClipboard()
     }
-    // else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
-    //   this.pivotTableRef.copyToClipboard()
-    // }
   }
 
   saveTableAsCSV = () => {
     if (this.tableRef) {
       this.tableRef.saveAsCSV()
     }
-    // else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
-    //   this.pivotTableRef.saveAsCSV()
-    // }
   }
 
   saveChartAsPNG = () => {
@@ -347,7 +359,7 @@ export default class ResponseRenderer extends React.Component {
 
     if (this.tableData.length === 1 && this.tableData[0].length === 1) {
       // This is a single cell of data
-      return this.tableData
+      return this.renderSingleValueResponse()
     }
 
     if (this.state.displayType === 'pivot_table') {
@@ -475,47 +487,6 @@ export default class ResponseRenderer extends React.Component {
       return dayjs.unix(value).format('MMMM YYYY')
     }
     return dayjs.unix(value).format('MMMM D, YYYY')
-  }
-
-  formatElement = (element, column = this.tableColumns[1]) => {
-    let formattedElement = element
-    if (column) {
-      switch (column.type) {
-        case 'STRING': {
-          // do nothing
-          break
-        }
-        case 'DOLLAR_AMT': {
-          // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          formattedElement = Numbro(element).formatCurrency({
-            thousandSeparated: true,
-            mantissa: 2
-          })
-          break
-        }
-        case 'QUANTITY': {
-          if (Number(element) && Number(element) % 1 !== 0) {
-            formattedElement = Numbro(element).format('0,0.0')
-          }
-          break
-        }
-        case 'DATE': {
-          // This will change when the query response is refactored
-          formattedElement = this.formatDateElement(column.title, element)
-          break
-        }
-        case 'PERCENT': {
-          if (Number(element)) {
-            formattedElement = Numbro(element).format('0.00%')
-          }
-          break
-        }
-        default: {
-          break
-        }
-      }
-    }
-    return formattedElement
   }
 
   generateChartData = () => {

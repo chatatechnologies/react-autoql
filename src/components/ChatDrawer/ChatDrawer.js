@@ -307,7 +307,7 @@ export default class ChatDrawer extends React.Component {
     const jsonData = {}
     let columns = [...origColumns]
 
-    if (!columns[0] || !columns[1]) {
+    if (!columns[0]) {
       return
     }
 
@@ -315,8 +315,10 @@ export default class ChatDrawer extends React.Component {
       // Swap first two columns if second one is DATE and first is not
       // rowData is already swapped here if necessary so don't swap again.
       if (
-        (columns[0].type !== 'DATE' && columns[1].type === 'DATE') ||
-        (columns[0].type !== 'DATE_STRING' && columns[1].type === 'DATE_STRING')
+        columns[1] &&
+        ((columns[0].type !== 'DATE' && columns[1].type === 'DATE') ||
+          (columns[0].type !== 'DATE_STRING' &&
+            columns[1].type === 'DATE_STRING'))
       ) {
         columns = [columns[1], columns[0], ...columns.slice(2)]
       }
@@ -335,7 +337,7 @@ export default class ChatDrawer extends React.Component {
     return jsonData
   }
 
-  processDrilldown = (rowData, columns, queryID) => {
+  processDrilldown = (rowData, columns, queryID, singleValueResponse) => {
     if (this.props.enableDrilldowns) {
       const groupByObject = this.getgroupByObjectFromTable(
         rowData,
@@ -344,8 +346,8 @@ export default class ChatDrawer extends React.Component {
       )
 
       if (
-        !groupByObject ||
-        JSON.stringify(groupByObject) === JSON.stringify({})
+        !singleValueResponse &&
+        (!groupByObject || JSON.stringify(groupByObject) === JSON.stringify({}))
       ) {
         return
       }
