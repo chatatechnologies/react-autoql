@@ -31,7 +31,8 @@ export default class App extends Component {
     demo: true,
     apiKey: '',
     customerId: '',
-    userId: ''
+    userId: '',
+    domain: ''
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -124,7 +125,6 @@ export default class App extends Component {
           <Fragment>
             <h4>API key</h4>
             <Input
-              // type="text"
               onChange={e => {
                 this.setState({ apiKey: e.target.value })
               }}
@@ -132,7 +132,6 @@ export default class App extends Component {
             />
             <h4>Customer ID</h4>
             <Input
-              // type="text"
               onChange={e => {
                 this.setState({ customerId: e.target.value })
               }}
@@ -140,11 +139,17 @@ export default class App extends Component {
             />
             <h4>User ID (email)</h4>
             <Input
-              // type="text"
               onChange={e => {
                 this.setState({ userId: e.target.value })
               }}
               value={this.state.userId}
+            />
+            <h4>Domain URL</h4>
+            <Input
+              onChange={e => {
+                this.setState({ domain: e.target.value })
+              }}
+              value={this.state.domain}
             />
           </Fragment>
         )}
@@ -293,6 +298,7 @@ export default class App extends Component {
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
+          domain={this.state.domain}
           key={this.state.componentKey}
           isVisible={this.state.isVisible}
           onHandleClick={() =>

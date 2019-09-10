@@ -22,7 +22,14 @@ export const cancelQuery = () => {
   // }
 }
 
-export const runQueryOnly = (query, demo, apiKey, customerId, userId) => {
+export const runQueryOnly = (
+  query,
+  demo,
+  domain,
+  apiKey,
+  customerId,
+  userId
+) => {
   const text = query
   const axiosInstance = axios.create({})
 
@@ -31,7 +38,7 @@ export const runQueryOnly = (query, demo, apiKey, customerId, userId) => {
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query`
-    : `http://spira-test-api.endpoints.staging-245514.cloud.goog/api/v1/chata/query?key=${apiKey}`
+    : `${domain}/api/v1/chata/query?key=${apiKey}`
 
   const data = {
     text,
@@ -83,11 +90,11 @@ export const runQueryOnly = (query, demo, apiKey, customerId, userId) => {
 export const runQuery = (
   query,
   demo,
+  useSafetyNet,
+  domain,
   apiKey,
   customerId,
-  userId,
-  useSafetyNet,
-  skipSafetyNetCallback
+  userId
 ) => {
   const axiosInstance = axios.create({})
 
@@ -101,9 +108,9 @@ export const runQuery = (
       ? `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
         query
       )}&projectId=1&unified_query_id=${unifiedQueryId}`
-      : `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
+      : `${domain}/api/v1/chata/safetynet?query=${encodeURIComponent(
         query
-      )}&projectId=1&unified_query_id=${unifiedQueryId}`
+      )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
     return axiosInstance
       .get(
@@ -120,14 +127,14 @@ export const runQuery = (
         ) {
           return Promise.resolve(response)
         }
-        return runQueryOnly(query, demo, apiKey, customerId, userId)
+        return runQueryOnly(query, demo, domain, apiKey, customerId, userId)
       })
       .catch(() => {
-        return runQueryOnly(query, demo, apiKey, customerId, userId)
+        return runQueryOnly(query, demo, domain, apiKey, customerId, userId)
       })
   }
 
-  return runQueryOnly(query, demo, apiKey, customerId, userId)
+  return runQueryOnly(query, demo, domain, apiKey, customerId, userId)
 }
 
 export const runDrilldown = (
@@ -142,16 +149,24 @@ export const runDrilldown = (
 
   // drilldownCall = axios.CancelToken.source()
 
-  const data = {
-    queryId: queryID,
-    groupBys: groupByObject,
-    customerId: customerId,
-    userId: userId
+  let data = {}
+  if (demo) {
+    data = {
+      queryId: queryID,
+      groupBys: groupByObject,
+      customerId: customerId,
+      userId: userId
+    }
+  } else {
+    data = {
+      query_id: queryID,
+      group_bys: groupByObject
+    }
   }
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
-    : `https://backend-staging.chata.ai/api/v1/query/demo/drilldown?&project=1&unified_query_id=${unifiedQueryId}`
+    : `${domain}/api/v1/chata/query/drilldown?key=${apiKey}`
 
   return axiosInstance
     .post(
@@ -166,6 +181,7 @@ export const runDrilldown = (
 export const fetchSuggestions = (
   suggestion,
   demo,
+  domain,
   apiKey,
   customerId,
   userId
@@ -183,9 +199,9 @@ export const fetchSuggestions = (
     ? `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
     )}&projectid=1`
-    : `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
+    : `${domain}/api/v1/chata/autocomplete?query=${encodeURIComponent(
       suggestion
-    )}&projectid=1`
+    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
   return axiosInstance
     .get(url, { cancelToken: autoCompleteCall.token })

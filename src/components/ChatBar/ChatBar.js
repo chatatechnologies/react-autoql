@@ -21,6 +21,7 @@ export default class ChatBar extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    domain: PropTypes.string,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
@@ -67,10 +68,11 @@ export default class ChatBar extends React.Component {
       runQuery(
         query,
         this.props.demo,
+        this.props.enableSafetyNet,
+        this.props.domain,
         this.props.apiKey,
         this.props.customerId,
-        this.props.userId,
-        this.props.enableSafetyNet
+        this.props.userId
       )
         .then(response => {
           this.props.onResponseCallback(response)
@@ -130,6 +132,7 @@ export default class ChatBar extends React.Component {
     fetchSuggestions(
       value,
       this.props.demo,
+      this.props.domain,
       this.props.apiKey,
       this.props.customerId,
       this.props.userId

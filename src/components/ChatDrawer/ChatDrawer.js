@@ -56,6 +56,7 @@ export default class ChatDrawer extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    domain: PropTypes.string,
     placement: PropTypes.string,
     maskClosable: PropTypes.bool,
     onVisibleChange: PropTypes.func,
@@ -281,6 +282,7 @@ export default class ChatDrawer extends React.Component {
       suggestion,
       this.props.demo,
       this.props.enableSafetyNet,
+      this.props.domain,
       this.props.apiKey,
       this.props.customerId,
       this.props.userId
@@ -601,6 +603,7 @@ export default class ChatDrawer extends React.Component {
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
                 userId={this.props.userId}
+                domain={this.props.domain}
                 demo={this.props.demo}
                 className="chat-drawer-chat-bar"
                 onSubmit={this.onInputSubmit}
