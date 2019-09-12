@@ -29,6 +29,7 @@ export default class App extends Component {
     darkAccentColor: '#525252',
     maxMessages: 6,
     demo: true,
+    debug: true,
     apiKey: '',
     customerId: '',
     userId: '',
@@ -92,7 +93,6 @@ export default class App extends Component {
             }}
           >
             <ResponseRenderer
-              // displayType="column"
               chatBarRef={this.chatBarRef}
               response={this.state.response}
             />
@@ -283,6 +283,11 @@ export default class App extends Component {
           'enableVoiceRecord',
           [true, false]
         )}
+        {this.createBooleanRadioGroup(
+          'Debug Mode (Allows SQL to be returned in the query response)',
+          'debug',
+          [true, false]
+        )}
       </div>
     )
   }
@@ -326,6 +331,7 @@ export default class App extends Component {
           }
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
+          debug={this.state.debug}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}

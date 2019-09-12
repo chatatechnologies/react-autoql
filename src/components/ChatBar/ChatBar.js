@@ -32,7 +32,8 @@ export default class ChatBar extends React.Component {
     showLoadingDots: PropTypes.bool,
     enableSafetyNet: PropTypes.bool,
     showChataIcon: PropTypes.bool,
-    demo: PropTypes.bool
+    demo: PropTypes.bool,
+    debug: PropTypes.bool
     // clearQueryOnSubmit: PropTypes.bool
   }
 
@@ -49,6 +50,7 @@ export default class ChatBar extends React.Component {
     showLoadingDots: true,
     showChataIcon: true,
     demo: false,
+    debug: false,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -68,6 +70,7 @@ export default class ChatBar extends React.Component {
       runQuery(
         query,
         this.props.demo,
+        this.props.debug,
         this.props.enableSafetyNet,
         this.props.domain,
         this.props.apiKey,

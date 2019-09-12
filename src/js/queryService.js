@@ -25,6 +25,7 @@ export const cancelQuery = () => {
 export const runQueryOnly = (
   query,
   demo,
+  debug,
   domain,
   api_key,
   customer_id,
@@ -43,7 +44,8 @@ export const runQueryOnly = (
   const data = {
     text,
     customer_id,
-    user_id
+    user_id: demo ? 'widget-demo' : user_id || 'widget-user',
+    debug
   }
 
   return axiosInstance
@@ -74,17 +76,20 @@ export const runQueryOnly = (
       }
 
       if (
+        debug &&
         response &&
         response.data &&
         response.data.data &&
         response.data.data.sql
       ) {
-        console.log(`
-          "${text}"
-          --------------------------------------
-          Interpretation: ${response.data.data.interpretation}
-          SQL: ${response.data.data.sql.forEach(sql => `${sql},`)}
-        `)
+        console.log(
+          `
+"${text}"
+--------------------------------------
+Interpretation: ${response.data.data.interpretation}
+SQL: ${response.data.data.sql}
+`
+        )
       }
 
       return Promise.resolve(queryResponse)
@@ -104,6 +109,7 @@ export const runQueryOnly = (
 export const runQuery = (
   query,
   demo,
+  debug,
   useSafetyNet,
   domain,
   api_key,
@@ -141,14 +147,30 @@ export const runQuery = (
         ) {
           return Promise.resolve(response)
         }
-        return runQueryOnly(query, demo, domain, api_key, customer_id, user_id)
+        return runQueryOnly(
+          query,
+          demo,
+          debug,
+          domain,
+          api_key,
+          customer_id,
+          user_id
+        )
       })
       .catch(() => {
-        return runQueryOnly(query, demo, domain, api_key, customer_id, user_id)
+        return runQueryOnly(
+          query,
+          demo,
+          debug,
+          domain,
+          api_key,
+          customer_id,
+          user_id
+        )
       })
   }
 
-  return runQueryOnly(query, demo, domain, api_key, customer_id, user_id)
+  return runQueryOnly(query, demo, debug, domain, api_key, customer_id, user_id)
 }
 
 export const runDrilldown = (

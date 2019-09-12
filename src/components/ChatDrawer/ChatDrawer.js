@@ -76,7 +76,8 @@ export default class ChatDrawer extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
-    demo: PropTypes.bool
+    demo: PropTypes.bool,
+    debug: PropTypes.bool
   }
 
   static defaultProps = {
@@ -104,6 +105,7 @@ export default class ChatDrawer extends React.Component {
     title: 'chata.ai',
     maxMessages: undefined,
     demo: false,
+    debug: false,
     introMessage: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
@@ -281,6 +283,7 @@ export default class ChatDrawer extends React.Component {
     runQuery(
       suggestion,
       this.props.demo,
+      this.props.debug,
       this.props.enableSafetyNet,
       this.props.domain,
       this.props.apiKey,
@@ -595,6 +598,7 @@ export default class ChatDrawer extends React.Component {
                 userId={this.props.userId}
                 domain={this.props.domain}
                 demo={this.props.demo}
+                debug={this.props.debug}
                 className="chat-drawer-chat-bar"
                 onSubmit={this.onInputSubmit}
                 onResponseCallback={this.onResponse}
