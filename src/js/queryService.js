@@ -73,6 +73,20 @@ export const runQueryOnly = (
         queryResponse.data.data.displayType = 'table'
       }
 
+      if (
+        response &&
+        response.data &&
+        response.data.data &&
+        response.data.data.sql
+      ) {
+        console.log(`
+          "${text}"
+          --------------------------------------
+          Interpretation: ${response.data.data.interpretation}
+          SQL: ${response.data.data.sql.forEach(sql => `${sql},`)}
+        `)
+      }
+
       return Promise.resolve(queryResponse)
     })
     .catch(error => {

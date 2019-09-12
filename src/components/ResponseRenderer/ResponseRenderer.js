@@ -70,8 +70,6 @@ export default class ResponseRenderer extends React.Component {
 
   componentDidMount = () => {
     // Determine the supported visualization types based on the response data
-    console.log('getting supported display types:')
-    console.log(this.getSupportedDisplayTypes(this.props.response))
     this.supportedDisplayTypes = this.getSupportedDisplayTypes(
       this.props.response
     )
