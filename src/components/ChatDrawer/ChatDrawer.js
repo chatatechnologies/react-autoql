@@ -403,6 +403,7 @@ export default class ChatDrawer extends React.Component {
   createMessage = (response, content) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
+
     return {
       content,
       response,
@@ -411,22 +412,9 @@ export default class ChatDrawer extends React.Component {
         response &&
         response.data &&
         response.data.data &&
-        response.data.data.displayType,
+        response.data.data.display_type,
       isResponse: true
     }
-  }
-
-  updateMessageDisplayType = (id, displayType) => {
-    const newMessages = this.state.messages.map(message => {
-      if (message.id === id) {
-        return {
-          ...message,
-          displayType
-        }
-      }
-      return message
-    })
-    this.setState({ messages: newMessages })
   }
 
   addRequestMessage = text => {
@@ -578,7 +566,7 @@ export default class ChatDrawer extends React.Component {
                         (message.response &&
                           message.response.data &&
                           message.response.data.data &&
-                          message.response.data.data.displayType)
+                          message.response.data.data.display_type)
                       }
                       response={message.response}
                       type={message.type}

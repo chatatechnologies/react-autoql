@@ -3,7 +3,7 @@ import uuid from 'uuid'
 
 import { TABLE_TYPES } from './Constants'
 
-var unifiedQueryId = uuid.v4()
+var unifiedquery_id = uuid.v4()
 
 var autoCompleteCall = null
 // var queryCall = null
@@ -68,7 +68,7 @@ export const runQueryOnly = (
         response &&
         response.data &&
         response.data.data &&
-        TABLE_TYPES.includes(response.data.data.displayType)
+        TABLE_TYPES.includes(response.data.data.display_type)
       ) {
         queryResponse.data.data.displayType = 'table'
       }
@@ -99,7 +99,7 @@ export const runQuery = (
   const axiosInstance = axios.create({})
 
   // Reset unified query ID
-  unifiedQueryId = uuid.v4()
+  unifiedquery_id = uuid.v4()
 
   if (useSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
@@ -107,7 +107,7 @@ export const runQuery = (
     const url = demo
       ? `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
         query
-      )}&projectId=1&unified_query_id=${unifiedQueryId}`
+      )}&projectId=1&unified_query_id=${unifiedquery_id}`
       : `${domain}/api/v1/chata/safetynet?query=${encodeURIComponent(
         query
       )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
@@ -138,7 +138,7 @@ export const runQuery = (
 }
 
 export const runDrilldown = (
-  queryID,
+  query_id,
   groupByObject,
   demo,
   api_key,
@@ -149,19 +149,11 @@ export const runDrilldown = (
 
   // drilldownCall = axios.CancelToken.source()
 
-  let data = {}
-  if (demo) {
-    data = {
-      queryId: queryID,
-      groupBys: groupByObject,
-      customer_id: customer_id,
-      user_id: user_id
-    }
-  } else {
-    data = {
-      query_id: queryID,
-      group_bys: groupByObject
-    }
+  const data = {
+    query_id: query_id,
+    group_bys: groupByObject,
+    customer_id: customer_id,
+    user_id: user_id
   }
 
   const url = demo

@@ -55,7 +55,7 @@ export default class ChatMessage extends React.Component {
       this.props.response &&
       this.props.response.data &&
       this.props.response.data.data &&
-      this.props.response.data.data.displayType,
+      this.props.response.data.data.display_type,
     isFilteringTable: false
   }
 

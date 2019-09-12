@@ -1,12 +1,12 @@
 export default [
   {},
-  { data: { displayType: 'table' } },
+  { data: { display_type: 'table' } },
   {
     data: {
       columns: [],
-      displayType: null,
+      display_type: null,
       interpretation: 'all invoices for invoice of this month ',
-      queryId: 'q_VzB9irC-RpKY-13XwgHrrw',
+      query_id: 'q_VzB9irC-RpKY-13XwgHrrw',
       rows: null
     },
     message: '',
@@ -28,9 +28,9 @@ export default [
           type: 'DOLLAR_AMT'
         }
       ],
-      displayType: 'date_pivot',
+      display_type: 'date_pivot',
       interpretation: 'total sales by line item by transaction month',
-      queryId: 'q_y4sWT0IAStWnLeM7COEsSQ',
+      query_id: 'q_y4sWT0IAStWnLeM7COEsSQ',
       rows: [
         [1483142400, 12500],
         [1488240000, 8742.68],
@@ -52,9 +52,9 @@ export default [
       groupable: false,
       name: 'Help Link',
       type: 'STRING',
-      displayType: 'help',
+      display_type: 'help',
       interpretation: 'help on bar-chart',
-      queryId: 'q_t_LufuRpQsGh71LE51qYnA',
+      query_id: 'q_t_LufuRpQsGh71LE51qYnA',
       rows: [['http://chata.ai/userguide/#bar-chart-2']]
     },
     message: '',
@@ -70,9 +70,9 @@ export default [
           name: 'query_suggestion'
         }
       ],
-      displayType: 'suggestion',
+      display_type: 'suggestion',
       interpretation: '',
-      queryId: 'q_3Kh8CIxGS5SYwmIt4aqeuQ',
+      query_id: 'q_3Kh8CIxGS5SYwmIt4aqeuQ',
       rows: [
         ['All invoices in this year'],
         ['All expenses in this year'],
@@ -112,9 +112,9 @@ export default [
           type: 'DOLLAR_AMT'
         }
       ],
-      displayType: 'unknown_type',
+      display_type: 'unknown_type',
       interpretation: 'total sales by line item by transaction month',
-      queryId: 'q_y4sWT0IAStWnLeM7COEsSQ',
+      query_id: 'q_y4sWT0IAStWnLeM7COEsSQ',
       rows: [
         [1483142400, 12500],
         [1488240000, 8742.68],

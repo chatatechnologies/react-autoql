@@ -70,6 +70,8 @@ export default class ResponseRenderer extends React.Component {
 
   componentDidMount = () => {
     // Determine the supported visualization types based on the response data
+    console.log('getting supported display types:')
+    console.log(this.getSupportedDisplayTypes(this.props.response))
     this.supportedDisplayTypes = this.getSupportedDisplayTypes(
       this.props.response
     )
@@ -118,12 +120,12 @@ export default class ResponseRenderer extends React.Component {
       !this.props.response ||
       !this.props.response.data ||
       !this.props.response.data.data ||
-      !this.props.response.data.data.displayType
+      !this.props.response.data.data.display_type
     ) {
       return 'table'
     }
 
-    const displayType = this.props.response.data.data.displayType
+    const displayType = this.props.response.data.data.display_type
 
     // If the display type is a recognized non-chart or non-table type
     if (displayType === 'suggestion' || displayType === 'help') {
@@ -151,12 +153,12 @@ export default class ResponseRenderer extends React.Component {
       !response ||
       !response.data ||
       !response.data.data ||
-      !response.data.data.displayType
+      !response.data.data.display_type
     ) {
       return []
     }
 
-    const displayType = response.data.data.displayType
+    const displayType = response.data.data.display_type
 
     if (displayType === 'suggestion' || displayType === 'help') {
       return [displayType]
@@ -212,7 +214,7 @@ export default class ResponseRenderer extends React.Component {
 
     if (response && response.data && response.data.data) {
       const responseBody = response.data.data
-      this.queryID = responseBody.queryId // We need queryID for drilldowns (for now)
+      this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation // Where should we display this?
       this.data = responseBody.rows
 
