@@ -1,6 +1,11 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { MdContentCopy, MdFileDownload, MdFilterList } from 'react-icons/md'
+import {
+  MdContentCopy,
+  MdFileDownload,
+  MdFilterList,
+  MdInfoOutline
+} from 'react-icons/md'
 import ReactTooltip from 'react-tooltip'
 
 import { ResponseRenderer } from '../ResponseRenderer'
@@ -36,7 +41,8 @@ export default class ChatMessage extends React.Component {
     onSuggestionClick: PropTypes.func.isRequired,
     response: PropTypes.shape({}),
     content: PropTypes.string,
-    tableOptions: PropTypes.shape({})
+    tableOptions: PropTypes.shape({}),
+    debug: PropTypes.bool
   }
 
   static defaultProps = {
@@ -47,7 +53,8 @@ export default class ChatMessage extends React.Component {
     isActive: false,
     type: 'text',
     text: null,
-    tableOptions: undefined
+    tableOptions: undefined,
+    debug: false
   }
 
   state = {
@@ -150,6 +157,28 @@ export default class ChatMessage extends React.Component {
     )
   }
 
+  renderInterpretationTip = () => {
+    const interpretation = `<span>
+        <strong>Interpretation: </strong>
+        ${this.props.response.data.data.interpretation}
+      </span>`
+
+    let sql = ''
+    if (this.props.debug) {
+      sql = `
+        <br />
+        <br />
+        <span>
+          <strong>SQL: </strong>
+          ${this.props.response.data.data.sql}
+        </span>`
+    }
+    return `<div>
+        ${interpretation}
+        ${sql}
+      </div>`
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
       showFilterButton:
@@ -161,7 +190,12 @@ export default class ChatMessage extends React.Component {
       showSaveAsCSVButton:
         TABLE_TYPES.includes(this.state.displayType) &&
         !this.isSingleValueResponse(),
-      showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType)
+      showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
+      showInterpretationButton:
+        this.props.response &&
+        this.props.response.data &&
+        this.props.response.data.data &&
+        !!this.props.response.data.data.interpretation
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -220,6 +254,13 @@ export default class ChatMessage extends React.Component {
             >
               <MdFileDownload />
             </button>
+          )}
+          {shouldShowButton.showInterpretationButton && (
+            <MdInfoOutline
+              className="interpretation-icon"
+              data-tip={this.renderInterpretationTip()}
+              data-for="interpretation-tooltip"
+            />
           )}
         </div>
       )

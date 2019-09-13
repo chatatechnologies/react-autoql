@@ -117,6 +117,16 @@
   opacity: 1 !important;
   z-index: 99999; /* necessary to show up on top of rc drawer */
 }
+.interpretation-tooltip {
+  font-family: "Titillium Web", sans-serif;
+  text-align: left;
+  letter-spacing: 0.04em;
+  padding: 7px 15px;
+  max-width: 400px;
+  opacity: 1 !important;
+  transition: none;
+  z-index: 99999; /* necessary to show up on top of rc drawer */
+}
 
 /* custom scrollbar */
 .chat-message-container > div:last-child {

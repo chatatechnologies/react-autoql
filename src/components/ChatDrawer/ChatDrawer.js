@@ -575,6 +575,7 @@ export default class ChatDrawer extends React.Component {
                       type={message.type}
                       key={message.id}
                       id={message.id}
+                      debug={this.props.debug}
                     />
                   )
                 })}
@@ -624,6 +625,15 @@ export default class ChatDrawer extends React.Component {
           id="chata-toolbar-btn-tooltip"
           effect="solid"
           delayShow={500}
+          html
+        />
+        <ReactTooltip
+          className="interpretation-tooltip"
+          id="interpretation-tooltip"
+          effect="solid"
+          delayShow={500}
+          delayHide={200}
+          clickable
           html
         />
         <ReactTooltip

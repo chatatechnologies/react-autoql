@@ -90,6 +90,13 @@ so we dont have to redraw the whole table */
 .chata-toolbar-btn:hover {
   opacity: 0.7;
 }
+.interpretation-icon {
+  color: var(--chata-drawer-text-color-primary);
+  vertical-align: top;
+  height: 26px;
+  margin: 0 3px;
+  font-size: 18px;
+}
 
 /* Chart icon styles */
 .chart-icon-svg-0,
