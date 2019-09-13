@@ -369,6 +369,7 @@ export default class ChatDrawer extends React.Component {
         queryID,
         groupByObject,
         this.props.demo,
+        this.props.debug,
         this.props.apiKey,
         this.props.customerId,
         this.props.userId

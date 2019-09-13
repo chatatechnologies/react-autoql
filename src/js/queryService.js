@@ -172,6 +172,7 @@ export const runDrilldown = (
   query_id,
   groupByObject,
   demo,
+  debug,
   api_key,
   customer_id,
   user_id
@@ -184,7 +185,8 @@ export const runDrilldown = (
     query_id: query_id,
     group_bys: groupByObject,
     customer_id: customer_id,
-    user_id: user_id
+    user_id: user_id,
+    debug
   }
 
   const url = demo
