@@ -3,8 +3,6 @@ import uuid from 'uuid'
 
 import { TABLE_TYPES } from './Constants'
 
-var unifiedquery_id = uuid.v4()
-
 var autoCompleteCall = null
 // var queryCall = null
 // var safetyNetCall = null
@@ -118,16 +116,13 @@ export const runQuery = (
 ) => {
   const axiosInstance = axios.create({})
 
-  // Reset unified query ID
-  unifiedquery_id = uuid.v4()
-
   if (useSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
 
     const url = demo
-      ? `https://backend-staging.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
+      ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
         query
-      )}&projectId=1&unified_query_id=${unifiedquery_id}`
+      )}&projectId=1`
       : `${domain}/api/v1/chata/safetynet?query=${encodeURIComponent(
         query
       )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
@@ -224,7 +219,7 @@ export const fetchSuggestions = (
   autoCompleteCall = axios.CancelToken.source()
 
   const url = demo
-    ? `https://backend-staging.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
+    ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
     )}&projectid=1`
     : `${domain}/api/v1/chata/autocomplete?query=${encodeURIComponent(

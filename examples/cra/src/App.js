@@ -284,7 +284,7 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Debug Mode (Allows SQL to be returned in the query response)',
+          'Debug Mode (Shows SQL in the info tooltip)',
           'debug',
           [true, false]
         )}
