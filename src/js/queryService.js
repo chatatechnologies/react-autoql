@@ -70,7 +70,7 @@ export const runQueryOnly = (
         response.data.data &&
         TABLE_TYPES.includes(response.data.data.display_type)
       ) {
-        queryResponse.data.data.displayType = 'table'
+        queryResponse.data.data.display_type = 'table'
       }
 
       return Promise.resolve(queryResponse)

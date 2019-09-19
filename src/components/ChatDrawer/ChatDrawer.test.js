@@ -16,7 +16,7 @@ const defaultProps = {
   handleStyles: {},
   shiftScreen: false,
   showMask: true,
-  token: 'test-token',
+  apiKey: 'test-apikey',
   projectId: 500,
   onHandleClick: () => {},
   onVisibleChange: () => {}
@@ -33,7 +33,7 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with only token prop', () => {
-    const wrapper = shallow(<ChatDrawer token="token" />)
+    const wrapper = shallow(<ChatDrawer apiKey="apiKey" />)
     expect(wrapper.exists()).toBe(true)
   })
   test('renders correctly with default props', () => {

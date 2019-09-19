@@ -19,6 +19,8 @@ import styles from './DashboardTile.css'
 const ReactGridLayout = WidthProvider(RGL)
 
 export default class ChatDrawer extends React.Component {
+  tileRefs = {}
+
   LIGHT_THEME = {
     '--chata-dashboard-accent-color': '#28a8e0',
     '--chata-dashboard-background-color': '#fff',
@@ -53,7 +55,8 @@ export default class ChatDrawer extends React.Component {
     demo: PropTypes.bool,
     debug: PropTypes.bool,
     chataDashboardState: PropTypes.shape({}),
-    isEditable: PropTypes.bool
+    isEditing: PropTypes.bool,
+    runDashboardOnMount: PropTypes.bool
   }
 
   static defaultProps = {
@@ -71,42 +74,140 @@ export default class ChatDrawer extends React.Component {
     debug: false,
     runDashboardOnMount: true,
     chataDashboardState: {},
-    isEditable: false
+    isEditing: false,
+    runDashboardOnMount: true
   }
 
   state = {
     tiles: [
       {
-        key: 'wefijwofiejwoeifjweofijweof',
-        i: 'wefijwofiejwoeifjweofijweof',
-        w: 6,
-        h: 2,
+        key: '0',
+        i: '0',
+        w: 3,
+        h: 1,
         x: 0,
         y: 0,
         maxH: 12,
-        minW: 2
+        minW: 2,
+        query: 'total profit this month',
+        title: 'Profit - Current Month'
       },
       {
-        key: 'wwefijweof',
-        i: 'wwefijweof',
-        w: 6,
-        h: 2,
+        key: '1',
+        i: '1',
+        w: 3,
+        h: 1,
+        x: 3,
+        y: 0,
+        maxH: 12,
+        minW: 2,
+        query: 'total profit last month',
+        title: 'Profit - Previous Month'
+      },
+      {
+        key: '2',
+        i: '2',
+        w: 3,
+        h: 1,
         x: 6,
         y: 0,
         maxH: 12,
-        minW: 2
+        minW: 2,
+        query: 'total profit ytd',
+        title: 'Profit - YTD'
       },
       {
-        key: 'wwweefijweof',
-        i: 'wwweefijweof',
-        w: 12,
+        key: '3',
+        i: '3',
+        w: 3,
+        h: 1,
+        x: 9,
+        y: 0,
+        maxH: 12,
+        minW: 2,
+        query: 'last years profit',
+        title: 'Profit - Previous Year'
+      },
+      {
+        key: '4',
+        i: '4',
+        w: 6,
         h: 3,
         x: 0,
-        y: 2,
+        y: 1,
         maxH: 12,
-        minW: 2
+        minW: 2,
+        query: 'profit by month ytd',
+        displayType: 'line',
+        title: 'Monthly YTD Profit'
+      },
+      {
+        key: '5',
+        i: '5',
+        w: 6,
+        h: 3,
+        x: 6,
+        y: 1,
+        maxH: 12,
+        minW: 2,
+        query: 'profit by month last year',
+        displayType: 'line',
+        title: '2018 Monthly Profit'
+      },
+      {
+        key: '6',
+        i: '6',
+        w: 6,
+        h: 3,
+        x: 0,
+        y: 4,
+        maxH: 12,
+        minW: 2,
+        query: 'profit by class this year',
+        displayType: 'column',
+        title: 'Total Profit by Class (2019)'
+      },
+      {
+        key: '7',
+        i: '7',
+        w: 6,
+        h: 3,
+        x: 6,
+        y: 4,
+        maxH: 12,
+        minW: 2,
+        query: 'profit by customer this year',
+        displayType: 'bar',
+        title: 'Total Profit by Customer (2019)'
+      },
+      {
+        key: '8',
+        i: '8',
+        w: 6,
+        h: 3,
+        x: 0,
+        y: 7,
+        maxH: 12,
+        minW: 2,
+        query: 'total profit by class by month ytd',
+        displayType: 'heatmap',
+        title: 'Product Profitability'
+      },
+      {
+        key: '9',
+        i: '9',
+        w: 6,
+        h: 3,
+        x: 6,
+        y: 7,
+        maxH: 12,
+        minW: 2,
+        query: 'total profit by customer by month ytd',
+        displayType: 'heatmap',
+        title: 'Customer Profitability'
       }
     ],
+    isDragging: false,
     ...this.props.chataDashboardState
   }
 
@@ -114,12 +215,18 @@ export default class ChatDrawer extends React.Component {
     this.setStyles()
 
     // Listen for esc press to cancel queries while they are running
-    document.addEventListener('keydown', this.escFunction, false)
+    // document.addEventListener('keydown', this.escFunction, false)
 
     // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-    setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 100)
+    // setTimeout(() => {
+    //   ReactTooltip.rebuild()
+    // }, 100)
+
+    if (this.props.runDashboardOnMount) {
+      for (var dashboardTile in this.tileRefs) {
+        this.tileRefs[dashboardTile].processTile()
+      }
+    }
   }
 
   componentDidUpdate = prevProps => {
@@ -136,6 +243,18 @@ export default class ChatDrawer extends React.Component {
     if (this.props.isVisible && event.keyCode === 27) {
       cancelQuery()
     }
+  }
+
+  onMoveStart = () => {
+    this.setState({
+      isDragging: true
+    })
+  }
+
+  onMoveEnd = () => {
+    this.setState({
+      isDragging: false
+    })
   }
 
   setStyles = () => {
@@ -250,30 +369,51 @@ export default class ChatDrawer extends React.Component {
           style={{
             height: '100%',
             width: '100%',
-            'overflow-x': 'hidden',
-            'overflow-y': 'auto'
+            overflowX: 'hidden',
+            overflowY: 'auto'
           }}
         >
           <ReactGridLayout
             onLayoutChange={layout => this.setState({ layout })}
-            // onDragStart    = {this.onMoveStart}
-            // onResizeStart  = {this.onMoveStart}
-            // onDragStop     = {this.onMoveEnd}
-            // onResizeStop   = {this.onMoveEnd}
+            onDragStart={this.onMoveStart}
+            onResizeStart={this.onMoveStart}
+            onDragStop={this.onMoveEnd}
+            onResizeStop={this.onMoveEnd}
             className="chata-dashboard"
             rowHeight={130}
             cols={12}
-            isDraggable={this.props.isEditable}
-            isResizable={this.props.isEditable}
+            isDraggable={this.props.isEditing}
+            isResizable={this.props.isEditing}
             draggableHandle=".chata-dashboard-tile-drag-handle"
             layout={this.state.tiles}
             margin={[20, 20]}
           >
             {this.state.tiles.map(tile => (
-              <DashboardTile key={tile.key} tile={tile} />
+              <DashboardTile
+                ref={ref => (this.tileRefs[tile.key] = ref)}
+                key={tile.key}
+                query={tile.query}
+                title={tile.title}
+                displayType={tile.displayType}
+                apiKey={this.props.apiKey}
+                customerId={this.props.customerId}
+                userId={this.props.userId}
+                domain={this.props.domain}
+                demo={this.props.demo}
+                debug={this.props.demo}
+                enableSafetyNet={this.props.enableSafetyNet}
+                isEditing={this.props.isEditing}
+                isDragging={this.state.isDragging}
+              />
             ))}
           </ReactGridLayout>
         </div>
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
       </Fragment>
     )
   }

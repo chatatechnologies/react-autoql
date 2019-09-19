@@ -357,7 +357,10 @@ export default class App extends Component {
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
           domain={this.state.domain}
-          isEditable={true}
+          demo={this.state.demo}
+          debug={this.state.debug}
+          enableSafetyNet={this.state.enableSafetyNet}
+          isEditing={false}
         />
       </div>
     )

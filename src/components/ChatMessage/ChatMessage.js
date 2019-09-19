@@ -113,8 +113,6 @@ export default class ChatMessage extends React.Component {
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}
-          width={chartWidth}
-          height={chartHeight}
         />
       )
     }

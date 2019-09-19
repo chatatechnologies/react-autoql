@@ -69,6 +69,8 @@ export default class ResponseRenderer extends React.Component {
   }
 
   componentDidMount = () => {
+    this.RESPONSE_COMPONENT_KEY = uuid.v4()
+
     // Determine the supported visualization types based on the response data
     this.supportedDisplayTypes = this.getSupportedDisplayTypes(
       this.props.response
@@ -84,6 +86,7 @@ export default class ResponseRenderer extends React.Component {
     // Initial display type has been determined, set the table and chart data now
     if (!prevState.displayType && this.state.displayType) {
       this.setResponseData(this.state.displayType)
+      this.forceUpdate()
     }
 
     // Detected a display type change from props. We must make sure
@@ -199,7 +202,9 @@ export default class ResponseRenderer extends React.Component {
         'pivot_table'
       ]
     }
-    return []
+
+    // We should always be able to display the table type by default
+    return ['table']
   }
 
   setResponseData = () => {
@@ -210,12 +215,11 @@ export default class ResponseRenderer extends React.Component {
     const { displayType } = this.state
     const { response } = this.props
 
-    if (response && response.data && response.data.data) {
+    if (response && response.data && response.data.data && displayType) {
       const responseBody = response.data.data
       this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
-      this.interpretation = responseBody.interpretation // Where should we display this?
-      this.data = responseBody.rows
-
+      this.interpretation = responseBody.interpretation
+      this.data = responseBody.rows ? [...responseBody.rows] : null
       if (this.isTableType(displayType) || this.isChartType(displayType)) {
         this.generateTableData()
         this.shouldGeneratePivotData() && this.generatePivotData()
@@ -287,9 +291,10 @@ export default class ResponseRenderer extends React.Component {
   renderSuggestionMessage = () => {
     // There is actually a suggestion for this case
     const { response } = this.props
-    const responseBody = response.data
+    const responseBody = { ...response.data }
     if (
       this.state.displayType === 'suggestion' &&
+      response.config &&
       responseBody.data.rows.length !== 0
     ) {
       const suggestions = responseBody.data.rows
@@ -399,37 +404,10 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
-  renderChart = () => {
+  renderChart = (width, height) => {
     if (!this.chartData) {
       return 'Error: There was no data supplied for this chart'
     }
-    let chartWidth = 0
-    let chartHeight = 0
-    const chatContainer = document.querySelector('.chat-message-container')
-    if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight - 20 // 85% of chat height minus message margins
-    }
-
-    // const height =
-    //   this.props.height ||
-    //   (document.querySelector(`#${this.props.key}`) &&
-    //     document.querySelector(`#${this.props.key}`).parent() &&
-    //     document
-    //       .querySelector(`#${this.props.key}`)
-    //       .parent()
-    //       .height()) ||
-    //   300
-
-    // const width =
-    //   this.props.width ||
-    //   (document.querySelector(`#${this.props.key}`) &&
-    //     document.querySelector(`#${this.props.key}`).parent() &&
-    //     document
-    //       .querySelector(`#${this.props.key}`)
-    //       .parent()
-    //       .width()) ||
-    //   500
 
     return (
       <ChataChart
@@ -437,8 +415,8 @@ export default class ResponseRenderer extends React.Component {
         type={this.state.displayType}
         data={this.chartData}
         columns={this.tableColumns}
-        height={chartHeight}
-        width={chartWidth}
+        height={height}
+        width={width}
         // valueFormatter={formatElement}
         onChartClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
@@ -737,7 +715,7 @@ export default class ResponseRenderer extends React.Component {
     return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
   }
 
-  renderResponse = () => {
+  renderResponse = (width, height) => {
     const { displayType } = this.state
     const { response } = this.props
 
@@ -755,7 +733,7 @@ export default class ResponseRenderer extends React.Component {
     }
 
     // Response prop was provided, but it has no response data
-    const responseBody = response.data
+    const responseBody = { ...response.data }
     if (!responseBody) {
       console.error('Error: No response body supplied')
       return this.renderErrorMessage()
@@ -784,7 +762,7 @@ export default class ResponseRenderer extends React.Component {
     }
 
     if (displayType && this.data) {
-      if (displayType === 'suggestion' || displayType === 'unknown_words') {
+      if (displayType === 'suggestion') {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
         return this.renderHelpResponse()
@@ -793,7 +771,7 @@ export default class ResponseRenderer extends React.Component {
       } else if (this.isTableType(displayType)) {
         return this.renderTable()
       } else if (this.isChartType(displayType)) {
-        return this.renderChart()
+        return this.renderChart(width, height)
       }
       return this.renderErrorMessage(
         `display type not recognized: ${this.state.displayType}`
@@ -804,14 +782,28 @@ export default class ResponseRenderer extends React.Component {
   }
 
   render = () => {
+    const responseContainer = document.getElementById(
+      `chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`
+    )
+
+    let height = 0
+    let width = 0
+    if (responseContainer) {
+      height = responseContainer.clientHeight
+      width = responseContainer.clientWidth
+    }
+
     return (
       <Fragment>
         <style>{`${styles}`}</style>
         <div
+          key={this.RESPONSE_COMPONENT_KEY}
+          id={`chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`}
           data-test="query-response-wrapper"
           className="chata-response-content-container"
+          // style={{ ...style }}
         >
-          {this.renderResponse()}
+          {this.renderResponse(width, height)}
         </div>
         {this.props.renderTooltips && (
           <ReactTooltip
