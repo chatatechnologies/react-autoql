@@ -232,35 +232,40 @@ export const getNumberOfGroupables = columns => {
   return null
 }
 
-// Lodash get function and dependencies
-// function get(object, path, defaultValue) {
-//   var result = object == null ? undefined : baseGet(object, path);
-//   return result === undefined ? defaultValue : result;
-// }
+export const getgroupByObjectFromTable = (
+  rowData,
+  origColumns,
+  forceDateAxis
+) => {
+  const jsonData = {}
+  let columns = [...origColumns]
 
-// function baseGet(object, path) {
-//   path = castPath(path, object);
+  if (!columns[0]) {
+    return
+  }
 
-//   var index = 0,
-//       length = path.length;
+  if (forceDateAxis) {
+    // Swap first two columns if second one is DATE and first is not
+    // rowData is already swapped here if necessary so don't swap again.
+    if (
+      columns[1] &&
+      ((columns[0].type !== 'DATE' && columns[1].type === 'DATE') ||
+        (columns[0].type !== 'DATE_STRING' &&
+          columns[1].type === 'DATE_STRING'))
+    ) {
+      columns = [columns[1], columns[0], ...columns.slice(2)]
+    }
+  }
 
-//   while (object != null && index < length) {
-//     object = object[toKey(path[index++])];
-//   }
-//   return (index && index == length) ? object : undefined;
-// }
-
-// function castPath(value, object) {
-//   if (isArray(value)) {
-//     return value;
-//   }
-//   return isKey(value, object) ? [value] : stringToPath(toString(value));
-// }
-
-// function toKey(value) {
-//   if (typeof value == 'string' || isSymbol(value)) {
-//     return value;
-//   }
-//   var result = (value + '');
-//   return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-// }
+  columns.forEach((column, index) => {
+    if (column.groupable) {
+      const columnName = column.name
+      if (column.type === 'DATE') {
+        jsonData[columnName] = `${rowData[index]}`
+      } else {
+        jsonData[columnName.toLowerCase()] = `${rowData[index]}`
+      }
+    }
+  })
+  return jsonData
+}

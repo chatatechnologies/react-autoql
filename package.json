@@ -65,6 +65,7 @@
     "rc-drawer": "^1.9.8",
     "react-autosuggest": "^9.4.3",
     "react-custom-scrollbars": "^4.2.1",
+    "react-grid-layout": "^0.16.6",
     "react-icons": "^3.7.0",
     "react-speech-recognition": "^2.0.1",
     "react-tabulator": "^0.9.1",

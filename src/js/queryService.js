@@ -73,23 +73,6 @@ export const runQueryOnly = (
         queryResponse.data.data.displayType = 'table'
       }
 
-      if (
-        debug &&
-        response &&
-        response.data &&
-        response.data.data &&
-        response.data.data.sql
-      ) {
-        console.log(
-          `
-"${text}"
---------------------------------------
-Interpretation: ${response.data.data.interpretation}
-SQL: ${response.data.data.sql}
-`
-        )
-      }
-
       return Promise.resolve(queryResponse)
     })
     .catch(error => {

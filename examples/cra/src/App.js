@@ -1,15 +1,21 @@
 import React, { Component, Fragment } from 'react'
-import { ChatDrawer, ResponseRenderer, ChatBar } from '@chata-ai/core'
+import {
+  ChatDrawer,
+  ResponseRenderer,
+  ChatBar,
+  Dashboard
+} from '@chata-ai/core'
 import uuid from 'uuid'
 
-import { Radio, Input, InputNumber, Switch, Button } from 'antd'
+import { Radio, Input, InputNumber, Switch, Button, Menu } from 'antd'
 import 'antd/dist/antd.css'
 import './index.css'
 
 export default class App extends Component {
   state = {
+    currentPage: 'drawer',
     componentKey: uuid.v4(),
-    isVisible: true,
+    isVisible: false,
     placement: 'right',
     showHandle: true,
     theme: 'light',
@@ -292,7 +298,7 @@ export default class App extends Component {
     )
   }
 
-  render = () => {
+  renderChatDrawerPage = () => {
     return (
       <div className="test-page-container">
         {
@@ -337,6 +343,62 @@ export default class App extends Component {
           // handleStyles={{ right: '25px' }}
         />
       </div>
+    )
+  }
+
+  renderDashboardPage = () => {
+    return (
+      <div
+        className="dashboard-container"
+        style={{ width: '100%', height: 'auto' }}
+      >
+        <Dashboard
+          apiKey={this.state.apiKey} // required if demo is false
+          customerId={this.state.customerId} // required if demo is false
+          userId={this.state.userId} // required if demo is false
+          domain={this.state.domain}
+          isEditable={true}
+        />
+      </div>
+    )
+  }
+
+  renderNavMenu = () => {
+    return (
+      <Menu
+        onClick={({ key }) => this.setState({ currentPage: key })}
+        selectedKeys={[this.state.currentPage]}
+        mode="horizontal"
+      >
+        <Menu.Item key="drawer">Chat Drawer</Menu.Item>
+        <Menu.Item key="dashboard">Dashboard</Menu.Item>
+      </Menu>
+    )
+  }
+
+  render = () => {
+    const { currentPage } = this.state
+
+    let pageToRender = null
+    switch (currentPage) {
+      case 'drawer': {
+        pageToRender = this.renderChatDrawerPage()
+        break
+      }
+      case 'dashboard': {
+        pageToRender = this.renderDashboardPage()
+        break
+      }
+      default: {
+        break
+      }
+    }
+
+    return (
+      <Fragment>
+        {this.renderNavMenu()}
+        {pageToRender}
+      </Fragment>
     )
   }
 }

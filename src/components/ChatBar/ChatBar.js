@@ -9,6 +9,7 @@ import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
+import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
 
 import styles from './ChatBar.css'
 
@@ -257,12 +258,7 @@ export default class ChatBar extends React.Component {
           )}
           {this.props.showLoadingDots && this.state.isQueryRunning && (
             <div className="input-response-loading-container">
-              <div className="response-loading">
-                <div />
-                <div />
-                <div />
-                <div />
-              </div>
+              <LoadingDots />
             </div>
           )}
           {this.props.enableVoiceRecord && (

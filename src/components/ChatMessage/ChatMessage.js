@@ -183,7 +183,12 @@ export default class ChatMessage extends React.Component {
     const shouldShowButton = {
       showFilterButton:
         TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse(),
+        !this.isSingleValueResponse() &&
+        this.props.response &&
+        this.props.response.data &&
+        this.props.response.data.data &&
+        this.props.response.data.data.rows &&
+        this.props.response.data.data.rows.length > 1,
       showCopyButton:
         TABLE_TYPES.includes(this.state.displayType) &&
         !this.isSingleValueResponse(),
