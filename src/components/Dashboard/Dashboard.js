@@ -84,22 +84,24 @@ export default class ChatDrawer extends React.Component {
         key: '0',
         i: '0',
         w: 3,
-        h: 1,
+        h: 2,
         x: 0,
         y: 0,
         maxH: 12,
+        minH: 2,
         minW: 2,
-        query: 'total profit this month',
+        query: 'total profi this month',
         title: 'Profit - Current Month'
       },
       {
         key: '1',
         i: '1',
         w: 3,
-        h: 1,
+        h: 2,
         x: 3,
         y: 0,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'total profit last month',
         title: 'Profit - Previous Month'
@@ -108,10 +110,11 @@ export default class ChatDrawer extends React.Component {
         key: '2',
         i: '2',
         w: 3,
-        h: 1,
+        h: 2,
         x: 6,
         y: 0,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'total profit ytd',
         title: 'Profit - YTD'
@@ -120,10 +123,11 @@ export default class ChatDrawer extends React.Component {
         key: '3',
         i: '3',
         w: 3,
-        h: 1,
+        h: 2,
         x: 9,
         y: 0,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'last years profit',
         title: 'Profit - Previous Year'
@@ -132,9 +136,9 @@ export default class ChatDrawer extends React.Component {
         key: '4',
         i: '4',
         w: 6,
-        h: 3,
+        h: 5,
         x: 0,
-        y: 1,
+        y: 2,
         maxH: 12,
         minW: 2,
         query: 'profit by month ytd',
@@ -145,9 +149,9 @@ export default class ChatDrawer extends React.Component {
         key: '5',
         i: '5',
         w: 6,
-        h: 3,
+        h: 5,
         x: 6,
-        y: 1,
+        y: 2,
         maxH: 12,
         minW: 2,
         query: 'profit by month last year',
@@ -158,10 +162,11 @@ export default class ChatDrawer extends React.Component {
         key: '6',
         i: '6',
         w: 6,
-        h: 3,
+        h: 5,
         x: 0,
-        y: 4,
+        y: 7,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'profit by class this year',
         displayType: 'column',
@@ -171,10 +176,11 @@ export default class ChatDrawer extends React.Component {
         key: '7',
         i: '7',
         w: 6,
-        h: 3,
+        h: 5,
         x: 6,
-        y: 4,
+        y: 7,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'profit by customer this year',
         displayType: 'bar',
@@ -184,10 +190,11 @@ export default class ChatDrawer extends React.Component {
         key: '8',
         i: '8',
         w: 6,
-        h: 3,
+        h: 5,
         x: 0,
-        y: 7,
+        y: 12,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'total profit by class by month ytd',
         displayType: 'heatmap',
@@ -197,10 +204,11 @@ export default class ChatDrawer extends React.Component {
         key: '9',
         i: '9',
         w: 6,
-        h: 3,
+        h: 5,
         x: 6,
-        y: 7,
+        y: 12,
         maxH: 12,
+        minH: 2,
         minW: 2,
         query: 'total profit by customer by month ytd',
         displayType: 'heatmap',
@@ -208,6 +216,7 @@ export default class ChatDrawer extends React.Component {
       }
     ],
     isDragging: false,
+    tileQueryResponses: {},
     ...this.props.chataDashboardState
   }
 
@@ -223,9 +232,12 @@ export default class ChatDrawer extends React.Component {
     // }, 100)
 
     if (this.props.runDashboardOnMount) {
-      for (var dashboardTile in this.tileRefs) {
-        this.tileRefs[dashboardTile].processTile()
-      }
+      // Allow tiles to animate into place before running
+      setTimeout(() => {
+        for (var dashboardTile in this.tileRefs) {
+          this.tileRefs[dashboardTile].processTile()
+        }
+      }, 1000)
     }
   }
 
@@ -252,9 +264,11 @@ export default class ChatDrawer extends React.Component {
   }
 
   onMoveEnd = () => {
-    this.setState({
-      isDragging: false
-    })
+    setTimeout(() => {
+      this.setState({
+        isDragging: false
+      })
+    }, 100)
   }
 
   setStyles = () => {
@@ -358,6 +372,43 @@ export default class ChatDrawer extends React.Component {
     this.chatBarRef = ref
   }
 
+  addTile = () => {
+    const tiles = [...this.state.tiles]
+    const id = uuid.v4()
+    tiles.push({
+      key: id,
+      i: id,
+      w: 6,
+      h: 5,
+      x: 0,
+      y: Infinity,
+      maxH: 12,
+      minH: 2,
+      minW: 2,
+      query: '',
+      title: ''
+    })
+
+    this.setState({ tiles })
+  }
+
+  deleteTile = id => {
+    const tiles = [...this.state.tiles]
+    var removeIndex = tiles.map(item => item.i).indexOf(id)
+    ~removeIndex && tiles.splice(removeIndex, 1)
+
+    this.setState({ tiles })
+  }
+
+  setResponseForTile = (response, id) => {
+    this.setState({
+      tileQueryResponses: {
+        ...this.state.tileQueryResponses,
+        [id]: response
+      }
+    })
+  }
+
   render = () => {
     return (
       <Fragment>
@@ -380,20 +431,26 @@ export default class ChatDrawer extends React.Component {
             onDragStop={this.onMoveEnd}
             onResizeStop={this.onMoveEnd}
             className="chata-dashboard"
-            rowHeight={130}
+            rowHeight={60}
             cols={12}
             isDraggable={this.props.isEditing}
             isResizable={this.props.isEditing}
-            draggableHandle=".chata-dashboard-tile-drag-handle"
+            // draggableHandle=".chata-dashboard-tile-drag-handle"
+            draggableHandle=".chata-dashboard-tile-inner-div"
             layout={this.state.tiles}
             margin={[20, 20]}
           >
             {this.state.tiles.map(tile => (
               <DashboardTile
+                className={`chata-dashboard-tile${
+                  this.state.isDragging ? ' dragging' : ''
+                }`}
                 ref={ref => (this.tileRefs[tile.key] = ref)}
                 key={tile.key}
                 query={tile.query}
                 title={tile.title}
+                tileId={tile.i}
+                s
                 displayType={tile.displayType}
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
@@ -404,6 +461,9 @@ export default class ChatDrawer extends React.Component {
                 enableSafetyNet={this.props.enableSafetyNet}
                 isEditing={this.props.isEditing}
                 isDragging={this.state.isDragging}
+                setResponseForTile={this.setResponseForTile}
+                deleteTile={this.deleteTile}
+                queryResponse={this.state.tileQueryResponses[tile.i]}
               />
             ))}
           </ReactGridLayout>

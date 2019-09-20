@@ -39,7 +39,8 @@ export default class App extends Component {
     apiKey: '',
     customerId: '',
     userId: '',
-    domain: ''
+    domain: '',
+    isEditing: false
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -352,7 +353,34 @@ export default class App extends Component {
         className="dashboard-container"
         style={{ width: '100%', height: 'auto' }}
       >
+        <div
+          className="dashboard-toolbar-container"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            background: '#fafafa',
+            padding: '10px'
+          }}
+        >
+          <Button
+            onClick={() => this.setState({ isEditing: !this.state.isEditing })}
+            icon={this.state.isEditing ? 'stop' : 'edit'}
+          >
+            {this.state.isEditing ? 'Stop Editing' : 'Edit'}
+          </Button>
+          {this.state.isEditing && (
+            <Button
+              onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
+              type="primary"
+              icon="plus"
+              style={{ marginLeft: '10px' }}
+            >
+              Add Tile
+            </Button>
+          )}
+        </div>
         <Dashboard
+          ref={ref => (this.dashboardRef = ref)}
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
@@ -360,7 +388,7 @@ export default class App extends Component {
           demo={this.state.demo}
           debug={this.state.debug}
           enableSafetyNet={this.state.enableSafetyNet}
-          isEditing={false}
+          isEditing={this.state.isEditing}
         />
       </div>
     )
