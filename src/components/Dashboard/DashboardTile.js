@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
 
-import { MdClose } from 'react-icons/md'
+import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
@@ -26,20 +26,27 @@ export default class DashboardTile extends React.PureComponent {
     tileId: PropTypes.string.isRequired,
     setResponseForTile: PropTypes.func.isRequired,
     deleteTile: PropTypes.func.isRequired,
+    isNewTile: PropTypes.bool,
     queryResponse: PropTypes.shape({})
   }
 
   static defaultProps = {
     query: '',
-    title: ''
+    title: '',
+    isNewTile: false
+  }
+
+  state = {
+    query: this.props.query,
+    title: this.props.title
   }
 
   processTile = () => {
-    if (this.props.query) {
+    if (this.state.query) {
       // Reset query response so tile starts "loading" again
       this.props.setResponseForTile(null, this.props.tileId)
       runQuery(
-        this.props.query,
+        this.state.query,
         this.props.demo,
         this.props.debug,
         this.props.enableSafetyNet,
@@ -53,8 +60,6 @@ export default class DashboardTile extends React.PureComponent {
     }
   }
 
-  renderDragHandle = () => <div className="chata-dashboard-tile-drag-handle" />
-
   renderHeader = () => {
     if (this.props.isEditing) {
       return (
@@ -65,18 +70,34 @@ export default class DashboardTile extends React.PureComponent {
           >
             <input
               className="dashboard-tile-input query"
-              defaultValue={this.props.query}
               placeholder="Query"
+              value={this.state.query}
+              onChange={e => this.setState({ query: e.target.value })}
+              onBlur={e =>
+                this.props.updateTileQuery(e.target.value, this.props.tileId)
+              }
             />
             <input
               className="dashboard-tile-input title"
-              defaultValue={this.props.title}
               placeholder="Title (optional)"
+              value={this.state.title}
+              onChange={e => this.setState({ title: e.target.value })}
+              onBlur={e =>
+                this.props.updateTileTitle(e.target.value, this.props.tileId)
+              }
             />
           </div>
           <div
             onMouseDown={e => e.stopPropagation()}
+            className={`dashboard-tile-play-button${
+              !this.state.query ? ' disabled' : ''
+            }`}
+          >
+            <MdPlayCircleOutline onClick={() => this.processTile()} />
+          </div>
+          <div
             className="dashboard-tile-delete-button"
+            onMouseDown={e => e.stopPropagation()}
             onClick={() => this.props.deleteTile(this.props.tileId)}
           >
             <MdClose />
@@ -87,7 +108,7 @@ export default class DashboardTile extends React.PureComponent {
     return (
       <div className="dashboard-tile-title-container">
         <span className="dashboard-tile-title">
-          {this.props.title || this.props.query}
+          {this.props.title || this.props.query || 'Untitled'}
         </span>
         <div className="dashboard-tile-title-divider"></div>
       </div>
@@ -101,6 +122,39 @@ export default class DashboardTile extends React.PureComponent {
         <div className="chata-db-dragging-placeholder-content"></div>
       </div>
     )
+  }
+
+  renderContentPlaceholder = () => {
+    let content = null
+    if (this.props.isNewTile && this.props.isEditing) {
+      content = (
+        <div className="dashboard-tile-placeholder-text">
+          <em>
+            1. Type your query in the search bar
+            <br />
+            2. Click{' '}
+            <MdPlayCircleOutline
+              style={{
+                display: 'inline-block',
+                marginRight: '3px',
+                marginBottom: '-2px'
+              }}
+            />
+            to fill this tile
+          </em>
+        </div>
+      )
+    } else if (this.props.isNewTile) {
+      content = (
+        <div className="dashboard-tile-placeholder-text">
+          <em>This tile has no query</em>
+        </div>
+      )
+    } else {
+      content = <LoadingDots />
+    }
+
+    return <div className="dashboard-tile-loading-container">{content}</div>
   }
 
   renderContent = () => (
@@ -120,9 +174,7 @@ export default class DashboardTile extends React.PureComponent {
             renderTooltips={false}
           />
         ) : (
-          <div className="dashboard-tile-loading-container">
-            <LoadingDots />
-          </div>
+          this.renderContentPlaceholder()
         )}
       </div>
     </div>

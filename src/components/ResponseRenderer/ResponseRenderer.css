@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css?family=Titillium+Web:100,200,300,400,500,600,700,800,900");
 
 .chata-response-content-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background-color: inherit;
   font-size: 14px;
   height: 100%;
