@@ -296,10 +296,6 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  shouldMessageBeFullWidth = () => {
-    return !!this.renderLeftToolbar()
-  }
-
   renderLeftToolbar = () => {
     if (
       !this.responseRef ||
@@ -340,7 +336,8 @@ export default class ChatMessage extends React.Component {
         >
           <div
             className={`chat-message-bubble
-            ${this.shouldMessageBeFullWidth() ? ' full-width' : ''}
+            ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
+            ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}

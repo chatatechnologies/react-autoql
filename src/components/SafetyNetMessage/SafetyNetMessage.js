@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import { IoIosCloseCircleOutline } from 'react-icons/io'
@@ -246,7 +246,7 @@ export default class SafetyNetMessage extends React.Component {
     )
 
     return (
-      <Fragment>
+      <div>
         <span>
           Before I can try to find your answer, I need your help understanding a
           term you used that I don't see in your data. Click the dropdown to
@@ -271,17 +271,15 @@ export default class SafetyNetMessage extends React.Component {
             Run Query
           </button>
         </span>
-      </Fragment>
+      </div>
     )
   }
 
   render = () => {
     return (
-      <Fragment>
-        <div className="chata-response-content-container">
-          {this.renderResponse()}
-        </div>
-      </Fragment>
+      <div className="chata-response-content-container">
+        {this.renderResponse()}
+      </div>
     )
   }
 }

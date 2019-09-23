@@ -29,12 +29,16 @@
   position: relative;
   padding: 13px;
   border-radius: 10px;
-  max-width: 70%;
+  max-width: calc(100% - 20px);
   word-wrap: break-word;
   font-family: "Titillium Web", sans-serif;
   font-size: 14px;
   letter-spacing: 0.04em;
 }
+.chat-single-message-container .chat-message-bubble.text {
+  max-width: 70%;
+}
+
 .chat-single-message-container .chat-message-bubble.full-width {
   width: calc(100% - 20px) !important;
   min-width: calc(100% - 20px) !important;
