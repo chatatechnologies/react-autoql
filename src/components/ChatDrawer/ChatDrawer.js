@@ -63,6 +63,7 @@ export default class ChatDrawer extends React.Component {
     isVisible: PropTypes.bool,
     showHandle: PropTypes.bool,
     // customHandle: PropTypes.ReactElement,
+    handleImage: PropTypes.string,
     theme: PropTypes.string,
     handleStyles: PropTypes.shape({}),
     shiftScreen: PropTypes.bool,
@@ -89,7 +90,8 @@ export default class ChatDrawer extends React.Component {
     isVisible: true,
     width: 500,
     height: 350,
-    // customHandle: undefined, // not working atm
+    customHandle: undefined, // not working atm
+    handleImage: undefined,
     showHandle: true,
     theme: 'light',
     handleStyles: {},
@@ -194,7 +196,7 @@ export default class ChatDrawer extends React.Component {
         >
           <img
             className="chata-bubbles-icon"
-            src={chataBubblesSVG}
+            src={this.props.handleImage || chataBubblesSVG}
             alt="chata.ai"
             height="22px"
             width="22px"

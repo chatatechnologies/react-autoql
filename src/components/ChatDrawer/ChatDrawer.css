@@ -145,6 +145,7 @@
   top: 72px;
   background: var(--chata-drawer-background-color);
   transition: opacity 0.5s ease;
+  overflow: hidden;
 }
 .drawer-handle.hide {
   opacity: 0;

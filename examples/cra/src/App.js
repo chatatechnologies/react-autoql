@@ -8,6 +8,8 @@ import {
 import uuid from 'uuid'
 
 import { Radio, Input, InputNumber, Switch, Button, Menu } from 'antd'
+import spiraLogo from './spira-logo.png'
+
 import 'antd/dist/antd.css'
 import './index.css'
 
@@ -29,9 +31,10 @@ export default class App extends Component {
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,
-    width: 500,
+    width: 600,
     title: 'Chat with your data',
-    lightAccentColor: '#28a8e0',
+    // lightAccentColor: '#28a8e0',
+    lightAccentColor: '#3b8dbc',
     darkAccentColor: '#525252',
     maxMessages: 6,
     demo: true,
@@ -339,6 +342,7 @@ export default class App extends Component {
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
           debug={this.state.debug}
+          handleImage={spiraLogo}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
@@ -427,6 +431,7 @@ export default class App extends Component {
 
     return (
       <Fragment>
+        <div className="spira-ui-overlay" />
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>
