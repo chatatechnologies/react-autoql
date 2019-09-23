@@ -37,6 +37,22 @@
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   cursor: move;
 }
+
+/* Safetynet styles specific to dashboard tiles */
+.chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.chata-dashboard-tile-inner-div .chata-safety-net-query {
+  white-space: nowrap;
+}
+.dashboard-tile-response-wrapper.small .chata-safety-net-description,
+.dashboard-tile-response-wrapper .chata-safety-net-execute-btn {
+  display: none;
+}
+
 .dashboard-tile-response-wrapper .dashboard-tile-response-container {
   height: 100%;
   width: 100%;

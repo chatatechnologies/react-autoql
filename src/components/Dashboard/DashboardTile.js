@@ -2,6 +2,8 @@ import React, { Fragment } from 'react'
 
 import PropTypes from 'prop-types'
 
+import uuid from 'uuid'
+
 import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
@@ -11,6 +13,7 @@ import { runQuery } from '../../js/queryService'
 
 export default class DashboardTile extends React.PureComponent {
   supportedDisplayTypes = []
+  TILE_ID = uuid.v4()
 
   static propTypes = {
     apiKey: PropTypes.string.isRequired,
@@ -49,14 +52,18 @@ export default class DashboardTile extends React.PureComponent {
         this.state.query,
         this.props.demo,
         this.props.debug,
-        this.props.enableSafetyNet,
+        !this.props.isEditing ? false : this.props.enableSafetyNet,
         this.props.domain,
         this.props.apiKey,
         this.props.customerId,
         this.props.userId
-      ).then(response => {
-        this.props.setResponseForTile(response, this.props.tileId)
-      })
+      )
+        .then(response => {
+          this.props.setResponseForTile(response, this.props.tileId)
+        })
+        .catch(error => {
+          this.props.setResponseForTile(error, this.props.tileId)
+        })
     }
   }
 
@@ -157,28 +164,42 @@ export default class DashboardTile extends React.PureComponent {
     return <div className="dashboard-tile-loading-container">{content}</div>
   }
 
-  renderContent = () => (
-    <div
-      className={`dashboard-tile-response-wrapper${
-        this.props.isEditing ? ' editing' : ''
-      }`}
-    >
+  renderContent = () => {
+    const containerElement = document.getElementById(
+      `chata-dashboard-tile-inner-div-${this.TILE_ID}`
+    )
+    let tileHeight
+    if (containerElement) {
+      tileHeight = containerElement.clientHeight
+    }
+
+    return (
       <div
-        onMouseDown={e => e.stopPropagation()}
-        className="dashboard-tile-response-container"
+        className={`dashboard-tile-response-wrapper
+      ${this.props.isEditing ? ' editing' : ''}
+      ${tileHeight < 350 ? ' small' : ''}`}
       >
-        {this.props.queryResponse ? (
-          <ResponseRenderer
-            displayType={this.props.displayType}
-            response={this.props.queryResponse}
-            renderTooltips={false}
-          />
-        ) : (
-          this.renderContentPlaceholder()
-        )}
+        <div
+          onMouseDown={e => e.stopPropagation()}
+          className="dashboard-tile-response-container"
+        >
+          {this.props.queryResponse ? (
+            <ResponseRenderer
+              displayType={this.props.displayType}
+              response={this.props.queryResponse}
+              renderTooltips={false}
+              autoSelectSafetyNetSuggestion={false}
+              onSafetyNetSelectOption={suggestion =>
+                this.setState({ query: suggestion })
+              }
+            />
+          ) : (
+            this.renderContentPlaceholder()
+          )}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   render = () => {
     const { onMouseDown, onMouseUp, onTouchStart, onTouchEnd } = this.props
@@ -199,7 +220,10 @@ export default class DashboardTile extends React.PureComponent {
           {...propsToPassToDragHandle}
         >
           {this.props.children}
-          <div className="chata-dashboard-tile-inner-div">
+          <div
+            id={`chata-dashboard-tile-inner-div-${this.TILE_ID}`}
+            className="chata-dashboard-tile-inner-div"
+          >
             {this.props.isDragging ? (
               this.renderDraggingPlaceholder()
             ) : (

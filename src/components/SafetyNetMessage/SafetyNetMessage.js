@@ -9,10 +9,14 @@ String.prototype.replaceAll = function(target, replacement) {
 }
 
 export default class SafetyNetMessage extends React.Component {
+  originalReplaceWords = []
+
   static propTypes = {
     response: PropTypes.shape({}).isRequired,
     onSuggestionClick: PropTypes.func.isRequired,
-    isQueryRunning: PropTypes.bool
+    autoSelectSuggestion: PropTypes.bool.isRequired,
+    isQueryRunning: PropTypes.bool,
+    onSafetyNetSelectOption: PropTypes.func.isRequired
   }
 
   static defaultProps = {
@@ -27,6 +31,23 @@ export default class SafetyNetMessage extends React.Component {
     this.initializeSafetyNetOptions(this.props.response.data)
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    // Change selections back to original words
+    // if autoSelectSuggestion is false
+    if (
+      prevState.safetyNetQueryArray.length === 0 &&
+      this.state.safetyNetQueryArray.length > 0 &&
+      !this.props.autoSelectSuggestion
+    ) {
+      this.originalReplaceWords.forEach((word, index) => {
+        this.onChangeSafetyNetSelectOption(
+          JSON.stringify({ text: word }),
+          index * 2 + 1
+        )
+      })
+    }
+  }
+
   initializeSafetyNetOptions = responseBody => {
     const queryArray = []
     let lastEndIndex = 0
@@ -34,8 +55,8 @@ export default class SafetyNetMessage extends React.Component {
 
     // Do we need to sort or will it always be sent sorted?
     // const sortedFullSuggestions = fullSuggestions.sortBy(['start']).value();
-    const sortedFullSuggestions = fullSuggestions
-    sortedFullSuggestions.forEach((fullSuggestion, index) => {
+    this.sortedFullSuggestions = fullSuggestions
+    this.sortedFullSuggestions.forEach((fullSuggestion, index) => {
       if (
         fullSuggestion.suggestion_list &&
         fullSuggestion.suggestion_list.length > 0
@@ -51,13 +72,15 @@ export default class SafetyNetMessage extends React.Component {
           fullSuggestion.end
         )
 
+        this.originalReplaceWords.push(replaceWord)
+
         queryArray.push({
           type: 'suggestion',
           value: replaceWord,
           valueLabel: suggestionList[0].value_label
         })
 
-        if (index === sortedFullSuggestions.length - 1) {
+        if (index === this.sortedFullSuggestions.length - 1) {
           queryArray.push({
             type: 'text',
             value: query.slice(fullSuggestion.end, query.length)
@@ -80,7 +103,7 @@ export default class SafetyNetMessage extends React.Component {
           value: replaceWord
         })
 
-        if (index === sortedFullSuggestions.length - 1) {
+        if (index === this.sortedFullSuggestions.length - 1) {
           queryArray.push({
             type: 'text',
             value: query.slice(fullSuggestion.end, query.length)
@@ -136,6 +159,11 @@ export default class SafetyNetMessage extends React.Component {
       }
     )
 
+    // If user provided callback for safetynet selection
+    this.props.onSafetyNetSelectOption(
+      this.getSafetyNetQueryText(newSafetyNetQueryArray)
+    )
+
     this.setState({
       safetyNetQueryArray: newSafetyNetQueryArray
     })
@@ -159,14 +187,14 @@ export default class SafetyNetMessage extends React.Component {
     })
   }
 
-  renderResponse = () => {
+  getSafetyNetQuery = () => {
     const { response } = this.props
     const fullSuggestions = response.data.full_suggestion
     const { query } = response.data
     const queryArray = this.state.safetyNetQueryArray
 
-    const safetyNetQuery = (
-      <span>
+    return (
+      <div className="chata-safety-net-query">
         {queryArray.map((element, index) => {
           if (element.type === 'text' || element.value === '') {
             return <span key={`query-element-${index}`}>{element.value}</span>
@@ -242,29 +270,36 @@ export default class SafetyNetMessage extends React.Component {
           }
           return null
         })}
-      </span>
+      </div>
     )
+  }
+
+  getSafetyNetQueryText = safetyNetArray => {
+    let safetyNetQueryText = ''
+    safetyNetArray.forEach(element => {
+      safetyNetQueryText = safetyNetQueryText.concat(element.value)
+    })
+    return safetyNetQueryText
+  }
+
+  renderResponse = () => {
+    const safetyNetQuery = this.getSafetyNetQuery()
 
     return (
-      <div>
-        <span>
+      <div className="chata-safety-net-container">
+        <div className="chata-safety-net-description">
           Before I can try to find your answer, I need your help understanding a
           term you used that I don't see in your data. Click the dropdown to
           view suggestions so I can ensure you get the right data!
-        </span>
-        <br />
-        <br />
+        </div>
         <span>
           {safetyNetQuery}
-          <br />
           <button
             className="chata-safety-net-execute-btn"
             onClick={() => {
-              let safetyNetQuery = ''
-              this.state.safetyNetQueryArray.forEach(element => {
-                safetyNetQuery = safetyNetQuery.concat(element.value)
-              })
-              this.props.onSuggestionClick(safetyNetQuery)
+              this.props.onSuggestionClick(
+                this.getSafetyNetQueryText(this.state.safetyNetQueryArray)
+              )
             }}
           >
             <MdPlayCircleOutline className="chata-execute-query-icon" />

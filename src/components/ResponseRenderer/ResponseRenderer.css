@@ -7,6 +7,7 @@
   background-color: inherit;
   font-size: 14px;
   height: 100%;
+  width: 100%;
 }
 
 .chata-suggestions-container {
@@ -60,6 +61,7 @@
 .chata-safety-net-selector-container {
   display: inline-block;
   position: relative;
+  margin-right: 20px;
   margin-left: -5px;
 }
 .chata-safety-net-execute-btn {
@@ -122,4 +124,15 @@
   color: inherit;
   text-decoration: underline;
   font-weight: 600;
+}
+
+.chata-safety-net-query {
+}
+
+.chata-safety-net-container {
+  width: 100%;
+}
+
+.chata-safety-net-description {
+  margin-bottom: 14px;
 }

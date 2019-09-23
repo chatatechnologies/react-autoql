@@ -19,5 +19,5 @@
   height: 100vh;
   background-size: cover;
   background-repeat: no-repeat;
-  background-image: url(/static/media/spira_ui.7d6c51fd.png);
+  background-image: url("./spira_ui.png");
 }

@@ -48,7 +48,9 @@ export default class ResponseRenderer extends React.Component {
     tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
     isFilteringTable: PropTypes.bool,
-    renderTooltips: PropTypes.bool
+    renderTooltips: PropTypes.bool,
+    onSafetyNetSelectOption: PropTypes.func,
+    autoSelectSafetyNetSuggestion: PropTypes.func
   }
 
   static defaultProps = {
@@ -61,7 +63,9 @@ export default class ResponseRenderer extends React.Component {
     onSuggestionClick: undefined,
     isFilteringTable: false,
     renderTooltips: true,
-    processDrilldown: () => {}
+    autoSelectSafetyNetSuggestion: true,
+    processDrilldown: () => {},
+    onSafetyNetSelectOption: () => {}
   }
 
   state = {
@@ -745,6 +749,8 @@ export default class ResponseRenderer extends React.Component {
         <SafetyNetMessage
           response={this.props.response}
           onSuggestionClick={this.onSuggestionClick}
+          onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
+          autoSelectSuggestion={this.props.autoSelectSafetyNetSuggestion}
         />
       )
     }
