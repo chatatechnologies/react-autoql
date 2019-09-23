@@ -36,7 +36,9 @@
   letter-spacing: 0.04em;
 }
 .chat-single-message-container .chat-message-bubble.full-width {
-  max-width: calc(100% - 20px);
+  width: calc(100% - 20px) !important;
+  min-width: calc(100% - 20px) !important;
+  max-width: calc(100% - 20px) !important;
 }
 .chat-single-message-container.response .chat-message-bubble.active {
   border: 1px solid #c3c3c3;
