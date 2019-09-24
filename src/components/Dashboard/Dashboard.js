@@ -90,7 +90,7 @@ export default class ChatDrawer extends React.Component {
         maxH: 12,
         minH: 2,
         minW: 3,
-        query: 'total profi this month',
+        query: 'total profit this month',
         title: 'Profit - Current Month'
       },
       {
@@ -430,6 +430,14 @@ export default class ChatDrawer extends React.Component {
     this.setState({ tiles })
   }
 
+  updateTileSuggestionSelection = (suggestion, id) => {
+    const tiles = [...this.state.tiles]
+    const tileIndex = tiles.map(item => item.i).indexOf(id)
+    tiles[tileIndex].selectedSuggestion = suggestion
+
+    this.setState({ tiles })
+  }
+
   updateTileQuery = (query, id) => {
     const tiles = [...this.state.tiles]
     const tileIndex = tiles.map(item => item.i).indexOf(id)
@@ -460,7 +468,14 @@ export default class ChatDrawer extends React.Component {
     const tiles = [...this.state.tiles]
     const tileIndex = tiles.map(item => item.i).indexOf(id)
     if (tiles[tileIndex]) {
+      // Reset state specific response values
+      if (tiles[tileIndex].selectedSuggestion) {
+        tiles[tileIndex].query = tiles[tileIndex].selectedSuggestion
+      }
       tiles[tileIndex].isNewTile = false
+      tiles[tileIndex].selectedSuggestion = undefined
+      tiles[tileIndex].safetyNetSelections = undefined
+
       this.setState({
         tileQueryResponses: {
           ...this.state.tileQueryResponses,
@@ -512,17 +527,13 @@ export default class ChatDrawer extends React.Component {
                 } ${tile.i}`}
                 ref={ref => (this.tileRefs[tile.key] = ref)}
                 key={tile.key}
-                query={tile.query}
-                title={tile.title}
-                tileId={tile.i}
-                s
-                displayType={tile.displayType}
+                tile={tile}
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
                 userId={this.props.userId}
                 domain={this.props.domain}
                 demo={this.props.demo}
-                debug={this.props.demo}
+                debug={this.props.debug}
                 enableSafetyNet={this.props.enableSafetyNet}
                 isEditing={this.props.isEditing}
                 isDragging={this.state.isDragging}
@@ -530,11 +541,12 @@ export default class ChatDrawer extends React.Component {
                 deleteTile={this.deleteTile}
                 updateTileQuery={this.updateTileQuery}
                 updateTileTitle={this.updateTileTitle}
-                isNewTile={tile.isNewTile}
                 queryResponse={this.state.tileQueryResponses[tile.i]}
-                safetyNetSelections={tile.safetyNetSelections}
                 updateTileSafetyNetSelections={
                   this.updateTileSafetyNetSelections
+                }
+                updateTileSuggestionSelection={
+                  this.updateTileSuggestionSelection
                 }
               />
             ))}

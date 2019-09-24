@@ -24,14 +24,10 @@ export default class DashboardTile extends React.PureComponent {
     debug: PropTypes.bool.isRequired,
     enableSafetyNet: PropTypes.bool.isRequired,
     isEditing: PropTypes.bool.isRequired,
-    query: PropTypes.string,
-    title: PropTypes.string,
-    tileId: PropTypes.string.isRequired,
+    tile: PropTypes.shape({}).isRequired,
     setResponseForTile: PropTypes.func.isRequired,
     deleteTile: PropTypes.func.isRequired,
-    isNewTile: PropTypes.bool,
     queryResponse: PropTypes.shape({}),
-    safetyNetSelections: PropTypes.arrayOf(PropTypes.shape({})),
     updateTileSafetyNetSelections: PropTypes.func.isRequired
   }
 
@@ -39,20 +35,21 @@ export default class DashboardTile extends React.PureComponent {
     query: '',
     title: '',
     isNewTile: false,
-    safetyNetSelections: undefined
+    safetyNetSelections: undefined,
+    selectedSuggestion: undefined
   }
 
   state = {
-    query: this.props.query,
-    title: this.props.title
+    query: this.props.tile.query,
+    title: this.props.tile.title
   }
 
-  processTile = () => {
-    if (this.state.query) {
+  processTile = query => {
+    if (query || this.state.query) {
       // Reset query response so tile starts "loading" again
-      this.props.setResponseForTile(null, this.props.tileId)
+      this.props.setResponseForTile(null, this.props.tile.i)
       runQuery(
-        this.state.query,
+        query || this.props.tile.selectedSuggestion || this.state.query,
         this.props.demo,
         this.props.debug,
         !this.props.isEditing ? false : this.props.enableSafetyNet,
@@ -62,11 +59,22 @@ export default class DashboardTile extends React.PureComponent {
         this.props.userId
       )
         .then(response => {
-          this.props.setResponseForTile(response, this.props.tileId)
+          this.props.setResponseForTile(response, this.props.tile.i)
         })
         .catch(error => {
-          this.props.setResponseForTile(error, this.props.tileId)
+          this.props.setResponseForTile(error, this.props.tile.i)
         })
+    }
+  }
+
+  onSuggestionClick = (suggestion, isButtonClick) => {
+    this.setState({ query: suggestion })
+
+    if (isButtonClick) {
+      this.props.updateTileQuery(suggestion, this.props.tile.i)
+      this.processTile(suggestion)
+    } else {
+      this.props.updateTileSuggestionSelection(suggestion, this.props.tile.i)
     }
   }
 
@@ -84,7 +92,7 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.query}
               onChange={e => this.setState({ query: e.target.value })}
               onBlur={e =>
-                this.props.updateTileQuery(e.target.value, this.props.tileId)
+                this.props.updateTileQuery(e.target.value, this.props.tile.i)
               }
             />
             <input
@@ -93,7 +101,7 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.title}
               onChange={e => this.setState({ title: e.target.value })}
               onBlur={e =>
-                this.props.updateTileTitle(e.target.value, this.props.tileId)
+                this.props.updateTileTitle(e.target.value, this.props.tile.i)
               }
             />
           </div>
@@ -108,7 +116,7 @@ export default class DashboardTile extends React.PureComponent {
           <div
             className="dashboard-tile-delete-button"
             onMouseDown={e => e.stopPropagation()}
-            onClick={() => this.props.deleteTile(this.props.tileId)}
+            onClick={() => this.props.deleteTile(this.props.tile.i)}
           >
             <MdClose />
           </div>
@@ -118,7 +126,7 @@ export default class DashboardTile extends React.PureComponent {
     return (
       <div className="dashboard-tile-title-container">
         <span className="dashboard-tile-title">
-          {this.props.title || this.props.query || 'Untitled'}
+          {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>
         <div className="dashboard-tile-title-divider"></div>
       </div>
@@ -136,7 +144,7 @@ export default class DashboardTile extends React.PureComponent {
 
   renderContentPlaceholder = () => {
     let content = null
-    if (this.props.isNewTile && this.props.isEditing) {
+    if (this.props.tile.isNewTile && this.props.isEditing) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -154,7 +162,7 @@ export default class DashboardTile extends React.PureComponent {
           </em>
         </div>
       )
-    } else if (this.props.isNewTile) {
+    } else if (this.props.tile.isNewTile) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>This tile has no query</em>
@@ -168,19 +176,11 @@ export default class DashboardTile extends React.PureComponent {
   }
 
   renderContent = () => {
-    const containerElement = document.getElementById(
-      `chata-dashboard-tile-inner-div-${this.TILE_ID}`
-    )
-    let tileHeight
-    if (containerElement) {
-      tileHeight = containerElement.clientHeight
-    }
-
     return (
       <div
         className={`dashboard-tile-response-wrapper
       ${this.props.isEditing ? ' editing' : ''}
-      ${tileHeight < 350 ? ' small' : ''}`}
+      ${this.props.tile.h < 4 ? ' small' : ''}`}
       >
         <div
           onMouseDown={e => e.stopPropagation()}
@@ -188,17 +188,21 @@ export default class DashboardTile extends React.PureComponent {
         >
           {this.props.queryResponse ? (
             <ResponseRenderer
-              displayType={this.props.displayType}
+              displayType={this.props.tile.displayType}
               response={this.props.queryResponse}
               renderTooltips={false}
               autoSelectSafetyNetSuggestion={false}
-              safetyNetSelections={this.props.safetyNetSelections}
+              safetyNetSelections={this.props.tile.safetyNetSelections}
+              renderSuggestionsAsDropdown={this.props.tile.h < 4}
+              onSuggestionClick={this.onSuggestionClick}
+              selectedSuggestion={this.props.tile.selectedSuggestion}
+              enableSuggestions={this.props.isEditing}
               onSafetyNetSelectOption={(queryText, suggestionList) => {
                 this.setState({ query: queryText })
-                this.props.updateTileQuery(queryText, this.props.tileId)
+                this.props.updateTileQuery(queryText, this.props.tile.i)
                 this.props.updateTileSafetyNetSelections(
                   suggestionList,
-                  this.props.tileId
+                  this.props.tile.i
                 )
               }}
             />
@@ -224,7 +228,6 @@ export default class DashboardTile extends React.PureComponent {
         <div
           className={this.props.className}
           style={{ ...this.props.style }}
-          key={this.props.key}
           data-grid={this.props.tile}
           {...propsToPassToDragHandle}
         >

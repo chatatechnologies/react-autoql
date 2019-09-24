@@ -51,7 +51,10 @@ export default class ResponseRenderer extends React.Component {
     renderTooltips: PropTypes.bool,
     onSafetyNetSelectOption: PropTypes.func,
     autoSelectSafetyNetSuggestion: PropTypes.bool,
-    safetyNetSelections: PropTypes.arrayOf(PropTypes.shape({}))
+    safetyNetSelections: PropTypes.arrayOf(PropTypes.shape({})),
+    renderSuggestionsAsDropdown: PropTypes.bool,
+    suggestionSelection: PropTypes.string,
+    enableSuggestions: PropTypes.bool
   }
 
   static defaultProps = {
@@ -66,12 +69,16 @@ export default class ResponseRenderer extends React.Component {
     renderTooltips: true,
     autoSelectSafetyNetSuggestion: true,
     safetyNetSelections: undefined,
+    renderSuggestionsAsDropdown: false,
+    selectedSuggestion: undefined,
+    enableSuggestions: true,
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
   }
 
   state = {
-    displayType: null
+    displayType: null,
+    suggestionSelection: this.props.selectedSuggestion
   }
 
   componentDidMount = () => {
@@ -270,31 +277,58 @@ export default class ResponseRenderer extends React.Component {
 
   createSuggestionMessage = (userInput, suggestions) => {
     return (
-      <div>
-        I'm not sure what you mean by <strong>"{userInput}"</strong>. Did you
-        mean:
-        <br />
+      <div className="chata-suggestion-message">
+        <div className="chata-suggestion-message-description">
+          I'm not sure what you mean by <strong>"{userInput}"</strong>. Did you
+          mean:
+        </div>
         <div className="chata-suggestions-container">
-          {suggestions.map(suggestion => {
-            return (
-              <div key={uuid.v4()}>
-                <button
-                  // disabled={this.props.isQueryRunning}
-                  onClick={() => this.onSuggestionClick(suggestion[0])}
-                  className="chata-suggestion-btn"
-                >
-                  {suggestion}
-                </button>
-                <br />
-              </div>
-            )
-          })}
+          {this.props.renderSuggestionsAsDropdown ? (
+            <select
+              key={uuid.v4()}
+              onChange={e => {
+                this.setState({ suggestionSelection: e.target.value })
+                this.onSuggestionClick(e.target.value)
+              }}
+              value={this.state.suggestionSelection}
+              className="chata-suggestions-select"
+            >
+              <option key={uuid.v4()} value={userInput}>
+                {userInput}
+              </option>
+              {suggestions.map((suggestion, i) => {
+                return (
+                  <option key={uuid.v4()} value={suggestion}>
+                    {suggestion}
+                  </option>
+                )
+              })}
+            </select>
+          ) : (
+            suggestions.map(suggestion => {
+              return (
+                <div key={uuid.v4()}>
+                  <button
+                    // disabled={this.props.isQueryRunning}
+                    onClick={() => this.onSuggestionClick(suggestion[0], true)}
+                    className="chata-suggestion-btn"
+                  >
+                    {suggestion}
+                  </button>
+                  <br />
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     )
   }
 
   renderSuggestionMessage = () => {
+    if (!this.props.enableSuggestions) {
+      return this.renderErrorMessage("Oops! We didn't understand that query.")
+    }
     // There is actually a suggestion for this case
     const { response } = this.props
     const responseBody = { ...response.data }
@@ -702,10 +736,11 @@ export default class ResponseRenderer extends React.Component {
     this.pivotTableData = pivotTableData
   }
 
-  onSuggestionClick = suggestion => {
+  onSuggestionClick = (suggestion, isButtonClick) => {
     if (this.props.onSuggestionClick) {
-      this.props.onSuggestionClick(suggestion)
-    } else if (this.props.chatBarRef) {
+      this.props.onSuggestionClick(suggestion, isButtonClick)
+    }
+    if (this.props.chatBarRef) {
       if (suggestion === 'None of these') {
         this.setState({ customResponse: 'Thank you for your feedback.' })
       } else {

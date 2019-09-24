@@ -57,6 +57,25 @@
   margin-right: 3px;
 }
 
+.chata-suggestion-message {
+  height: 100%;
+  width: 100%;
+  word-break: break-word;
+}
+.chata-suggestions-select {
+  position: relative;
+  display: inline-block;
+  height: 30px;
+  background: none;
+  outline: none !important;
+  border: 1px solid;
+  font-family: "Titillium Web", sans-serif;
+  letter-spacing: 0.05em;
+  color: #28a8e0;
+  cursor: pointer;
+  font-size: inherit;
+}
+
 /* safetynet */
 .chata-safety-net-selector-container {
   display: inline-block;
@@ -105,7 +124,6 @@
   cursor: pointer;
   margin-bottom: -2px;
 }
-
 .chata-chart-tooltip {
   font-family: "Titillium Web", sans-serif;
   letter-spacing: 0.04em;
@@ -115,24 +133,17 @@
   opacity: 1 !important;
   z-index: 99999; /* necessary to show up on top of rc drawer */
 }
-
 .single-value-response {
   color: inherit;
 }
-
 .single-value-response:hover {
   color: inherit;
   text-decoration: underline;
   font-weight: 600;
 }
-
-.chata-safety-net-query {
-}
-
 .chata-safety-net-container {
   width: 100%;
 }
-
 .chata-safety-net-description {
   margin-bottom: 14px;
 }
