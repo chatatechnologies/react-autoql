@@ -45,6 +45,7 @@ export default class SafetyNetMessage extends React.Component {
           suggestion => {
             return {
               id: uuid.v4(),
+              hidden: false,
               ...suggestion
             }
           }
@@ -158,26 +159,32 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   deleteSafetyNetSuggestion = suggestionIndex => {
-    const newSafetyNetQueryArray = this.state.safetyNetQueryArray.map(
-      (element, index) => {
+    const newSelectedSuggestions = this.state.selectedSuggestions.map(
+      (suggestion, index) => {
         if (index === suggestionIndex) {
           return {
-            ...element,
-            value: ''
+            ...suggestion,
+            hidden: true
           }
         }
-        return element
+        return suggestion
       }
     )
 
+    // Update list in callback
+    this.props.onSafetyNetSelectOption(
+      this.getSafetyNetQueryText(newSelectedSuggestions),
+      newSelectedSuggestions
+    )
+
     this.setState({
-      safetyNetQueryArray: newSafetyNetQueryArray
+      selectedSuggestions: newSelectedSuggestions
     })
   }
 
   getSuggestionElement = suggestionDropdownIndex => {
     const suggestion = this.state.selectedSuggestions[suggestionDropdownIndex]
-    if (!suggestion) {
+    if (!suggestion || suggestion.hidden) {
       return null
     }
 
@@ -258,7 +265,7 @@ export default class SafetyNetMessage extends React.Component {
     this.plainTextList.forEach((word, dropdownIndex) => {
       safetyNetQueryText = safetyNetQueryText.concat(word)
       const suggestion = newSelectedSuggestions[dropdownIndex]
-      if (suggestion) {
+      if (suggestion && !suggestion.hidden) {
         safetyNetQueryText = safetyNetQueryText.concat(suggestion.text)
       }
     })
