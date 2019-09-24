@@ -422,6 +422,14 @@ export default class ChatDrawer extends React.Component {
     this.setState({ tiles })
   }
 
+  updateTileSafetyNetSelections = (selectedSuggestions, id) => {
+    const tiles = [...this.state.tiles]
+    const tileIndex = tiles.map(item => item.i).indexOf(id)
+    tiles[tileIndex].safetyNetSelections = selectedSuggestions
+
+    this.setState({ tiles })
+  }
+
   updateTileQuery = (query, id) => {
     const tiles = [...this.state.tiles]
     const tileIndex = tiles.map(item => item.i).indexOf(id)
@@ -524,6 +532,10 @@ export default class ChatDrawer extends React.Component {
                 updateTileTitle={this.updateTileTitle}
                 isNewTile={tile.isNewTile}
                 queryResponse={this.state.tileQueryResponses[tile.i]}
+                safetyNetSelections={tile.safetyNetSelections}
+                updateTileSafetyNetSelections={
+                  this.updateTileSafetyNetSelections
+                }
               />
             ))}
           </ReactGridLayout>

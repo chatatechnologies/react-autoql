@@ -50,7 +50,8 @@ export default class ResponseRenderer extends React.Component {
     isFilteringTable: PropTypes.bool,
     renderTooltips: PropTypes.bool,
     onSafetyNetSelectOption: PropTypes.func,
-    autoSelectSafetyNetSuggestion: PropTypes.func
+    autoSelectSafetyNetSuggestion: PropTypes.bool,
+    safetyNetSelections: PropTypes.arrayOf(PropTypes.shape({}))
   }
 
   static defaultProps = {
@@ -64,6 +65,7 @@ export default class ResponseRenderer extends React.Component {
     isFilteringTable: false,
     renderTooltips: true,
     autoSelectSafetyNetSuggestion: true,
+    safetyNetSelections: undefined,
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
   }
@@ -564,7 +566,7 @@ export default class ResponseRenderer extends React.Component {
       } else if (nameFragments.length === 1) {
         // all good
       } else {
-        console.error(`unexpected nameFragments.length ${nameFragments.length}`)
+        console.warn(`unexpected nameFragments.length ${nameFragments.length}`)
       }
 
       col.title = col.name.replace(/_/g, ' ')
@@ -732,14 +734,14 @@ export default class ResponseRenderer extends React.Component {
 
     // No response prop was provided to <ResponseRenderer />
     if (!response) {
-      console.error('Error: No response object supplied')
+      console.warn('Error: No response object supplied')
       return this.renderErrorMessage()
     }
 
     // Response prop was provided, but it has no response data
     const responseBody = { ...response.data }
     if (!responseBody) {
-      console.error('Error: No response body supplied')
+      console.warn('Error: No response body supplied')
       return this.renderErrorMessage()
     }
 
@@ -750,6 +752,7 @@ export default class ResponseRenderer extends React.Component {
           response={this.props.response}
           onSuggestionClick={this.onSuggestionClick}
           onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
+          initialSelections={this.props.safetyNetSelections}
           autoSelectSuggestion={this.props.autoSelectSafetyNetSuggestion}
         />
       )
@@ -758,7 +761,7 @@ export default class ResponseRenderer extends React.Component {
     // Response is not a suggestion list, but no query data object was provided
     const responseData = responseBody.data
     if (!responseData) {
-      console.error('Error: No response data supplied')
+      console.warn('Error: No response data supplied')
       return this.renderErrorMessage()
     }
 
