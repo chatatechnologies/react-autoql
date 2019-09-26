@@ -81,21 +81,7 @@ so we dont have to redraw the whole table */
 .chat-message-bubble:hover .chat-message-toolbar {
   display: block;
 }
-.chata-toolbar-btn {
-  height: 28px;
-  width: 28px;
-  background: none;
-  border: none;
-  font-size: 16px;
-  line-height: 28px;
-  vertical-align: top;
-  color: var(--chata-drawer-text-color-primary);
-  cursor: pointer;
-  outline: none !important;
-}
-.chata-toolbar-btn:hover {
-  opacity: 0.7;
-}
+
 .interpretation-icon {
   color: var(--chata-drawer-text-color-primary);
   vertical-align: top;

@@ -1,0 +1,24 @@
+.viz-toolbar {
+  position: absolute;
+  background: #fff;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  border: 1px solid #d3d3d352;
+}
+
+.chata-toolbar-btn {
+  height: 28px;
+  width: 28px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 28px;
+  vertical-align: top;
+  color: var(--chata-drawer-text-color-primary);
+  cursor: pointer;
+  outline: none !important;
+}
+.chata-toolbar-btn:hover {
+  opacity: 0.7;
+}

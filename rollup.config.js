@@ -108,7 +108,9 @@ const outputs = [
       'd3-array': 'd3Array',
       'd3-shape': 'd3Shape',
       'd3-collection': 'd3Collection',
-      'd3-interpolate': 'd3Interpolate'
+      'd3-interpolate': 'd3Interpolate',
+      'react-grid-layout': 'RGL',
+      'react-grid-layout/css/styles.css': 'gridLayoutStyles'
     }
   }
 ]

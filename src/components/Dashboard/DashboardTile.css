@@ -13,6 +13,18 @@
   /* transition: all 0.2s ease-in; */
 }
 
+.chata-dashboard-tile .viz-toolbar {
+  transition: all 0.3s ease;
+  visibility: hidden;
+  opacity: 0;
+  bottom: 7px;
+  left: 7px;
+}
+.chata-dashboard-tile:hover .viz-toolbar {
+  visibility: visible;
+  opacity: 1;
+}
+
 .chata-dashboard-tile-inner-div {
   height: 100%;
   width: 100%;

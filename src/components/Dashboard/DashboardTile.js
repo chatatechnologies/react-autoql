@@ -7,12 +7,13 @@ import uuid from 'uuid'
 import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
+import { VizToolbar } from '../VizToolbar'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
+import { getSupportedDisplayTypes } from '../../js/Util'
 import { runQuery } from '../../js/queryService'
 
 export default class DashboardTile extends React.PureComponent {
-  supportedDisplayTypes = []
   TILE_ID = uuid.v4()
 
   static propTypes = {
@@ -28,7 +29,8 @@ export default class DashboardTile extends React.PureComponent {
     setResponseForTile: PropTypes.func.isRequired,
     deleteTile: PropTypes.func.isRequired,
     queryResponse: PropTypes.shape({}),
-    updateTileSafetyNetSelections: PropTypes.func.isRequired
+    updateTileSafetyNetSelections: PropTypes.func.isRequired,
+    changeDisplayType: PropTypes.func.isRequired
   }
 
   static defaultProps = {
@@ -187,25 +189,38 @@ export default class DashboardTile extends React.PureComponent {
           className="dashboard-tile-response-container"
         >
           {this.props.queryResponse ? (
-            <ResponseRenderer
-              displayType={this.props.tile.displayType}
-              response={this.props.queryResponse}
-              renderTooltips={false}
-              autoSelectSafetyNetSuggestion={false}
-              safetyNetSelections={this.props.tile.safetyNetSelections}
-              renderSuggestionsAsDropdown={this.props.tile.h < 4}
-              onSuggestionClick={this.onSuggestionClick}
-              selectedSuggestion={this.props.tile.selectedSuggestion}
-              enableSuggestions={this.props.isEditing}
-              onSafetyNetSelectOption={(queryText, suggestionList) => {
-                this.setState({ query: queryText })
-                this.props.updateTileQuery(queryText, this.props.tile.i)
-                this.props.updateTileSafetyNetSelections(
-                  suggestionList,
-                  this.props.tile.i
-                )
-              }}
-            />
+            <Fragment>
+              <ResponseRenderer
+                displayType={this.props.displayType}
+                response={this.props.queryResponse}
+                renderTooltips={false}
+                autoSelectSafetyNetSuggestion={false}
+                safetyNetSelections={this.props.tile.safetyNetSelections}
+                renderSuggestionsAsDropdown={this.props.tile.h < 4}
+                onSuggestionClick={this.onSuggestionClick}
+                selectedSuggestion={this.props.tile.selectedSuggestion}
+                enableSuggestions={this.props.isEditing}
+                onSafetyNetSelectOption={(queryText, suggestionList) => {
+                  this.setState({ query: queryText })
+                  this.props.updateTileQuery(queryText, this.props.tile.i)
+                  this.props.updateTileSafetyNetSelections(
+                    suggestionList,
+                    this.props.tile.i
+                  )
+                }}
+              />
+              {this.props.isEditing && (
+                <VizToolbar
+                  displayType={this.props.displayType}
+                  onDisplayTypeChange={displayType =>
+                    this.props.changeDisplayType(displayType, this.props.tile.i)
+                  }
+                  supportedDisplayTypes={getSupportedDisplayTypes(
+                    this.props.queryResponse
+                  )}
+                />
+              )}
+            </Fragment>
           ) : (
             this.renderContentPlaceholder()
           )}

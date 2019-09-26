@@ -454,6 +454,14 @@ export default class ChatDrawer extends React.Component {
     this.setState({ tiles })
   }
 
+  changeDisplayType = (displayType, id) => {
+    const tiles = [...this.state.tiles]
+    const tileIndex = tiles.map(item => item.i).indexOf(id)
+    tiles[tileIndex].displayType = displayType
+
+    this.setState({ tiles })
+  }
+
   updateTileLayout = layout => {
     const tiles = this.state.tiles.map((tile, index) => {
       return {
@@ -528,6 +536,7 @@ export default class ChatDrawer extends React.Component {
                 ref={ref => (this.tileRefs[tile.key] = ref)}
                 key={tile.key}
                 tile={tile}
+                displayType={tile.displayType}
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
                 userId={this.props.userId}
@@ -542,6 +551,7 @@ export default class ChatDrawer extends React.Component {
                 updateTileQuery={this.updateTileQuery}
                 updateTileTitle={this.updateTileTitle}
                 queryResponse={this.state.tileQueryResponses[tile.i]}
+                changeDisplayType={this.changeDisplayType}
                 updateTileSafetyNetSelections={
                   this.updateTileSafetyNetSelections
                 }
@@ -556,6 +566,13 @@ export default class ChatDrawer extends React.Component {
           className="chata-chart-tooltip"
           id="chart-element-tooltip"
           effect="solid"
+          html
+        />
+        <ReactTooltip
+          className="chata-dashboard-tooltip"
+          id="chata-toolbar-btn-tooltip"
+          effect="solid"
+          delayShow={500}
           html
         />
       </Fragment>

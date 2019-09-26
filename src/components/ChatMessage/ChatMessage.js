@@ -12,16 +12,7 @@ import { ResponseRenderer } from '../ResponseRenderer'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
-import {
-  tableIcon,
-  pivotTableIcon,
-  columnChartIcon,
-  barChartIcon,
-  lineChartIcon,
-  pieChartIcon,
-  heatmapIcon,
-  bubbleChartIcon
-} from '../../svgIcons.js'
+import { VizToolbar } from '../VizToolbar'
 
 export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
@@ -271,56 +262,18 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  showDisplayTypeButton = displayType => {
-    return (
-      this.responseRef &&
-      this.responseRef.supportedDisplayTypes &&
-      this.responseRef.supportedDisplayTypes.includes(displayType) &&
-      this.state.displayType !== displayType
-    )
-  }
-
-  createVisButton = (displayType, name, icon) => {
-    if (this.showDisplayTypeButton(displayType)) {
-      return (
-        <button
-          onClick={() => this.switchView(displayType)}
-          className="chata-toolbar-btn"
-          data-tip={name}
-          data-for="chata-toolbar-btn-tooltip"
-        >
-          {icon}
-        </button>
-      )
-    }
-    return null
-  }
-
   renderLeftToolbar = () => {
-    if (
-      !this.responseRef ||
-      !this.responseRef.supportedDisplayTypes ||
-      this.responseRef.supportedDisplayTypes.length <= 1
-    ) {
-      return null
-    }
-    if (
-      this.props.isResponse &&
-      this.props.type !== 'text' &&
-      this.state.displayType !== 'help' &&
-      this.state.displayType !== 'suggestion'
-    ) {
+    const supportedDisplayTypes =
+      this.responseRef && this.responseRef.supportedDisplayTypes
+
+    if (this.props.isResponse && this.props.type !== 'text') {
       return (
-        <div className="chat-message-toolbar left">
-          {this.createVisButton('table', 'Table', tableIcon)}
-          {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
-          {this.createVisButton('column', 'Column Chart', columnChartIcon)}
-          {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
-          {this.createVisButton('line', 'Line Chart', lineChartIcon)}
-          {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
-          {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
-          {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
-        </div>
+        <VizToolbar
+          className="chat-message-toolbar left"
+          supportedDisplayTypes={supportedDisplayTypes}
+          displayType={this.state.displayType}
+          onDisplayTypeChange={this.switchView}
+        />
       )
     }
     return null

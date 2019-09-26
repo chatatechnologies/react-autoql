@@ -24,20 +24,6 @@ export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
 }
 
-// export const isNumber = value => {
-//   if (
-//     !_.isNil(value) &&
-//     !_.isNaN(_.toNumber(value)) &&
-//     value !== 'inf' &&
-//     value !== '-inf' &&
-//     value !== '' &&
-//     !_.isFinite(_.toNumber(value))
-//   ) {
-//     return true
-//   }
-//   return false
-// }
-
 export const makeEmptyArray = (w, h) => {
   var arr = []
   for (let i = 0; i < h; i++) {
@@ -230,6 +216,64 @@ export const getNumberOfGroupables = columns => {
     return numberOfGroupables
   }
   return null
+}
+
+export const getSupportedDisplayTypes = response => {
+  if (
+    !response ||
+    !response.data ||
+    !response.data.data ||
+    !response.data.data.display_type
+  ) {
+    return []
+  }
+
+  const displayType = response.data.data.display_type
+
+  if (displayType === 'suggestion' || displayType === 'help') {
+    return [displayType]
+  }
+
+  const columns =
+    response &&
+    response.data &&
+    response.data.data &&
+    response.data.data.columns
+
+  if (!columns) {
+    return []
+  }
+
+  if (getNumberOfGroupables(columns) === 1) {
+    // Is direct key-value query (ie. Avg days to pay per customer)
+    const supportedDisplayTypes = [
+      'bar',
+      'column',
+      'line',
+      'table'
+      // 'pie',
+    ]
+
+    // create pivot based on month and year
+    if (columns[0].type === 'DATE') {
+      supportedDisplayTypes.push('pivot_table')
+    }
+    return supportedDisplayTypes
+  } else if (getNumberOfGroupables(columns) === 2) {
+    // Is pivot query (ie. Sale per customer per month)
+    return [
+      'multi_line',
+      'stacked_bar',
+      'stacked_column',
+      'bubble',
+      'heatmap',
+      'table',
+      'pivot_table'
+    ]
+  }
+
+  // We should always be able to display the table type by default
+  return ['table']
 }
 
 export const getgroupByObjectFromTable = (

@@ -10,13 +10,14 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
-import { ChataForecast } from '../ChataForecast'
+// import { ChataForecast } from '../ChataForecast'
 
 import {
   onlyUnique,
   formatElement,
   makeEmptyArray,
-  getNumberOfGroupables
+  getNumberOfGroupables,
+  getSupportedDisplayTypes
 } from '../../js/Util.js'
 
 import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
@@ -85,9 +86,7 @@ export default class ResponseRenderer extends React.Component {
     this.RESPONSE_COMPONENT_KEY = uuid.v4()
 
     // Determine the supported visualization types based on the response data
-    this.supportedDisplayTypes = this.getSupportedDisplayTypes(
-      this.props.response
-    )
+    this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
 
     // Set the initial display type based on prop value, response, and supported display types
     this.setState({
@@ -160,64 +159,6 @@ export default class ResponseRenderer extends React.Component {
 
     // Default to table type
     return 'table'
-  }
-
-  getSupportedDisplayTypes = response => {
-    if (
-      !response ||
-      !response.data ||
-      !response.data.data ||
-      !response.data.data.display_type
-    ) {
-      return []
-    }
-
-    const displayType = response.data.data.display_type
-
-    if (displayType === 'suggestion' || displayType === 'help') {
-      return [displayType]
-    }
-
-    const columns =
-      response &&
-      response.data &&
-      response.data.data &&
-      response.data.data.columns
-
-    if (!columns) {
-      return []
-    }
-
-    if (getNumberOfGroupables(columns) === 1) {
-      // Is direct key-value query (ie. Avg days to pay per customer)
-      const supportedDisplayTypes = [
-        'bar',
-        'column',
-        'line',
-        'table'
-        // 'pie',
-      ]
-
-      // create pivot based on month and year
-      if (columns[0].type === 'DATE') {
-        supportedDisplayTypes.push('pivot_table')
-      }
-      return supportedDisplayTypes
-    } else if (getNumberOfGroupables(columns) === 2) {
-      // Is pivot query (ie. Sale per customer per month)
-      return [
-        'multi_line',
-        'stacked_bar',
-        'stacked_column',
-        'bubble',
-        'heatmap',
-        'table',
-        'pivot_table'
-      ]
-    }
-
-    // We should always be able to display the table type by default
-    return ['table']
   }
 
   setResponseData = () => {
