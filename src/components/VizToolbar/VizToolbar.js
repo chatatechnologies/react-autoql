@@ -51,9 +51,6 @@ class VizToolbar extends React.Component {
 
   render = () => {
     const { displayType, supportedDisplayTypes } = this.props
-    console.log('rendering viz toolbar with these props')
-    console.log(displayType)
-    console.log(supportedDisplayTypes)
 
     if (!supportedDisplayTypes || supportedDisplayTypes.length <= 1) {
       return null

@@ -18,7 +18,29 @@ import styles from './DashboardTile.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
-export default class ChatDrawer extends React.Component {
+export const getDashboardTileState = ref => {
+  if (ref) {
+    if (ref.state) {
+      if (ref.state.tiles) {
+        return ref.state.tiles
+      }
+      console.error(
+        'There are no tiles in this components state. Make sure you are passing in the correct ref for the dashboard component'
+      )
+      return undefined
+    }
+    console.error(
+      'The dashboard ref provided was invalid. It must be a valid react component'
+    )
+    return undefined
+  }
+  console.error(
+    'getDashboardTileState expects a dashboard component ref but none was found'
+  )
+  return undefined
+}
+
+export class Dashboard extends React.Component {
   tileRefs = {}
 
   LIGHT_THEME = {
@@ -54,7 +76,6 @@ export default class ChatDrawer extends React.Component {
     accentColor: PropTypes.string,
     demo: PropTypes.bool,
     debug: PropTypes.bool,
-    chataDashboardState: PropTypes.shape({}),
     isEditing: PropTypes.bool,
     runDashboardOnMount: PropTypes.bool
   }
@@ -73,7 +94,6 @@ export default class ChatDrawer extends React.Component {
     demo: false,
     debug: false,
     runDashboardOnMount: true,
-    chataDashboardState: {},
     isEditing: false,
     runDashboardOnMount: true
   }
@@ -216,8 +236,7 @@ export default class ChatDrawer extends React.Component {
       }
     ],
     isDragging: false,
-    tileQueryResponses: {},
-    ...this.props.chataDashboardState
+    tileQueryResponses: {}
   }
 
   componentDidMount = () => {
