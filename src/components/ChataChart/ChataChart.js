@@ -366,7 +366,7 @@ export default class ChataChart extends Component {
             width={this.props.width}
             height={this.props.height}
             style={{
-              fontFamily: '"Titillium Web", sans-serif',
+              fontFamily: 'sans-serif',
               background: 'inherit'
             }}
           >
