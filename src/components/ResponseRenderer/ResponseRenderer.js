@@ -557,6 +557,18 @@ export default class ResponseRenderer extends React.Component {
       // displayed differently than the data (ie. dates)
       col.headerFilterFunc = this.setFilterFunction(col)
 
+      if (col.type === 'DATE') {
+        col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
+          const aDate = dayjs.unix(a)
+          const bDate = dayjs.unix(b)
+
+          if (!aDate || !bDate) {
+            return a - b
+          }
+          return aDate - bDate
+        }
+      }
+
       return col
     })
     return formattedColumns
