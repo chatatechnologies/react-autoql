@@ -20,12 +20,14 @@ export default class ChataLineChart extends Component {
     bottomMargin: PropTypes.number.isRequired,
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
-    tooltipFormatter: PropTypes.func
+    tooltipFormatter: PropTypes.func,
+    currencyCode: PropTypes.string
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
+    currencyCode: undefined,
     tooltipFormatter: () => {}
   }
 
@@ -100,6 +102,7 @@ export default class ChataLineChart extends Component {
           height={height}
           xTicks={xTickValues}
           rotateLabels={barWidth < 135}
+          currencyCode={this.props.currencyCode}
           yGridLines
         />
         <Line

@@ -78,7 +78,8 @@ export default class ChatDrawer extends React.Component {
     title: PropTypes.string,
     maxMessages: PropTypes.number,
     demo: PropTypes.bool,
-    debug: PropTypes.bool
+    debug: PropTypes.bool,
+    currencyCode: PropTypes.string
   }
 
   static defaultProps = {
@@ -109,6 +110,7 @@ export default class ChatDrawer extends React.Component {
     demo: false,
     debug: false,
     introMessage: undefined,
+    currencyCode: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -361,7 +363,8 @@ export default class ChatDrawer extends React.Component {
       // How do we get the right text?? Can we make an api call to get the text first?
       const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
         rowData[0],
-        columns[0]
+        columns[0],
+        this.props.currencyCode
       )}"`
 
       this.addRequestMessage(drilldownText)
@@ -557,6 +560,7 @@ export default class ChatDrawer extends React.Component {
                       content={message.content}
                       scrollToBottom={this.scrollToBottom}
                       lastMessageId={this.state.lastMessageId}
+                      currencyCode={this.props.currencyCode}
                       tableBorderColor={
                         this.props.theme === 'light'
                           ? this.LIGHT_THEME['--chata-drawer-border-color']

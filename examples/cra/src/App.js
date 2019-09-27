@@ -8,7 +8,6 @@ import {
 import uuid from 'uuid'
 
 import { Radio, Input, InputNumber, Switch, Button, Menu } from 'antd'
-import spiraLogo from './spira-logo.png'
 
 import 'antd/dist/antd.css'
 import './index.css'
@@ -31,19 +30,19 @@ export default class App extends Component {
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,
-    width: 600,
+    width: 500,
     title: 'Chat with your data',
-    // lightAccentColor: '#28a8e0',
-    lightAccentColor: '#3b8dbc',
+    lightAccentColor: '#28a8e0',
     darkAccentColor: '#525252',
     maxMessages: 6,
+    isEditing: false,
     demo: true,
     debug: true,
     apiKey: '',
     customerId: '',
-    userId: '',
     domain: '',
-    isEditing: false
+    userId: '',
+    currencyCode: 'USD'
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -195,6 +194,15 @@ export default class App extends Component {
           'left',
           'right'
         ])}
+        <h4>Currency Code</h4>
+        <Input
+          type="text"
+          onBlur={e => {
+            this.setState({ currencyCode: e.target.value })
+          }}
+          style={{ width: '55px' }}
+          defaultValue={this.state.currencyCode}
+        />
         <h4>Customer Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
@@ -342,7 +350,8 @@ export default class App extends Component {
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
           debug={this.state.debug}
-          handleImage={spiraLogo}
+          // handleImage={spiraLogo}
+          currencyCode={this.state.currencyCode}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
@@ -431,7 +440,6 @@ export default class App extends Component {
 
     return (
       <Fragment>
-        <div className="spira-ui-overlay" />
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>

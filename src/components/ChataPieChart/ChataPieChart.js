@@ -31,59 +31,6 @@ export default class Axis extends Component {
     this.renderPie()
   }
 
-  formatLabel = d => {
-    const { col } = this.props
-    if (!col || !col.type) {
-      return d
-    }
-
-    let formattedLabel = d
-    switch (col.type) {
-      case 'STRING': {
-        // do nothing
-        break
-      }
-      case 'DOLLAR_AMT': {
-        // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-        formattedLabel = Numbro(d).formatCurrency({
-          thousandSeparated: true,
-          mantissa: 0
-        })
-        break
-      }
-      case 'QUANTITY': {
-        // if (Number(d) % 1 !== 0) {
-        //   formattedLabel = Numbro(d).format('0,0.0')
-        // }
-        break
-      }
-      case 'DATE': {
-        const title = col.title
-        if (title && title.includes('Year')) {
-          formattedLabel = dayjs.unix(d).format('YYYY')
-        } else if (title && title.includes('Month')) {
-          formattedLabel = dayjs.unix(d).format('MMMM YYYY')
-        }
-        formattedLabel = dayjs.unix(d).format('MMMM D, YYYY')
-        break
-      }
-      case 'PERCENT': {
-        if (Number(d)) {
-          formattedLabel = Numbro(d).format('0.00%')
-        }
-        break
-      }
-      default: {
-        break
-      }
-    }
-
-    if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
-      return `${formattedLabel.substring(0, 25)}...`
-    }
-    return formattedLabel
-  }
-
   renderPieContainer = () => {
     const { width, height } = this.props
     this.pieChartContainer = select(this.chartElement)

@@ -35,7 +35,7 @@ export const makeEmptyArray = (w, h) => {
   return arr
 }
 
-export const formatChartLabel = (d, col) => {
+export const formatChartLabel = (d, col, currencyCode) => {
   if (!col || !col.type) {
     return d
   }
@@ -46,11 +46,24 @@ export const formatChartLabel = (d, col) => {
       break
     }
     case 'DOLLAR_AMT': {
-      // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-      formattedLabel = Numbro(d).formatCurrency({
-        thousandSeparated: true,
-        mantissa: 0
-      })
+      if (Number(d)) {
+        const currency = currencyCode || 'USD'
+        const sigDigs = String(parseInt(d)).length
+        try {
+          formattedLabel = new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: `${currency}`,
+            maximumSignificantDigits: sigDigs
+          }).format(d)
+        } catch (err) {
+          console.error(err)
+          formattedLabel = new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: 'USD',
+            maximumSignificantDigits: sigDigs
+          }).format(d)
+        }
+      }
       break
     }
     case 'QUANTITY': {
@@ -84,7 +97,7 @@ export const formatChartLabel = (d, col) => {
   return formattedLabel
 }
 
-export const formatElement = (element, column) => {
+export const formatElement = (element, column, currencyCode) => {
   let formattedElement = element
   if (column) {
     switch (column.type) {
@@ -95,10 +108,19 @@ export const formatElement = (element, column) => {
       case 'DOLLAR_AMT': {
         // We will need to grab the actual currency symbol here. Will that be returned in the query response?
         if (Number(element)) {
-          formattedElement = Numbro(element).formatCurrency({
-            thousandSeparated: true,
-            mantissa: 2
-          })
+          const currency = currencyCode || 'USD'
+          try {
+            formattedElement = new Intl.NumberFormat(undefined, {
+              style: 'currency',
+              currency: `${currency}`
+            }).format(element)
+          } catch (err) {
+            console.error(err)
+            formattedElement = new Intl.NumberFormat(undefined, {
+              style: 'currency',
+              currency: 'USD'
+            }).format(element)
+          }
         }
         break
       }

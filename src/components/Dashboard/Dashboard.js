@@ -77,7 +77,9 @@ export class Dashboard extends React.Component {
     demo: PropTypes.bool,
     debug: PropTypes.bool,
     isEditing: PropTypes.bool,
-    runDashboardOnMount: PropTypes.bool
+    runDashboardOnMount: PropTypes.bool,
+    currencyCode: PropTypes.string,
+    defaultTileState: PropTypes.arrayOf(PropTypes.shape({}))
   }
 
   static defaultProps = {
@@ -95,11 +97,9 @@ export class Dashboard extends React.Component {
     debug: false,
     runDashboardOnMount: true,
     isEditing: false,
-    runDashboardOnMount: true
-  }
-
-  state = {
-    tiles: [
+    runDashboardOnMount: true,
+    currencyCode: undefined,
+    defaultTileState: [
       {
         key: '0',
         i: '0',
@@ -234,7 +234,11 @@ export class Dashboard extends React.Component {
         displayType: 'heatmap',
         title: 'Customer Profitability'
       }
-    ],
+    ]
+  }
+
+  state = {
+    tiles: this.props.defaultTileState,
     isDragging: false,
     tileQueryResponses: {}
   }
@@ -381,7 +385,8 @@ export class Dashboard extends React.Component {
       // How do we get the right text?? Can we make an api call to get the text first?
       const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
         rowData[0],
-        columns[0]
+        columns[0],
+        this.props.currencyCode
       )}"`
 
       this.addRequestMessage(drilldownText)
@@ -571,6 +576,7 @@ export class Dashboard extends React.Component {
                 updateTileTitle={this.updateTileTitle}
                 queryResponse={this.state.tileQueryResponses[tile.i]}
                 changeDisplayType={this.changeDisplayType}
+                currencyCode={this.props.currencyCode}
                 updateTileSafetyNetSelections={
                   this.updateTileSafetyNetSelections
                 }
