@@ -21,13 +21,15 @@ export default class ChataBarChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
     currencyCode: undefined,
+    languageCode: undefined,
     tooltipFormatter: () => {}
   }
 
@@ -105,6 +107,7 @@ export default class ChataBarChart extends Component {
           yTicks={yTickValues}
           rotateLabels={tickWidth < 135}
           currencyCode={this.props.currencyCode}
+          languageCode={this.props.languageCode}
           xGridLines
         />
         {

@@ -42,7 +42,8 @@ export default class App extends Component {
     customerId: '',
     domain: '',
     userId: '',
-    currencyCode: 'USD'
+    currencyCode: 'PLN',
+    languageCode: 'pl'
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -203,6 +204,15 @@ export default class App extends Component {
           style={{ width: '55px' }}
           defaultValue={this.state.currencyCode}
         />
+        <h4>Language Code</h4>
+        <Input
+          type="text"
+          onBlur={e => {
+            this.setState({ languageCode: e.target.value })
+          }}
+          style={{ width: '55px' }}
+          defaultValue={this.state.languageCode}
+        />
         <h4>Customer Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
@@ -350,8 +360,9 @@ export default class App extends Component {
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
           debug={this.state.debug}
-          // handleImage={spiraLogo}
           currencyCode={this.state.currencyCode}
+          languageCode={this.state.languageCode}
+          // handleImage={spiraLogo}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
@@ -402,6 +413,8 @@ export default class App extends Component {
           debug={this.state.debug}
           enableSafetyNet={this.state.enableSafetyNet}
           isEditing={this.state.isEditing}
+          currencyCode={this.state.currencyCode}
+          languageCode={this.state.languageCode}
         />
       </div>
     )

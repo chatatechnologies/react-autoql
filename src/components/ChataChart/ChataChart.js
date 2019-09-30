@@ -23,11 +23,12 @@ export default class ChataChart extends Component {
     type: PropTypes.string.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    currenyCode: PropTypes.string
+    currencyCode: PropTypes.string
   }
 
   static defaultProps = {
-    currencyCode: undefined
+    currencyCode: undefined,
+    languageCode: undefined
   }
 
   state = {
@@ -98,13 +99,15 @@ export default class ChataChart extends Component {
         <strong>${labelCol.title}:</strong> ${formatElement(
       data.label,
       labelCol,
-      this.props.currencyCode
+      this.props.currencyCode,
+      this.props.languageCode
     )}
       </div>
       <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement(
       data.values[colIndex],
       valueCols[colIndex],
-      this.props.currencyCode
+      this.props.currencyCode,
+      this.props.languageCode
     )}
       </div>
     </div>`
@@ -125,21 +128,24 @@ export default class ChataChart extends Component {
       <strong>${labelColY.title}:</strong> ${formatElement(
       data.labelY,
       labelColY,
-      this.props.currencyCode
+      this.props.currencyCode,
+      this.props.languageCode
     )}
     </div>
     <div>
       <strong>${labelColX.title}:</strong> ${formatElement(
       data.labelX,
       labelColX,
-      this.props.currencyCode
+      this.props.currencyCode,
+      this.props.languageCode
     )}
     </div>
     <div>
       <strong>${valueCol.title}:</strong> ${formatElement(
       data.value,
       valueCol,
-      this.props.currencyCode
+      this.props.currencyCode,
+      this.props.languageCode
     )}
     </div>
   </div>`
@@ -190,6 +196,7 @@ export default class ChataChart extends Component {
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }
@@ -211,6 +218,7 @@ export default class ChataChart extends Component {
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }
@@ -232,6 +240,7 @@ export default class ChataChart extends Component {
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }
@@ -253,6 +262,7 @@ export default class ChataChart extends Component {
         labelValue="label"
         tooltipFormatter={self.tooltipFormatter2D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }
@@ -275,6 +285,7 @@ export default class ChataChart extends Component {
         labelValueY="labelY"
         tooltipFormatter={self.tooltipFormatter3D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }
@@ -297,6 +308,7 @@ export default class ChataChart extends Component {
         labelValueY="labelY"
         tooltipFormatter={self.tooltipFormatter3D}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
       />
     )
   }

@@ -35,7 +35,7 @@ export const makeEmptyArray = (w, h) => {
   return arr
 }
 
-export const formatChartLabel = (d, col, currencyCode) => {
+export const formatChartLabel = (d, col, currencyCode, languageCode) => {
   if (!col || !col.type) {
     return d
   }
@@ -50,14 +50,14 @@ export const formatChartLabel = (d, col, currencyCode) => {
         const currency = currencyCode || 'USD'
         const sigDigs = String(parseInt(d)).length
         try {
-          formattedLabel = new Intl.NumberFormat(undefined, {
+          formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: `${currency}`,
             maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (err) {
           console.error(err)
-          formattedLabel = new Intl.NumberFormat(undefined, {
+          formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: 'USD',
             maximumSignificantDigits: sigDigs
@@ -97,7 +97,7 @@ export const formatChartLabel = (d, col, currencyCode) => {
   return formattedLabel
 }
 
-export const formatElement = (element, column, currencyCode) => {
+export const formatElement = (element, column, currencyCode, languageCode) => {
   let formattedElement = element
   if (column) {
     switch (column.type) {
@@ -110,13 +110,13 @@ export const formatElement = (element, column, currencyCode) => {
         if (Number(element)) {
           const currency = currencyCode || 'USD'
           try {
-            formattedElement = new Intl.NumberFormat(undefined, {
+            formattedElement = new Intl.NumberFormat(languageCode, {
               style: 'currency',
               currency: `${currency}`
             }).format(element)
           } catch (err) {
             console.error(err)
-            formattedElement = new Intl.NumberFormat(undefined, {
+            formattedElement = new Intl.NumberFormat(languageCode, {
               style: 'currency',
               currency: 'USD'
             }).format(element)

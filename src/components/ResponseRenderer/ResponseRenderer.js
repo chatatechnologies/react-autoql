@@ -56,7 +56,8 @@ export default class ResponseRenderer extends React.Component {
     renderSuggestionsAsDropdown: PropTypes.bool,
     suggestionSelection: PropTypes.string,
     enableSuggestions: PropTypes.bool,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
@@ -75,6 +76,7 @@ export default class ResponseRenderer extends React.Component {
     selectedSuggestion: undefined,
     enableSuggestions: true,
     currencyCode: undefined,
+    languageCode: undefined,
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
   }
@@ -312,7 +314,8 @@ export default class ResponseRenderer extends React.Component {
         {formatElement(
           this.tableData[0],
           this.tableColumns[0],
-          this.props.currencyCode
+          this.props.currencyCode,
+          this.props.languageCode
         )}
       </a>
     )
@@ -405,6 +408,7 @@ export default class ResponseRenderer extends React.Component {
         height={height}
         width={width}
         currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
         // valueFormatter={formatElement}
         onChartClick={(row, columns) => {
           if (!this.props.isDrilldownDisabled) {
@@ -477,7 +481,12 @@ export default class ResponseRenderer extends React.Component {
               label: row[0],
               values,
               formatter: (value, column) => {
-                return formatElement(value, column, this.props.currencyCode)
+                return formatElement(
+                  value,
+                  column,
+                  this.props.currencyCode,
+                  this.props.languageCode
+                )
               }
             }
           } else {
@@ -496,7 +505,12 @@ export default class ResponseRenderer extends React.Component {
           labelY: row[0],
           value: Number(row[2]) || row[2],
           formatter: (value, column) => {
-            return formatElement(value, column, this.props.currencyCode)
+            return formatElement(
+              value,
+              column,
+              this.props.currencyCode,
+              this.props.languageCode
+            )
           }
         }
       })
@@ -530,7 +544,12 @@ export default class ResponseRenderer extends React.Component {
       col.field = `${i}`
       col.align = 'center'
       col.formatter = (cell, formatterParams, onRendered) => {
-        return formatElement(cell.getValue(), col, this.props.currencyCode)
+        return formatElement(
+          cell.getValue(),
+          col,
+          this.props.currencyCode,
+          this.props.languageCode
+        )
       }
 
       const nameFragments = col.name.split('___')
@@ -672,7 +691,8 @@ export default class ResponseRenderer extends React.Component {
       const formattedColumnName = formatElement(
         columnName,
         this.tableColumns[1],
-        this.props.currencyCode
+        this.props.currencyCode,
+        this.props.languageCode
       )
       pivotTableColumns.push({
         ...this.tableColumns[2], // value column

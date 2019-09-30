@@ -21,12 +21,14 @@ export default class Axis extends Component {
     rotateLabels: PropTypes.bool,
     type: PropTypes.string,
     col: PropTypes.shape({}),
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
     orient: 'Bottom',
-    currencyCode: undefined
+    currencyCode: undefined,
+    languageCode: undefined
   }
 
   componentDidMount = () => {
@@ -98,7 +100,12 @@ export default class Axis extends Component {
       .scale(this.props.scale)
       .tickSizeOuter(0)
       .tickFormat(d => {
-        return formatChartLabel(d, this.props.col, this.props.currencyCode)
+        return formatChartLabel(
+          d,
+          this.props.col,
+          this.props.currencyCode,
+          this.props.languageCode
+        )
       })
 
     if (this.props.ticks) {

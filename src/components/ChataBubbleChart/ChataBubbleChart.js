@@ -23,7 +23,8 @@ export default class ChataBubbleChart extends Component {
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
@@ -31,6 +32,7 @@ export default class ChataBubbleChart extends Component {
     labelValueX: 'labelX',
     labelValueY: 'labelY',
     currencyCode: undefined,
+    languageCode: undefined,
     tooltipFormatter: () => {}
   }
 
@@ -113,6 +115,7 @@ export default class ChataBubbleChart extends Component {
           yTicks={yTickValues}
           xTicks={xTickValues}
           currencyCode={this.props.currencyCode}
+          languageCode={this.props.languageCode}
           rotateLabels={squareWidth < 135}
         />
         {

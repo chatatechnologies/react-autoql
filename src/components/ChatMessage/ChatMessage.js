@@ -34,6 +34,7 @@ export default class ChatMessage extends React.Component {
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
     currencyCode: PropTypes.string,
+    languageCode: PropTypes.string,
     debug: PropTypes.bool
   }
 
@@ -47,7 +48,8 @@ export default class ChatMessage extends React.Component {
     text: null,
     tableOptions: undefined,
     debug: false,
-    currencyCode: undefined
+    currencyCode: undefined,
+    languageCode: undefined
   }
 
   state = {
@@ -104,6 +106,7 @@ export default class ChatMessage extends React.Component {
           tableOptions={this.props.tableOptions}
           isFilteringTable={this.state.isFilteringTable}
           currencyCode={this.props.currencyCode}
+          languageCode={this.props.languageCode}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}

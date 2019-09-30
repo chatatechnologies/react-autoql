@@ -79,7 +79,8 @@ export default class ChatDrawer extends React.Component {
     maxMessages: PropTypes.number,
     demo: PropTypes.bool,
     debug: PropTypes.bool,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
@@ -111,6 +112,7 @@ export default class ChatDrawer extends React.Component {
     debug: false,
     introMessage: undefined,
     currencyCode: undefined,
+    languageCode: undefined,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -364,7 +366,8 @@ export default class ChatDrawer extends React.Component {
       const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
         rowData[0],
         columns[0],
-        this.props.currencyCode
+        this.props.currencyCode,
+        this.props.languageCode
       )}"`
 
       this.addRequestMessage(drilldownText)
@@ -561,6 +564,7 @@ export default class ChatDrawer extends React.Component {
                       scrollToBottom={this.scrollToBottom}
                       lastMessageId={this.state.lastMessageId}
                       currencyCode={this.props.currencyCode}
+                      languageCode={this.props.languageCode}
                       tableBorderColor={
                         this.props.theme === 'light'
                           ? this.LIGHT_THEME['--chata-drawer-border-color']

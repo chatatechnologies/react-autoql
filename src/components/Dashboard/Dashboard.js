@@ -79,6 +79,7 @@ export class Dashboard extends React.Component {
     isEditing: PropTypes.bool,
     runDashboardOnMount: PropTypes.bool,
     currencyCode: PropTypes.string,
+    languageCode: PropTypes.string,
     defaultTileState: PropTypes.arrayOf(PropTypes.shape({}))
   }
 
@@ -99,6 +100,7 @@ export class Dashboard extends React.Component {
     isEditing: false,
     runDashboardOnMount: true,
     currencyCode: undefined,
+    languageCode: undefined,
     defaultTileState: [
       {
         key: '0',
@@ -386,7 +388,8 @@ export class Dashboard extends React.Component {
       const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
         rowData[0],
         columns[0],
-        this.props.currencyCode
+        this.props.currencyCode,
+        this.props.languageCode
       )}"`
 
       this.addRequestMessage(drilldownText)
@@ -577,6 +580,7 @@ export class Dashboard extends React.Component {
                 queryResponse={this.state.tileQueryResponses[tile.i]}
                 changeDisplayType={this.changeDisplayType}
                 currencyCode={this.props.currencyCode}
+                languageCode={this.props.languageCode}
                 updateTileSafetyNetSelections={
                   this.updateTileSafetyNetSelections
                 }

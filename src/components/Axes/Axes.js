@@ -13,7 +13,8 @@ export default ({
   yCol,
   xGridLines,
   yGridLines,
-  currencyCode
+  currencyCode,
+  languageCode
 }) => {
   const xProps = {
     orient: 'Bottom',
@@ -27,7 +28,8 @@ export default ({
     margins,
     col: xCol,
     showGridLines: xGridLines,
-    currencyCode
+    currencyCode,
+    languageCode
   }
 
   const yProps = {
@@ -41,7 +43,8 @@ export default ({
     margins,
     col: yCol,
     showGridLines: yGridLines,
-    currencyCode
+    currencyCode,
+    languageCode
   }
 
   return (

@@ -31,7 +31,8 @@ export default class DashboardTile extends React.PureComponent {
     queryResponse: PropTypes.shape({}),
     updateTileSafetyNetSelections: PropTypes.func.isRequired,
     changeDisplayType: PropTypes.func.isRequired,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string
   }
 
   static defaultProps = {
@@ -40,7 +41,8 @@ export default class DashboardTile extends React.PureComponent {
     isNewTile: false,
     safetyNetSelections: undefined,
     selectedSuggestion: undefined,
-    currencyCode: undefined
+    currencyCode: undefined,
+    languageCode: undefined
   }
 
   state = {
@@ -203,6 +205,7 @@ export default class DashboardTile extends React.PureComponent {
                 selectedSuggestion={this.props.tile.selectedSuggestion}
                 enableSuggestions={this.props.isEditing}
                 currencyCode={this.props.currencyCode}
+                languageCode={this.props.languageCode}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })
                   this.props.updateTileQuery(queryText, this.props.tile.i)
