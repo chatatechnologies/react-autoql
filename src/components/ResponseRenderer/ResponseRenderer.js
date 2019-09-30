@@ -778,7 +778,7 @@ export default class ResponseRenderer extends React.Component {
     const responseData = responseBody.data
     if (!responseData) {
       console.warn('Error: No response data supplied')
-      return this.renderErrorMessage()
+      return this.renderErrorMessage(responseBody.message)
     }
 
     if (!responseData.rows || !responseData.rows.length) {

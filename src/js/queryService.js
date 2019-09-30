@@ -3,6 +3,8 @@ import uuid from 'uuid'
 
 import { TABLE_TYPES } from './Constants'
 
+axios.defaults.timeout = 10000
+
 var autoCompleteCall = null
 // var queryCall = null
 // var safetyNetCall = null
@@ -76,8 +78,11 @@ export const runQueryOnly = (
       return Promise.resolve(queryResponse)
     })
     .catch(error => {
+      if (error.code === 'ECONNABORTED') {
+        error.data = { message: 'Request Timed Out' }
+      }
       if (axios.isCancel(error)) {
-        return Promise.reject({ error: 'cancelled' })
+        error.data = { message: 'Query Cancelled' }
       }
       return Promise.reject(error)
     })

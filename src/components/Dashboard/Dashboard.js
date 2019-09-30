@@ -248,8 +248,6 @@ export class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
-    console.log('dashboard mounted. is there a font family prop?')
-    console.log(this.props.fontFamily)
     this.setStyles()
 
     // Listen for esc press to cancel queries while they are running
