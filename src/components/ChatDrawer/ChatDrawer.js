@@ -32,7 +32,8 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-border-color': '#d3d3d352',
     '--chata-drawer-hover-color': '#ececec',
     '--chata-drawer-text-color-primary': '#5d5d5d',
-    '--chata-drawer-text-color-placeholder': '#0000009c'
+    '--chata-drawer-text-color-placeholder': '#0000009c',
+    '--chata-drawer-font-family': 'sans-serif'
   }
 
   DARK_THEME = {
@@ -42,7 +43,8 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-border-color': '#d3d3d329',
     '--chata-drawer-hover-color': '#5a5a5a',
     '--chata-drawer-text-color-primary': '#fff',
-    '--chata-drawer-text-color-placeholder': '#ffffff9c'
+    '--chata-drawer-text-color-placeholder': '#ffffff9c',
+    '--chata-drawer-font-family': 'sans-serif'
   }
 
   introMessageObject = {
@@ -185,6 +187,12 @@ export default class ChatDrawer extends React.Component {
       document.documentElement.style.setProperty(
         '--chata-drawer-accent-color',
         this.props.accentColor
+      )
+    }
+    if (this.props.fontFamily) {
+      document.documentElement.style.setProperty(
+        '--chata-drawer-font-family',
+        this.props.fontFamily
       )
     }
   }

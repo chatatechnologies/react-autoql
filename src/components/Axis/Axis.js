@@ -124,7 +124,6 @@ export default class Axis extends Component {
         .selectAll('text')
         .style('transform', 'rotate(-45deg)')
         .style('text-anchor', 'end')
-
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
     }
@@ -133,6 +132,7 @@ export default class Axis extends Component {
       .selectAll('text')
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
+      .style('font-family', 'inherit')
 
     select(this.axisElement)
       .selectAll('.axis path')

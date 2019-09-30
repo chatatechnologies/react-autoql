@@ -43,7 +43,8 @@ export default class App extends Component {
     domain: '',
     userId: '',
     currencyCode: 'USD',
-    languageCode: 'en-US'
+    languageCode: 'en-US',
+    fontFamily: 'sans-serif'
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -264,6 +265,15 @@ export default class App extends Component {
           }}
           value={this.state.title}
         />
+        <h4>Font Family</h4>
+        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ fontFamily: e.target.value })
+          }}
+          value={this.state.fontFamily}
+        />
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
@@ -357,6 +367,7 @@ export default class App extends Component {
               ? this.state.lightAccentColor
               : this.state.darkAccentColor
           }
+          fontFamily={this.state.fontFamily}
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
           debug={this.state.debug}

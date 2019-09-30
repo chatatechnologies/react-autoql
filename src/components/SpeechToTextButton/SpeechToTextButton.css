@@ -29,7 +29,7 @@
   vertical-align: top;
 }
 .chata-tooltip {
-  font-family: sans-serif;
+  font-family: inherit;
   letter-spacing: 0.04em;
   padding: 7px 15px;
   opacity: 1 !important;

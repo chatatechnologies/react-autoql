@@ -1,7 +1,6 @@
-@import url("https://fonts.googleapis.com/css?family=Titillium+Web:100,200,300,400,500,600,700,800,900");
-
 .chata-drawer {
-  font-family: sans-serif;
+  /* font-family: sans-serif; */
+  font-family: var(--chata-drawer-font-family), sans-serif;
 }
 
 .chata-drawer-content-container {
@@ -110,7 +109,9 @@
   height: 35px;
 }
 .chata-drawer-tooltip {
-  font-family: sans-serif;
+  /* font-family: sans-serif; */
+  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: inherit;
   letter-spacing: 0.04em;
   padding: 7px 15px;
   transition: none;
@@ -118,7 +119,9 @@
   z-index: 99999; /* necessary to show up on top of rc drawer */
 }
 .interpretation-tooltip {
-  font-family: sans-serif;
+  /* font-family: sans-serif; */
+  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: inherit;
   text-align: left;
   letter-spacing: 0.04em;
   padding: 7px 15px;

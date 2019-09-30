@@ -1,6 +1,3 @@
-/* @import url("https://fonts.googleapis.com/css?family=Titillium+Web:100,200,300,400,500,600,700,800,900");
- */
-
 .chat-single-message-container:first-of-type {
   margin-top: 20px;
 }
@@ -31,7 +28,7 @@
   border-radius: 10px;
   max-width: calc(100% - 20px);
   word-wrap: break-word;
-  font-family: sans-serif;
+  font-family: inherit;
   font-size: 14px;
   letter-spacing: 0.04em;
 }

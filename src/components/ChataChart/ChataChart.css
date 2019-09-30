@@ -12,3 +12,7 @@
 .chata-chart-container .line-dot.active {
   fill: #a5cd39 !important;
 }
+
+.axis {
+  font-family: inherit;
+}
