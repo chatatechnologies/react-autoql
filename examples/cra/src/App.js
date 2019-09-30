@@ -42,8 +42,8 @@ export default class App extends Component {
     customerId: '',
     domain: '',
     userId: '',
-    currencyCode: 'PLN',
-    languageCode: 'pl'
+    currencyCode: 'USD',
+    languageCode: 'en-US'
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
