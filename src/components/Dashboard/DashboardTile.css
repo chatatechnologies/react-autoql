@@ -5,6 +5,7 @@
 .chata-dashboard .react-grid-item {
   background: #fff;
   color: rgb(64, 64, 64);
+  font-family: var(--chata-dashboard-font-family), sans-serif;
 
   border-radius: 4px;
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.13);

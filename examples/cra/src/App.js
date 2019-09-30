@@ -426,6 +426,7 @@ export default class App extends Component {
           isEditing={this.state.isEditing}
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
+          fontFamily={this.state.fontFamily}
         />
       </div>
     )

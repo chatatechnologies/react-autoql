@@ -80,7 +80,8 @@ export class Dashboard extends React.Component {
     runDashboardOnMount: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    defaultTileState: PropTypes.arrayOf(PropTypes.shape({}))
+    defaultTileState: PropTypes.arrayOf(PropTypes.shape({})),
+    fontFamily: PropTypes.string
   }
 
   static defaultProps = {
@@ -101,6 +102,7 @@ export class Dashboard extends React.Component {
     runDashboardOnMount: true,
     currencyCode: undefined,
     languageCode: undefined,
+    fontFamily: undefined,
     defaultTileState: [
       {
         key: '0',
@@ -246,6 +248,8 @@ export class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
+    console.log('dashboard mounted. is there a font family prop?')
+    console.log(this.props.fontFamily)
     this.setStyles()
 
     // Listen for esc press to cancel queries while they are running
@@ -265,7 +269,10 @@ export class Dashboard extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.props.theme && this.props.theme !== prevProps.theme) {
+    if (
+      this.props.fontFamily &&
+      this.props.fontFamily !== prevProps.fontFamily
+    ) {
       this.setStyles()
     }
     if (prevProps.isEditing && !this.props.isEditing) {
@@ -328,8 +335,14 @@ export class Dashboard extends React.Component {
     }
     if (this.props.accentColor) {
       document.documentElement.style.setProperty(
-        '--chata-drawer-accent-color',
+        '--chata-dashboard-accent-color',
         this.props.accentColor
+      )
+    }
+    if (this.props.fontFamily) {
+      document.documentElement.style.setProperty(
+        '--chata-dashboard-font-family',
+        this.props.fontFamily
       )
     }
   }

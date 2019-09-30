@@ -126,6 +126,7 @@ export default class Axis extends Component {
         .style('text-anchor', 'end')
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
+        .style('font-family', 'inherit')
     }
 
     select(this.axisElement)

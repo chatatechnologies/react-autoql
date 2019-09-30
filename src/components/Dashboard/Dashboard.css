@@ -1,5 +1,5 @@
 .chata-drawer-tooltip {
-  font-family: sans-serif;
+  font-family: var(--chata-dashboard-font-family), sans-serif;
   letter-spacing: 0.04em;
   padding: 7px 15px;
   transition: none;
