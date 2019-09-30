@@ -1,6 +1,9 @@
 .chata-dashboard-container {
   background: #fafafa;
 }
+.chata-dashboard-container.edit-mode {
+  padding-bottom: 200px;
+}
 
 .chata-dashboard .react-grid-item {
   background: #fff;

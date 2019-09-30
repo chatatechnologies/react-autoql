@@ -542,12 +542,13 @@ export class Dashboard extends React.Component {
         <style>{`${gridLayoutStyles}`}</style>
         <div
           ref={ref => (this.ref = ref)}
-          className="chata-dashboard-container"
+          className={`chata-dashboard-container${
+            this.props.isEditing ? ' edit-mode' : ''
+          }`}
           style={{
             height: '100%',
             width: '100%',
             overflow: 'hidden'
-            // overflowY: 'auto'
           }}
         >
           <ReactGridLayout
