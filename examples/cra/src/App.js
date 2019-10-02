@@ -4,8 +4,7 @@ import {
   ResponseRenderer,
   ChatBar,
   Dashboard,
-  executeDashboard,
-  getDashboardTileState
+  executeDashboard
 } from '@chata-ai/core'
 import uuid from 'uuid'
 
