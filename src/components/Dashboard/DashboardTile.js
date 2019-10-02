@@ -26,11 +26,8 @@ export default class DashboardTile extends React.PureComponent {
     enableSafetyNet: PropTypes.bool.isRequired,
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
-    setResponseForTile: PropTypes.func.isRequired,
     deleteTile: PropTypes.func.isRequired,
     queryResponse: PropTypes.shape({}),
-    updateTileSafetyNetSelections: PropTypes.func.isRequired,
-    changeDisplayType: PropTypes.func.isRequired,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string
   }
@@ -52,8 +49,10 @@ export default class DashboardTile extends React.PureComponent {
 
   processTile = query => {
     if (query || this.state.query) {
+      const id = this.props.tile.i
       // Reset query response so tile starts "loading" again
-      this.props.setResponseForTile(null, this.props.tile.i)
+      this.props.setParamForTile('isExecuting', true, id)
+      this.props.setParamForTile('queryResponse', null, id)
       runQuery(
         query || this.props.tile.selectedSuggestion || this.state.query,
         this.props.demo,
@@ -65,10 +64,12 @@ export default class DashboardTile extends React.PureComponent {
         this.props.userId
       )
         .then(response => {
-          this.props.setResponseForTile(response, this.props.tile.i)
+          this.props.setParamForTile('isExecuting', false, id)
+          this.props.setParamForTile('queryResponse', response, id)
         })
         .catch(error => {
-          this.props.setResponseForTile(error, this.props.tile.i)
+          this.props.setParamForTile('isExecuting', false, id)
+          this.props.setParamForTile('queryResponse', error, id)
         })
     }
   }
@@ -77,10 +78,14 @@ export default class DashboardTile extends React.PureComponent {
     this.setState({ query: suggestion })
 
     if (isButtonClick) {
-      this.props.updateTileQuery(suggestion, this.props.tile.i)
+      this.props.setParamForTile('query', suggestion, this.props.tile.i)
       this.processTile(suggestion)
     } else {
-      this.props.updateTileSuggestionSelection(suggestion, this.props.tile.i)
+      this.props.setParamForTile(
+        'selectedSuggestion',
+        suggestion,
+        this.props.tile.i
+      )
     }
   }
 
@@ -98,7 +103,11 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.query}
               onChange={e => this.setState({ query: e.target.value })}
               onBlur={e =>
-                this.props.updateTileQuery(e.target.value, this.props.tile.i)
+                this.props.setParamForTile(
+                  'query',
+                  e.target.value,
+                  this.props.tile.i
+                )
               }
             />
             <input
@@ -107,7 +116,11 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.title}
               onChange={e => this.setState({ title: e.target.value })}
               onBlur={e =>
-                this.props.updateTileTitle(e.target.value, this.props.tile.i)
+                this.props.setParamForTile(
+                  'title',
+                  e.target.value,
+                  this.props.tile.i
+                )
               }
             />
           </div>
@@ -174,8 +187,14 @@ export default class DashboardTile extends React.PureComponent {
           <em>This tile has no query</em>
         </div>
       )
-    } else {
+    } else if (this.props.tile.isExecuting) {
       content = <LoadingDots />
+    } else {
+      content = (
+        <div className="dashboard-tile-placeholder-text">
+          <em>{this.props.notExecutedText || 'Not Executed'}</em>
+        </div>
+      )
     }
 
     return <div className="dashboard-tile-loading-container">{content}</div>
@@ -192,7 +211,7 @@ export default class DashboardTile extends React.PureComponent {
           onMouseDown={e => e.stopPropagation()}
           className="dashboard-tile-response-container"
         >
-          {this.props.queryResponse ? (
+          {this.props.queryResponse && !this.props.tile.isExecuting ? (
             <Fragment>
               <ResponseRenderer
                 displayType={this.props.displayType}
@@ -208,8 +227,13 @@ export default class DashboardTile extends React.PureComponent {
                 languageCode={this.props.languageCode}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })
-                  this.props.updateTileQuery(queryText, this.props.tile.i)
-                  this.props.updateTileSafetyNetSelections(
+                  this.props.setParamForTile(
+                    'query',
+                    queryText,
+                    this.props.tile.i
+                  )
+                  this.props.setParamForTile(
+                    'safetyNetSelections',
                     suggestionList,
                     this.props.tile.i
                   )
@@ -219,7 +243,11 @@ export default class DashboardTile extends React.PureComponent {
                 <VizToolbar
                   displayType={this.props.displayType}
                   onDisplayTypeChange={displayType =>
-                    this.props.changeDisplayType(displayType, this.props.tile.i)
+                    this.props.setParamForTile(
+                      'displayType',
+                      displayType,
+                      this.props.tile.i
+                    )
                   }
                   supportedDisplayTypes={
                     getSupportedDisplayTypes(this.props.queryResponse) || []

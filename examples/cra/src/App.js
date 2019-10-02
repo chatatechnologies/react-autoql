@@ -3,7 +3,9 @@ import {
   ChatDrawer,
   ResponseRenderer,
   ChatBar,
-  Dashboard
+  Dashboard,
+  executeDashboard,
+  getDashboardTileState
 } from '@chata-ai/core'
 import uuid from 'uuid'
 
@@ -44,7 +46,116 @@ export default class App extends Component {
     userId: '',
     currencyCode: 'USD',
     languageCode: 'en-US',
-    fontFamily: 'sans-serif'
+    fontFamily: 'sans-serif',
+    runDashboardAutomatically: false,
+    dashboardTiles: [
+      {
+        key: '0',
+        i: '0',
+        w: 3,
+        h: 2,
+        x: 0,
+        y: 0,
+        query: 'total profit this month',
+        title: 'Profit - Current Month'
+      },
+      {
+        key: '1',
+        i: '1',
+        w: 3,
+        h: 2,
+        x: 3,
+        y: 0,
+        query: 'total profit last month',
+        title: 'Profit - Previous Month'
+      },
+      {
+        key: '2',
+        i: '2',
+        w: 3,
+        h: 2,
+        x: 6,
+        y: 0,
+        query: 'total profit ytd',
+        title: 'Profit - YTD'
+      },
+      {
+        key: '3',
+        i: '3',
+        w: 3,
+        h: 2,
+        x: 9,
+        y: 0,
+        query: 'last years profit',
+        title: 'Profit - Previous Year'
+      },
+      {
+        key: '4',
+        i: '4',
+        w: 6,
+        h: 5,
+        x: 0,
+        y: 2,
+        query: 'profit by month ytd',
+        displayType: 'line',
+        title: 'Monthly YTD Profit'
+      },
+      {
+        key: '5',
+        i: '5',
+        w: 6,
+        h: 5,
+        x: 6,
+        y: 2,
+        query: 'profit by month last year',
+        displayType: 'line',
+        title: '2018 Monthly Profit'
+      },
+      {
+        key: '6',
+        i: '6',
+        w: 6,
+        h: 5,
+        x: 0,
+        y: 7,
+        query: 'profit by class this year',
+        displayType: 'column',
+        title: 'Total Profit by Class (2019)'
+      },
+      {
+        key: '7',
+        i: '7',
+        w: 6,
+        h: 5,
+        x: 6,
+        y: 7,
+        query: 'profit by customer this year',
+        displayType: 'bar',
+        title: 'Total Profit by Customer (2019)'
+      },
+      {
+        key: '8',
+        i: '8',
+        w: 6,
+        h: 5,
+        x: 0,
+        y: 12,
+        query: 'total profit by class by month ytd',
+        displayType: 'heatmap',
+        title: 'Product Profitability'
+      },
+      {
+        key: '9',
+        i: '9',
+        w: 6,
+        h: 5,
+        x: 6,
+        y: 12,
+        query: 'total profit by customer by month ytd',
+        displayType: 'heatmap',
+        title: 'Customer Profitability'
+      }
+    ]
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -403,6 +514,32 @@ export default class App extends Component {
           >
             {this.state.isEditing ? 'Stop Editing' : 'Edit'}
           </Button>
+          <Button
+            onClick={() => executeDashboard(this.dashboardRef)}
+            icon="play-circle"
+            style={{ marginLeft: '10px' }}
+          >
+            Execute Dashboard
+          </Button>
+          <Button
+            onClick={() => console.log(this.state.dashboardTiles)}
+            style={{ marginLeft: '10px' }}
+          >
+            Log Current Tile State
+          </Button>
+          <div style={{ paddingTop: '6px', marginLeft: '10px' }}>
+            Run Dashboard Automatically&nbsp;&nbsp;
+            <Switch
+              defaultChecked={this.state.runDashboardAutomatically}
+              checked={this.state.runDashboardAutomatically === true}
+              onChange={e => {
+                if (e) {
+                  executeDashboard(this.dashboardRef)
+                }
+                this.setState({ runDashboardAutomatically: e })
+              }}
+            />
+          </div>
           {this.state.isEditing && (
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
@@ -419,7 +556,7 @@ export default class App extends Component {
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
-          domain={this.state.domain}
+          domain={this.state.domain} // required if demo is false
           demo={this.state.demo}
           debug={this.state.debug}
           enableSafetyNet={this.state.enableSafetyNet}
@@ -427,6 +564,13 @@ export default class App extends Component {
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
           fontFamily={this.state.fontFamily}
+          executeOnMount={this.state.runDashboardAutomatically}
+          executeOnStopEditing={this.state.runDashboardAutomatically}
+          tiles={this.state.dashboardTiles}
+          notExecutedText='Hit "Execute" to run this dashboard'
+          onChangeCallback={newTiles =>
+            this.setState({ dashboardTiles: newTiles })
+          }
         />
       </div>
     )
