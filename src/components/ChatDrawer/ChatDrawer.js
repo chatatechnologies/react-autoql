@@ -376,8 +376,8 @@ export default class ChatDrawer extends React.Component {
       //   this.props.currencyCode,
       //   this.props.languageCode
       // )}"`
+      // this.addRequestMessage('drilldown')
 
-      this.addRequestMessage('drilldown')
       this.setState({ isChataThinking: true })
 
       runDrilldown(

@@ -130,7 +130,7 @@ class Dashboard extends React.Component {
     if (prevProps.tiles.length < this.props.tiles.length) {
       setTimeout(() => {
         if (this.ref) {
-          this.ref.scrollIntoView({ behavior: 'smooth' })
+          this.ref.scrollIntoView(false)
         }
       }, 200)
     }
