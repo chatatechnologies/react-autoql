@@ -45,7 +45,7 @@ export default class Bars extends Component {
               height={barHeight}
               onClick={() => {
                 this.setState({ activeKey: d[labelValue] })
-                this.props.onChartClick(d.origRow, d.origColumns)
+                this.props.onChartClick(d.origRow)
               }}
               data-tip={this.props.tooltipFormatter(d, i)}
               data-for="chart-element-tooltip"

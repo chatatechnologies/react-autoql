@@ -61,7 +61,7 @@ export default class Squares extends Component {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
-            this.props.onChartClick(d.origRow, d.origColumns)
+            this.props.onChartClick(d[labelValueX], d[labelValueY])
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"

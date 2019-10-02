@@ -352,14 +352,15 @@ export default class ChatDrawer extends React.Component {
     return jsonData
   }
 
-  processDrilldown = (rowData, columns, queryID, singleValueResponse) => {
+  processDrilldown = (groupByObject, queryID, singleValueResponse) => {
     if (this.props.enableDrilldowns) {
-      const groupByObject = this.getgroupByObjectFromTable(
-        rowData,
-        columns,
-        true
-      )
+      // const groupByObject = this.getgroupByObjectFromTable(
+      //   rowData,
+      //   columns,
+      //   true
+      // )
 
+      // We only want to allow empty groupByObjects for single value responses
       if (
         !singleValueResponse &&
         (!groupByObject || JSON.stringify(groupByObject) === JSON.stringify({}))
@@ -367,16 +368,16 @@ export default class ChatDrawer extends React.Component {
         return
       }
 
-      // This is a hack.
-      // How do we get the right text?? Can we make an api call to get the text first?
-      const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
-        rowData[0],
-        columns[0],
-        this.props.currencyCode,
-        this.props.languageCode
-      )}"`
+      // // This is a hack.
+      // // How do we get the right text?? Can we make an api call to get the text first?
+      // const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
+      //   rowData[0],
+      //   columns[0],
+      //   this.props.currencyCode,
+      //   this.props.languageCode
+      // )}"`
 
-      this.addRequestMessage(drilldownText)
+      this.addRequestMessage('drilldown')
       this.setState({ isChataThinking: true })
 
       runDrilldown(

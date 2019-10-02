@@ -17,7 +17,11 @@ import {
   formatElement,
   makeEmptyArray,
   getNumberOfGroupables,
-  getSupportedDisplayTypes
+  getSupportedDisplayTypes,
+  getGroupBysFromPivotTable,
+  getGroupBysFromTable,
+  getGroupBysFrom3dChart,
+  getGroupBysFrom2dChart
 } from '../../js/Util.js'
 
 import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
@@ -303,12 +307,7 @@ export default class ResponseRenderer extends React.Component {
       <a
         className="single-value-response"
         onClick={() => {
-          this.props.processDrilldown(
-            this.tableData[0],
-            this.tableColumns,
-            this.queryID,
-            true
-          )
+          this.props.processDrilldown({}, this.queryID, true)
         }}
       >
         {formatElement(
@@ -344,6 +343,38 @@ export default class ResponseRenderer extends React.Component {
     // return <ChataForecast />
   }
 
+  processCellClick = cell => {
+    let groupByObject = {}
+    if (this.pivotTableColumns) {
+      groupByObject = getGroupBysFromPivotTable(
+        cell,
+        this.tableColumns,
+        this.pivotTableColumns
+      )
+    } else {
+      groupByObject = getGroupBysFromTable(cell, this.tableColumns)
+    }
+
+    if (!this.props.isDrilldownDisabled) {
+      this.props.processDrilldown(groupByObject, this.queryID)
+    }
+  }
+
+  onChartClick = (row, column) => {
+    let groupByObject = {}
+    if (
+      this.pivotTableColumns &&
+      !this.tableColumns[0].name.includes('month')
+    ) {
+      groupByObject = getGroupBysFrom3dChart(row, column, this.tableColumns)
+    } else {
+      groupByObject = getGroupBysFrom2dChart(row, this.tableColumns)
+    }
+    if (!this.props.isDrilldownDisabled) {
+      this.props.processDrilldown(groupByObject, this.queryID)
+    }
+  }
+
   renderTable = () => {
     if (
       !this.tableData ||
@@ -367,9 +398,10 @@ export default class ResponseRenderer extends React.Component {
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
           isFilteringTable={this.props.isFilteringTable}
-          // onRowClick={(row, columns) => {
+          onCellClick={this.processCellClick}
+          // onCellClick={(cell, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
-          //     this.props.processDrilldown(row, columns, this.queryID)
+          //     this.props.processDrilldown(cell, columns, this.queryID)
           //   }
           // }}
         />
@@ -384,11 +416,8 @@ export default class ResponseRenderer extends React.Component {
         data={this.tableData}
         borderColor={this.props.tableBorderColor}
         hoverColor={this.props.tableHoverColor}
-        onRowClick={(row, columns) => {
-          if (!this.props.isDrilldownDisabled) {
-            this.props.processDrilldown(row, columns, this.queryID)
-          }
-        }}
+        // onRowClick={this.processRowClick}
+        onCellClick={this.processCellClick}
         isFilteringTable={this.props.isFilteringTable}
       />
     )
@@ -410,11 +439,12 @@ export default class ResponseRenderer extends React.Component {
         currencyCode={this.props.currencyCode}
         languageCode={this.props.languageCode}
         // valueFormatter={formatElement}
-        onChartClick={(row, columns) => {
-          if (!this.props.isDrilldownDisabled) {
-            this.props.processDrilldown(row, columns, this.queryID)
-          }
-        }}
+        // onChartClick={(row, columns) => {
+        //   if (!this.props.isDrilldownDisabled) {
+        //     this.props.processDrilldown(row, columns, this.queryID)
+        //   }
+        // }}
+        onChartClick={this.onChartClick}
       />
     )
   }
@@ -750,14 +780,14 @@ export default class ResponseRenderer extends React.Component {
 
     // No response prop was provided to <ResponseRenderer />
     if (!response) {
-      console.warn('Error: No response object supplied')
+      console.warn('Warning: No response object supplied')
       return this.renderErrorMessage()
     }
 
     // Response prop was provided, but it has no response data
     const responseBody = { ...response.data }
     if (!responseBody) {
-      console.warn('Error: No response body supplied')
+      console.warn('Warning: No response body supplied')
       return this.renderErrorMessage()
     }
 
@@ -777,7 +807,7 @@ export default class ResponseRenderer extends React.Component {
     // Response is not a suggestion list, but no query data object was provided
     const responseData = responseBody.data
     if (!responseData) {
-      console.warn('Error: No response data supplied')
+      console.warn('Warning: No response data supplied')
       return this.renderErrorMessage(responseBody.message)
     }
 

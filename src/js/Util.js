@@ -277,7 +277,7 @@ export const getSupportedDisplayTypes = response => {
     ]
 
     // create pivot based on month and year
-    if (columns[0].type === 'DATE') {
+    if (columns[0].type === 'DATE' && columns[0].name.includes('month')) {
       supportedDisplayTypes.push('pivot_table')
     }
     return supportedDisplayTypes
@@ -296,6 +296,48 @@ export const getSupportedDisplayTypes = response => {
 
   // We should always be able to display the table type by default
   return ['table']
+}
+
+export const getGroupBysFromPivotTable = (
+  cell,
+  tableColumns,
+  pivotTableColumns
+) => {
+  let groupByObject = {}
+
+  if (tableColumns[0].type === 'DATE') {
+    // This is a date pivot.
+    const monthYear = `${cell.getData()[0]} ${
+      pivotTableColumns[cell.getField()].name
+    }`
+
+    const groupByName = tableColumns[0].name
+    const groupByValue = `${dayjs(monthYear).unix()}`
+
+    groupByObject[groupByName] = groupByValue
+  } else {
+    const groupBy1Name = tableColumns[0].name
+    const groupBy1Value = cell.getData()[0]
+    groupByObject[groupBy1Name] = groupBy1Value
+
+    const groupBy2Name = tableColumns[1].name
+    let groupBy2Value = pivotTableColumns[cell.getField()].name
+    if (tableColumns[1].type === 'DATE') {
+      groupBy2Value = `${dayjs(groupBy2Value).unix()}`
+    }
+    groupByObject[groupBy2Name] = groupBy2Value
+  }
+
+  return groupByObject
+}
+
+export const getGroupBysFromTable = (cell, tableColumns) => {
+  const groupByName = tableColumns[0].name
+  let groupByValue = cell.getData()[0]
+  if (tableColumns[0].type === 'DATE') {
+    groupByValue = `${groupByValue}`
+  }
+  return { [groupByName]: groupByValue }
 }
 
 export const getgroupByObjectFromTable = (
@@ -334,4 +376,37 @@ export const getgroupByObjectFromTable = (
     }
   })
   return jsonData
+}
+
+export const getGroupBysFrom3dChart = (row, column, tableColumns) => {
+  const groupBy1Name = tableColumns[0].name
+  const groupBy2Name = tableColumns[1].name
+
+  let groupBy1Value = column
+  let groupBy2Value = row
+
+  if (typeof groupBy1Value !== 'string') {
+    groupBy1Value = `${groupBy1Value}`
+  }
+  if (typeof groupBy2Value !== 'string') {
+    groupBy2Value = `${groupBy2Value}`
+  }
+
+  return {
+    [groupBy1Name]: groupBy1Value,
+    [groupBy2Name]: groupBy2Value
+  }
+}
+
+export const getGroupBysFrom2dChart = (row, tableColumns) => {
+  const groupByName = tableColumns[0].name
+
+  let groupByValue = row[0]
+  if (typeof groupByValue !== 'string') {
+    groupByValue = `${groupByValue}`
+  }
+
+  return {
+    [groupByName]: groupByValue
+  }
 }

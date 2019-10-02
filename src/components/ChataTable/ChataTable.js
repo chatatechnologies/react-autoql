@@ -13,6 +13,7 @@ import {
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
+// import { getGroupBysFromTable, getGroupBysFromPivotTable } from '../../js/Util'
 
 export default class ChataTable extends React.Component {
   ref = null
@@ -68,6 +69,12 @@ export default class ChataTable extends React.Component {
     this.props.onRowClick(row.getData(), this.props.columns)
   }
 
+  cellClick = (e, cell) => {
+    e.preventDefault()
+    e.stopPropagation()
+    this.props.onCellClick(cell)
+  }
+
   copyToClipboard = () => {
     if (this.ref && this.ref.table) {
       this.ref.table.copyToClipboard('active', true)
@@ -109,7 +116,8 @@ export default class ChataTable extends React.Component {
           ref={ref => (this.ref = ref)}
           columns={this.props.columns}
           data={this.props.data}
-          rowClick={this.rowClick}
+          // rowClick={this.rowClick}
+          cellClick={this.cellClick}
           options={options}
           data-custom-attr="test-custom-attribute"
           className="chata-table"
