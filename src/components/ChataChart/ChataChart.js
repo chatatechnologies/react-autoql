@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
+import uuid from 'uuid'
 
 import { select } from 'd3-selection'
 import { max } from 'd3-array'
@@ -11,6 +12,10 @@ import { ChataLineChart } from '../ChataLineChart'
 import { ChataPieChart } from '../ChataPieChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
+import { ChataStackedBarChart } from '../ChataStackedBarChart'
+import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng, formatElement } from '../../js/Util.js'
 
@@ -39,6 +44,7 @@ export default class ChataChart extends Component {
   }
 
   componentDidMount = () => {
+    this.CHART_ID = uuid.v4()
     this.updateMargins()
   }
 
@@ -50,39 +56,54 @@ export default class ChataChart extends Component {
   }
 
   updateMargins = () => {
-    const xAxisBBox = select(this.chartRef)
-      .select('.axis-Bottom')
-      .node()
-      .getBBox()
+    try {
+      const xAxisBBox = select(this.chartRef)
+        .select('.axis-Bottom')
+        .node()
+        .getBBox()
 
-    const yAxisLabels = select(this.chartRef)
-      .select('.axis-Left')
-      .selectAll('text')
+      const yAxisLabels = select(this.chartRef)
+        .select('.axis-Left')
+        .selectAll('text')
 
-    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
-      n.getComputedTextLength()
-    )
+      const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+        n.getComputedTextLength()
+      )
 
-    let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+      // Space for legend
+      let rightMargin = this.state.rightMargin
+      if (
+        this.props.type === 'stacked_bar' ||
+        this.props.type === 'stacked_column'
+      ) {
+        rightMargin = 150
+      }
 
-    if (this.props.type === 'bar') {
-      // only for bar charts (vertical grid lines mess with the axis size)
-      const innerTickSize =
-        this.props.height - this.state.topMargin - this.state.bottomMargin
-      bottomMargin = bottomMargin - innerTickSize
+      let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+
+      if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
+        // only for bar charts (vertical grid lines mess with the axis size)
+        const innerTickSize =
+          this.props.height - this.state.topMargin - this.state.bottomMargin
+        bottomMargin = bottomMargin - innerTickSize + 10
+      }
+
+      let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
+      // If the rotated labels in the x axis exceed the width of the chart, use that instead
+      if (xAxisBBox.width > this.props.width) {
+        leftMargin =
+          xAxisBBox.width - this.props.width + this.state.leftMargin + 45
+      }
+
+      this.setState({
+        leftMargin,
+        bottomMargin,
+        rightMargin
+      })
+    } catch (error) {
+      // Something went wrong rendering the chart.
+      console.log(error)
     }
-
-    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
-    // If the rotated labels in the x axis exceed the width of the chart, use that instead
-    if (xAxisBBox.width > this.props.width) {
-      leftMargin =
-        xAxisBBox.width - this.props.width + this.state.leftMargin + 45
-    }
-
-    this.setState({
-      leftMargin,
-      bottomMargin
-    })
   }
 
   tooltipFormatter2D = (data, colIndex) => {
@@ -314,23 +335,49 @@ export default class ChataChart extends Component {
   }
 
   renderStackedColumnChart = () => {
-    return null
+    const self = this
+    return (
+      <ChataStackedColumnChart
+        data={this.props.data}
+        columns={this.props.columns}
+        height={this.props.height}
+        width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
+        onChartClick={this.props.onChartClick}
+        dataValue="value"
+        labelValueX="labelY"
+        labelValueY="labelX"
+        tooltipFormatter={self.tooltipFormatter3D}
+        currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
+      />
+    )
   }
 
   renderStackedBarChart = () => {
-    return null
-  }
-
-  renderContrastColumnChart = () => {
-    return null
-  }
-
-  renderContrastBarChart = () => {
-    return null
-  }
-
-  renderContrastLineChart = () => {
-    return null
+    const self = this
+    return (
+      <ChataStackedBarChart
+        data={this.props.data}
+        columns={this.props.columns}
+        height={this.props.height}
+        width={this.props.width}
+        topMargin={this.state.topMargin}
+        bottomMargin={this.state.bottomMargin}
+        rightMargin={this.state.rightMargin}
+        leftMargin={this.state.leftMargin}
+        onChartClick={this.props.onChartClick}
+        dataValue="value"
+        labelValueX="labelY"
+        labelValueY="labelX"
+        tooltipFormatter={self.tooltipFormatter3D}
+        currencyCode={this.props.currencyCode}
+        languageCode={this.props.languageCode}
+      />
+    )
   }
 
   render = () => {
@@ -346,10 +393,6 @@ export default class ChataChart extends Component {
       }
       case 'line': {
         chart = this.renderLineChart()
-        break
-      }
-      case 'pie': {
-        chart = this.renderPieChart()
         break
       }
       case 'bubble': {

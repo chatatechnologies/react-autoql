@@ -135,21 +135,32 @@ export default class App extends Component {
       {
         key: '8',
         i: '8',
-        w: 6,
+        w: 12,
         h: 5,
         x: 0,
-        y: 12,
+        y: 10,
         query: 'total profit by class by month ytd',
-        displayType: 'heatmap',
+        displayType: 'stacked_column',
         title: 'Product Profitability'
       },
       {
         key: '9',
         i: '9',
-        w: 6,
-        h: 5,
-        x: 6,
+        w: 12,
+        h: 8,
+        x: 0,
         y: 12,
+        query: 'total profit by customer by month ytd',
+        displayType: 'stacked_bar',
+        title: 'Customer Profitability'
+      },
+      {
+        key: '10',
+        i: '10',
+        w: 12,
+        h: 5,
+        x: 0,
+        y: 19,
         query: 'total profit by customer by month ytd',
         displayType: 'heatmap',
         title: 'Customer Profitability'

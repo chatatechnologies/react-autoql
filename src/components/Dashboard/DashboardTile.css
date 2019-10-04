@@ -32,6 +32,7 @@
 .chata-dashboard-tile-inner-div {
   height: 100%;
   width: 100%;
+  background: inherit;
   position: relative;
   text-align: center;
   display: flex;
@@ -47,6 +48,7 @@
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
   height: 100%;
   width: 100%;
+  /* padding: 20px; */
   padding: 30px;
   padding-top: 0;
 }

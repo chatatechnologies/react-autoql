@@ -3,7 +3,7 @@ import uuid from 'uuid'
 
 import { TABLE_TYPES } from './Constants'
 
-axios.defaults.timeout = 10000
+// axios.defaults.timeout = 10000
 
 var autoCompleteCall = null
 // var queryCall = null

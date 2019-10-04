@@ -39,7 +39,7 @@ export default class Axis extends Component {
       .attr('height', height)
       .append('g')
       .attr('class', 'slices')
-      .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
+      .attr('transform', `translate(${width / 2},${height / 2})`)
   }
 
   setColorScale = () => {
@@ -125,7 +125,7 @@ export default class Axis extends Component {
             })
             .transition()
             .duration(500)
-            .attr('transform', 'translate(0,0)')
+            .attr('transform', 'translate(,0)')
         }
 
         select(this)

@@ -3,18 +3,14 @@ import PropTypes from 'prop-types'
 import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
 
 import { Axes } from '../Axes'
-import { StackedBars } from '../StackedBars'
+import { StackedColumns } from '../StackedColumns'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  getMaxValueFromKeyValueObj,
-  getMinValueFromKeyValueObj,
-  onlyUnique
-} from '../../js/Util'
+import { calculateMinAndMaxSums, onlyUnique } from '../../js/Util'
 
-export default class ChataStackedBarChart extends Component {
-  xScale = scaleLinear()
-  yScale = scaleBand()
+export default class ChataStackedColumnChart extends Component {
+  yScale = scaleLinear()
+  xScale = scaleBand()
 
   constructor(props) {
     super(props)
@@ -31,7 +27,7 @@ export default class ChataStackedBarChart extends Component {
     this.uniqueXLabels = data.map(d => d[labelValueX]).filter(onlyUnique)
 
     this.legendScale = scaleOrdinal()
-      .domain(this.uniqueXLabels)
+      .domain(this.uniqueYLabels)
       .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
   }
 
@@ -61,42 +57,6 @@ export default class ChataStackedBarChart extends Component {
 
   state = {}
 
-  calculateMinAndMaxSums = (data, labelValueY, dataValue) => {
-    const positiveSumsObject = {}
-    const negativeSumsObject = {}
-
-    // Loop through data array to get maximum and minimum sums of postive and negative values
-    // These will be used to get the max and min values for the x Scale (data values)
-    for (let i = 0; i < data.length; i++) {
-      const value = data[i][dataValue]
-
-      if (value >= 0) {
-        // Calculate positive sum
-        if (positiveSumsObject[data[i][labelValueY]]) {
-          positiveSumsObject[data[i][labelValueY]] += value
-        } else {
-          positiveSumsObject[data[i][labelValueY]] = value
-        }
-      } else if (value < 0) {
-        // Calculate negative sum
-        if (negativeSumsObject[data[i][labelValueY]]) {
-          negativeSumsObject[data[i][labelValueY]] -= value
-        } else {
-          negativeSumsObject[data[i][labelValueY]] = value
-        }
-      }
-    }
-
-    // Get max and min sums from those sum objects
-    const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
-    const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
-
-    return {
-      max: maxValue,
-      min: minValue
-    }
-  }
-
   render = () => {
     const {
       tooltipFormatter,
@@ -114,31 +74,25 @@ export default class ChataStackedBarChart extends Component {
       data
     } = this.props
 
-    const { max, min } = this.calculateMinAndMaxSums(
-      data,
-      labelValueY,
-      dataValue
-    )
+    const { max, min } = calculateMinAndMaxSums(data, labelValueY, dataValue)
 
     const xScale = this.xScale
-      .domain([min, max])
-      .range([leftMargin, width - rightMargin])
-
-    const yScale = this.yScale
       .domain(this.uniqueYLabels)
-      .range([height - bottomMargin, topMargin])
+      .range([leftMargin, width - rightMargin])
       .paddingInner(0.1)
 
-    const tickWidth = (width - leftMargin - rightMargin) / 6
+    const yScale = this.yScale
+      .domain([min, max])
+      .range([height - bottomMargin, topMargin])
 
-    const barHeight = height / this.uniqueYLabels.length
-    const interval = Math.ceil((this.uniqueYLabels.length * 16) / height)
-    let yTickValues
-    if (barHeight < 16) {
-      yTickValues = []
+    const barWidth = width / this.uniqueYLabels.length
+    const interval = Math.ceil((this.uniqueYLabels.length * 16) / width)
+    let xTickValues
+    if (barWidth < 16) {
+      xTickValues = []
       this.uniqueYLabels.forEach((element, index) => {
         if (index % interval === 0) {
-          yTickValues.push(element[labelValueY])
+          xTickValues.push(element[labelValueY])
         }
       })
     }
@@ -148,8 +102,8 @@ export default class ChataStackedBarChart extends Component {
         <g>
           <Axes
             scales={{ xScale, yScale }}
-            xCol={columns[2]}
-            yCol={columns[1]}
+            xCol={columns[1]}
+            yCol={columns[2]}
             // valueCol={columns[2]}
             margins={{
               left: leftMargin,
@@ -159,16 +113,16 @@ export default class ChataStackedBarChart extends Component {
             }}
             width={width}
             height={height}
-            yTicks={yTickValues}
-            rotateLabels={tickWidth < 135}
+            xTicks={xTickValues}
+            rotateLabels={barWidth < 135}
             legendLabels={this.uniqueXLabels}
             legendColumn={columns[0]}
             currencyCode={this.props.currencyCode}
             languageCode={this.props.languageCode}
-            xGridLines
+            yGridLines
             hasLegend
           />
-          <StackedBars
+          <StackedColumns
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,
@@ -182,8 +136,8 @@ export default class ChataStackedBarChart extends Component {
             uniqueXLabels={this.uniqueXLabels}
             width={width}
             height={height}
-            labelValueX={labelValueY}
-            labelValueY={labelValueX}
+            labelValueX={labelValueX}
+            labelValueY={labelValueY}
             dataValue={dataValue}
             onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}

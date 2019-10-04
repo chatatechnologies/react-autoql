@@ -16,6 +16,7 @@ import {
   pieChartIcon,
   heatmapIcon,
   bubbleChartIcon
+  // stackedBarChartIcon
 } from '../../svgIcons.js'
 
 class VizToolbar extends React.Component {
@@ -69,9 +70,18 @@ class VizToolbar extends React.Component {
             {this.createVisButton('column', 'Column Chart', columnChartIcon)}
             {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
             {this.createVisButton('line', 'Line Chart', lineChartIcon)}
-            {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
             {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
             {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
+            {this.createVisButton(
+              'stacked_bar',
+              'Stacked Bar Chart',
+              barChartIcon
+            )}
+            {this.createVisButton(
+              'stacked_column',
+              'Stacked Column Chart',
+              columnChartIcon
+            )}
           </div>
         </Fragment>
       )

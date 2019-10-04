@@ -64,13 +64,13 @@ export default class ChataHeatmapChart extends Component {
     const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([width - rightMargin, leftMargin])
-      .paddingInner(0.02)
+      .paddingInner(0.01)
 
     const uniqueYLabels = data.map(d => d[labelValueY]).filter(onlyUnique)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
-      .paddingInner(0.02)
+      .paddingInner(0.01)
 
     const squareHeight = height / uniqueYLabels.length
     const squareWidth = width / uniqueXLabels.length

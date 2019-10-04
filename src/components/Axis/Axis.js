@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
+import dayjs from 'dayjs'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
-
-import dayjs from 'dayjs'
+import { legendColor } from 'd3-svg-legend'
+import { symbol, symbolCircle } from 'd3-shape'
+import { scaleOrdinal } from 'd3-scale'
 
 import { formatChartLabel } from '../../js/Util.js'
 
@@ -22,16 +24,24 @@ export default class Axis extends Component {
     type: PropTypes.string,
     col: PropTypes.shape({}),
     currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    languageCode: PropTypes.string,
+    hasLegend: PropTypes.bool
   }
 
   static defaultProps = {
     orient: 'Bottom',
+    hasLegend: false,
     currencyCode: undefined,
     languageCode: undefined
   }
 
   componentDidMount = () => {
+    if (this.props.legendLabels) {
+      this.legendScale = scaleOrdinal()
+        .domain(this.props.legendLabels)
+        .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+    }
+
     this.renderAxis()
   }
 
@@ -39,57 +49,43 @@ export default class Axis extends Component {
     this.renderAxis()
   }
 
-  formatLabel = d => {
-    const { col } = this.props
-    if (!col || !col.type) {
-      return d
+  renderLegend = () => {
+    const self = this
+    const { legendLabels, legendColumn } = this.props
+
+    if (!legendLabels || !legendColumn) {
+      return
     }
 
-    let formattedLabel = d
-    switch (col.type) {
-      case 'STRING': {
-        // do nothing
-        break
-      }
-      case 'DOLLAR_AMT': {
-        // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-        formattedLabel = Numbro(d).formatCurrency({
-          thousandSeparated: true,
-          mantissa: 0
-        })
-        break
-      }
-      case 'QUANTITY': {
-        // if (Number(d) % 1 !== 0) {
-        //   formattedLabel = Numbro(d).format('0,0.0')
-        // }
-        break
-      }
-      case 'DATE': {
-        const title = col.title
-        if (title && title.includes('Year')) {
-          formattedLabel = dayjs.unix(d).format('YYYY')
-        } else if (title && title.includes('Month')) {
-          formattedLabel = dayjs.unix(d).format('MMMM YYYY')
-        }
-        formattedLabel = dayjs.unix(d).format('MMMM D, YYYY')
-        break
-      }
-      case 'PERCENT': {
-        if (Number(d)) {
-          formattedLabel = Numbro(d).format('0.00%')
-        }
-        break
-      }
-      default: {
-        break
-      }
-    }
+    const svg = select(this.legendElement)
 
-    if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
-      return `${formattedLabel.substring(0, 18)}...`
-    }
-    return formattedLabel
+    svg
+      .append('g')
+      .attr('class', 'legendOrdinal')
+      .style('fill', 'currentColor')
+      .style('fill-opacity', '0.7')
+      .style('font-family', 'inherit')
+      .style('font-size', '10px')
+
+    var legendOrdinal = legendColor()
+      .shape(
+        'path',
+        symbol()
+          .type(symbolCircle)
+          .size(75)()
+      )
+      .orient('vertical')
+      .shapePadding(5)
+      .labelWrap(120)
+      // .labelAlign('left')
+      // .cellFilter(d => {
+      //   return d[self.props.labelValueY] !== 'e'
+      // })
+      // .labels(formattedLabels)
+      // .titleWidth(600)
+      .scale(this.legendScale)
+
+    svg.select('.legendOrdinal').call(legendOrdinal)
   }
 
   renderAxis = () => {
@@ -121,16 +117,21 @@ export default class Axis extends Component {
     if (this.props.orient === 'Bottom' && this.props.rotateLabels) {
       // translate labels slightly to line up with ticks once rotated
       select(this.axisElement)
-        .selectAll('text')
+        .selectAll('.tick text')
         .style('transform', 'rotate(-45deg)')
         .style('text-anchor', 'end')
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
+        .attr('fill-opacity', '0.7')
         .style('font-family', 'inherit')
     }
 
+    if (this.props.hasLegend) {
+      this.renderLegend()
+    }
+
     select(this.axisElement)
-      .selectAll('text')
+      .selectAll('.axis text')
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
@@ -149,14 +150,22 @@ export default class Axis extends Component {
 
   render = () => {
     return (
-      <g
-        className={`axis axis-${this.props.orient}
+      <g>
+        <g
+          className={`axis axis-${this.props.orient}
         ${this.props.rotateLabels ? ' rotated' : ''}`}
-        ref={el => {
-          this.axisElement = el
-        }}
-        transform={this.props.translate}
-      />
+          ref={el => {
+            this.axisElement = el
+          }}
+          transform={this.props.translate}
+        />
+        <g
+          ref={el => {
+            this.legendElement = el
+          }}
+          transform={`translate(${this.props.width + 15},15)`}
+        />
+      </g>
     )
   }
 }

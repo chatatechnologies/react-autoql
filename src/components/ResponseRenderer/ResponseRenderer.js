@@ -12,6 +12,8 @@ import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 // import { ChataForecast } from '../ChataForecast'
 
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
 import {
   onlyUnique,
   formatElement,
@@ -428,24 +430,36 @@ export default class ResponseRenderer extends React.Component {
       return 'Error: There was no data supplied for this chart'
     }
 
+    // let data = this.chartData
+    // let columns = this.tableColumns
+    // if (
+    //   this.state.displayType === 'stacked_bar' ||
+    //   this.state.displayType === 'stacked_column'
+    // ) {
+    //   data = this.pivotTableData
+    //   columns = this.pivotTableColumns
+    // }
+
     return (
-      <ChataChart
-        ref={ref => (this.chartRef = ref)}
-        type={this.state.displayType}
-        data={this.chartData}
-        columns={this.tableColumns}
-        height={height}
-        width={width}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-        // valueFormatter={formatElement}
-        // onChartClick={(row, columns) => {
-        //   if (!this.props.isDrilldownDisabled) {
-        //     this.props.processDrilldown(row, columns, this.queryID)
-        //   }
-        // }}
-        onChartClick={this.onChartClick}
-      />
+      <ErrorBoundary>
+        <ChataChart
+          ref={ref => (this.chartRef = ref)}
+          type={this.state.displayType}
+          data={this.chartData}
+          columns={this.tableColumns}
+          height={height}
+          width={width}
+          currencyCode={this.props.currencyCode}
+          languageCode={this.props.languageCode}
+          // valueFormatter={formatElement}
+          // onChartClick={(row, columns) => {
+          //   if (!this.props.isDrilldownDisabled) {
+          //     this.props.processDrilldown(row, columns, this.queryID)
+          //   }
+          // }}
+          onChartClick={this.onChartClick}
+        />
+      </ErrorBoundary>
     )
   }
 

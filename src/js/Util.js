@@ -94,6 +94,7 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
   if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
     return `${formattedLabel.substring(0, 18)}...`
   }
+
   return formattedLabel
 }
 
@@ -408,5 +409,67 @@ export const getGroupBysFrom2dChart = (row, tableColumns) => {
 
   return {
     [groupByName]: groupByValue
+  }
+}
+
+export const getObjSize = obj => Object.keys(obj).length
+
+export const getMaxValueFromKeyValueObj = obj => {
+  const size = getObjSize(obj)
+
+  let maxValue = 0
+  if (size === 1) {
+    maxValue = obj[Object.keys(obj)[0]]
+  } else if (size > 1) {
+    maxValue = Math.max(...Object.values(obj))
+  }
+  return maxValue
+}
+
+export const getMinValueFromKeyValueObj = obj => {
+  const size = getObjSize(obj)
+
+  let minValue = 0
+  if (size === 1) {
+    minValue = obj[Object.keys(obj)[0]]
+  } else if (size > 1) {
+    minValue = Math.min(...Object.values(obj))
+  }
+  return minValue
+}
+
+export const calculateMinAndMaxSums = (data, labelValue, dataValue) => {
+  const positiveSumsObject = {}
+  const negativeSumsObject = {}
+
+  // Loop through data array to get maximum and minimum sums of postive and negative values
+  // These will be used to get the max and min values for the x Scale (data values)
+  for (let i = 0; i < data.length; i++) {
+    const value = data[i][dataValue]
+
+    if (value >= 0) {
+      // Calculate positive sum
+      if (positiveSumsObject[data[i][labelValue]]) {
+        positiveSumsObject[data[i][labelValue]] += value
+      } else {
+        positiveSumsObject[data[i][labelValue]] = value
+      }
+    } else if (value < 0) {
+      // Calculate negative sum
+      if (negativeSumsObject[data[i][labelValue]]) {
+        negativeSumsObject[data[i][labelValue]] -= value
+      } else {
+        negativeSumsObject[data[i][labelValue]] = value
+      }
+    }
+  }
+
+  // Get max and min sums from those sum objects
+  const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
+  const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
+
+  return {
+    max: maxValue,
+    min: minValue
   }
 }
