@@ -19,6 +19,7 @@ export default class ChataHeatmapChart extends Component {
     rightMargin: PropTypes.number.isRequired,
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     dataValue: PropTypes.string,
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
@@ -44,6 +45,7 @@ export default class ChataHeatmapChart extends Component {
       rightMargin,
       labelValueY,
       labelValueX,
+      chartColors,
       leftMargin,
       topMargin,
       dataValue,
@@ -117,6 +119,7 @@ export default class ChataHeatmapChart extends Component {
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           rotateLabels={squareWidth < 135}
+          chartColors={chartColors}
         />
         {
           <Squares
@@ -136,6 +139,7 @@ export default class ChataHeatmapChart extends Component {
             labelValueY={labelValueY}
             onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}
+            chartColors={chartColors}
           />
         }
       </g>

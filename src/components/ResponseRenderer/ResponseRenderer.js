@@ -63,7 +63,8 @@ export default class ResponseRenderer extends React.Component {
     suggestionSelection: PropTypes.string,
     enableSuggestions: PropTypes.bool,
     currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    languageCode: PropTypes.string,
+    chartColors: PropTypes.arrayOf(PropTypes.string)
   }
 
   static defaultProps = {
@@ -83,6 +84,7 @@ export default class ResponseRenderer extends React.Component {
     enableSuggestions: true,
     currencyCode: undefined,
     languageCode: undefined,
+    chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
   }
@@ -451,6 +453,7 @@ export default class ResponseRenderer extends React.Component {
           width={width}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
+          chartColors={this.props.chartColors}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {

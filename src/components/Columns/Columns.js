@@ -3,9 +3,12 @@ import React, { Component } from 'react'
 import { scaleOrdinal } from 'd3-scale'
 
 export default class Columns extends Component {
-  colorScale = scaleOrdinal()
-    .domain([...Array(10).keys()])
-    .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+  constructor(props) {
+    super(props)
+    const { chartColors } = props
+
+    this.colorScale = scaleOrdinal().range(chartColors)
+  }
 
   static propTypes = {}
 

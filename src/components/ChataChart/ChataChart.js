@@ -28,6 +28,7 @@ export default class ChataChart extends Component {
     type: PropTypes.string.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     currencyCode: PropTypes.string
   }
 
@@ -239,7 +240,8 @@ export default class ChataChart extends Component {
       columns,
       onChartClick,
       currencyCode,
-      languageCode
+      languageCode,
+      chartColors
     } = this.props
 
     return {
@@ -255,7 +257,8 @@ export default class ChataChart extends Component {
       bottomLegendWidth,
       onChartClick,
       currencyCode,
-      languageCode
+      languageCode,
+      chartColors
     }
   }
 

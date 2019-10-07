@@ -66,7 +66,8 @@ class Dashboard extends React.Component {
     languageCode: PropTypes.string,
     fontFamily: PropTypes.string,
     onChangeCallback: PropTypes.func,
-    notExecutedText: PropTypes.string
+    notExecutedText: PropTypes.string,
+    chartColors: PropTypes.arrayOf(PropTypes.string)
   }
 
   static defaultProps = {
@@ -89,7 +90,8 @@ class Dashboard extends React.Component {
     currencyCode: undefined,
     languageCode: undefined,
     fontFamily: undefined,
-    notExecutedText: undefined
+    notExecutedText: undefined,
+    chartColors: undefined
   }
 
   state = {
@@ -295,6 +297,7 @@ class Dashboard extends React.Component {
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
                 notExecutedText={this.props.notExecutedText}
+                chartColors={this.props.chartColors}
               />
             ))}
           </ReactGridLayout>

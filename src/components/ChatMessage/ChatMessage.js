@@ -30,6 +30,7 @@ export default class ChatMessage extends React.Component {
     tableBorderColor: PropTypes.string.isRequired,
     tableHoverColor: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     response: PropTypes.shape({}),
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
@@ -107,6 +108,7 @@ export default class ChatMessage extends React.Component {
           isFilteringTable={this.state.isFilteringTable}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
+          chartColors={this.props.chartColors}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}

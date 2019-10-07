@@ -34,14 +34,14 @@ export default class StackedBars extends Component {
         const nextSum = previousSum + value
         runningPositiveSumObject[d[labelValueX]] = nextSum
 
-        width = xScale(value) - xScale(0) - 0.5
+        width = Math.abs(xScale(value) - xScale(0) - 0.5)
         x = xScale(previousSum)
       } else {
         const previousSum = runningNegativeSumObject[d[labelValueX]] || 0
         const nextSum = previousSum + value
         runningNegativeSumObject[d[labelValueX]] = nextSum
 
-        width = xScale(Math.abs(value)) - xScale(0) - 0.5
+        width = Math.abs(xScale(Math.abs(value)) - xScale(0) - 0.5)
         x = xScale(nextSum)
       }
 

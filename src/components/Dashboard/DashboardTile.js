@@ -27,6 +27,7 @@ export default class DashboardTile extends React.PureComponent {
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string),
     queryResponse: PropTypes.shape({}),
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string
@@ -39,7 +40,8 @@ export default class DashboardTile extends React.PureComponent {
     safetyNetSelections: undefined,
     selectedSuggestion: undefined,
     currencyCode: undefined,
-    languageCode: undefined
+    languageCode: undefined,
+    chartColors: undefined
   }
 
   state = {
@@ -225,6 +227,7 @@ export default class DashboardTile extends React.PureComponent {
                 enableSuggestions={this.props.isEditing}
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
+                chartColors={this.props.chartColors}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })
                   this.props.setParamForTile(

@@ -18,6 +18,7 @@ export default class ChataLineChart extends Component {
     rightMargin: PropTypes.number.isRequired,
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
@@ -42,6 +43,7 @@ export default class ChataLineChart extends Component {
       currencyCode,
       bottomMargin,
       onChartClick,
+      chartColors,
       rightMargin,
       leftMargin,
       labelValue,
@@ -118,6 +120,7 @@ export default class ChataLineChart extends Component {
           bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
           hasBottomLegend={data[0].values.length > 1}
+          chartColors={chartColors}
           yGridLines
         />
         <Line
@@ -136,6 +139,7 @@ export default class ChataLineChart extends Component {
           labelValue={labelValue}
           onChartClick={onChartClick}
           tooltipFormatter={tooltipFormatter}
+          chartColors={chartColors}
         />
       </g>
     )

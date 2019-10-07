@@ -20,7 +20,7 @@ export default class ChataStackedBarChart extends Component {
     super(props)
 
     // Only calculate these things one time. They will never change
-    const { data, labelValueX, labelValueY } = props
+    const { data, labelValueX, labelValueY, chartColors } = props
 
     this.uniqueYLabels = data
       .map(d => d[labelValueY])
@@ -32,7 +32,7 @@ export default class ChataStackedBarChart extends Component {
 
     this.legendScale = scaleOrdinal()
       .domain(this.uniqueXLabels)
-      .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+      .range(chartColors)
   }
 
   static propTypes = {
@@ -44,6 +44,7 @@ export default class ChataStackedBarChart extends Component {
     rightMargin: PropTypes.number.isRequired,
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
@@ -108,6 +109,9 @@ export default class ChataStackedBarChart extends Component {
       dataValue,
       labelValueX,
       labelValueY,
+      currencyCode,
+      languageCode,
+      chartColors,
       columns,
       height,
       width,
@@ -163,8 +167,9 @@ export default class ChataStackedBarChart extends Component {
             rotateLabels={tickWidth < 135}
             legendLabels={this.uniqueXLabels}
             legendColumn={columns[0]}
-            currencyCode={this.props.currencyCode}
-            languageCode={this.props.languageCode}
+            currencyCode={currencyCode}
+            languageCode={languageCode}
+            chartColors={chartColors}
             xGridLines
             hasRightLegend
           />
@@ -189,6 +194,7 @@ export default class ChataStackedBarChart extends Component {
             tooltipFormatter={tooltipFormatter}
             legendColumn={columns[0]}
             legendScale={this.legendScale}
+            chartColors={chartColors}
           />
         </g>
       </ErrorBoundary>

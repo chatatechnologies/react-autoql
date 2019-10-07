@@ -45,7 +45,7 @@ export default class StackedColumns extends Component {
           x={xScale(d[labelValueY])}
           y={y}
           width={xScale.bandwidth()}
-          height={height}
+          height={Math.abs(height)}
           onClick={() =>
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`

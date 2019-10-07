@@ -17,6 +17,7 @@ export default class Axis extends Component {
   LEGEND_PADDING = 130
 
   static propTypes = {
+    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
     translate: PropTypes.string,
@@ -43,7 +44,7 @@ export default class Axis extends Component {
     if (this.props.legendLabels) {
       this.legendScale = scaleOrdinal()
         .domain(this.props.legendLabels)
-        .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+        .range(this.props.chartColors)
     }
 
     this.renderAxis()
@@ -56,9 +57,6 @@ export default class Axis extends Component {
   renderLegend = () => {
     const self = this
     const { legendLabels } = this.props
-
-    console.log('legend width:')
-    console.log(this.props.bottomLegendWidth)
 
     if (!legendLabels) {
       return

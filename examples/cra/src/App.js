@@ -8,7 +8,7 @@ import {
 } from '@chata-ai/core'
 import uuid from 'uuid'
 
-import { Radio, Input, InputNumber, Switch, Button, Menu } from 'antd'
+import { Radio, Input, InputNumber, Switch, Button, Menu, Select } from 'antd'
 
 import 'antd/dist/antd.css'
 import './index.css'
@@ -47,6 +47,7 @@ export default class App extends Component {
     languageCode: 'en-US',
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
+    chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     dashboardTiles: [
       {
         key: '0',
@@ -395,6 +396,19 @@ export default class App extends Component {
           }}
           value={this.state.fontFamily}
         />
+        <h4>Chart Colors</h4>
+        <h5>
+          This is an array of colors used for the charts. If the data scale is
+          larger than the color array, it will repeat the colors. Any solid
+          color formats are accepted. Hit "enter" to add a color.
+        </h5>
+        <Select
+          mode="tags"
+          onChange={colors => {
+            this.setState({ chartColors: colors })
+          }}
+          value={this.state.chartColors}
+        />
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
@@ -494,6 +508,7 @@ export default class App extends Component {
           debug={this.state.debug}
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
+          chartColors={this.state.chartColors}
           // handleImage={spiraLogo}
           // inputStyles
           // autocompleteStyles
@@ -578,6 +593,7 @@ export default class App extends Component {
           executeOnStopEditing={this.state.runDashboardAutomatically}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
+          chartColors={this.state.chartColors}
           onChangeCallback={newTiles =>
             this.setState({ dashboardTiles: newTiles })
           }

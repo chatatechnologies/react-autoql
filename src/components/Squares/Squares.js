@@ -5,13 +5,13 @@ import { scaleLinear } from 'd3-scale'
 import ReactTooltip from 'react-tooltip'
 
 export default class Squares extends Component {
-  // blue for positive values and red for negative values
-  colorScalePositive = scaleLinear()
-    .domain([0, this.props.maxValue])
-    .range(['rgba(40,168,224,0)', 'rgba(40,168,224,1)'])
-  colorScaleNegative = scaleLinear()
-    .domain([0, this.props.maxValue])
-    .range(['rgba(221, 106, 106,0)', 'rgba(221, 106, 106,1)'])
+  constructor(props) {
+    super(props)
+
+    this.opacityScale = scaleLinear()
+      .domain([0, this.props.maxValue])
+      .range([0, 1])
+  }
 
   static propTypes = {}
 
@@ -19,11 +19,9 @@ export default class Squares extends Component {
     activeKey: null
   }
 
-  getFillColor = value => {
+  getFillOpacity = value => {
     if (value >= 0) {
-      return this.colorScalePositive(value)
-    } else {
-      return this.colorScaleNegative(Math.abs(value))
+      return this.opacityScale(Math.abs(value))
     }
   }
 
@@ -65,7 +63,13 @@ export default class Squares extends Component {
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
-          fill={this.getFillColor(d[dataValue])}
+          // chosen color for positive values and red for negative values
+          fill={
+            d[dataValue] >= 0
+              ? this.props.chartColors[0]
+              : 'rgba(221, 106, 106)'
+          }
+          fillOpacity={this.opacityScale(Math.abs(d[dataValue]))}
         />
       )
     })

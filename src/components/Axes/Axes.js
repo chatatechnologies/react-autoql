@@ -25,7 +25,8 @@ export default class Axes extends React.Component {
       languageCode,
       hasRightLegend,
       hasBottomLegend,
-      bottomLegendWidth
+      bottomLegendWidth,
+      chartColors
     } = this.props
 
     const xProps = {
@@ -46,7 +47,8 @@ export default class Axes extends React.Component {
       legendLabels,
       legendColumn,
       currencyCode,
-      languageCode
+      languageCode,
+      chartColors
     }
 
     const yProps = {
@@ -61,7 +63,8 @@ export default class Axes extends React.Component {
       col: yCol,
       showGridLines: yGridLines,
       currencyCode,
-      languageCode
+      languageCode,
+      chartColors
     }
 
     return (
