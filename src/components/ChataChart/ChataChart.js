@@ -40,7 +40,9 @@ export default class ChataChart extends Component {
     leftMargin: 50,
     rightMargin: 10,
     topMargin: 10,
-    bottomMargin: 100
+    bottomMargin: 100,
+    bottomLegendWidth: 0,
+    bottomLegendMargin: 0
   }
 
   componentDidMount = () => {
@@ -71,15 +73,33 @@ export default class ChataChart extends Component {
       )
 
       // Space for legend
+      const legendBBox = select(this.chartRef)
+        .select('.legendOrdinal-container')
+        .node()
+        .getBBox()
+
+      let bottomLegendMargin = this.state.bottomLegendMargin
+      let bottomLegendWidth = this.state.bottomLegendWidth
       let rightMargin = this.state.rightMargin
       if (
-        this.props.type === 'stacked_bar' ||
-        this.props.type === 'stacked_column'
+        // Legend goes on the side for these types
+        (this.props.type === 'stacked_bar' ||
+          this.props.type === 'stacked_column') &&
+        legendBBox
       ) {
-        rightMargin = 150
+        rightMargin = legendBBox.width
+      } else if (
+        (this.props.type === 'bar' ||
+          this.props.type === 'column' ||
+          this.props.type === 'line') &&
+        legendBBox
+      ) {
+        // Legend goes on the bottom
+        bottomLegendMargin = legendBBox.height + 20
+        bottomLegendWidth = legendBBox.width
       }
 
-      let bottomMargin = Math.ceil(xAxisBBox.height) + 30 // margin to include axis label
+      let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 30 // margin to include axis label
 
       if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
         // only for bar charts (vertical grid lines mess with the axis size)
@@ -98,7 +118,9 @@ export default class ChataChart extends Component {
       this.setState({
         leftMargin,
         bottomMargin,
-        rightMargin
+        rightMargin,
+        bottomLegendMargin,
+        bottomLegendWidth
       })
     } catch (error) {
       // Something went wrong rendering the chart.
@@ -200,185 +222,118 @@ export default class ChataChart extends Component {
       .catch(err => {})
   }
 
-  renderColumnChart = () => {
-    const self = this
-    return (
-      <ChataColumnChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="values"
-        labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
+  getCommonChartProps = () => {
+    const {
+      topMargin,
+      bottomMargin,
+      rightMargin,
+      leftMargin,
+      bottomLegendMargin,
+      bottomLegendWidth
+    } = this.state
+
+    const {
+      width,
+      height,
+      data,
+      columns,
+      onChartClick,
+      currencyCode,
+      languageCode
+    } = this.props
+
+    return {
+      data,
+      height,
+      width,
+      columns,
+      topMargin,
+      bottomMargin,
+      rightMargin,
+      leftMargin,
+      bottomLegendMargin,
+      bottomLegendWidth,
+      onChartClick,
+      currencyCode,
+      languageCode
+    }
   }
 
-  renderBarChart = () => {
-    const self = this
-    return (
-      <ChataBarChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValues="values"
-        labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderColumnChart = () => (
+    <ChataColumnChart
+      {...this.getCommonChartProps()}
+      dataValue="values"
+      labelValue="label"
+      tooltipFormatter={this.tooltipFormatter2D}
+    />
+  )
 
-  renderLineChart = () => {
-    const self = this
-    return (
-      <ChataLineChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValues="values"
-        labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderBarChart = () => (
+    <ChataBarChart
+      {...this.getCommonChartProps()}
+      dataValues="values"
+      labelValue="label"
+      tooltipFormatter={this.tooltipFormatter2D}
+    />
+  )
 
-  renderPieChart = () => {
-    const self = this
-    return (
-      <ChataPieChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="value"
-        labelValue="label"
-        tooltipFormatter={self.tooltipFormatter2D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderLineChart = () => (
+    <ChataLineChart
+      {...this.getCommonChartProps()}
+      dataValues="values"
+      labelValue="label"
+      tooltipFormatter={this.tooltipFormatter2D}
+    />
+  )
 
-  renderHeatmapChart = () => {
-    const self = this
-    return (
-      <ChataHeatmapChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="value"
-        labelValueX="labelX"
-        labelValueY="labelY"
-        tooltipFormatter={self.tooltipFormatter3D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderPieChart = () => (
+    <ChataPieChart
+      {...this.getCommonChartProps()}
+      dataValue="value"
+      labelValue="label"
+      tooltipFormatter={this.tooltipFormatter2D}
+    />
+  )
 
-  renderBubbleChart = () => {
-    const self = this
-    return (
-      <ChataBubbleChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="value"
-        labelValueX="labelX"
-        labelValueY="labelY"
-        tooltipFormatter={self.tooltipFormatter3D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderHeatmapChart = () => (
+    <ChataHeatmapChart
+      {...this.getCommonChartProps()}
+      dataValue="value"
+      labelValueX="labelX"
+      labelValueY="labelY"
+      tooltipFormatter={this.tooltipFormatter3D}
+    />
+  )
 
-  renderStackedColumnChart = () => {
-    const self = this
-    return (
-      <ChataStackedColumnChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="value"
-        labelValueX="labelY"
-        labelValueY="labelX"
-        tooltipFormatter={self.tooltipFormatter3D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderBubbleChart = () => (
+    <ChataBubbleChart
+      {...this.getCommonChartProps()}
+      dataValue="value"
+      labelValueX="labelX"
+      labelValueY="labelY"
+      tooltipFormatter={this.tooltipFormatter3D}
+    />
+  )
 
-  renderStackedBarChart = () => {
-    const self = this
-    return (
-      <ChataStackedBarChart
-        data={this.props.data}
-        columns={this.props.columns}
-        height={this.props.height}
-        width={this.props.width}
-        topMargin={this.state.topMargin}
-        bottomMargin={this.state.bottomMargin}
-        rightMargin={this.state.rightMargin}
-        leftMargin={this.state.leftMargin}
-        onChartClick={this.props.onChartClick}
-        dataValue="value"
-        labelValueX="labelY"
-        labelValueY="labelX"
-        tooltipFormatter={self.tooltipFormatter3D}
-        currencyCode={this.props.currencyCode}
-        languageCode={this.props.languageCode}
-      />
-    )
-  }
+  renderStackedColumnChart = () => (
+    <ChataStackedColumnChart
+      {...this.getCommonChartProps()}
+      dataValue="value"
+      labelValueX="labelY"
+      labelValueY="labelX"
+      tooltipFormatter={this.tooltipFormatter3D}
+    />
+  )
+
+  renderStackedBarChart = () => (
+    <ChataStackedBarChart
+      {...this.getCommonChartProps()}
+      dataValue="value"
+      labelValueX="labelY"
+      labelValueY="labelX"
+      tooltipFormatter={this.tooltipFormatter3D}
+    />
+  )
 
   render = () => {
     let chart

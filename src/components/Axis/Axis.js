@@ -14,6 +14,8 @@ import { formatChartLabel } from '../../js/Util.js'
 import './Axis.css'
 
 export default class Axis extends Component {
+  LEGEND_PADDING = 130
+
   static propTypes = {
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
@@ -25,12 +27,14 @@ export default class Axis extends Component {
     col: PropTypes.shape({}),
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    hasLegend: PropTypes.bool
+    hasRightLegend: PropTypes.bool,
+    hasBottomLegend: PropTypes.bool
   }
 
   static defaultProps = {
     orient: 'Bottom',
-    hasLegend: false,
+    hasRightLegend: false,
+    hasBottomLegend: false,
     currencyCode: undefined,
     languageCode: undefined
   }
@@ -51,9 +55,12 @@ export default class Axis extends Component {
 
   renderLegend = () => {
     const self = this
-    const { legendLabels, legendColumn } = this.props
+    const { legendLabels } = this.props
 
-    if (!legendLabels || !legendColumn) {
+    console.log('legend width:')
+    console.log(this.props.bottomLegendWidth)
+
+    if (!legendLabels) {
       return
     }
 
@@ -67,23 +74,37 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .style('font-size', '10px')
 
-    var legendOrdinal = legendColor()
-      .shape(
-        'path',
-        symbol()
-          .type(symbolCircle)
-          .size(75)()
-      )
-      .orient('vertical')
-      .shapePadding(5)
-      .labelWrap(120)
-      // .labelAlign('left')
-      // .cellFilter(d => {
-      //   return d[self.props.labelValueY] !== 'e'
-      // })
-      // .labels(formattedLabels)
-      // .titleWidth(600)
-      .scale(this.legendScale)
+    if (this.props.hasRightLegend) {
+      var legendOrdinal = legendColor()
+        .shape(
+          'path',
+          symbol()
+            .type(symbolCircle)
+            .size(75)()
+        )
+        .orient('vertical')
+        .shapePadding(5)
+        .labelWrap(120)
+        .scale(this.legendScale)
+    } else if (this.props.hasBottomLegend) {
+      var legendOrdinal = legendColor()
+        .shape(
+          'path',
+          symbol()
+            .type(symbolCircle)
+            .size(75)()
+        )
+        .orient('horizontal')
+        .shapePadding(self.LEGEND_PADDING)
+        .labelWrap(120)
+        .labelAlign('left')
+        // .cellFilter(d => {
+        //   return d[self.props.labelValueY] !== 'e'
+        // })
+        // .labels(formattedLabels)
+        // .titleWidth(600)
+        .scale(this.legendScale)
+    }
 
     svg.select('.legendOrdinal').call(legendOrdinal)
   }
@@ -126,7 +147,7 @@ export default class Axis extends Component {
         .style('font-family', 'inherit')
     }
 
-    if (this.props.hasLegend) {
+    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
       this.renderLegend()
     }
 
@@ -149,6 +170,11 @@ export default class Axis extends Component {
   }
 
   render = () => {
+    const numSeries =
+      (this.props.legendLabels && this.props.legendLabels.length) || 0
+    const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
+    const marginLeft = this.props.margins.left || 0
+
     return (
       <g>
         <g
@@ -163,7 +189,14 @@ export default class Axis extends Component {
           ref={el => {
             this.legendElement = el
           }}
-          transform={`translate(${this.props.width + 15},15)`}
+          className="legendOrdinal-container"
+          transform={
+            this.props.hasRightLegend
+              ? `translate(${this.props.width + 15},15)`
+              : `translate(${(this.props.width - marginLeft) / 2 +
+                  marginLeft -
+                  legendDx},${this.props.height - 30})`
+          }
         />
       </g>
     )

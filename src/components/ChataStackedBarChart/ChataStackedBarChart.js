@@ -166,7 +166,7 @@ export default class ChataStackedBarChart extends Component {
             currencyCode={this.props.currencyCode}
             languageCode={this.props.languageCode}
             xGridLines
-            hasLegend
+            hasRightLegend
           />
           <StackedBars
             scales={{ xScale, yScale }}

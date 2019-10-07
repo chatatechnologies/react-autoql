@@ -35,7 +35,11 @@ export default class ChataLineChart extends Component {
 
   render = () => {
     const {
+      bottomLegendMargin,
+      bottomLegendWidth,
       tooltipFormatter,
+      languageCode,
+      currencyCode,
       bottomMargin,
       onChartClick,
       rightMargin,
@@ -88,6 +92,10 @@ export default class ChataLineChart extends Component {
       })
     }
 
+    const legendLabels = columns.slice(1).map(column => {
+      return column.title
+    })
+
     return (
       <g>
         <Axes
@@ -98,14 +106,18 @@ export default class ChataLineChart extends Component {
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
-            top: topMargin
+            top: topMargin,
+            bottomLegend: bottomLegendMargin
           }}
           width={width}
           height={height}
           xTicks={xTickValues}
           rotateLabels={barWidth < 135}
-          currencyCode={this.props.currencyCode}
-          languageCode={this.props.languageCode}
+          languageCode={languageCode}
+          currencyCode={currencyCode}
+          bottomLegendWidth={bottomLegendWidth}
+          legendLabels={legendLabels}
+          hasBottomLegend={data[0].values.length > 1}
           yGridLines
         />
         <Line

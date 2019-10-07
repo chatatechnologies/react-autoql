@@ -35,6 +35,8 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     const {
+      bottomLegendMargin,
+      bottomLegendWidth,
       tooltipFormatter,
       bottomMargin,
       onChartClick,
@@ -90,6 +92,10 @@ export default class ChataBarChart extends Component {
       })
     }
 
+    const legendLabels = columns.slice(1).map(column => {
+      return column.title
+    })
+
     return (
       <g>
         <Axes
@@ -100,7 +106,8 @@ export default class ChataBarChart extends Component {
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
-            top: topMargin
+            top: topMargin,
+            bottomLegend: bottomLegendMargin
           }}
           width={width}
           height={height}
@@ -108,6 +115,9 @@ export default class ChataBarChart extends Component {
           rotateLabels={tickWidth < 135}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
+          hasBottomLegend={data[0].values.length > 1}
+          bottomLegendWidth={bottomLegendWidth}
+          legendLabels={legendLabels}
           xGridLines
         />
         {

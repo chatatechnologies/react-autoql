@@ -25,7 +25,7 @@ export default class Line extends Component {
         const xShift = xScale.bandwidth() / 2
         allLines.push(
           <line
-            key={d[labelValue]}
+            key={`line-${d[labelValue]}-${series}`}
             className="line"
             x1={xScale(d[labelValue]) + xShift}
             y1={yScale(d[dataValues][series])}
@@ -61,7 +61,7 @@ export default class Line extends Component {
         const xShift = xScale.bandwidth() / 2
         allDots.push(
           <circle
-            key={d[labelValue]}
+            key={`line-dot-${d[labelValue]}-${series}`}
             className={`line-dot${
               this.state.activeKey === d[labelValue] ? ' active' : ''
             }`}
@@ -71,7 +71,9 @@ export default class Line extends Component {
             strokeWidth={5}
             r={2}
             onClick={() => {
-              this.setState({ activeKey: d[labelValue] })
+              this.setState({
+                activeKey: `line-dot-${d[labelValue]}-${series}`
+              })
               this.props.onChartClick(d.origRow)
             }}
             data-tip={this.props.tooltipFormatter(d, series)}

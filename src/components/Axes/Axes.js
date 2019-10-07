@@ -23,7 +23,9 @@ export default class Axes extends React.Component {
       legendColumn,
       currencyCode,
       languageCode,
-      hasLegend
+      hasRightLegend,
+      hasBottomLegend,
+      bottomLegendWidth
     } = this.props
 
     const xProps = {
@@ -38,7 +40,9 @@ export default class Axes extends React.Component {
       margins,
       col: xCol,
       showGridLines: xGridLines,
-      hasLegend,
+      hasRightLegend,
+      hasBottomLegend,
+      bottomLegendWidth,
       legendLabels,
       legendColumn,
       currencyCode,
@@ -79,7 +83,7 @@ export default class Axes extends React.Component {
           className="x-axis-label"
           textAnchor="middle"
           fontWeight="bold"
-          y={xProps.height}
+          y={xProps.height - (xProps.margins.bottomLegend || 0)}
           x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
           style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
         >
