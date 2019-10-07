@@ -165,12 +165,12 @@ export default class ChataStackedBarChart extends Component {
             height={height}
             yTicks={yTickValues}
             rotateLabels={tickWidth < 135}
-            legendLabels={this.uniqueXLabels}
-            legendColumn={columns[0]}
             currencyCode={currencyCode}
             languageCode={languageCode}
             chartColors={chartColors}
             xGridLines
+            legendLabels={this.uniqueXLabels}
+            legendColumn={columns[0]}
             hasRightLegend
           />
           <StackedBars

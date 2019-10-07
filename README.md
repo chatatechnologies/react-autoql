@@ -24,7 +24,9 @@ $ yarn add @chata-ai/core
 - Support for voice to text button in Google Chrome only. Will fail silently in other browsers.
 
 # Authentication
-You will need an API key, customer ID, and user ID, to query your database through these widgets. If you do not have these, please visit the chata.io developer site for more information https://chata.readme.io
+You will need a API key, customer ID, user ID, and domain to query your database through these widgets. Additionally, we require that you pass in a valid JWT token to be used on every endpoint call.
+
+For more information on these requirements or how to retrieve/refresh your token please visit the chata.io developer site https://chata.readme.io
 
 # Components
 
@@ -36,24 +38,25 @@ import React, { Component } from 'react'
 import { ChatDrawer } from '@chata-ai/core';
 
 export default class App extends Component {
-	state = {
-		isVisible: false
-	}
+  state = {
+    isVisible: false
+  }
 
-	render = () => {
-		return (
-			<ChatDrawer
-				apiKey="your-api-key"
-				customerId = "your-customer-id"
-				userId = "your@email.com"
+  render = () => {
+    return (
+      <ChatDrawer
+        apiKey="your-api-key"
+        customerId = "your-customer-id"
+        userId = "your@email.com"
+        domain = "https://yourdomain.com"
 
-				isVisible={this.state.isVisible}
-				onHandleClick={() =>
-					this.setState({ isVisible: !this.state.isVisible })
-				}}
-			/>
-		)
-	}
+        isVisible={this.state.isVisible}
+        onHandleClick={() =>
+          this.setState({ isVisible: !this.state.isVisible })
+        }}
+      />
+    )
+  }
 }
 ```
 
@@ -64,31 +67,91 @@ A chat bar component and visualization component that can be placed anywhere. Th
 You will find a list of available props and their defaults in the next section.
 ```
 import React, { Component, Fragment } from 'react'
-import { ChatBar, ResponseRendere } from '@chata-ai/core';
+import { ChatBar, ResponseRenderer } from '@chata-ai/core';
 
 export default class App extends Component {
-	chatBarRef = null;
+  chatBarRef = null;
 
-	render = () => {
-		return (
-			<Fragment>
-				<ChatBar
-					apiKey="your-api-key"
-					customerId = "your-customer-id"
-					userId = "your@email.com"
+  render = () => {
+    return (
+      <Fragment>
+        <ChatBar
+          apiKey="your-api-key"
+          customerId = "your-customer-id"
+          userId = "your@email.com"
+          domain = "https://yourdomain.com"
 
-					ref={r => (this.chatBarRef = r)}
-					onResponseCallback={response => {
-						this.setState({ response })
-					}}
-				/>
-				<ResponseRenderer
-					chatBarRef={this.chatBarRef}
-					response={this.state.response}
-				/>
-			</Fragment>
-		)
-	}
+          ref={r => (this.chatBarRef = r)}
+          onResponseCallback={response => {
+            this.setState({ response })
+          }}
+        />
+        <ResponseRenderer
+          chatBarRef={this.chatBarRef}
+          response={this.state.response}
+        />
+      </Fragment>
+    )
+  }
+}
+```
+
+#### Dashboard
+
+An editable dashboard component containing tiles with a query and a visualization. This component takes an array of tile objects as a prop for the initial render. If the user wants to edit the dashboard, the new tile state can be retrieved using the getDashboardTileState function and stored in a database for persistence.
+
+You will find a list of available props and their defaults in the next section.
+
+```
+import React, { Component } from 'react'
+import { Dashboard } from '@chata-ai/core';
+
+export default class App extends Component {
+  state = {
+    tiles: [
+      {
+        key: '0',
+        i: '0',
+        w: 3,
+        h: 2,
+        x: 0,
+        y: 0,
+        maxH: 12,
+        minH: 2,
+        minW: 3,
+        query: 'total profit this month',
+        title: 'Profit - Current Month'
+      },
+      {
+        key: '1',
+        i: '1',
+        w: 3,
+        h: 2,
+        x: 3,
+        y: 0,fis
+        maxH: 12,
+        minH: 2,
+        minW: 3,
+        query: 'total profit last month',
+        title: 'Profit - Previous Month'
+      },
+    ]
+  }
+  
+  render = () => {
+    return (
+      <Dashboard
+        apiKey="your-api-key"
+        customerId = "your-customer-id"
+        userId = "your@email.com"
+        domain = "https://yourdomain.com"
+
+        ref={r => (this.dashboardRef = r)}
+        tiles={this.tiles}
+        onChangeCallback={tiles => this.setState({ tiles })}
+      />
+    )
+  }
 }
 ```
 
@@ -97,10 +160,12 @@ export default class App extends Component {
 #### ChatDrawer Props
 
 | Prop | Type | Default Value |
-| :------------: | :-------------: | :------------: |
+| :------------ | :------------- | :------------ |
+| token (Required) | String | - |
 | apiKey (Required) | String | - |
 | customerId (Required) | String | - |
 | userId (Required) | String | - |
+| domain (Required) | String | - |
 | isVisible |  Boolean | false |
 | placement | String: 'left' &#124;&#124; 'right' &#124;&#124; 'top' &#124;&#124; 'bottom' |  'right' |
 | width | String &#124;&#124; Number | 500 |
@@ -125,13 +190,19 @@ export default class App extends Component {
 | enableSafetyNet | Boolean | true |
 | enableDrilldowns |  Boolean | true |
 | demo | Boolean | false |
+| currencyCode | String | 'USD' |
+| languageCode | String | 'en-US' |
+| fontFamily | String | 'sans-serif' |
+| chartColors | Array | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
 
 #### ChatBar Props
 | Prop | Type | Default Value |
-| :------------: | :-------------: | :------------: |
+| :------------ | :------------- | :------------ |
+| token (Required) | String | - |
 | apiKey (Required) | String | - |
 | customerId (Required) | String | - |
 | userId (Required) | String | - |
+| domain (Required) | String | - |
 | isDisabled | Boolean | false |
 | onSubmit | Function | () => {} |
 | onResponseCallback | Function | () => {} |
@@ -144,10 +215,12 @@ export default class App extends Component {
 | enableSafetyNet | Boolean | true |
 | enableDrilldowns |  Boolean | true |
 | demo | Boolean | false |
+| debug | Boolean | false |
+| fontFamily | String | 'sans-serif' |
 
 #### ResponseRenderer Props
 | Prop | Type | Default Value |
-| :------------: | :-------------: | :------------: |
+| :------------ | :------------- | :------------ |
 | response (Required) | Object | - |
 | chatBarRef | Instance of `<ChatBar/>` | undefined |
 | supportsSuggestions | Boolean | true |
@@ -158,6 +231,31 @@ export default class App extends Component {
 | displayType | String | undefined |
 | isFilteringTable | Boolean | false |
 | renderTooltips | Boolean | true |
+| currencyCode | String | 'USD' |
+| languageCode | String | 'en-US' |
+| fontFamily | String | 'sans-serif' |
+| chartColors | Array | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
+
+#### Dashboard Props
+| Prop | Type | Default Value |
+| :------------ | :------------- | :------------ |
+| token (Required) | String | - |
+| apiKey (Required) | String | - |
+| customerId (Required) | String | - |
+| userId (Required) | String | - |
+| domain (Required) | String | - |
+| tiles (Required) | Array of Tile Objects | [] |
+| onChangeCallback | Function | () => {} |
+| isEditing | Boolean | false |
+| currencyCode | String | 'USD' |
+| languageCode | String | 'en-US' |
+| fontFamily | String | 'sans-serif' |
+| chartColors | Array | ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'] |
+| executeOnMount | Boolean | true |
+| executeOnStopEditing | Boolean | true |
+| notExecutedText | String | 'Hit "Execute" to run this dashboard' |
+| demo | Boolean | false |
+| debug | Boolean | false |
 
 #### Prop Descriptions
 **isVisible**: Whether the drawer is open or not. You have full control over the visibility of the drawer by using your own state.
@@ -182,6 +280,8 @@ export default class App extends Component {
 
 **accentColor**: Main accent color used in the chat drawer. This is the color of the header, speech-to-text button, and the request messages. The chart colours will not be affected by this.
 
+**chartColors**: An array of colors for the chart themes starting with the most primary. You can pass in any valid css color format in here, however it is recommended that the color is opaque. ie. "#26A7E9", "rgb(111, 227, 142)", or "red". The charts will always use the colors in order from first to last. If the chart requires more colors than provided, it will repeat the colors provided.
+
 **onVisibleChange**: Callback after the drawer closes or opens.
 
 **onHandleClick**: Callback when drawer handle is clicked.
@@ -198,6 +298,8 @@ export default class App extends Component {
 
 **introMessage**: Customize the intro message to use your own branded voice. The customerName prop will be ignored if this is provided.
 
+**fontFamily**: Customize the font family to the provided font wherever possible. Accepts any css font family that is available, and if not it will default on sans-serif
+
 **enableVoiceRecord**: Enables the speech to text button. Note that this feature is only available in Google Chrome. It will fail silently on other browsers.
 
 **enableAutocomplete**: If this is enabled, you will see query suggestions as you type in the chat bar.
@@ -213,6 +315,8 @@ If this value is false, the query will bypass the "safetynet" endpoint and be se
 **enableDrilldowns**: A new query will be sent when clicking on a table or chart element to "drill down" into the data. A new message will be sent to the user with more detailed data related to that clicked element. If this is false, nothing will happen when a table or chart element is clicked.
 
 **demo**: If this value is true, the widget will use chata's demo Plumbing Co. as a data source.
+
+**debug**: If this value is true, the generated SQL for your queries will show in the interpretation icon in the message toolbar.
 
 **response (Required)**: This is the whole response object supplied from the query endpoint (or safetynet endpoint if enabled). You must pass in this whole object to the response renderer to process. 
 
@@ -233,7 +337,7 @@ For more information on the structure of a query response, please visit the API 
 **displayType**: This is where you can pass in the type of visualization you want for the data. The full list of display types is below:
 
 | Display Type | Prop Value | Description |
-| ------------ | ------------ | -- |
+| :------------ | :------------ | :------------ |
 | Table | `table` | Displays array data in a regular table. (We use the Tabulator library) |
 | Pivot Table | `pivot_table` | Displays a multi-dimensional table, with the first column frozen |
 | Bar Chart | `bar` | Ordinal data is on the y-axis, numerical data is on the x-axis, bars are horizontal. Will show a series for each column of data where applicable |
@@ -248,6 +352,89 @@ You must pass in a supported display type to the ResponseRenderer (see the Suppo
 
 **renderTooltips**: Whether or not to render tooltips for chart display types. When this value is true, each chart element will have a tooltip showing the ordinal title/value and numerical title/value.
 
+**currencyCode**: If your data is not in USD, you can specify the currency code here and all tables and charts will show the default currency formatting for that code.
+
+> **Warning:**
+> Setting a currency code does *not* perform a currency conversion. It simply displays the number in the desired format.
+
+**languageCode**: If the currency code from your country needs to use a language other than english in order to show symbols correctly, you can pass in a locale here. Visit https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat for more details
+
+**isEditing**:  Toggles edit mode for the dashboard component. If edit mode is active, the user is able to resize, reorder, or delete a tile. They are also able to change the query, title, and visualization type.
+
+**tiles**: Required prop to manage the state of the dashboard. Used along with **onChangeCallback** below to control the state of the dashboard. More details in the Tile section below on the structure of this prop.
+
+**onChangeCallback**: Callback used to update your tile state in your own react component. See example below for how to control the state of the dashboard.
+
+# Tiles
+
+The defaultTileState prop should be an array of tile objects. This can either be created through the widget by using edit mode, or you can pass it in manually. The minimum required structure for a dashboard tile is as follows:
+
+```
+{
+   i: '0', // unique id for each tile but can match 'key'
+   w: 3, // width of the tile. A value of 1 represents 1/12 of the container width. 12 is the maximum (full width)
+   h: 2, // height of the tile. A value of 1 represents 60px
+   x: 0, // x position of the tile (in same increments as w)
+   y: 0, // y position of the tile (in same increments as h)
+   query: 'total profit this month', // query to be used for the tile
+   title: 'Profit - Current Month' // title to display in the tile outide of edit mode. If this isn't supplied, the query text will be used
+}
+```
+
+> **This is a controlled component**
+> Note: The dashboard component is a controlled component. It accepts a tiles prop and an onChange callback that are designed to work with each other using your own state. This makes it extremely easy to fetch/manage/store the current dashboard tile state.
+
+If you want to persist the dashboard, simply store the tile array in your own database. See example below for how to manage the dashboards tile state:
+
+```
+import React, { Component, Fragment } from 'react'
+import { Dashboard, getDashboardTileState } from '@chata-ai/core';
+
+export default class App extends Component {
+  state = {
+    isEditingDashboard: false,
+    tiles: [],
+  }
+ 
+  saveDashboard = () => {
+     // Save tileState somewhere
+     yourSaveEndpoint(this.state.tiles);
+  }
+ 	
+  render = () => {
+    return (
+      <Fragment>
+        <button
+      	  onClick={() => 
+            this.setState({
+              isEditingDashboard: !this.state.isEditingDashboard
+            })}
+        >
+          Toggle Edit
+        </button>
+        <button onClick={this.saveDashboard}>
+          Save Dashboard
+        </button>
+        <Dashboard
+          apiKey="your-api-key"
+          customerId = "your-customer-id"
+          userId = "your@email.com"
+          domain = "https://yourdomain.com"
+
+          tiles={this.state.tiles}
+          onChangeCallback={tiles => this.setState(tiles)}
+          ref={r => (this.dashboardRef = r)}
+          isEditing={this.state.isEditingDashboard}  
+        />
+      </Fragment>
+    )
+  }
+}
+```
+
+> **You probably don't need the response!**
+> When saving your dashboard tiles, it is likely that you don't need to save the query response, since the dashboard can be executed ad hoc. In this case, just exclude the queryResponse from the tile objects.
+
 # Supported Display Types
 
 Using the ref of ResponseRenderer, you can access the `supportedDisplayTypes` array that is stored in the component. These are display type options you can pass in as the displayType prop into the ResponseRenderer component.
@@ -260,21 +447,65 @@ import { ResponseRenderer } from 'chata-ai'
 export default class App extends Component {
 
 ...
-	getSupportedDisplayTypes = () => {
-		return this.responseRef.supportedDisplayTypes
-	}
+  getSupportedDisplayTypes = () => {
+    return this.responseRef.supportedDisplayTypes
+  }
 
-	render = () => {
-		const displayType = this.getSupportedDisplayTypes().includes('bar') ? 'bar' : 'table'
+  render = () => {
+    const displayType = this.getSupportedDisplayTypes().includes('bar') ? 'bar' : 'table'
 
-		return (
-		  <ResponseRenderer
-			ref={ref => this.responseRef = ref}
-			response={this.state.response}
-			displayType={displayType} // If you pass in an unsupported display type, it will use 'table' by default
-		  />
-		)
-	}
+    return (
+      <ResponseRenderer
+        ref={ref => this.responseRef = ref}
+        response={this.state.response}
+        displayType={displayType} // If you pass in an unsupported display type, it will use 'table' by default
+      />
+    )
+  }
+}
+```
+
+# Dashboard Edit Mode
+
+**Points to note about dashboard edit mode: **
+- Safetynet and suggestions are enabled only in edit mode. If outside of edit mode, the tile will display a general error message. The reason for this it that the query should be considered immutable outside of edit mode.
+
+- To add a dashboard tile, you can call the "addTile" function from the dashboard ref. It will make a new tile and place it at the bottom of the dashboard with a default width and height of 6 and 5 respectively.
+
+```
+import React, { Component, Fragment } from 'react'
+import { Dashboard, getDashboardTileState } from '@chata-ai/core';
+
+export default class App extends Component {
+  state = {
+    isEditingDashboard: true,
+  }
+  
+  ...
+  addTile = () => {
+    if (this.state.isEditingDashboard ? this.dashboardRef) {
+      this.dashboardRef.addTile()
+    }
+  }
+ 	
+  render = () => {
+    return (
+      <Fragment>
+        <button onClick={this.addTile}>
+          Add Tile
+        </button>
+        <Dashboard
+          apiKey="your-api-key"
+          customerId = "your-customer-id"
+          userId = "your@email.com"
+          domain = "https://yourdomain.com"
+
+          ref={r => (this.dashboardRef = r)}
+          isEditing={this.state.isEditingDashboard}  
+        />
+      </Fragment>
+    )
+  }
 }
 ```
 

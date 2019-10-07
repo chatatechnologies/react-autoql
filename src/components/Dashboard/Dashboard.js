@@ -47,6 +47,7 @@ class Dashboard extends React.Component {
 
   static propTypes = {
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
+    onChangeCallback: PropTypes.func,
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
@@ -65,7 +66,6 @@ class Dashboard extends React.Component {
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
     fontFamily: PropTypes.string,
-    onChangeCallback: PropTypes.func,
     notExecutedText: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string)
   }

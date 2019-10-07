@@ -47,7 +47,7 @@ export default class Circles extends Component {
           style={{
             stroke: 'transparent',
             strokeWidth: 10,
-            fill: '#28a8e0',
+            fill: this.props.chartColors[0],
             fillOpacity: 0.7
           }}
         />

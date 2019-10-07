@@ -119,11 +119,14 @@ export default class ChataStackedColumnChart extends Component {
             height={height}
             xTicks={xTickValues}
             rotateLabels={barWidth < 135}
-            legendLabels={this.uniqueXLabels}
             legendColumn={columns[0]}
             currencyCode={currencyCode}
             languageCode={languageCode}
             chartColors={chartColors}
+            legendColumn={columns[0]}
+            legendLabels={this.uniqueXLabels}
+            legendScale={this.legendScale}
+            hasRightLegend
             yGridLines
             hasLegend
           />
