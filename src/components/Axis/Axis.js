@@ -122,7 +122,7 @@ export default class Axis extends Component {
           this.props.col,
           this.props.currencyCode,
           this.props.languageCode
-        )
+        ).formattedLabel
       })
 
     if (this.props.ticks) {
@@ -156,6 +156,19 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
+      .attr('data-for', 'chart-element-tooltip')
+      .attr('data-tip', function(d) {
+        const { fullWidthLabel, isTruncated } = formatChartLabel(
+          d,
+          self.props.col,
+          self.props.currencyCode,
+          self.props.languageCode
+        )
+        if (isTruncated) {
+          return fullWidthLabel
+        }
+        return null
+      })
 
     select(this.axisElement)
       .selectAll('.axis path')

@@ -91,11 +91,14 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
     }
   }
 
+  const fullWidthLabel = formattedLabel
+  let isTruncated = false
   if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
-    return `${formattedLabel.substring(0, 18)}...`
+    formattedLabel = `${formattedLabel.substring(0, 18)}...`
+    isTruncated = true
   }
 
-  return formattedLabel
+  return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
 export const formatElement = (element, column, currencyCode, languageCode) => {
