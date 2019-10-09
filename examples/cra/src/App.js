@@ -18,7 +18,8 @@ import {
   Button,
   Menu,
   Select,
-  Form
+  Form,
+  message
 } from 'antd'
 
 import 'antd/dist/antd.css'
@@ -50,10 +51,10 @@ export default class App extends Component {
     isEditing: false,
     demo: true,
     debug: true,
-    apiKey: '',
-    customerId: '',
-    domain: '',
-    userId: '',
+    apiKey: localStorage.getItem('api-key') || '',
+    customerId: localStorage.getItem('customer-id') || '',
+    domain: localStorage.getItem('domain-url') || '',
+    userId: localStorage.getItem('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     fontFamily: 'sans-serif',
@@ -183,22 +184,47 @@ export default class App extends Component {
   onLogin = async e => {
     e.preventDefault()
 
-    const formData = new FormData()
-    formData.append('username', this.state.email)
-    formData.append('password', this.state.password)
-    // Login to get login token
-    const tokenInfo = await axios.post(
-      'https://backend-staging.chata.io/api/v1/login',
-      formData,
-      {
-        headers: {
-          'Access-Control-Allow-Origin': '*'
+    try {
+      // Login to get login token
+      const loginFormData = new FormData()
+      loginFormData.append('username', this.state.email)
+      loginFormData.append('password', this.state.password)
+      const loginResponse = await axios.post(
+        'https://backend-staging.chata.io/api/v1/login',
+        loginFormData,
+        {
+          headers: {
+            // 'Access-Control-Allow-Origin': '*'
+          }
         }
-      }
-    )
+      )
 
-    console.log(tokenInfo)
-    // Use login token to get JWT token
+      // Put login token in local storage
+      const loginToken = loginResponse.data
+      localStorage.setItem('loginToken', loginToken)
+
+      // Use login token to get JWT token
+      const jwtResponse = await axios.get(
+        'https://backend-staging.chata.io/api/v1/jwt',
+        {
+          headers: {
+            // 'Access-Control-Allow-Origin': '*'
+            Authorization: `Bearer ${loginToken}`
+          }
+        }
+      )
+
+      // Put jwt token into storage
+      const jwtToken = jwtResponse.data
+      localStorage.setItem('jwtToken', jwtToken)
+
+      return message.success(
+        'Login Sucessful! Your token will be valid for 6 hours if you do not clear your cache.'
+      )
+    } catch (error) {
+      console.error(error)
+      return message.error('Login Unsuccessful. Check logs for details.')
+    }
   }
 
   createRadioInputGroup = (title, propName, propValues = []) => {
@@ -310,34 +336,46 @@ export default class App extends Component {
                 Login
               </Button>
             </Form>
-            <h4>API key</h4>
-            <Input
-              onChange={e => {
-                this.setState({ apiKey: e.target.value })
-              }}
-              value={this.state.apiKey}
-            />
-            <h4>Customer ID</h4>
-            <Input
-              onChange={e => {
-                this.setState({ customerId: e.target.value })
-              }}
-              value={this.state.customerId}
-            />
-            <h4>User ID (email)</h4>
-            <Input
-              onChange={e => {
-                this.setState({ userId: e.target.value })
-              }}
-              value={this.state.userId}
-            />
-            <h4>Domain URL</h4>
-            <Input
-              onChange={e => {
-                this.setState({ domain: e.target.value })
-              }}
-              value={this.state.domain}
-            />
+            <Form onSubmit={e => e.preventDefault()}>
+              <h4>API key</h4>
+              <Input
+                name="api-key"
+                onChange={e => {
+                  this.setState({ apiKey: e.target.value })
+                }}
+                onBlur={e => localStorage.setItem('api-key', e.target.value)}
+                value={this.state.apiKey}
+              />
+              <h4>Customer ID</h4>
+              <Input
+                name="customer-id"
+                onChange={e => {
+                  this.setState({ customerId: e.target.value })
+                }}
+                onBlur={e =>
+                  localStorage.setItem('customer-id', e.target.value)
+                }
+                value={this.state.customerId}
+              />
+              <h4>User ID (email)</h4>
+              <Input
+                name="user-id"
+                onChange={e => {
+                  this.setState({ userId: e.target.value })
+                }}
+                onBlur={e => localStorage.setItem('user-id', e.target.value)}
+                value={this.state.userId}
+              />
+              <h4>Domain URL</h4>
+              <Input
+                name="domain-url"
+                onChange={e => {
+                  this.setState({ domain: e.target.value })
+                }}
+                onBlur={e => localStorage.setItem('domain-url', e.target.value)}
+                value={this.state.domain}
+              />
+            </Form>
           </Fragment>
         )}
         <h1>Drawer Props</h1>
@@ -527,6 +565,7 @@ export default class App extends Component {
         }
         {this.renderPropOptions()}
         <ChatDrawer
+          token={localStorage.getItem('jwtToken')}
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
@@ -632,6 +671,7 @@ export default class App extends Component {
         </div>
         <Dashboard
           ref={ref => (this.dashboardRef = ref)}
+          token={localStorage.getItem('jwtToken')}
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false

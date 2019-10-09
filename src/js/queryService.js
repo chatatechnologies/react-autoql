@@ -51,7 +51,7 @@ export const runQueryOnly = (
 
   const config = {}
   // config.cancelToken = queryCall.token
-  if (token) {
+  if (token && !demo) {
     config.headers = {
       // 'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
@@ -123,7 +123,7 @@ export const runQuery = (
 
     const config = {}
     // config.cancelToken = safetyNetCall.token
-    if (token) {
+    if (token && !demo) {
       config.headers = {
         Authorization: `Bearer ${token}`
       }
@@ -193,7 +193,7 @@ export const runDrilldown = (
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
-  if (token) {
+  if (token && !demo) {
     config.headers = {
       Authorization: `Bearer ${token}`
     }
@@ -237,7 +237,7 @@ export const fetchSuggestions = (
 
   const config = {}
   // config.cancelToken = autoCompleteCall.token
-  if (token) {
+  if (token && !demo) {
     config.headers = {
       Authorization: `Bearer ${token}`
     }
