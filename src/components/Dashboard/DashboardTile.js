@@ -17,10 +17,11 @@ export default class DashboardTile extends React.PureComponent {
   TILE_ID = uuid.v4()
 
   static propTypes = {
-    apiKey: PropTypes.string.isRequired,
-    customerId: PropTypes.string.isRequired,
-    userId: PropTypes.string.isRequired,
-    domain: PropTypes.string.isRequired,
+    token: PropTypes.string,
+    apiKey: PropTypes.string,
+    customerId: PropTypes.string,
+    userId: PropTypes.string,
+    domain: PropTypes.string,
     demo: PropTypes.bool.isRequired,
     debug: PropTypes.bool.isRequired,
     enableSafetyNet: PropTypes.bool.isRequired,
@@ -36,6 +37,11 @@ export default class DashboardTile extends React.PureComponent {
   static defaultProps = {
     query: '',
     title: '',
+    token: undefined,
+    apiKey: undefined,
+    customerId: undefined,
+    userId: undefined,
+    domain: undefined,
     isNewTile: false,
     safetyNetSelections: undefined,
     selectedSuggestion: undefined,
@@ -63,7 +69,8 @@ export default class DashboardTile extends React.PureComponent {
         this.props.domain,
         this.props.apiKey,
         this.props.customerId,
-        this.props.userId
+        this.props.userId,
+        this.props.token
       )
         .then(response => {
           this.props.setParamForTile('isExecuting', false, id)

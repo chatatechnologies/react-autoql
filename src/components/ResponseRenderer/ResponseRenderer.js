@@ -104,9 +104,6 @@ export default class ResponseRenderer extends React.Component {
     // Determine the supported visualization types based on the response data
     this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
 
-    console.log('supported display types:')
-    console.log(this.supportedDisplayTypes)
-
     // Set the initial display type based on prop value, response, and supported display types
     this.setState({
       displayType: this.getInitialDisplayType(this.supportedDisplayTypes)

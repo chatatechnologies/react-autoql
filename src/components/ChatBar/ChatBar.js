@@ -19,6 +19,7 @@ export default class ChatBar extends React.Component {
   UNIQUE_ID = uuid.v4()
 
   static propTypes = {
+    token: PropTypes.string,
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
@@ -39,6 +40,7 @@ export default class ChatBar extends React.Component {
   }
 
   static defaultProps = {
+    token: undefined,
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
@@ -76,7 +78,8 @@ export default class ChatBar extends React.Component {
         this.props.domain,
         this.props.apiKey,
         this.props.customerId,
-        this.props.userId
+        this.props.userId,
+        this.props.token
       )
         .then(response => {
           this.props.onResponseCallback(response)
@@ -139,7 +142,8 @@ export default class ChatBar extends React.Component {
       this.props.domain,
       this.props.apiKey,
       this.props.customerId,
-      this.props.userId
+      this.props.userId,
+      this.props.token
     )
       .then(response => {
         const body = response.data

@@ -53,6 +53,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   static propTypes = {
+    token: PropTypes.string,
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
@@ -85,6 +86,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   static defaultProps = {
+    token: undefined,
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
@@ -302,7 +304,8 @@ export default class ChatDrawer extends React.Component {
       this.props.domain,
       this.props.apiKey,
       this.props.customerId,
-      this.props.userId
+      this.props.userId,
+      this.props.token
     )
       .then(response => {
         this.onResponse(response)
@@ -389,7 +392,8 @@ export default class ChatDrawer extends React.Component {
         this.props.debug,
         this.props.apiKey,
         this.props.customerId,
-        this.props.userId
+        this.props.userId,
+        this.props.token
       )
         .then(response => {
           this.addResponseMessage({
@@ -615,6 +619,7 @@ export default class ChatDrawer extends React.Component {
               <div className="watermark">{bubblesIcon} We run on Chata</div>
               <ChatBar
                 ref={this.setChatBarRef}
+                token={this.props.token}
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
                 userId={this.props.userId}

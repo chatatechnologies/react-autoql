@@ -1,4 +1,6 @@
 import React, { Component, Fragment } from 'react'
+import axios from 'axios'
+
 import {
   ChatDrawer,
   ResponseRenderer,
@@ -8,7 +10,16 @@ import {
 } from '@chata-ai/core'
 import uuid from 'uuid'
 
-import { Radio, Input, InputNumber, Switch, Button, Menu, Select } from 'antd'
+import {
+  Radio,
+  Input,
+  InputNumber,
+  Switch,
+  Button,
+  Menu,
+  Select,
+  Form
+} from 'antd'
 
 import 'antd/dist/antd.css'
 import './index.css'
@@ -169,6 +180,22 @@ export default class App extends Component {
     ]
   }
 
+  onLogin = async e => {
+    e.preventDefault()
+    // Login to get login token
+    const axiosInstance = axios.create({})
+    const tokenInfo = await axiosInstance.post(
+      'https://backend-staging.chata.io/api/v1/login',
+      {
+        username: this.state.email,
+        password: this.state.password
+      }
+    )
+
+    console.log(tokenInfo)
+    // Use login token to get JWT token
+  }
+
   createRadioInputGroup = (title, propName, propValues = []) => {
     return (
       <div>
@@ -256,6 +283,28 @@ export default class App extends Component {
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
         {!this.state.demo && (
           <Fragment>
+            <h3>You must login to access data</h3>
+            <Form onSubmit={this.onLogin}>
+              <h4>Username</h4>
+              <Input
+                onChange={e => {
+                  this.setState({ email: e.target.value })
+                }}
+                value={this.state.email}
+              />
+              <h4>Password</h4>
+              <Input
+                type="password"
+                onChange={e => {
+                  this.setState({ password: e.target.value })
+                }}
+                value={this.state.password}
+              />
+              <br />
+              <Button type="primary" htmlType="submit">
+                Login
+              </Button>
+            </Form>
             <h4>API key</h4>
             <Input
               onChange={e => {

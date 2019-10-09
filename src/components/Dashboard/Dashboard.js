@@ -48,6 +48,7 @@ class Dashboard extends React.Component {
   static propTypes = {
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     onChangeCallback: PropTypes.func,
+    token: PropTypes.string,
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
@@ -72,6 +73,7 @@ class Dashboard extends React.Component {
 
   static defaultProps = {
     tiles: [],
+    token: undefined,
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
@@ -283,6 +285,7 @@ class Dashboard extends React.Component {
                 tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
                 displayType={tile.displayType}
                 queryResponse={tile.queryResponse}
+                token={this.props.token}
                 apiKey={this.props.apiKey}
                 customerId={this.props.customerId}
                 userId={this.props.userId}

@@ -29,7 +29,8 @@ export const runQueryOnly = (
   domain,
   api_key,
   customer_id,
-  user_id
+  user_id,
+  token
 ) => {
   const text = query
   const axiosInstance = axios.create({})
@@ -51,7 +52,8 @@ export const runQueryOnly = (
   return axiosInstance
     .post(url, data, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : null
       }
       // cancelToken: queryCall.token
     })
@@ -100,7 +102,8 @@ export const runQuery = (
   domain,
   api_key,
   customer_id,
-  user_id
+  user_id,
+  token
 ) => {
   const axiosInstance = axios.create({})
 
@@ -116,10 +119,12 @@ export const runQuery = (
       )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
     return axiosInstance
-      .get(
-        url
-        // { cancelToken: safetyNetCall.token }
-      )
+      .get(url, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : null
+        }
+        // cancelToken: safetyNetCall.token
+      })
       .then(response => {
         if (
           response &&
@@ -137,7 +142,8 @@ export const runQuery = (
           domain,
           api_key,
           customer_id,
-          user_id
+          user_id,
+          token
         )
       })
       .catch(() => {
@@ -148,7 +154,8 @@ export const runQuery = (
           domain,
           api_key,
           customer_id,
-          user_id
+          user_id,
+          token
         )
       })
   }
@@ -163,7 +170,8 @@ export const runDrilldown = (
   debug,
   api_key,
   customer_id,
-  user_id
+  user_id,
+  token
 ) => {
   const axiosInstance = axios.create({})
 
@@ -182,11 +190,12 @@ export const runDrilldown = (
     : `${domain}/api/v1/chata/query/drilldown?key=${api_key}`
 
   return axiosInstance
-    .post(
-      url,
-      data
-      // { cancelToken: drilldownCall.token }
-    )
+    .post(url, data, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : null
+      }
+      // cancelToken: drilldownCall.token
+    })
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
@@ -197,7 +206,8 @@ export const fetchSuggestions = (
   domain,
   api_key,
   customer_id,
-  user_id
+  user_id,
+  token
 ) => {
   const axiosInstance = axios.create({})
 
@@ -217,7 +227,12 @@ export const fetchSuggestions = (
     )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
   return axiosInstance
-    .get(url, { cancelToken: autoCompleteCall.token })
+    .get(url, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : null
+      },
+      cancelToken: autoCompleteCall.token
+    })
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
