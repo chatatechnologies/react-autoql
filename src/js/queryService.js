@@ -49,14 +49,17 @@ export const runQueryOnly = (
     debug
   }
 
+  const config = {}
+  // config.cancelToken = queryCall.token
+  if (token) {
+    config.headers = {
+      // 'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  }
+
   return axiosInstance
-    .post(url, data, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : null
-      }
-      // cancelToken: queryCall.token
-    })
+    .post(url, data, config)
     .then(response => {
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
@@ -118,13 +121,16 @@ export const runQuery = (
         query
       )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
+    const config = {}
+    // config.cancelToken = safetyNetCall.token
+    if (token) {
+      config.headers = {
+        Authorization: `Bearer ${token}`
+      }
+    }
+
     return axiosInstance
-      .get(url, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : null
-        }
-        // cancelToken: safetyNetCall.token
-      })
+      .get(url, config)
       .then(response => {
         if (
           response &&
@@ -185,17 +191,20 @@ export const runDrilldown = (
     debug
   }
 
+  const config = {}
+  // config.cancelToken = safetyNetCall.token
+  if (token) {
+    config.headers = {
+      Authorization: `Bearer ${token}`
+    }
+  }
+
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
     : `${domain}/api/v1/chata/query/drilldown?key=${api_key}`
 
   return axiosInstance
-    .post(url, data, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : null
-      }
-      // cancelToken: drilldownCall.token
-    })
+    .post(url, data, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
@@ -226,13 +235,16 @@ export const fetchSuggestions = (
       suggestion
     )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
+  const config = {}
+  // config.cancelToken = autoCompleteCall.token
+  if (token) {
+    config.headers = {
+      Authorization: `Bearer ${token}`
+    }
+  }
+
   return axiosInstance
-    .get(url, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : null
-      },
-      cancelToken: autoCompleteCall.token
-    })
+    .get(url, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }

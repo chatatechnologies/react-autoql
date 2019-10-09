@@ -11,7 +11,7 @@ import { VizToolbar } from '../VizToolbar'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
 import { getSupportedDisplayTypes } from '../../js/Util'
-import { runQuery } from '../../js/queryService'
+import { runQuery, runQueryOnly } from '../../js/queryService'
 
 export default class DashboardTile extends React.PureComponent {
   TILE_ID = uuid.v4()
@@ -62,31 +62,53 @@ export default class DashboardTile extends React.PureComponent {
     }
   }
 
-  processTile = query => {
+  processTile = (query, skipSafetyNet) => {
     if (query || this.state.query) {
       const id = this.props.tile.i
       // Reset query response so tile starts "loading" again
       this.props.setParamForTile('isExecuting', true, id)
       this.props.setParamForTile('queryResponse', null, id)
-      runQuery(
-        query || this.props.tile.selectedSuggestion || this.state.query,
-        this.props.demo,
-        this.props.debug,
-        !this.props.isEditing ? false : this.props.enableSafetyNet,
-        this.props.domain,
-        this.props.apiKey,
-        this.props.customerId,
-        this.props.userId,
-        this.props.token
-      )
-        .then(response => {
-          this.props.setParamForTile('isExecuting', false, id)
-          this.props.setParamForTile('queryResponse', response, id)
-        })
-        .catch(error => {
-          this.props.setParamForTile('isExecuting', false, id)
-          this.props.setParamForTile('queryResponse', error, id)
-        })
+
+      if (skipSafetyNet) {
+        runQueryOnly(
+          query || this.props.tile.selectedSuggestion || this.state.query,
+          this.props.demo,
+          this.props.debug,
+          this.props.domain,
+          this.props.apiKey,
+          this.props.customerId,
+          this.props.userId,
+          this.props.token
+        )
+          .then(response => {
+            this.props.setParamForTile('isExecuting', false, id)
+            this.props.setParamForTile('queryResponse', response, id)
+          })
+          .catch(error => {
+            this.props.setParamForTile('isExecuting', false, id)
+            this.props.setParamForTile('queryResponse', error, id)
+          })
+      } else {
+        runQuery(
+          query || this.props.tile.selectedSuggestion || this.state.query,
+          this.props.demo,
+          this.props.debug,
+          !this.props.isEditing ? false : this.props.enableSafetyNet,
+          this.props.domain,
+          this.props.apiKey,
+          this.props.customerId,
+          this.props.userId,
+          this.props.token
+        )
+          .then(response => {
+            this.props.setParamForTile('isExecuting', false, id)
+            this.props.setParamForTile('queryResponse', response, id)
+          })
+          .catch(error => {
+            this.props.setParamForTile('isExecuting', false, id)
+            this.props.setParamForTile('queryResponse', error, id)
+          })
+      }
     }
   }
 
@@ -95,7 +117,7 @@ export default class DashboardTile extends React.PureComponent {
 
     if (isButtonClick) {
       this.props.setParamForTile('query', suggestion, this.props.tile.i)
-      this.processTile(suggestion)
+      this.processTile(suggestion, true)
     } else {
       this.props.setParamForTile(
         'selectedSuggestion',

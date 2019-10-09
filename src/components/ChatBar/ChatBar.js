@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 
 import uuid from 'uuid'
 
-import { runQuery, fetchSuggestions } from '../../js/queryService'
+import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
@@ -64,31 +64,53 @@ export default class ChatBar extends React.Component {
     isQueryRunning: false
   }
 
-  submitQuery = queryText => {
+  submitQuery = (queryText, skipSafetyNet) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
 
     if (query.trim()) {
       this.props.onSubmit(query)
-      runQuery(
-        query,
-        this.props.demo,
-        this.props.debug,
-        this.props.enableSafetyNet,
-        this.props.domain,
-        this.props.apiKey,
-        this.props.customerId,
-        this.props.userId,
-        this.props.token
-      )
-        .then(response => {
-          this.props.onResponseCallback(response)
-          this.setState({ isQueryRunning: false })
-        })
-        .catch(error => {
-          this.props.onResponseCallback(error)
-          this.setState({ isQueryRunning: false })
-        })
+
+      if (skipSafetyNet) {
+        runQueryOnly(
+          query,
+          this.props.demo,
+          this.props.debug,
+          this.props.domain,
+          this.props.apiKey,
+          this.props.customerId,
+          this.props.userId,
+          this.props.token
+        )
+          .then(response => {
+            this.props.onResponseCallback(response)
+            this.setState({ isQueryRunning: false })
+          })
+          .catch(error => {
+            this.props.onResponseCallback(error)
+            this.setState({ isQueryRunning: false })
+          })
+      } else {
+        runQuery(
+          query,
+          this.props.demo,
+          this.props.debug,
+          this.props.enableSafetyNet,
+          this.props.domain,
+          this.props.apiKey,
+          this.props.customerId,
+          this.props.userId,
+          this.props.token
+        )
+          .then(response => {
+            this.props.onResponseCallback(response)
+            this.setState({ isQueryRunning: false })
+          })
+          .catch(error => {
+            this.props.onResponseCallback(error)
+            this.setState({ isQueryRunning: false })
+          })
+      }
     }
     this.setState({ inputValue: '' })
   }

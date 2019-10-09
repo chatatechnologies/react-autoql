@@ -17,7 +17,12 @@ import { bubblesIcon } from '../../svgIcons.js'
 
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
-import { runQuery, runDrilldown, cancelQuery } from '../../js/queryService'
+import {
+  runQuery,
+  runQueryOnly,
+  runDrilldown,
+  cancelQuery
+} from '../../js/queryService'
 import { formatElement } from '../../js/Util'
 
 import rcStyles from 'rc-drawer/assets/index.css'
@@ -296,11 +301,10 @@ export default class ChatDrawer extends React.Component {
       return
     }
 
-    runQuery(
+    runQueryOnly(
       suggestion,
       this.props.demo,
       this.props.debug,
-      this.props.enableSafetyNet,
       this.props.domain,
       this.props.apiKey,
       this.props.customerId,

@@ -776,7 +776,7 @@ export default class ResponseRenderer extends React.Component {
       if (suggestion === 'None of these') {
         this.setState({ customResponse: 'Thank you for your feedback.' })
       } else {
-        this.props.chatBarRef.submitQuery(suggestion)
+        this.props.chatBarRef.submitQuery(suggestion, skipSafetyNet)
       }
     }
   }

@@ -182,13 +182,18 @@ export default class App extends Component {
 
   onLogin = async e => {
     e.preventDefault()
+
+    const formData = new FormData()
+    formData.append('username', this.state.email)
+    formData.append('password', this.state.password)
     // Login to get login token
-    const axiosInstance = axios.create({})
-    const tokenInfo = await axiosInstance.post(
+    const tokenInfo = await axios.post(
       'https://backend-staging.chata.io/api/v1/login',
+      formData,
       {
-        username: this.state.email,
-        password: this.state.password
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
       }
     )
 
