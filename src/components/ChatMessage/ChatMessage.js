@@ -109,6 +109,8 @@ export default class ChatMessage extends React.Component {
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
+          height={chartHeight}
+          width={chartWidth}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}
@@ -274,12 +276,20 @@ export default class ChatMessage extends React.Component {
     const supportedDisplayTypes =
       this.responseRef && this.responseRef.supportedDisplayTypes
 
+    let displayType = this.state.displayType
+    if (
+      supportedDisplayTypes &&
+      !supportedDisplayTypes.includes(this.state.displayType)
+    ) {
+      displayType = 'table'
+    }
+
     if (this.props.isResponse && this.props.type !== 'text') {
       return (
         <VizToolbar
           className="chat-message-toolbar left"
           supportedDisplayTypes={supportedDisplayTypes || []}
-          displayType={this.state.displayType}
+          displayType={displayType}
           onDisplayTypeChange={this.switchView}
         />
       )

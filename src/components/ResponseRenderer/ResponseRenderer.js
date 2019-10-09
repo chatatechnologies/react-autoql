@@ -64,7 +64,9 @@ export default class ResponseRenderer extends React.Component {
     enableSuggestions: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    chartColors: PropTypes.arrayOf(PropTypes.string)
+    chartColors: PropTypes.arrayOf(PropTypes.string),
+    height: PropTypes.number,
+    width: PropTypes.number
   }
 
   static defaultProps = {
@@ -84,6 +86,8 @@ export default class ResponseRenderer extends React.Component {
     enableSuggestions: true,
     currencyCode: undefined,
     languageCode: undefined,
+    height: undefined,
+    width: undefined,
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
@@ -99,6 +103,9 @@ export default class ResponseRenderer extends React.Component {
 
     // Determine the supported visualization types based on the response data
     this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+
+    console.log('supported display types:')
+    console.log(this.supportedDisplayTypes)
 
     // Set the initial display type based on prop value, response, and supported display types
     this.setState({
@@ -860,9 +867,18 @@ export default class ResponseRenderer extends React.Component {
 
     let height = 0
     let width = 0
+
     if (responseContainer) {
       height = responseContainer.clientHeight
       width = responseContainer.clientWidth
+    }
+
+    if (this.props.height) {
+      height = this.props.height
+    }
+
+    if (this.props.width) {
+      width = this.props.width
     }
 
     return (
