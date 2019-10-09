@@ -55,6 +55,13 @@ export default class DashboardTile extends React.PureComponent {
     title: this.props.tile.title
   }
 
+  onQueryTextKeyDown = e => {
+    if (e.key === 'Enter') {
+      this.processTile()
+      e.target.blur()
+    }
+  }
+
   processTile = query => {
     if (query || this.state.query) {
       const id = this.props.tile.i
@@ -111,6 +118,7 @@ export default class DashboardTile extends React.PureComponent {
               placeholder="Query"
               value={this.state.query}
               onChange={e => this.setState({ query: e.target.value })}
+              onKeyDown={this.onQueryTextKeyDown}
               onBlur={e =>
                 this.props.setParamForTile(
                   'query',
