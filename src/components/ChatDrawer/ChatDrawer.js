@@ -127,6 +127,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   state = {
+    stateScrollTop: 0,
     messages: [this.introMessageObject],
     lastMessageId: 'intro'
   }
@@ -567,47 +568,50 @@ export default class ChatDrawer extends React.Component {
               }}
               className="chat-message-container"
             >
-              {this.state.messages.length > 0 &&
-                this.state.messages.map(message => {
-                  return (
-                    <ChatMessage
-                      setActiveMessage={this.setActiveMessage}
-                      isActive={this.state.activeMessageId === message.id}
-                      processDrilldown={this.processDrilldown}
-                      isResponse={message.isResponse}
-                      isChataThinking={this.state.isChataThinking}
-                      onSuggestionClick={this.onSuggestionClick}
-                      content={message.content}
-                      scrollToBottom={this.scrollToBottom}
-                      lastMessageId={this.state.lastMessageId}
-                      currencyCode={this.props.currencyCode}
-                      languageCode={this.props.languageCode}
-                      chartColors={this.props.chartColors}
-                      tableBorderColor={
-                        this.props.theme === 'light'
-                          ? this.LIGHT_THEME['--chata-drawer-border-color']
-                          : this.DARK_THEME['--chata-drawer-border-color']
-                      }
-                      tableHoverColor={
-                        this.props.theme === 'light'
-                          ? this.LIGHT_THEME['--chata-drawer-hover-color']
-                          : this.DARK_THEME['--chata-drawer-hover-color']
-                      }
-                      displayType={
-                        message.displayType ||
-                        (message.response &&
-                          message.response.data &&
-                          message.response.data.data &&
-                          message.response.data.data.display_type)
-                      }
-                      response={message.response}
-                      type={message.type}
-                      key={message.id}
-                      id={message.id}
-                      debug={this.props.debug}
-                    />
-                  )
-                })}
+              <div style={{ height: '100%' }}>
+                {this.state.messages.length > 0 &&
+                  this.state.messages.map(message => {
+                    return (
+                      <ChatMessage
+                        scrollRef={this.scrollComponent}
+                        setActiveMessage={this.setActiveMessage}
+                        isActive={this.state.activeMessageId === message.id}
+                        processDrilldown={this.processDrilldown}
+                        isResponse={message.isResponse}
+                        isChataThinking={this.state.isChataThinking}
+                        onSuggestionClick={this.onSuggestionClick}
+                        content={message.content}
+                        scrollToBottom={this.scrollToBottom}
+                        lastMessageId={this.state.lastMessageId}
+                        currencyCode={this.props.currencyCode}
+                        languageCode={this.props.languageCode}
+                        chartColors={this.props.chartColors}
+                        tableBorderColor={
+                          this.props.theme === 'light'
+                            ? this.LIGHT_THEME['--chata-drawer-border-color']
+                            : this.DARK_THEME['--chata-drawer-border-color']
+                        }
+                        tableHoverColor={
+                          this.props.theme === 'light'
+                            ? this.LIGHT_THEME['--chata-drawer-hover-color']
+                            : this.DARK_THEME['--chata-drawer-hover-color']
+                        }
+                        displayType={
+                          message.displayType ||
+                          (message.response &&
+                            message.response.data &&
+                            message.response.data.data &&
+                            message.response.data.data.display_type)
+                        }
+                        response={message.response}
+                        type={message.type}
+                        key={message.id}
+                        id={message.id}
+                        debug={this.props.debug}
+                      />
+                    )
+                  })}
+              </div>
             </Scrollbars>
             {this.state.isChataThinking && (
               <div className="response-loading-container">
@@ -644,6 +648,7 @@ export default class ChatDrawer extends React.Component {
             </div>
           </div>
         </Drawer>
+
         <ReactTooltip
           className="chata-drawer-tooltip"
           id="chata-header-tooltip"

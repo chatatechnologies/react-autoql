@@ -8,10 +8,7 @@
   display: flex;
   justify-content: flex-start;
   margin-left: 20px;
-  /* make small margin on bottom because sometimes react
-  custom scrollbar cuts off a pixel or 2 at the bottom */
-  margin-bottom: 2px;
-  max-height: 85%;
+  /* max-height: 85%; */
 
   animation: scale-up-bl 0.4s cubic-bezier(0.39, 0.575, 0.565, 1) both;
 }
@@ -31,6 +28,9 @@
   font-family: inherit;
   font-size: 14px;
   letter-spacing: 0.04em;
+  /* make small margin on bottom because sometimes react
+  custom scrollbar cuts off a pixel or 2 at the bottom */
+  margin-bottom: 6px;
 }
 .chat-single-message-container .chat-message-bubble.text {
   max-width: 70%;

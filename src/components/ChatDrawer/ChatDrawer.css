@@ -58,6 +58,7 @@
 }
 
 .chat-message-container {
+  scroll-behavior: smooth !important;
   max-height: calc(100% - 140px);
   overflow-y: auto;
   overflow-x: hidden;

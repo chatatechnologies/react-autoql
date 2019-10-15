@@ -20,7 +20,6 @@ export default class ChatMessage extends React.Component {
   static propTypes = {
     isResponse: PropTypes.bool.isRequired,
     lastMessageId: PropTypes.string.isRequired,
-    scrollToBottom: PropTypes.func.isRequired,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,
@@ -66,17 +65,8 @@ export default class ChatMessage extends React.Component {
     ReactTooltip.rebuild()
   }
 
-  scrollToBottomIfLastMessage = () => {
-    if (this.props.lastMessageId === this.props.id) {
-      this.props.scrollToBottom()
-    }
-  }
-
   switchView = displayType => {
     this.setState({ displayType, isFilteringTable: false })
-    // If its the last message, scroll to bottom.
-    // There is a bug that makes it jump to the top if its the only message
-    // this.scrollToBottomIfLastMessage()
   }
 
   renderContent = (chartWidth, chartHeight) => {
@@ -114,7 +104,6 @@ export default class ChatMessage extends React.Component {
 
   toggleTableFilter = () => {
     this.setState({ isFilteringTable: !this.state.isFilteringTable })
-    // this.scrollToBottomIfLastMessage()
   }
 
   // todo: put all right toolbar functions into separate component
