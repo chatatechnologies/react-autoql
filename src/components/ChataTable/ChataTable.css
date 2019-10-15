@@ -76,16 +76,18 @@
 
 .chata-table .tabulator-tableHolder::-webkit-scrollbar {
   display: unset;
+  opacity: 0;
   background-color: transparent;
   width: 7px;
   height: 7px;
+  transition: all 0.3s ease;
 }
-.chata-table .tabulator-tableHolder::-webkit-scrollbar-track,
-.chata-table .tabulator-tableHolder::-webkit-scrollbar-track-piece,
-.chata-table .tabulator-tableHolder::-webkit-scrollbar-corner {
+.chata-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
+.chata-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
+.chata-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
   background-color: transparent;
 }
-.chata-table .tabulator-tableHolder::-webkit-scrollbar-thumb {
+.chata-table .tabulator-tableHolder:hover::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 7px;
   border: 0px;

@@ -8,11 +8,11 @@ This is a library of react widgets. React must be installed as a prerequisite
 #### Using npm or yarn
 
 ```
-$ npm install @chata-ai/core
+$ npm install react-chata
 ```
 
 ```
-$ yarn add @chata-ai/core
+$ yarn add react-chata
 ```
 
 #### Import in Browser
@@ -35,7 +35,7 @@ For more information on these requirements or how to retrieve/refresh your token
 A chat panel that slides open from the edge of the screen. You will find a list of available props and their defaults in the next section.
 ```
 import React, { Component } from 'react'
-import { ChatDrawer } from '@chata-ai/core';
+import { ChatDrawer } from 'react-chata';
 
 export default class App extends Component {
   state = {
@@ -67,7 +67,7 @@ A chat bar component and visualization component that can be placed anywhere. Th
 You will find a list of available props and their defaults in the next section.
 ```
 import React, { Component, Fragment } from 'react'
-import { ChatBar, ResponseRenderer } from '@chata-ai/core';
+import { ChatBar, ResponseRenderer } from 'react-chata';
 
 export default class App extends Component {
   chatBarRef = null;
@@ -104,7 +104,7 @@ You will find a list of available props and their defaults in the next section.
 
 ```
 import React, { Component } from 'react'
-import { Dashboard } from '@chata-ai/core';
+import { Dashboard } from 'react-chata';
 
 export default class App extends Component {
   state = {
@@ -388,7 +388,7 @@ If you want to persist the dashboard, simply store the tile array in your own da
 
 ```
 import React, { Component, Fragment } from 'react'
-import { Dashboard, getDashboardTileState } from '@chata-ai/core';
+import { Dashboard, getDashboardTileState } from 'react-chata';
 
 export default class App extends Component {
   state = {
@@ -474,7 +474,7 @@ export default class App extends Component {
 
 ```
 import React, { Component, Fragment } from 'react'
-import { Dashboard, getDashboardTileState } from '@chata-ai/core';
+import { Dashboard, getDashboardTileState } from 'react-chata';
 
 export default class App extends Component {
   state = {

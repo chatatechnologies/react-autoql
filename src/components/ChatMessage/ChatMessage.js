@@ -76,22 +76,14 @@ export default class ChatMessage extends React.Component {
     this.setState({ displayType, isFilteringTable: false })
     // If its the last message, scroll to bottom.
     // There is a bug that makes it jump to the top if its the only message
-    this.scrollToBottomIfLastMessage()
+    // this.scrollToBottomIfLastMessage()
   }
 
-  renderContent = () => {
+  renderContent = (chartWidth, chartHeight) => {
     const { response, content } = this.props
     if (content) {
       return content
     } else if (response) {
-      let chartWidth = 0
-      let chartHeight = 0
-      const chatContainer = document.querySelector('.chat-message-container')
-      if (chatContainer) {
-        chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-        chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
-      }
-
       return (
         <ResponseRenderer
           ref={ref => (this.responseRef = ref)}
@@ -122,7 +114,7 @@ export default class ChatMessage extends React.Component {
 
   toggleTableFilter = () => {
     this.setState({ isFilteringTable: !this.state.isFilteringTable })
-    this.scrollToBottomIfLastMessage()
+    // this.scrollToBottomIfLastMessage()
   }
 
   // todo: put all right toolbar functions into separate component
@@ -298,12 +290,21 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
+    let chartWidth = 0
+    let chartHeight = 0
+    const chatContainer = document.querySelector('.chat-message-container')
+    if (chatContainer) {
+      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
+      chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+    }
+
     return (
       <Fragment>
         <div
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}
           ${this.state.isFilteringTable ? ' filtering-table' : ''}`}
+          style={{ maxHeight: chartHeight }}
         >
           <div
             className={`chat-message-bubble
@@ -311,7 +312,7 @@ export default class ChatMessage extends React.Component {
             ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
           >
-            {this.renderContent()}
+            {this.renderContent(chartWidth, chartHeight)}
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
           </div>

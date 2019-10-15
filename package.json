@@ -68,6 +68,7 @@
     "react-custom-scrollbars": "^4.2.1",
     "react-grid-layout": "^0.16.6",
     "react-icons": "^3.7.0",
+    "react-scrollbars-custom": "^4.0.21",
     "react-speech-recognition": "^2.0.1",
     "react-tabulator": "^0.9.1",
     "react-tooltip": "^3.10.0",
