@@ -42,6 +42,7 @@ class VizToolbar extends React.Component {
           className="chata-toolbar-btn"
           data-tip={name}
           data-for="chata-toolbar-btn-tooltip"
+          data-test="viz-toolbar-button"
         >
           {icon}
         </button>
@@ -64,7 +65,10 @@ class VizToolbar extends React.Component {
       return (
         <Fragment>
           <style>{`${styles}`}</style>
-          <div className={`${this.props.className || ''} viz-toolbar`}>
+          <div
+            className={`${this.props.className || ''} viz-toolbar`}
+            data-test="viz-toolbar"
+          >
             {this.createVisButton('table', 'Table', tableIcon)}
             {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
             {this.createVisButton('column', 'Column Chart', columnChartIcon)}

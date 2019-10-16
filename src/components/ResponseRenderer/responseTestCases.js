@@ -1,7 +1,10 @@
 export default [
-  {},
+  // empty response
+  { data: {} },
+  // only display type returned, nothing else
   { data: { display_type: 'table' } },
   {
+    // no data and no display type
     data: {
       columns: [],
       display_type: null,
@@ -13,6 +16,7 @@ export default [
     referenceId: '1.1.0'
   },
   {
+    // valid pivot data response
     data: {
       columns: [
         {
@@ -43,6 +47,7 @@ export default [
     referenceId: '1.1.0'
   },
   {
+    // valid help response
     data: {
       columns: [
         { type: 'STRING', groupable: false, active: false, name: 'Help Link' }
@@ -61,6 +66,7 @@ export default [
     referenceId: '1.1.0'
   },
   {
+    // valid suggestion response
     data: {
       columns: [
         {
@@ -85,6 +91,7 @@ export default [
     referenceId: '1.1.0'
   },
   {
+    // valid safetynet response single suggestion
     full_suggestion: [
       {
         start: 10,
@@ -97,6 +104,7 @@ export default [
     query: 'sales for john'
   },
   {
+    // display type that we dont understand
     data: {
       columns: [
         {

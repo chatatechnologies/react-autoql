@@ -28,7 +28,9 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    this.initializeSafetyNetOptions(this.props.response.data)
+    if (this.props.response && !this.props.response.data) {
+      this.initializeSafetyNetOptions(this.props.response.data)
+    }
   }
 
   getSuggestionLists = (query, fullSuggestions) => {
@@ -130,6 +132,9 @@ export default class SafetyNetMessage extends React.Component {
 
   initializeSafetyNetOptions = responseBody => {
     const { full_suggestion: fullSuggestions, query } = responseBody
+    if (!fullSuggestions || !query) {
+      return []
+    }
 
     // Gets list of suggestions with value labels for each "dropdown"
     // and also includes the original query at the end of this list
@@ -274,7 +279,10 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   renderResponse = () => {
-    if (!this.state.selectedSuggestions) {
+    if (
+      !this.state.selectedSuggestions ||
+      !this.state.selectedSuggestions.length
+    ) {
       return null
     }
 

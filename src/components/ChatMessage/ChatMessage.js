@@ -293,7 +293,7 @@ export default class ChatMessage extends React.Component {
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}
           ${this.state.isFilteringTable ? ' filtering-table' : ''}`}
-          style={{ maxHeight: chartHeight }}
+          style={{ maxHeight: chartHeight + 20 }}
         >
           <div
             className={`chat-message-bubble
