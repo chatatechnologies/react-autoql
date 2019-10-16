@@ -185,13 +185,15 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       // prepend a "header"
       var image64 = b64Start + svg64
 
-      const width = svgElement.getBBox().width * 2
-      const height = svgElement.getBBox().height * 2
+      const bbox = svgElement.getBoundingClientRect()
+      const width = bbox.width * 2
+      const height = bbox.height * 2
 
       // create a canvas element to pass through
       var canvas = document.createElement('canvas')
-      canvas.width = height + margin
-      canvas.height = width + margin
+      canvas.width = width + margin
+      canvas.height = height + margin
+
       var ctx = canvas.getContext('2d')
       // ctx.imageSmoothingEnabled = true
 
