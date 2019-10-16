@@ -62,7 +62,7 @@ so we dont have to redraw the whole table */
 .chat-message-toolbar {
   display: none;
   position: absolute;
-  background: var(--chata-drawer-background-color);
+  background: inherit;
   top: -22px;
   padding: 5px;
   border-radius: 6px;
