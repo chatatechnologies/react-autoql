@@ -1,6 +1,7 @@
-import React from 'react'
-
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
+import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import {
   ReactTabulator
@@ -40,6 +41,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidMount = () => {
+    this.TABLE_CONTAINER_ID = uuid.v4()
     this.setStyles()
   }
 
@@ -49,6 +51,43 @@ export default class ChataTable extends React.Component {
       this.props.borderColor !== prevProps.borderColor
     ) {
       this.setStyles()
+    }
+
+    if (this.props.isFilteringTable !== prevProps.isFilteringTable) {
+      this.setFilterTags()
+    }
+  }
+
+  setFilterTags = () => {
+    if (!_get(this.ref, 'table')) {
+      return
+    }
+
+    const filterValues = this.ref.table.getHeaderFilters()
+    if (filterValues) {
+      filterValues.forEach(filter => {
+        try {
+          if (!this.props.isFilteringTable) {
+            const filterTagEl = document.createElement('span')
+            filterTagEl.innerText = 'F'
+            filterTagEl.setAttribute('class', 'filter-tag')
+
+            const columnTitleEl = document.querySelector(
+              `#chata-table-container-${this.TABLE_CONTAINER_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+            )
+            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
+          } else if (this.props.isFilteringTable) {
+            var filterTagEl = document.querySelector(
+              `#chata-table-container-${this.TABLE_CONTAINER_ID} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+            )
+            if (filterTagEl) {
+              filterTagEl.parentNode.removeChild(filterTagEl)
+            }
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      })
     }
   }
 
@@ -108,21 +147,27 @@ export default class ChataTable extends React.Component {
 
     return (
       <div
-        className={`chata-table-container ${
-          this.props.isFilteringTable ? 'filtering' : ''
+        id={`chata-table-container-${this.TABLE_CONTAINER_ID}`}
+        className={`chata-table-container${
+          this.props.isFilteringTable ? ' filtering' : ''
         }`}
       >
         <ReactTabulator
           ref={ref => (this.ref = ref)}
-          columns={this.props.columns}
+          columns={this.state.columns}
           data={this.props.data}
           // rowClick={this.rowClick}
           cellClick={this.cellClick}
           options={options}
           data-custom-attr="test-custom-attribute"
           className="chata-table"
-          height="100%"
           // selectable
+          height="100%"
+          // style={{
+          //   height: showFilteredDataWarning
+          //     ? 'calc(100% - 50px) !important'
+          //     : '100%'
+          // }}
           clipboard
           download
         />

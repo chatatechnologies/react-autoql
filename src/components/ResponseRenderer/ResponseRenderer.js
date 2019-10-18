@@ -622,9 +622,7 @@ export default class ResponseRenderer extends React.Component {
       }
 
       col.title = col.name.replace(/_/g, ' ')
-      if (!col.title.isUpperCase()) {
-        col.title = col.title.toProperCase()
-      }
+      col.title = `${col.title.toProperCase()}`
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user

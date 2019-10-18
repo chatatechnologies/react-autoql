@@ -117,3 +117,15 @@ the whole table when the filter button is clicked */
 .chata-table-container.filtering .chata-table .tabulator-col {
   height: 72px !important;
 }
+
+.filter-tag {
+  color: #2ecc40;
+  border: 1px solid;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 400;
+  font-size: 10px;
+  margin-right: 5px;
+  vertical-align: top;
+  line-height: 21px;
+}

@@ -208,7 +208,6 @@ export default class App extends Component {
         'https://backend-staging.chata.io/api/v1/jwt',
         {
           headers: {
-            // 'Access-Control-Allow-Origin': '*'
             Authorization: `Bearer ${loginToken}`
           }
         }

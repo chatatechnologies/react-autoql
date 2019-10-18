@@ -61,6 +61,7 @@
     "d3-svg-legend": "^2.25.6",
     "d3-transition": "^1.2.0",
     "dayjs": "^1.8.14",
+    "lodash.get": "^4.4.2",
     "numbro": "^2.1.2",
     "prop-types": "^15.6.2",
     "rc-drawer": "^1.9.8",

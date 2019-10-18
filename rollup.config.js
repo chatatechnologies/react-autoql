@@ -111,7 +111,8 @@ const outputs = [
       'd3-interpolate': 'd3Interpolate',
       'd3-svg-legend': 'd3SVGLegend',
       'react-grid-layout': 'RGL',
-      'react-grid-layout/css/styles.css': 'gridLayoutStyles'
+      'react-grid-layout/css/styles.css': 'gridLayoutStyles',
+      'lodash.get': '_get'
     }
   }
 ]

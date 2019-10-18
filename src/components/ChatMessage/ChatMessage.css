@@ -57,7 +57,7 @@
 /* Increase height of message to include table filters,
 so we dont have to redraw the whole table */
 .chat-single-message-container.response.filtering-table {
-  max-height: calc(85% + 35px);
+  max-height: calc(85% + 35px) !important;
 }
 .chat-message-toolbar {
   display: none;
