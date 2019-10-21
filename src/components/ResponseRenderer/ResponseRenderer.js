@@ -351,7 +351,7 @@ export default class ResponseRenderer extends React.Component {
 
   processCellClick = cell => {
     let groupByObject = {}
-    if (this.pivotTableColumns) {
+    if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
       groupByObject = getGroupBysFromPivotTable(
         cell,
         this.tableColumns,

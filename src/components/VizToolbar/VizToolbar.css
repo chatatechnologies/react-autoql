@@ -1,6 +1,6 @@
 .viz-toolbar {
   position: absolute;
-  background: #fff;
+  background: inherit;
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;

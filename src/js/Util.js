@@ -338,6 +338,10 @@ export const getGroupBysFromPivotTable = (
 }
 
 export const getGroupBysFromTable = (cell, tableColumns) => {
+  if (!getNumberOfGroupables(tableColumns)) {
+    return {}
+  }
+
   const groupByName = tableColumns[0].name
   let groupByValue = cell.getData()[0]
   if (tableColumns[0].type === 'DATE') {
