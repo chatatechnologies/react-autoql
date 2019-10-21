@@ -34,7 +34,7 @@
   margin-bottom: 6px;
 }
 .chat-single-message-container .chat-message-bubble.text {
-  max-width: 70%;
+  max-width: 85%;
 }
 
 .chat-single-message-container .chat-message-bubble.full-width {

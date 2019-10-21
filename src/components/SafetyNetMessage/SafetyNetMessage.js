@@ -28,7 +28,7 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    if (this.props.response && !this.props.response.data) {
+    if (this.props.response && this.props.response.data) {
       this.initializeSafetyNetOptions(this.props.response.data)
     }
   }
