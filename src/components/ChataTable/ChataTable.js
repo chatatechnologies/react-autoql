@@ -50,43 +50,6 @@ export default class ChataTable extends React.Component {
     ) {
       this.setStyles()
     }
-
-    if (this.props.isFilteringTable !== prevProps.isFilteringTable) {
-      this.setFilterTags()
-    }
-  }
-
-  setFilterTags = () => {
-    if (!_get(this.ref, 'table')) {
-      return
-    }
-
-    const filterValues = this.ref.table.getHeaderFilters()
-    if (filterValues) {
-      filterValues.forEach(filter => {
-        try {
-          if (!this.props.isFilteringTable) {
-            const filterTagEl = document.createElement('span')
-            filterTagEl.innerText = 'F'
-            filterTagEl.setAttribute('class', 'filter-tag')
-
-            const columnTitleEl = document.querySelector(
-              `#chata-table-container-${this.TABLE_CONTAINER_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
-            )
-            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-          } else if (this.props.isFilteringTable) {
-            var filterTagEl = document.querySelector(
-              `#chata-table-container-${this.TABLE_CONTAINER_ID} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
-            )
-            if (filterTagEl) {
-              filterTagEl.parentNode.removeChild(filterTagEl)
-            }
-          }
-        } catch (error) {
-          console.error(error)
-        }
-      })
-    }
   }
 
   setStyles = () => {

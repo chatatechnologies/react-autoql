@@ -229,7 +229,6 @@ export default class App extends Component {
 | tableBorderColor | String | undefined |
 | tableHoverColor | String | undefined |
 | displayType | String | undefined |
-| isFilteringTable | Boolean | false |
 | renderTooltips | Boolean | true |
 | currencyCode | String | 'USD' |
 | languageCode | String | 'en-US' |
@@ -347,8 +346,6 @@ For more information on the structure of a query response, please visit the API 
 | Bubble Chart | `bubble` | The position of the bubbles are based on the categories, and the radius of the bubbles are based on the values |
 
 You must pass in a supported display type to the ResponseRenderer (see the Supported Display Types section below for more details). If an invalid display type or non-supported display type is passed in, it will default to a regular table.
-
-**isFilteringTable**: Whether or not to show the filter inputs in each column header for table types.
 
 **renderTooltips**: Whether or not to render tooltips for chart display types. When this value is true, each chart element will have a tooltip showing the ordinal title/value and numerical title/value.
 
