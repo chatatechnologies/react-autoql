@@ -1,16 +1,13 @@
 import React, { Fragment } from 'react'
-
 import PropTypes from 'prop-types'
-
 import uuid from 'uuid'
-
 import Drawer from 'rc-drawer'
-
 import ReactTooltip from 'react-tooltip'
-
+import Popover from 'react-tiny-popover'
 import { Scrollbars } from 'react-custom-scrollbars'
 import { MdClose } from 'react-icons/md'
 import { FaRegTrashAlt } from 'react-icons/fa'
+import { MdError } from 'react-icons/md'
 
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import { bubblesIcon } from '../../svgIcons.js'
@@ -131,7 +128,8 @@ export default class ChatDrawer extends React.Component {
   state = {
     stateScrollTop: 0,
     messages: [this.introMessageObject],
-    lastMessageId: 'intro'
+    lastMessageId: 'intro',
+    isClearMessageConfirmVisible: false
   }
 
   componentDidMount = () => {
@@ -419,9 +417,14 @@ export default class ChatDrawer extends React.Component {
   }
 
   clearMessages = () => {
+    if (this.chatBarRef) {
+      this.chatBarRef.focus()
+    }
+
     this.setState({
       messages: [this.introMessageObject],
-      lastMessageId: 'intro'
+      lastMessageId: 'intro',
+      isClearMessageConfirmVisible: false
     })
   }
 
@@ -509,6 +512,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   renderHeaderContent = () => {
+    console.log(this.state.isClearMessageConfirmVisible)
     return (
       <Fragment>
         <div className="chata-header-left-container">
@@ -523,19 +527,46 @@ export default class ChatDrawer extends React.Component {
         </div>
         <div className="chata-header-center-container">{this.props.title}</div>
         <div className="chata-header-right-container">
-          <button
-            onClick={() => {
-              this.clearMessages()
-              if (this.chatBarRef) {
-                this.chatBarRef.focus()
-              }
-            }}
-            className="chata-button clear-all"
-            data-tip="Clear Messages"
-            data-for="chata-header-tooltip"
+          <Popover
+            isOpen={this.state.isClearMessageConfirmVisible}
+            onClickOutside={() =>
+              this.setState({ isClearMessageConfirmVisible: false })
+            }
+            position={'bottom'} // preferred position
+            content={
+              <div className="clear-messages-confirm-popover">
+                <div className="chata-confirm-text">
+                  <MdError className="chata-confirm-icon" />
+                  Clear all messages?
+                </div>
+                <button
+                  onClick={() =>
+                    this.setState({ isClearMessageConfirmVisible: false })
+                  }
+                  className="chata-confirm-btn no"
+                >
+                  No
+                </button>
+                <button
+                  className="chata-confirm-btn yes"
+                  onClick={() => this.clearMessages()}
+                >
+                  Yes
+                </button>
+              </div>
+            }
           >
-            <FaRegTrashAlt />
-          </button>
+            <button
+              onClick={() =>
+                this.setState({ isClearMessageConfirmVisible: true })
+              }
+              className="chata-button clear-all"
+              data-tip="Clear Messages"
+              data-for="chata-header-tooltip"
+            >
+              <FaRegTrashAlt />
+            </button>
+          </Popover>
         </div>
       </Fragment>
     )

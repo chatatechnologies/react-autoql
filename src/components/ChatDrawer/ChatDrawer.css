@@ -194,6 +194,55 @@
   z-index: 99999; /* necessary to show up on top of rc drawer */
 }
 
+.react-tiny-popover-container {
+  z-index: 9999;
+  border: 1px solid #ababab52;
+  border-radius: 4px;
+  box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.clear-messages-confirm-popover {
+  color: var(--chata-drawer-text-color-primary);
+  padding: 20px;
+  background: var(--chata-drawer-background-color);
+  text-align: right;
+  padding: 18px;
+  width: 185px;
+}
+.chata-confirm-text {
+  text-align: center;
+}
+.chata-confirm-btn {
+  margin: 7px 0px 0 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none !important;
+  transition: all 0.2s ease;
+}
+.chata-confirm-btn.yes {
+  background: var(--chata-drawer-accent-color);
+  border-color: var(--chata-drawer-accent-color);
+  color: white;
+}
+.chata-confirm-btn.yes:hover {
+  opacity: 0.8;
+}
+.chata-confirm-btn.no {
+  color: inherit;
+  border-color: #a7a7a7;
+  background: inherit;
+}
+.chata-confirm-btn.no:hover {
+  border-color: var(--chata-drawer-accent-color);
+  color: var(--chata-drawer-accent-color);
+}
+.chata-confirm-icon {
+  color: #faad14;
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-bottom: 3px;
+}
+
 /* Safetynet styles */
 /* .chata-drawer .chata-safetynet-select {
   color: var(--chata-drawer-accent-color);
