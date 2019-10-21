@@ -583,6 +583,46 @@ export default class ResponseRenderer extends React.Component {
 
         return formattedElement.includes(headerValue.toLowerCase())
       }
+    } else if (
+      col.type === 'DOLLAR_AMT' ||
+      col.type === 'QUANTITY' ||
+      col.type === 'PERCENT'
+    ) {
+      return (headerValue, rowValue, rowData, filterParams) => {
+        // headerValue - the value of the header filter element
+        // rowValue - the value of the column in this row
+        // rowData - the data for the row being filtered
+        // filterParams - params object passed to the headerFilterFuncParams property
+
+        try {
+          const trimmedValue = headerValue.trim()
+          if (trimmedValue.length >= 2) {
+            const number = Number(
+              trimmedValue.substr(1).replace(/[^0-9.]/g, '')
+            )
+            if (trimmedValue[0] === '>' && trimmedValue[1] === '=') {
+              return rowValue >= number
+            } else if (trimmedValue[0] === '>') {
+              return rowValue > number
+            } else if (trimmedValue[0] === '<' && trimmedValue[1] === '=') {
+              return rowValue <= number
+            } else if (trimmedValue[0] === '<') {
+              return rowValue < number
+            } else if (trimmedValue[0] === '!' && trimmedValue[1] === '=') {
+              return rowValue !== number
+            } else if (trimmedValue[0] === '=') {
+              return rowValue === number
+            }
+          }
+
+          // No logical operators detected, just compare strings
+          const strippedHeader = headerValue.replace(/[^0-9.]/g, '')
+          return rowValue.toString().includes(strippedHeader)
+        } catch (err) {
+          console.log(err)
+          return false
+        }
+      }
     }
     return undefined
   }

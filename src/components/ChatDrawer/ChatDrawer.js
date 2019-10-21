@@ -37,7 +37,8 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-border-color': '#d3d3d352',
     '--chata-drawer-hover-color': '#ececec',
     '--chata-drawer-text-color-primary': '#5d5d5d',
-    '--chata-drawer-text-color-placeholder': '#0000009c'
+    '--chata-drawer-text-color-placeholder': '#0000009c',
+    '--chata-drawer-font-family': 'sans-serif'
   }
 
   DARK_THEME = {
@@ -47,7 +48,8 @@ export default class ChatDrawer extends React.Component {
     '--chata-drawer-border-color': '#d3d3d329',
     '--chata-drawer-hover-color': '#5a5a5a',
     '--chata-drawer-text-color-primary': '#fff',
-    '--chata-drawer-text-color-placeholder': '#ffffff9c'
+    '--chata-drawer-text-color-placeholder': '#ffffff9c',
+    '--chata-drawer-font-family': 'sans-serif'
   }
 
   introMessageObject = {
@@ -114,7 +116,7 @@ export default class ChatDrawer extends React.Component {
     enableSafetyNet: true,
     enableAutocomplete: true,
     enableVoiceRecord: true,
-    title: 'chata.ai',
+    title: 'Chat with your data',
     maxMessages: undefined,
     demo: false,
     debug: false,
@@ -269,8 +271,12 @@ export default class ChatDrawer extends React.Component {
     if (this.props.maskClosable === false) {
       return
     }
-    this.props.onMaskClick()
-    this.props.onHandleClick()
+    if (this.props.onMakClick) {
+      this.props.onMaskClick()
+    }
+    if (this.props.onHandleClick) {
+      this.props.onHandleClick()
+    }
   }
 
   scrollToBottom = () => {
@@ -539,9 +545,9 @@ export default class ChatDrawer extends React.Component {
     return (
       <Fragment>
         <style>{`${rcStyles}`}</style>
-        <style>{`${styles}`}</style>
         <style>{`${chataTableStyles}`}</style>
         <style>{`${messageStyles}`}</style>
+        <style>{`${styles}`}</style>
         <Drawer
           data-test="chata-drawer-test"
           className="chata-drawer"
@@ -568,7 +574,14 @@ export default class ChatDrawer extends React.Component {
               }}
               className="chat-message-container"
             >
-              <div style={{ height: '100%' }}>
+              <div
+                style={{
+                  // height: 'calc(100% - 20px)'
+                  height: '100%'
+                  // width: '100%',
+                  // position: 'relative'
+                }}
+              >
                 {this.state.messages.length > 0 &&
                   this.state.messages.map(message => {
                     return (
@@ -624,7 +637,7 @@ export default class ChatDrawer extends React.Component {
               </div>
             )}
             <div className="chat-bar-container">
-              <div className="watermark">{bubblesIcon} We run on Chata</div>
+              <div className="watermark">{bubblesIcon} We run on chata</div>
               <ChatBar
                 ref={this.setChatBarRef}
                 token={this.props.token}
@@ -648,7 +661,6 @@ export default class ChatDrawer extends React.Component {
             </div>
           </div>
         </Drawer>
-
         <ReactTooltip
           className="chata-drawer-tooltip"
           id="chata-header-tooltip"

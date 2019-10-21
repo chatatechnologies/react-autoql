@@ -28,6 +28,7 @@
   font-family: inherit;
   font-size: 14px;
   letter-spacing: 0.04em;
+  box-sizing: border-box;
   /* make small margin on bottom because sometimes react
   custom scrollbar cuts off a pixel or 2 at the bottom */
   margin-bottom: 6px;
