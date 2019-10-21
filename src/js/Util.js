@@ -307,38 +307,38 @@ export const getSupportedDisplayTypes = response => {
 export const getGroupBysFromPivotTable = (
   cell,
   tableColumns,
-  pivotTableColumns
+  pivotTableColumns,
+  originalColumnData
 ) => {
   let groupByObject = {}
+  try {
+    if (tableColumns[0].type === 'DATE') {
+      const year = Number(pivotTableColumns[cell.getField()].name)
+      const month = cell.getData()[0]
+      const groupByValue = `${originalColumnData[year][month]}`
 
-  if (tableColumns[0].type === 'DATE') {
-    // This is a date pivot.
-    const monthYear = `${cell.getData()[0]} ${
-      pivotTableColumns[cell.getField()].name
-    }`
+      const groupByName = tableColumns[0].name
+      groupByObject[groupByName] = groupByValue
+    } else {
+      const groupBy1Name = tableColumns[0].name
+      const groupBy1Value = cell.getData()[0]
+      groupByObject[groupBy1Name] = groupBy1Value
 
-    const groupByName = tableColumns[0].name
-    const groupByValue = `${dayjs(monthYear).unix()}`
+      const groupBy2Name = tableColumns[1].name
+      let groupBy2Value = pivotTableColumns[cell.getField()].name
 
-    groupByObject[groupByName] = groupByValue
-  } else {
-    const groupBy1Name = tableColumns[0].name
-    const groupBy1Value = cell.getData()[0]
-    groupByObject[groupBy1Name] = groupBy1Value
-
-    const groupBy2Name = tableColumns[1].name
-    let groupBy2Value = pivotTableColumns[cell.getField()].name
-    if (tableColumns[1].type === 'DATE') {
-      groupBy2Value = `${dayjs(groupBy2Value).unix()}`
+      groupByObject[groupBy2Name] = groupBy2Value
     }
-    groupByObject[groupBy2Name] = groupBy2Value
+    return groupByObject
+  } catch (error) {
+    console.error(error)
+    return {}
   }
-
-  return groupByObject
 }
 
 export const getGroupBysFromTable = (cell, tableColumns) => {
-  if (!getNumberOfGroupables(tableColumns)) {
+  const numGroupables = getNumberOfGroupables(tableColumns)
+  if (!numGroupables) {
     return {}
   }
 
@@ -347,7 +347,21 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
   if (tableColumns[0].type === 'DATE') {
     groupByValue = `${groupByValue}`
   }
-  return { [groupByName]: groupByValue }
+
+  if (numGroupables === 1) {
+    return { [groupByName]: groupByValue }
+  }
+
+  const groupByName2 = tableColumns[1].name
+  let groupByValue2 = cell.getData()[1]
+  if (tableColumns[1].type === 'DATE') {
+    groupByValue2 = `${groupByValue2}`
+  }
+
+  return {
+    [groupByName]: groupByValue,
+    [groupByName2]: groupByValue2
+  }
 }
 
 export const getgroupByObjectFromTable = (

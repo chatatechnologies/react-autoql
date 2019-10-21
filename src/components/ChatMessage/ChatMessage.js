@@ -178,7 +178,7 @@ export default class ChatMessage extends React.Component {
         this.setFilterTags(false)
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 

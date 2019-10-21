@@ -126,7 +126,6 @@
   background: white;
 }
 .chata-drawer .drawer-handle {
-  top: 72px;
   background: var(--chata-drawer-background-color);
   transition: opacity 0.5s ease;
   overflow: hidden;

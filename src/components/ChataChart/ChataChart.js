@@ -125,7 +125,7 @@ export default class ChataChart extends Component {
       })
     } catch (error) {
       // Something went wrong rendering the chart.
-      console.log(error)
+      console.error(error)
     }
   }
 

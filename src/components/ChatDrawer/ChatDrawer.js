@@ -512,7 +512,6 @@ export default class ChatDrawer extends React.Component {
   }
 
   renderHeaderContent = () => {
-    console.log(this.state.isClearMessageConfirmVisible)
     return (
       <Fragment>
         <div className="chata-header-left-container">
@@ -575,10 +574,10 @@ export default class ChatDrawer extends React.Component {
   render = () => {
     return (
       <Fragment>
-        <style>{`${rcStyles}`}</style>
         <style>{`${chataTableStyles}`}</style>
         <style>{`${messageStyles}`}</style>
         <style>{`${styles}`}</style>
+        <style>{`${rcStyles}`}</style>
         <Drawer
           data-test="chata-drawer-test"
           className="chata-drawer"

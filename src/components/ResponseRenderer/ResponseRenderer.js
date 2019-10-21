@@ -355,7 +355,8 @@ export default class ResponseRenderer extends React.Component {
       groupByObject = getGroupBysFromPivotTable(
         cell,
         this.tableColumns,
-        this.pivotTableColumns
+        this.pivotTableColumns,
+        this.pivotOriginalColumnData
       )
     } else {
       groupByObject = getGroupBysFromTable(cell, this.tableColumns)
@@ -615,7 +616,7 @@ export default class ResponseRenderer extends React.Component {
           const strippedHeader = headerValue.replace(/[^0-9.]/g, '')
           return rowValue.toString().includes(strippedHeader)
         } catch (err) {
-          console.log(err)
+          console.error(error)
           return false
         }
       }
@@ -730,6 +731,7 @@ export default class ResponseRenderer extends React.Component {
     })
 
     const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
+    const pivotOriginalColumnData = {}
 
     // Populate first column
     Object.keys(uniqueMonths).forEach((month, i) => {
@@ -740,8 +742,14 @@ export default class ResponseRenderer extends React.Component {
       const year = dayjs.unix(row[0]).format('YYYY')
       const month = dayjs.unix(row[0]).format('MMMM')
       pivotTableData[uniqueMonths[month]][uniqueYears[year]] = row[1]
+      // pivotOriginalColumnData[uniqueYears[year]][uniqueMonths[month]] = row[0]
+      pivotOriginalColumnData[year] = {
+        ...pivotOriginalColumnData[year],
+        [month]: row[0]
+      }
     })
 
+    this.pivotOriginalColumnData = pivotOriginalColumnData
     this.pivotTableColumns = pivotTableColumns
     this.pivotTableData = pivotTableData
   }
@@ -781,7 +789,7 @@ export default class ResponseRenderer extends React.Component {
       )
       pivotTableColumns.push({
         ...this.tableColumns[2], // value column
-        name: formattedColumnName,
+        name: columnName,
         title: formattedColumnName,
         field: `${i + 1}`
       })
