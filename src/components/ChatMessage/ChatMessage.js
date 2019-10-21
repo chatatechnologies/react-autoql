@@ -1,5 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
+import uuid from 'uuid'
+import _get from 'lodash.get'
 import {
   MdContentCopy,
   MdFileDownload,
@@ -16,6 +18,7 @@ import { VizToolbar } from '../VizToolbar'
 
 export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
+  filtering = false
 
   static propTypes = {
     isResponse: PropTypes.bool.isRequired,
@@ -57,8 +60,11 @@ export default class ChatMessage extends React.Component {
       this.props.response &&
       this.props.response.data &&
       this.props.response.data.data &&
-      this.props.response.data.data.display_type,
-    isFilteringTable: false
+      this.props.response.data.data.display_type
+  }
+
+  componentDidMount = () => {
+    this.MESSAGE_ID = uuid.v4()
   }
 
   componentDidUpdate = () => {
@@ -66,7 +72,8 @@ export default class ChatMessage extends React.Component {
   }
 
   switchView = displayType => {
-    this.setState({ displayType, isFilteringTable: false })
+    this.filtering = false
+    this.setState({ displayType })
   }
 
   renderContent = (chartWidth, chartHeight) => {
@@ -87,7 +94,6 @@ export default class ChatMessage extends React.Component {
           tableHoverColor={this.props.tableHoverColor}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
-          isFilteringTable={this.state.isFilteringTable}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
@@ -102,8 +108,78 @@ export default class ChatMessage extends React.Component {
     return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
   }
 
+  setFilterTags = isFilteringTable => {
+    const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+    if (!tableRef) {
+      return
+    }
+
+    const filterValues = tableRef.getHeaderFilters()
+    if (filterValues) {
+      filterValues.forEach(filter => {
+        try {
+          if (!isFilteringTable) {
+            const filterTagEl = document.createElement('span')
+            filterTagEl.innerText = 'F'
+            filterTagEl.setAttribute('class', 'filter-tag')
+
+            const columnTitleEl = document.querySelector(
+              `#message-${this.MESSAGE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+            )
+            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
+          } else if (isFilteringTable) {
+            var filterTagEl = document.querySelector(
+              `#message-${this.MESSAGE_ID} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+            )
+            if (filterTagEl) {
+              filterTagEl.parentNode.removeChild(filterTagEl)
+            }
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      })
+    }
+  }
+
   toggleTableFilter = () => {
-    this.setState({ isFilteringTable: !this.state.isFilteringTable })
+    // We want to do this without updating the component for performance reasons
+    // and so the component doesnt re-render and reset scroll values
+    this.filtering = !this.filtering
+
+    try {
+      const filterHeaderElements = document.querySelectorAll(
+        `#message-${this.MESSAGE_ID} .chata-table .tabulator-header-filter`
+      )
+      const colHeaderElements = document.querySelectorAll(
+        `#message-${this.MESSAGE_ID} .chata-table .tabulator-col`
+      )
+      const messageElement = document.querySelector(
+        `#message-${this.MESSAGE_ID}.response`
+      )
+
+      if (this.filtering) {
+        messageElement.style.maxHeight = 'calc(85% + 35px)'
+        filterHeaderElements.forEach(element => {
+          element.style.display = 'inline-block'
+        })
+        colHeaderElements.forEach(element => {
+          element.style.height = '72px !important'
+        })
+        this.setFilterTags(true)
+      } else {
+        messageElement.style.maxHeight = '85%'
+        filterHeaderElements.forEach(element => {
+          element.style.display = 'none'
+        })
+        colHeaderElements.forEach(element => {
+          element.style.height = '37px !important'
+        })
+        this.setFilterTags(false)
+      }
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   // todo: put all right toolbar functions into separate component
@@ -202,9 +278,7 @@ export default class ChatMessage extends React.Component {
             <button
               onClick={this.toggleTableFilter}
               className="chata-toolbar-btn"
-              data-tip={
-                this.state.isFilteringTable ? 'Stop Filtering' : 'Filter Table'
-              }
+              data-tip="Filter Table"
               data-for="chata-toolbar-btn-tooltip"
             >
               <MdFilterList />
@@ -290,9 +364,9 @@ export default class ChatMessage extends React.Component {
     return (
       <Fragment>
         <div
+          id={`message-${this.MESSAGE_ID}`}
           className={`chat-single-message-container
-          ${this.props.isResponse ? ' response' : ' request'}
-          ${this.state.isFilteringTable ? ' filtering-table' : ''}`}
+          ${this.props.isResponse ? ' response' : ' request'}`}
           style={{ maxHeight: chartHeight + 20 }}
         >
           <div

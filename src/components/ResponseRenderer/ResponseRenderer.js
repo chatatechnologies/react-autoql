@@ -54,7 +54,6 @@ export default class ResponseRenderer extends React.Component {
     tableBorderColor: PropTypes.string,
     tableHoverColor: PropTypes.string,
     displayType: PropTypes.string,
-    isFilteringTable: PropTypes.bool,
     renderTooltips: PropTypes.bool,
     onSafetyNetSelectOption: PropTypes.func,
     autoSelectSafetyNetSuggestion: PropTypes.bool,
@@ -77,7 +76,6 @@ export default class ResponseRenderer extends React.Component {
     displayType: undefined,
     chatBarRef: undefined,
     onSuggestionClick: undefined,
-    isFilteringTable: false,
     renderTooltips: true,
     autoSelectSafetyNetSuggestion: true,
     safetyNetSelections: undefined,
@@ -405,7 +403,6 @@ export default class ResponseRenderer extends React.Component {
           data={this.pivotTableData}
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
-          isFilteringTable={this.props.isFilteringTable}
           onCellClick={this.processCellClick}
           // onCellClick={(cell, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
@@ -426,7 +423,6 @@ export default class ResponseRenderer extends React.Component {
         hoverColor={this.props.tableHoverColor}
         // onRowClick={this.processRowClick}
         onCellClick={this.processCellClick}
-        isFilteringTable={this.props.isFilteringTable}
       />
     )
   }

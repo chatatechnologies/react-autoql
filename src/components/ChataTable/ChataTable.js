@@ -24,15 +24,13 @@ export default class ChataTable extends React.Component {
     onRowClick: PropTypes.func,
     data: PropTypes.arrayOf(PropTypes.array).isRequired,
     borderColor: PropTypes.string,
-    hoverColor: PropTypes.string,
-    isFilteringTable: PropTypes.bool
+    hoverColor: PropTypes.string
   }
 
   static defaultProps = {
     borderColor: '#ddd',
     // hoverColor: '#5a5a5a',
     hoverColor: '#ececec',
-    isFilteringTable: false,
     onRowClick: () => {}
   }
 
@@ -148,9 +146,7 @@ export default class ChataTable extends React.Component {
     return (
       <div
         id={`chata-table-container-${this.TABLE_CONTAINER_ID}`}
-        className={`chata-table-container${
-          this.props.isFilteringTable ? ' filtering' : ''
-        }`}
+        className="chata-table-container"
       >
         <ReactTabulator
           ref={ref => (this.ref = ref)}
