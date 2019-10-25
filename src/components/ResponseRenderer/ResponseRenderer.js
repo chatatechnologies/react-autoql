@@ -4,6 +4,9 @@ import uuid from 'uuid'
 import { IoIosGlobe } from 'react-icons/io'
 import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
+import Popover from 'react-tiny-popover'
+import disableScroll from 'disable-scroll'
+// import _get from 'lodash.get'
 
 import styles from './ResponseRenderer.css'
 import { ChataTable } from '../ChataTable'
@@ -97,15 +100,19 @@ export default class ResponseRenderer extends React.Component {
   }
 
   componentDidMount = () => {
-    this.RESPONSE_COMPONENT_KEY = uuid.v4()
+    try {
+      this.RESPONSE_COMPONENT_KEY = uuid.v4()
 
-    // Determine the supported visualization types based on the response data
-    this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+      // Determine the supported visualization types based on the response data
+      this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
 
-    // Set the initial display type based on prop value, response, and supported display types
-    this.setState({
-      displayType: this.getInitialDisplayType(this.supportedDisplayTypes)
-    })
+      // Set the initial display type based on prop value, response, and supported display types
+      this.setState({
+        displayType: this.getInitialDisplayType(this.supportedDisplayTypes)
+      })
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -124,6 +131,13 @@ export default class ResponseRenderer extends React.Component {
       this.supportedDisplayTypes.includes(this.props.displayType)
     ) {
       this.setState({ displayType: this.props.displayType })
+    }
+
+    // Do not allow scrolling while the context menu is open
+    if (!prevState.isContextMenuOpen && this.state.isContextMenuOpen) {
+      disableScroll.on()
+    } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
+      disableScroll.off()
     }
 
     ReactTooltip.rebuild()
@@ -350,20 +364,24 @@ export default class ResponseRenderer extends React.Component {
   }
 
   processCellClick = cell => {
-    let groupByObject = {}
-    if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
-      groupByObject = getGroupBysFromPivotTable(
-        cell,
-        this.tableColumns,
-        this.pivotTableColumns,
-        this.pivotOriginalColumnData
-      )
+    if (this.state.isContextMenuOpen) {
+      this.setState({ isContextMenuOpen: false })
     } else {
-      groupByObject = getGroupBysFromTable(cell, this.tableColumns)
-    }
+      let groupByObject = {}
+      if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
+        groupByObject = getGroupBysFromPivotTable(
+          cell,
+          this.tableColumns,
+          this.pivotTableColumns,
+          this.pivotOriginalColumnData
+        )
+      } else {
+        groupByObject = getGroupBysFromTable(cell, this.tableColumns)
+      }
 
-    if (!this.props.isDrilldownDisabled) {
-      this.props.processDrilldown(groupByObject, this.queryID)
+      if (!this.props.isDrilldownDisabled) {
+        this.props.processDrilldown(groupByObject, this.queryID)
+      }
     }
   }
 
@@ -669,6 +687,17 @@ export default class ResponseRenderer extends React.Component {
       // displayed differently than the data (ie. dates)
       col.headerFilterFunc = this.setFilterFunction(col)
 
+      // Context menu when right clicking on column header
+      col.headerContext = (e, column) => {
+        // Do not show native context menu
+        e.preventDefault()
+        this.setState({
+          isContextMenuOpen: true,
+          activeColumn: column,
+          contextMenuPosition: { top: e.clientY, left: e.clientX }
+        })
+      }
+
       if (col.type === 'DATE') {
         col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
           const aDate = dayjs.unix(a)
@@ -899,6 +928,42 @@ export default class ResponseRenderer extends React.Component {
     return null
   }
 
+  renderContextMenuContent = ({
+    position,
+    nudgedLeft,
+    nudgedTop,
+    targetRect,
+    popoverRect
+  }) => {
+    return (
+      <div
+        style={{
+          background: 'white',
+          height: '100px',
+          width: '200px',
+          padding: '20px'
+        }}
+      >
+        Context menu
+      </div>
+    )
+  }
+
+  renderContextMenu = () => {
+    return (
+      <Popover
+        isOpen={this.state.isContextMenuOpen}
+        position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
+        padding={10} // adjust padding here!
+        onClickOutside={() => this.setState({ isContextMenuOpen: false })}
+        contentLocation={this.state.contextMenuPosition}
+        content={props => this.renderContextMenuContent(props)}
+      >
+        <div />
+      </Popover>
+    )
+  }
+
   render = () => {
     const responseContainer = document.getElementById(
       `chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`
@@ -932,6 +997,7 @@ export default class ResponseRenderer extends React.Component {
         >
           {this.renderResponse(width, height)}
         </div>
+        {this.renderContextMenu()}
         {this.props.renderTooltips && (
           <ReactTooltip
             className="chata-chart-tooltip"

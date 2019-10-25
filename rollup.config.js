@@ -112,8 +112,11 @@ const outputs = [
       'd3-svg-legend': 'd3SVGLegend',
       'react-grid-layout': 'RGL',
       'react-grid-layout/css/styles.css': 'gridLayoutStyles',
+      'react-tiny-popover': 'Popver',
+      'disable-scroll': 'disableScroll',
       'lodash.get': '_get',
-      'react-tiny-popover': 'Popver'
+      'lodash.isequal': '_isEqual',
+      'lodash.clonedeep': '_cloneDeep'
     }
   }
 ]

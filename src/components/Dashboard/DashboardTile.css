@@ -52,6 +52,7 @@
   /* padding: 20px; */
   padding: 30px;
   padding-top: 0;
+  background: inherit;
 }
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   cursor: move;
@@ -78,6 +79,7 @@
   width: 100%;
   padding-top: 21px;
   cursor: default;
+  background: inherit;
 }
 
 .dashboard-tile-title-container {

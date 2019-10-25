@@ -63,7 +63,6 @@ export default class App extends Component {
     dashboardTiles: [
       {
         key: '0',
-        i: '0',
         w: 3,
         h: 2,
         x: 0,
@@ -73,7 +72,6 @@ export default class App extends Component {
       },
       {
         key: '1',
-        i: '1',
         w: 3,
         h: 2,
         x: 3,
@@ -83,7 +81,6 @@ export default class App extends Component {
       },
       {
         key: '2',
-        i: '2',
         w: 3,
         h: 2,
         x: 6,
@@ -93,7 +90,6 @@ export default class App extends Component {
       },
       {
         key: '3',
-        i: '3',
         w: 3,
         h: 2,
         x: 9,
@@ -103,7 +99,6 @@ export default class App extends Component {
       },
       {
         key: '4',
-        i: '4',
         w: 6,
         h: 5,
         x: 0,
@@ -114,7 +109,6 @@ export default class App extends Component {
       },
       {
         key: '5',
-        i: '5',
         w: 6,
         h: 5,
         x: 6,
@@ -125,7 +119,6 @@ export default class App extends Component {
       },
       {
         key: '6',
-        i: '6',
         w: 6,
         h: 5,
         x: 0,
@@ -136,7 +129,6 @@ export default class App extends Component {
       },
       {
         key: '7',
-        i: '7',
         w: 6,
         h: 5,
         x: 6,
@@ -147,7 +139,6 @@ export default class App extends Component {
       },
       {
         key: '8',
-        i: '8',
         w: 12,
         h: 5,
         x: 0,
@@ -158,7 +149,6 @@ export default class App extends Component {
       },
       {
         key: '9',
-        i: '9',
         w: 12,
         h: 8,
         x: 0,
@@ -169,7 +159,6 @@ export default class App extends Component {
       },
       {
         key: '10',
-        i: '10',
         w: 12,
         h: 5,
         x: 0,
@@ -667,6 +656,16 @@ export default class App extends Component {
               Add Tile
             </Button>
           )}
+          {this.state.isEditing && (
+            <Button
+              onClick={() => this.dashboardRef && this.dashboardRef.undo()}
+              type="primary"
+              icon="rollback"
+              style={{ marginLeft: '10px' }}
+            >
+              Undo
+            </Button>
+          )}
         </div>
         <Dashboard
           ref={ref => (this.dashboardRef = ref)}
@@ -687,9 +686,9 @@ export default class App extends Component {
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
           chartColors={this.state.chartColors}
-          onChangeCallback={newTiles =>
+          onChangeCallback={newTiles => {
             this.setState({ dashboardTiles: newTiles })
-          }
+          }}
         />
       </div>
     )

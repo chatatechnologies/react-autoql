@@ -1,19 +1,18 @@
 import React, { Fragment } from 'react'
-
 import PropTypes from 'prop-types'
-
 import uuid from 'uuid'
-
+import _get from 'lodash.get'
 import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 import { VizToolbar } from '../VizToolbar'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
 import { getSupportedDisplayTypes } from '../../js/Util'
 import { runQuery, runQueryOnly } from '../../js/queryService'
 
-export default class DashboardTile extends React.PureComponent {
+export default class DashboardTile extends React.Component {
   TILE_ID = uuid.v4()
 
   static propTypes = {
@@ -37,6 +36,7 @@ export default class DashboardTile extends React.PureComponent {
   static defaultProps = {
     query: '',
     title: '',
+    displayType: 'table',
     token: undefined,
     apiKey: undefined,
     customerId: undefined,
@@ -52,22 +52,54 @@ export default class DashboardTile extends React.PureComponent {
 
   state = {
     query: this.props.tile.query,
-    title: this.props.tile.title
+    title: this.props.tile.title,
+    isExecuting: false
   }
 
-  onQueryTextKeyDown = e => {
-    if (e.key === 'Enter') {
-      this.processTile()
-      e.target.blur()
+  componentDidUpdate = prevProps => {
+    // If query or title change from props (due to undo for example), update state
+    if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
+      this.setState({ query: _get(this.props, 'tile.query') })
     }
+
+    if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
+      this.setState({ title: _get(this.props, 'tile.title') })
+    }
+  }
+
+  startQuery = () => {
+    this.props.setParamsForTile(
+      {
+        queryResponse: null,
+        isNewTile: false,
+        selectedSuggestion: undefined,
+        safetyNetSelection: undefined
+      },
+      this.props.tile.i
+    )
+    this.setState({
+      isExecuting: true
+    })
+  }
+
+  endQuery = response => {
+    this.props.setParamsForTile(
+      {
+        queryResponse: response,
+        isNewTile: false,
+        selectedSuggestion: undefined,
+        safetyNetSelection: undefined
+      },
+      this.props.tile.i
+    )
+    this.setState({
+      isExecuting: false
+    })
   }
 
   processTile = (query, skipSafetyNet) => {
     if (query || this.state.query) {
-      const id = this.props.tile.i
-      // Reset query response so tile starts "loading" again
-      this.props.setParamForTile('isExecuting', true, id)
-      this.props.setParamForTile('queryResponse', null, id)
+      this.startQuery()
 
       if (skipSafetyNet) {
         runQueryOnly(
@@ -80,14 +112,8 @@ export default class DashboardTile extends React.PureComponent {
           this.props.userId,
           this.props.token
         )
-          .then(response => {
-            this.props.setParamForTile('isExecuting', false, id)
-            this.props.setParamForTile('queryResponse', response, id)
-          })
-          .catch(error => {
-            this.props.setParamForTile('isExecuting', false, id)
-            this.props.setParamForTile('queryResponse', error, id)
-          })
+          .then(response => this.endQuery(response))
+          .catch(error => this.endQuery(error))
       } else {
         runQuery(
           query || this.props.tile.selectedSuggestion || this.state.query,
@@ -100,15 +126,16 @@ export default class DashboardTile extends React.PureComponent {
           this.props.userId,
           this.props.token
         )
-          .then(response => {
-            this.props.setParamForTile('isExecuting', false, id)
-            this.props.setParamForTile('queryResponse', response, id)
-          })
-          .catch(error => {
-            this.props.setParamForTile('isExecuting', false, id)
-            this.props.setParamForTile('queryResponse', error, id)
-          })
+          .then(response => this.endQuery(response))
+          .catch(error => this.endQuery(error))
       }
+    }
+  }
+
+  onQueryTextKeyDown = e => {
+    if (e.key === 'Enter') {
+      this.processTile(e.target.value)
+      e.target.blur()
     }
   }
 
@@ -116,12 +143,11 @@ export default class DashboardTile extends React.PureComponent {
     this.setState({ query: suggestion })
 
     if (isButtonClick) {
-      this.props.setParamForTile('query', suggestion, this.props.tile.i)
+      this.props.setParamsForTile({ query: suggestion }, this.props.tile.i)
       this.processTile(suggestion, true)
     } else {
-      this.props.setParamForTile(
-        'selectedSuggestion',
-        suggestion,
+      this.props.setParamsForTile(
+        { selectedSuggestion: suggestion },
         this.props.tile.i
       )
     }
@@ -141,13 +167,14 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.query}
               onChange={e => this.setState({ query: e.target.value })}
               onKeyDown={this.onQueryTextKeyDown}
-              onBlur={e =>
-                this.props.setParamForTile(
-                  'query',
-                  e.target.value,
-                  this.props.tile.i
-                )
-              }
+              onBlur={e => {
+                if (_get(this.props, 'tile.query') !== e.target.value) {
+                  this.props.setParamsForTile(
+                    { query: e.target.value, displayType: undefined },
+                    this.props.tile.i
+                  )
+                }
+              }}
             />
             <input
               className="dashboard-tile-input title"
@@ -155,9 +182,8 @@ export default class DashboardTile extends React.PureComponent {
               value={this.state.title}
               onChange={e => this.setState({ title: e.target.value })}
               onBlur={e =>
-                this.props.setParamForTile(
-                  'title',
-                  e.target.value,
+                this.props.setParamsForTile(
+                  { title: e.target.value },
                   this.props.tile.i
                 )
               }
@@ -226,7 +252,7 @@ export default class DashboardTile extends React.PureComponent {
           <em>This tile has no query</em>
         </div>
       )
-    } else if (this.props.tile.isExecuting) {
+    } else if (this.state.isExecuting) {
       content = <LoadingDots />
     } else {
       content = (
@@ -250,7 +276,7 @@ export default class DashboardTile extends React.PureComponent {
           onMouseDown={e => e.stopPropagation()}
           className="dashboard-tile-response-container"
         >
-          {this.props.queryResponse && !this.props.tile.isExecuting ? (
+          {this.props.queryResponse && !this.state.isExecuting ? (
             <Fragment>
               <ResponseRenderer
                 displayType={this.props.displayType}
@@ -267,14 +293,11 @@ export default class DashboardTile extends React.PureComponent {
                 chartColors={this.props.chartColors}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })
-                  this.props.setParamForTile(
-                    'query',
-                    queryText,
-                    this.props.tile.i
-                  )
-                  this.props.setParamForTile(
-                    'safetyNetSelections',
-                    suggestionList,
+                  this.props.setParamsForTile(
+                    {
+                      query: queryText,
+                      safetyNetSelections: suggestionList
+                    },
                     this.props.tile.i
                   )
                 }}
@@ -283,9 +306,8 @@ export default class DashboardTile extends React.PureComponent {
                 <VizToolbar
                   displayType={this.props.displayType}
                   onDisplayTypeChange={displayType =>
-                    this.props.setParamForTile(
-                      'displayType',
-                      displayType,
+                    this.props.setParamsForTile(
+                      { displayType },
                       this.props.tile.i
                     )
                   }
@@ -313,7 +335,7 @@ export default class DashboardTile extends React.PureComponent {
     }
 
     return (
-      <Fragment>
+      <ErrorBoundary>
         <div
           className={this.props.className}
           style={{ ...this.props.style }}
@@ -335,7 +357,7 @@ export default class DashboardTile extends React.PureComponent {
             )}
           </div>
         </div>
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

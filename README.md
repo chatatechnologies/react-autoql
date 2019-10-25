@@ -368,7 +368,7 @@ The defaultTileState prop should be an array of tile objects. This can either be
 
 ```
 {
-   i: '0', // unique id for each tile but can match 'key'
+   key: '0', // unique id for each tile
    w: 3, // width of the tile. A value of 1 represents 1/12 of the container width. 12 is the maximum (full width)
    h: 2, // height of the tile. A value of 1 represents 60px
    x: 0, // x position of the tile (in same increments as w)
@@ -469,6 +469,8 @@ export default class App extends Component {
 
 - To add a dashboard tile, you can call the "addTile" function from the dashboard ref. It will make a new tile and place it at the bottom of the dashboard with a default width and height of 6 and 5 respectively.
 
+- To undo the previous action, you can call the "undo" function from the dashboard ref. This will only undo one previous action. Undoing a second time will "redo"
+
 ```
 import React, { Component, Fragment } from 'react'
 import { Dashboard, getDashboardTileState } from 'react-chata';
@@ -484,12 +486,21 @@ export default class App extends Component {
       this.dashboardRef.addTile()
     }
   }
+
+  undo = () => {
+    if (this.state.isEditingDashboard ? this.dashboardRef) {
+      this.dashboardRef.undo()
+    }
+  }
  	
   render = () => {
     return (
       <Fragment>
         <button onClick={this.addTile}>
           Add Tile
+        </button>
+        <button onClick={this.undo}>
+          Undo
         </button>
         <Dashboard
           apiKey="your-api-key"

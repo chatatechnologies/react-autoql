@@ -381,9 +381,7 @@ export const getgroupByObjectFromTable = (
     // rowData is already swapped here if necessary so don't swap again.
     if (
       columns[1] &&
-      ((columns[0].type !== 'DATE' && columns[1].type === 'DATE') ||
-        (columns[0].type !== 'DATE_STRING' &&
-          columns[1].type === 'DATE_STRING'))
+      (columns[0].type !== 'DATE' && columns[1].type === 'DATE')
     ) {
       columns = [columns[1], columns[0], ...columns.slice(2)]
     }

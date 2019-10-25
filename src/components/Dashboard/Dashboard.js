@@ -4,15 +4,18 @@ import uuid from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import gridLayoutStyles from 'react-grid-layout/css/styles.css'
 import ReactTooltip from 'react-tooltip'
+import _isEqual from 'lodash.isequal'
+import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 
 import DashboardTile from './DashboardTile'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import chataTableStyles from '../ChataTable/ChataTable.css'
 import styles from './DashboardTile.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
-// We will want to
 const executeDashboard = ref => {
   if (ref) {
     try {
@@ -97,24 +100,19 @@ class Dashboard extends React.Component {
   }
 
   state = {
-    // tiles: this.props.defaultTileState,
-    isDragging: false
+    isDragging: false,
+    previousTileState: this.props.tiles
   }
 
   componentDidMount = () => {
     this.setStyles()
-
-    // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-    // setTimeout(() => {
-    //   ReactTooltip.rebuild()
-    // }, 100)
 
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (
       this.props.fontFamily &&
       this.props.fontFamily !== prevProps.fontFamily
@@ -131,12 +129,25 @@ class Dashboard extends React.Component {
       this.executeDashboard()
     }
 
-    if (prevProps.tiles.length < this.props.tiles.length) {
-      setTimeout(() => {
-        if (this.ref) {
-          this.ref.scrollIntoView(false)
-        }
-      }, 200)
+    // If tile structure changed, set previous tile state for undo feature
+    if (
+      !_isEqual(
+        this.getChangeDetectionTileStructure(this.props.tiles),
+        this.getChangeDetectionTileStructure(prevProps.tiles)
+      ) &&
+      prevProps.tiles[prevProps.tiles.length - 1].y !== Infinity
+    ) {
+      // Do not scroll to the bottom if new tile is added because of undo
+      if (
+        prevProps.tiles.length < this.props.tiles.length &&
+        !this.state.justPerformedUndo
+      ) {
+        this.scrollToNewTile()
+      }
+
+      this.setState({
+        justPerformedUndo: false
+      })
     }
   }
 
@@ -163,12 +174,50 @@ class Dashboard extends React.Component {
     }
   }
 
+  setPreviousTileState = tiles => {
+    this.setState({
+      previousTileState: tiles
+    })
+  }
+
   executeDashboard = () => {
-    for (var dashboardTile in this.tileRefs) {
-      if (this.tileRefs[dashboardTile]) {
-        this.tileRefs[dashboardTile].processTile()
+    try {
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          this.tileRefs[dashboardTile].processTile()
+        }
       }
+    } catch (error) {
+      console.error(error)
     }
+  }
+
+  getChangeDetectionTileStructure = tiles => {
+    try {
+      const newTiles = tiles.map(tile => {
+        return {
+          query: tile.query,
+          title: tile.title,
+          i: tile.i,
+          w: tile.w,
+          h: tile.h,
+          x: tile.x,
+          y: tile.y
+        }
+      })
+
+      return newTiles
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  scrollToNewTile = () => {
+    setTimeout(() => {
+      if (this.ref) {
+        this.ref.scrollIntoView(false)
+      }
+    }, 200)
   }
 
   onMoveStart = () => {
@@ -177,148 +226,200 @@ class Dashboard extends React.Component {
     })
   }
 
-  onMoveEnd = () => {
-    setTimeout(() => {
-      this.setState({
-        isDragging: false
-      })
-    }, 100)
+  onMoveEnd = ({ layout }) => {
+    try {
+      // Update previousTileState here instead of in updateTileLayout
+      this.setPreviousTileState(this.props.tiles)
+
+      // Delaying this makes the snap back animation much smoother
+      // after moving a tile
+      setTimeout(() => {
+        this.setState({
+          isDragging: false
+        })
+      }, 100)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   updateTileLayout = layout => {
-    const tiles = this.props.tiles.map((tile, index) => {
-      return {
-        ...tile,
-        ...layout[index]
-      }
-    })
+    try {
+      const tiles = this.props.tiles.map((tile, index) => {
+        return {
+          ...tile,
+          ...layout[index]
+        }
+      })
 
-    this.props.onChangeCallback(tiles)
+      // This function is called when anything updates, including automatic
+      // re-adjustment of all tiles after moving a single tile. So we do not
+      // want to trigger the undo state on this action. Only on main actions
+      // directly caused from user interaction
+      this.props.onChangeCallback(tiles)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   addTile = () => {
-    const tiles = [...this.props.tiles]
-    const id = uuid.v4()
-    tiles.push({
-      key: id,
-      i: id,
-      w: 6,
-      h: 5,
-      x: (Object.keys(tiles).length * 6) % 12,
-      y: Infinity,
-      query: '',
-      title: '',
-      isNewTile: true
-    })
+    try {
+      this.setPreviousTileState(this.props.tiles)
 
-    this.props.onChangeCallback(tiles)
+      const tiles = _cloneDeep(this.props.tiles)
+      const id = uuid.v4()
+      tiles.push({
+        key: id,
+        i: id,
+        w: 6,
+        h: 5,
+        x: (Object.keys(tiles).length * 6) % 12,
+        y: Infinity,
+        query: '',
+        title: '',
+        isNewTile: true
+      })
+
+      this.props.onChangeCallback(tiles)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  undo = () => {
+    try {
+      this.props.onChangeCallback(this.state.previousTileState)
+      this.setState({
+        previousTileState: this.props.tiles,
+        justPerformedUndo: true
+      })
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   deleteTile = id => {
-    const tiles = [...this.props.tiles]
-    const tileIndex = tiles.map(item => item.i).indexOf(id)
-    ~tileIndex && tiles.splice(tileIndex, 1)
+    try {
+      this.setPreviousTileState(this.props.tiles)
 
-    this.props.onChangeCallback(tiles)
+      const tiles = _cloneDeep(this.props.tiles)
+      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      ~tileIndex && tiles.splice(tileIndex, 1)
+
+      this.props.onChangeCallback(tiles)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
-  setParamForTile = (paramName, paramValue, id) => {
-    const tiles = [...this.props.tiles]
-    const tileIndex = tiles.map(item => item.i).indexOf(id)
-    tiles[tileIndex][paramName] = paramValue
+  setParamsForTile = (params, id) => {
+    try {
+      this.setPreviousTileState(this.props.tiles)
 
-    if ((paramName = 'queryResponse')) {
-      // Reset state specific response values
-      if (tiles[tileIndex].selectedSuggestion) {
-        tiles[tileIndex].query = tiles[tileIndex].selectedSuggestion
+      const tiles = _cloneDeep(this.props.tiles)
+      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      tiles[tileIndex] = {
+        ...tiles[tileIndex],
+        ...params
       }
-      tiles[tileIndex].isNewTile = false
-      tiles[tileIndex].selectedSuggestion = undefined
-      tiles[tileIndex].safetyNetSelections = undefined
-    }
 
-    this.props.onChangeCallback(tiles)
+      this.props.onChangeCallback(tiles)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   render = () => {
+    const tileLayout = this.props.tiles.map(tile => {
+      return {
+        ...tile,
+        i: tile.key,
+        maxH: 12,
+        minH: 2,
+        minW: 3
+      }
+    })
+
     return (
-      <Fragment>
-        <style>{`${styles}`}</style>
-        <style>{`${chataTableStyles}`}</style>
-        <style>{`${gridLayoutStyles}`}</style>
-        <div
-          ref={ref => (this.ref = ref)}
-          className={`chata-dashboard-container${
-            this.props.isEditing ? ' edit-mode' : ''
-          }`}
-          style={{
-            height: '100%',
-            width: '100%',
-            overflow: 'hidden'
-          }}
-        >
-          <ReactGridLayout
-            onLayoutChange={layout => {
-              this.updateTileLayout(layout)
-              this.setState({ layout })
+      <ErrorBoundary>
+        <Fragment>
+          <style>{`${styles}`}</style>
+          <style>{`${chataTableStyles}`}</style>
+          <style>{`${gridLayoutStyles}`}</style>
+          <div
+            ref={ref => (this.ref = ref)}
+            className={`chata-dashboard-container${
+              this.props.isEditing ? ' edit-mode' : ''
+            }`}
+            style={{
+              height: '100%',
+              width: '100%',
+              overflow: 'hidden'
             }}
-            onDragStart={this.onMoveStart}
-            onResizeStart={this.onMoveStart}
-            onDragStop={this.onMoveEnd}
-            onResizeStop={this.onMoveEnd}
-            className="chata-dashboard"
-            rowHeight={60}
-            cols={12}
-            isDraggable={this.props.isEditing}
-            isResizable={this.props.isEditing}
-            draggableHandle=".chata-dashboard-tile-inner-div"
-            layout={this.props.tiles}
-            margin={[20, 20]}
           >
-            {this.props.tiles.map(tile => (
-              <DashboardTile
-                className={`chata-dashboard-tile${
-                  this.state.isDragging ? ' dragging' : ''
-                } ${tile.i}`}
-                ref={ref => (this.tileRefs[tile.key] = ref)}
-                key={tile.key}
-                tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
-                displayType={tile.displayType}
-                queryResponse={tile.queryResponse}
-                token={this.props.token}
-                apiKey={this.props.apiKey}
-                customerId={this.props.customerId}
-                userId={this.props.userId}
-                domain={this.props.domain}
-                demo={this.props.demo}
-                debug={this.props.debug}
-                enableSafetyNet={this.props.enableSafetyNet}
-                isEditing={this.props.isEditing}
-                isDragging={this.state.isDragging}
-                setParamForTile={this.setParamForTile}
-                deleteTile={this.deleteTile}
-                currencyCode={this.props.currencyCode}
-                languageCode={this.props.languageCode}
-                notExecutedText={this.props.notExecutedText}
-                chartColors={this.props.chartColors}
-              />
-            ))}
-          </ReactGridLayout>
-        </div>
-        <ReactTooltip
-          className="chata-chart-tooltip"
-          id="chart-element-tooltip"
-          effect="solid"
-          html
-        />
-        <ReactTooltip
-          className="chata-dashboard-tooltip"
-          id="chata-toolbar-btn-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
-      </Fragment>
+            <ReactGridLayout
+              onLayoutChange={layout => {
+                this.updateTileLayout(layout)
+                this.setState({ layout })
+              }}
+              onDragStart={this.onMoveStart}
+              onResizeStart={this.onMoveStart}
+              onDragStop={this.onMoveEnd}
+              onResizeStop={this.onMoveEnd}
+              className="chata-dashboard"
+              rowHeight={60}
+              cols={12}
+              isDraggable={this.props.isEditing}
+              isResizable={this.props.isEditing}
+              draggableHandle=".chata-dashboard-tile-inner-div"
+              layout={tileLayout}
+              margin={[20, 20]}
+            >
+              {tileLayout.map(tile => (
+                <DashboardTile
+                  className={`chata-dashboard-tile${
+                    this.state.isDragging ? ' dragging' : ''
+                  } ${tile.i}`}
+                  ref={ref => (this.tileRefs[tile.key] = ref)}
+                  key={tile.key}
+                  tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
+                  displayType={tile.displayType}
+                  queryResponse={tile.queryResponse}
+                  token={this.props.token}
+                  apiKey={this.props.apiKey}
+                  customerId={this.props.customerId}
+                  userId={this.props.userId}
+                  domain={this.props.domain}
+                  demo={this.props.demo}
+                  debug={this.props.debug}
+                  enableSafetyNet={this.props.enableSafetyNet}
+                  isEditing={this.props.isEditing}
+                  isDragging={this.state.isDragging}
+                  setParamsForTile={this.setParamsForTile}
+                  deleteTile={this.deleteTile}
+                  currencyCode={this.props.currencyCode}
+                  languageCode={this.props.languageCode}
+                  notExecutedText={this.props.notExecutedText}
+                  chartColors={this.props.chartColors}
+                />
+              ))}
+            </ReactGridLayout>
+          </div>
+          <ReactTooltip
+            className="chata-chart-tooltip"
+            id="chart-element-tooltip"
+            effect="solid"
+            html
+          />
+          <ReactTooltip
+            className="chata-dashboard-tooltip"
+            id="chata-toolbar-btn-tooltip"
+            effect="solid"
+            delayShow={500}
+            html
+          />
+        </Fragment>
+      </ErrorBoundary>
     )
   }
 }
