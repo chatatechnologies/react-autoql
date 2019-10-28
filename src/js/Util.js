@@ -1,7 +1,6 @@
+import React from 'react'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
-
-var href
 
 export const getParameterByName = (
   parameterName,
@@ -101,7 +100,13 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
   return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
-export const formatElement = (element, column, currencyCode, languageCode) => {
+export const formatElement = (
+  element,
+  column,
+  currencyCode,
+  languageCode,
+  htmlElement
+) => {
   let formattedElement = element
   if (column) {
     switch (column.type) {
@@ -146,9 +151,22 @@ export const formatElement = (element, column, currencyCode, languageCode) => {
         }
         break
       }
+      case 'RATIO': {
+        if (Number(element)) {
+          formattedElement = Numbro(element).format('0.00')
+        }
+        break
+      }
       case 'PERCENT': {
         if (Number(element)) {
           formattedElement = Numbro(element).format('0.00%')
+
+          if (htmlElement) {
+            console.log(htmlElement)
+            htmlElement.classList.add(
+              `comparison-value-${element < 0 ? 'negative' : 'positive'}`
+            )
+          }
         }
         break
       }

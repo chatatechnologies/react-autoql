@@ -86,6 +86,7 @@ export default class ChatDrawer extends React.Component {
     debug: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
+    comparisonDisplay: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string)
   }
 
@@ -121,6 +122,7 @@ export default class ChatDrawer extends React.Component {
     currencyCode: undefined,
     languageCode: undefined,
     chartColors: undefined,
+    comparisonDisplay: 'ratio',
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -589,6 +591,7 @@ export default class ChatDrawer extends React.Component {
                         currencyCode={this.props.currencyCode}
                         languageCode={this.props.languageCode}
                         chartColors={this.props.chartColors}
+                        comparisonDisplay={this.props.comparisonDisplay}
                         tableBorderColor={
                           this.props.theme === 'light'
                             ? this.LIGHT_THEME['--chata-drawer-border-color']

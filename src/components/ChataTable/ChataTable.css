@@ -123,3 +123,9 @@ the whole table when the filter button is clicked */
   vertical-align: top;
   line-height: 21px;
 }
+.comparison-value-positive {
+  color: #00cc00;
+}
+.comparison-value-negative {
+  color: #e80000;
+}

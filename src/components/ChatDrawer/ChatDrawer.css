@@ -180,7 +180,7 @@
   padding: 7px 15px;
   transition: none;
   opacity: 1 !important;
-  z-index: 99999; /* necessary to show up on top of rc drawer */
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 .interpretation-tooltip {
   font-family: var(--chata-drawer-font-family), sans-serif;
@@ -190,7 +190,7 @@
   max-width: 400px;
   opacity: 1 !important;
   transition: none;
-  z-index: 99999; /* necessary to show up on top of rc drawer */
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
 .react-tiny-popover-container {

@@ -192,6 +192,7 @@ export default class App extends Component {
 | demo | Boolean | false |
 | currencyCode | String | 'USD' |
 | languageCode | String | 'en-US' |
+| comparisonDisplay | String | 'ratio' &#124;&#124; 'percent' |
 | fontFamily | String | 'sans-serif' |
 | chartColors | Array | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
 
@@ -232,6 +233,7 @@ export default class App extends Component {
 | renderTooltips | Boolean | true |
 | currencyCode | String | 'USD' |
 | languageCode | String | 'en-US' |
+| comparisonDisplay | String | 'ratio' &#124;&#124; 'percent' |
 | fontFamily | String | 'sans-serif' |
 | chartColors | Array | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
 
@@ -248,6 +250,7 @@ export default class App extends Component {
 | isEditing | Boolean | false |
 | currencyCode | String | 'USD' |
 | languageCode | String | 'en-US' |
+| comparisonDisplay | String | 'ratio' &#124;&#124; 'percent' |
 | fontFamily | String | 'sans-serif' |
 | chartColors | Array | ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'] |
 | executeOnMount | Boolean | true |

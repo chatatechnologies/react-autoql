@@ -59,6 +59,7 @@ export default class App extends Component {
     languageCode: 'en-US',
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
+    comparisonDisplay: false,
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     dashboardTiles: [
       {
@@ -523,6 +524,11 @@ export default class App extends Component {
           value={this.state.maxMessages}
         />
         {this.createBooleanRadioGroup(
+          'Display comparisons as Percent',
+          'comparisonDisplay',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
           'Enable Autocomplete',
           'enableAutocomplete',
           [true, false]
@@ -590,6 +596,7 @@ export default class App extends Component {
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
           chartColors={this.state.chartColors}
+          comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
           // handleImage={spiraLogo}
           // inputStyles
           // autocompleteStyles

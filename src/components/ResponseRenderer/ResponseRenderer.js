@@ -68,7 +68,8 @@ export default class ResponseRenderer extends React.Component {
     languageCode: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string),
     height: PropTypes.number,
-    width: PropTypes.number
+    width: PropTypes.number,
+    comparisonDisplay: PropTypes.string
   }
 
   static defaultProps = {
@@ -89,6 +90,7 @@ export default class ResponseRenderer extends React.Component {
     languageCode: undefined,
     height: undefined,
     width: undefined,
+    comparisonDisplay: 'ratio',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
@@ -647,6 +649,11 @@ export default class ResponseRenderer extends React.Component {
       return null
     }
     const formattedColumns = columns.map((col, i) => {
+      if (col.type === 'RATIO' && this.props.comparisonDisplay === 'PERCENT') {
+        console.log('type was ratio, changing to percent')
+        col.type = 'PERCENT'
+      }
+
       col.field = `${i}`
       col.align = 'center'
       col.formatter = (cell, formatterParams, onRendered) => {
@@ -654,7 +661,8 @@ export default class ResponseRenderer extends React.Component {
           cell.getValue(),
           col,
           this.props.currencyCode,
-          this.props.languageCode
+          this.props.languageCode,
+          cell.getElement()
         )
       }
 

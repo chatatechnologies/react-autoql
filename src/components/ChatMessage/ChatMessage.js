@@ -38,7 +38,8 @@ export default class ChatMessage extends React.Component {
     tableOptions: PropTypes.shape({}),
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    debug: PropTypes.bool
+    debug: PropTypes.bool,
+    comparisonDisplay: PropTypes.string
   }
 
   static defaultProps = {
@@ -52,7 +53,8 @@ export default class ChatMessage extends React.Component {
     tableOptions: undefined,
     debug: false,
     currencyCode: undefined,
-    languageCode: undefined
+    languageCode: undefined,
+    comparisonDisplay: 'ratio'
   }
 
   state = {
@@ -97,6 +99,7 @@ export default class ChatMessage extends React.Component {
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
+          comparisonDisplay={this.props.comparisonDisplay}
           height={chartHeight}
           width={chartWidth}
           // We want to render our own in the parent component
