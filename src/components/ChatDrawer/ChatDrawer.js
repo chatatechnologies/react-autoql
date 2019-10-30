@@ -114,7 +114,7 @@ export default class ChatDrawer extends React.Component {
     enableSafetyNet: true,
     enableAutocomplete: true,
     enableVoiceRecord: true,
-    title: 'Chat with your data',
+    title: 'Data Messenger',
     maxMessages: undefined,
     demo: false,
     debug: false,

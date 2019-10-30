@@ -69,7 +69,7 @@ export default class ChatMessage extends React.Component {
     this.MESSAGE_ID = uuid.v4()
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
   }
 
@@ -100,6 +100,7 @@ export default class ChatMessage extends React.Component {
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
           comparisonDisplay={this.props.comparisonDisplay}
+          setFilterTagsCallback={this.setFilterTags}
           height={chartHeight}
           width={chartWidth}
           // We want to render our own in the parent component
@@ -362,6 +363,10 @@ export default class ChatMessage extends React.Component {
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+    }
+
+    if (this.state.displayType === 'pie') {
+      chartHeight = 330
     }
 
     return (

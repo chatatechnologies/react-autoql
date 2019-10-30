@@ -24,13 +24,17 @@ export default class ChataTable extends React.Component {
     onRowClick: PropTypes.func,
     data: PropTypes.arrayOf(PropTypes.array).isRequired,
     borderColor: PropTypes.string,
-    hoverColor: PropTypes.string
+    hoverColor: PropTypes.string,
+    onFilterCallback: PropTypes.func,
+    setFilterTagsCallback: PropTypes.func
   }
 
   static defaultProps = {
     borderColor: '#ddd',
     // hoverColor: '#5a5a5a',
     hoverColor: '#ececec',
+    setFilterTagsCallback: () => {},
+    onFilterCallback: () => {},
     onRowClick: () => {}
   }
 
@@ -40,7 +44,10 @@ export default class ChataTable extends React.Component {
 
   componentDidMount = () => {
     this.TABLE_CONTAINER_ID = uuid.v4()
+    this.setInitialHeaderFilters()
     this.setStyles()
+
+    setTimeout(this.props.setFilterTagsCallback, 100)
   }
 
   componentDidUpdate = prevProps => {
@@ -49,6 +56,14 @@ export default class ChataTable extends React.Component {
       this.props.borderColor !== prevProps.borderColor
     ) {
       this.setStyles()
+    }
+  }
+
+  setInitialHeaderFilters = () => {
+    if (_get(this.props, 'headerFilters.length') && this.ref) {
+      this.props.headerFilters.forEach(filter => {
+        this.ref.table.setHeaderFilterValue(filter.field, filter.value)
+      })
     }
   }
 
@@ -101,6 +116,14 @@ export default class ChataTable extends React.Component {
         columnGroups: false,
         rowGroups: false,
         columnCalcs: false
+      },
+      dataFiltering: filters => {
+        // The filters provided to this function don't include header filters
+        // We only use header filters so we have to use the function below
+        if (this.ref) {
+          // console.log(this.ref.table.getData(true))
+          this.props.onFilterCallback(this.ref.table.getHeaderFilters())
+        }
       },
       downloadDataFormatter: data => data,
       downloadReady: (fileContents, blob) => blob

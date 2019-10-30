@@ -48,11 +48,17 @@ export default class ChataChart extends Component {
 
   componentDidMount = () => {
     this.CHART_ID = uuid.v4()
-    this.updateMargins()
+    if (this.props.type !== 'pie') {
+      this.updateMargins()
+    }
   }
 
   componentDidUpdate = prevProps => {
-    if (this.props.type && this.props.type !== prevProps.type) {
+    if (
+      this.props.type &&
+      this.props.type !== prevProps.type &&
+      this.props.type !== 'pie'
+    ) {
       this.updateMargins()
       ReactTooltip.rebuild()
     }
@@ -292,7 +298,7 @@ export default class ChataChart extends Component {
   renderPieChart = () => (
     <ChataPieChart
       {...this.getCommonChartProps()}
-      dataValue="value"
+      dataValue="values"
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
     />
@@ -351,6 +357,10 @@ export default class ChataChart extends Component {
       }
       case 'line': {
         chart = this.renderLineChart()
+        break
+      }
+      case 'pie': {
+        chart = this.renderPieChart()
         break
       }
       case 'bubble': {

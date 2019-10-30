@@ -14,10 +14,10 @@
   max-width: 200px;
 }
 
-.spira-ui-overlay {
+.ui-overlay {
   width: 100%;
   height: 100vh;
   background-size: cover;
   background-repeat: no-repeat;
-  background-image: url("./spira_ui.png");
+  background-image: url("./locate_ui.png");
 }

@@ -22,6 +22,8 @@ import {
   message
 } from 'antd'
 
+import locateLogo from './locate_logo.png'
+
 import 'antd/dist/antd.css'
 import './index.css'
 
@@ -44,10 +46,11 @@ export default class App extends Component {
     clearOnClose: false,
     height: 500,
     width: 500,
-    title: 'Chat with your data',
-    lightAccentColor: '#28a8e0',
+    title: 'Data Messenger',
+    // lightAccentColor: '#28a8e0',
+    lightAccentColor: '#585359',
     darkAccentColor: '#525252',
-    maxMessages: 6,
+    maxMessages: 10,
     isEditing: false,
     demo: true,
     debug: true,
@@ -301,6 +304,10 @@ export default class App extends Component {
       <div>
         <h1>Data Source</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
+        {this.createBooleanRadioGroup('Locate Demo', 'uiOverlay', [
+          true,
+          false
+        ])}
         {!this.state.demo && (
           <Fragment>
             <h3>You must login to access data</h3>
@@ -597,7 +604,7 @@ export default class App extends Component {
           languageCode={this.state.languageCode}
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
-          // handleImage={spiraLogo}
+          handleImage={this.state.uiOverlay ? locateLogo : undefined}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
@@ -734,6 +741,7 @@ export default class App extends Component {
 
     return (
       <Fragment>
+        {this.state.uiOverlay && <div className="ui-overlay" />}
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>

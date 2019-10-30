@@ -98,6 +98,7 @@ export default class ResponseRenderer extends React.Component {
 
   state = {
     displayType: null,
+    tableFilters: [],
     suggestionSelection: this.props.selectedSuggestion
   }
 
@@ -239,10 +240,14 @@ export default class ResponseRenderer extends React.Component {
   }
 
   generatePivotData = () => {
-    if (this.tableColumns.length === 2) {
-      this.generateDatePivotData()
-    } else {
-      this.generatePivotTableData()
+    try {
+      if (this.tableColumns.length === 2) {
+        this.generateDatePivotData()
+      } else {
+        this.generatePivotTableData()
+      }
+    } catch (error) {
+      this.pivotTableData = undefined
     }
   }
 
@@ -402,6 +407,16 @@ export default class ResponseRenderer extends React.Component {
     }
   }
 
+  onTableFilter = async filters => {
+    this.headerFilters = filters
+
+    if (this.tableRef && this.tableRef.ref && this.tableRef.ref.table) {
+      setTimeout(() => {
+        this.generateChartData(this.tableRef.ref.table.getData(true))
+      }, 500)
+    }
+  }
+
   renderTable = () => {
     if (
       !this.tableData ||
@@ -425,11 +440,9 @@ export default class ResponseRenderer extends React.Component {
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
           onCellClick={this.processCellClick}
-          // onCellClick={(cell, columns) => {
-          //   if (!this.props.isDrilldownDisabled) {
-          //     this.props.processDrilldown(cell, columns, this.queryID)
-          //   }
-          // }}
+          headerFilters={this.headerFilters}
+          onFilterCallback={this.onTableFilter}
+          setFilterTagsCallback={this.props.setFilterTagsCallback}
         />
       )
     }
@@ -442,8 +455,10 @@ export default class ResponseRenderer extends React.Component {
         data={this.tableData}
         borderColor={this.props.tableBorderColor}
         hoverColor={this.props.tableHoverColor}
-        // onRowClick={this.processRowClick}
         onCellClick={this.processCellClick}
+        headerFilters={this.headerFilters}
+        onFilterCallback={this.onTableFilter}
+        setFilterTagsCallback={this.props.setFilterTagsCallback}
       />
     )
   }
@@ -527,12 +542,13 @@ export default class ResponseRenderer extends React.Component {
     return dayjs.unix(value).format('MMMM D, YYYY')
   }
 
-  generateChartData = () => {
+  generateChartData = data => {
     const columns = this.tableColumns
+    const tableData = data || this.tableData
 
     if (getNumberOfGroupables(this.tableColumns) === 1) {
       this.chartData = Object.values(
-        this.tableData.reduce((chartDataObject, row) => {
+        tableData.reduce((chartDataObject, row) => {
           // Loop through columns and create a series for each
           const values = []
           row.forEach((value, i) => {
@@ -565,7 +581,7 @@ export default class ResponseRenderer extends React.Component {
         }, {})
       )
     } else if (getNumberOfGroupables(this.tableColumns) === 2) {
-      this.chartData = this.tableData.map(row => {
+      this.chartData = tableData.map(row => {
         return {
           origColumns: columns,
           origRow: row,

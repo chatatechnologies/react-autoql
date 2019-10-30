@@ -172,7 +172,7 @@ export default class App extends Component {
 | height | String &#124;&#124; Number | 350 |
 | theme | String: 'light' &#124;&#124; 'dark' | 'light' |
 | accentColor | String | light theme: '#28a8e0', dark theme: '#525252' |
-| title | String | 'Chat with your data' |
+| title | String | 'Data Messenger' |
 | showHandle | Boolean | true |
 | handleStyles | Object | {} |
 | onVisibleChange | Function | () => {} |

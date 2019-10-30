@@ -14,7 +14,7 @@ export const CHART_TYPES = [
   'column',
   'heatmap',
   'line',
-  // 'pie',
+  'pie',
   'stacked_bar',
   'stacked_column',
   'word_cloud',
