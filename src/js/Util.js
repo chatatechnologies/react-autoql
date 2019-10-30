@@ -162,7 +162,6 @@ export const formatElement = (
           formattedElement = Numbro(element).format('0.00%')
 
           if (htmlElement) {
-            console.log(htmlElement)
             htmlElement.classList.add(
               `comparison-value-${element < 0 ? 'negative' : 'positive'}`
             )

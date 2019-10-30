@@ -92,11 +92,12 @@ export default class ChataStackedColumnChart extends Component {
     const barWidth = width / this.uniqueYLabels.length
     const interval = Math.ceil((this.uniqueYLabels.length * 16) / width)
     let xTickValues
+
     if (barWidth < 16) {
       xTickValues = []
       this.uniqueYLabels.forEach((element, index) => {
         if (index % interval === 0) {
-          xTickValues.push(element[labelValueY])
+          xTickValues.push(element)
         }
       })
     }

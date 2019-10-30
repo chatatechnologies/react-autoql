@@ -650,7 +650,6 @@ export default class ResponseRenderer extends React.Component {
     }
     const formattedColumns = columns.map((col, i) => {
       if (col.type === 'RATIO' && this.props.comparisonDisplay === 'PERCENT') {
-        console.log('type was ratio, changing to percent')
         col.type = 'PERCENT'
       }
 

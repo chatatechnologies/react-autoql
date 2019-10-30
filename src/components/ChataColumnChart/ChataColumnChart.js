@@ -66,9 +66,9 @@ export default class ChataBarChart extends Component {
     let minValue = min(minValuesFromArrays)
 
     // Make sure 0 is always visible on the y axis
-    // if (minValue > 0) {
-    //   minValue = 0
-    // }
+    if (minValue > 0) {
+      minValue = 0
+    }
 
     const xScale = this.xScale
       .domain(data.map(d => d[labelValue]))
