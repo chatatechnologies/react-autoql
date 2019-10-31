@@ -548,61 +548,68 @@ export default class ResponseRenderer extends React.Component {
   }
 
   generateChartData = data => {
-    const columns = this.tableColumns
-    const tableData = data || this.tableData
+    try {
+      const columns = this.tableColumns
+      const tableData = data || this.tableData
 
-    if (getNumberOfGroupables(this.tableColumns) === 1) {
-      this.chartData = Object.values(
-        tableData.reduce((chartDataObject, row) => {
-          // Loop through columns and create a series for each
-          const values = []
-          row.forEach((value, i) => {
-            if (i > 0) {
-              values.push(Number(value) || value)
-            }
-          })
-
-          // Make sure the row label doesn't exist already
-          if (!chartDataObject[row[0]]) {
-            chartDataObject[row[0]] = {
-              origColumns: columns,
-              origRow: row,
-              label: row[0],
-              values,
-              formatter: (value, column) => {
-                return formatElement(
-                  value,
-                  column,
-                  this.props.currencyCode,
-                  this.props.languageCode
-                )
+      if (getNumberOfGroupables(this.tableColumns) === 1) {
+        this.chartData = Object.values(
+          tableData.reduce((chartDataObject, row) => {
+            // Loop through columns and create a series for each
+            const values = []
+            row.forEach((value, i) => {
+              if (i > 0) {
+                values.push(Number(value) || value)
               }
+            })
+
+            // Make sure the row label doesn't exist already
+            if (!chartDataObject[row[0]]) {
+              chartDataObject[row[0]] = {
+                origColumns: columns,
+                origRow: row,
+                label: row[0],
+                values,
+                formatter: (value, column) => {
+                  return formatElement(
+                    value,
+                    column,
+                    this.props.currencyCode,
+                    this.props.languageCode
+                  )
+                }
+              }
+            } else {
+              // If this label already exists, just add the values together
+              chartDataObject[row[1]].value += Number(row[1])
             }
-          } else {
-            // If this label already exists, just add the values together
-            chartDataObject[row[1]].value += Number(row[1])
+            return chartDataObject
+          }, {})
+        )
+      } else if (getNumberOfGroupables(this.tableColumns) === 2) {
+        this.chartData = tableData.map(row => {
+          return {
+            origColumns: columns,
+            origRow: row,
+            labelX: row[1],
+            labelY: row[0],
+            value: Number(row[2]) || row[2],
+            formatter: (value, column) => {
+              return formatElement(
+                value,
+                column,
+                this.props.currencyCode,
+                this.props.languageCode
+              )
+            }
           }
-          return chartDataObject
-        }, {})
-      )
-    } else if (getNumberOfGroupables(this.tableColumns) === 2) {
-      this.chartData = tableData.map(row => {
-        return {
-          origColumns: columns,
-          origRow: row,
-          labelX: row[1],
-          labelY: row[0],
-          value: Number(row[2]) || row[2],
-          formatter: (value, column) => {
-            return formatElement(
-              value,
-              column,
-              this.props.currencyCode,
-              this.props.languageCode
-            )
-          }
-        }
-      })
+        })
+      }
+    } catch (error) {
+      // Something went wrong. Do not show chart options
+      this.supportedDisplayTypes = ['table']
+      this.chartData = undefined
+      console.error(error)
     }
   }
 
