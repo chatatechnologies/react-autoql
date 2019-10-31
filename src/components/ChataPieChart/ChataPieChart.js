@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
+import _get from 'lodash.get'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -10,6 +11,8 @@ import { interpolate } from 'd3-interpolate'
 import 'd3-transition'
 
 import dayjs from 'dayjs'
+
+import { formatChartLabel } from '../../js/Util'
 
 export default class Axis extends Component {
   static propTypes = {
@@ -172,7 +175,10 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', 0.7)
       .text(function(d) {
-        return d.data.value[self.props.labelValue]
+        const data = _get(d, `data.value[${self.props.labelValue}]`)
+        const column = _get(d, `data.value.origColumns[0]`)
+
+        return formatChartLabel(data, column).formattedLabel
       })
       .transition()
       .duration(2000)
