@@ -322,7 +322,11 @@ export const getSupportedDisplayTypes = response => {
     const supportedDisplayTypes = ['bar', 'column', 'line', 'table', 'pie']
 
     // create pivot based on month and year
-    if (columns[0].type === 'DATE' && columns[0].name.includes('month')) {
+    if (
+      columns[0].type === 'DATE' &&
+      columns[0].name.includes('month') &&
+      columns.length === 2
+    ) {
       supportedDisplayTypes.push('pivot_table')
     }
     return supportedDisplayTypes
