@@ -660,6 +660,36 @@ export default class ResponseRenderer extends React.Component {
     return undefined
   }
 
+  getColTitle = col => {
+    if (col.display_name) {
+      return col.display_name
+    }
+
+    let title
+    const nameFragments = col.name.split('___')
+    if (nameFragments.length === 2) {
+      let firstFragment = nameFragments[0]
+      let secondFragment = nameFragments[1]
+
+      if (!firstFragment.isUpperCase()) {
+        firstFragment = firstFragment.toProperCase()
+      }
+      if (!secondFragment.isUpperCase()) {
+        secondFragment = secondFragment.toProperCase()
+      }
+      title = `${firstFragment} (${secondFragment})`
+    } else if (nameFragments.length === 1) {
+      // all good
+    } else {
+      console.warn(`unexpected nameFragments.length ${nameFragments.length}`)
+    }
+
+    title = col.name.replace(/_/g, ' ')
+    title = `${title.toProperCase()}`
+
+    return title
+  }
+
   formatColumnsForTable = columns => {
     if (!columns) {
       return null
@@ -681,26 +711,7 @@ export default class ResponseRenderer extends React.Component {
         )
       }
 
-      const nameFragments = col.name.split('___')
-      if (nameFragments.length === 2) {
-        let firstFragment = nameFragments[0]
-        let secondFragment = nameFragments[1]
-
-        if (!firstFragment.isUpperCase()) {
-          firstFragment = firstFragment.toProperCase()
-        }
-        if (!secondFragment.isUpperCase()) {
-          secondFragment = secondFragment.toProperCase()
-        }
-        col.title = `${firstFragment} (${secondFragment})`
-      } else if (nameFragments.length === 1) {
-        // all good
-      } else {
-        console.warn(`unexpected nameFragments.length ${nameFragments.length}`)
-      }
-
-      col.title = col.name.replace(/_/g, ' ')
-      col.title = `${col.title.toProperCase()}`
+      col.title = this.getColTitle(col)
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user

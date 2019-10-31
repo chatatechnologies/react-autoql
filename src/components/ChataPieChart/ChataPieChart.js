@@ -53,8 +53,6 @@ export default class Axis extends Component {
       .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
 
     const pieChart = pie().value(d => {
-      console.log('data value for pie slice')
-      console.log(d)
       return d.value[self.props.dataValue]
     })
 
@@ -92,13 +90,6 @@ export default class Axis extends Component {
     //   }
     // })
 
-    console.log('radiuses')
-    console.log(self.innerRadius)
-    console.log(self.outerRadius)
-
-    console.log('dataReady')
-    console.log(self.dataReady)
-
     // build the pie chart
     this.pieChartContainer
       .selectAll('slices')
@@ -113,8 +104,6 @@ export default class Axis extends Component {
           .outerRadius(self.outerRadius)
       )
       .attr('fill', d => {
-        console.log('setting color for slice')
-        console.log(d.data.value[self.props.labelValue])
         return self.color(d.data.value[self.props.labelValue])
       })
       .style('fill-opacity', 0.85)
@@ -276,9 +265,6 @@ export default class Axis extends Component {
   renderPie = () => {
     const self = this
 
-    console.log('original data')
-    console.log(this.props.data)
-
     // 100 pixel max for labels.
     // Might want to calculate max label length and use that if it is much less than 100px
     const labelMargin = 100
@@ -297,9 +283,6 @@ export default class Axis extends Component {
         parseFloat(b[self.props.dataValue])
     )
 
-    console.log('sorted data:')
-    console.log(this.sortedData)
-
     this.renderPieContainer()
     this.setColorScale()
     this.renderPieSlices()
@@ -308,7 +291,6 @@ export default class Axis extends Component {
   }
 
   render = () => {
-    console.log('rendering pie chart')
     return (
       <svg
         className="pie-chart"
