@@ -319,7 +319,11 @@ export const getSupportedDisplayTypes = response => {
 
   if (getNumberOfGroupables(columns) === 1) {
     // Is direct key-value query (ie. Avg days to pay per customer)
-    const supportedDisplayTypes = ['bar', 'column', 'line', 'table', 'pie']
+    const supportedDisplayTypes = ['bar', 'column', 'line', 'table']
+
+    if (columns.length === 2) {
+      supportedDisplayTypes.push('pie')
+    }
 
     // create pivot based on month and year
     if (
