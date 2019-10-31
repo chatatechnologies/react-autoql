@@ -47,13 +47,14 @@ export default class Axis extends Component {
 
   setColorScale = () => {
     const self = this
+
     this.color = scaleOrdinal()
       .domain(
         self.sortedData.map(d => {
           return d[self.props.labelValue]
         })
       )
-      .range(['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'])
+      .range(this.props.chartColors)
 
     const pieChart = pie().value(d => {
       return d.value[self.props.dataValue]
@@ -108,6 +109,10 @@ export default class Axis extends Component {
       )
       .attr('fill', d => {
         return self.color(d.data.value[self.props.labelValue])
+      })
+      .attr('data-for', 'chart-element-tooltip')
+      .attr('data-tip', function(d) {
+        return self.props.tooltipFormatter(d)
       })
       .style('fill-opacity', 0.85)
       .style('stroke-width', '0')
@@ -268,6 +273,10 @@ export default class Axis extends Component {
       })
   }
 
+  renderLegend = () => {
+    return <div>Legend</div>
+  }
+
   renderPie = () => {
     const self = this
 
@@ -292,8 +301,9 @@ export default class Axis extends Component {
     this.renderPieContainer()
     this.setColorScale()
     this.renderPieSlices()
-    this.renderLabelLines()
-    this.renderLabels()
+    // this.renderLabelLines()
+    // this.renderLabels()
+    this.renderLegend()
   }
 
   render = () => {

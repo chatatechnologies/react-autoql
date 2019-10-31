@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { select } from 'd3-selection'
 import { max } from 'd3-array'
@@ -306,7 +307,39 @@ export default class ChataChart extends Component {
       {...this.getCommonChartProps()}
       dataValue="values"
       labelValue="label"
-      tooltipFormatter={this.tooltipFormatter2D}
+      tooltipFormatter={d => {
+        const { columns } = this.props
+        const label = _get(d, `data.value.label`)
+        const value = _get(d, 'value')
+
+        if (!label || !value) {
+          return null
+        }
+
+        try {
+          const tooltipElement = `<div>
+          <div>
+            <strong>${columns[0].title}:</strong> ${formatElement(
+            label,
+            columns[0],
+            this.props.currencyCode,
+            this.props.languageCode
+          )}
+          </div>
+          <div><strong>${columns[1].title}:</strong> ${formatElement(
+            value,
+            columns[1],
+            this.props.currencyCode,
+            this.props.languageCode
+          )}
+          </div>
+        </div>`
+          return tooltipElement
+        } catch (error) {
+          console.error(error)
+          return null
+        }
+      }}
     />
   )
 
