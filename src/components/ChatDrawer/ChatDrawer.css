@@ -184,6 +184,7 @@
 }
 .interpretation-tooltip {
   font-family: var(--chata-drawer-font-family), sans-serif;
+  font-size: 12px;
   text-align: left;
   letter-spacing: 0.04em;
   padding: 7px 15px;

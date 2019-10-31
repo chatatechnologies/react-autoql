@@ -2,6 +2,8 @@ import React from 'react'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
 
+import { MONTH_NAMES } from './Constants'
+
 export const getParameterByName = (
   parameterName,
   url = window.location.href
@@ -32,6 +34,29 @@ export const makeEmptyArray = (w, h) => {
     }
   }
   return arr
+}
+
+export const formatDate = (value, col) => {
+  // Use title to determine significant digits of date format
+  const title = col.title
+
+  if (!Number(value)) {
+    // Not an epoch time. Try converting using dayjs
+    if (title && title.toLowerCase().includes('year')) {
+      return dayjs(value).format('YYYY')
+    } else if (title && title.toLowerCase().includes('month')) {
+      return dayjs(value).format('MMMM YYYY')
+    }
+    return dayjs(value).format('MMMM D, YYYY')
+  }
+
+  // Is epoch time
+  if (title && title.toLowerCase().includes('year')) {
+    return dayjs.unix(value).format('YYYY')
+  } else if (title && title.toLowerCase().includes('month')) {
+    return dayjs.unix(value).format('MMMM YYYY')
+  }
+  return dayjs.unix(value).format('MMMM D, YYYY')
 }
 
 export const formatChartLabel = (d, col, currencyCode, languageCode) => {
@@ -69,16 +94,22 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
       break
     }
     case 'DATE': {
-      const title = col.title
-      if (title && title.includes('Year')) {
-        formattedLabel = dayjs.unix(d).format('YYYY')
-      } else if (title && title.includes('Month')) {
-        formattedLabel = dayjs.unix(d).format('MMMM YYYY')
-      } else {
-        formattedLabel = dayjs.unix(d).format('MMMM D, YYYY')
-      }
+      formattedLabel = formatDate(d, col)
       break
     }
+    // case 'DATE_YEAR': {
+    //   // This should always be a string of the year number ie. "2019"
+    //   formattedLabel = Number(d)
+    //   break
+    // }
+    // case 'DATE_MONTH': {
+    //   // This will be a string of the month number ie. "2", "12"
+    //   const monthNumber = Number(d)
+    //   if (monthNumber) {
+    //     formattedLabel = MONTH_NAMES[monthNumber]
+    //   }
+    //   break
+    // }
     case 'PERCENT': {
       if (Number(d)) {
         formattedLabel = Numbro(d).format('0%')
@@ -107,74 +138,71 @@ export const formatElement = (
   languageCode,
   htmlElement
 ) => {
-  let formattedElement = element
-  if (column) {
-    switch (column.type) {
-      case 'STRING': {
-        // do nothing
-        break
-      }
-      case 'DOLLAR_AMT': {
-        // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-        if (Number(element)) {
-          const currency = currencyCode || 'USD'
-          try {
-            formattedElement = new Intl.NumberFormat(languageCode, {
-              style: 'currency',
-              currency: `${currency}`
-            }).format(element)
-          } catch (err) {
-            console.error(err)
-            formattedElement = new Intl.NumberFormat(languageCode, {
-              style: 'currency',
-              currency: 'USD'
-            }).format(element)
+  try {
+    let formattedElement = element
+    if (column) {
+      switch (column.type) {
+        case 'STRING': {
+          // do nothing
+          break
+        }
+        case 'DOLLAR_AMT': {
+          // We will need to grab the actual currency symbol here. Will that be returned in the query response?
+          if (Number(element)) {
+            const currency = currencyCode || 'USD'
+            try {
+              formattedElement = new Intl.NumberFormat(languageCode, {
+                style: 'currency',
+                currency: `${currency}`
+              }).format(element)
+            } catch (err) {
+              console.error(err)
+              formattedElement = new Intl.NumberFormat(languageCode, {
+                style: 'currency',
+                currency: 'USD'
+              }).format(element)
+            }
           }
+          break
         }
-        break
-      }
-      case 'QUANTITY': {
-        if (Number(element) && Number(element) % 1 !== 0) {
-          formattedElement = Numbro(element).format('0,0.0')
+        case 'QUANTITY': {
+          if (Number(element) && Number(element) % 1 !== 0) {
+            formattedElement = Numbro(element).format('0,0.0')
+          }
+          break
         }
-        break
-      }
-      case 'DATE': {
-        // This will change when the query response is refactored
-        const title = column.title
-        if (title && title.includes('Year')) {
-          formattedElement = dayjs.unix(element).format('YYYY')
-        } else if (title && title.includes('Month')) {
-          formattedElement = dayjs.unix(element).format('MMMM YYYY')
-        } else {
-          formattedElement = dayjs.unix(element).format('MMMM D, YYYY')
+        case 'DATE': {
+          formattedElement = formatDate(element, column)
+          break
         }
-        break
-      }
-      case 'RATIO': {
-        if (Number(element)) {
-          formattedElement = Numbro(element).format('0.00')
+        case 'RATIO': {
+          if (Number(element)) {
+            formattedElement = Numbro(element).format('0.00')
+          }
+          break
         }
-        break
-      }
-      case 'PERCENT': {
-        if (Number(element)) {
-          formattedElement = Numbro(element).format('0.00%')
+        case 'PERCENT': {
+          if (Number(element)) {
+            formattedElement = Numbro(element).format('0.00%')
 
-          if (htmlElement) {
-            htmlElement.classList.add(
-              `comparison-value-${element < 0 ? 'negative' : 'positive'}`
-            )
+            if (htmlElement) {
+              htmlElement.classList.add(
+                `comparison-value-${element < 0 ? 'negative' : 'positive'}`
+              )
+            }
           }
+          break
         }
-        break
-      }
-      default: {
-        break
+        default: {
+          break
+        }
       }
     }
+    return formattedElement
+  } catch (error) {
+    // If something goes wrong, just display original value
+    return element
   }
-  return formattedElement
 }
 
 /**

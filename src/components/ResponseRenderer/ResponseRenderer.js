@@ -410,7 +410,12 @@ export default class ResponseRenderer extends React.Component {
   onTableFilter = async filters => {
     this.headerFilters = filters
 
-    if (this.tableRef && this.tableRef.ref && this.tableRef.ref.table) {
+    if (
+      this.tableRef &&
+      this.tableRef.ref &&
+      this.tableRef.ref.table &&
+      this.state.displayType === 'table'
+    ) {
       setTimeout(() => {
         this.generateChartData(this.tableRef.ref.table.getData(true))
       }, 500)

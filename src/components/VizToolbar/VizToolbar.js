@@ -26,6 +26,10 @@ class VizToolbar extends React.Component {
     onDisplayTypeChange: PropTypes.func.isRequired
   }
 
+  componentDidUpdate = () => {
+    ReactTooltip.rebuild()
+  }
+
   showDisplayTypeButton = displayType => {
     return (
       this.props.supportedDisplayTypes &&

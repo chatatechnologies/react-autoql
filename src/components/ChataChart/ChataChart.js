@@ -144,23 +144,29 @@ export default class ChataChart extends Component {
       return null
     }
 
-    return `<div>
+    try {
+      const tooltipElement = `<div>
       <div>
         <strong>${labelCol.title}:</strong> ${formatElement(
-      data.label,
-      labelCol,
-      this.props.currencyCode,
-      this.props.languageCode
-    )}
+        data.label,
+        labelCol,
+        this.props.currencyCode,
+        this.props.languageCode
+      )}
       </div>
       <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement(
-      data.values[colIndex],
-      valueCols[colIndex],
-      this.props.currencyCode,
-      this.props.languageCode
-    )}
+        data.values[colIndex],
+        valueCols[colIndex],
+        this.props.currencyCode,
+        this.props.languageCode
+      )}
       </div>
     </div>`
+      return tooltipElement
+    } catch (error) {
+      console.error(error)
+      return null
+    }
   }
 
   tooltipFormatter3D = data => {
