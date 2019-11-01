@@ -1,6 +1,6 @@
-import React from 'react'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
+import _get from 'lodash.get'
 
 import { MONTH_NAMES } from './Constants'
 
@@ -300,26 +300,18 @@ export const getNumberOfGroupables = columns => {
 }
 
 export const getSupportedDisplayTypes = response => {
-  if (
-    !response ||
-    !response.data ||
-    !response.data.data ||
-    !response.data.data.display_type
-  ) {
+  if (!_get(response, 'data.data.display_type')) {
     return []
   }
 
+  // For CaaS there should be 3 types: data, suggestion, help
   const displayType = response.data.data.display_type
 
   if (displayType === 'suggestion' || displayType === 'help') {
     return [displayType]
   }
 
-  const columns =
-    response &&
-    response.data &&
-    response.data.data &&
-    response.data.data.columns
+  const columns = _get(response, 'data.data.columns')
 
   if (!columns) {
     return []

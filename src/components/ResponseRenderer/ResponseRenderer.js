@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
-// import _get from 'lodash.get'
+import _get from 'lodash.get'
 
 import styles from './ResponseRenderer.css'
 import { ChataTable } from '../ChataTable'
@@ -90,7 +90,7 @@ export default class ResponseRenderer extends React.Component {
     languageCode: undefined,
     height: undefined,
     width: undefined,
-    comparisonDisplay: 'ratio',
+    comparisonDisplay: 'percent',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
@@ -159,34 +159,37 @@ export default class ResponseRenderer extends React.Component {
       return this.props.displayType
     }
 
+    const responseDisplayType = _get(
+      this.props,
+      'response.data.data.display_type'
+    )
+
     // If there is no display type in the response, default to table
-    if (
-      !this.props.response ||
-      !this.props.response.data ||
-      !this.props.response.data.data ||
-      !this.props.response.data.data.display_type
-    ) {
+    if (!responseDisplayType || responseDisplayType === 'data') {
       return 'table'
     }
 
-    const displayType = this.props.response.data.data.display_type
-
     // If the display type is a recognized non-chart or non-table type
-    if (displayType === 'suggestion' || displayType === 'help') {
-      return displayType
+    if (
+      responseDisplayType === 'suggestion' ||
+      responseDisplayType === 'help'
+    ) {
+      return responseDisplayType
     }
 
+    // ----------------- This probably won't happen anymore with CaaS ---------------
     // If the display type is a recognized table type
-    if (this.isTableType(displayType)) {
+    if (this.isTableType(responseDisplayType)) {
       return 'table'
     }
 
     // If the display type is a recognized chart type
     // This probably won't happen with chata.io, it is
     // usually returned as a table type initially
-    if (this.isChartType(displayType)) {
-      return displayType
+    if (this.isChartType(responseDisplayType)) {
+      return responseDisplayType
     }
+    // ------------------------------------------------------------------------------
 
     // Default to table type
     return 'table'
@@ -734,15 +737,15 @@ export default class ResponseRenderer extends React.Component {
       col.headerFilterFunc = this.setFilterFunction(col)
 
       // Context menu when right clicking on column header
-      col.headerContext = (e, column) => {
-        // Do not show native context menu
-        e.preventDefault()
-        this.setState({
-          isContextMenuOpen: true,
-          activeColumn: column,
-          contextMenuPosition: { top: e.clientY, left: e.clientX }
-        })
-      }
+      // col.headerContext = (e, column) => {
+      //   // Do not show native context menu
+      //   e.preventDefault()
+      //   this.setState({
+      //     isContextMenuOpen: true,
+      //     activeColumn: column,
+      //     contextMenuPosition: { top: e.clientY, left: e.clientX }
+      //   })
+      // }
 
       if (col.type === 'DATE') {
         col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {

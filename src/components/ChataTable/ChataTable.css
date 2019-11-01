@@ -112,6 +112,14 @@ the whole table when the filter button is clicked */
   height: auto !important;
 }
 
+/* Center header titles */
+.chata-table .tabulator-header .tabulator-col {
+  text-align: center;
+}
+.chata-table .tabulator-header .tabulator-col-title {
+  padding-left: 25px;
+}
+
 .filter-tag {
   color: #2ecc40;
   border: 1px solid;

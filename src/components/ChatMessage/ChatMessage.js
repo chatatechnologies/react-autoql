@@ -59,10 +59,9 @@ export default class ChatMessage extends React.Component {
 
   state = {
     displayType:
-      this.props.response &&
-      this.props.response.data &&
-      this.props.response.data.data &&
-      this.props.response.data.data.display_type
+      _get(this.props, 'response.data.data.display_type') === 'data'
+        ? 'table'
+        : _get(this.props, 'response.data.data.display_type')
   }
 
   componentDidMount = () => {
@@ -244,11 +243,7 @@ export default class ChatMessage extends React.Component {
       showFilterButton:
         TABLE_TYPES.includes(this.state.displayType) &&
         !this.isSingleValueResponse() &&
-        this.props.response &&
-        this.props.response.data &&
-        this.props.response.data.data &&
-        this.props.response.data.data.rows &&
-        this.props.response.data.data.rows.length > 1,
+        _get(this.props, 'response.data.data.rows.length') > 1,
       showCopyButton:
         TABLE_TYPES.includes(this.state.displayType) &&
         !this.isSingleValueResponse(),
@@ -256,11 +251,10 @@ export default class ChatMessage extends React.Component {
         TABLE_TYPES.includes(this.state.displayType) &&
         !this.isSingleValueResponse(),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
-      showInterpretationButton:
-        this.props.response &&
-        this.props.response.data &&
-        this.props.response.data.data &&
-        !!this.props.response.data.data.interpretation
+      showInterpretationButton: !!_get(
+        this.props,
+        'response.data.data.interpretation'
+      )
     }
 
     // If there is nothing to put in the toolbar, don't render it

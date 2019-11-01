@@ -2,12 +2,12 @@ import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 import _get from 'lodash.get'
+import uuid from 'uuid'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc, symbol, symbolCircle } from 'd3-shape'
 import { entries } from 'd3-collection'
-import { interpolate } from 'd3-interpolate'
 import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
@@ -16,6 +16,8 @@ import dayjs from 'dayjs'
 import { formatChartLabel, formatElement } from '../../js/Util'
 
 export default class Axis extends Component {
+  CHART_ID = uuid.v4()
+
   static propTypes = {
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
@@ -35,10 +37,6 @@ export default class Axis extends Component {
     this.renderPie()
   }
 
-  // componentWillUnmount = () => {
-  //   // this.chartElement.remove()
-  // }
-
   renderPieContainer = () => {
     const { width, height } = this.props
     if (this.pieChartContainer) {
@@ -52,7 +50,10 @@ export default class Axis extends Component {
       .attr('height', height)
       .append('g')
       .attr('class', 'slices')
-      .attr('transform', `translate(${width / 2 + 100},${height / 2})`)
+      .attr(
+        'transform',
+        `translate(${width / 2 + this.outerRadius},${height / 2})`
+      )
   }
 
   setColorScale = () => {
@@ -75,34 +76,6 @@ export default class Axis extends Component {
 
   renderPieSlices = () => {
     const self = this
-    // transition boiler plate (not working)
-    // pieChartContainer
-    //   .select('slices')
-    //   .selectAll('path.slice')
-    //   .transition()
-    //   .duration(1000)
-    //   .attrTween('d', function(d) {
-    //     this._current = this._current || d
-    //     var interpolate = interpolate(this._current, d)
-    //     this._current = interpolate(0)
-    //     return function(t) {
-    //       return arc(interpolate(t))
-    //     }
-    //   })
-
-    // second transition attempt (also not working)
-    // selectAll('path.slice')
-    // .transition()
-    // .duration(2000)
-    // .attrTween('d', function(b) {
-    //   var i = interpolate(
-    //     { startAngle: 1.1 * Math.PI, endAngle: 1.1 * Math.PI },
-    //     b
-    //   )
-    //   return function(t) {
-    //     return arc(i(t))
-    //   }
-    // })
 
     // build the pie chart
     this.pieChartContainer
@@ -143,7 +116,7 @@ export default class Axis extends Component {
             })
             .transition()
             .duration(500)
-            .attr('transform', 'translate(,0)')
+          // .attr('transform', 'translate(,0)')
         }
 
         select(this)
@@ -167,131 +140,25 @@ export default class Axis extends Component {
       })
   }
 
-  renderLabels = () => {
-    const self = this
+  centerVisualization = () => {
+    const containerBBox = select(`#pie-chart-container-${this.CHART_ID}`)
+      .node()
+      .getBBox()
 
-    const text = this.pieChartContainer
-      .append('g')
-      .attr('class', 'labels')
-      .selectAll('text')
-      .data(self.dataReady)
+    const containerWidth = containerBBox.width
+    const currentXPosition = containerBBox.x
+    const finalXPosition = (this.props.width - containerWidth) / 2
+    const xDelta = finalXPosition - currentXPosition
 
-    function midAngle(d) {
-      return d.startAngle + (d.endAngle - d.startAngle) / 2
-    }
-
-    var prev
-    const textOffset = 14
-
-    text
-      .enter()
-      .append('text')
-      .attr('dy', '.35em')
-      .style('fill', 'currentColor')
-      .style('fill-opacity', 0.7)
-      .text(function(d) {
-        const data = _get(d, `data.value[${self.props.labelValue}]`)
-        const column = _get(d, `data.value.origColumns[0]`)
-
-        return formatChartLabel(data, column).formattedLabel
-      })
-      .transition()
-      .duration(2000)
-      .each(function(d, i) {
-        if (i > 0) {
-          var thisbb = this.getBoundingClientRect(),
-            prevbb = prev.getBoundingClientRect()
-          // move if they overlap
-          if (
-            !(
-              thisbb.right < prevbb.left ||
-              thisbb.left > prevbb.right ||
-              thisbb.bottom < prevbb.top ||
-              thisbb.top > prevbb.bottom
-            )
-          ) {
-            var ctx = thisbb.left + (thisbb.right - thisbb.left) / 2,
-              cty = thisbb.top + (thisbb.bottom - thisbb.top) / 2,
-              cpx = prevbb.left + (prevbb.right - prevbb.left) / 2,
-              cpy = prevbb.top + (prevbb.bottom - prevbb.top) / 2,
-              off =
-                Math.sqrt(Math.pow(ctx - cpx, 2) + Math.pow(cty - cpy, 2)) / 2
-            select(this).attr(
-              'transform',
-              'translate(' +
-                Math.cos((d.startAngle + d.endAngle - Math.PI) / 2) *
-                  (self.outerRadius + textOffset + off) +
-                ',' +
-                Math.sin((d.startAngle + d.endAngle - Math.PI) / 2) *
-                  (self.outerRadius + textOffset + off) +
-                ')'
-            )
-          }
-        }
-        prev = this
-      })
-      .attrTween('transform', function(d) {
-        this._current = this._current || d
-        const interpolated = interpolate(this._current, d)
-        this._current = interpolated(0)
-        return function(t) {
-          var d2 = interpolated(t)
-          var pos = self.outerArc.centroid(d2)
-          // pos[0] = self.outerRadius * (midAngle(d2) < Math.PI ? 1.2 : -1.2)
-          pos[0] = pos[0] + 10 * (midAngle(d2) < Math.PI ? 1.2 : -1.2)
-          return 'translate(' + pos + ')'
-        }
-      })
-      .styleTween('text-anchor', function(d) {
-        this._current = this._current || d
-        const interpolated = interpolate(this._current, d)
-        this._current = interpolated(0)
-        return function(t) {
-          var d2 = interpolated(t)
-          return midAngle(d2) < Math.PI ? 'start' : 'end'
-        }
-      })
-
-    text.exit().remove()
-  }
-
-  renderLabelLines = () => {
-    const self = this
-
-    const arcForLabels = arc()
-      .innerRadius(self.outerRadius * 0.5)
-      .outerRadius(self.outerRadius * 1.1)
-
-    this.pieChartContainer
-      .selectAll('allPolylines')
-      .data(self.dataReady)
-      .enter()
-      .append('polyline')
-      .attr('stroke', 'currentColor')
-      .style('fill', 'none')
-      .attr('stroke-width', 1)
-      .style('stroke-opacity', 0.7)
-      .attr('points', function(d) {
-        var posA = arcForLabels.centroid(d) // line insertion in the slice
-        var posB = self.outerArc.centroid(d) // line break: we use the other arc generator that has been built only for that
-        // var posC = self.outerArc.centroid(d) // Label position = almost the same as posB
-        var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2 // we need the angle to see if the X position will be at the extreme right or extreme left
-        // posC[0] = self.outerRadius * 1.15 * (midangle < Math.PI ? 1 : -1) // multiply by 1 or -1 to put it on the right or on the left
-        var posC = self.outerArc.centroid(d)
-        posC[0] = posC[0] + 10 * (midangle < Math.PI ? 1 : -1)
-        return [posA, posB, posC]
-      })
+    select(`#pie-chart-container-${this.CHART_ID}`).attr(
+      'transform',
+      `translate(${xDelta},0)`
+    )
   }
 
   renderLegend = () => {
     const self = this
     const { height, margin, labelValue, dataValue, chartColors } = this.props
-
-    const pieHeight = select('.slices')
-      .node()
-      .getBBox()
-    console.log(pieHeight)
-    const legendXPosition = this.props.width / 2 - 250
 
     const legendLabels = this.sortedData.map(d => {
       return `${formatElement(
@@ -309,6 +176,10 @@ export default class Axis extends Component {
       return
     }
 
+    // The legend wrap length threshold should be half of the width
+    // Because the pie will never be larger than half the width
+    const legendWrapLength = this.props.width / 2 - 30 // 30 for the width of the circles and padding
+
     const svg = select(this.legendElement)
     svg
       .append('g')
@@ -317,7 +188,6 @@ export default class Axis extends Component {
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
       .style('font-size', '10px')
-      .attr('transform', `translate(${legendXPosition}, 15)`)
     var legendOrdinal = legendColor()
       .shape(
         'path',
@@ -327,36 +197,49 @@ export default class Axis extends Component {
       )
       .orient('vertical')
       .shapePadding(5)
-      // .labelWrap(120)
+      .labelWrap(legendWrapLength)
       .scale(legendScale)
 
     svg.select('.legendOrdinal').call(legendOrdinal)
 
-    const legendHeight = svg
+    const legendBBox = svg
       .select('.legendOrdinal')
       .node()
-      .getBBox().height
+      .getBBox()
 
-    if (legendHeight < height) {
-      const legendYPosition = (height - legendHeight - margin) / 2
+    const legendHeight = legendBBox.height
+    const legendWidth = legendBBox.width
+    const legendXPosition = this.props.width / 2 - legendWidth - 20
+    const legendYPosition =
+      legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
 
-      svg
-        .select('.legendOrdinal')
-        .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+    svg
+      .select('.legendOrdinal')
+      .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+  }
+
+  setPieRadius = () => {
+    const { width, height, margin } = this.props
+
+    let pieWidth
+    if (width < height) {
+      pieWidth = width / 2 - margin
+    } else if (height * 2 < width) {
+      pieWidth = height - margin
+    } else {
+      pieWidth = width / 2 - margin
     }
+
+    this.outerRadius = pieWidth / 2
+    this.innerRadius = this.outerRadius - 40 > 15 ? this.outerRadius - 40 : 0
   }
 
   renderPie = () => {
     const self = this
-
-    // 100 pixel max for labels.
-    // Might want to calculate max label length and use that if it is much less than 100px
-    const legendMargin = 80
-
     const { data, width, height, margin } = this.props
-    this.outerRadius =
-      Math.min(width - legendMargin * 2, height - 25) / 2 - margin
-    this.innerRadius = this.outerRadius - 40 > 15 ? this.outerRadius - 40 : 0
+
+    this.setPieRadius()
+
     this.outerArc = arc()
       .innerRadius(self.outerRadius * 1.1)
       .outerRadius(self.outerRadius * 1.1)
@@ -370,14 +253,15 @@ export default class Axis extends Component {
     this.renderPieContainer()
     this.setColorScale()
     this.renderPieSlices()
-    // this.renderLabelLines()
-    // this.renderLabels()
     this.renderLegend()
+
+    // Finally, translate container of legend and pie chart to center of parent container
+    this.centerVisualization()
   }
 
   render = () => {
     return (
-      <Fragment>
+      <g id={`pie-chart-container-${this.CHART_ID}`}>
         <svg
           className="pie-chart"
           ref={el => {
@@ -393,10 +277,10 @@ export default class Axis extends Component {
             this.legendElement = el
           }}
           className="legendOrdinal-container"
-          transform="translate(15, 15)"
+          // transform="translate(15, 15)"
           // transform={`translate(${}, 20)`}
         />
-      </Fragment>
+      </g>
     )
   }
 }
