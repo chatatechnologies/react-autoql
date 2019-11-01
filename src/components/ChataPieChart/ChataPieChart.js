@@ -291,7 +291,7 @@ export default class Axis extends Component {
       .node()
       .getBBox()
     console.log(pieHeight)
-    const legendXPosition = this.props.width / 2 - 200
+    const legendXPosition = this.props.width / 2 - 250
 
     const legendLabels = this.sortedData.map(d => {
       return `${formatElement(
@@ -327,7 +327,7 @@ export default class Axis extends Component {
       )
       .orient('vertical')
       .shapePadding(5)
-      .labelWrap(120)
+      // .labelWrap(120)
       .scale(legendScale)
 
     svg.select('.legendOrdinal').call(legendOrdinal)

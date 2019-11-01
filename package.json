@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.0.52",
+  "version": "0.0.54",
   "description": "Javascript widget library",
   "main": "dist/bundle.cjs.js",
   "module": "dist/bundle.esm.js",
