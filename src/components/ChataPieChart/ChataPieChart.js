@@ -1,18 +1,19 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 import _get from 'lodash.get'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import { pie, arc } from 'd3-shape'
+import { pie, arc, symbol, symbolCircle } from 'd3-shape'
 import { entries } from 'd3-collection'
 import { interpolate } from 'd3-interpolate'
+import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
 import dayjs from 'dayjs'
 
-import { formatChartLabel } from '../../js/Util'
+import { formatChartLabel, formatElement } from '../../js/Util'
 
 export default class Axis extends Component {
   static propTypes = {
@@ -31,18 +32,27 @@ export default class Axis extends Component {
   }
 
   componentDidUpdate = () => {
-    // this.renderPie()
+    this.renderPie()
   }
+
+  // componentWillUnmount = () => {
+  //   // this.chartElement.remove()
+  // }
 
   renderPieContainer = () => {
     const { width, height } = this.props
+    if (this.pieChartContainer) {
+      // Remove previous pie slices
+      this.pieChartContainer.remove()
+    }
+
     this.pieChartContainer = select(this.chartElement)
       .append('svg')
       .attr('width', width)
       .attr('height', height)
       .append('g')
       .attr('class', 'slices')
-      .attr('transform', `translate(${width / 2},${height / 2})`)
+      .attr('transform', `translate(${width / 2 + 100},${height / 2})`)
   }
 
   setColorScale = () => {
@@ -96,7 +106,7 @@ export default class Axis extends Component {
 
     // build the pie chart
     this.pieChartContainer
-      .selectAll('slices')
+      .selectAll('.slices')
       .data(self.dataReady)
       .enter()
       .append('path')
@@ -171,7 +181,7 @@ export default class Axis extends Component {
     }
 
     var prev
-    var textOffset = 14
+    const textOffset = 14
 
     text
       .enter()
@@ -274,7 +284,66 @@ export default class Axis extends Component {
   }
 
   renderLegend = () => {
-    return <div>Legend</div>
+    const self = this
+    const { height, margin, labelValue, dataValue, chartColors } = this.props
+
+    const pieHeight = select('.slices')
+      .node()
+      .getBBox()
+    console.log(pieHeight)
+    const legendXPosition = this.props.width / 2 - 200
+
+    const legendLabels = this.sortedData.map(d => {
+      return `${formatElement(
+        d[labelValue],
+        _get(d, 'origColumns[0]')
+      )}: ${formatElement(d[dataValue][0], _get(d, 'origColumns[1]'))}`
+    })
+
+    let legendScale
+    if (legendLabels) {
+      legendScale = scaleOrdinal()
+        .domain(legendLabels)
+        .range(chartColors)
+    } else {
+      return
+    }
+
+    const svg = select(this.legendElement)
+    svg
+      .append('g')
+      .attr('class', 'legendOrdinal')
+      .style('fill', 'currentColor')
+      .style('fill-opacity', '0.7')
+      .style('font-family', 'inherit')
+      .style('font-size', '10px')
+      .attr('transform', `translate(${legendXPosition}, 15)`)
+    var legendOrdinal = legendColor()
+      .shape(
+        'path',
+        symbol()
+          .type(symbolCircle)
+          .size(75)()
+      )
+      .orient('vertical')
+      .shapePadding(5)
+      .labelWrap(120)
+      .scale(legendScale)
+
+    svg.select('.legendOrdinal').call(legendOrdinal)
+
+    const legendHeight = svg
+      .select('.legendOrdinal')
+      .node()
+      .getBBox().height
+
+    if (legendHeight < height) {
+      const legendYPosition = (height - legendHeight - margin) / 2
+
+      svg
+        .select('.legendOrdinal')
+        .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+    }
   }
 
   renderPie = () => {
@@ -282,12 +351,12 @@ export default class Axis extends Component {
 
     // 100 pixel max for labels.
     // Might want to calculate max label length and use that if it is much less than 100px
-    const labelMargin = 100
+    const legendMargin = 80
 
     const { data, width, height, margin } = this.props
     this.outerRadius =
-      Math.min(width - labelMargin * 2, height - 25) / 2 - margin
-    this.innerRadius = this.outerRadius - 100 > 40 ? this.outerRadius - 100 : 40
+      Math.min(width - legendMargin * 2, height - 25) / 2 - margin
+    this.innerRadius = this.outerRadius - 40 > 15 ? this.outerRadius - 40 : 0
     this.outerArc = arc()
       .innerRadius(self.outerRadius * 1.1)
       .outerRadius(self.outerRadius * 1.1)
@@ -308,15 +377,26 @@ export default class Axis extends Component {
 
   render = () => {
     return (
-      <svg
-        className="pie-chart"
-        ref={el => {
-          this.chartElement = el
-        }}
-        width={this.props.width}
-        height={this.props.height}
-        transform={this.props.translate}
-      />
+      <Fragment>
+        <svg
+          className="pie-chart"
+          ref={el => {
+            this.chartElement = el
+          }}
+          width={this.props.width}
+          height={this.props.height}
+          // transform={this.props.translate}
+          // transform="translate(100, 0)"
+        />
+        <g
+          ref={el => {
+            this.legendElement = el
+          }}
+          className="legendOrdinal-container"
+          transform="translate(15, 15)"
+          // transform={`translate(${}, 20)`}
+        />
+      </Fragment>
     )
   }
 }

@@ -365,7 +365,7 @@ export default class ChatMessage extends React.Component {
       chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
     }
 
-    if (this.state.displayType === 'pie') {
+    if (this.state.displayType === 'pie' && chartHeight > 330) {
       chartHeight = 330
     }
 
