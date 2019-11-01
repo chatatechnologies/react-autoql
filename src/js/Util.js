@@ -97,17 +97,17 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
       formattedLabel = formatDate(d, col)
       break
     }
+    case 'DATE_MONTH': {
+      // This will be a string of the month number ie. "2", "12"
+      const monthNumber = Number(d)
+      if (monthNumber && MONTH_NAMES[monthNumber]) {
+        formattedLabel = MONTH_NAMES[monthNumber]
+      }
+      break
+    }
     // case 'DATE_YEAR': {
     //   // This should always be a string of the year number ie. "2019"
     //   formattedLabel = Number(d)
-    //   break
-    // }
-    // case 'DATE_MONTH': {
-    //   // This will be a string of the month number ie. "2", "12"
-    //   const monthNumber = Number(d)
-    //   if (monthNumber) {
-    //     formattedLabel = MONTH_NAMES[monthNumber]
-    //   }
     //   break
     // }
     case 'PERCENT': {
@@ -173,6 +173,14 @@ export const formatElement = (
         }
         case 'DATE': {
           formattedElement = formatDate(element, column)
+          break
+        }
+        case 'DATE_MONTH': {
+          // This will be a string of the month number ie. "2", "12"
+          const monthNumber = Number(element)
+          if (monthNumber && MONTH_NAMES[monthNumber]) {
+            formattedElement = MONTH_NAMES[monthNumber]
+          }
           break
         }
         case 'RATIO': {
