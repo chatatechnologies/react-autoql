@@ -237,7 +237,7 @@ export const fetchSuggestions = (
     ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
     )}&projectid=1`
-    : `${domain}/api/v1/chata/autocomplete?query=${encodeURIComponent(
+    : `${domain}/api/v1/chata/autocomplete?text=${encodeURIComponent(
       suggestion
     )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
