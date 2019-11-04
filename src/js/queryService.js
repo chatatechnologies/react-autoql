@@ -117,7 +117,7 @@ export const runQuery = (
       ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
         query
       )}&projectId=1`
-      : `${domain}/api/v1/chata/safetynet?query=${encodeURIComponent(
+      : `${domain}/api/v1/chata/safetynet?text=${encodeURIComponent(
         query
       )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 

@@ -212,11 +212,14 @@ export default class App extends Component {
       const jwtToken = jwtResponse.data
       localStorage.setItem('jwtToken', jwtToken)
 
+      this.setState({ isAuthenticated: true })
+
       return message.success(
         'Login Sucessful! Your token will be valid for 6 hours if you do not clear your cache.'
       )
     } catch (error) {
       console.error(error)
+      this.setState({ isAuthenticated: false })
       return message.error('Login Unsuccessful. Check logs for details.')
     }
   }
@@ -307,10 +310,12 @@ export default class App extends Component {
       <div>
         <h1>Data Source</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
-        {this.createBooleanRadioGroup('Locate Demo', 'uiOverlay', [
-          true,
-          false
-        ])}
+        {this.state.isAuthenticated &&
+          this.state.domain.includes('locate') &&
+          this.createBooleanRadioGroup('Locate Demo', 'uiOverlay', [
+            true,
+            false
+          ])}
         {!this.state.demo && (
           <Fragment>
             <h3>You must login to access data</h3>
