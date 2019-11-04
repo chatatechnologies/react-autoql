@@ -546,6 +546,11 @@ export default class App extends Component {
           false
         ])}
         {this.createBooleanRadioGroup(
+          'Disable Drilldowns',
+          'disableDrilldowns',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
           'Enable Speech to Text',
           'enableVoiceRecord',
           [true, false]
@@ -591,6 +596,7 @@ export default class App extends Component {
           height={this.state.height}
           title={this.state.title}
           enableSafetyNet={this.state.enableSafetyNet}
+          disableDrilldowns={this.state.disableDrilldowns}
           theme={this.state.theme}
           accentColor={
             this.state.theme === 'light'
