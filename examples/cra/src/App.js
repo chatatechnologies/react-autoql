@@ -179,12 +179,16 @@ export default class App extends Component {
     e.preventDefault()
 
     try {
+      const baseUrl = window.location.href.includes('prod')
+        ? 'https://backend.chata.io'
+        : 'https://backend-staging.chata.io'
+
       // Login to get login token
       const loginFormData = new FormData()
       loginFormData.append('username', this.state.email)
       loginFormData.append('password', this.state.password)
       const loginResponse = await axios.post(
-        'https://backend-staging.chata.io/api/v1/login',
+        `${baseUrl}/api/v1/login`,
         loginFormData,
         {
           headers: {
@@ -198,14 +202,11 @@ export default class App extends Component {
       localStorage.setItem('loginToken', loginToken)
 
       // Use login token to get JWT token
-      const jwtResponse = await axios.get(
-        'https://backend-staging.chata.io/api/v1/jwt',
-        {
-          headers: {
-            Authorization: `Bearer ${loginToken}`
-          }
+      const jwtResponse = await axios.get(`${baseUrl}/api/v1/jwt`, {
+        headers: {
+          Authorization: `Bearer ${loginToken}`
         }
-      )
+      })
 
       // Put jwt token into storage
       const jwtToken = jwtResponse.data
