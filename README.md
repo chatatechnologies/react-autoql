@@ -188,7 +188,7 @@ export default class App extends Component {
 | enableAutocomplete | Boolean | true |
 | autocompleteStyles | Object | {} |
 | enableSafetyNet | Boolean | true |
-| enableDrilldowns |  Boolean | true |
+| disableDrilldowns |  Boolean | false |
 | demo | Boolean | false |
 | currencyCode | String | 'USD' |
 | languageCode | String | 'en-US' |
@@ -214,7 +214,7 @@ export default class App extends Component {
 | enableAutocomplete | Boolean | true |
 | autocompleteStyles | Object | {} |
 | enableSafetyNet | Boolean | true |
-| enableDrilldowns |  Boolean | true |
+| disableDrilldowns |  Boolean | false |
 | demo | Boolean | false |
 | debug | Boolean | false |
 | fontFamily | String | 'sans-serif' |
@@ -314,7 +314,7 @@ For example: If you query 'How much money does Nikk owe me?', safetynet may dete
 
 If this value is false, the query will bypass the "safetynet" endpoint and be sent straight to the "query" endpoint.
 
-**enableDrilldowns**: A new query will be sent when clicking on a table or chart element to "drill down" into the data. A new message will be sent to the user with more detailed data related to that clicked element. If this is false, nothing will happen when a table or chart element is clicked.
+**disableDrilldowns**: A new query will be sent when clicking on a table or chart element to "drill down" into the data. A new message will be sent to the user with more detailed data related to that clicked element. If this is true, nothing will happen when a table or chart element is clicked.
 
 **demo**: If this value is true, the widget will use chata's demo Plumbing Co. as a data source.
 

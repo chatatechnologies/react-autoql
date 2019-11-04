@@ -72,7 +72,7 @@ export default class ChatDrawer extends React.Component {
     theme: PropTypes.string,
     handleStyles: PropTypes.shape({}),
     shiftScreen: PropTypes.bool,
-    enableDrilldowns: PropTypes.bool,
+    disableDrilldowns: PropTypes.bool,
     customerName: PropTypes.string,
     enableAutocomplete: PropTypes.bool,
     clearOnClose: PropTypes.bool,
@@ -106,7 +106,7 @@ export default class ChatDrawer extends React.Component {
     theme: 'light',
     handleStyles: {},
     shiftScreen: false,
-    enableDrilldowns: true,
+    disableDrilldowns: false,
     customerName: 'there',
     enableAutocomplete: true,
     clearOnClose: false,
@@ -335,7 +335,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   processDrilldown = (groupByObject, queryID, singleValueResponse) => {
-    if (this.props.enableDrilldowns) {
+    if (!this.props.disableDrilldowns) {
       // We only want to allow empty groupByObjects for single value responses
       if (
         !singleValueResponse &&
@@ -368,7 +368,7 @@ export default class ChatDrawer extends React.Component {
       )
         .then(response => {
           this.addResponseMessage({
-            response: { ...response, isDrilldownDisabled: true }
+            response: { ...response, disableDrilldowns: true }
           })
           this.setState({ isChataThinking: false })
         })

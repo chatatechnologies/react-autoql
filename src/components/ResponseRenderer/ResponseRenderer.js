@@ -389,7 +389,7 @@ export default class ResponseRenderer extends React.Component {
         groupByObject = getGroupBysFromTable(cell, this.tableColumns)
       }
 
-      if (!this.props.isDrilldownDisabled) {
+      if (!this.props.disableDrilldowns) {
         this.props.processDrilldown(groupByObject, this.queryID)
       }
     }
@@ -405,7 +405,7 @@ export default class ResponseRenderer extends React.Component {
     } else {
       groupByObject = getGroupBysFrom2dChart(row, this.tableColumns)
     }
-    if (!this.props.isDrilldownDisabled) {
+    if (!this.props.disableDrilldowns) {
       this.props.processDrilldown(groupByObject, this.queryID)
     }
   }

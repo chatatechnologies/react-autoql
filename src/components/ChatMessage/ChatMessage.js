@@ -88,7 +88,7 @@ export default class ChatMessage extends React.Component {
           processDrilldown={this.props.processDrilldown}
           response={response}
           displayType={this.state.displayType}
-          isDrilldownDisabled={!!response.isDrilldownDisabled}
+          disableDrilldowns={!!response.disableDrilldowns}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           tableBorderColor={this.props.tableBorderColor}

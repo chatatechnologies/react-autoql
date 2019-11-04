@@ -42,6 +42,7 @@ export default class App extends Component {
     introMessage: undefined,
     enableAutocomplete: true,
     enableSafetyNet: true,
+    disableDrilldowns: true,
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,
@@ -62,7 +63,7 @@ export default class App extends Component {
     languageCode: 'en-US',
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
-    comparisonDisplay: false,
+    comparisonDisplay: true,
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     dashboardTiles: [
       {
