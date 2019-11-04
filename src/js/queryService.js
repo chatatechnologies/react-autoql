@@ -207,7 +207,7 @@ export const runDrilldown = ({
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
-    : `${domain}/api/v1/query/${queryID}/drilldown?key=${apiKey}`
+    : `${domain}/api/v1/chata/query/${queryID}/drilldown?key=${apiKey}`
 
   return axiosInstance
     .post(url, data, config)
