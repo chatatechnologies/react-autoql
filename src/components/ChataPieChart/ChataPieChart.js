@@ -178,7 +178,7 @@ export default class Axis extends Component {
 
     // The legend wrap length threshold should be half of the width
     // Because the pie will never be larger than half the width
-    const legendWrapLength = this.props.width / 2 - 30 // 30 for the width of the circles and padding
+    const legendWrapLength = this.props.width / 2 - 50 // 30 for the width of the circles and padding
 
     const svg = select(this.legendElement)
     svg
