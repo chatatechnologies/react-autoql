@@ -69,6 +69,7 @@ export default class ResponseRenderer extends React.Component {
     chartColors: PropTypes.arrayOf(PropTypes.string),
     height: PropTypes.number,
     width: PropTypes.number,
+    demo: PropTypes.bool,
     comparisonDisplay: PropTypes.string
   }
 
@@ -90,6 +91,7 @@ export default class ResponseRenderer extends React.Component {
     languageCode: undefined,
     height: undefined,
     width: undefined,
+    demo: false,
     comparisonDisplay: 'percent',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
@@ -337,7 +339,11 @@ export default class ResponseRenderer extends React.Component {
       <a
         className="single-value-response"
         onClick={() => {
-          this.props.processDrilldown({}, this.queryID, true)
+          this.props.processDrilldown(
+            this.props.demo ? {} : [],
+            this.queryID,
+            true
+          )
         }}
       >
         {formatElement(
@@ -383,10 +389,15 @@ export default class ResponseRenderer extends React.Component {
           cell,
           this.tableColumns,
           this.pivotTableColumns,
-          this.pivotOriginalColumnData
+          this.pivotOriginalColumnData,
+          this.props.demo
         )
       } else {
-        groupByObject = getGroupBysFromTable(cell, this.tableColumns)
+        groupByObject = getGroupBysFromTable(
+          cell,
+          this.tableColumns,
+          this.props.demo
+        )
       }
 
       if (!this.props.disableDrilldowns) {
@@ -401,9 +412,18 @@ export default class ResponseRenderer extends React.Component {
       this.pivotTableColumns &&
       !this.tableColumns[0].name.includes('month')
     ) {
-      groupByObject = getGroupBysFrom3dChart(row, column, this.tableColumns)
+      groupByObject = getGroupBysFrom3dChart(
+        row,
+        column,
+        this.tableColumns,
+        this.props.demo
+      )
     } else {
-      groupByObject = getGroupBysFrom2dChart(row, this.tableColumns)
+      groupByObject = getGroupBysFrom2dChart(
+        row,
+        this.tableColumns,
+        this.props.demo
+      )
     }
     if (!this.props.disableDrilldowns) {
       this.props.processDrilldown(groupByObject, this.queryID)

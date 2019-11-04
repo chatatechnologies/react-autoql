@@ -42,7 +42,7 @@ export default class App extends Component {
     introMessage: undefined,
     enableAutocomplete: true,
     enableSafetyNet: true,
-    disableDrilldowns: true,
+    disableDrilldowns: false,
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,
@@ -280,6 +280,7 @@ export default class App extends Component {
             <ResponseRenderer
               chatBarRef={this.chatBarRef}
               response={this.state.response}
+              demo={this.state.demo}
             />
           </div>
         ) : (

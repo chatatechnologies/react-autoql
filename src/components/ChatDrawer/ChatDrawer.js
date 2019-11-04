@@ -356,16 +356,17 @@ export default class ChatDrawer extends React.Component {
 
       this.setState({ isChataThinking: true })
 
-      runDrilldown(
+      runDrilldown({
         queryID,
         groupByObject,
-        this.props.demo,
-        this.props.debug,
-        this.props.apiKey,
-        this.props.customerId,
-        this.props.userId,
-        this.props.token
-      )
+        demo: this.props.demo,
+        debug: this.props.debug,
+        domain: this.props.domain,
+        apiKey: this.props.apiKey,
+        customerId: this.props.customerId,
+        userId: this.props.userId,
+        token: this.props.token
+      })
         .then(response => {
           this.addResponseMessage({
             response: { ...response, disableDrilldowns: true }
@@ -569,7 +570,7 @@ export default class ChatDrawer extends React.Component {
               <div
                 style={{
                   // height: 'calc(100% - 20px)'
-                  height: '100%'
+                  height: 'calc(100% - 20px)'
                   // width: '100%',
                   // position: 'relative'
                 }}
@@ -614,6 +615,7 @@ export default class ChatDrawer extends React.Component {
                         key={message.id}
                         id={message.id}
                         debug={this.props.debug}
+                        demo={this.props.demo}
                       />
                     )
                   })}

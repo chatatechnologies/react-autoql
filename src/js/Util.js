@@ -355,39 +355,80 @@ export const getGroupBysFromPivotTable = (
   cell,
   tableColumns,
   pivotTableColumns,
-  originalColumnData
+  originalColumnData,
+  demo
 ) => {
-  let groupByObject = {}
+  let groupByName1
+  let groupByValue1
+  let groupByName2
+  let groupByValue2
   try {
     if (tableColumns[0].type === 'DATE') {
       const year = Number(pivotTableColumns[cell.getField()].name)
       const month = cell.getData()[0]
-      const groupByValue = `${originalColumnData[year][month]}`
-
-      const groupByName = tableColumns[0].name
-      groupByObject[groupByName] = groupByValue
+      groupByName1 = tableColumns[0].name
+      groupByValue1 = `${originalColumnData[year][month]}`
     } else {
-      const groupBy1Name = tableColumns[0].name
-      const groupBy1Value = cell.getData()[0]
-      groupByObject[groupBy1Name] = groupBy1Value
+      groupByName1 = tableColumns[0].name
+      groupByValue1 = cell.getData()[0]
 
-      const groupBy2Name = tableColumns[1].name
-      let groupBy2Value = pivotTableColumns[cell.getField()].name
-
-      groupByObject[groupBy2Name] = groupBy2Value
+      groupByName2 = tableColumns[1].name
+      groupByValue2 = pivotTableColumns[cell.getField()].name
     }
-    return groupByObject
+
+    if (demo) {
+      if (groupByName2) {
+        return {
+          [groupByName1]: groupByValue1
+        }
+      }
+      return {
+        [groupByName1]: groupByValue1,
+        [groupByName2]: groupByValue2
+      }
+    } else if (groupByName2) {
+      return [
+        {
+          name: groupByName1,
+          value: groupByValue1
+        }
+      ]
+    }
+    return [
+      {
+        name: groupByName1,
+        value: groupByValue1
+      },
+      {
+        name: groupByName2,
+        value: groupByValue2
+      }
+    ]
   } catch (error) {
     console.error(error)
-    return {}
+    return undefined
   }
 }
 
-export const getGroupBysFromTable = (cell, tableColumns) => {
+export const nameValueObject = (name, value) => {
+  return {
+    name,
+    value
+  }
+}
+
+export const getGroupBysFromTable = (cell, tableColumns, demo) => {
   const numGroupables = getNumberOfGroupables(tableColumns)
   if (!numGroupables) {
     return {}
   }
+
+  // const groupByIndices = []
+  // tableColumns.forEach((col, i) => {
+  //   if (col.groupable) {
+  //     groupByIndices.push(i)
+  //   }
+  // })
 
   const groupByName = tableColumns[0].name
   let groupByValue = cell.getData()[0]
@@ -396,7 +437,11 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
   }
 
   if (numGroupables === 1) {
-    return { [groupByName]: groupByValue }
+    if (demo) {
+      return { [groupByName]: groupByValue }
+    }
+    // Not demo. Need to format groupbys differently
+    return [nameValueObject(groupByName, groupByValue)]
   }
 
   const groupByName2 = tableColumns[1].name
@@ -405,10 +450,18 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
     groupByValue2 = `${groupByValue2}`
   }
 
-  return {
-    [groupByName]: groupByValue,
-    [groupByName2]: groupByValue2
+  if (demo) {
+    return {
+      [groupByName]: groupByValue,
+      [groupByName2]: groupByValue2
+    }
   }
+
+  // Not demo. Need to format groupbys differently
+  return [
+    nameValueObject(groupByName, groupByValue),
+    nameValueObject(groupByName2, groupByValue2)
+  ]
 }
 
 export const getgroupByObjectFromTable = (
@@ -447,7 +500,7 @@ export const getgroupByObjectFromTable = (
   return jsonData
 }
 
-export const getGroupBysFrom3dChart = (row, column, tableColumns) => {
+export const getGroupBysFrom3dChart = (row, column, tableColumns, demo) => {
   const groupBy1Name = tableColumns[0].name
   const groupBy2Name = tableColumns[1].name
 
@@ -461,13 +514,21 @@ export const getGroupBysFrom3dChart = (row, column, tableColumns) => {
     groupBy2Value = `${groupBy2Value}`
   }
 
-  return {
-    [groupBy1Name]: groupBy1Value,
-    [groupBy2Name]: groupBy2Value
+  if (demo) {
+    return {
+      [groupBy1Name]: groupBy1Value,
+      [groupBy2Name]: groupBy2Value
+    }
   }
+
+  // Not demo. Need to format groupbys differently
+  return [
+    nameValueObject(groupBy1Name, groupBy1Value),
+    nameValueObject(groupBy2Name, groupBy2Value)
+  ]
 }
 
-export const getGroupBysFrom2dChart = (row, tableColumns) => {
+export const getGroupBysFrom2dChart = (row, tableColumns, demo) => {
   const groupByName = tableColumns[0].name
 
   let groupByValue = row[0]
@@ -475,9 +536,13 @@ export const getGroupBysFrom2dChart = (row, tableColumns) => {
     groupByValue = `${groupByValue}`
   }
 
-  return {
-    [groupByName]: groupByValue
+  if (demo) {
+    return {
+      [groupByName]: groupByValue
+    }
   }
+
+  return [nameValueObject(groupByName, groupByValue)]
 }
 
 export const getObjSize = obj => Object.keys(obj).length

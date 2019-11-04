@@ -39,6 +39,7 @@ export default class ChatMessage extends React.Component {
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
     debug: PropTypes.bool,
+    demo: PropTypes.bool,
     comparisonDisplay: PropTypes.string
   }
 
@@ -52,6 +53,7 @@ export default class ChatMessage extends React.Component {
     text: null,
     tableOptions: undefined,
     debug: false,
+    demo: false,
     currencyCode: undefined,
     languageCode: undefined,
     comparisonDisplay: 'ratio'
@@ -102,6 +104,7 @@ export default class ChatMessage extends React.Component {
           setFilterTagsCallback={this.setFilterTags}
           height={chartHeight}
           width={chartWidth}
+          demo={this.props.demo}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}

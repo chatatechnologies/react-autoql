@@ -169,26 +169,32 @@ export const runQuery = (
   return runQueryOnly(query, demo, debug, domain, api_key, customer_id, user_id)
 }
 
-export const runDrilldown = (
-  query_id,
+export const runDrilldown = ({
+  queryID,
   groupByObject,
   demo,
   debug,
-  api_key,
-  customer_id,
-  user_id,
+  domain,
+  apiKey,
+  customerId,
+  userId,
   token
-) => {
+}) => {
   const axiosInstance = axios.create({})
 
   // drilldownCall = axios.CancelToken.source()
 
   const data = {
-    query_id: query_id,
-    group_bys: groupByObject,
-    customer_id: customer_id,
-    user_id: user_id,
+    customer_id: customerId,
+    user_id: userId,
     debug
+  }
+
+  if (demo) {
+    data.query_id = queryID
+    data.group_bys = groupByObject
+  } else {
+    data.columns = groupByObject
   }
 
   const config = {}
@@ -201,7 +207,7 @@ export const runDrilldown = (
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
-    : `${domain}/api/v1/chata/query/drilldown?key=${api_key}`
+    : `${domain}/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
   return axiosInstance
     .post(url, data, config)
