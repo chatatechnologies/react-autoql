@@ -1,8 +1,7 @@
 import React, { Fragment } from 'react'
-
 import PropTypes from 'prop-types'
-
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
@@ -168,7 +167,10 @@ export default class ChatBar extends React.Component {
       this.props.token
     )
       .then(response => {
-        const body = response.data
+        const body = this.props.demo
+          ? response.data
+          : _get(response, 'data.data')
+
         const sortingArray = []
         let suggestionsMatchArray = []
         autoCompleteArray = []
