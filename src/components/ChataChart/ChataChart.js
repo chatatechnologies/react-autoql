@@ -23,6 +23,13 @@ import { svgToPng, formatElement } from '../../js/Util.js'
 import styles from './ChataChart.css'
 
 export default class ChataChart extends Component {
+  DEFAULT_MARGINS = {
+    left: 50,
+    right: 10,
+    bottom: 100,
+    top: 10
+  }
+
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -50,6 +57,7 @@ export default class ChataChart extends Component {
   componentDidMount = () => {
     this.CHART_ID = uuid.v4()
     if (this.props.type !== 'pie') {
+      setTimeout(this.updateMargins, 100)
       this.updateMargins()
     }
   }
@@ -60,6 +68,7 @@ export default class ChataChart extends Component {
       this.props.type !== prevProps.type &&
       this.props.type !== 'pie'
     ) {
+      setTimeout(this.updateMargins, 100)
       this.updateMargins()
       ReactTooltip.rebuild()
     }
@@ -88,14 +97,14 @@ export default class ChataChart extends Component {
 
       let bottomLegendMargin = this.state.bottomLegendMargin
       let bottomLegendWidth = this.state.bottomLegendWidth
-      let rightMargin = this.state.rightMargin
+      let rightMargin = this.DEFAULT_MARGINS.right
       if (
         // Legend goes on the side for these types
         (this.props.type === 'stacked_bar' ||
           this.props.type === 'stacked_column') &&
         legendBBox
       ) {
-        rightMargin = legendBBox.width
+        rightMargin = legendBBox.width + this.DEFAULT_MARGINS.right
       } else if (
         (this.props.type === 'bar' ||
           this.props.type === 'column' ||

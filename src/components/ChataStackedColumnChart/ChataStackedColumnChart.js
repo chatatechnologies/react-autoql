@@ -89,7 +89,8 @@ export default class ChataStackedColumnChart extends Component {
       .domain([min, max])
       .range([height - bottomMargin, topMargin])
 
-    const barWidth = width / this.uniqueYLabels.length
+    const barWidth =
+      (width - rightMargin - leftMargin) / this.uniqueYLabels.length
     const interval = Math.ceil((this.uniqueYLabels.length * 16) / width)
     let xTickValues
 
