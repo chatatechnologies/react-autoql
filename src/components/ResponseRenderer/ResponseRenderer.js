@@ -92,7 +92,7 @@ export default class ResponseRenderer extends React.Component {
     height: undefined,
     width: undefined,
     demo: false,
-    comparisonDisplay: 'percent',
+    comparisonDisplay: 'PERCENT',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {}
@@ -730,7 +730,10 @@ export default class ResponseRenderer extends React.Component {
       return null
     }
     const formattedColumns = columns.map((col, i) => {
-      if (col.type === 'RATIO' && this.props.comparisonDisplay === 'PERCENT') {
+      if (
+        (col.type === 'RATIO' || col.type === 'NUMBER') &&
+        this.props.comparisonDisplay === 'PERCENT'
+      ) {
         col.type = 'PERCENT'
       }
 

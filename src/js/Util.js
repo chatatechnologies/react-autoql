@@ -185,7 +185,14 @@ export const formatElement = (
         }
         case 'RATIO': {
           if (Number(element)) {
-            formattedElement = Numbro(element).format('0.00')
+            formattedElement = Numbro(element).format('0.0000')
+          }
+          break
+        }
+        // This is for QBO demo ratios. Not sure why it isn't RATIO
+        case 'NUMBER': {
+          if (Number(element)) {
+            formattedElement = Numbro(element).format('0.0000')
           }
           break
         }
