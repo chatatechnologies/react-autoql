@@ -67,7 +67,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    this.MESSAGE_ID = uuid.v4()
+    // this.props.id = uuid.v4()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -130,12 +130,12 @@ export default class ChatMessage extends React.Component {
             filterTagEl.setAttribute('class', 'filter-tag')
 
             const columnTitleEl = document.querySelector(
-              `#message-${this.MESSAGE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
             )
             columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
           } else if (isFilteringTable) {
             var filterTagEl = document.querySelector(
-              `#message-${this.MESSAGE_ID} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
             )
             if (filterTagEl) {
               filterTagEl.parentNode.removeChild(filterTagEl)
@@ -155,13 +155,13 @@ export default class ChatMessage extends React.Component {
 
     try {
       const filterHeaderElements = document.querySelectorAll(
-        `#message-${this.MESSAGE_ID} .chata-table .tabulator-header-filter`
+        `#message-${this.props.id} .chata-table .tabulator-header-filter`
       )
       const colHeaderElements = document.querySelectorAll(
-        `#message-${this.MESSAGE_ID} .chata-table .tabulator-col`
+        `#message-${this.props.id} .chata-table .tabulator-col`
       )
       const messageElement = document.querySelector(
-        `#message-${this.MESSAGE_ID}.response`
+        `#message-${this.props.id}.response`
       )
 
       if (this.filtering) {
@@ -369,10 +369,10 @@ export default class ChatMessage extends React.Component {
     return (
       <Fragment>
         <div
-          id={`message-${this.MESSAGE_ID}`}
+          id={`message-${this.props.id}`}
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
-          style={{ maxHeight: chartHeight + 20 }}
+          style={{ maxHeight: chartHeight ? chartHeight + 20 : '85%' }}
         >
           <div
             className={`chat-message-bubble

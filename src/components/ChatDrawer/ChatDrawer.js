@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import { Scrollbars } from 'react-custom-scrollbars'
 import { MdClose } from 'react-icons/md'
+import { MdLightbulbOutline } from 'react-icons/md'
 import { FaRegTrashAlt } from 'react-icons/fa'
 import { MdError } from 'react-icons/md'
 
@@ -131,7 +132,8 @@ export default class ChatDrawer extends React.Component {
     stateScrollTop: 0,
     messages: [this.introMessageObject],
     lastMessageId: 'intro',
-    isClearMessageConfirmVisible: false
+    isClearMessageConfirmVisible: false,
+    activePage: 'messenger'
   }
 
   componentDidMount = () => {
@@ -280,13 +282,13 @@ export default class ChatDrawer extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.scrollComponent) {
-      this.scrollComponent.scrollToBottom()
+    if (this.messengerScrollComponent) {
+      this.messengerScrollComponent.scrollToBottom()
     }
     // Required to make animation smooth
     setTimeout(() => {
-      if (this.scrollComponent) {
-        this.scrollComponent.scrollToBottom()
+      if (this.messengerScrollComponent) {
+        this.messengerScrollComponent.scrollToBottom()
       }
     }, 50)
   }
@@ -474,6 +476,100 @@ export default class ChatDrawer extends React.Component {
     this.chatBarRef = ref
   }
 
+  renderPageSwitcher = () => {
+    const page = this.state.activePage
+
+    if (this.props.isVisible) {
+      return (
+        <div
+          className={`page-switcher-shadow-container  ${this.props.placement}`}
+          // style={tabStyles.tabShadowContainerStyle}
+        >
+          <div className={`page-switcher-container ${this.props.placement}`}>
+            <div
+              className={`tab${page === 'messenger' ? ' active' : ''}`}
+              onClick={() => this.setState({ activePage: 'messenger' })}
+              data-tip="Data Messenger"
+              data-for="chata-header-tooltip"
+              data-delay-show={1000}
+              // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
+            >
+              {bubblesIcon}
+            </div>
+            <div
+              className={`tab${page === 'tips' ? ' active' : ''}`}
+              onClick={() => this.setState({ activePage: 'tips' })}
+              data-tip="Query Tips"
+              data-for="chata-header-tooltip"
+              data-delay-show={1000}
+              // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
+            >
+              <MdLightbulbOutline size={22} />
+            </div>
+          </div>
+        </div>
+      )
+    }
+  }
+
+  renderClearMessagesButton = () => {
+    if (this.state.activePage === 'messenger') {
+      return (
+        <Popover
+          isOpen={this.state.isClearMessageConfirmVisible}
+          onClickOutside={() =>
+            this.setState({ isClearMessageConfirmVisible: false })
+          }
+          position={'bottom'} // preferred position
+          content={
+            <div className="clear-messages-confirm-popover">
+              <div className="chata-confirm-text">
+                <MdError className="chata-confirm-icon" />
+                Clear all messages?
+              </div>
+              <button
+                onClick={() =>
+                  this.setState({ isClearMessageConfirmVisible: false })
+                }
+                className="chata-confirm-btn no"
+              >
+                No
+              </button>
+              <button
+                className="chata-confirm-btn yes"
+                onClick={() => this.clearMessages()}
+              >
+                Yes
+              </button>
+            </div>
+          }
+        >
+          <button
+            onClick={() =>
+              this.setState({ isClearMessageConfirmVisible: true })
+            }
+            className="chata-button clear-all"
+            data-tip="Clear Messages"
+            data-for="chata-header-tooltip"
+          >
+            <FaRegTrashAlt />
+          </button>
+        </Popover>
+      )
+    }
+  }
+
+  renderHeaderTitle = () => {
+    let title = ''
+    if (this.state.activePage === 'messenger') {
+      title = this.props.title
+    }
+    if (this.state.activePage === 'tips') {
+      title = 'What Can I Ask?'
+    }
+    return <div className="header-title">{title}</div>
+  }
+
   renderHeaderContent = () => {
     return (
       <Fragment>
@@ -487,54 +583,139 @@ export default class ChatDrawer extends React.Component {
             <MdClose />
           </button>
         </div>
-        <div className="chata-header-center-container">{this.props.title}</div>
+        <div className="chata-header-center-container">
+          {this.renderHeaderTitle()}
+        </div>
         <div className="chata-header-right-container">
-          <Popover
-            isOpen={this.state.isClearMessageConfirmVisible}
-            onClickOutside={() =>
-              this.setState({ isClearMessageConfirmVisible: false })
-            }
-            position={'bottom'} // preferred position
-            content={
-              <div className="clear-messages-confirm-popover">
-                <div className="chata-confirm-text">
-                  <MdError className="chata-confirm-icon" />
-                  Clear all messages?
-                </div>
-                <button
-                  onClick={() =>
-                    this.setState({ isClearMessageConfirmVisible: false })
-                  }
-                  className="chata-confirm-btn no"
-                >
-                  No
-                </button>
-                <button
-                  className="chata-confirm-btn yes"
-                  onClick={() => this.clearMessages()}
-                >
-                  Yes
-                </button>
-              </div>
-            }
-          >
-            <button
-              onClick={() =>
-                this.setState({ isClearMessageConfirmVisible: true })
-              }
-              className="chata-button clear-all"
-              data-tip="Clear Messages"
-              data-for="chata-header-tooltip"
-            >
-              <FaRegTrashAlt />
-            </button>
-          </Popover>
+          {this.renderClearMessagesButton()}
         </div>
       </Fragment>
     )
   }
 
+  renderDataMessengerContent = () => {
+    return (
+      <Fragment>
+        <Scrollbars
+          ref={c => {
+            this.messengerScrollComponent = c
+          }}
+          className="chat-message-container"
+        >
+          <div
+            style={{
+              // height: 'calc(100% - 20px)'
+              height: 'calc(100% - 20px)'
+              // width: '100%',
+              // position: 'relative'
+            }}
+          >
+            {this.state.messages.length > 0 &&
+              this.state.messages.map(message => {
+                return (
+                  <ChatMessage
+                    scrollRef={this.messengerScrollComponent}
+                    setActiveMessage={this.setActiveMessage}
+                    isActive={this.state.activeMessageId === message.id}
+                    processDrilldown={this.processDrilldown}
+                    isResponse={message.isResponse}
+                    isChataThinking={this.state.isChataThinking}
+                    onSuggestionClick={this.onSuggestionClick}
+                    content={message.content}
+                    scrollToBottom={this.scrollToBottom}
+                    lastMessageId={this.state.lastMessageId}
+                    currencyCode={this.props.currencyCode}
+                    languageCode={this.props.languageCode}
+                    chartColors={this.props.chartColors}
+                    comparisonDisplay={this.props.comparisonDisplay}
+                    tableBorderColor={
+                      this.props.theme === 'light'
+                        ? this.LIGHT_THEME['--chata-drawer-border-color']
+                        : this.DARK_THEME['--chata-drawer-border-color']
+                    }
+                    tableHoverColor={
+                      this.props.theme === 'light'
+                        ? this.LIGHT_THEME['--chata-drawer-hover-color']
+                        : this.DARK_THEME['--chata-drawer-hover-color']
+                    }
+                    displayType={
+                      message.displayType ||
+                      (message.response &&
+                        message.response.data &&
+                        message.response.data.data &&
+                        message.response.data.data.display_type)
+                    }
+                    response={message.response}
+                    type={message.type}
+                    key={message.id}
+                    id={message.id}
+                    debug={this.props.debug}
+                    demo={this.props.demo}
+                  />
+                )
+              })}
+          </div>
+        </Scrollbars>
+        {this.state.isChataThinking && (
+          <div className="response-loading-container">
+            <div className="response-loading">
+              <div />
+              <div />
+              <div />
+              <div />
+            </div>
+          </div>
+        )}
+        <div className="chat-bar-container">
+          <div className="watermark">{bubblesIcon} We run on chata</div>
+          <ChatBar
+            ref={this.setChatBarRef}
+            token={this.props.token}
+            apiKey={this.props.apiKey}
+            customerId={this.props.customerId}
+            userId={this.props.userId}
+            domain={this.props.domain}
+            demo={this.props.demo}
+            debug={this.props.debug}
+            className="chat-drawer-chat-bar"
+            onSubmit={this.onInputSubmit}
+            onResponseCallback={this.onResponse}
+            isDisabled={this.state.isChataThinking}
+            enableAutocomplete={this.props.enableAutocomplete}
+            enableSafetyNet={this.props.enableSafetyNet}
+            enableVoiceRecord={this.props.enableVoiceRecord}
+            autoCompletePlacement="top"
+            showChataIcon={false}
+            showLoadingDots={false}
+          />
+        </div>
+      </Fragment>
+    )
+  }
+
+  renderQueryTipsContent = () => (
+    <Scrollbars
+      ref={c => {
+        this.queryTipsScrollComponent = c
+      }}
+    >
+      <div className="query-tips-page-container"></div>
+    </Scrollbars>
+  )
+
   render = () => {
+    let drawerContent
+    switch (this.state.activePage) {
+      case 'messenger': {
+        drawerContent = this.renderDataMessengerContent()
+        break
+      }
+      case 'tips': {
+        drawerContent = this.renderQueryTipsContent()
+        break
+      }
+    }
+
     return (
       <Fragment>
         <style>{`${chataTableStyles}`}</style>
@@ -557,103 +738,12 @@ export default class ChatDrawer extends React.Component {
           keyboard={false}
           // onKeyDown={this.escFunction}
         >
+          {this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}
             </div>
-            <Scrollbars
-              ref={c => {
-                this.scrollComponent = c
-              }}
-              className="chat-message-container"
-            >
-              <div
-                style={{
-                  // height: 'calc(100% - 20px)'
-                  height: 'calc(100% - 20px)'
-                  // width: '100%',
-                  // position: 'relative'
-                }}
-              >
-                {this.state.messages.length > 0 &&
-                  this.state.messages.map(message => {
-                    return (
-                      <ChatMessage
-                        scrollRef={this.scrollComponent}
-                        setActiveMessage={this.setActiveMessage}
-                        isActive={this.state.activeMessageId === message.id}
-                        processDrilldown={this.processDrilldown}
-                        isResponse={message.isResponse}
-                        isChataThinking={this.state.isChataThinking}
-                        onSuggestionClick={this.onSuggestionClick}
-                        content={message.content}
-                        scrollToBottom={this.scrollToBottom}
-                        lastMessageId={this.state.lastMessageId}
-                        currencyCode={this.props.currencyCode}
-                        languageCode={this.props.languageCode}
-                        chartColors={this.props.chartColors}
-                        comparisonDisplay={this.props.comparisonDisplay}
-                        tableBorderColor={
-                          this.props.theme === 'light'
-                            ? this.LIGHT_THEME['--chata-drawer-border-color']
-                            : this.DARK_THEME['--chata-drawer-border-color']
-                        }
-                        tableHoverColor={
-                          this.props.theme === 'light'
-                            ? this.LIGHT_THEME['--chata-drawer-hover-color']
-                            : this.DARK_THEME['--chata-drawer-hover-color']
-                        }
-                        displayType={
-                          message.displayType ||
-                          (message.response &&
-                            message.response.data &&
-                            message.response.data.data &&
-                            message.response.data.data.display_type)
-                        }
-                        response={message.response}
-                        type={message.type}
-                        key={message.id}
-                        id={message.id}
-                        debug={this.props.debug}
-                        demo={this.props.demo}
-                      />
-                    )
-                  })}
-              </div>
-            </Scrollbars>
-            {this.state.isChataThinking && (
-              <div className="response-loading-container">
-                <div className="response-loading">
-                  <div />
-                  <div />
-                  <div />
-                  <div />
-                </div>
-              </div>
-            )}
-            <div className="chat-bar-container">
-              <div className="watermark">{bubblesIcon} We run on chata</div>
-              <ChatBar
-                ref={this.setChatBarRef}
-                token={this.props.token}
-                apiKey={this.props.apiKey}
-                customerId={this.props.customerId}
-                userId={this.props.userId}
-                domain={this.props.domain}
-                demo={this.props.demo}
-                debug={this.props.debug}
-                className="chat-drawer-chat-bar"
-                onSubmit={this.onInputSubmit}
-                onResponseCallback={this.onResponse}
-                isDisabled={this.state.isChataThinking}
-                enableAutocomplete={this.props.enableAutocomplete}
-                enableSafetyNet={this.props.enableSafetyNet}
-                enableVoiceRecord={this.props.enableVoiceRecord}
-                autoCompletePlacement="top"
-                showChataIcon={false}
-                showLoadingDots={false}
-              />
-            </div>
+            {drawerContent}
           </div>
         </Drawer>
         <ReactTooltip
