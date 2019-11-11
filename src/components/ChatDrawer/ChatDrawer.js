@@ -4,15 +4,19 @@ import uuid from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
+import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
+
+// Icons
 import { MdClose } from 'react-icons/md'
 import { MdLightbulbOutline } from 'react-icons/md'
 import { FaRegTrashAlt } from 'react-icons/fa'
 import { MdError } from 'react-icons/md'
-
+import { IoIosSearch } from 'react-icons/io'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import { bubblesIcon } from '../../svgIcons.js'
 
+// Components
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import {
@@ -21,8 +25,10 @@ import {
   runDrilldown,
   cancelQuery
 } from '../../js/queryService'
+
 import { formatElement } from '../../js/Util'
 
+// Styles
 import rcStyles from 'rc-drawer/assets/index.css'
 import chataTableStyles from '../ChataTable/ChataTable.css'
 import messageStyles from '../ChatMessage/ChatMessage.css'
@@ -133,7 +139,8 @@ export default class ChatDrawer extends React.Component {
     messages: [this.introMessageObject],
     lastMessageId: 'intro',
     isClearMessageConfirmVisible: false,
-    activePage: 'messenger'
+    activePage: 'messenger',
+    queryTipResults: []
   }
 
   componentDidMount = () => {
@@ -693,13 +700,54 @@ export default class ChatDrawer extends React.Component {
     )
   }
 
+  onQueryTipsInputKeyPress = e => {
+    if (e.key == 'Enter') {
+      console.log('submit topic')
+    }
+  }
+
   renderQueryTipsContent = () => (
     <Scrollbars
       ref={c => {
         this.queryTipsScrollComponent = c
       }}
     >
-      <div className="query-tips-page-container"></div>
+      <div className="query-tips-page-container">
+        <div
+          className="chata-input-container"
+          style={{ animation: 'slideDown 0.5s ease' }}
+        >
+          <input
+            className="chata-input left-padding"
+            placeholder="Enter a Topic..."
+            value={this.state.queryTipsInputValue}
+            onChange={e =>
+              this.setState({ queryTipsInputValue: e.target.value })
+            }
+            onKeyPress={this.onQueryTipsInputKeyPress}
+            ref={ref => (this.queryTipsInputRef = ref)}
+            autoFocus
+          />
+          <div className="chat-bar-input-icon">
+            <IoIosSearch
+              style={{ width: '19px', height: '20px', color: '#999' }}
+            />
+          </div>
+        </div>
+        <div className="query-tips-result-container">
+          {!_get(this.state.queryTipResults, 'length') ? (
+            <div>
+              <p>Your query suggestions will show up here.</p>
+              <p>
+                You can copy them for later use or execute them in the data
+                messenger by hitting the “execute” button
+              </p>
+            </div>
+          ) : (
+            <div></div>
+          )}
+        </div>
+      </div>
     </Scrollbars>
   )
 

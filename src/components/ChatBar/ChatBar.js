@@ -248,7 +248,7 @@ export default class ChatBar extends React.Component {
                 className: `${this.UNIQUE_ID} chata-input${
                   this.props.showChataIcon ? ' left-padding' : ''
                 }`,
-                placeholder: 'Ask me anything',
+                placeholder: 'Ask me anything...',
                 disabled: this.props.isDisabled,
                 onChange: this.onInputChange,
                 onKeyPress: this.onKeyPress,
@@ -262,7 +262,7 @@ export default class ChatBar extends React.Component {
                 className={`chata-input${
                   this.props.showChataIcon ? ' left-padding' : ''
                 }`}
-                placeholder="Ask me anything"
+                placeholder="Ask me anything..."
                 value={this.state.inputValue}
                 onChange={e => this.setState({ inputValue: e.target.value })}
                 onKeyPress={this.onKeyPress}

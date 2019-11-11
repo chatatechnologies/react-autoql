@@ -34,7 +34,7 @@
 }
 .chata-input::placeholder {
   /* Default color outside of chat drawer */
-  color: #999;
+  color: #999 !important;
 }
 
 /* autosuggest */
