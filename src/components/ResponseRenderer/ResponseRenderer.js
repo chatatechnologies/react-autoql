@@ -1016,7 +1016,9 @@ export default class ResponseRenderer extends React.Component {
           padding: '20px'
         }}
       >
-        Context menu
+        <ul>
+          <li>Hide Column</li>
+        </ul>
       </div>
     )
   }
