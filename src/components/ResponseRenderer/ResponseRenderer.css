@@ -79,7 +79,6 @@
 .chata-safety-net-selector-container {
   display: inline-block;
   position: relative;
-  margin-right: 20px;
   margin-left: -5px;
 }
 .chata-safety-net-execute-btn {
@@ -145,4 +144,28 @@
 }
 .chata-safety-net-description {
   margin-bottom: 14px;
+}
+
+.context-menu {
+  background: var(--chata-drawer-background-color);
+  /* height: 100px; */
+  width: 150px;
+  padding: 10px 0;
+}
+.context-menu-list {
+  list-style-type: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.context-menu-list li {
+  color: var(--chata-drawer-text-color-primary);
+  width: 100%;
+  height: 35px;
+  line-height: 35px;
+  padding: 0 20px;
+  cursor: pointer;
+}
+.context-menu-list li:hover {
+  background: rgba(0, 0, 0, 0.05);
 }

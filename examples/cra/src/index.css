@@ -19,5 +19,12 @@
   height: 100vh;
   background-size: cover;
   background-repeat: no-repeat;
+}
+
+.ui-overlay.locate {
   background-image: url("./locate_ui.png");
+}
+
+.ui-overlay.qbo-demo {
+  background-image: url("./qbo_demo_ui.png");
 }

@@ -55,6 +55,7 @@ export default class App extends Component {
     isEditing: false,
     demo: true,
     debug: true,
+    test: true,
     apiKey: localStorage.getItem('api-key') || '',
     customerId: localStorage.getItem('customer-id') || '',
     domain: localStorage.getItem('domain-url') || '',
@@ -312,7 +313,7 @@ export default class App extends Component {
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
         {this.state.isAuthenticated &&
           this.state.domain.includes('locate') &&
-          this.createBooleanRadioGroup('Locate Demo', 'uiOverlay', [
+          this.createBooleanRadioGroup('Locate Demo', 'locateUiOverlay', [
             true,
             false
           ])}
@@ -567,6 +568,11 @@ export default class App extends Component {
           'debug',
           [true, false]
         )}
+        {this.createBooleanRadioGroup(
+          'Test Mode (Provides extra logging on the server side)',
+          'test',
+          [true, false]
+        )}
       </div>
     )
   }
@@ -614,11 +620,12 @@ export default class App extends Component {
           maxMessages={this.state.maxMessages}
           demo={this.state.demo}
           debug={this.state.debug}
+          test={this.state.test}
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
-          handleImage={this.state.uiOverlay ? locateLogo : undefined}
+          handleImage={this.state.locateUiOverlay ? locateLogo : undefined}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}
@@ -704,6 +711,7 @@ export default class App extends Component {
           domain={this.state.domain} // required if demo is false
           demo={this.state.demo}
           debug={this.state.debug}
+          test={this.state.test}
           enableSafetyNet={this.state.enableSafetyNet}
           isEditing={this.state.isEditing}
           currencyCode={this.state.currencyCode}
@@ -755,7 +763,10 @@ export default class App extends Component {
 
     return (
       <Fragment>
-        {this.state.uiOverlay && <div className="ui-overlay" />}
+        {this.state.locateUiOverlay && !this.state.demo && (
+          <div className="ui-overlay locate" />
+        )}
+        {this.state.demo && <div className="ui-overlay qbo-demo" />}
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>

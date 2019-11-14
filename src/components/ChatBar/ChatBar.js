@@ -34,7 +34,8 @@ export default class ChatBar extends React.Component {
     enableSafetyNet: PropTypes.bool,
     showChataIcon: PropTypes.bool,
     demo: PropTypes.bool,
-    debug: PropTypes.bool
+    debug: PropTypes.bool,
+    test: PropTypes.bool
     // clearQueryOnSubmit: PropTypes.bool
   }
 
@@ -53,6 +54,7 @@ export default class ChatBar extends React.Component {
     showChataIcon: true,
     demo: false,
     debug: false,
+    test: false,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -71,16 +73,17 @@ export default class ChatBar extends React.Component {
       this.props.onSubmit(query)
 
       if (skipSafetyNet) {
-        runQueryOnly(
+        runQueryOnly({
           query,
-          this.props.demo,
-          this.props.debug,
-          this.props.domain,
-          this.props.apiKey,
-          this.props.customerId,
-          this.props.userId,
-          this.props.token
-        )
+          demo: this.props.demo,
+          debug: this.props.debug,
+          test: this.props.test,
+          domain: this.props.domain,
+          apiKey: this.props.apiKey,
+          customerId: this.props.customerId,
+          userId: this.props.userId,
+          token: this.props.token
+        })
           .then(response => {
             this.props.onResponseCallback(response)
             this.setState({ isQueryRunning: false })
@@ -90,17 +93,18 @@ export default class ChatBar extends React.Component {
             this.setState({ isQueryRunning: false })
           })
       } else {
-        runQuery(
+        runQuery({
           query,
-          this.props.demo,
-          this.props.debug,
-          this.props.enableSafetyNet,
-          this.props.domain,
-          this.props.apiKey,
-          this.props.customerId,
-          this.props.userId,
-          this.props.token
-        )
+          demo: this.props.demo,
+          debug: this.props.debug,
+          test: this.props.test,
+          useSafetyNet: this.props.enableSafetyNet,
+          domain: this.props.domain,
+          apiKey: this.props.apiKey,
+          customerId: this.props.customerId,
+          userId: this.props.userId,
+          token: this.props.token
+        })
           .then(response => {
             this.props.onResponseCallback(response)
             this.setState({ isQueryRunning: false })

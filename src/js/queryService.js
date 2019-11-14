@@ -22,16 +22,17 @@ export const cancelQuery = () => {
   // }
 }
 
-export const runQueryOnly = (
+export const runQueryOnly = ({
   query,
   demo,
   debug,
+  test,
   domain,
-  api_key,
-  customer_id,
-  user_id,
+  apiKey,
+  customerId,
+  userId,
   token
-) => {
+}) => {
   const text = query
   const axiosInstance = axios.create({})
 
@@ -40,13 +41,14 @@ export const runQueryOnly = (
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query`
-    : `${domain}/api/v1/chata/query?key=${api_key}`
+    : `${domain}/api/v1/chata/query?key=${apiKey}`
 
   const data = {
     text,
-    customer_id,
-    user_id: demo ? 'widget-demo' : user_id || 'widget-user',
-    debug
+    customer_id: customerId,
+    user_id: demo ? 'widget-demo' : userId || 'widget-user',
+    debug,
+    test
   }
 
   const config = {}
@@ -97,17 +99,18 @@ export const runQueryOnly = (
   // }
 }
 
-export const runQuery = (
+export const runQuery = ({
   query,
   demo,
   debug,
+  test,
   useSafetyNet,
   domain,
-  api_key,
-  customer_id,
-  user_id,
+  apiKey,
+  customerId,
+  userId,
   token
-) => {
+}) => {
   const axiosInstance = axios.create({})
 
   if (useSafetyNet) {
@@ -119,7 +122,7 @@ export const runQuery = (
       )}&projectId=1`
       : `${domain}/api/v1/chata/safetynet?text=${encodeURIComponent(
         query
-      )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
+      )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
     const config = {}
     // config.cancelToken = safetyNetCall.token
@@ -141,32 +144,43 @@ export const runQuery = (
         ) {
           return Promise.resolve(response)
         }
-        return runQueryOnly(
+        return runQueryOnly({
           query,
           demo,
           debug,
+          test,
           domain,
-          api_key,
-          customer_id,
-          user_id,
+          apiKey,
+          customerId,
+          userId,
           token
-        )
+        })
       })
       .catch(() => {
-        return runQueryOnly(
+        return runQueryOnly({
           query,
           demo,
           debug,
+          test,
           domain,
-          api_key,
-          customer_id,
-          user_id,
+          apiKey,
+          customerId,
+          userId,
           token
-        )
+        })
       })
   }
 
-  return runQueryOnly(query, demo, debug, domain, api_key, customer_id, user_id)
+  return runQueryOnly({
+    query,
+    demo,
+    debug,
+    test,
+    domain,
+    apiKey,
+    customerId,
+    userId
+  })
 }
 
 export const runDrilldown = ({
@@ -174,6 +188,7 @@ export const runDrilldown = ({
   groupByObject,
   demo,
   debug,
+  test,
   domain,
   apiKey,
   customerId,
@@ -187,7 +202,8 @@ export const runDrilldown = ({
   const data = {
     customer_id: customerId,
     user_id: userId,
-    debug
+    debug,
+    test
   }
 
   if (demo) {

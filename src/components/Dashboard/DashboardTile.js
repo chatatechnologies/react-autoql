@@ -23,6 +23,7 @@ export default class DashboardTile extends React.Component {
     domain: PropTypes.string,
     demo: PropTypes.bool.isRequired,
     debug: PropTypes.bool.isRequired,
+    test: PropTypes.bool.isRequired,
     enableSafetyNet: PropTypes.bool.isRequired,
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
@@ -102,30 +103,34 @@ export default class DashboardTile extends React.Component {
       this.startQuery()
 
       if (skipSafetyNet) {
-        runQueryOnly(
-          query || this.props.tile.selectedSuggestion || this.state.query,
-          this.props.demo,
-          this.props.debug,
-          this.props.domain,
-          this.props.apiKey,
-          this.props.customerId,
-          this.props.userId,
-          this.props.token
-        )
+        runQueryOnly({
+          query:
+            query || this.props.tile.selectedSuggestion || this.state.query,
+          demo: this.props.demo,
+          debug: this.props.debug,
+          domain: this.props.domain,
+          apiKey: this.props.apiKey,
+          customerId: this.props.customerId,
+          userId: this.props.userId,
+          token: this.props.token
+        })
           .then(response => this.endQuery(response))
           .catch(error => this.endQuery(error))
       } else {
-        runQuery(
-          query || this.props.tile.selectedSuggestion || this.state.query,
-          this.props.demo,
-          this.props.debug,
-          !this.props.isEditing ? false : this.props.enableSafetyNet,
-          this.props.domain,
-          this.props.apiKey,
-          this.props.customerId,
-          this.props.userId,
-          this.props.token
-        )
+        runQuery({
+          query:
+            query || this.props.tile.selectedSuggestion || this.state.query,
+          demo: this.props.demo,
+          debug: this.props.debug,
+          domain: this.props.domain,
+          apiKey: this.props.apiKey,
+          customerId: this.props.customerId,
+          userId: this.props.userId,
+          token: this.props.token,
+          useSafetyNet: !this.props.isEditing
+            ? false
+            : this.props.enableSafetyNet
+        })
           .then(response => this.endQuery(response))
           .catch(error => this.endQuery(error))
       }

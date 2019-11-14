@@ -66,6 +66,7 @@ class Dashboard extends React.Component {
     accentColor: PropTypes.string,
     demo: PropTypes.bool,
     debug: PropTypes.bool,
+    test: PropTypes.bool,
     isEditing: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
@@ -89,6 +90,7 @@ class Dashboard extends React.Component {
     enableAutocomplete: true,
     demo: false,
     debug: false,
+    test: false,
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
@@ -392,6 +394,7 @@ class Dashboard extends React.Component {
                   domain={this.props.domain}
                   demo={this.props.demo}
                   debug={this.props.debug}
+                  test={this.props.test}
                   enableSafetyNet={this.props.enableSafetyNet}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}

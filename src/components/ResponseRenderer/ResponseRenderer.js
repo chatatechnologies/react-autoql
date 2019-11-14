@@ -70,7 +70,8 @@ export default class ResponseRenderer extends React.Component {
     height: PropTypes.number,
     width: PropTypes.number,
     demo: PropTypes.bool,
-    comparisonDisplay: PropTypes.string
+    comparisonDisplay: PropTypes.string,
+    hideColumnCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -95,7 +96,8 @@ export default class ResponseRenderer extends React.Component {
     comparisonDisplay: 'PERCENT',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     processDrilldown: () => {},
-    onSafetyNetSelectOption: () => {}
+    onSafetyNetSelectOption: () => {},
+    hideColumnCallback: () => {}
   }
 
   state = {
@@ -760,15 +762,15 @@ export default class ResponseRenderer extends React.Component {
       col.headerFilterFunc = this.setFilterFunction(col)
 
       // Context menu when right clicking on column header
-      // col.headerContext = (e, column) => {
-      //   // Do not show native context menu
-      //   e.preventDefault()
-      //   this.setState({
-      //     isContextMenuOpen: true,
-      //     activeColumn: column,
-      //     contextMenuPosition: { top: e.clientY, left: e.clientX }
-      //   })
-      // }
+      col.headerContext = (e, column) => {
+        // Do not show native context menu
+        e.preventDefault()
+        this.setState({
+          isContextMenuOpen: true,
+          activeColumn: column,
+          contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 }
+        })
+      }
 
       if (col.type === 'DATE') {
         col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
@@ -1008,16 +1010,16 @@ export default class ResponseRenderer extends React.Component {
     popoverRect
   }) => {
     return (
-      <div
-        style={{
-          background: 'white',
-          height: '100px',
-          width: '200px',
-          padding: '20px'
-        }}
-      >
-        <ul>
-          <li>Hide Column</li>
+      <div className="context-menu">
+        <ul className="context-menu-list">
+          <li
+            onClick={() => {
+              this.setState({ isContextMenuOpen: false })
+              this.props.hideColumnCallback(this.state.activeColumn)
+            }}
+          >
+            Hide Column
+          </li>
         </ul>
       </div>
     )

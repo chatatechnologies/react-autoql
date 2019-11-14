@@ -91,6 +91,7 @@ export default class ChatDrawer extends React.Component {
     maxMessages: PropTypes.number,
     demo: PropTypes.bool,
     debug: PropTypes.bool,
+    test: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
     comparisonDisplay: PropTypes.string,
@@ -125,6 +126,7 @@ export default class ChatDrawer extends React.Component {
     maxMessages: undefined,
     demo: false,
     debug: false,
+    test: false,
     introMessage: undefined,
     currencyCode: undefined,
     languageCode: undefined,
@@ -317,16 +319,17 @@ export default class ChatDrawer extends React.Component {
       return
     }
 
-    runQueryOnly(
-      suggestion,
-      this.props.demo,
-      this.props.debug,
-      this.props.domain,
-      this.props.apiKey,
-      this.props.customerId,
-      this.props.userId,
-      this.props.token
-    )
+    runQueryOnly({
+      query: suggestion,
+      demo: this.props.demo,
+      debug: this.props.debug,
+      test: this.props.test,
+      domain: this.props.domain,
+      apiKey: this.props.apiKey,
+      customerId: this.props.customerId,
+      userId: this.props.userId,
+      token: this.props.token
+    })
       .then(response => {
         this.onResponse(response)
       })
@@ -370,6 +373,7 @@ export default class ChatDrawer extends React.Component {
         groupByObject,
         demo: this.props.demo,
         debug: this.props.debug,
+        test: this.props.test,
         domain: this.props.domain,
         apiKey: this.props.apiKey,
         customerId: this.props.customerId,
@@ -684,6 +688,7 @@ export default class ChatDrawer extends React.Component {
             domain={this.props.domain}
             demo={this.props.demo}
             debug={this.props.debug}
+            test={this.props.test}
             className="chat-drawer-chat-bar"
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
