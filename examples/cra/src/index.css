@@ -25,6 +25,10 @@
   background-image: url("./locate_ui.png");
 }
 
+.ui-overlay.purefacts {
+  background-image: url("./purefacts_ui.png");
+}
+
 .ui-overlay.qbo-demo {
   background-image: url("./qbo_demo_ui.png");
 }

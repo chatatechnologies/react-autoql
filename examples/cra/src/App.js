@@ -317,6 +317,12 @@ export default class App extends Component {
             true,
             false
           ])}
+        {this.state.isAuthenticated &&
+          this.state.domain.includes('purefacts') &&
+          this.createBooleanRadioGroup('PureFacts Demo', 'purefactsUiOverlay', [
+            true,
+            false
+          ])}
         {!this.state.demo && (
           <Fragment>
             <h3>You must login to access data</h3>
@@ -765,6 +771,9 @@ export default class App extends Component {
       <Fragment>
         {this.state.locateUiOverlay && !this.state.demo && (
           <div className="ui-overlay locate" />
+        )}
+        {this.state.purefactsUiOverlay && !this.state.demo && (
+          <div className="ui-overlay purefacts" />
         )}
         {this.state.demo && <div className="ui-overlay qbo-demo" />}
         {this.renderNavMenu()}
