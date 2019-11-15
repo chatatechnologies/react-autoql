@@ -732,6 +732,7 @@ export default class ResponseRenderer extends React.Component {
       return null
     }
     const formattedColumns = columns.map((col, i) => {
+      // Regardless of the BE response, we want to default to percent
       if (
         (col.type === 'RATIO' || col.type === 'NUMBER') &&
         this.props.comparisonDisplay === 'PERCENT'
@@ -740,7 +741,20 @@ export default class ResponseRenderer extends React.Component {
       }
 
       col.field = `${i}`
-      col.align = 'center'
+      col.title = this.getColTitle(col)
+
+      // Cell alignment
+      if (
+        col.type === 'DOLLAR_AMT' ||
+        col.type === 'RATIO' ||
+        col.type === 'NUMBER'
+      ) {
+        col.align = 'right'
+      } else {
+        col.align = 'center'
+      }
+
+      // Cell formattingg
       col.formatter = (cell, formatterParams, onRendered) => {
         return formatElement(
           cell.getValue(),
@@ -750,8 +764,6 @@ export default class ResponseRenderer extends React.Component {
           cell.getElement()
         )
       }
-
-      col.title = this.getColTitle(col)
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
@@ -772,6 +784,7 @@ export default class ResponseRenderer extends React.Component {
         })
       }
 
+      // Allow proper chronological sorting for date strings
       if (col.type === 'DATE') {
         col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
           const aDate = dayjs.unix(a)

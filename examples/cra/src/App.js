@@ -23,6 +23,7 @@ import {
 } from 'antd'
 
 import locateLogo from './locate_logo.png'
+import purefactsLogo from './purefacts_logo.png'
 
 import 'antd/dist/antd.css'
 import './index.css'
@@ -584,6 +585,12 @@ export default class App extends Component {
   }
 
   renderChatDrawerPage = () => {
+    let handleImage
+    if (this.state.purefactsUiOverlay) {
+      handleImage = purefactsLogo
+    } else if (this.state.locateUiOverlay) {
+      handleImage = locateLogo
+    }
     return (
       <div className="test-page-container">
         {
@@ -631,7 +638,7 @@ export default class App extends Component {
           languageCode={this.state.languageCode}
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
-          handleImage={this.state.locateUiOverlay ? locateLogo : undefined}
+          handleImage={handleImage}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}

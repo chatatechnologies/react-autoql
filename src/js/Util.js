@@ -153,13 +153,17 @@ export const formatElement = (
             try {
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
-                currency: `${currency}`
+                currency: `${currency}`,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
               }).format(element)
             } catch (err) {
               console.error(err)
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
-                currency: 'USD'
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
               }).format(element)
             }
           }
