@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 import _get from 'lodash.get'
 import uuid from 'uuid'
+import ReactTooltip from 'react-tooltip'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -58,6 +59,7 @@ export default class Axis extends Component {
 
   componentDidUpdate = () => {
     this.renderPie()
+    ReactTooltip.rebuild()
   }
 
   renderPieContainer = () => {
