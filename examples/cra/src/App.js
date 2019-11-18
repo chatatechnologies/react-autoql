@@ -782,7 +782,10 @@ export default class App extends Component {
         {this.state.purefactsUiOverlay && !this.state.demo && (
           <div className="ui-overlay purefacts" />
         )}
-        {this.state.demo && <div className="ui-overlay qbo-demo" />}
+        {
+          // this.state.demo && <div className="ui-overlay qbo-demo" />
+        }
+        {this.state.demo && <div className="ui-overlay sage-demo" />}
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>

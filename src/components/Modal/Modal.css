@@ -1,0 +1,72 @@
+.chata-modal-container {
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  /* transition: opacity 0.2s ease 0s !important; */
+  transition: none !important;
+}
+
+.chata-modal {
+  display: flex;
+  flex-direction: column;
+
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
+
+  margin: 100px auto;
+  width: 500px;
+  height: 500px;
+  max-width: 90vw;
+
+  animation: createBox 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+  /* the animation below is bouncy */
+  /* animation: createBox 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); */
+}
+
+.chata-modal-header {
+  position: relative;
+  flex: 0 0 60px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 18px 25px;
+  font-size: 16px;
+}
+.chata-modal-footer {
+  position: relative;
+  flex: 0 0 55px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: right;
+  padding: 8px 10px;
+}
+.chata-modal-footer .chata-confirm-btn {
+  padding: 8px 18px;
+  margin: 5px;
+}
+
+.chata-modal-body {
+  padding: 25px;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.chata-modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 22px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.chata-modal-close-btn:hover {
+  opacity: 1;
+}
+
+@keyframes createBox {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}

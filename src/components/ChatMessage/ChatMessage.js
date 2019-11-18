@@ -8,11 +8,14 @@ import {
   MdFilterList,
   MdInfoOutline
 } from 'react-icons/md'
+import { FaEye } from 'react-icons/fa'
 import ReactTooltip from 'react-tooltip'
 
 import { ResponseRenderer } from '../ResponseRenderer'
+import { Modal } from '../Modal'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import { getNumberOfGroupables } from '../../js/Util'
 
 import { VizToolbar } from '../VizToolbar'
 
@@ -66,12 +69,16 @@ export default class ChatMessage extends React.Component {
         : _get(this.props, 'response.data.data.display_type')
   }
 
-  componentDidMount = () => {
-    // this.props.id = uuid.v4()
-  }
+  componentDidMount = () => {}
 
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
+
+    // We must explicitly set the message height in order to avoid scroll jumping
+    // when message bubbles resize due to their content
+    // const messageContainer = document.getElementById(`message-${this.props.id}`)
+    // this.MESSAGE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
+    // messageContainer.style.height = `${this.MESSAGE_CONTAINER_HEIGHT}px`
   }
 
   switchView = displayType => {
@@ -102,6 +109,7 @@ export default class ChatMessage extends React.Component {
           chartColors={this.props.chartColors}
           comparisonDisplay={this.props.comparisonDisplay}
           setFilterTagsCallback={this.setFilterTags}
+          hideColumnCallback={this.hideColumnCallback}
           height={chartHeight}
           width={chartWidth}
           demo={this.props.demo}
@@ -241,6 +249,22 @@ export default class ChatMessage extends React.Component {
       </div>`
   }
 
+  hideColumnCallback = column => {}
+
+  showHideColumnsModal = () =>
+    this.setState({ isHideColumnsModalVisible: true })
+
+  renderHideColumnsModal = () => {
+    return (
+      <Modal
+        isVisible={this.state.isHideColumnsModalVisible}
+        title="Show/Hide Columns"
+        onClose={() => this.setState({ isHideColumnsModalVisible: false })}
+        onConfirm={() => console.log('SAVE COLUMNS')}
+      ></Modal>
+    )
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
       showFilterButton:
@@ -257,7 +281,11 @@ export default class ChatMessage extends React.Component {
       showInterpretationButton: !!_get(
         this.props,
         'response.data.data.interpretation'
-      )
+      ),
+      showHideColumnsButton:
+        getNumberOfGroupables(
+          _get(this.props, 'response.data.data.columns')
+        ) === 0
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -283,6 +311,16 @@ export default class ChatMessage extends React.Component {
               data-for="chata-toolbar-btn-tooltip"
             >
               <MdFilterList />
+            </button>
+          )}
+          {shouldShowButton.showHideColumnsButton && (
+            <button
+              onClick={this.showHideColumnsModal}
+              className="chata-toolbar-btn"
+              data-tip="Show/Hide Columns"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <FaEye />
             </button>
           )}
           {shouldShowButton.showCopyButton && (
@@ -353,6 +391,13 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
+  adjustHeightOfMessageContainer = () => {
+    const messageContainer = document.getElementById(`message-${this.props.id}`)
+    const messageBubble = document.querySelector(
+      `#message-${this.props.id} .chat-message-bubble`
+    )
+  }
+
   render = () => {
     let chartWidth = 0
     let chartHeight = 0
@@ -372,7 +417,9 @@ export default class ChatMessage extends React.Component {
           id={`message-${this.props.id}`}
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
-          style={{ maxHeight: chartHeight ? chartHeight + 20 : '85%' }}
+          style={{
+            maxHeight: chartHeight ? chartHeight + 20 : '85%'
+          }}
         >
           <div
             className={`chat-message-bubble
@@ -383,8 +430,12 @@ export default class ChatMessage extends React.Component {
             {this.renderContent(chartWidth, chartHeight)}
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
+            {this.renderHideColumnsModal()}
           </div>
         </div>
+        {
+          // this.adjustHeightOfMessageContainer()
+        }
       </Fragment>
     )
   }
