@@ -234,6 +234,7 @@
   border: 1px solid #ababab52;
   border-radius: 4px;
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
+  transition: opacity 0.2s ease 0s !important;
 }
 
 .clear-messages-confirm-popover {
@@ -253,10 +254,12 @@
   cursor: pointer;
   outline: none !important;
   transition: all 0.2s ease;
+  width: auto;
+  display: inline-block;
 }
 .chata-confirm-btn.yes {
   background: var(--chata-drawer-accent-color);
-  border-color: var(--chata-drawer-accent-color);
+  border: 1px solid var(--chata-drawer-accent-color);
   color: white;
 }
 .chata-confirm-btn.yes:hover {
@@ -264,7 +267,7 @@
 }
 .chata-confirm-btn.no {
   color: inherit;
-  border-color: #a7a7a7;
+  border: 1px solid #a7a7a7;
   background: inherit;
 }
 .chata-confirm-btn.no:hover {
@@ -341,6 +344,9 @@
 
 /* Individual Tabs */
 .page-switcher-container .tab {
+  position: relative;
+  z-index: 1;
+
   background: var(--chata-drawer-accent-color);
   color: #fff;
 
@@ -351,11 +357,11 @@
   font-size: 18px;
   text-align: center;
   transform: translate(0, 0);
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
 
   transition-property: background, color, transform, line-height, height, width,
-    margin-right, margin-top, margin-left, margin-bottom;
+    margin-right, margin-top, margin-left, margin-bottom, z-index;
   transition-duration: 0.2s;
 }
 .page-switcher-container.right .tab {
@@ -390,6 +396,8 @@
   background: var(--chata-drawer-background-color);
   color: var(--chata-drawer-text-color-primary);
   font-weight: bold;
+  position: relative;
+  z-index: 2;
 }
 .page-switcher-container.bottom .tab.active {
   background: var(--chata-drawer-accent-color);
@@ -407,6 +415,7 @@
   line-height: 56px;
   transform: translate(-2px, -2px);
   margin-bottom: -2px;
+  z-index: 3;
 }
 .page-switcher-container.left .tab:hover {
   height: 69px;
@@ -414,6 +423,7 @@
   line-height: 56px;
   transform: translate(0px, -2px);
   margin-bottom: -2px;
+  z-index: 3;
 }
 .page-switcher-container.top .tab:hover {
   height: 49px;
@@ -422,6 +432,7 @@
   transform: translate(-2px, -2px);
   margin-right: -2px;
   margin-bottom: -2px;
+  z-index: 3;
 }
 .page-switcher-container.bottom .tab:hover {
   height: 51px;
@@ -430,6 +441,7 @@
   transform: translate(-2px, -2px);
   margin-right: -2px;
   margin-top: -2px;
+  z-index: 3;
 }
 
 /* Curve appropriate corners depending on placement */
