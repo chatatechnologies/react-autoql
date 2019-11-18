@@ -70,7 +70,7 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
       break
     }
     case 'DOLLAR_AMT': {
-      if (Number(d)) {
+      if (Number(d) || Number(d) === 0) {
         const currency = currencyCode || 'USD'
         const sigDigs = String(parseInt(d)).length
         try {
@@ -148,7 +148,7 @@ export const formatElement = (
         }
         case 'DOLLAR_AMT': {
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          if (Number(element)) {
+          if (Number(element) || Number(element) === 0) {
             const currency = currencyCode || 'USD'
             try {
               formattedElement = new Intl.NumberFormat(languageCode, {
