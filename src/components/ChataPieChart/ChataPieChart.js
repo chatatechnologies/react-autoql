@@ -161,10 +161,11 @@ export default class Axis extends Component {
     const { height, margin, labelValue, dataValue, chartColors } = this.props
 
     const legendLabels = this.sortedData.map(d => {
-      return `${formatElement(
+      const legendString = `${formatElement(
         d[labelValue],
         _get(d, 'origColumns[0]')
       )}: ${formatElement(d[dataValue][0], _get(d, 'origColumns[1]'))}`
+      return legendString.trim()
     })
 
     let legendScale
