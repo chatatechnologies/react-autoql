@@ -276,10 +276,12 @@ export default class ChatMessage extends React.Component {
         _get(this.props, 'response.data.data.rows.length') > 1,
       showCopyButton:
         TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse(),
+        !this.isSingleValueResponse() &&
+        !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsCSVButton:
         TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse(),
+        !this.isSingleValueResponse() &&
+        !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
       showInterpretationButton: !!_get(
         this.props,
@@ -288,7 +290,9 @@ export default class ChatMessage extends React.Component {
       showHideColumnsButton:
         getNumberOfGroupables(
           _get(this.props, 'response.data.data.columns')
-        ) === 0
+        ) === 0 &&
+        _get(this.props, 'response.data.data.columns.length') > 1 &&
+        _get(this.props, 'response.data.data.rows.length') > 1
     }
 
     // If there is nothing to put in the toolbar, don't render it
