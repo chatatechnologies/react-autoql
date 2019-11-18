@@ -22,17 +22,38 @@ export default class Axis extends Component {
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
+    onChartClick: PropTypes.func,
     margin: PropTypes.number,
     backgroundColor: PropTypes.string
   }
 
   static defaultProps = {
     margin: 20,
-    backgroundColor: 'transparent'
+    backgroundColor: 'transparent',
+    onChartClick: () => {}
+  }
+
+  state = {
+    activeKey: null
   }
 
   componentDidMount = () => {
     this.renderPie()
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.state.activeKey !== nextState.activeKey) {
+      return true
+    }
+
+    if (
+      this.props.height !== nextProps.height ||
+      this.props.width !== nextProps.width
+    ) {
+      return true
+    }
+
+    return false
   }
 
   componentDidUpdate = () => {
@@ -109,38 +130,33 @@ export default class Axis extends Component {
         select(this).style('fill-opacity', 0.85)
       })
       .on('click', function(d) {
-        // if already expanded, we want to move it back so skip this step
-        if (!d._expanded) {
-          self.pieChartContainer
-            .selectAll('path.slice')
-            .each(function(data) {
-              // reset all slices to not expanded
-              data._expanded = false
-            })
-            .transition()
-            .duration(500)
-          // .attr('transform', 'translate(,0)')
+        if (d.data.value[self.props.labelValue] === self.state.activeKey) {
+          // Put it back if it is expanded
+          self.setState({ activeKey: null })
+        } else {
+          self.props.onChartClick(_get(d, 'data.value.origRow', []))
+          self.setState({ activeKey: d.data.value[self.props.labelValue] })
         }
-
-        select(this)
-          .transition()
-          .duration(500)
-          .attr('transform', function(d) {
-            if (!d._expanded) {
-              d._expanded = true
-              const a =
-                d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2
-              const x = Math.cos(a) * 20
-              const y = Math.sin(a) * 20
-              // move it away from the circle center
-              return 'translate(' + x + ',' + y + ')'
-            } else {
-              d._expanded = false
-              // move it back
-              return 'translate(0,0)'
-            }
-          })
       })
+
+    // render active pie slice if there is one
+    self.pieChartContainer.selectAll('path.slice').each(function(slice) {
+      select(this)
+        .transition()
+        .duration(500)
+        .attr('transform', function(data) {
+          if (data.data.value[self.props.labelValue] === self.state.activeKey) {
+            const a =
+              data.startAngle +
+              (data.endAngle - data.startAngle) / 2 -
+              Math.PI / 2
+            const x = Math.cos(a) * 10
+            const y = Math.sin(a) * 10
+            // move it away from the circle center
+            return 'translate(' + x + ',' + y + ')'
+          }
+        })
+    })
   }
 
   centerVisualization = () => {
@@ -240,7 +256,7 @@ export default class Axis extends Component {
 
   renderPie = () => {
     const self = this
-    const { data, width, height, margin } = this.props
+    const { data } = this.props
 
     this.setPieRadius()
 
@@ -273,16 +289,12 @@ export default class Axis extends Component {
           }}
           width={this.props.width}
           height={this.props.height}
-          // transform={this.props.translate}
-          // transform="translate(100, 0)"
         />
         <g
           ref={el => {
             this.legendElement = el
           }}
           className="legendOrdinal-container"
-          // transform="translate(15, 15)"
-          // transform={`translate(${}, 20)`}
         />
       </g>
     )
