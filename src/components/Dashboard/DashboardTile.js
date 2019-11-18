@@ -296,6 +296,9 @@ export default class DashboardTile extends React.Component {
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
                 chartColors={this.props.chartColors}
+                backgroundColor={document.documentElement.style.getPropertyValue(
+                  '--chata-dashboard-background-color'
+                )}
                 demo={this.props.demo}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })

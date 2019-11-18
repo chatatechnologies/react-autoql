@@ -113,6 +113,9 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={this.props.demo}
+          backgroundColor={document.documentElement.style.getPropertyValue(
+            '--chata-drawer-background-color'
+          )}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}

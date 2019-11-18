@@ -316,6 +316,7 @@ export default class ChataChart extends Component {
       {...this.getCommonChartProps()}
       dataValue="values"
       labelValue="label"
+      backgroundColor={this.props.backgroundColor}
       tooltipFormatter={d => {
         const { columns } = this.props
         const label = _get(d, `data.value.label`)

@@ -22,11 +22,13 @@ export default class Axis extends Component {
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-    margin: PropTypes.number
+    margin: PropTypes.number,
+    backgroundColor: PropTypes.string
   }
 
   static defaultProps = {
-    margin: 20
+    margin: 20,
+    backgroundColor: 'transparent'
   }
 
   componentDidMount = () => {
@@ -98,7 +100,8 @@ export default class Axis extends Component {
         return self.props.tooltipFormatter(d)
       })
       .style('fill-opacity', 0.85)
-      .style('stroke-width', '0')
+      .attr('stroke-width', '0.5px')
+      .attr('stroke', this.props.backgroundColor)
       .on('mouseover', function(d) {
         select(this).style('fill-opacity', 1)
       })

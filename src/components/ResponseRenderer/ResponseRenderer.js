@@ -520,6 +520,7 @@ export default class ResponseRenderer extends React.Component {
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
+          backgroundColor={this.props.backgroundColor}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
@@ -990,7 +991,7 @@ export default class ResponseRenderer extends React.Component {
       return this.renderErrorMessage(responseBody.message)
     }
 
-    if (!responseData.rows || !responseData.rows.length) {
+    if (!_get(responseData, 'rows.length')) {
       // This is not an error. There is just no data in the DB
       return 'No data found.'
     }
