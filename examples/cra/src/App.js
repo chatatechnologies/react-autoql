@@ -214,7 +214,7 @@ export default class App extends Component {
       const jwtToken = jwtResponse.data
       localStorage.setItem('jwtToken', jwtToken)
 
-      this.setState({ isAuthenticated: true })
+      this.setState({ isAuthenticated: true, componentKey: uuid.v4() })
 
       return message.success(
         'Login Sucessful! Your token will be valid for 6 hours if you do not clear your cache.'
@@ -318,12 +318,14 @@ export default class App extends Component {
             true,
             false
           ])}
-        {this.state.isAuthenticated &&
-          this.state.domain.includes('purefacts') &&
-          this.createBooleanRadioGroup('PureFacts Demo', 'purefactsUiOverlay', [
-            true,
-            false
-          ])}
+        {
+          // this.state.isAuthenticated &&
+          // this.state.domain.includes('purefacts') &&
+          // this.createBooleanRadioGroup('PureFacts Demo', 'purefactsUiOverlay', [
+          //   true,
+          //   false
+          // ])
+        }
         {!this.state.demo && (
           <Fragment>
             <h3>You must login to access data</h3>
@@ -586,11 +588,25 @@ export default class App extends Component {
 
   renderChatDrawerPage = () => {
     let handleImage
-    if (this.state.purefactsUiOverlay) {
+    if (this.state.isAuthenticated && this.state.domain.includes('purefacts')) {
       handleImage = purefactsLogo
-    } else if (this.state.locateUiOverlay) {
+    } else if (
+      this.state.isAuthenticated &&
+      this.state.domain.includes('locate')
+    ) {
       handleImage = locateLogo
     }
+
+    const lightAccentColor =
+      this.state.isAuthenticated && this.state.domain.includes('purefacts')
+        ? '#253340'
+        : this.state.lightAccentColor
+
+    const darkAccentColor =
+      this.state.isAuthenticated && this.state.domain.includes('purefacts')
+        ? '#253340'
+        : this.state.darkAccentColor
+
     return (
       <div className="test-page-container">
         {
@@ -625,9 +641,7 @@ export default class App extends Component {
           disableDrilldowns={this.state.disableDrilldowns}
           theme={this.state.theme}
           accentColor={
-            this.state.theme === 'light'
-              ? this.state.lightAccentColor
-              : this.state.darkAccentColor
+            this.state.theme === 'light' ? lightAccentColor : darkAccentColor
           }
           fontFamily={this.state.fontFamily}
           maxMessages={this.state.maxMessages}
@@ -776,16 +790,16 @@ export default class App extends Component {
 
     return (
       <Fragment>
-        {this.state.locateUiOverlay && !this.state.demo && (
-          <div className="ui-overlay locate" />
-        )}
-        {this.state.purefactsUiOverlay && !this.state.demo && (
-          <div className="ui-overlay purefacts" />
-        )}
+        {this.state.isAuthenticated &&
+          this.state.domain.includes('locate') &&
+          !this.state.demo && <div className="ui-overlay locate" />}
+        {this.state.isAuthenticated &&
+          this.state.domain.includes('purefacts') &&
+          !this.state.demo && <div className="ui-overlay purefacts" />}
+        {this.state.demo && <div className="ui-overlay qbo-demo" />}
         {
-          // this.state.demo && <div className="ui-overlay qbo-demo" />
+          // this.state.demo && <div className="ui-overlay sage-demo" />
         }
-        {this.state.demo && <div className="ui-overlay sage-demo" />}
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>
