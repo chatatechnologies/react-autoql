@@ -95,6 +95,8 @@ export default class ChatDrawer extends React.Component {
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
     comparisonDisplay: PropTypes.string,
+    enableQueryTipsTab: PropTypes.bool,
+    enableColumnEditor: PropTypes.bool,
     chartColors: PropTypes.arrayOf(PropTypes.string)
   }
 
@@ -131,6 +133,8 @@ export default class ChatDrawer extends React.Component {
     currencyCode: undefined,
     languageCode: undefined,
     chartColors: undefined,
+    enableQueryTipsTab: true,
+    enableColumnEditor: true,
     comparisonDisplay: 'ratio',
     onHandleClick: () => {},
     onVisibleChange: () => {}
@@ -639,6 +643,7 @@ export default class ChatDrawer extends React.Component {
                     languageCode={this.props.languageCode}
                     chartColors={this.props.chartColors}
                     comparisonDisplay={this.props.comparisonDisplay}
+                    enableColumnEditor={this.props.enableColumnEditor}
                     tableBorderColor={
                       this.props.theme === 'light'
                         ? this.LIGHT_THEME['--chata-drawer-border-color']
@@ -791,7 +796,7 @@ export default class ChatDrawer extends React.Component {
           keyboard={false}
           // onKeyDown={this.escFunction}
         >
-          {this.renderPageSwitcher()}
+          {this.props.enableQueryTipsTab && this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}

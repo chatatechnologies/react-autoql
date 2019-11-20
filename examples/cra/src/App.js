@@ -44,6 +44,8 @@ export default class App extends Component {
     enableAutocomplete: true,
     enableSafetyNet: true,
     disableDrilldowns: false,
+    enableQueryTipsTab: true,
+    enableColumnEditor: true,
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,
@@ -568,6 +570,16 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
+          'Enable Query Tips Tab',
+          'enableQueryTipsTab',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Column Visibility Editor',
+          'enableColumnEditor',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
           'Enable Speech to Text',
           'enableVoiceRecord',
           [true, false]
@@ -653,6 +665,8 @@ export default class App extends Component {
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
           handleImage={handleImage}
+          enableQueryTipsTab={this.state.enableQueryTipsTab}
+          enableColumnEditor={this.state.enableColumnEditor}
           // inputStyles
           // autocompleteStyles
           // handleStyles={{ right: '25px' }}

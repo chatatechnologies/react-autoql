@@ -43,7 +43,8 @@ export default class ChatMessage extends React.Component {
     languageCode: PropTypes.string,
     debug: PropTypes.bool,
     demo: PropTypes.bool,
-    comparisonDisplay: PropTypes.string
+    comparisonDisplay: PropTypes.string,
+    enableColumnEditor: PropTypes.bool
   }
 
   static defaultProps = {
@@ -59,7 +60,8 @@ export default class ChatMessage extends React.Component {
     demo: false,
     currencyCode: undefined,
     languageCode: undefined,
-    comparisonDisplay: 'ratio'
+    comparisonDisplay: 'ratio',
+    enableColumnEditor: true
   }
 
   state = {
@@ -288,6 +290,7 @@ export default class ChatMessage extends React.Component {
         'response.data.data.interpretation'
       ),
       showHideColumnsButton:
+        this.props.enableColumnEditor &&
         getNumberOfGroupables(
           _get(this.props, 'response.data.data.columns')
         ) === 0 &&
