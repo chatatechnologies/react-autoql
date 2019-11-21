@@ -11,7 +11,7 @@ export default class Button extends React.Component {
 
   static propTypes = {
     type: PropTypes.string,
-    onClick: PropTypes.bool,
+    onClick: PropTypes.func,
     loading: PropTypes.bool,
     size: PropTypes.string
   }
