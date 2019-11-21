@@ -13,7 +13,7 @@ export default class Columns extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeKey
   }
 
   Y0 = () => this.props.scales.yScale(0)
@@ -49,7 +49,10 @@ export default class Columns extends Component {
               width={barWidth}
               onClick={() => {
                 this.setState({ activeKey: d[labelValue] })
-                this.props.onChartClick(d.origRow)
+                this.props.onChartClick({
+                  row: d.origRow,
+                  activeKey: d[labelValue]
+                })
               }}
               data-tip={this.props.tooltipFormatter(d, i)}
               data-for="chart-element-tooltip"

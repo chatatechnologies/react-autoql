@@ -36,9 +36,11 @@ export default class ChataLineChart extends Component {
 
   render = () => {
     const {
+      activeChartElementKey,
       bottomLegendMargin,
       bottomLegendWidth,
       tooltipFormatter,
+      backgroundColor,
       languageCode,
       currencyCode,
       bottomMargin,
@@ -140,6 +142,8 @@ export default class ChataLineChart extends Component {
           onChartClick={onChartClick}
           tooltipFormatter={tooltipFormatter}
           chartColors={chartColors}
+          backgroundColor={backgroundColor}
+          activeKey={activeChartElementKey}
         />
       </g>
     )

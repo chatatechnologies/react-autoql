@@ -1,33 +1,29 @@
 /* These are not inline styles since they do not apply to saved PNG charts */
+.chata-chart-container .square {
+  transition: fill-opacity 0.3s ease;
+}
+
 .chata-chart-container .bar,
-.chata-chart-container .line-dot,
-.chata-chart-container .stacked-bar {
+/* .chata-chart-container .line-dot, */
+.chata-chart-container .stacked-bar,
+.chata-chart-container .circle {
+  transition: fill-opacity 0.3s ease;
   fill-opacity: 0.7 !important;
 }
 
 .chata-chart-container .bar:hover,
-.chata-chart-container .line-dot:hover,
-.chata-chart-container .stacked-bar:hover {
+/* .chata-chart-container .line-dot:hover, */
+.chata-chart-container .stacked-bar:hover,
+.chata-chart-container .circle:hover,
+.chata-chart-container .square:hover {
   fill-opacity: 1 !important;
 }
 
 .chata-chart-container .bar.active,
-.chata-chart-container .line-dot.active,
+/* .chata-chart-container .line-dot.active, */
 .chata-chart-container .stacked-bar.active {
   fill-opacity: 1 !important;
 }
-
-/* .chata-chart-container .circle,
-.chata-chart-container .square {
-}
-
-.chata-chart-container .circle:hover,
-.chata-chart-container .square:hover {
-}
-
-.chata-chart-container .circle.active,
-.chata-chart-container .square.active {
-} */
 
 .axis {
   font-family: inherit;

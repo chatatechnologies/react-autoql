@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import { MdClose } from 'react-icons/md'
 
+import { Button } from '../Button'
+
 import styles from './Modal.css'
 
 export default class Modal extends React.Component {
@@ -10,12 +12,20 @@ export default class Modal extends React.Component {
     title: PropTypes.string,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
-    onConfirm: PropTypes.func
+    onConfirm: PropTypes.func,
+    width: PropTypes.number,
+    height: PropTypes.number,
+    showCancelButton: PropTypes.bool,
+    showFooter: PropTypes.bool
   }
 
   static defaultProps = {
     title: '',
     isVisible: false,
+    width: 500,
+    height: undefined,
+    showCancelButton: true,
+    showFooter: true,
     onClose: () => {},
     onConfirm: () => {}
   }
@@ -31,7 +41,15 @@ export default class Modal extends React.Component {
           containerClassName="chata-modal-container"
           contentLocation={{ top: 0, left: 0 }}
           content={
-            <div className="chata-modal">
+            <div
+              className="chata-modal"
+              // onScroll={e => console.log('SCROLL START')}
+              style={{
+                ...this.props.style,
+                width: this.props.width,
+                height: this.props.height
+              }}
+            >
               <div className="chata-modal-header">
                 {this.props.title}
                 <MdClose
@@ -40,20 +58,18 @@ export default class Modal extends React.Component {
                 />
               </div>
               <div className="chata-modal-body">{this.props.children}</div>
-              <div className="chata-modal-footer">
-                <div
-                  className="chata-confirm-btn no"
-                  onClick={this.props.onClose}
-                >
-                  Cancel
+              {this.props.showFooter && (
+                <div className="chata-modal-footer">
+                  {this.props.showCancelButton && (
+                    <Button type="default" onClick={this.props.onClose}>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button type="primary" onClick={this.props.onConfirm}>
+                    {this.props.confirmText || 'Ok'}
+                  </Button>
                 </div>
-                <div
-                  className="chata-confirm-btn yes"
-                  onClick={this.props.onConfirm}
-                >
-                  Save Columns
-                </div>
-              </div>
+              )}
             </div>
           }
         >

@@ -60,6 +60,7 @@ export default class ChataStackedColumnChart extends Component {
 
   render = () => {
     const {
+      activeChartElementKey,
       tooltipFormatter,
       onChartClick,
       rightMargin,
@@ -154,6 +155,7 @@ export default class ChataStackedColumnChart extends Component {
             legendColumn={columns[0]}
             legendScale={this.legendScale}
             chartColors={chartColors}
+            activeKey={activeChartElementKey}
           />
         </g>
       </ErrorBoundary>

@@ -71,7 +71,8 @@ export default class ResponseRenderer extends React.Component {
     width: PropTypes.number,
     demo: PropTypes.bool,
     comparisonDisplay: PropTypes.string,
-    hideColumnCallback: PropTypes.func
+    hideColumnCallback: PropTypes.func,
+    activeChartElementKey: PropTypes.string
   }
 
   static defaultProps = {
@@ -95,6 +96,7 @@ export default class ResponseRenderer extends React.Component {
     demo: false,
     comparisonDisplay: 'PERCENT',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
+    activeChartElementKey: undefined,
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {},
     hideColumnCallback: () => {}
@@ -408,7 +410,7 @@ export default class ResponseRenderer extends React.Component {
     }
   }
 
-  onChartClick = (row, column) => {
+  onChartClick = ({ row, column, activeKey }) => {
     let groupByObject = {}
     if (
       this.pivotTableColumns &&
@@ -428,7 +430,7 @@ export default class ResponseRenderer extends React.Component {
       )
     }
     if (!this.props.disableDrilldowns) {
-      this.props.processDrilldown(groupByObject, this.queryID)
+      this.props.processDrilldown(groupByObject, this.queryID, activeKey)
     }
   }
 
@@ -521,6 +523,7 @@ export default class ResponseRenderer extends React.Component {
           languageCode={this.props.languageCode}
           chartColors={this.props.chartColors}
           backgroundColor={this.props.backgroundColor}
+          activeChartElementKey={this.props.activeChartElementKey}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {

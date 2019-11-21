@@ -19,6 +19,7 @@ import { bubblesIcon } from '../../svgIcons.js'
 // Components
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
+import { Button } from '../Button'
 import {
   runQuery,
   runQueryOnly,
@@ -542,20 +543,22 @@ export default class ChatDrawer extends React.Component {
                 <MdError className="chata-confirm-icon" />
                 Clear all messages?
               </div>
-              <button
+              <Button
+                type="default"
+                size="small"
                 onClick={() =>
                   this.setState({ isClearMessageConfirmVisible: false })
                 }
-                className="chata-confirm-btn no"
               >
                 No
-              </button>
-              <button
-                className="chata-confirm-btn yes"
+              </Button>
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => this.clearMessages()}
               >
                 Yes
-              </button>
+              </Button>
             </div>
           }
         >

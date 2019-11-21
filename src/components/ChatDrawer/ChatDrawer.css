@@ -248,32 +248,6 @@
 .chata-confirm-text {
   text-align: center;
 }
-.chata-confirm-btn {
-  margin: 7px 0px 0 5px;
-  border-radius: 4px;
-  cursor: pointer;
-  outline: none !important;
-  transition: all 0.2s ease;
-  width: auto;
-  display: inline-block;
-}
-.chata-confirm-btn.yes {
-  background: var(--chata-drawer-accent-color);
-  border: 1px solid var(--chata-drawer-accent-color);
-  color: white;
-}
-.chata-confirm-btn.yes:hover {
-  opacity: 0.8;
-}
-.chata-confirm-btn.no {
-  color: inherit;
-  border: 1px solid #a7a7a7;
-  background: inherit;
-}
-.chata-confirm-btn.no:hover {
-  border-color: var(--chata-drawer-accent-color);
-  color: var(--chata-drawer-accent-color);
-}
 .chata-confirm-icon {
   color: #faad14;
   vertical-align: middle;

@@ -6,7 +6,7 @@ export default class Circles extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeKey
   }
 
   render() {
@@ -40,14 +40,21 @@ export default class Circles extends Component {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
-            this.props.onChartClick(d[labelValueX], d[labelValueY])
+            this.props.onChartClick({
+              row: d[labelValueX],
+              column: d[labelValueY],
+              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
+            })
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
           style={{
             stroke: 'transparent',
             strokeWidth: 10,
-            fill: this.props.chartColors[0],
+            fill:
+              this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
+                ? this.props.chartColors[1]
+                : this.props.chartColors[0],
             fillOpacity: 0.7
           }}
         />

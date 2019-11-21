@@ -35,7 +35,7 @@ export default class Axis extends Component {
   }
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeChartElementKey
   }
 
   componentDidMount = () => {
@@ -136,7 +136,10 @@ export default class Axis extends Component {
           // Put it back if it is expanded
           self.setState({ activeKey: null })
         } else {
-          self.props.onChartClick(_get(d, 'data.value.origRow', []))
+          self.props.onChartClick({
+            row: _get(d, 'data.value.origRow', []),
+            activeKey: d.data.value[self.props.labelValue]
+          })
           self.setState({ activeKey: d.data.value[self.props.labelValue] })
         }
       })

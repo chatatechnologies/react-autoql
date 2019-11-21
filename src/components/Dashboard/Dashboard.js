@@ -8,11 +8,17 @@ import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
+import { Modal } from '../Modal'
 import DashboardTile from './DashboardTile'
+import { ResponseRenderer } from '../ResponseRenderer'
+import { runDrilldown } from '../../js/queryService'
+import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { CHART_TYPES } from '../../js/Constants'
 
 import chataTableStyles from '../ChataTable/ChataTable.css'
-import styles from './DashboardTile.css'
+import styles from './Dashboard.css'
+import tileStyles from './DashboardTile.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -331,6 +337,123 @@ class Dashboard extends React.Component {
     }
   }
 
+  startDrilldown = (groupByObject, queryID) => {
+    this.setState({ isDrilldownRunning: true })
+    runDrilldown({
+      queryID,
+      groupByObject,
+      demo: this.props.demo,
+      debug: this.props.debug,
+      test: this.props.test,
+      domain: this.props.domain,
+      apiKey: this.props.apiKey,
+      customerId: this.props.customerId,
+      userId: this.props.userId,
+      token: this.props.token
+    })
+      .then(drilldownResponse => {
+        this.setState({
+          activeDrilldownResponse: drilldownResponse,
+          isDrilldownRunning: false
+        })
+      })
+      .catch(error => {
+        console.error(error)
+        this.setState({ isDrilldownRunning: false })
+      })
+  }
+
+  processDrilldown = (tileId, groupByObject, queryID, activeKey) => {
+    document.documentElement.style.setProperty('overflow', 'hidden')
+
+    this.setState({
+      isDrilldownModalVisible: true,
+      activeDrilldownTile: tileId,
+      activeDrilldownResponse: null,
+      activeDrilldownChartElementKey: activeKey
+    })
+
+    this.startDrilldown(groupByObject, queryID)
+  }
+
+  shouldShowOriginalQuery = tile => {
+    return CHART_TYPES.includes(tile.displayType)
+  }
+
+  renderDrilldownModal = () => {
+    const tile = this.props.tiles.find(
+      tile => tile.i === this.state.activeDrilldownTile
+    )
+
+    return (
+      <Modal
+        className=""
+        title={tile ? tile.query : ''}
+        isVisible={this.state.isDrilldownModalVisible}
+        width={800}
+        style={{ marginTop: '45px' }}
+        confirmText="Done"
+        showFooter={false}
+        onClose={() => {
+          this.setState({
+            isDrilldownModalVisible: false,
+            activeDrilldownTile: null
+          })
+          // This gets glitchy if you do it at the same time as the state update
+          setTimeout(
+            () =>
+              document.documentElement.style.setProperty('overflow', 'auto'),
+            300
+          )
+        }}
+      >
+        <Fragment>
+          {tile && this.shouldShowOriginalQuery(tile) && (
+            <div className="chata-dashboard-drilldown-original">
+              <ResponseRenderer
+                response={tile.queryResponse}
+                displayType={tile.displayType}
+                currencyCode={this.props.currencyCode}
+                languageCode={this.props.languageCode}
+                chartColors={this.props.chartColors}
+                backgroundColor={document.documentElement.style.getPropertyValue(
+                  '--chata-dashboard-background-color'
+                )}
+                processDrilldown={this.startDrilldown}
+                activeChartElementKey={
+                  this.state.activeDrilldownChartElementKey
+                }
+              />
+            </div>
+          )}
+          <div className="chata-dashboard-drilldown-table">
+            {this.state.isDrilldownRunning ? (
+              <div className="dashboard-tile-loading-container">
+                <LoadingDots />
+              </div>
+            ) : (
+              <ResponseRenderer
+                response={this.state.activeDrilldownResponse}
+                renderTooltips={false}
+                enableSafetyNet={false}
+                enableSuggestions={false}
+                disableDrilldowns={true}
+                currencyCode={this.props.currencyCode}
+                languageCode={this.props.languageCode}
+                // chartColors={this.props.chartColors}
+                backgroundColor={document.documentElement.style.getPropertyValue(
+                  '--chata-dashboard-background-color'
+                )}
+                // height={300}
+                demo={this.props.demo}
+              />
+            )}
+          </div>
+        </Fragment>
+      </Modal>
+    )
+  }
+
   render = () => {
     const tileLayout = this.props.tiles.map(tile => {
       return {
@@ -346,6 +469,7 @@ class Dashboard extends React.Component {
       <ErrorBoundary>
         <Fragment>
           <style>{`${styles}`}</style>
+          <style>{`${tileStyles}`}</style>
           <style>{`${chataTableStyles}`}</style>
           <style>{`${gridLayoutStyles}`}</style>
           <div
@@ -353,11 +477,6 @@ class Dashboard extends React.Component {
             className={`chata-dashboard-container${
               this.props.isEditing ? ' edit-mode' : ''
             }`}
-            style={{
-              height: '100%',
-              width: '100%',
-              overflow: 'hidden'
-            }}
           >
             <ReactGridLayout
               onLayoutChange={layout => {
@@ -404,10 +523,12 @@ class Dashboard extends React.Component {
                   languageCode={this.props.languageCode}
                   notExecutedText={this.props.notExecutedText}
                   chartColors={this.props.chartColors}
+                  processDrilldown={this.processDrilldown}
                 />
               ))}
             </ReactGridLayout>
           </div>
+          {this.renderDrilldownModal()}
           <ReactTooltip
             className="chata-chart-tooltip"
             id="chart-element-tooltip"

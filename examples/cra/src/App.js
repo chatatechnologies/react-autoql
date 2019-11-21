@@ -223,6 +223,9 @@ export default class App extends Component {
       )
     } catch (error) {
       console.error(error)
+      // Clear tokens
+      localStorage.setItem('loginToken', null)
+      localStorage.setItem('jwtToken', null)
       this.setState({ isAuthenticated: false })
       return message.error('Login Unsuccessful. Check logs for details.')
     }

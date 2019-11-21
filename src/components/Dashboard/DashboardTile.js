@@ -284,6 +284,7 @@ export default class DashboardTile extends React.Component {
           {this.props.queryResponse && !this.state.isExecuting ? (
             <Fragment>
               <ResponseRenderer
+                ref={ref => (this.responseRef = ref)}
                 displayType={this.props.displayType}
                 response={this.props.queryResponse}
                 renderTooltips={false}
@@ -296,6 +297,14 @@ export default class DashboardTile extends React.Component {
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
                 chartColors={this.props.chartColors}
+                processDrilldown={(groupByObject, queryID, activeKey) =>
+                  this.props.processDrilldown(
+                    this.props.tile.i,
+                    groupByObject,
+                    queryID,
+                    activeKey
+                  )
+                }
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
                 )}

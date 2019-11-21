@@ -39,6 +39,7 @@ export default class ChataBubbleChart extends Component {
 
   render = () => {
     const {
+      activeChartElementKey,
       tooltipFormatter,
       onChartClick,
       bottomMargin,
@@ -140,6 +141,7 @@ export default class ChataBubbleChart extends Component {
             onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}
             chartColors={chartColors}
+            activeKey={activeChartElementKey}
           />
         }
       </g>

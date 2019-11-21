@@ -1,3 +1,13 @@
+.chata-dashboard-container {
+  background: #fafafa;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.chata-dashboard-container.edit-mode {
+  padding-bottom: 200px;
+}
+
 .chata-drawer-tooltip {
   font-family: var(--chata-dashboard-font-family), sans-serif;
   letter-spacing: 0.04em;
@@ -5,4 +15,15 @@
   transition: none;
   opacity: 1 !important;
   z-index: 99999; /* necessary to show up on top of rc drawer */
+}
+
+.chata-dashboard-drilldown-original {
+  flex: 0 0 34vh;
+  height: 34vh;
+  padding-bottom: 20px;
+}
+.chata-dashboard-drilldown-table {
+  flex: 1;
+  height: 30vh;
+  overflow: hidden;
 }

@@ -1,0 +1,27 @@
+.chata-btn {
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none !important;
+  transition: all 0.2s ease;
+  width: auto;
+  display: inline-block;
+}
+
+.chata-btn.default {
+  color: inherit;
+  border: 1px solid #a7a7a7;
+  background: inherit;
+}
+.chata-btn.default:hover {
+  border-color: var(--chata-drawer-accent-color);
+  color: var(--chata-drawer-accent-color);
+}
+
+.chata-btn.primary {
+  background: var(--chata-drawer-accent-color);
+  border: 1px solid var(--chata-drawer-accent-color);
+  color: white;
+}
+.chata-btn.primary:hover {
+  opacity: 0.8;
+}

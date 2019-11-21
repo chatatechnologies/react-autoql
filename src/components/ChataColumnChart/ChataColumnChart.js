@@ -36,6 +36,7 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     const {
+      activeChartElementKey,
       bottomLegendMargin,
       tooltipFormatter,
       chartColors,
@@ -137,6 +138,7 @@ export default class ChataBarChart extends Component {
           onChartClick={onChartClick}
           tooltipFormatter={tooltipFormatter}
           chartColors={chartColors}
+          activeKey={activeChartElementKey}
         />
       </g>
     )

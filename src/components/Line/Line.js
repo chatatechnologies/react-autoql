@@ -12,7 +12,7 @@ export default class Line extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeKey
   }
 
   makeLines = () => {
@@ -66,27 +66,36 @@ export default class Line extends Component {
           <circle
             key={`line-dot-${d[labelValue]}-${series}`}
             className={`line-dot${
-              this.state.activeKey === d[labelValue] ? ' active' : ''
+              this.state.activeKey === `line-dot-${d[labelValue]}-${series}`
+                ? ' active'
+                : ''
             }`}
             cy={yScale(d[dataValues][series])}
             cx={xScale(d[labelValue]) + xShift}
-            stroke="transparent"
-            strokeWidth={5}
-            r={2}
+            r={3}
             onClick={() => {
               this.setState({
                 activeKey: `line-dot-${d[labelValue]}-${series}`
               })
-              this.props.onChartClick(d.origRow)
+              this.props.onChartClick({
+                row: d.origRow,
+                activeKey: `line-dot-${d[labelValue]}-${series}`
+              })
             }}
             data-tip={this.props.tooltipFormatter(d, series)}
             data-for="chart-element-tooltip"
             style={{
-              stroke: 'transparent',
-              strokeWidth: 10,
-              fill: this.colorScale(series),
-              fillOpacity: 0.7
+              cursor: 'pointer',
+              stroke: this.colorScale(series),
+              strokeWidth: 2,
+              strokeOpacity: 0.7,
+              fillOpacity: 1,
+              fill:
+                this.state.activeKey === `line-dot-${d[labelValue]}-${series}`
+                  ? this.colorScale(series)
+                  : this.props.backgroundColor || '#fff'
             }}
+            // onHover={{}}
           />
         )
       })

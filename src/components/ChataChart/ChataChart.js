@@ -263,7 +263,8 @@ export default class ChataChart extends Component {
       onChartClick,
       currencyCode,
       languageCode,
-      chartColors
+      chartColors,
+      activeChartElementKey
     } = this.props
 
     return {
@@ -280,7 +281,8 @@ export default class ChataChart extends Component {
       onChartClick,
       currencyCode,
       languageCode,
-      chartColors
+      chartColors,
+      activeChartElementKey
     }
   }
 

@@ -16,7 +16,7 @@ export default class Squares extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeKey
   }
 
   getFillOpacity = value => {
@@ -38,6 +38,9 @@ export default class Squares extends Component {
     const { xScale, yScale } = scales
 
     const squares = data.map(d => {
+      const fillColor =
+        d[dataValue] >= 0 ? this.props.chartColors[0] : 'rgba(221, 106, 106)'
+      const activeFillColor = this.props.chartColors[1]
       return (
         <rect
           key={`${d[labelValueX]}-${d[labelValueY]}`}
@@ -59,17 +62,32 @@ export default class Squares extends Component {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
-            this.props.onChartClick(d[labelValueX], d[labelValueY])
+            this.props.onChartClick({
+              row: d[labelValueX],
+              column: d[labelValueY],
+              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
+            })
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
+          stroke={activeFillColor}
+          stroke-width="2px"
+          stroke-opacity={
+            this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
+              ? 1
+              : 0
+          }
           // chosen color for positive values and red for negative values
           fill={
-            d[dataValue] >= 0
-              ? this.props.chartColors[0]
-              : 'rgba(221, 106, 106)'
+            this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
+              ? activeFillColor
+              : fillColor
           }
-          fillOpacity={this.opacityScale(Math.abs(d[dataValue]))}
+          fillOpacity={
+            this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
+              ? 1
+              : this.opacityScale(Math.abs(d[dataValue]))
+          }
         />
       )
     })

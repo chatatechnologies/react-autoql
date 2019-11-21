@@ -4,7 +4,7 @@ export default class StackedBars extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: null
+    activeKey: this.props.activeKey
   }
 
   X0 = () => this.props.scales.xScale(0)
@@ -66,7 +66,11 @@ export default class StackedBars extends Component {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
-            this.props.onChartClick(d[labelValueX], d[labelValueY])
+            this.props.onChartClick({
+              row: d[labelValueX],
+              column: d[labelValueY],
+              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
+            })
           }}
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
