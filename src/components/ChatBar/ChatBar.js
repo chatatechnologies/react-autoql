@@ -129,7 +129,9 @@ export default class ChatBar extends React.Component {
   }
 
   onFinalTranscript = () => {
-    this.submitQuery()
+    // Disabling auto submit for now
+    // this.submitQuery()
+    this.focus()
   }
 
   setInputRef = ref => {
@@ -224,6 +226,12 @@ export default class ChatBar extends React.Component {
     }
   }
 
+  moveCaretAtEnd = e => {
+    var temp_value = e.target.value
+    e.target.value = ''
+    e.target.value = temp_value
+  }
+
   render = () => {
     return (
       <Fragment>
@@ -257,6 +265,7 @@ export default class ChatBar extends React.Component {
                 onChange: this.onInputChange,
                 onKeyPress: this.onKeyPress,
                 value: this.state.inputValue,
+                onFocus: this.moveCaretAtEnd,
                 autoFocus: true
               }}
             />
@@ -272,6 +281,7 @@ export default class ChatBar extends React.Component {
                 onKeyPress={this.onKeyPress}
                 disabled={this.props.isDisabled}
                 ref={this.setInputRef}
+                onFocus={this.moveCaretAtEnd}
                 autoFocus
               />
             </div>
