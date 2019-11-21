@@ -364,7 +364,7 @@ class Dashboard extends React.Component {
   }
 
   processDrilldown = (tileId, groupByObject, queryID, activeKey) => {
-    document.documentElement.style.setProperty('overflow', 'hidden')
+    // document.documentElement.style.setProperty('overflow', 'hidden')
 
     this.setState({
       isDrilldownModalVisible: true,
@@ -400,11 +400,11 @@ class Dashboard extends React.Component {
             activeDrilldownTile: null
           })
           // This gets glitchy if you do it at the same time as the state update
-          setTimeout(
-            () =>
-              document.documentElement.style.setProperty('overflow', 'auto'),
-            300
-          )
+          // setTimeout(
+          //   () =>
+          //     document.documentElement.style.setProperty('overflow', 'auto'),
+          //   300
+          // )
         }}
       >
         <Fragment>
