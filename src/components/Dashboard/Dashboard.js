@@ -76,6 +76,7 @@ class Dashboard extends React.Component {
     isEditing: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
+    currencyDecimals: PropTypes.number,
     fontFamily: PropTypes.string,
     notExecutedText: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string)
@@ -102,6 +103,7 @@ class Dashboard extends React.Component {
     isEditing: false,
     currencyCode: undefined,
     languageCode: undefined,
+    currencyDecimals: undefined,
     fontFamily: undefined,
     notExecutedText: undefined,
     chartColors: undefined
@@ -415,6 +417,7 @@ class Dashboard extends React.Component {
                 displayType={tile.displayType}
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
+                currencyDecimals={this.props.currencyDecimals}
                 chartColors={this.props.chartColors}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'

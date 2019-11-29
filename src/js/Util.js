@@ -72,19 +72,23 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
     case 'DOLLAR_AMT': {
       if (Number(d) || Number(d) === 0) {
         const currency = currencyCode || 'USD'
-        const sigDigs = String(parseInt(d)).length
+        // const sigDigs = String(parseInt(d)).length
         try {
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: `${currency}`,
-            maximumSignificantDigits: sigDigs
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+            // maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (err) {
           console.error(err)
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: 'USD',
-            maximumSignificantDigits: sigDigs
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+            // maximumSignificantDigits: sigDigs
           }).format(d)
         }
       }
@@ -131,13 +135,14 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
   return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
-export const formatElement = (
+export const formatElement = ({
   element,
   column,
   currencyCode,
   languageCode,
-  htmlElement
-) => {
+  htmlElement,
+  currencyDecimals
+}) => {
   try {
     let formattedElement = element
     if (column) {
@@ -150,20 +155,25 @@ export const formatElement = (
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
           if (Number(element) || Number(element) === 0) {
             const currency = currencyCode || 'USD'
+            const validatedCurrencyDecimals =
+              currencyDecimals || currencyDecimals === 0
+                ? currencyDecimals
+                : undefined
+
             try {
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
                 currency: `${currency}`,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
+                minimumFractionDigits: validatedCurrencyDecimals,
+                maximumFractionDigits: validatedCurrencyDecimals
               }).format(element)
             } catch (err) {
               console.error(err)
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
                 currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
+                minimumFractionDigits: validatedCurrencyDecimals,
+                maximumFractionDigits: validatedCurrencyDecimals
               }).format(element)
             }
           }

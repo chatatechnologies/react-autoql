@@ -65,6 +65,7 @@ export default class App extends Component {
     userId: localStorage.getItem('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
+    currencyDecimals: undefined,
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
     comparisonDisplay: true,
@@ -447,6 +448,14 @@ export default class App extends Component {
           style={{ width: '55px' }}
           defaultValue={this.state.languageCode}
         />
+        <h4>Number of Decimals for Currency Values</h4>
+        <InputNumber
+          type="number"
+          onChange={e => {
+            this.setState({ currencyDecimals: e })
+          }}
+          value={this.state.currencyDecimals}
+        />
         <h4>Customer Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
@@ -665,6 +674,7 @@ export default class App extends Component {
           test={this.state.test}
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
+          currencyDecimals={this.state.currencyDecimals}
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
           handleImage={handleImage}
@@ -760,6 +770,7 @@ export default class App extends Component {
           isEditing={this.state.isEditing}
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
+          currencyDecimals={this.state.currencyDecimals}
           fontFamily={this.state.fontFamily}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}

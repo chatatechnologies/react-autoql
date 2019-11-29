@@ -37,12 +37,14 @@ export default class ChataChart extends Component {
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
-    currencyCode: PropTypes.string
+    currencyCode: PropTypes.string,
+    currencyDecimals: PropTypes.number
   }
 
   static defaultProps = {
     currencyCode: undefined,
-    languageCode: undefined
+    languageCode: undefined,
+    currencyDecimals: undefined
   }
 
   state = {
@@ -157,19 +159,21 @@ export default class ChataChart extends Component {
     try {
       const tooltipElement = `<div>
       <div>
-        <strong>${labelCol.title}:</strong> ${formatElement(
-        data.label,
-        labelCol,
-        this.props.currencyCode,
-        this.props.languageCode
-      )}
+        <strong>${labelCol.title}:</strong> ${formatElement({
+        element: data.label,
+        column: labelCol,
+        currencyCode: this.props.currencyCode,
+        languageCode: this.props.languageCode,
+        currencyDecimals: this.props.currencyDecimals
+      })}
       </div>
-      <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement(
-        data.values[colIndex],
-        valueCols[colIndex],
-        this.props.currencyCode,
-        this.props.languageCode
-      )}
+      <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement({
+        element: data.values[colIndex],
+        column: valueCols[colIndex],
+        currencyCode: this.props.currencyCode,
+        languageCode: this.props.languageCode,
+        currencyDecimals: this.props.currencyDecimals
+      })}
       </div>
     </div>`
       return tooltipElement
@@ -191,28 +195,31 @@ export default class ChataChart extends Component {
 
     return `<div>
     <div>
-      <strong>${labelColY.title}:</strong> ${formatElement(
-      data.labelY,
-      labelColY,
-      this.props.currencyCode,
-      this.props.languageCode
-    )}
+      <strong>${labelColY.title}:</strong> ${formatElement({
+      element: data.labelY,
+      column: labelColY,
+      currencyCode: this.props.currencyCode,
+      languageCode: this.props.languageCode,
+      currencyDecimals: this.props.currencyDecimals
+    })}
     </div>
     <div>
-      <strong>${labelColX.title}:</strong> ${formatElement(
-      data.labelX,
-      labelColX,
-      this.props.currencyCode,
-      this.props.languageCode
-    )}
+      <strong>${labelColX.title}:</strong> ${formatElement({
+      element: data.labelX,
+      column: labelColX,
+      currencyCode: this.props.currencyCode,
+      languageCode: this.props.languageCode,
+      currencyDecimals: this.props.currencyDecimals
+    })}
     </div>
     <div>
-      <strong>${valueCol.title}:</strong> ${formatElement(
-      data.value,
-      valueCol,
-      this.props.currencyCode,
-      this.props.languageCode
-    )}
+      <strong>${valueCol.title}:</strong> ${formatElement({
+      element: data.value,
+      column: valueCol,
+      currencyCode: this.props.currencyCode,
+      languageCode: this.props.languageCode,
+      currencyDecimals: this.props.currencyDecimals
+    })}
     </div>
   </div>`
   }
@@ -264,7 +271,8 @@ export default class ChataChart extends Component {
       currencyCode,
       languageCode,
       chartColors,
-      activeChartElementKey
+      activeChartElementKey,
+      currencyDecimals
     } = this.props
 
     return {
@@ -282,7 +290,8 @@ export default class ChataChart extends Component {
       currencyCode,
       languageCode,
       chartColors,
-      activeChartElementKey
+      activeChartElementKey,
+      currencyDecimals
     }
   }
 
@@ -331,19 +340,21 @@ export default class ChataChart extends Component {
         try {
           const tooltipElement = `<div>
           <div>
-            <strong>${columns[0].title}:</strong> ${formatElement(
-            label,
-            columns[0],
-            this.props.currencyCode,
-            this.props.languageCode
-          )}
+            <strong>${columns[0].title}:</strong> ${formatElement({
+            element: label,
+            column: columns[0],
+            currencyCode: this.props.currencyCode,
+            languageCode: this.props.languageCode,
+            currencyDecimals: this.props.currencyDecimals
+          })}
           </div>
-          <div><strong>${columns[1].title}:</strong> ${formatElement(
-            value,
-            columns[1],
-            this.props.currencyCode,
-            this.props.languageCode
-          )}
+          <div><strong>${columns[1].title}:</strong> ${formatElement({
+            element: value,
+            column: columns[1],
+            currencyCode: this.props.currencyCode,
+            languageCode: this.props.languageCode,
+            currencyDecimals: this.props.currencyDecimals
+          })}
           </div>
         </div>`
           return tooltipElement

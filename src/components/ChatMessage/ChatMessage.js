@@ -44,7 +44,8 @@ export default class ChatMessage extends React.Component {
     debug: PropTypes.bool,
     demo: PropTypes.bool,
     comparisonDisplay: PropTypes.string,
-    enableColumnEditor: PropTypes.bool
+    enableColumnEditor: PropTypes.bool,
+    currencyDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -60,6 +61,7 @@ export default class ChatMessage extends React.Component {
     demo: false,
     currencyCode: undefined,
     languageCode: undefined,
+    currencyDecimals: undefined,
     comparisonDisplay: 'ratio',
     enableColumnEditor: true
   }
@@ -108,6 +110,7 @@ export default class ChatMessage extends React.Component {
           tableOptions={this.props.tableOptions}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
+          currencyDecimals={this.props.currencyDecimals}
           chartColors={this.props.chartColors}
           comparisonDisplay={this.props.comparisonDisplay}
           setFilterTagsCallback={this.setFilterTags}

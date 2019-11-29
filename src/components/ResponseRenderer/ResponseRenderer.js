@@ -72,7 +72,8 @@ export default class ResponseRenderer extends React.Component {
     demo: PropTypes.bool,
     comparisonDisplay: PropTypes.string,
     hideColumnCallback: PropTypes.func,
-    activeChartElementKey: PropTypes.string
+    activeChartElementKey: PropTypes.string,
+    currencyDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -91,6 +92,7 @@ export default class ResponseRenderer extends React.Component {
     enableSuggestions: true,
     currencyCode: undefined,
     languageCode: undefined,
+    currencyDecimals: undefined,
     height: undefined,
     width: undefined,
     demo: false,
@@ -350,12 +352,13 @@ export default class ResponseRenderer extends React.Component {
           )
         }}
       >
-        {formatElement(
-          this.tableData[0],
-          this.tableColumns[0],
-          this.props.currencyCode,
-          this.props.languageCode
-        )}
+        {formatElement({
+          element: this.tableData[0],
+          column: this.tableColumns[0],
+          currencyCode: this.props.currencyCode,
+          languageCode: this.props.languageCode,
+          currencyDecimals: this.props.currencyDecimals
+        })}
       </a>
     )
   }
@@ -521,6 +524,7 @@ export default class ResponseRenderer extends React.Component {
           width={width}
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
+          currencyDecimals={this.props.currencyDecimals}
           chartColors={this.props.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -600,12 +604,13 @@ export default class ResponseRenderer extends React.Component {
                 label: row[0],
                 values,
                 formatter: (value, column) => {
-                  return formatElement(
-                    value,
+                  return formatElement({
+                    element: value,
                     column,
-                    this.props.currencyCode,
-                    this.props.languageCode
-                  )
+                    currencyCode: this.props.currencyCode,
+                    languageCode: this.props.languageCode,
+                    currencyDecimals: this.props.currencyDecimals
+                  })
                 }
               }
             } else {
@@ -624,12 +629,13 @@ export default class ResponseRenderer extends React.Component {
             labelY: row[0],
             value: Number(row[2]) || row[2],
             formatter: (value, column) => {
-              return formatElement(
-                value,
+              return formatElement({
+                element: value,
                 column,
-                this.props.currencyCode,
-                this.props.languageCode
-              )
+                currencyCode: this.props.currencyCode,
+                languageCode: this.props.languageCode,
+                currencyDecimals: this.props.currencyDecimals
+              })
             }
           }
         })
@@ -760,13 +766,14 @@ export default class ResponseRenderer extends React.Component {
 
       // Cell formattingg
       col.formatter = (cell, formatterParams, onRendered) => {
-        return formatElement(
-          cell.getValue(),
-          col,
-          this.props.currencyCode,
-          this.props.languageCode,
-          cell.getElement()
-        )
+        return formatElement({
+          element: cell.getValue(),
+          column: col,
+          currencyCode: this.props.currencyCode,
+          languageCode: this.props.languageCode,
+          currencyDecimals: this.props.currencyDecimals,
+          htmlElement: cell.getElement()
+        })
       }
 
       // Always have filtering enabled, but only
@@ -901,12 +908,13 @@ export default class ResponseRenderer extends React.Component {
       }
     ]
     Object.keys(uniqueValues1).forEach((columnName, i) => {
-      const formattedColumnName = formatElement(
-        columnName,
-        this.tableColumns[1],
-        this.props.currencyCode,
-        this.props.languageCode
-      )
+      const formattedColumnName = formatElement({
+        element: columnName,
+        column: this.tableColumns[1],
+        currencyCode: this.props.currencyCode,
+        languageCode: this.props.languageCode,
+        currencyDecimals: this.props.currencyDecimals
+      })
       pivotTableColumns.push({
         ...this.tableColumns[2], // value column
         name: columnName,

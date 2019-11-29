@@ -95,6 +95,7 @@ export default class ChatDrawer extends React.Component {
     test: PropTypes.bool,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
+    currencyDecimals: PropTypes.number,
     comparisonDisplay: PropTypes.string,
     enableQueryTipsTab: PropTypes.bool,
     enableColumnEditor: PropTypes.bool,
@@ -133,6 +134,7 @@ export default class ChatDrawer extends React.Component {
     introMessage: undefined,
     currencyCode: undefined,
     languageCode: undefined,
+    currencyDecimals: undefined,
     chartColors: undefined,
     enableQueryTipsTab: true,
     enableColumnEditor: true,
@@ -644,6 +646,7 @@ export default class ChatDrawer extends React.Component {
                     lastMessageId={this.state.lastMessageId}
                     currencyCode={this.props.currencyCode}
                     languageCode={this.props.languageCode}
+                    currencyDecimals={this.props.currencyDecimals}
                     chartColors={this.props.chartColors}
                     comparisonDisplay={this.props.comparisonDisplay}
                     enableColumnEditor={this.props.enableColumnEditor}

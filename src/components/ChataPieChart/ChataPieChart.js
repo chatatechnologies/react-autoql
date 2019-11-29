@@ -12,9 +12,7 @@ import { entries } from 'd3-collection'
 import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
-import dayjs from 'dayjs'
-
-import { formatChartLabel, formatElement } from '../../js/Util'
+import { formatElement } from '../../js/Util'
 
 export default class Axis extends Component {
   CHART_ID = uuid.v4()
@@ -25,12 +23,18 @@ export default class Axis extends Component {
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
     onChartClick: PropTypes.func,
     margin: PropTypes.number,
-    backgroundColor: PropTypes.string
+    backgroundColor: PropTypes.string,
+    currencyCode: PropTypes.string,
+    languageCode: PropTypes.string,
+    currencyDecimals: PropTypes.number
   }
 
   static defaultProps = {
     margin: 20,
     backgroundColor: 'transparent',
+    currencyCode: undefined,
+    languageCode: undefined,
+    currencyDecimals: undefined,
     onChartClick: () => {}
   }
 
@@ -188,7 +192,13 @@ export default class Axis extends Component {
       const legendString = `${formatElement(
         d[labelValue],
         _get(d, 'origColumns[0]')
-      )}: ${formatElement(d[dataValue][0], _get(d, 'origColumns[1]'))}`
+      )}: ${formatElement({
+        element: d[dataValue][0],
+        column: _get(d, 'origColumns[1]'),
+        currencyCode: this.props.currencyCode,
+        languageCode: this.props.languageCode,
+        currencyDecimals: this.props.currencyDecimals
+      })}`
       return legendString.trim()
     })
 

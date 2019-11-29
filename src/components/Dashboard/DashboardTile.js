@@ -31,7 +31,8 @@ export default class DashboardTile extends React.Component {
     chartColors: PropTypes.arrayOf(PropTypes.string),
     queryResponse: PropTypes.shape({}),
     currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    languageCode: PropTypes.string,
+    currencyDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -48,6 +49,7 @@ export default class DashboardTile extends React.Component {
     selectedSuggestion: undefined,
     currencyCode: undefined,
     languageCode: undefined,
+    currencyDecimals: undefined,
     chartColors: undefined
   }
 
@@ -296,6 +298,7 @@ export default class DashboardTile extends React.Component {
                 enableSuggestions={this.props.isEditing}
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
+                currencyDecimals={this.props.currencyDecimals}
                 chartColors={this.props.chartColors}
                 processDrilldown={(groupByObject, queryID, activeKey) =>
                   this.props.processDrilldown(
