@@ -61,6 +61,7 @@ class Dashboard extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    username: PropTypes.string,
     domain: PropTypes.string,
     executeOnMount: PropTypes.bool,
     executeOnStopEditing: PropTypes.bool,
@@ -88,6 +89,7 @@ class Dashboard extends React.Component {
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
+    username: undefined,
     domain: undefined,
     theme: 'light',
     disableDrilldowns: false,
@@ -351,6 +353,7 @@ class Dashboard extends React.Component {
       apiKey: this.props.apiKey,
       customerId: this.props.customerId,
       userId: this.props.userId,
+      username: this.props.username,
       token: this.props.token
     })
       .then(drilldownResponse => {
@@ -513,6 +516,7 @@ class Dashboard extends React.Component {
                   apiKey={this.props.apiKey}
                   customerId={this.props.customerId}
                   userId={this.props.userId}
+                  username={this.props.username}
                   domain={this.props.domain}
                   demo={this.props.demo}
                   debug={this.props.debug}

@@ -20,6 +20,7 @@ export default class DashboardTile extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    username: PropTypes.string,
     domain: PropTypes.string,
     demo: PropTypes.bool.isRequired,
     debug: PropTypes.bool.isRequired,
@@ -43,6 +44,7 @@ export default class DashboardTile extends React.Component {
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
+    username: undefined,
     domain: undefined,
     isNewTile: false,
     safetyNetSelections: undefined,
@@ -114,6 +116,7 @@ export default class DashboardTile extends React.Component {
           apiKey: this.props.apiKey,
           customerId: this.props.customerId,
           userId: this.props.userId,
+          username: this.props.username,
           token: this.props.token
         })
           .then(response => this.endQuery(response))
@@ -128,6 +131,7 @@ export default class DashboardTile extends React.Component {
           apiKey: this.props.apiKey,
           customerId: this.props.customerId,
           userId: this.props.userId,
+          username: this.props.username,
           token: this.props.token,
           useSafetyNet: !this.props.isEditing
             ? false

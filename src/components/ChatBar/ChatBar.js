@@ -22,6 +22,7 @@ export default class ChatBar extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    username: PropTypes.string,
     domain: PropTypes.string,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
@@ -44,6 +45,7 @@ export default class ChatBar extends React.Component {
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
+    username: undefined,
     enableVoiceRecord: false,
     isDisabled: false,
     enableAutocomplete: true,
@@ -82,6 +84,7 @@ export default class ChatBar extends React.Component {
           apiKey: this.props.apiKey,
           customerId: this.props.customerId,
           userId: this.props.userId,
+          username: this.props.username,
           token: this.props.token
         })
           .then(response => {
@@ -103,6 +106,7 @@ export default class ChatBar extends React.Component {
           apiKey: this.props.apiKey,
           customerId: this.props.customerId,
           userId: this.props.userId,
+          username: this.props.username,
           token: this.props.token
         })
           .then(response => {

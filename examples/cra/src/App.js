@@ -62,7 +62,8 @@ export default class App extends Component {
     apiKey: localStorage.getItem('api-key') || '',
     customerId: localStorage.getItem('customer-id') || '',
     domain: localStorage.getItem('domain-url') || '',
-    userId: localStorage.getItem('user-id') || '',
+    username: localStorage.getItem('user-id') || '',
+    userId: localStorage.getItem('userid') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
@@ -357,7 +358,7 @@ export default class App extends Component {
               </Button>
             </Form>
             <Form onSubmit={e => e.preventDefault()}>
-              <h4>API key</h4>
+              <h4>API key *</h4>
               <Input
                 name="api-key"
                 onChange={e => {
@@ -366,7 +367,7 @@ export default class App extends Component {
                 onBlur={e => localStorage.setItem('api-key', e.target.value)}
                 value={this.state.apiKey}
               />
-              <h4>Customer ID</h4>
+              <h4>Customer ID *</h4>
               <Input
                 name="customer-id"
                 onChange={e => {
@@ -377,16 +378,25 @@ export default class App extends Component {
                 }
                 value={this.state.customerId}
               />
-              <h4>User ID (email)</h4>
+              <h4>User ID *</h4>
               <Input
                 name="user-id"
                 onChange={e => {
                   this.setState({ userId: e.target.value })
                 }}
-                onBlur={e => localStorage.setItem('user-id', e.target.value)}
+                onBlur={e => localStorage.setItem('userid', e.target.value)}
                 value={this.state.userId}
               />
-              <h4>Domain URL</h4>
+              <h4>Username (email)</h4>
+              <Input
+                name="username"
+                onChange={e => {
+                  this.setState({ username: e.target.value })
+                }}
+                onBlur={e => localStorage.setItem('user-id', e.target.value)}
+                value={this.state.username}
+              />
+              <h4>Domain URL *</h4>
               <Input
                 name="domain-url"
                 onChange={e => {
@@ -643,6 +653,7 @@ export default class App extends Component {
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
           domain={this.state.domain}
+          username={this.state.username}
           key={this.state.componentKey}
           isVisible={this.state.isVisible}
           onHandleClick={() =>
@@ -762,6 +773,7 @@ export default class App extends Component {
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
+          username={this.state.username}
           domain={this.state.domain} // required if demo is false
           demo={this.state.demo}
           debug={this.state.debug}

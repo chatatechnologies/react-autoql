@@ -31,7 +31,8 @@ export const runQueryOnly = ({
   apiKey,
   customerId,
   userId,
-  token
+  token,
+  username
 }) => {
   const text = query
   const axiosInstance = axios.create({})
@@ -45,8 +46,9 @@ export const runQueryOnly = ({
 
   const data = {
     text,
+    username: demo ? 'widget-demo' : username || 'widget-user',
     customer_id: customerId,
-    user_id: demo ? 'widget-demo' : userId || 'widget-user',
+    user_id: userId,
     debug,
     test
   }
@@ -109,7 +111,8 @@ export const runQuery = ({
   apiKey,
   customerId,
   userId,
-  token
+  token,
+  username
 }) => {
   const axiosInstance = axios.create({})
 
@@ -153,7 +156,8 @@ export const runQuery = ({
           apiKey,
           customerId,
           userId,
-          token
+          token,
+          username
         })
       })
       .catch(() => {
@@ -166,7 +170,8 @@ export const runQuery = ({
           apiKey,
           customerId,
           userId,
-          token
+          token,
+          username
         })
       })
   }
@@ -179,7 +184,8 @@ export const runQuery = ({
     domain,
     apiKey,
     customerId,
-    userId
+    userId,
+    username
   })
 }
 
@@ -193,7 +199,8 @@ export const runDrilldown = ({
   apiKey,
   customerId,
   userId,
-  token
+  token,
+  username
 }) => {
   const axiosInstance = axios.create({})
 
@@ -203,7 +210,8 @@ export const runDrilldown = ({
     customer_id: customerId,
     user_id: userId,
     debug,
-    test
+    test,
+    username
   }
 
   if (demo) {

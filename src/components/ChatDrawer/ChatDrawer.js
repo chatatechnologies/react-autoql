@@ -69,6 +69,7 @@ export default class ChatDrawer extends React.Component {
     apiKey: PropTypes.string,
     customerId: PropTypes.string,
     userId: PropTypes.string,
+    username: PropTypes.string,
     domain: PropTypes.string,
     placement: PropTypes.string,
     maskClosable: PropTypes.bool,
@@ -107,6 +108,7 @@ export default class ChatDrawer extends React.Component {
     apiKey: undefined,
     customerId: undefined,
     userId: undefined,
+    username: undefined,
     placement: 'right',
     maskClosable: true,
     isVisible: true,
@@ -335,6 +337,7 @@ export default class ChatDrawer extends React.Component {
       apiKey: this.props.apiKey,
       customerId: this.props.customerId,
       userId: this.props.userId,
+      username: this.props.username,
       token: this.props.token
     })
       .then(response => {
@@ -385,6 +388,7 @@ export default class ChatDrawer extends React.Component {
         apiKey: this.props.apiKey,
         customerId: this.props.customerId,
         userId: this.props.userId,
+        username: this.props.username,
         token: this.props.token
       })
         .then(response => {
@@ -696,6 +700,7 @@ export default class ChatDrawer extends React.Component {
             apiKey={this.props.apiKey}
             customerId={this.props.customerId}
             userId={this.props.userId}
+            username={this.props.username}
             domain={this.props.domain}
             demo={this.props.demo}
             debug={this.props.debug}
