@@ -67,6 +67,7 @@ export default class App extends Component {
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
+    quantityDecimals: undefined,
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
     comparisonDisplay: true,
@@ -466,6 +467,14 @@ export default class App extends Component {
           }}
           value={this.state.currencyDecimals}
         />
+        <h4>Number of Decimals for Quantity Values</h4>
+        <InputNumber
+          type="number"
+          onChange={e => {
+            this.setState({ quantityDecimals: e })
+          }}
+          value={this.state.quantityDecimals}
+        />
         <h4>Customer Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
@@ -686,6 +695,7 @@ export default class App extends Component {
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
           currencyDecimals={this.state.currencyDecimals}
+          quantityDecimals={this.state.quantityDecimals}
           chartColors={this.state.chartColors}
           comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
           handleImage={handleImage}
@@ -783,6 +793,7 @@ export default class App extends Component {
           currencyCode={this.state.currencyCode}
           languageCode={this.state.languageCode}
           currencyDecimals={this.state.currencyDecimals}
+          quantityDecimals={this.state.quantityDecimals}
           fontFamily={this.state.fontFamily}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}

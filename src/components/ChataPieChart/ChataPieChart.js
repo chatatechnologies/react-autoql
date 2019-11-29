@@ -26,7 +26,8 @@ export default class Axis extends Component {
     backgroundColor: PropTypes.string,
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number
+    currencyDecimals: PropTypes.number,
+    quantityDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -35,6 +36,7 @@ export default class Axis extends Component {
     currencyCode: undefined,
     languageCode: undefined,
     currencyDecimals: undefined,
+    quantityDecimals: undefined,
     onChartClick: () => {}
   }
 
@@ -197,7 +199,8 @@ export default class Axis extends Component {
         column: _get(d, 'origColumns[1]'),
         currencyCode: this.props.currencyCode,
         languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals
+        currencyDecimals: this.props.currencyDecimals,
+        quantityDecimals: this.props.quantityDecimals
       })}`
       return legendString.trim()
     })

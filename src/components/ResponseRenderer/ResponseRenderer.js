@@ -73,7 +73,8 @@ export default class ResponseRenderer extends React.Component {
     comparisonDisplay: PropTypes.string,
     hideColumnCallback: PropTypes.func,
     activeChartElementKey: PropTypes.string,
-    currencyDecimals: PropTypes.number
+    currencyDecimals: PropTypes.number,
+    quantityDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -93,6 +94,7 @@ export default class ResponseRenderer extends React.Component {
     currencyCode: undefined,
     languageCode: undefined,
     currencyDecimals: undefined,
+    quantityDecimals: undefined,
     height: undefined,
     width: undefined,
     demo: false,
@@ -357,7 +359,8 @@ export default class ResponseRenderer extends React.Component {
           column: this.tableColumns[0],
           currencyCode: this.props.currencyCode,
           languageCode: this.props.languageCode,
-          currencyDecimals: this.props.currencyDecimals
+          currencyDecimals: this.props.currencyDecimals,
+          quantityDecimals: this.props.quantityDecimals
         })}
       </a>
     )
@@ -525,6 +528,7 @@ export default class ResponseRenderer extends React.Component {
           currencyCode={this.props.currencyCode}
           languageCode={this.props.languageCode}
           currencyDecimals={this.props.currencyDecimals}
+          quantityDecimals={this.props.quantityDecimals}
           chartColors={this.props.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -609,7 +613,8 @@ export default class ResponseRenderer extends React.Component {
                     column,
                     currencyCode: this.props.currencyCode,
                     languageCode: this.props.languageCode,
-                    currencyDecimals: this.props.currencyDecimals
+                    currencyDecimals: this.props.currencyDecimals,
+                    quantityDecimals: this.props.quantityDecimals
                   })
                 }
               }
@@ -634,7 +639,8 @@ export default class ResponseRenderer extends React.Component {
                 column,
                 currencyCode: this.props.currencyCode,
                 languageCode: this.props.languageCode,
-                currencyDecimals: this.props.currencyDecimals
+                currencyDecimals: this.props.currencyDecimals,
+                quantityDecimals: this.props.quantityDecimals
               })
             }
           }
@@ -772,6 +778,7 @@ export default class ResponseRenderer extends React.Component {
           currencyCode: this.props.currencyCode,
           languageCode: this.props.languageCode,
           currencyDecimals: this.props.currencyDecimals,
+          quantityDecimals: this.props.quantityDecimals,
           htmlElement: cell.getElement()
         })
       }
@@ -913,7 +920,8 @@ export default class ResponseRenderer extends React.Component {
         column: this.tableColumns[1],
         currencyCode: this.props.currencyCode,
         languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals
+        currencyDecimals: this.props.currencyDecimals,
+        quantityDecimals: this.props.quantityDecimals
       })
       pivotTableColumns.push({
         ...this.tableColumns[2], // value column

@@ -141,7 +141,8 @@ export const formatElement = ({
   currencyCode,
   languageCode,
   htmlElement,
-  currencyDecimals
+  currencyDecimals,
+  quantityDecimals
 }) => {
   try {
     let formattedElement = element
@@ -180,8 +181,14 @@ export const formatElement = ({
           break
         }
         case 'QUANTITY': {
+          const validatedQuantityDecimals =
+            quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
+
           if (Number(element) && Number(element) % 1 !== 0) {
-            formattedElement = Numbro(element).format('0,0.0')
+            formattedElement = Numbro(element).format({
+              thousandSeparated: true,
+              mantissa: validatedQuantityDecimals
+            })
           }
           break
         }

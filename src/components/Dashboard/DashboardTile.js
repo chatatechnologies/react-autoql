@@ -33,7 +33,8 @@ export default class DashboardTile extends React.Component {
     queryResponse: PropTypes.shape({}),
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number
+    currencyDecimals: PropTypes.number,
+    quantityDecimals: PropTypes.number
   }
 
   static defaultProps = {
@@ -52,6 +53,7 @@ export default class DashboardTile extends React.Component {
     currencyCode: undefined,
     languageCode: undefined,
     currencyDecimals: undefined,
+    quantityDecimals: undefined,
     chartColors: undefined
   }
 
@@ -303,6 +305,7 @@ export default class DashboardTile extends React.Component {
                 currencyCode={this.props.currencyCode}
                 languageCode={this.props.languageCode}
                 currencyDecimals={this.props.currencyDecimals}
+                quantityDecimals={this.props.quantityDecimals}
                 chartColors={this.props.chartColors}
                 processDrilldown={(groupByObject, queryID, activeKey) =>
                   this.props.processDrilldown(
