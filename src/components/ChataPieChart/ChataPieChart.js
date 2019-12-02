@@ -191,11 +191,11 @@ export default class Axis extends Component {
     const { height, margin, labelValue, dataValue, chartColors } = this.props
 
     const legendLabels = this.sortedData.map(d => {
-      const legendString = `${formatElement(
-        d[labelValue],
-        _get(d, 'origColumns[0]')
-      )}: ${formatElement({
-        element: d[dataValue][0],
+      const legendString = `${formatElement({
+        element: d[labelValue] || 'Untitled Category',
+        column: _get(d, 'origColumns[0]')
+      })}: ${formatElement({
+        element: d[dataValue][0] || 0,
         column: _get(d, 'origColumns[1]'),
         currencyCode: this.props.currencyCode,
         languageCode: this.props.languageCode,
