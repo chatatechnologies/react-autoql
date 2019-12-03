@@ -1,32 +1,34 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
-import { MdClose } from 'react-icons/md'
+
+import { Spinner } from '../Spinner'
 
 import styles from './Button.css'
 
-export default class Button extends React.Component {
-  validTypes = ['default', 'primary']
-  validSizes = ['small', 'large']
+const validTypes = ['default', 'primary']
+const validSizes = ['small', 'large']
 
+export default class Button extends React.Component {
   static propTypes = {
-    type: PropTypes.string,
+    type: PropTypes.oneOf(validTypes),
+    size: PropTypes.oneOf(validSizes),
     onClick: PropTypes.func,
     loading: PropTypes.bool,
-    size: PropTypes.string
+    disabled: PropTypes.bool
   }
 
   static defaultProps = {
     type: 'default',
     loading: false,
     size: 'large',
+    disabled: false,
     onClick: () => {}
   }
 
   getType = () => {
     try {
       const type = this.props.type.trim().toLowerCase()
-      if (this.validTypes.includes(type)) {
+      if (validTypes.includes(type)) {
         return type
       }
     } catch (error) {
@@ -38,7 +40,7 @@ export default class Button extends React.Component {
     let size
     try {
       const trimmedSize = this.props.size.trim().toLowerCase()
-      if (this.validSizes.includes(trimmedSize)) {
+      if (validSizes.includes(trimmedSize)) {
         size = trimmedSize
       }
     } catch (error) {
@@ -65,16 +67,19 @@ export default class Button extends React.Component {
   render = () => {
     const type = this.getType()
     const sizeCss = this.getSize()
+    const isDisabled = this.props.loading || this.props.disabled
 
     return (
       <Fragment>
         <style>{`${styles}`}</style>
         <div
-          className={`chata-btn ${type} ${this.props.className || ''}`}
+          className={`chata-btn ${type} ${this.props.className || ''}${
+            isDisabled ? ' disabled' : ''
+          }`}
           onClick={this.props.onClick}
           style={{ ...sizeCss }}
         >
-          {this.props.loading && <div>...</div>}
+          {this.props.loading && <Spinner />}
           {this.props.children}
         </div>
       </Fragment>
