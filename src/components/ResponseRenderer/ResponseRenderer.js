@@ -23,10 +23,15 @@ import {
   makeEmptyArray,
   getNumberOfGroupables,
   getSupportedDisplayTypes,
+  getInitialDisplayType,
+  isDisplayTypeValid,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
   getGroupBysFrom3dChart,
-  getGroupBysFrom2dChart
+  getGroupBysFrom2dChart,
+  isTableType,
+  isChartType,
+  isForecastType
 } from '../../js/Util.js'
 
 import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
@@ -121,7 +126,12 @@ export default class ResponseRenderer extends React.Component {
 
       // Set the initial display type based on prop value, response, and supported display types
       this.setState({
-        displayType: this.getInitialDisplayType(this.supportedDisplayTypes)
+        displayType: isDisplayTypeValid(
+          this.props.displayType,
+          this.supportedDisplayTypes
+        )
+          ? this.props.displayType
+          : getInitialDisplayType(this.supportedDisplayTypes)
       })
     } catch (error) {
       console.error(error)
@@ -156,55 +166,6 @@ export default class ResponseRenderer extends React.Component {
     ReactTooltip.rebuild()
   }
 
-  isChartType = type => CHART_TYPES.includes(type)
-  isTableType = type => TABLE_TYPES.includes(type)
-  isForecastType = type => FORECAST_TYPES.includes(type)
-
-  getInitialDisplayType = supportedDisplayTypes => {
-    // If display type is a provided prop and it is valid
-    if (
-      this.props.displayType &&
-      supportedDisplayTypes.includes(this.props.displayType)
-    ) {
-      return this.props.displayType
-    }
-
-    const responseDisplayType = _get(
-      this.props,
-      'response.data.data.display_type'
-    )
-
-    // If there is no display type in the response, default to table
-    if (!responseDisplayType || responseDisplayType === 'data') {
-      return 'table'
-    }
-
-    // If the display type is a recognized non-chart or non-table type
-    if (
-      responseDisplayType === 'suggestion' ||
-      responseDisplayType === 'help'
-    ) {
-      return responseDisplayType
-    }
-
-    // ----------------- This probably won't happen anymore with CaaS ---------------
-    // If the display type is a recognized table type
-    if (this.isTableType(responseDisplayType)) {
-      return 'table'
-    }
-
-    // If the display type is a recognized chart type
-    // This probably won't happen with chata.io, it is
-    // usually returned as a table type initially
-    if (this.isChartType(responseDisplayType)) {
-      return responseDisplayType
-    }
-    // ------------------------------------------------------------------------------
-
-    // Default to table type
-    return 'table'
-  }
-
   setResponseData = () => {
     // Initialize ID's of tables
     this.tableID = uuid.v4()
@@ -218,11 +179,11 @@ export default class ResponseRenderer extends React.Component {
       this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation
       this.data = responseBody.rows ? [...responseBody.rows] : null
-      if (this.isTableType(displayType) || this.isChartType(displayType)) {
+      if (isTableType(displayType) || isChartType(displayType)) {
         this.generateTableData()
         this.shouldGeneratePivotData() && this.generatePivotData()
         this.shouldGenerateChartData() && this.generateChartData()
-      } else if (this.isForecastType(displayType)) {
+      } else if (isForecastType(displayType)) {
         this.generateForecastData()
       }
     }
@@ -1023,11 +984,11 @@ export default class ResponseRenderer extends React.Component {
         return this.renderSuggestionMessage()
       } else if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (this.isForecastType(displayType)) {
+      } else if (isForecastType(displayType)) {
         return this.renderForecastVis()
-      } else if (this.isTableType(displayType)) {
+      } else if (isTableType(displayType)) {
         return this.renderTable()
-      } else if (this.isChartType(displayType)) {
+      } else if (isChartType(displayType)) {
         return this.renderChart(width, height)
       }
       return this.renderErrorMessage(

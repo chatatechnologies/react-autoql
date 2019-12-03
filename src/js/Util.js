@@ -2,7 +2,12 @@ import Numbro from 'numbro'
 import dayjs from 'dayjs'
 import _get from 'lodash.get'
 
-import { MONTH_NAMES } from './Constants'
+import {
+  MONTH_NAMES,
+  CHART_TYPES,
+  TABLE_TYPES,
+  FORECAST_TYPES
+} from './Constants'
 
 export const getParameterByName = (
   parameterName,
@@ -327,6 +332,10 @@ export const getNumberOfGroupables = columns => {
   return null
 }
 
+export const isChartType = type => CHART_TYPES.includes(type)
+export const isTableType = type => TABLE_TYPES.includes(type)
+export const isForecastType = type => FORECAST_TYPES.includes(type)
+
 export const getSupportedDisplayTypes = response => {
   if (!_get(response, 'data.data.display_type')) {
     return []
@@ -377,6 +386,51 @@ export const getSupportedDisplayTypes = response => {
 
   // We should always be able to display the table type by default
   return ['table']
+}
+
+export const isDisplayTypeValid = (displayType, supportedDisplayTypes) => {
+  const isValid = supportedDisplayTypes.includes(displayType)
+  if (!isValid) {
+    console.error('provided display type is not valid for this response data')
+  }
+  return isValid
+}
+
+export const getInitialDisplayType = response => {
+  const supportedDisplayTypes = getSupportedDisplayTypes(response)
+  const responseDisplayType = _get(response, 'data.data.display_type')
+
+  // If the display type is a recognized non-chart or non-table type
+  if (responseDisplayType === 'suggestion' || responseDisplayType === 'help') {
+    return responseDisplayType
+  }
+
+  // We want to default on pivot table if it is one of the supported types
+  if (supportedDisplayTypes.includes('pivot_table')) {
+    return 'pivot_table'
+  }
+
+  // If there is no display type in the response, default to regular table
+  if (!responseDisplayType || responseDisplayType === 'data') {
+    return 'table'
+  }
+
+  // ----------------- This probably won't happen anymore with CaaS ---------------
+  // If the display type is a recognized table type
+  if (isTableType(responseDisplayType)) {
+    return 'table'
+  }
+
+  // If the display type is a recognized chart type
+  // This probably won't happen with chata.io, it is
+  // usually returned as a table type initially
+  if (isChartType(responseDisplayType)) {
+    return responseDisplayType
+  }
+  // ------------------------------------------------------------------------------
+
+  // Default to table type
+  return 'table'
 }
 
 export const getGroupBysFromPivotTable = (

@@ -45,7 +45,7 @@ export default class App extends Component {
     enableSafetyNet: true,
     disableDrilldowns: false,
     enableQueryTipsTab: false,
-    enableColumnEditor: false,
+    enableColumnEditor: true,
     enableVoiceRecord: true,
     clearOnClose: false,
     height: 500,

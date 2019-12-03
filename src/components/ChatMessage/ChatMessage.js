@@ -16,7 +16,7 @@ import { ResponseRenderer } from '../ResponseRenderer'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import { getNumberOfGroupables } from '../../js/Util'
+import { getNumberOfGroupables, getInitialDisplayType } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 
 import { VizToolbar } from '../VizToolbar'
@@ -79,10 +79,7 @@ export default class ChatMessage extends React.Component {
   }
 
   state = {
-    displayType:
-      _get(this.props, 'response.data.data.display_type') === 'data'
-        ? 'table'
-        : _get(this.props, 'response.data.data.display_type')
+    displayType: getInitialDisplayType(this.props.response)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -237,19 +234,15 @@ export default class ChatMessage extends React.Component {
   isSingleValueResponse = () => {
     const { response } = this.props
     return (
-      response &&
-      response.data &&
-      response.data.data &&
-      response.data.data.rows &&
-      response.data.data.rows.length === 1 &&
-      response.data.data.rows[0].length === 1
+      _get(response, 'data.data.rows.length') === 1 &&
+      _get(response, 'data.data.rows[0].length') === 1
     )
   }
 
   renderInterpretationTip = () => {
     const interpretation = `<span>
         <strong>Interpretation: </strong>
-        ${this.props.response.data.data.interpretation}
+        ${_get(this.props.response, 'data.data.interpretation')}
       </span>`
 
     let sql = ''
@@ -259,7 +252,7 @@ export default class ChatMessage extends React.Component {
         <br />
         <span>
           <strong>SQL: </strong>
-          ${this.props.response.data.data.sql}
+          ${_get(this.props.response, 'data.data.sql')}
         </span>`
     }
     return `<div>
