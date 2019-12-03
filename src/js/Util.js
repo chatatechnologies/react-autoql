@@ -41,7 +41,7 @@ export const makeEmptyArray = (w, h) => {
   return arr
 }
 
-export const formatDate = (value, col) => {
+export const formatEpochDate = (value, col) => {
   // Use title to determine significant digits of date format
   const title = col.title
 
@@ -62,6 +62,26 @@ export const formatDate = (value, col) => {
     return dayjs.unix(value).format('MMMM YYYY')
   }
   return dayjs.unix(value).format('MMMM D, YYYY')
+}
+
+export const formatStringDate = value => {
+  if (value && typeof value === 'string') {
+    const dateArray = value.split('-')
+    const year = _get(dateArray, '[0]')
+    const month = _get(dateArray, '[1]')
+    const day = _get(dateArray, '[2]')
+
+    if (day) {
+      return dayjs(value).format('MMMM D, YYYY')
+    } else if (month) {
+      return dayjs(value).format('MMMM YYYY')
+    } else if (year) {
+      return year
+    }
+  }
+
+  // Unable to parse...
+  return value
 }
 
 export const formatChartLabel = (d, col, currencyCode, languageCode) => {
@@ -103,17 +123,21 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
       break
     }
     case 'DATE': {
-      formattedLabel = formatDate(d, col)
+      formattedLabel = formatEpochDate(d, col)
       break
     }
-    case 'DATE_MONTH': {
-      // This will be a string of the month number ie. "2", "12"
-      const monthNumber = Number(d)
-      if (monthNumber && MONTH_NAMES[monthNumber]) {
-        formattedLabel = MONTH_NAMES[monthNumber]
-      }
+    case 'DATE_STRING': {
+      formattedLabel = formatStringDate(d)
       break
     }
+    // case 'DATE_MONTH': {
+    //   // This will be a string of the month number ie. "2", "12"
+    //   const monthNumber = Number(d)
+    //   if (monthNumber && MONTH_NAMES[monthNumber]) {
+    //     formattedLabel = MONTH_NAMES[monthNumber]
+    //   }
+    //   break
+    // }
     // case 'DATE_YEAR': {
     //   // This should always be a string of the year number ie. "2019"
     //   formattedLabel = Number(d)
@@ -198,17 +222,21 @@ export const formatElement = ({
           break
         }
         case 'DATE': {
-          formattedElement = formatDate(element, column)
+          formattedElement = formatEpochDate(element, column)
           break
         }
-        case 'DATE_MONTH': {
-          // This will be a string of the month number ie. "2", "12"
-          const monthNumber = Number(element)
-          if (monthNumber && MONTH_NAMES[monthNumber]) {
-            formattedElement = MONTH_NAMES[monthNumber]
-          }
+        case 'DATE_STRING': {
+          formattedElement = formatStringDate(element)
           break
         }
+        // case 'DATE_MONTH': {
+        //   // This will be a string of the month number ie. "2", "12"
+        //   const monthNumber = Number(element)
+        //   if (monthNumber && MONTH_NAMES[monthNumber]) {
+        //     formattedElement = MONTH_NAMES[monthNumber]
+        //   }
+        //   break
+        // }
         case 'RATIO': {
           if (Number(element)) {
             formattedElement = Numbro(element).format('0.0000')
