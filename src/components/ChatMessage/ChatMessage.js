@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 import {
   MdContentCopy,
   MdFileDownload,
@@ -12,10 +13,11 @@ import { FaEye } from 'react-icons/fa'
 import ReactTooltip from 'react-tooltip'
 
 import { ResponseRenderer } from '../ResponseRenderer'
-import { Modal } from '../Modal'
+import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import { getNumberOfGroupables } from '../../js/Util'
+import { setColumnVisibility } from '../../js/queryService'
 
 import { VizToolbar } from '../VizToolbar'
 
@@ -46,7 +48,11 @@ export default class ChatMessage extends React.Component {
     comparisonDisplay: PropTypes.string,
     enableColumnEditor: PropTypes.bool,
     currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number
+    quantityDecimals: PropTypes.number,
+    apiKey: PropTypes.string,
+    userId: PropTypes.string,
+    token: PropTypes.string,
+    domain: PropTypes.string
   }
 
   static defaultProps = {
@@ -65,7 +71,11 @@ export default class ChatMessage extends React.Component {
     currencyDecimals: undefined,
     quantityDecimals: undefined,
     comparisonDisplay: 'ratio',
-    enableColumnEditor: true
+    enableColumnEditor: true,
+    apiKey: undefined,
+    userId: undefined,
+    token: undefined,
+    domain: undefined
   }
 
   state = {
@@ -74,8 +84,6 @@ export default class ChatMessage extends React.Component {
         ? 'table'
         : _get(this.props, 'response.data.data.display_type')
   }
-
-  componentDidMount = () => {}
 
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
@@ -265,14 +273,33 @@ export default class ChatMessage extends React.Component {
   showHideColumnsModal = () =>
     this.setState({ isHideColumnsModalVisible: true })
 
+  onColumnVisibilitySave = columns => {
+    const { apiKey, userId, token, domain } = this.props
+
+    this.setState({ isSettingColumnVisibility: true })
+    setColumnVisibility({ apiKey, userId, domain, token, columns })
+      .then(() => {
+        this.setState({
+          isHideColumnsModalVisible: false,
+          isSettingColumnVisibility: false
+        })
+      })
+      .catch(error => {
+        // We will want some sort of alert here
+        console.error(error)
+        this.setState({ isSettingColumnVisibility: false })
+      })
+  }
+
   renderHideColumnsModal = () => {
     return (
-      <Modal
+      <ColumnVisibilityModal
+        columns={_get(this.props, 'response.data.data.columns')}
         isVisible={this.state.isHideColumnsModalVisible}
-        title="Show/Hide Columns"
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
-        onConfirm={() => console.log('SAVE COLUMNS')}
-      ></Modal>
+        isSettingColumns={this.state.isSettingColumnVisibility}
+        onConfirm={this.onColumnVisibilitySave}
+      />
     )
   }
 

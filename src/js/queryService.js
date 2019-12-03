@@ -62,6 +62,10 @@ export const runQueryOnly = ({
     }
   }
 
+  if (!demo && (!userId || !customerId || !apiKey || !domain)) {
+    return Promise.reject({ error: 'unauthenticated' })
+  }
+
   return axiosInstance
     .post(url, data, config)
     .then(response => {
@@ -276,5 +280,48 @@ export const fetchSuggestions = (
   return axiosInstance
     .get(url, config)
     .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
+}
+
+export const fetchApiId = (apiKey, token) => {
+  const url = `https://backend-staging.chata.io/api/v1/integrator?key=${apiKey}`
+  const axiosInstance = axios.create({})
+
+  return axiosInstance
+    .get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
+}
+
+export const setColumnVisibility = ({
+  apiKey,
+  userId,
+  token,
+  // domain,
+  columns
+}) => {
+  return fetchApiId(apiKey, token)
+    .then(response => {
+      const apiId = response.data
+      const url = `https://backend-staging.chata.io/api/v1/colvisibilitySetting/set/${apiId}/${userId}`
+      const data = { columns }
+
+      const config = {}
+      if (token) {
+        config.headers = {
+          Authorization: `Bearer ${token}`
+        }
+      }
+
+      const axiosInstance = axios.create({})
+      return axiosInstance
+        .put(url, data, config)
+        .then(response => Promise.resolve(response))
+        .catch(error => Promise.reject(error))
+    })
     .catch(error => Promise.reject(error))
 }

@@ -398,6 +398,7 @@ class Dashboard extends React.Component {
         title={tile ? tile.query : ''}
         isVisible={this.state.isDrilldownModalVisible}
         width={800}
+        height="calc(100vh - 90px)"
         style={{ marginTop: '45px' }}
         confirmText="Done"
         showFooter={false}

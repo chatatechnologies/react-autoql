@@ -476,9 +476,15 @@ export default class ChatDrawer extends React.Component {
     }
 
     let message = {}
-    if (response && response.error && response.error === 'cancelled') {
+    if (_get(response, 'error') === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
-    } else if (response && response.error && response.error === 'parse error') {
+    } else if (_get(response, 'error') === 'unauthenticated') {
+      message = this.createErrorMessage(
+        `Uh oh.. It looks like you don't have access to this resource. 
+
+        Please double check that all the required authentication fields are provided.`
+      )
+    } else if (_get(response, 'error') === 'parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
     } else if (!response && !content) {
@@ -680,6 +686,10 @@ export default class ChatDrawer extends React.Component {
                     id={message.id}
                     debug={this.props.debug}
                     demo={this.props.demo}
+                    apiKey={this.props.apiKey}
+                    userId={this.props.userId}
+                    token={this.props.token}
+                    domain={this.props.domain}
                   />
                 )
               })}

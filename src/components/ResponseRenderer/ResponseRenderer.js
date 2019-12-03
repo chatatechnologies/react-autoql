@@ -759,6 +759,9 @@ export default class ResponseRenderer extends React.Component {
       col.field = `${i}`
       col.title = this.getColTitle(col)
 
+      // Visibility flag: this can be changed through the column visibility editor modal
+      col.visible = col.is_visible
+
       // Cell alignment
       if (
         col.type === 'DOLLAR_AMT' ||

@@ -255,6 +255,17 @@
   margin-bottom: 3px;
 }
 
+/* Use drawer theme colors for the UI component accent colors */
+.chata-modal-container .m-checkbox__input,
+.chata-drawer .m-checkbox__input {
+  border-color: var(--chata-drawer-accent-color);
+}
+
+.chata-modal-container .m-checkbox__input::before,
+.chata-drawer .m-checkbox__input::before {
+  background: var(--chata-drawer-accent-color);
+}
+
 /* Safetynet styles */
 /* .chata-drawer .chata-safetynet-select {
   color: var(--chata-drawer-accent-color);

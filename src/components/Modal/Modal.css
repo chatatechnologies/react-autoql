@@ -24,7 +24,7 @@
 
   margin: 100px auto;
   width: 500px;
-  height: calc(100vh - 90px);
+  /* height: calc(100vh - 90px); */
   max-width: 90vw;
   max-height: calc(100vh - 90px);
 

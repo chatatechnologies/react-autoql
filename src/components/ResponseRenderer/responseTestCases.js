@@ -133,5 +133,54 @@ export default [
     },
     message: '',
     referenceId: '1.1.0'
+  },
+  {
+    data: {
+      columns: [
+        {
+          display_name: 'Security Name',
+          groupable: true,
+          is_visible: true,
+          name: 'hldSecurity.SecurityDescription',
+          type: 'STRING'
+        },
+        {
+          display_name: 'Market Value',
+          groupable: false,
+          is_visible: true,
+          name: 'sum(hldHolding.MVwithAccruedLocal)',
+          type: 'DOLLAR_AMT'
+        }
+      ],
+      display_type: 'data',
+      interpretation:
+        'Security Name and Market Value, by Security Name, UNKNOWN COMPARISON',
+      query_id: 'q_sASrCuQzTtGwAS6TNf7eyA',
+      rows: [
+        [null, 0],
+        ['American Equity ETF', 29040],
+        ['Asian Equity ETF', 80002],
+        ['Balanced Foundation ETF', 122000],
+        ['Balanced Foundation ETF Ii', 85960],
+        ['Black Diamond ETF', 190820],
+        ['Bond ETF', 1428885],
+        ['Canadian Dollar', 172202725],
+        ['Canadian Small Cap ETF', 512320],
+        ['Emerging Markets ETF', 23712.5],
+        ['European Equity ETF', 49600],
+        ['Focus Canadian Equity ETF', 412650],
+        ['Global Equity Sri ETF', 56055],
+        ["Partners' Bond ETF", 4928],
+        ["Partners' Global ETF", 382700],
+        ["Partners' Opportunities ETF", 17452.5],
+        ['Purefacts Canadian Equity Fund', 3485],
+        ['Purefacts Money Market Fund', 0],
+        ['Total Return Bond ETF', 1100763],
+        ['U.S. Mid Cap ETF', 1379040]
+      ],
+      sql: [
+        "select hldSecurity.SecurityDescription, sum(hldHolding.MVwithAccruedLocal) from hldHolding join hldSecurity on hldSecurity.ID = hldHolding.SecurityID and hldSecurity.SponsorID = hldHolding.SponsorID where hldHolding.ValuationDate = cast('31-DEC-2018' as DATETIME) group by hldSecurity.SecurityDescription"
+      ]
+    }
   }
 ]

@@ -16,7 +16,9 @@ export default class Modal extends React.Component {
     width: PropTypes.number,
     height: PropTypes.number,
     showCancelButton: PropTypes.bool,
-    showFooter: PropTypes.bool
+    showFooter: PropTypes.bool,
+    enableBodyScroll: PropTypes.bool,
+    confirmLoading: PropTypes.bool
   }
 
   static defaultProps = {
@@ -25,7 +27,9 @@ export default class Modal extends React.Component {
     width: 500,
     height: undefined,
     showCancelButton: true,
+    enableBodyScroll: false,
     showFooter: true,
+    confirmLoading: false,
     onClose: () => {},
     onConfirm: () => {}
   }
@@ -57,7 +61,14 @@ export default class Modal extends React.Component {
                   onClick={this.props.onClose}
                 />
               </div>
-              <div className="chata-modal-body">{this.props.children}</div>
+              <div
+                className="chata-modal-body"
+                style={{
+                  overflow: this.props.enableBodyScroll ? 'auto' : 'hidden'
+                }}
+              >
+                {this.props.children}
+              </div>
               {this.props.showFooter && (
                 <div className="chata-modal-footer">
                   {this.props.showCancelButton && (
@@ -65,7 +76,11 @@ export default class Modal extends React.Component {
                       Cancel
                     </Button>
                   )}
-                  <Button type="primary" onClick={this.props.onConfirm}>
+                  <Button
+                    type="primary"
+                    onClick={this.props.onConfirm}
+                    loading={this.props.confirmLoading}
+                  >
                     {this.props.confirmText || 'Ok'}
                   </Button>
                 </div>
