@@ -47,7 +47,6 @@ export default class Modal extends React.Component {
           content={
             <div
               className="chata-modal"
-              // onScroll={e => console.log('SCROLL START')}
               style={{
                 ...this.props.style,
                 width: this.props.width,

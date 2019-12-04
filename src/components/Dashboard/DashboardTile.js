@@ -74,19 +74,24 @@ export default class DashboardTile extends React.Component {
     }
   }
 
+  isQueryValid = query => {
+    return query && query.trim()
+  }
+
   startQuery = () => {
+    this.setState({
+      isExecuting: true
+    })
     this.props.setParamsForTile(
       {
         queryResponse: null,
+        displayType: null,
         isNewTile: false,
         selectedSuggestion: undefined,
         safetyNetSelection: undefined
       },
       this.props.tile.i
     )
-    this.setState({
-      isExecuting: true
-    })
   }
 
   endQuery = response => {
@@ -105,13 +110,16 @@ export default class DashboardTile extends React.Component {
   }
 
   processTile = (query, skipSafetyNet) => {
-    if (query || this.state.query) {
+    const q = query || this.props.tile.selectedSuggestion || this.state.query
+    if (this.isQueryValid(q)) {
       this.startQuery()
 
-      if (skipSafetyNet) {
+      if (
+        skipSafetyNet ||
+        _get(this.props.queryResponse, 'data.full_suggestion')
+      ) {
         runQueryOnly({
-          query:
-            query || this.props.tile.selectedSuggestion || this.state.query,
+          query: q,
           demo: this.props.demo,
           debug: this.props.debug,
           domain: this.props.domain,
@@ -125,8 +133,7 @@ export default class DashboardTile extends React.Component {
           .catch(error => this.endQuery(error))
       } else {
         runQuery({
-          query:
-            query || this.props.tile.selectedSuggestion || this.state.query,
+          query: q,
           demo: this.props.demo,
           debug: this.props.debug,
           domain: this.props.domain,
@@ -205,7 +212,7 @@ export default class DashboardTile extends React.Component {
           <div
             onMouseDown={e => e.stopPropagation()}
             className={`dashboard-tile-play-button${
-              !this.state.query ? ' disabled' : ''
+              !this.isQueryValid(this.state.query) ? ' disabled' : ''
             }`}
           >
             <MdPlayCircleOutline onClick={() => this.processTile()} />
@@ -241,7 +248,10 @@ export default class DashboardTile extends React.Component {
 
   renderContentPlaceholder = () => {
     let content = null
-    if (this.props.tile.isNewTile && this.props.isEditing) {
+    if (this.state.isExecuting) {
+      // This should always take priority over the other conditions below
+      content = <LoadingDots />
+    } else if (this.props.tile.isNewTile && this.props.isEditing) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -265,8 +275,6 @@ export default class DashboardTile extends React.Component {
           <em>This tile has no query</em>
         </div>
       )
-    } else if (this.state.isExecuting) {
-      content = <LoadingDots />
     } else {
       content = (
         <div className="dashboard-tile-placeholder-text">

@@ -20,7 +20,6 @@ export default class ColumnVisibilityModal extends React.Component {
 
   componentDidUpdate = prevProps => {
     if (this.props.isVisible && !prevProps.isVisible) {
-      console.log('resetting columns to provided prop')
       this.setState({ columns: this.props.columns })
     }
   }
