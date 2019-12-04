@@ -90,6 +90,7 @@ export default class SafetyNetMessage extends React.Component {
 
     this.props.initialSelections.forEach((selection, index) => {
       if (
+        !this.suggestionLists[index] ||
         !this.suggestionLists[index].find(
           suggestion => suggestion.text === selection.text
         )
