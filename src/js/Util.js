@@ -50,18 +50,18 @@ export const formatEpochDate = (value, col) => {
     if (title && title.toLowerCase().includes('year')) {
       return dayjs(value).format('YYYY')
     } else if (title && title.toLowerCase().includes('month')) {
-      return dayjs(value).format('MMMM YYYY')
+      return dayjs(value).format('MMM YYYY')
     }
-    return dayjs(value).format('MMMM D, YYYY')
+    return dayjs(value).format('MMM D, YYYY')
   }
 
   // Is epoch time
   if (title && title.toLowerCase().includes('year')) {
     return dayjs.unix(value).format('YYYY')
   } else if (title && title.toLowerCase().includes('month')) {
-    return dayjs.unix(value).format('MMMM YYYY')
+    return dayjs.unix(value).format('MMM YYYY')
   }
-  return dayjs.unix(value).format('MMMM D, YYYY')
+  return dayjs.unix(value).format('MMM D, YYYY')
 }
 
 export const formatStringDate = value => {
@@ -72,9 +72,9 @@ export const formatStringDate = value => {
     const day = _get(dateArray, '[2]')
 
     if (day) {
-      return dayjs(value).format('MMMM D, YYYY')
+      return dayjs(value).format('MMM D, YYYY')
     } else if (month) {
-      return dayjs(value).format('MMMM YYYY')
+      return dayjs(value).format('MMM YYYY')
     } else if (year) {
       return year
     }
