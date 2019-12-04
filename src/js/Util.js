@@ -58,10 +58,7 @@ export const formatEpochDate = (value, col) => {
       date = dayjs(value).format('MMM YYYY')
     }
     date = dayjs(value).format('MMM D, YYYY')
-  }
-
-  // Is epoch time
-  if (title && title.toLowerCase().includes('year')) {
+  } else if (title && title.toLowerCase().includes('year')) {
     date = dayjs.unix(value).format('YYYY')
   } else if (title && title.toLowerCase().includes('month')) {
     date = dayjs.unix(value).format('MMM YYYY')
