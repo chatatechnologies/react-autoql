@@ -41,27 +41,37 @@ export const makeEmptyArray = (w, h) => {
   return arr
 }
 
+export const isDayJSDateValid = date => {
+  return date !== 'Invalid Date'
+}
+
 export const formatEpochDate = (value, col) => {
   // Use title to determine significant digits of date format
   const title = col.title
+  let date = dayjs.unix(value).format('MMM D, YYYY')
 
   if (!Number(value)) {
     // Not an epoch time. Try converting using dayjs
     if (title && title.toLowerCase().includes('year')) {
-      return dayjs(value).format('YYYY')
+      date = dayjs(value).format('YYYY')
     } else if (title && title.toLowerCase().includes('month')) {
-      return dayjs(value).format('MMM YYYY')
+      date = dayjs(value).format('MMM YYYY')
     }
-    return dayjs(value).format('MMM D, YYYY')
+    date = dayjs(value).format('MMM D, YYYY')
   }
 
   // Is epoch time
   if (title && title.toLowerCase().includes('year')) {
-    return dayjs.unix(value).format('YYYY')
+    date = dayjs.unix(value).format('YYYY')
   } else if (title && title.toLowerCase().includes('month')) {
-    return dayjs.unix(value).format('MMM YYYY')
+    date = dayjs.unix(value).format('MMM YYYY')
   }
-  return dayjs.unix(value).format('MMM D, YYYY')
+
+  if (isDayJSDateValid(date)) {
+    return date
+  }
+
+  return value
 }
 
 export const formatStringDate = value => {
@@ -72,9 +82,15 @@ export const formatStringDate = value => {
     const day = _get(dateArray, '[2]')
 
     if (day) {
-      return dayjs(value).format('MMM D, YYYY')
+      const date = dayjs(value).format('MMM D, YYYY')
+      if (isDayJSDateValid(date)) {
+        return date
+      }
     } else if (month) {
-      return dayjs(value).format('MMM YYYY')
+      const date = dayjs(value).format('MMM YYYY')
+      if (isDayJSDateValid(date)) {
+        return date
+      }
     } else if (year) {
       return year
     }
