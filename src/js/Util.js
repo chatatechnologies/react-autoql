@@ -729,3 +729,26 @@ export const calculateMinAndMaxSums = (data, labelValue, dataValue) => {
     min: minValue
   }
 }
+
+export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
+  const tooltip = document.getElementById(id)
+  const prevText = tooltip.innerHTML
+
+  tooltip.innerHTML = text
+  if (tooltipShiftDistance) {
+    tooltip.style.left = `${Number(
+      tooltip.style.left.substring(0, tooltip.style.left.length - 2)
+    ) + tooltipShiftDistance}px`
+  }
+
+  if (duration) {
+    setTimeout(() => {
+      tooltip.innerHTML = prevText
+      if (tooltipShiftDistance) {
+        tooltip.style.left = `${Number(
+          tooltip.style.left.substring(0, tooltip.style.left.length - 2)
+        ) - tooltipShiftDistance}px`
+      }
+    }, duration)
+  }
+}

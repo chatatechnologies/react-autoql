@@ -16,7 +16,11 @@ import { ResponseRenderer } from '../ResponseRenderer'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import { getNumberOfGroupables, getInitialDisplayType } from '../../js/Util'
+import {
+  getNumberOfGroupables,
+  getInitialDisplayType,
+  changeTooltipText
+} from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 
 import { VizToolbar } from '../VizToolbar'
@@ -212,10 +216,26 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  setTemporaryState = (key, value, duration) => {
+    this.setState({ [key]: value })
+    setTimeout(() => {
+      this.setState({ [key]: undefined })
+    }, duration)
+  }
+
   // todo: put all right toolbar functions into separate component
   copyTableToClipboard = () => {
     if (this.responseRef) {
       this.responseRef.copyTableToClipboard()
+      this.setTemporaryState('copiedTable', true, 1000)
+      changeTooltipText(
+        `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
+        'Copied!',
+        32,
+        1000
+      )
+    } else {
+      this.setTemporaryState('copiedTable', false, 1000)
     }
   }
 
@@ -362,9 +382,13 @@ export default class ChatMessage extends React.Component {
           {shouldShowButton.showCopyButton && (
             <button
               onClick={this.copyTableToClipboard}
-              className="chata-toolbar-btn"
-              data-tip="Copy to Clipboard"
-              data-for="chata-toolbar-btn-tooltip"
+              className={`chata-toolbar-btn${
+                this.state.copiedTable === true ? ' green' : ''
+              }${this.state.copiedTable === false ? ' red' : ''}`}
+              data-tip={
+                this.state.copyTableMessage ? 'Copied!' : 'Copy to Clipboard'
+              }
+              data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
             >
               <MdContentCopy />
             </button>
@@ -438,6 +462,7 @@ export default class ChatMessage extends React.Component {
     let chartWidth = 0
     let chartHeight = 0
     const chatContainer = document.querySelector('.chat-message-container')
+
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
@@ -467,6 +492,16 @@ export default class ChatMessage extends React.Component {
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
             {this.renderHideColumnsModal()}
+            <ReactTooltip
+              className="chata-drawer-tooltip"
+              id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+              getContent={() =>
+                this.state.copyTableMessage ? 'Copied!' : 'Copy to Clipboard'
+              }
+              effect="solid"
+              delayShow={500}
+              html
+            />
           </div>
         </div>
         {

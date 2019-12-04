@@ -19,6 +19,12 @@
   cursor: pointer;
   outline: none !important;
 }
+.chata-toolbar-btn.green {
+  color: #2ecc40;
+}
+.chata-toolbar-btn.red {
+  color: #e80000;
+}
 .chata-toolbar-btn:hover {
   opacity: 0.7;
 }
