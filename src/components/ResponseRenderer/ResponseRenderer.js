@@ -131,7 +131,7 @@ export default class ResponseRenderer extends React.Component {
           this.supportedDisplayTypes
         )
           ? this.props.displayType
-          : getInitialDisplayType(this.supportedDisplayTypes)
+          : getInitialDisplayType(this.props.response)
       })
     } catch (error) {
       console.error(error)
