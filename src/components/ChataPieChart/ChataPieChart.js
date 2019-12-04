@@ -282,11 +282,13 @@ export default class Axis extends Component {
       .innerRadius(self.outerRadius * 1.1)
       .outerRadius(self.outerRadius * 1.1)
 
-    this.sortedData = data.sort(
-      (a, b) =>
-        parseFloat(a[self.props.dataValue]) -
-        parseFloat(b[self.props.dataValue])
-    )
+    this.sortedData = data
+      .concat() // this copies the array so the original isn't mutated
+      .sort(
+        (a, b) =>
+          parseFloat(a[self.props.dataValue]) -
+          parseFloat(b[self.props.dataValue])
+      )
 
     this.renderPieContainer()
     this.setColorScale()
