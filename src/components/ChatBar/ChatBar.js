@@ -10,7 +10,7 @@ import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
 
-import './ChatBar.css'
+import './ChatBar.scss'
 
 let autoCompleteArray = []
 

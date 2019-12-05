@@ -33,7 +33,7 @@ import {
   isForecastType
 } from '../../js/Util.js'
 
-import './ResponseRenderer.css'
+import './ResponseRenderer.scss'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()

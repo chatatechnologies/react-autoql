@@ -15,7 +15,7 @@ import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
 
-import './Dashboard.css'
+import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
 
 const ReactGridLayout = WidthProvider(RGL)

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 
 import { Spinner } from '../Spinner'
 
-import './Button.css'
+import './Button.scss'
 
 const validTypes = ['default', 'primary']
 const validSizes = ['small', 'large']

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 
-import './Checkbox.css'
+import './Checkbox.scss'
 
 export default class Checkbox extends React.Component {
   ID = uuid.v4()

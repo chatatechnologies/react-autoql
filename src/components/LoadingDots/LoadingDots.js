@@ -1,6 +1,6 @@
 import React from 'react'
 
-import './LoadingDots.css'
+import './LoadingDots.scss'
 
 function LoadingDots () {
   return (

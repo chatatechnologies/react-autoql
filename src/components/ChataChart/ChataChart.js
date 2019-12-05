@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
@@ -16,11 +16,9 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
 import { svgToPng, formatElement } from '../../js/Util.js'
 
-import './ChataChart.css'
+import './ChataChart.scss'
 
 export default class ChataChart extends Component {
   DEFAULT_MARGINS = {

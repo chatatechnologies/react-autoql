@@ -11,7 +11,7 @@ import { scaleOrdinal } from 'd3-scale'
 
 import { formatChartLabel } from '../../js/Util.js'
 
-import './Axis.css'
+import './Axis.scss'
 
 export default class Axis extends Component {
   LEGEND_PADDING = 130

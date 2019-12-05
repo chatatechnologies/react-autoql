@@ -6,7 +6,7 @@ import SpeechRecognition from 'react-speech-recognition'
 
 import microphoneIconSVG from '../../images/microphone-voice-interface-symbol.svg'
 
-import './SpeechToTextButton.css'
+import './SpeechToTextButton.scss'
 
 const options = {
   autoStart: false,

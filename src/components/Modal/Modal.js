@@ -5,7 +5,7 @@ import { MdClose } from 'react-icons/md'
 
 import { Button } from '../Button'
 
-import './Modal.css'
+import './Modal.scss'
 
 export default class Modal extends React.Component {
   static propTypes = {

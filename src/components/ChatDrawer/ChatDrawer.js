@@ -26,7 +26,7 @@ import { formatElement } from '../../js/Util'
 
 // Styles
 import 'rc-drawer/assets/index.css'
-import './ChatDrawer.css'
+import './ChatDrawer.scss'
 
 export default class ChatDrawer extends React.Component {
   LIGHT_THEME = {

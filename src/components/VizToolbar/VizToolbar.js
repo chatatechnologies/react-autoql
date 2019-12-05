@@ -5,7 +5,7 @@ import ReactTooltip from 'react-tooltip'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
-import './VizToolbar.css'
+import './VizToolbar.scss'
 
 import {
   tableIcon,

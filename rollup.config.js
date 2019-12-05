@@ -9,7 +9,7 @@ import css from 'rollup-plugin-css-only'
 import pkg from './package.json'
 
 const dist = 'dist'
-const bundle = 'bundle'
+const bundle = 'chata'
 
 const production = !process.env.ROLLUP_WATCH
 

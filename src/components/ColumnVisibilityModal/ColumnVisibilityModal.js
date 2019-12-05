@@ -1,11 +1,11 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 
 import { Modal } from '../Modal'
 import { Checkbox } from '../Checkbox'
 
-import './ColumnVisibilityModal.css'
+import './ColumnVisibilityModal.scss'
 
 export default class ColumnVisibilityModal extends React.Component {
   static propTypes = {
