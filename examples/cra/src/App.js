@@ -26,6 +26,7 @@ import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
 
 import 'antd/dist/antd.css'
+import '@chata-ai/core/dist/bundle.esm.css'
 import './index.css'
 
 export default class App extends Component {

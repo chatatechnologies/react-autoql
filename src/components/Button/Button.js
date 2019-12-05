@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 
 import { Spinner } from '../Spinner'
 
-import styles from './Button.css'
+import './Button.css'
 
 const validTypes = ['default', 'primary']
 const validSizes = ['small', 'large']
@@ -70,19 +70,15 @@ export default class Button extends React.Component {
     const isDisabled = this.props.loading || this.props.disabled
 
     return (
-      <Fragment>
-        <style>{`${styles}`}</style>
-        <div
-          className={`chata-btn ${type} ${this.props.className || ''}${
-            isDisabled ? ' disabled' : ''
-          }`}
-          onClick={this.props.onClick}
-          style={{ ...sizeCss }}
-        >
-          {this.props.loading && <Spinner />}
-          {this.props.children}
-        </div>
-      </Fragment>
+      <div
+        className={`chata-btn ${type} ${this.props.className || ''}${
+          isDisabled ? ' disabled' : ''
+        }`}
+        style={{ ...sizeCss, ...this.props.style }}
+      >
+        {this.props.loading && <Spinner />}
+        {this.props.children}
+      </div>
     )
   }
 }
