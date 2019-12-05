@@ -79,7 +79,8 @@ export default class ResponseRenderer extends React.Component {
     hideColumnCallback: PropTypes.func,
     activeChartElementKey: PropTypes.string,
     currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number
+    quantityDecimals: PropTypes.number,
+    onTableFilterCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -108,7 +109,8 @@ export default class ResponseRenderer extends React.Component {
     activeChartElementKey: undefined,
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {},
-    hideColumnCallback: () => {}
+    hideColumnCallback: () => {},
+    onTableFilterCallback: () => {}
   }
 
   state = {
@@ -405,13 +407,13 @@ export default class ResponseRenderer extends React.Component {
     this.headerFilters = filters
 
     if (
-      this.tableRef &&
-      this.tableRef.ref &&
-      this.tableRef.ref.table &&
+      _get(this.tableRef, 'ref.table') &&
       this.state.displayType === 'table'
     ) {
       setTimeout(() => {
-        this.generateChartData(this.tableRef.ref.table.getData(true))
+        const newTableData = this.tableRef.ref.table.getData(true)
+        this.generateChartData(newTableData)
+        this.props.onTableFilterCallback(newTableData)
       }, 500)
     }
   }

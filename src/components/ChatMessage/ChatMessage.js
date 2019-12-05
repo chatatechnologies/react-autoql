@@ -101,6 +101,10 @@ export default class ChatMessage extends React.Component {
     this.setState({ displayType })
   }
 
+  onTableFilter = newTableData => {
+    this.setState({ disableChartingOptions: _get(newTableData, 'length') < 2 })
+  }
+
   renderContent = (chartWidth, chartHeight) => {
     const { response, content } = this.props
     if (content) {
@@ -127,6 +131,7 @@ export default class ChatMessage extends React.Component {
           comparisonDisplay={this.props.comparisonDisplay}
           setFilterTagsCallback={this.setFilterTags}
           hideColumnCallback={this.hideColumnCallback}
+          onTableFilterCallback={this.onTableFilter}
           height={chartHeight}
           width={chartWidth}
           demo={this.props.demo}
@@ -445,6 +450,7 @@ export default class ChatMessage extends React.Component {
           supportedDisplayTypes={supportedDisplayTypes || []}
           displayType={displayType}
           onDisplayTypeChange={this.switchView}
+          disableCharts={this.state.disableChartingOptions}
         />
       )
     }

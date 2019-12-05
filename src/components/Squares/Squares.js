@@ -71,8 +71,8 @@ export default class Squares extends Component {
           data-tip={this.props.tooltipFormatter(d)}
           data-for="chart-element-tooltip"
           stroke={activeFillColor}
-          stroke-width="2px"
-          stroke-opacity={
+          strokeWidth="2px"
+          stroke-Opacity={
             this.state.activeKey === `${d[labelValueX]}-${d[labelValueY]}`
               ? 1
               : 0

@@ -23,7 +23,12 @@ class VizToolbar extends React.Component {
   static propTypes = {
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
     displayType: PropTypes.string.isRequired,
-    onDisplayTypeChange: PropTypes.func.isRequired
+    onDisplayTypeChange: PropTypes.func.isRequired,
+    disableCharts: PropTypes.bool
+  }
+
+  static defaultProps = {
+    disableCharts: false
   }
 
   componentDidUpdate = () => {
@@ -31,6 +36,10 @@ class VizToolbar extends React.Component {
   }
 
   showDisplayTypeButton = displayType => {
+    if (this.props.disableCharts && CHART_TYPES.includes(displayType)) {
+      return false
+    }
+
     return (
       this.props.supportedDisplayTypes &&
       this.props.supportedDisplayTypes.includes(displayType) &&
@@ -58,7 +67,12 @@ class VizToolbar extends React.Component {
   render = () => {
     const { displayType, supportedDisplayTypes } = this.props
 
-    if (!supportedDisplayTypes || supportedDisplayTypes.length <= 1) {
+    if (
+      !supportedDisplayTypes ||
+      supportedDisplayTypes.length <= 1 ||
+      (!supportedDisplayTypes.includes('pivot_table') &&
+        this.props.disableCharts)
+    ) {
       return null
     }
 
