@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
-import gridLayoutStyles from 'react-grid-layout/css/styles.css'
 import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
@@ -16,9 +15,8 @@ import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
 
-import chataTableStyles from '../ChataTable/ChataTable.css'
-import styles from './Dashboard.css'
-import tileStyles from './DashboardTile.css'
+import './Dashboard.css'
+import 'react-grid-layout/css/styles.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
@@ -484,10 +482,6 @@ class Dashboard extends React.Component {
     return (
       <ErrorBoundary>
         <Fragment>
-          <style>{`${styles}`}</style>
-          <style>{`${tileStyles}`}</style>
-          <style>{`${chataTableStyles}`}</style>
-          <style>{`${gridLayoutStyles}`}</style>
           <div
             ref={ref => (this.ref = ref)}
             className={`chata-dashboard-container${

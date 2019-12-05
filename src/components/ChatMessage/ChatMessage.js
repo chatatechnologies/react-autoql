@@ -25,6 +25,8 @@ import { setColumnVisibility } from '../../js/queryService'
 
 import { VizToolbar } from '../VizToolbar'
 
+import './ChatMessage.css'
+
 export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
   filtering = false

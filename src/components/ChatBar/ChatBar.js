@@ -10,7 +10,7 @@ import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
 
-import styles from './ChatBar.css'
+import './ChatBar.css'
 
 let autoCompleteArray = []
 
@@ -238,83 +238,80 @@ export default class ChatBar extends React.Component {
 
   render = () => {
     return (
-      <Fragment>
-        <style>{`${styles}`}</style>
-        <div
-          className={`chata-bar-container ${this.props.className} ${
-            this.props.autoCompletePlacement === 'bottom'
-              ? 'autosuggest-bottom'
-              : 'autosuggest-top'
-          }`}
-        >
-          {this.props.enableAutocomplete ? (
-            <Autosuggest
-              className="auto-complete-chata"
-              onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-              onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-              getSuggestionValue={this.userSelectedSuggestionHandler}
-              suggestions={this.state.suggestions}
-              ref={ref => {
-                this.autoSuggest = ref
-              }}
-              renderSuggestion={suggestion => (
-                <Fragment>{suggestion.name}</Fragment>
-              )}
-              inputProps={{
-                className: `${this.UNIQUE_ID} chata-input${
-                  this.props.showChataIcon ? ' left-padding' : ''
-                }`,
-                placeholder: 'Ask me anything...',
-                disabled: this.props.isDisabled,
-                onChange: this.onInputChange,
-                onKeyPress: this.onKeyPress,
-                value: this.state.inputValue,
-                onFocus: this.moveCaretAtEnd,
-                autoFocus: true
-              }}
+      <div
+        className={`chata-bar-container ${this.props.className} ${
+          this.props.autoCompletePlacement === 'bottom'
+            ? 'autosuggest-bottom'
+            : 'autosuggest-top'
+        }`}
+      >
+        {this.props.enableAutocomplete ? (
+          <Autosuggest
+            className="auto-complete-chata"
+            onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+            onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+            getSuggestionValue={this.userSelectedSuggestionHandler}
+            suggestions={this.state.suggestions}
+            ref={ref => {
+              this.autoSuggest = ref
+            }}
+            renderSuggestion={suggestion => (
+              <Fragment>{suggestion.name}</Fragment>
+            )}
+            inputProps={{
+              className: `${this.UNIQUE_ID} chata-input${
+                this.props.showChataIcon ? ' left-padding' : ''
+              }`,
+              placeholder: 'Ask me anything...',
+              disabled: this.props.isDisabled,
+              onChange: this.onInputChange,
+              onKeyPress: this.onKeyPress,
+              value: this.state.inputValue,
+              onFocus: this.moveCaretAtEnd,
+              autoFocus: true
+            }}
+          />
+        ) : (
+          <div className="chata-input-container">
+            <input
+              className={`chata-input${
+                this.props.showChataIcon ? ' left-padding' : ''
+              }`}
+              placeholder="Ask me anything..."
+              value={this.state.inputValue}
+              onChange={e => this.setState({ inputValue: e.target.value })}
+              onKeyPress={this.onKeyPress}
+              disabled={this.props.isDisabled}
+              ref={this.setInputRef}
+              onFocus={this.moveCaretAtEnd}
+              autoFocus
             />
-          ) : (
-            <div className="chata-input-container">
-              <input
-                className={`chata-input${
-                  this.props.showChataIcon ? ' left-padding' : ''
-                }`}
-                placeholder="Ask me anything..."
-                value={this.state.inputValue}
-                onChange={e => this.setState({ inputValue: e.target.value })}
-                onKeyPress={this.onKeyPress}
-                disabled={this.props.isDisabled}
-                ref={this.setInputRef}
-                onFocus={this.moveCaretAtEnd}
-                autoFocus
-              />
-            </div>
-          )}
-          {this.props.showChataIcon && (
-            <div className="chat-bar-input-icon">
-              <img
-                className="chata-bubbles-icon"
-                src={chataBubblesSVG}
-                alt="chata.ai"
-                height="22px"
-                width="22px"
-                draggable="false"
-              />
-            </div>
-          )}
-          {this.props.showLoadingDots && this.state.isQueryRunning && (
-            <div className="input-response-loading-container">
-              <LoadingDots />
-            </div>
-          )}
-          {this.props.enableVoiceRecord && (
-            <SpeechToTextButton
-              onTranscriptChange={this.onTranscriptChange}
-              onFinalTranscript={this.onFinalTranscript}
+          </div>
+        )}
+        {this.props.showChataIcon && (
+          <div className="chat-bar-input-icon">
+            <img
+              className="chata-bubbles-icon"
+              src={chataBubblesSVG}
+              alt="chata.ai"
+              height="22px"
+              width="22px"
+              draggable="false"
             />
-          )}
-        </div>
-      </Fragment>
+          </div>
+        )}
+        {this.props.showLoadingDots && this.state.isQueryRunning && (
+          <div className="input-response-loading-container">
+            <LoadingDots />
+          </div>
+        )}
+        {this.props.enableVoiceRecord && (
+          <SpeechToTextButton
+            onTranscriptChange={this.onTranscriptChange}
+            onFinalTranscript={this.onFinalTranscript}
+          />
+        )}
+      </div>
     )
   }
 }

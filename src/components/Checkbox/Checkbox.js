@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 
-import styles from './Checkbox.css'
+import './Checkbox.css'
 
 export default class Checkbox extends React.Component {
   ID = uuid.v4()
@@ -74,7 +74,6 @@ export default class Checkbox extends React.Component {
 
     return (
       <div>
-        <style>{`${styles}`}</style>
         {
           //   // <label>
           // <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>

@@ -1,14 +1,9 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 
-import styles from './Spinner.css'
+import './Spinner.css'
 
 function LoadingDots () {
-  return (
-    <Fragment>
-      <style>{`${styles}`}</style>
-      <div className="spinner-loader"></div>
-    </Fragment>
-  )
+  return <div className="spinner-loader"></div>
 }
 
 export default LoadingDots

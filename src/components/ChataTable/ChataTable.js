@@ -16,6 +16,8 @@ import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 // import { getGroupBysFromTable, getGroupBysFromPivotTable } from '../../js/Util'
 
+import './ChataTable.css'
+
 export default class ChataTable extends React.Component {
   ref = null
 

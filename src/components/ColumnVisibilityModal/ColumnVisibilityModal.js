@@ -5,7 +5,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { Modal } from '../Modal'
 import { Checkbox } from '../Checkbox'
 
-import styles from './ColumnVisibilityModal.css'
+import './ColumnVisibilityModal.css'
 
 export default class ColumnVisibilityModal extends React.Component {
   static propTypes = {
@@ -28,44 +28,41 @@ export default class ColumnVisibilityModal extends React.Component {
     const columns = _cloneDeep(this.state.columns)
 
     return (
-      <Fragment>
-        <style>{`${styles}`}</style>
-        <Modal
-          isVisible={this.props.isVisible}
-          onClose={this.props.onClose}
-          onConfirm={() => this.props.onConfirm(this.state.columns)}
-          title="Show/Hide Columns"
-          enableBodyScroll={true}
-          width={600}
-          confirmText="Save"
-          style={{ marginTop: '45px' }}
-          confirmLoading={this.props.isSettingColumns}
-        >
-          <div style={{ padding: '0 15px' }}>
-            <div className="col-visibility-header">
-              <div>Column Name</div>
-              <div>Visible</div>
-            </div>
-            {columns &&
-              columns.map((col, index) => {
-                return (
-                  <div className="col-visibility-line-item">
-                    <div>{col.display_name || col.title}</div>
-                    <div>
-                      <Checkbox
-                        checked={col.is_visible}
-                        onChange={() => {
-                          columns[index].is_visible = !columns[index].is_visible
-                          this.setState({ columns })
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+      <Modal
+        isVisible={this.props.isVisible}
+        onClose={this.props.onClose}
+        onConfirm={() => this.props.onConfirm(this.state.columns)}
+        title="Show/Hide Columns"
+        enableBodyScroll={true}
+        width={600}
+        confirmText="Save"
+        style={{ marginTop: '45px' }}
+        confirmLoading={this.props.isSettingColumns}
+      >
+        <div style={{ padding: '0 15px' }}>
+          <div className="col-visibility-header">
+            <div>Column Name</div>
+            <div>Visible</div>
           </div>
-        </Modal>
-      </Fragment>
+          {columns &&
+            columns.map((col, index) => {
+              return (
+                <div className="col-visibility-line-item">
+                  <div>{col.display_name || col.title}</div>
+                  <div>
+                    <Checkbox
+                      checked={col.is_visible}
+                      onChange={() => {
+                        columns[index].is_visible = !columns[index].is_visible
+                        this.setState({ columns })
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+        </div>
+      </Modal>
     )
   }
 }

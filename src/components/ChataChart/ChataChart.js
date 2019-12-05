@@ -20,7 +20,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng, formatElement } from '../../js/Util.js'
 
-import styles from './ChataChart.css'
+import './ChataChart.css'
 
 export default class ChataChart extends Component {
   DEFAULT_MARGINS = {
@@ -470,23 +470,20 @@ export default class ChataChart extends Component {
       }
     }
     return (
-      <Fragment>
-        <style>{`${styles}`}</style>
-        <div className="chata-chart-container">
-          <svg
-            ref={r => (this.chartRef = r)}
-            xmlns="http://www.w3.org/2000/svg"
-            width={this.props.width}
-            height={this.props.height}
-            style={{
-              fontFamily: 'inherit',
-              background: 'inherit'
-            }}
-          >
-            {chart}
-          </svg>
-        </div>
-      </Fragment>
+      <div className="chata-chart-container">
+        <svg
+          ref={r => (this.chartRef = r)}
+          xmlns="http://www.w3.org/2000/svg"
+          width={this.props.width}
+          height={this.props.height}
+          style={{
+            fontFamily: 'inherit',
+            background: 'inherit'
+          }}
+        >
+          {chart}
+        </svg>
+      </div>
     )
   }
 }

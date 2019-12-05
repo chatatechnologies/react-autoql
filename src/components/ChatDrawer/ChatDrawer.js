@@ -20,20 +20,13 @@ import { bubblesIcon } from '../../svgIcons.js'
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
-import {
-  runQuery,
-  runQueryOnly,
-  runDrilldown,
-  cancelQuery
-} from '../../js/queryService'
+import { runQueryOnly, runDrilldown, cancelQuery } from '../../js/queryService'
 
 import { formatElement } from '../../js/Util'
 
 // Styles
-import rcStyles from 'rc-drawer/assets/index.css'
-import chataTableStyles from '../ChataTable/ChataTable.css'
-import messageStyles from '../ChatMessage/ChatMessage.css'
-import styles from './ChatDrawer.css'
+import 'rc-drawer/assets/index.css'
+import './ChatDrawer.css'
 
 export default class ChatDrawer extends React.Component {
   LIGHT_THEME = {
@@ -800,10 +793,6 @@ export default class ChatDrawer extends React.Component {
 
     return (
       <Fragment>
-        <style>{`${chataTableStyles}`}</style>
-        <style>{`${messageStyles}`}</style>
-        <style>{`${styles}`}</style>
-        <style>{`${rcStyles}`}</style>
         <Drawer
           data-test="chata-drawer-test"
           className="chata-drawer"

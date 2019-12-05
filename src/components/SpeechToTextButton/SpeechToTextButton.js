@@ -6,7 +6,7 @@ import SpeechRecognition from 'react-speech-recognition'
 
 import microphoneIconSVG from '../../images/microphone-voice-interface-symbol.svg'
 
-import styles from './SpeechToTextButton.css'
+import './SpeechToTextButton.css'
 
 const options = {
   autoStart: false,
@@ -61,7 +61,6 @@ class Dictaphone extends React.Component {
 
     return (
       <Fragment>
-        <style>{`${styles}`}</style>
         <button
           id="chata-voice-record-button"
           className={`chat-voice-record-button${listening ? ' listening' : ''}`}

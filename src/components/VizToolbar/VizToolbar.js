@@ -1,11 +1,11 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
-import styles from './VizToolbar.css'
+import './VizToolbar.css'
 
 import {
   tableIcon,
@@ -81,32 +81,29 @@ class VizToolbar extends React.Component {
       CHART_TYPES.includes(displayType)
     ) {
       return (
-        <Fragment>
-          <style>{`${styles}`}</style>
-          <div
-            className={`${this.props.className || ''} viz-toolbar`}
-            data-test="viz-toolbar"
-          >
-            {this.createVisButton('table', 'Table', tableIcon)}
-            {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
-            {this.createVisButton('column', 'Column Chart', columnChartIcon)}
-            {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
-            {this.createVisButton('line', 'Line Chart', lineChartIcon)}
-            {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
-            {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
-            {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
-            {this.createVisButton(
-              'stacked_bar',
-              'Stacked Bar Chart',
-              barChartIcon
-            )}
-            {this.createVisButton(
-              'stacked_column',
-              'Stacked Column Chart',
-              columnChartIcon
-            )}
-          </div>
-        </Fragment>
+        <div
+          className={`${this.props.className || ''} viz-toolbar`}
+          data-test="viz-toolbar"
+        >
+          {this.createVisButton('table', 'Table', tableIcon)}
+          {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
+          {this.createVisButton('column', 'Column Chart', columnChartIcon)}
+          {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
+          {this.createVisButton('line', 'Line Chart', lineChartIcon)}
+          {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
+          {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
+          {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
+          {this.createVisButton(
+            'stacked_bar',
+            'Stacked Bar Chart',
+            barChartIcon
+          )}
+          {this.createVisButton(
+            'stacked_column',
+            'Stacked Column Chart',
+            columnChartIcon
+          )}
+        </div>
       )
     }
     return null

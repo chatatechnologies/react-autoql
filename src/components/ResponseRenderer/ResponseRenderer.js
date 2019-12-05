@@ -8,7 +8,6 @@ import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 
-import styles from './ResponseRenderer.css'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
@@ -34,7 +33,7 @@ import {
   isForecastType
 } from '../../js/Util.js'
 
-import { TABLE_TYPES, CHART_TYPES, FORECAST_TYPES } from '../../js/Constants.js'
+import './ResponseRenderer.css'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -1062,7 +1061,6 @@ export default class ResponseRenderer extends React.Component {
 
     return (
       <Fragment>
-        <style>{`${styles}`}</style>
         <div
           key={this.RESPONSE_COMPONENT_KEY}
           id={`chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`}

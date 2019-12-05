@@ -12,6 +12,8 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import { getSupportedDisplayTypes } from '../../js/Util'
 import { runQuery, runQueryOnly } from '../../js/queryService'
 
+import './DashboardTile.css'
+
 export default class DashboardTile extends React.Component {
   TILE_ID = uuid.v4()
 
