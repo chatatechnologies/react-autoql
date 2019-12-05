@@ -47,9 +47,10 @@ export default class App extends Component {
     enableQueryTipsTab: false,
     enableColumnEditor: true,
     enableVoiceRecord: true,
+    dashboardTitleColor: '#2466AE',
     clearOnClose: false,
     height: 500,
-    width: 500,
+    width: 550,
     title: 'Data Messenger',
     // lightAccentColor: '#28a8e0',
     lightAccentColor: '#585359',
@@ -548,6 +549,14 @@ export default class App extends Component {
           }}
           value={this.state.chartColors}
         />
+        <h4>Dashboard Title Color</h4>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ dashboardTitleColor: e.target.value })
+          }}
+          value={this.state.dashboardTitleColor}
+        />
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
@@ -800,6 +809,7 @@ export default class App extends Component {
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
           chartColors={this.state.chartColors}
+          titleColor={this.state.dashboardTitleColor}
           onChangeCallback={newTiles => {
             this.setState({ dashboardTiles: newTiles })
           }}

@@ -34,7 +34,8 @@ export default class DashboardTile extends React.Component {
     currencyCode: PropTypes.string,
     languageCode: PropTypes.string,
     currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number
+    quantityDecimals: PropTypes.number,
+    titleColor: PropTypes.string.isRequired
   }
 
   static defaultProps = {
@@ -227,9 +228,13 @@ export default class DashboardTile extends React.Component {
         </div>
       )
     }
+
     return (
       <div className="dashboard-tile-title-container">
-        <span className="dashboard-tile-title">
+        <span
+          className="dashboard-tile-title"
+          style={{ color: this.props.titleColor }}
+        >
           {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>
         <div className="dashboard-tile-title-divider"></div>

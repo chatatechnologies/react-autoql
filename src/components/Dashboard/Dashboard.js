@@ -81,7 +81,8 @@ class Dashboard extends React.Component {
     quantityDecimals: PropTypes.number,
     fontFamily: PropTypes.string,
     notExecutedText: PropTypes.string,
-    chartColors: PropTypes.arrayOf(PropTypes.string)
+    chartColors: PropTypes.arrayOf(PropTypes.string),
+    titleColor: PropTypes.string
   }
 
   static defaultProps = {
@@ -110,7 +111,8 @@ class Dashboard extends React.Component {
     quantityDecimals: undefined,
     fontFamily: undefined,
     notExecutedText: undefined,
-    chartColors: undefined
+    chartColors: undefined,
+    titleColor: '#356f90'
   }
 
   state = {
@@ -366,7 +368,10 @@ class Dashboard extends React.Component {
       })
       .catch(error => {
         console.error(error)
-        this.setState({ isDrilldownRunning: false })
+        this.setState({
+          isDrilldownRunning: false,
+          activeDrilldownResponse: undefined
+        })
       })
   }
 
@@ -426,13 +431,14 @@ class Dashboard extends React.Component {
                 currencyDecimals={this.props.currencyDecimals}
                 quantityDecimals={this.props.quantityDecimals}
                 chartColors={this.props.chartColors}
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--chata-dashboard-background-color'
-                )}
                 processDrilldown={this.startDrilldown}
+                demo={this.props.demo}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey
                 }
+                backgroundColor={document.documentElement.style.getPropertyValue(
+                  '--chata-dashboard-background-color'
+                )}
               />
             </div>
           )}
@@ -535,6 +541,7 @@ class Dashboard extends React.Component {
                   notExecutedText={this.props.notExecutedText}
                   chartColors={this.props.chartColors}
                   processDrilldown={this.processDrilldown}
+                  titleColor={this.props.titleColor}
                 />
               ))}
             </ReactGridLayout>
