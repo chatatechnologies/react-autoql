@@ -75,6 +75,7 @@ export default class Button extends React.Component {
           isDisabled ? ' disabled' : ''
         }`}
         style={{ ...sizeCss, ...this.props.style }}
+        onClick={this.props.onClick}
       >
         {this.props.loading && <Spinner />}
         {this.props.children}

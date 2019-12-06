@@ -79,9 +79,11 @@ export default class QueryTipsTab extends React.Component {
                         style={{ display: 'block' }}
                       >
                         {query}
-                        <span className="execute-btn">
-                          <MdPlayCircleOutline />
-                        </span>
+                        {
+                          // <span className="execute-btn">
+                          //   <MdPlayCircleOutline />
+                          // </span>
+                        }
                       </div>
                     )
                   })}
@@ -93,7 +95,7 @@ export default class QueryTipsTab extends React.Component {
                 </div>
                 <div id="react-paginate" className="animated-item">
                   <ReactPaginate
-                    pageCount={3}
+                    pageCount={153}
                     pageRangeDisplayed={1}
                     marginPagesDisplayed={2}
                     containerClassName={'pagination'}
