@@ -26,7 +26,7 @@
     position: relative;
     height: 45px;
     line-height: 45px;
-    border-top: 1px solid lightgray;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
     cursor: pointer;
 
     &:first-child {
@@ -66,6 +66,7 @@
 #react-paginate {
   position: relative;
   background: var(--chata-drawer-accent-color);
+  border-radius: 25px;
   padding: 8px;
 
   ul {
