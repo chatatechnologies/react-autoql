@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
-
 import {
   ChatDrawer,
   ResponseRenderer,
@@ -9,6 +8,7 @@ import {
   executeDashboard
 } from '@chata-ai/core'
 import uuid from 'uuid'
+import { sortable } from 'react-sortable'
 
 import {
   Radio,
@@ -19,7 +19,8 @@ import {
   Menu,
   Select,
   Form,
-  message
+  message,
+  Icon
 } from 'antd'
 
 import locateLogo from './locate_logo.png'
@@ -28,6 +29,31 @@ import purefactsLogo from './purefacts_logo.png'
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/chata.esm.css'
 import './index.css'
+
+class Item extends React.Component {
+  render() {
+    return (
+      <li
+        style={{
+          width: '200px',
+          margin: '0 auto',
+          listStyleType: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          border: '1px solid lightgray',
+          borderRadius: '3px',
+          paddingRight: '5px',
+          marginBottom: '3px'
+        }}
+        {...this.props}
+      >
+        {this.props.children}
+      </li>
+    )
+  }
+}
+
+const SortableItem = sortable(Item)
 
 export default class App extends Component {
   state = {
@@ -45,7 +71,7 @@ export default class App extends Component {
     enableAutocomplete: true,
     enableSafetyNet: true,
     disableDrilldowns: false,
-    enableQueryTipsTab: false,
+    enableQueryTipsTab: true,
     enableColumnEditor: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
@@ -265,6 +291,60 @@ export default class App extends Component {
           defaultChecked={this.state[propName]}
           checked={this.state[propName] === true}
           onChange={e => this.setState({ [propName]: e })}
+        />
+      </div>
+    )
+  }
+
+  onSortChartColors = items => {
+    this.setState({
+      items: items
+    })
+  }
+
+  renderChartColorsList = () => {
+    const { chartColors } = this.state
+    var listItems = chartColors.map((item, i) => {
+      return (
+        <SortableItem
+          key={i}
+          onSortItems={this.onSortChartColors}
+          items={chartColors}
+          sortId={i}
+        >
+          {item}
+          <Icon
+            style={{ float: 'right', cursor: 'pointer', marginTop: '3px' }}
+            type="close"
+            onClick={() => {
+              const newChartColors = this.state.chartColors.filter(
+                color => color !== item
+              )
+              this.setState({ chartColors: newChartColors })
+            }}
+          />
+        </SortableItem>
+      )
+    })
+
+    return (
+      <div>
+        <ul
+          style={{ padding: 0, marginBottom: '3px' }}
+          className="sortable-list"
+        >
+          {listItems}
+        </ul>
+        <Input
+          placeholder="New Color"
+          value={this.state.newColorInput}
+          onChange={e => this.setState({ newColorInput: e.target.value })}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              const newChartColors = [...this.state.chartColors, e.target.value]
+              this.setState({ chartColors: newChartColors, newColorInput: '' })
+            }
+          }}
         />
       </div>
     )
@@ -543,13 +623,16 @@ export default class App extends Component {
           larger than the color array, it will repeat the colors. Any solid
           color formats are accepted. Hit "enter" to add a color.
         </h5>
-        <Select
-          mode="tags"
-          onChange={colors => {
-            this.setState({ chartColors: colors })
-          }}
-          value={this.state.chartColors}
-        />
+        {this.renderChartColorsList()}
+        {
+          // <Select
+          //   mode="tags"
+          //   onChange={colors => {
+          //     this.setState({ chartColors: colors })
+          //   }}
+          //   value={this.state.chartColors}
+          // />
+        }
         <h4>Dashboard Title Color</h4>
         <Input
           type="text"

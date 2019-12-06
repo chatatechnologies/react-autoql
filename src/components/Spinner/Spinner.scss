@@ -11,8 +11,8 @@
   height: 16px;
   margin: 0px;
   border-radius: 50%;
-  border: 1px solid #fff;
-  border-color: #fff transparent #fff transparent;
+  border: 1px solid currentColor;
+  border-color: currentColor transparent currentColor transparent;
   animation: spinner-loader 1.2s linear infinite;
 }
 

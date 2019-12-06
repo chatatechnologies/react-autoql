@@ -85,7 +85,8 @@ export default class ChatMessage extends React.Component {
   }
 
   state = {
-    displayType: getInitialDisplayType(this.props.response)
+    displayType: getInitialDisplayType(this.props.response),
+    isSettingColumnVisibility: false
   }
 
   componentDidUpdate = (prevProps, prevState) => {

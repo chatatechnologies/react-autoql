@@ -12,7 +12,6 @@ import { MdClose } from 'react-icons/md'
 import { MdLightbulbOutline } from 'react-icons/md'
 import { FaRegTrashAlt } from 'react-icons/fa'
 import { MdError } from 'react-icons/md'
-import { IoIosSearch } from 'react-icons/io'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import { bubblesIcon } from '../../svgIcons.js'
 
@@ -20,9 +19,13 @@ import { bubblesIcon } from '../../svgIcons.js'
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
-import { runQueryOnly, runDrilldown, cancelQuery } from '../../js/queryService'
-
-import { formatElement } from '../../js/Util'
+import { QueryTipsTab } from '../QueryTipsTab'
+import {
+  runQueryOnly,
+  runDrilldown,
+  cancelQuery,
+  fetchQueryTips
+} from '../../js/queryService'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -141,12 +144,16 @@ export default class ChatDrawer extends React.Component {
   }
 
   state = {
+    activePage: 'messenger',
+
     stateScrollTop: 0,
-    messages: [this.introMessageObject],
     lastMessageId: 'intro',
     isClearMessageConfirmVisible: false,
-    activePage: 'messenger',
-    queryTipResults: []
+    messages: [this.introMessageObject],
+
+    queryTipsList: [],
+    queryTipsLoading: false,
+    queryTipsError: false
   }
 
   componentDidMount = () => {
@@ -429,11 +436,7 @@ export default class ChatDrawer extends React.Component {
       content,
       response,
       id,
-      type:
-        response &&
-        response.data &&
-        response.data.data &&
-        response.data.data.display_type,
+      type: _get(response, 'data.data.display_type'),
       isResponse: true
     }
   }
@@ -618,6 +621,17 @@ export default class ChatDrawer extends React.Component {
     )
   }
 
+  renderBodyContent = () => {
+    switch (this.state.activePage) {
+      case 'messenger': {
+        return this.renderDataMessengerContent()
+      }
+      case 'tips': {
+        return this.renderQueryTipsContent()
+      }
+    }
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -729,68 +743,46 @@ export default class ChatDrawer extends React.Component {
 
   onQueryTipsInputKeyPress = e => {
     if (e.key == 'Enter') {
-      console.log('submit topic')
+      this.setState({ queryTipsLoading: true })
+      fetchQueryTips()
+        .then(response => {
+          this.setState({
+            queryTipsList: response.data,
+            queryTipsLoading: false,
+            queryTipsError: false
+          })
+        })
+        .catch(() =>
+          this.setState({
+            queryTipsLoading: false,
+            queryTipsError: true
+          })
+        )
+    } else {
+      this.setState({ queryTipsInputValue: e.target.value })
     }
   }
 
   renderQueryTipsContent = () => (
-    <Scrollbars
-      ref={c => {
-        this.queryTipsScrollComponent = c
+    <QueryTipsTab
+      onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
+      loading={this.state.queryTipsLoading}
+      error={this.state.queryTipsError}
+      queryTipsList={this.state.queryTipsList}
+      queryTipsInputValue={this.state.queryTipsInputValue}
+      onPageChange={() => {
+        fetchQueryTips().then(response =>
+          this.setState({ queryTipsList: response.data })
+        )
       }}
-    >
-      <div className="query-tips-page-container">
-        <div
-          className="chata-input-container"
-          style={{ animation: 'slideDown 0.5s ease' }}
-        >
-          <input
-            className="chata-input left-padding"
-            placeholder="Enter a Topic..."
-            value={this.state.queryTipsInputValue}
-            onChange={e =>
-              this.setState({ queryTipsInputValue: e.target.value })
-            }
-            onKeyPress={this.onQueryTipsInputKeyPress}
-            ref={ref => (this.queryTipsInputRef = ref)}
-            autoFocus
-          />
-          <div className="chat-bar-input-icon">
-            <IoIosSearch
-              style={{ width: '19px', height: '20px', color: '#999' }}
-            />
-          </div>
-        </div>
-        <div className="query-tips-result-container">
-          {!_get(this.state.queryTipResults, 'length') ? (
-            <div>
-              <p>Your query suggestions will show up here.</p>
-              <p>
-                You can copy them for later use or execute them in the data
-                messenger by hitting the “execute” button
-              </p>
-            </div>
-          ) : (
-            <div></div>
-          )}
-        </div>
-      </div>
-    </Scrollbars>
+      executeQuery={query => {
+        this.setState({ activePage: 'messenger' })
+        this.onSuggestionClick(query)
+      }}
+    />
   )
 
   render = () => {
-    let drawerContent
-    switch (this.state.activePage) {
-      case 'messenger': {
-        drawerContent = this.renderDataMessengerContent()
-        break
-      }
-      case 'tips': {
-        drawerContent = this.renderQueryTipsContent()
-        break
-      }
-    }
-
     return (
       <Fragment>
         <Drawer
@@ -814,7 +806,7 @@ export default class ChatDrawer extends React.Component {
             <div className="chat-header-container">
               {this.renderHeaderContent()}
             </div>
-            {drawerContent}
+            {this.renderBodyContent()}
           </div>
         </Drawer>
         <ReactTooltip

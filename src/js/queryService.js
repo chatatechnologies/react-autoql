@@ -3,6 +3,14 @@ import uuid from 'uuid'
 
 import { TABLE_TYPES } from './Constants'
 
+const queryTipsSampleData = [
+  'List all sales',
+  'Sales per month last year',
+  'Total sales this year',
+  'All sales per customer',
+  'Sales per service per month'
+]
+
 // axios.defaults.timeout = 10000
 
 var autoCompleteCall = null
@@ -324,4 +332,33 @@ export const setColumnVisibility = ({
         .catch(error => Promise.reject(error))
     })
     .catch(error => Promise.reject(error))
+}
+
+export const fetchQueryTips = ({
+  category,
+  demo,
+  domain,
+  apiKey,
+  token
+  // customerId,
+  // userId,
+} = {}) => {
+  return new Promise((resolve, reject) => {
+    return setTimeout(() => resolve({ data: queryTipsSampleData }), 1000)
+  })
+
+  // const url = demo
+  //   ? ''
+  //   : `${domain}/api/v1/querytips?key=${apiKey}&category=${category}`
+
+  // const axiosInstance = axios.create({
+  //   headers: {
+  //     Authorization: `Bearer ${token}`
+  //   }
+  // })
+
+  // return axiosInstance
+  //   .get(url)
+  //   .then(response => Promise.resolve(response))
+  //   .catch(error => Promise.reject(error))
 }

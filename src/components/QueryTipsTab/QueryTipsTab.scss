@@ -1,0 +1,151 @@
+.query-tips-page-container {
+  height: 100%;
+  padding: 10px;
+}
+.query-tips-result-container {
+  color: var(--chata-drawer-text-color-primary);
+  padding: 10px 20px;
+  text-align: center;
+  max-width: 550px;
+  margin: 0 auto;
+
+  p {
+    animation: fadeIn 0.5s;
+  }
+
+  .query-tip-list-container {
+    margin-bottom: 20px;
+  }
+
+  .animated-item {
+    animation: fadeIn 0.5s linear;
+    animation-fill-mode: both;
+  }
+
+  .query-tip-item {
+    position: relative;
+    height: 45px;
+    line-height: 45px;
+    border-top: 1px solid lightgray;
+    cursor: pointer;
+
+    &:first-child {
+      border-top: none;
+    }
+
+    .execute-btn {
+      position: absolute;
+      right: 10px;
+      top: 4px;
+      font-size: 20px;
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    &:hover {
+      font-weight: bold;
+      .execute-btn {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+  }
+
+  .query-tips-result-placeholder {
+    margin-top: 50px;
+    opacity: 0.6;
+  }
+}
+
+.chat-bar-loading-spinner {
+  position: absolute;
+  right: 20px;
+  top: 22px;
+}
+
+#react-paginate {
+  position: relative;
+  background: var(--chata-drawer-accent-color);
+  padding: 8px;
+
+  ul {
+    display: inline-block;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+
+  li {
+    display: inline-block;
+    color: #fff;
+    cursor: pointer;
+    margin-right: 3px;
+    border-radius: 5px;
+    margin-bottom: 0;
+    user-select: none;
+    border: 1px solid transparent;
+
+    &:hover {
+      opacity: 0.7;
+      border: 1px solid #fff;
+      border-radius: 50%;
+    }
+  }
+
+  li a {
+    display: inline-block;
+    color: #fff;
+    outline: none;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+
+  li.selected {
+    border: 1px solid #fff;
+    border-radius: 50%;
+    outline: none;
+  }
+
+  .pagination-next.disabled,
+  .pagination-previous.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    &:hover {
+      border: 1px solid transparent;
+    }
+  }
+
+  .pagination-previous {
+    position: absolute;
+    font-size: 22px;
+    left: 20px;
+  }
+
+  .pagination-next {
+    position: absolute;
+    font-size: 22px;
+    right: 20px;
+  }
+}
+
+// Set delay per List Item
+@for $i from 1 through 5 {
+  .animated-item:nth-child(#{$i}) {
+    animation-delay: 0.15s * $i;
+  }
+}
+
+// Keyframe animation
+@-webkit-keyframes fadeIn {
+  0% {
+    opacity: 0;
+    top: 100px;
+  }
+  75% {
+    opacity: 0.5;
+    top: 0px;
+  }
+  100% {
+    opacity: 1;
+  }
+}
