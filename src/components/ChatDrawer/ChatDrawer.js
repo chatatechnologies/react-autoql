@@ -319,35 +319,41 @@ export default class ChatDrawer extends React.Component {
   }
 
   onSuggestionClick = suggestion => {
-    this.addRequestMessage(suggestion)
-    this.setState({ isChataThinking: true })
-
-    if (suggestion === 'None of these') {
-      setTimeout(() => {
-        this.addResponseMessage({ content: 'Thank you for your feedback.' })
-        this.setState({ isChataThinking: false })
-      }, 1000)
-      return
+    if (this.chatBarRef) {
+      this.chatBarRef.animateInputTextAndSubmit(suggestion)
     }
 
-    runQueryOnly({
-      query: suggestion,
-      demo: this.props.demo,
-      debug: this.props.debug,
-      test: this.props.test,
-      domain: this.props.domain,
-      apiKey: this.props.apiKey,
-      customerId: this.props.customerId,
-      userId: this.props.userId,
-      username: this.props.username,
-      token: this.props.token
-    })
-      .then(response => {
-        this.onResponse(response)
-      })
-      .catch(error => {
-        this.onResponse(error)
-      })
+    // then(() => {
+    //   this.addRequestMessage(suggestion)
+    //   this.setState({ isChataThinking: true })
+
+    //   if (suggestion === 'None of these') {
+    //     setTimeout(() => {
+    //       this.addResponseMessage({ content: 'Thank you for your feedback.' })
+    //       this.setState({ isChataThinking: false })
+    //     }, 1000)
+    //     return
+    //   }
+
+    //   runQueryOnly({
+    //     query: suggestion,
+    //     demo: this.props.demo,
+    //     debug: this.props.debug,
+    //     test: this.props.test,
+    //     domain: this.props.domain,
+    //     apiKey: this.props.apiKey,
+    //     customerId: this.props.customerId,
+    //     userId: this.props.userId,
+    //     username: this.props.username,
+    //     token: this.props.token
+    //   })
+    //     .then(response => {
+    //       this.onResponse(response)
+    //     })
+    //     .catch(error => {
+    //       this.onResponse(error)
+    //     })
+    // })
   }
 
   onResponse = response => {
@@ -525,7 +531,7 @@ export default class ChatDrawer extends React.Component {
             <div
               className={`tab${page === 'tips' ? ' active' : ''}`}
               onClick={() => this.setState({ activePage: 'tips' })}
-              data-tip="Query Tips"
+              data-tip="Query Inspiration"
               data-for="chata-header-tooltip"
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
@@ -782,7 +788,9 @@ export default class ChatDrawer extends React.Component {
       }}
       executeQuery={query => {
         this.setState({ activePage: 'messenger' })
-        this.onSuggestionClick(query)
+        setTimeout(() => {
+          this.onSuggestionClick(query)
+        }, 500)
       }}
     />
   )

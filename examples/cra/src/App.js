@@ -694,7 +694,7 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Enable Query Tips Tab',
+          'Enable Query Inspiration Tab',
           'enableQueryTipsTab',
           [true, false]
         )}

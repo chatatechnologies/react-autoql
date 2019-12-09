@@ -95,7 +95,7 @@ export default class QueryTipsTab extends React.Component {
                 </div>
                 <div id="react-paginate" className="animated-item">
                   <ReactPaginate
-                    pageCount={153}
+                    pageCount={11}
                     pageRangeDisplayed={1}
                     marginPagesDisplayed={2}
                     containerClassName={'pagination'}

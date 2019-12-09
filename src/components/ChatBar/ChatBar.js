@@ -67,6 +67,23 @@ export default class ChatBar extends React.Component {
     isQueryRunning: false
   }
 
+  animateInputTextAndSubmit = text => {
+    if (typeof text === 'string' && _get(text, 'length')) {
+      for (let i = 1; i <= text.length; i++) {
+        setTimeout(() => {
+          this.setState({
+            inputValue: text.slice(0, i)
+          })
+          if (i === text.length) {
+            setTimeout(() => {
+              this.submitQuery(text)
+            }, 300)
+          }
+        }, i * 50)
+      }
+    }
+  }
+
   submitQuery = (queryText, skipSafetyNet) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
