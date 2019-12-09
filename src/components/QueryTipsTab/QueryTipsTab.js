@@ -100,8 +100,8 @@ export default class QueryTipsTab extends React.Component {
                     marginPagesDisplayed={2}
                     containerClassName={'pagination'}
                     subContainerClassName={'pages pagination'}
-                    previousLabel="&#8249;"
-                    nextLabel="&#8250;"
+                    previousLabel="&#8592;"
+                    nextLabel="&#8594;"
                     onPageChange={this.props.onPageChange}
                     nextClassName="pagination-next"
                     previousClassName="pagination-previous"

@@ -80,7 +80,7 @@ export default class App extends Component {
     width: 550,
     title: 'Data Messenger',
     // lightAccentColor: '#28a8e0',
-    lightAccentColor: '#585359',
+    lightAccentColor: '#2466AE',
     darkAccentColor: '#525252',
     maxMessages: 10,
     isEditing: false,

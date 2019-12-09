@@ -60,9 +60,9 @@
 
 #react-paginate {
   position: relative;
-  background: var(--chata-drawer-accent-color);
-  border-radius: 25px;
+  background: transparent;
   padding: 8px;
+  box-shadow: 0px 16px 16px -17px var(--chata-drawer-accent-color);
 
   ul {
     display: inline-block;
@@ -72,24 +72,24 @@
 
   li {
     display: inline-block;
-    color: #fff;
+    color: var(--chata-drawer-text-color-primary);
     cursor: pointer;
     margin-right: 3px;
     border-radius: 5px;
     margin-bottom: 0;
     user-select: none;
-    border: 1px solid transparent;
+    // border: 1px solid transparent;
 
     &:hover {
       opacity: 0.7;
-      border: 1px solid #fff;
+      // border: 1px solid #fff;
       border-radius: 50%;
     }
   }
 
   li a {
     display: inline-block;
-    color: #fff;
+    color: var(--chata-drawer-text-color-primary);
     outline: none;
     width: 28px;
     height: 28px;
@@ -97,29 +97,35 @@
   }
 
   li.selected {
-    border: 1px solid #fff;
+    background: var(--chata-drawer-accent-color);
     border-radius: 50%;
     outline: none;
+    a {
+      color: #fff;
+    }
   }
 
   .pagination-next.disabled,
   .pagination-previous.disabled {
     opacity: 0.5;
     pointer-events: none;
-    &:hover {
-      border: 1px solid transparent;
-    }
+    // &:hover {
+    //   border: 1px solid transparent;
+    // }
   }
 
-  .pagination-previous {
-    position: absolute;
-    font-size: 22px;
-    left: 20px;
-  }
-
+  .pagination-previous,
   .pagination-next {
     position: absolute;
-    font-size: 22px;
+    font-size: 18px;
+    a {
+      color: var(--chata-drawer-accent-color);
+    }
+  }
+  .pagination-previous {
+    left: 20px;
+  }
+  .pagination-next {
     right: 20px;
   }
 }
@@ -127,7 +133,7 @@
 // Set delay per List Item, max out at 15 as it shouldnt exceed this
 @for $i from 1 through 15 {
   .animated-item:nth-child(#{$i}) {
-    animation-delay: 0.1s * $i;
+    animation-delay: 0.08s * $i;
   }
 }
 
