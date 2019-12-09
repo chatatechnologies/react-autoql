@@ -100,6 +100,8 @@ export default class App extends Component {
     runDashboardAutomatically: false,
     comparisonDisplay: true,
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
+    monthFormat: 'MMM YYYY',
+    dayFormat: 'MMM DD, YYYY',
     dashboardTiles: [
       {
         key: '0',
@@ -540,6 +542,35 @@ export default class App extends Component {
           }}
           style={{ width: '55px' }}
           defaultValue={this.state.languageCode}
+        />
+        <h4>Format for Month, Year</h4>
+        <h6>
+          Don't know the syntax for formats?{' '}
+          <a href="https://devhints.io/moment" target="_blank">
+            View the cheat sheet
+          </a>
+        </h6>
+        <Input
+          type="text"
+          onBlur={e => {
+            this.setState({ monthFormat: e.target.value })
+          }}
+          defaultValue={this.state.monthFormat}
+        />
+        <h4>Format for Day, Month, Year</h4>
+        <h6>
+          Don't know the syntax for formats?{' '}
+          <a href="https://devhints.io/moment" target="_blank">
+            View the cheat sheet
+          </a>
+        </h6>
+
+        <Input
+          type="text"
+          onBlur={e => {
+            this.setState({ dayFormat: e.target.value })
+          }}
+          defaultValue={this.state.dayFormat}
         />
         <h4>Number of Decimals for Currency Values</h4>
         <InputNumber

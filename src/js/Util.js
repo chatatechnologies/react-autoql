@@ -45,23 +45,28 @@ export const isDayJSDateValid = date => {
   return date !== 'Invalid Date'
 }
 
-export const formatEpochDate = (value, col) => {
+export const formatEpochDate = (value, col, config) => {
+  const { monthYearFormat, dayMonthYearFormat } = config
+  const year = 'YYYY'
+  const monthYear = monthYearFormat || 'MMM YYYY'
+  const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+
   // Use title to determine significant digits of date format
   const title = col.title
-  let date = dayjs.unix(value).format('MMM D, YYYY')
+  let date = dayjs.unix(value).format(dayMonthYear)
 
   if (!Number(value)) {
     // Not an epoch time. Try converting using dayjs
     if (title && title.toLowerCase().includes('year')) {
-      date = dayjs(value).format('YYYY')
+      date = dayjs(value).format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs(value).format('MMM YYYY')
+      date = dayjs(value).format(monthYear)
     }
-    date = dayjs(value).format('MMM D, YYYY')
+    date = dayjs(value).format(dayMonthYear)
   } else if (title && title.toLowerCase().includes('year')) {
-    date = dayjs.unix(value).format('YYYY')
+    date = dayjs.unix(value).format(year)
   } else if (title && title.toLowerCase().includes('month')) {
-    date = dayjs.unix(value).format('MMM YYYY')
+    date = dayjs.unix(value).format(monthYear)
   }
 
   if (isDayJSDateValid(date)) {
@@ -71,20 +76,24 @@ export const formatEpochDate = (value, col) => {
   return value
 }
 
-export const formatStringDate = value => {
+export const formatStringDate = (value, config) => {
   if (value && typeof value === 'string') {
     const dateArray = value.split('-')
     const year = _get(dateArray, '[0]')
     const month = _get(dateArray, '[1]')
     const day = _get(dateArray, '[2]')
 
+    const { monthYearFormat, dayMonthYearFormat } = config
+    const monthYear = monthYearFormat || 'MMM YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+
     if (day) {
-      const date = dayjs(value).format('MMM D, YYYY')
+      const date = dayjs(value).format(dayMonthYear)
       if (isDayJSDateValid(date)) {
         return date
       }
     } else if (month) {
-      const date = dayjs(value).format('MMM YYYY')
+      const date = dayjs(value).format(monthYear)
       if (isDayJSDateValid(date)) {
         return date
       }
@@ -138,11 +147,11 @@ export const formatChartLabel = (d, col, config = {}) => {
       break
     }
     case 'DATE': {
-      formattedLabel = formatEpochDate(d, col)
+      formattedLabel = formatEpochDate(d, col, config)
       break
     }
     case 'DATE_STRING': {
-      formattedLabel = formatStringDate(d)
+      formattedLabel = formatStringDate(d, config)
       break
     }
     // case 'DATE_MONTH': {
@@ -241,11 +250,11 @@ export const formatElement = ({
           break
         }
         case 'DATE': {
-          formattedElement = formatEpochDate(element, column)
+          formattedElement = formatEpochDate(element, column, config)
           break
         }
         case 'DATE_STRING': {
-          formattedElement = formatStringDate(element)
+          formattedElement = formatStringDate(element, config)
           break
         }
         // case 'DATE_MONTH': {
