@@ -47,18 +47,22 @@ export default class ChatMessage extends React.Component {
     response: PropTypes.shape({}),
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
     debug: PropTypes.bool,
     demo: PropTypes.bool,
-    comparisonDisplay: PropTypes.string,
     enableColumnEditor: PropTypes.bool,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number,
     apiKey: PropTypes.string,
     userId: PropTypes.string,
     token: PropTypes.string,
-    domain: PropTypes.string
+    domain: PropTypes.string,
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
@@ -72,16 +76,12 @@ export default class ChatMessage extends React.Component {
     tableOptions: undefined,
     debug: false,
     demo: false,
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
-    comparisonDisplay: 'ratio',
     enableColumnEditor: true,
     apiKey: undefined,
     userId: undefined,
     token: undefined,
-    domain: undefined
+    domain: undefined,
+    dataFormatting: {}
   }
 
   state = {
@@ -126,12 +126,8 @@ export default class ChatMessage extends React.Component {
           tableHoverColor={this.props.tableHoverColor}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
-          currencyCode={this.props.currencyCode}
-          languageCode={this.props.languageCode}
-          currencyDecimals={this.props.currencyDecimals}
-          quantityDecimals={this.props.quantityDecimals}
+          dataFormatting={this.props.dataFormatting}
           chartColors={this.props.chartColors}
-          comparisonDisplay={this.props.comparisonDisplay}
           setFilterTagsCallback={this.setFilterTags}
           hideColumnCallback={this.hideColumnCallback}
           onTableFilterCallback={this.onTableFilter}

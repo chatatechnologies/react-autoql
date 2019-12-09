@@ -97,10 +97,12 @@ export const formatStringDate = value => {
   return value
 }
 
-export const formatChartLabel = (d, col, currencyCode, languageCode) => {
+export const formatChartLabel = (d, col, config = {}) => {
   if (!col || !col.type) {
     return d
   }
+
+  const { currencyCode, languageCode } = config
 
   let formattedLabel = d
   switch (col.type) {
@@ -180,14 +182,18 @@ export const formatChartLabel = (d, col, currencyCode, languageCode) => {
 export const formatElement = ({
   element,
   column,
-  currencyCode,
-  languageCode,
-  htmlElement,
-  currencyDecimals,
-  quantityDecimals
+  config = {},
+  htmlElement
 }) => {
   try {
     let formattedElement = element
+    const {
+      currencyCode,
+      languageCode,
+      currencyDecimals,
+      quantityDecimals
+    } = config
+
     if (column) {
       switch (column.type) {
         case 'STRING': {

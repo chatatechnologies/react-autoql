@@ -90,14 +90,18 @@ export default class ChatDrawer extends React.Component {
     demo: PropTypes.bool,
     debug: PropTypes.bool,
     test: PropTypes.bool,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number,
-    comparisonDisplay: PropTypes.string,
     enableQueryTipsTab: PropTypes.bool,
     enableColumnEditor: PropTypes.bool,
-    chartColors: PropTypes.arrayOf(PropTypes.string)
+    chartColors: PropTypes.arrayOf(PropTypes.string),
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
@@ -131,14 +135,10 @@ export default class ChatDrawer extends React.Component {
     debug: false,
     test: false,
     introMessage: undefined,
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
+    dataFormatting: {},
     chartColors: undefined,
     enableQueryTipsTab: true,
     enableColumnEditor: true,
-    comparisonDisplay: 'ratio',
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -669,12 +669,8 @@ export default class ChatDrawer extends React.Component {
                     content={message.content}
                     scrollToBottom={this.scrollToBottom}
                     lastMessageId={this.state.lastMessageId}
-                    currencyCode={this.props.currencyCode}
-                    languageCode={this.props.languageCode}
-                    currencyDecimals={this.props.currencyDecimals}
-                    quantityDecimals={this.props.quantityDecimals}
+                    dataFormatting={this.props.dataFormatting}
                     chartColors={this.props.chartColors}
-                    comparisonDisplay={this.props.comparisonDisplay}
                     enableColumnEditor={this.props.enableColumnEditor}
                     tableBorderColor={
                       this.props.theme === 'light'

@@ -73,10 +73,15 @@ class Dashboard extends React.Component {
     debug: PropTypes.bool,
     test: PropTypes.bool,
     isEditing: PropTypes.bool,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number,
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    }),
     fontFamily: PropTypes.string,
     notExecutedText: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string),
@@ -103,10 +108,7 @@ class Dashboard extends React.Component {
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
+    dataFormatting: {},
     fontFamily: undefined,
     notExecutedText: undefined,
     chartColors: undefined,
@@ -424,10 +426,7 @@ class Dashboard extends React.Component {
               <ResponseRenderer
                 response={tile.queryResponse}
                 displayType={tile.displayType}
-                currencyCode={this.props.currencyCode}
-                languageCode={this.props.languageCode}
-                currencyDecimals={this.props.currencyDecimals}
-                quantityDecimals={this.props.quantityDecimals}
+                dataFormatting={this.props.dataFormatting}
                 chartColors={this.props.chartColors}
                 processDrilldown={this.startDrilldown}
                 demo={this.props.demo}
@@ -452,8 +451,7 @@ class Dashboard extends React.Component {
                 enableSafetyNet={false}
                 enableSuggestions={false}
                 disableDrilldowns={true}
-                currencyCode={this.props.currencyCode}
-                languageCode={this.props.languageCode}
+                dataFormatting={this.props.dataFormatting}
                 // chartColors={this.props.chartColors}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
@@ -530,8 +528,7 @@ class Dashboard extends React.Component {
                   isDragging={this.state.isDragging}
                   setParamsForTile={this.setParamsForTile}
                   deleteTile={this.deleteTile}
-                  currencyCode={this.props.currencyCode}
-                  languageCode={this.props.languageCode}
+                  dataFormatting={this.props.dataFormatting}
                   notExecutedText={this.props.notExecutedText}
                   chartColors={this.props.chartColors}
                   processDrilldown={this.processDrilldown}

@@ -33,10 +33,15 @@ export default class DashboardTile extends React.Component {
     deleteTile: PropTypes.func.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string),
     queryResponse: PropTypes.shape({}),
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number,
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    }),
     titleColor: PropTypes.string.isRequired
   }
 
@@ -53,10 +58,7 @@ export default class DashboardTile extends React.Component {
     isNewTile: false,
     safetyNetSelections: undefined,
     selectedSuggestion: undefined,
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
+    dataFormatting: {},
     chartColors: undefined
   }
 
@@ -317,10 +319,7 @@ export default class DashboardTile extends React.Component {
                 onSuggestionClick={this.onSuggestionClick}
                 selectedSuggestion={this.props.tile.selectedSuggestion}
                 enableSuggestions={this.props.isEditing}
-                currencyCode={this.props.currencyCode}
-                languageCode={this.props.languageCode}
-                currencyDecimals={this.props.currencyDecimals}
-                quantityDecimals={this.props.quantityDecimals}
+                dataFormatting={this.props.dataFormatting}
                 chartColors={this.props.chartColors}
                 processDrilldown={(groupByObject, queryID, activeKey) =>
                   this.props.processDrilldown(

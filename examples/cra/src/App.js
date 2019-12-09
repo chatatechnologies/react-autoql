@@ -785,12 +785,18 @@ export default class App extends Component {
           demo={this.state.demo}
           debug={this.state.debug}
           test={this.state.test}
-          currencyCode={this.state.currencyCode}
-          languageCode={this.state.languageCode}
-          currencyDecimals={this.state.currencyDecimals}
-          quantityDecimals={this.state.quantityDecimals}
+          dataFormatting={{
+            currencyCode: this.state.currencyCode,
+            languageCode: this.state.languageCode,
+            currencyDecimals: this.state.currencyDecimals,
+            quantityDecimals: this.state.quantityDecimals,
+            comparisonDisplay: this.state.comparisonDisplay
+              ? 'PERCENT'
+              : 'RATIO',
+            monthYearFormat: this.state.monthFormat,
+            dayMonthYearFormat: this.state.dayFormat
+          }}
           chartColors={this.state.chartColors}
-          comparisonDisplay={this.state.comparisonDisplay ? 'PERCENT' : 'RATIO'}
           handleImage={handleImage}
           enableQueryTipsTab={this.state.enableQueryTipsTab}
           enableColumnEditor={this.state.enableColumnEditor}
@@ -883,10 +889,17 @@ export default class App extends Component {
           test={this.state.test}
           enableSafetyNet={this.state.enableSafetyNet}
           isEditing={this.state.isEditing}
-          currencyCode={this.state.currencyCode}
-          languageCode={this.state.languageCode}
-          currencyDecimals={this.state.currencyDecimals}
-          quantityDecimals={this.state.quantityDecimals}
+          dataFormatting={{
+            currencyCode: this.state.currencyCode,
+            languageCode: this.state.languageCode,
+            currencyDecimals: this.state.currencyDecimals,
+            quantityDecimals: this.state.quantityDecimals,
+            comparisonDisplay: this.state.comparisonDisplay
+              ? 'PERCENT'
+              : 'RATIO',
+            monthYearFormat: this.state.monthFormat,
+            dayMonthYearFormat: this.state.dayFormat
+          }}
           fontFamily={this.state.fontFamily}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}

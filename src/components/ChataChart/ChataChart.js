@@ -35,16 +35,19 @@ export default class ChataChart extends Component {
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
-    currencyCode: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined
+    dataFormatting: {}
   }
 
   state = {
@@ -162,19 +165,13 @@ export default class ChataChart extends Component {
         <strong>${labelCol.title}:</strong> ${formatElement({
         element: data.label,
         column: labelCol,
-        currencyCode: this.props.currencyCode,
-        languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals,
-        quantityDecimals: this.props.quantityDecimals
+        config: this.props.dataFormatting
       })}
       </div>
       <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement({
         element: data.values[colIndex],
         column: valueCols[colIndex],
-        currencyCode: this.props.currencyCode,
-        languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals,
-        quantityDecimals: this.props.quantityDecimals
+        config: this.props.dataFormatting
       })}
       </div>
     </div>`
@@ -200,30 +197,21 @@ export default class ChataChart extends Component {
       <strong>${labelColY.title}:</strong> ${formatElement({
       element: data.labelY,
       column: labelColY,
-      currencyCode: this.props.currencyCode,
-      languageCode: this.props.languageCode,
-      currencyDecimals: this.props.currencyDecimals,
-      quantityDecimals: this.props.quantityDecimals
+      config: this.props.dataFormatting
     })}
     </div>
     <div>
       <strong>${labelColX.title}:</strong> ${formatElement({
       element: data.labelX,
       column: labelColX,
-      currencyCode: this.props.currencyCode,
-      languageCode: this.props.languageCode,
-      currencyDecimals: this.props.currencyDecimals,
-      quantityDecimals: this.props.quantityDecimals
+      config: this.props.dataFormatting
     })}
     </div>
     <div>
       <strong>${valueCol.title}:</strong> ${formatElement({
       element: data.value,
       column: valueCol,
-      currencyCode: this.props.currencyCode,
-      languageCode: this.props.languageCode,
-      currencyDecimals: this.props.currencyDecimals,
-      quantityDecimals: this.props.quantityDecimals
+      config: this.props.dataFormatting
     })}
     </div>
   </div>`
@@ -350,19 +338,13 @@ export default class ChataChart extends Component {
             <strong>${columns[0].title}:</strong> ${formatElement({
             element: label,
             column: columns[0],
-            currencyCode: this.props.currencyCode,
-            languageCode: this.props.languageCode,
-            currencyDecimals: this.props.currencyDecimals,
-            quantityDecimals: this.props.quantityDecimals
+            config: this.props.dataFormatting
           })}
           </div>
           <div><strong>${columns[1].title}:</strong> ${formatElement({
             element: value,
             column: columns[1],
-            currencyCode: this.props.currencyCode,
-            languageCode: this.props.languageCode,
-            currencyDecimals: this.props.currencyDecimals,
-            quantityDecimals: this.props.quantityDecimals
+            config: this.props.dataFormatting
           })}
           </div>
         </div>`

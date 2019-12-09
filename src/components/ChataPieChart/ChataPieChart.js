@@ -24,19 +24,21 @@ export default class Axis extends Component {
     onChartClick: PropTypes.func,
     margin: PropTypes.number,
     backgroundColor: PropTypes.string,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     margin: 20,
     backgroundColor: 'transparent',
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
+    dataFormatting: {},
     onChartClick: () => {}
   }
 
@@ -197,10 +199,7 @@ export default class Axis extends Component {
       })}: ${formatElement({
         element: d[dataValue][0] || 0,
         column: _get(d, 'origColumns[1]'),
-        currencyCode: this.props.currencyCode,
-        languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals,
-        quantityDecimals: this.props.quantityDecimals
+        config: this.props.dataFormatting
       })}`
       return legendString.trim()
     })

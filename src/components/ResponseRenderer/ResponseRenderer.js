@@ -68,18 +68,22 @@ export default class ResponseRenderer extends React.Component {
     renderSuggestionsAsDropdown: PropTypes.bool,
     suggestionSelection: PropTypes.string,
     enableSuggestions: PropTypes.bool,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string),
     height: PropTypes.number,
     width: PropTypes.number,
     demo: PropTypes.bool,
-    comparisonDisplay: PropTypes.string,
     hideColumnCallback: PropTypes.func,
     activeChartElementKey: PropTypes.string,
-    currencyDecimals: PropTypes.number,
-    quantityDecimals: PropTypes.number,
-    onTableFilterCallback: PropTypes.func
+    onTableFilterCallback: PropTypes.func,
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
@@ -96,16 +100,13 @@ export default class ResponseRenderer extends React.Component {
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
     enableSuggestions: true,
-    currencyCode: undefined,
-    languageCode: undefined,
-    currencyDecimals: undefined,
-    quantityDecimals: undefined,
+    dataFormatting: {},
     height: undefined,
     width: undefined,
     demo: false,
-    comparisonDisplay: 'PERCENT',
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     activeChartElementKey: undefined,
+    dateFormats: {},
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {},
     hideColumnCallback: () => {},
@@ -319,10 +320,7 @@ export default class ResponseRenderer extends React.Component {
         {formatElement({
           element: this.tableData[0],
           column: this.tableColumns[0],
-          currencyCode: this.props.currencyCode,
-          languageCode: this.props.languageCode,
-          currencyDecimals: this.props.currencyDecimals,
-          quantityDecimals: this.props.quantityDecimals
+          config: this.props.dataFormatting
         })}
       </a>
     )
@@ -487,10 +485,7 @@ export default class ResponseRenderer extends React.Component {
           columns={this.tableColumns}
           height={height}
           width={width}
-          currencyCode={this.props.currencyCode}
-          languageCode={this.props.languageCode}
-          currencyDecimals={this.props.currencyDecimals}
-          quantityDecimals={this.props.quantityDecimals}
+          dataFormatting={this.props.dataFormatting}
           chartColors={this.props.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -573,10 +568,7 @@ export default class ResponseRenderer extends React.Component {
                   return formatElement({
                     element: value,
                     column,
-                    currencyCode: this.props.currencyCode,
-                    languageCode: this.props.languageCode,
-                    currencyDecimals: this.props.currencyDecimals,
-                    quantityDecimals: this.props.quantityDecimals
+                    config: this.props.dataFormatting
                   })
                 }
               }
@@ -599,10 +591,7 @@ export default class ResponseRenderer extends React.Component {
               return formatElement({
                 element: value,
                 column,
-                currencyCode: this.props.currencyCode,
-                languageCode: this.props.languageCode,
-                currencyDecimals: this.props.currencyDecimals,
-                quantityDecimals: this.props.quantityDecimals
+                config: this.props.dataFormatting
               })
             }
           }
@@ -713,7 +702,7 @@ export default class ResponseRenderer extends React.Component {
       // Regardless of the BE response, we want to default to percent
       if (
         (col.type === 'RATIO' || col.type === 'NUMBER') &&
-        this.props.comparisonDisplay === 'PERCENT'
+        _get(this.props.dataFormatting, 'comparisonDisplay') === 'PERCENT'
       ) {
         col.type = 'PERCENT'
       }
@@ -740,10 +729,7 @@ export default class ResponseRenderer extends React.Component {
         return formatElement({
           element: cell.getValue(),
           column: col,
-          currencyCode: this.props.currencyCode,
-          languageCode: this.props.languageCode,
-          currencyDecimals: this.props.currencyDecimals,
-          quantityDecimals: this.props.quantityDecimals,
+          config: this.props.dataFormatting,
           htmlElement: cell.getElement()
         })
       }
@@ -883,10 +869,7 @@ export default class ResponseRenderer extends React.Component {
       const formattedColumnName = formatElement({
         element: columnName,
         column: this.tableColumns[1],
-        currencyCode: this.props.currencyCode,
-        languageCode: this.props.languageCode,
-        currencyDecimals: this.props.currencyDecimals,
-        quantityDecimals: this.props.quantityDecimals
+        config: this.props.dataFormatting
       })
       pivotTableColumns.push({
         ...this.tableColumns[2], // value column
