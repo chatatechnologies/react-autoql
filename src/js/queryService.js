@@ -8,7 +8,12 @@ const queryTipsSampleData = [
   'Sales per month last year',
   'Total sales this year',
   'All sales per customer',
-  'Sales per service per month'
+  'Sales per service per month',
+  'All sales last year',
+  'Sales for porcelain sink',
+  'Sales per product per month',
+  'Sales per year',
+  'All sales over $1000'
 ]
 
 // axios.defaults.timeout = 10000
@@ -336,6 +341,8 @@ export const setColumnVisibility = ({
 
 export const fetchQueryTips = ({
   category,
+  limit,
+  offset,
   demo,
   domain,
   apiKey,
@@ -344,7 +351,8 @@ export const fetchQueryTips = ({
   // userId,
 } = {}) => {
   return new Promise((resolve, reject) => {
-    return setTimeout(() => resolve({ data: queryTipsSampleData }), 1000)
+    const data = queryTipsSampleData.slice(0, limit)
+    return setTimeout(() => resolve({ data }), 1000)
   })
 
   // const url = demo

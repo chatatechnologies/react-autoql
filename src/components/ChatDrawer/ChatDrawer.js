@@ -744,7 +744,12 @@ export default class ChatDrawer extends React.Component {
   onQueryTipsInputKeyPress = e => {
     if (e.key == 'Enter') {
       this.setState({ queryTipsLoading: true })
-      fetchQueryTips()
+
+      const containerElement = document.querySelector(
+        '.query-tips-page-container'
+      )
+      const limit = Math.floor((containerElement.clientHeight - 150) / 50)
+      fetchQueryTips({ limit })
         .then(response => {
           this.setState({
             queryTipsList: response.data,

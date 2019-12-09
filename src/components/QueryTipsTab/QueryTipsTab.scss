@@ -4,21 +4,17 @@
 }
 .query-tips-result-container {
   color: var(--chata-drawer-text-color-primary);
-  padding: 10px 20px;
+  padding: 0px 20px;
   text-align: center;
   max-width: 550px;
   margin: 0 auto;
-
-  p {
-    animation: fadeIn 0.5s;
-  }
 
   .query-tip-list-container {
     margin-bottom: 20px;
   }
 
   .animated-item {
-    animation: fadeIn 0.5s linear;
+    animation: fadeIn 0.3s linear;
     animation-fill-mode: both;
   }
 
@@ -128,10 +124,10 @@
   }
 }
 
-// Set delay per List Item
-@for $i from 1 through 5 {
+// Set delay per List Item, max out at 15 as it shouldnt exceed this
+@for $i from 1 through 15 {
   .animated-item:nth-child(#{$i}) {
-    animation-delay: 0.15s * $i;
+    animation-delay: 0.1s * $i;
   }
 }
 
