@@ -18,6 +18,7 @@ export default class Axis extends Component {
 
   static propTypes = {
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    height: PropTypes.number,
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
     translate: PropTypes.string,
@@ -26,18 +27,24 @@ export default class Axis extends Component {
     rotateLabels: PropTypes.bool,
     type: PropTypes.string,
     col: PropTypes.shape({}),
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string,
     hasRightLegend: PropTypes.bool,
-    hasBottomLegend: PropTypes.bool
+    hasBottomLegend: PropTypes.bool,
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     orient: 'Bottom',
     hasRightLegend: false,
     hasBottomLegend: false,
-    currencyCode: undefined,
-    languageCode: undefined
+    dataFormatting: {}
   }
 
   componentDidMount = () => {
@@ -114,13 +121,12 @@ export default class Axis extends Component {
     axis
       .scale(this.props.scale)
       .tickSizeOuter(0)
-      .tickFormat(d => {
-        return formatChartLabel(
+      .tickFormat(function(d) {
+        return formatChartLabel({
           d,
-          this.props.col,
-          this.props.currencyCode,
-          this.props.languageCode
-        ).formattedLabel
+          col: self.props.col,
+          config: self.props.dataFormatting
+        }).formattedLabel
       })
 
     if (this.props.ticks) {
@@ -156,12 +162,11 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .attr('data-for', 'chart-element-tooltip')
       .attr('data-tip', function(d) {
-        const { fullWidthLabel, isTruncated } = formatChartLabel(
+        const { fullWidthLabel, isTruncated } = formatChartLabel({
           d,
-          self.props.col,
-          self.props.currencyCode,
-          self.props.languageCode
-        )
+          col: self.props.col,
+          config: self.props.dataFormatting
+        })
         if (isTruncated) {
           return fullWidthLabel
         }

@@ -46,34 +46,39 @@ export const isDayJSDateValid = date => {
 }
 
 export const formatEpochDate = (value, col, config) => {
-  const { monthYearFormat, dayMonthYearFormat } = config
-  const year = 'YYYY'
-  const monthYear = monthYearFormat || 'MMM YYYY'
-  const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+  try {
+    const { monthYearFormat, dayMonthYearFormat } = config
+    const year = 'YYYY'
+    const monthYear = monthYearFormat || 'MMM YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
 
-  // Use title to determine significant digits of date format
-  const title = col.title
-  let date = dayjs.unix(value).format(dayMonthYear)
+    // Use title to determine significant digits of date format
+    const title = col.title
+    let date = dayjs.unix(value).format(dayMonthYear)
 
-  if (!Number(value)) {
-    // Not an epoch time. Try converting using dayjs
-    if (title && title.toLowerCase().includes('year')) {
-      date = dayjs(value).format(year)
+    if (!Number(value)) {
+      // Not an epoch time. Try converting using dayjs
+      if (title && title.toLowerCase().includes('year')) {
+        date = dayjs(value).format(year)
+      } else if (title && title.toLowerCase().includes('month')) {
+        date = dayjs(value).format(monthYear)
+      }
+      date = dayjs(value).format(dayMonthYear)
+    } else if (title && title.toLowerCase().includes('year')) {
+      date = dayjs.unix(value).format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs(value).format(monthYear)
+      date = dayjs.unix(value).format(monthYear)
     }
-    date = dayjs(value).format(dayMonthYear)
-  } else if (title && title.toLowerCase().includes('year')) {
-    date = dayjs.unix(value).format(year)
-  } else if (title && title.toLowerCase().includes('month')) {
-    date = dayjs.unix(value).format(monthYear)
-  }
 
-  if (isDayJSDateValid(date)) {
-    return date
-  }
+    if (isDayJSDateValid(date)) {
+      return date
+    }
 
-  return value
+    return value
+  } catch (error) {
+    console.error(error)
+    return value
+  }
 }
 
 export const formatStringDate = (value, config) => {
@@ -106,7 +111,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const formatChartLabel = (d, col, config = {}) => {
+export const formatChartLabel = ({ d, col, config = {} }) => {
   if (!col || !col.type) {
     return d
   }

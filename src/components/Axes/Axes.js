@@ -21,8 +21,7 @@ export default class Axes extends React.Component {
       yGridLines,
       legendLabels,
       legendColumn,
-      currencyCode,
-      languageCode,
+      dataFormatting,
       hasRightLegend,
       hasBottomLegend,
       bottomLegendWidth,
@@ -46,8 +45,7 @@ export default class Axes extends React.Component {
       bottomLegendWidth,
       legendLabels,
       legendColumn,
-      currencyCode,
-      languageCode,
+      dataFormatting,
       chartColors
     }
 
@@ -62,8 +60,7 @@ export default class Axes extends React.Component {
       margins,
       col: yCol,
       showGridLines: yGridLines,
-      currencyCode,
-      languageCode,
+      dataFormatting,
       chartColors
     }
 

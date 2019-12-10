@@ -379,8 +379,7 @@ export default class ChatDrawer extends React.Component {
       // const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
       //   rowData[0],
       //   columns[0],
-      //   this.props.currencyCode,
-      //   this.props.languageCode
+      //   config: this.props.dataFormatting
       // )}"`
       // this.addRequestMessage('drilldown')
 

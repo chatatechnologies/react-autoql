@@ -44,15 +44,21 @@ export default class ChataStackedColumnChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
-    currencyCode: undefined,
-    languageCode: undefined,
+    dataFormatting: {},
     tooltipFormatter: () => {}
   }
 
@@ -70,8 +76,7 @@ export default class ChataStackedColumnChart extends Component {
       dataValue,
       labelValueX,
       labelValueY,
-      currencyCode,
-      languageCode,
+      dataFormatting,
       chartColors,
       columns,
       height,
@@ -123,8 +128,7 @@ export default class ChataStackedColumnChart extends Component {
             xTicks={xTickValues}
             rotateLabels={barWidth < 135}
             legendColumn={columns[0]}
-            currencyCode={currencyCode}
-            languageCode={languageCode}
+            dataFormatting={dataFormatting}
             chartColors={chartColors}
             legendColumn={columns[0]}
             legendLabels={this.uniqueXLabels}

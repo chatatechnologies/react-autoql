@@ -22,15 +22,21 @@ export default class ChataLineChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
-    currencyCode: undefined,
-    languageCode: undefined,
+    dataFormatting: {},
     tooltipFormatter: () => {}
   }
 
@@ -41,8 +47,7 @@ export default class ChataLineChart extends Component {
       bottomLegendWidth,
       tooltipFormatter,
       backgroundColor,
-      languageCode,
-      currencyCode,
+      dataFormatting,
       bottomMargin,
       onChartClick,
       chartColors,
@@ -117,8 +122,7 @@ export default class ChataLineChart extends Component {
           height={height}
           xTicks={xTickValues}
           rotateLabels={barWidth < 135}
-          languageCode={languageCode}
-          currencyCode={currencyCode}
+          dataFormatting={dataFormatting}
           bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
           hasBottomLegend={data[0].values.length > 1}

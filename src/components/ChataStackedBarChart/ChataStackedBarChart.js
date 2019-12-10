@@ -48,15 +48,21 @@ export default class ChataStackedBarChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
-    currencyCode: undefined,
-    languageCode: undefined,
+    dataFormatting: {},
     tooltipFormatter: () => {}
   }
 
@@ -110,8 +116,7 @@ export default class ChataStackedBarChart extends Component {
       dataValue,
       labelValueX,
       labelValueY,
-      currencyCode,
-      languageCode,
+      dataFormatting,
       chartColors,
       columns,
       height,
@@ -143,7 +148,7 @@ export default class ChataStackedBarChart extends Component {
       yTickValues = []
       this.uniqueYLabels.forEach((element, index) => {
         if (index % interval === 0) {
-          yTickValues.push(element[labelValueY])
+          yTickValues.push(element)
         }
       })
     }
@@ -166,8 +171,7 @@ export default class ChataStackedBarChart extends Component {
             height={height}
             yTicks={yTickValues}
             rotateLabels={tickWidth < 135}
-            currencyCode={currencyCode}
-            languageCode={languageCode}
+            dataFormatting={dataFormatting}
             chartColors={chartColors}
             xGridLines
             legendLabels={this.uniqueXLabels}

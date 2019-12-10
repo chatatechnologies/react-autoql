@@ -24,16 +24,22 @@ export default class ChataHeatmapChart extends Component {
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     dataValue: 'value',
     labelValueX: 'labelX',
     labelValueY: 'labelY',
-    currencyCode: undefined,
-    languageCode: undefined,
+    dataFormatting: {},
     tooltipFormatter: () => {}
   }
 
@@ -117,8 +123,7 @@ export default class ChataHeatmapChart extends Component {
           height={height}
           yTicks={yTickValues}
           xTicks={xTickValues}
-          currencyCode={this.props.currencyCode}
-          languageCode={this.props.languageCode}
+          dataFormatting={this.props.dataFormatting}
           rotateLabels={squareWidth < 135}
           chartColors={chartColors}
         />

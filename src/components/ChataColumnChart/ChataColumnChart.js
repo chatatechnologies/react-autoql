@@ -22,15 +22,21 @@ export default class ChataBarChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
-    currencyCode: PropTypes.string,
-    languageCode: PropTypes.string
+    dataFormatting: PropTypes.shape({
+      currencyCode: PropTypes.string,
+      languageCode: PropTypes.string,
+      currencyDecimals: PropTypes.number,
+      quantityDecimals: PropTypes.number,
+      comparisonDisplay: PropTypes.string,
+      monthYearFormat: PropTypes.string,
+      dayMonthYearFormat: PropTypes.string
+    })
   }
 
   static defaultProps = {
     dataValues: 'values',
     labelValue: 'label',
-    currencyCode: undefined,
-    languageCode: undefined,
+    dataFormatting: {},
     tooltipFormatter: () => {}
   }
 
@@ -113,8 +119,7 @@ export default class ChataBarChart extends Component {
           height={height}
           xTicks={xTickValues}
           rotateLabels={barWidth < 135}
-          currencyCode={this.props.currencyCode}
-          languageCode={this.props.languageCode}
+          dataFormatting={this.props.dataFormatting}
           hasBottomLegend={data[0].values.length > 1}
           bottomLegendWidth={this.props.bottomLegendWidth}
           legendLabels={legendLabels}
