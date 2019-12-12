@@ -109,6 +109,7 @@ export default class App extends Component {
         h: 2,
         x: 0,
         y: 0,
+        sql: true,
         query: 'total profit this month',
         title: 'Profit - Current Month'
       },
@@ -941,6 +942,7 @@ export default class App extends Component {
           onChangeCallback={newTiles => {
             this.setState({ dashboardTiles: newTiles })
           }}
+          enableSQLInput={false}
         />
       </div>
     )

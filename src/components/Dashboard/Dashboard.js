@@ -85,7 +85,8 @@ class Dashboard extends React.Component {
     fontFamily: PropTypes.string,
     notExecutedText: PropTypes.string,
     chartColors: PropTypes.arrayOf(PropTypes.string),
-    titleColor: PropTypes.string
+    titleColor: PropTypes.string,
+    enableSQLInput: PropTypes.bool
   }
 
   static defaultProps = {
@@ -112,7 +113,8 @@ class Dashboard extends React.Component {
     fontFamily: undefined,
     notExecutedText: undefined,
     chartColors: undefined,
-    titleColor: '#356f90'
+    titleColor: '#356f90',
+    enableSQLInput: false
   }
 
   state = {
@@ -533,6 +535,7 @@ class Dashboard extends React.Component {
                   chartColors={this.props.chartColors}
                   processDrilldown={this.processDrilldown}
                   titleColor={this.props.titleColor}
+                  enableSQLInput={this.props.enableSQLInput}
                 />
               ))}
             </ReactGridLayout>

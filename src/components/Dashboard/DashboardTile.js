@@ -3,11 +3,14 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
+import { FaDatabase } from 'react-icons/fa'
+import { MdChatBubble } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 import { VizToolbar } from '../VizToolbar'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
+import { Select } from '../Select'
 
 import { getSupportedDisplayTypes } from '../../js/Util'
 import { runQuery, runQueryOnly } from '../../js/queryService'
@@ -41,8 +44,9 @@ export default class DashboardTile extends React.Component {
       comparisonDisplay: PropTypes.string,
       monthYearFormat: PropTypes.string,
       dayMonthYearFormat: PropTypes.string
-    }),
-    titleColor: PropTypes.string.isRequired
+    }).isRequired,
+    titleColor: PropTypes.string.isRequired,
+    enableSQLInput: PropTypes.bool.isRequired
   }
 
   static defaultProps = {
@@ -58,13 +62,15 @@ export default class DashboardTile extends React.Component {
     isNewTile: false,
     safetyNetSelections: undefined,
     selectedSuggestion: undefined,
-    dataFormatting: {},
     chartColors: undefined
   }
 
   state = {
     query: this.props.tile.query,
+    sql: this.props.tile.sql,
     title: this.props.tile.title,
+    isSql: !!this.props.tile.sql,
+    languageSelectValue: !!this.props.tile.sql ? 'sql' : 'nl',
     isExecuting: false
   }
 
@@ -77,6 +83,8 @@ export default class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
+
+    // If user changes to SQL we need to reset the query
   }
 
   isQueryValid = query => {
@@ -178,6 +186,22 @@ export default class DashboardTile extends React.Component {
     }
   }
 
+  renderSQLSelector = () => {
+    return (
+      <Select
+        options={[
+          { value: 'sql', label: <FaDatabase /> },
+          { value: 'nl', label: <MdChatBubble /> }
+        ]}
+        value={this.state.languageSelectValue}
+        className="chata-sql-selector"
+        onOptionClick={option => {
+          this.setState({ languageSelectValue: option.value })
+        }}
+      />
+    )
+  }
+
   renderHeader = () => {
     if (this.props.isEditing) {
       return (
@@ -186,9 +210,14 @@ export default class DashboardTile extends React.Component {
             className="dashboard-tile-input-container"
             onMouseDown={e => e.stopPropagation()}
           >
+            {this.props.enableSQLInput && this.renderSQLSelector()}
             <input
-              className="dashboard-tile-input query"
-              placeholder="Query"
+              className={`dashboard-tile-input query ${
+                this.props.enableSQLInput ? ' left-padding' : ''
+              }`}
+              placeholder={
+                this.state.languageSelectValue === 'sql' ? 'SQL Hash' : 'Query'
+              }
               value={this.state.query}
               onChange={e => this.setState({ query: e.target.value })}
               onKeyDown={this.onQueryTextKeyDown}

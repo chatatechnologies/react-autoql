@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "description": "Javascript widget library",
   "main": "dist/chata.cjs.js",
   "module": "dist/chata.esm.js",
@@ -109,6 +109,7 @@
     "jest": "^23.6.0",
     "jest-css-modules": "^2.0.0",
     "lint-staged": "^8.2.1",
+    "node-sass": "^4.13.0",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1",
     "react-test-renderer": "^16.11.0",
