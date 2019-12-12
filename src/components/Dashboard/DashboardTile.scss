@@ -167,6 +167,10 @@
 
   flex-grow: 1;
   transition: width 0.3s ease;
+
+  &.left-padding {
+    padding-left: 40px;
+  }
 }
 .dashboard-tile-input-container .dashboard-tile-input:focus {
   width: 80%;
@@ -245,4 +249,14 @@
 .react-draggable-transparent-selection text::selection,
 .react-draggable-transparent-selection input::placeholder {
   color: inherit;
+}
+
+.chata-sql-selector {
+  position: absolute;
+  border: none;
+  line-height: 38px;
+
+  &:hover {
+    opacity: 0.7;
+  }
 }
