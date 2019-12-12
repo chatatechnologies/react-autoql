@@ -24,6 +24,73 @@ export default class QueryTipsTab extends React.Component {
   //   queryTipsList: []
   // }
 
+  renderQueryTipsContent = () => {
+    if (!this.props.queryTipsList) {
+      return (
+        <div className="query-tips-result-placeholder">
+          <p>Your query suggestions will show up here.</p>
+          <p>
+            You can copy them for later use or execute them in the data
+            messenger by hitting the “execute” button
+          </p>
+        </div>
+      )
+    }
+
+    if (_get(this.props.queryTipsList, 'length') === 0) {
+      return (
+        <div className="query-tips-result-placeholder">
+          <p>Sorry, we couldn't find any queries matching those keywords.</p>
+        </div>
+      )
+    }
+
+    return (
+      <Fragment>
+        <div className="query-tip-list-container">
+          {this.props.queryTipsList.map((query, i) => {
+            return (
+              <div
+                className="query-tip-item animated-item"
+                onClick={() => this.props.executeQuery(query)}
+                key={`query-tip-${i}`}
+                style={{ display: 'block' }}
+              >
+                {query}
+                {
+                  // <span className="execute-btn">
+                  //   <MdPlayCircleOutline />
+                  // </span>
+                }
+              </div>
+            )
+          })}
+          {
+            //   this.props.loading && (
+            //   <Spinner />
+            // )
+          }
+        </div>
+        <div id="react-paginate" className="animated-item">
+          <ReactPaginate
+            pageCount={this.props.totalPages}
+            pageRangeDisplayed={1}
+            initialPage={this.props.currentPage}
+            pageRangeDisplayed={1}
+            marginPagesDisplayed={2}
+            containerClassName={'pagination'}
+            subContainerClassName={'pages pagination'}
+            previousLabel="&#8592;"
+            nextLabel="&#8594;"
+            onPageChange={this.props.onPageChange}
+            nextClassName="pagination-next"
+            previousClassName="pagination-previous"
+          />
+        </div>
+      </Fragment>
+    )
+  }
+
   render = () => {
     return (
       <Scrollbars
@@ -59,56 +126,7 @@ export default class QueryTipsTab extends React.Component {
             )}
           </div>
           <div className="query-tips-result-container">
-            {!_get(this.props.queryTipsList, 'length') ? (
-              <div className="query-tips-result-placeholder">
-                <p>Your query suggestions will show up here.</p>
-                <p>
-                  You can copy them for later use or execute them in the data
-                  messenger by hitting the “execute” button
-                </p>
-              </div>
-            ) : (
-              <Fragment>
-                <div className="query-tip-list-container">
-                  {this.props.queryTipsList.map((query, i) => {
-                    return (
-                      <div
-                        className="query-tip-item animated-item"
-                        onClick={() => this.props.executeQuery(query)}
-                        key={`query-tip-${i}`}
-                        style={{ display: 'block' }}
-                      >
-                        {query}
-                        {
-                          // <span className="execute-btn">
-                          //   <MdPlayCircleOutline />
-                          // </span>
-                        }
-                      </div>
-                    )
-                  })}
-                  {
-                    //   this.props.loading && (
-                    //   <Spinner />
-                    // )
-                  }
-                </div>
-                <div id="react-paginate" className="animated-item">
-                  <ReactPaginate
-                    pageCount={11}
-                    pageRangeDisplayed={1}
-                    marginPagesDisplayed={2}
-                    containerClassName={'pagination'}
-                    subContainerClassName={'pages pagination'}
-                    previousLabel="&#8592;"
-                    nextLabel="&#8594;"
-                    onPageChange={this.props.onPageChange}
-                    nextClassName="pagination-next"
-                    previousClassName="pagination-previous"
-                  />
-                </div>
-              </Fragment>
-            )}
+            {this.renderQueryTipsContent()}
           </div>
         </div>
       </Scrollbars>

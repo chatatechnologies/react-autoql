@@ -151,9 +151,12 @@ export default class ChatDrawer extends React.Component {
     isClearMessageConfirmVisible: false,
     messages: [this.introMessageObject],
 
-    queryTipsList: [],
+    queryTipsList: undefined,
     queryTipsLoading: false,
-    queryTipsError: false
+    queryTipsError: false,
+    queryTipsPage: 0,
+    queryTipsTotalPages: undefined,
+    queryTipsCurrentPage: 0
   }
 
   componentDidMount = () => {
@@ -742,31 +745,61 @@ export default class ChatDrawer extends React.Component {
     )
   }
 
+  fetchQueryTipsList = (keywords, offset) => {
+    this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
+
+    const containerElement = document.querySelector(
+      '.query-tips-page-container'
+    )
+    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
+
+    fetchQueryTips({
+      keywords,
+      customerId: this.props.customerId,
+      userId: this.props.userId,
+      limit,
+      offset,
+      domain: this.props.domain,
+      apiKey: this.props.apiKey,
+      token: this.props.token
+    })
+      .then(response => {
+        const totalQueries = Number(_get(response, 'data.data.total'))
+        const offset = Number(_get(response, 'data.data.offset'))
+
+        this.setState({
+          queryTipsList: _get(response, 'data.data.queries'),
+          queryTipsLoading: false,
+          queryTipsError: false,
+          queryTipsTotalPages: totalQueries
+            ? Math.ceil(totalQueries / limit)
+            : 0,
+          queryTipsCurrentPage: offset ? offset / limit : 0
+        })
+      })
+      .catch(() =>
+        this.setState({
+          queryTipsLoading: false,
+          queryTipsError: true
+        })
+      )
+  }
+
   onQueryTipsInputKeyPress = e => {
     if (e.key == 'Enter') {
-      this.setState({ queryTipsLoading: true })
-
-      const containerElement = document.querySelector(
-        '.query-tips-page-container'
-      )
-      const limit = Math.floor((containerElement.clientHeight - 150) / 50)
-      fetchQueryTips({ limit })
-        .then(response => {
-          this.setState({
-            queryTipsList: response.data,
-            queryTipsLoading: false,
-            queryTipsError: false
-          })
-        })
-        .catch(() =>
-          this.setState({
-            queryTipsLoading: false,
-            queryTipsError: true
-          })
-        )
+      this.fetchQueryTipsList(e.target.value, 0)
     } else {
       this.setState({ queryTipsInputValue: e.target.value })
     }
+  }
+
+  onQueryTipsPageChange = ({ selected }) => {
+    const containerElement = document.querySelector(
+      '.query-tips-page-container'
+    )
+    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
+    const nextOffset = limit * selected
+    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextOffset)
   }
 
   renderQueryTipsContent = () => (
@@ -776,11 +809,9 @@ export default class ChatDrawer extends React.Component {
       error={this.state.queryTipsError}
       queryTipsList={this.state.queryTipsList}
       queryTipsInputValue={this.state.queryTipsInputValue}
-      onPageChange={() => {
-        fetchQueryTips().then(response =>
-          this.setState({ queryTipsList: response.data })
-        )
-      }}
+      totalPages={this.state.queryTipsTotalPages}
+      currentPage={this.state.queryTipsCurrentPage}
+      onPageChange={this.onQueryTipsPageChange}
       executeQuery={query => {
         this.setState({ activePage: 'messenger' })
         setTimeout(() => {

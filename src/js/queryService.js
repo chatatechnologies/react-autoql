@@ -340,33 +340,25 @@ export const setColumnVisibility = ({
 }
 
 export const fetchQueryTips = ({
-  category,
+  keywords,
+  customerId,
+  userId,
   limit,
   offset,
-  demo,
   domain,
   apiKey,
   token
-  // customerId,
-  // userId,
 } = {}) => {
-  return new Promise((resolve, reject) => {
-    const data = queryTipsSampleData.slice(0, limit)
-    return setTimeout(() => resolve({ data }), 1000)
+  const url = `${domain}/api/v1/chata/inspirations?key=${apiKey}&keywords=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   })
 
-  // const url = demo
-  //   ? ''
-  //   : `${domain}/api/v1/querytips?key=${apiKey}&category=${category}`
-
-  // const axiosInstance = axios.create({
-  //   headers: {
-  //     Authorization: `Bearer ${token}`
-  //   }
-  // })
-
-  // return axiosInstance
-  //   .get(url)
-  //   .then(response => Promise.resolve(response))
-  //   .catch(error => Promise.reject(error))
+  return axiosInstance
+    .get(url)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
 }

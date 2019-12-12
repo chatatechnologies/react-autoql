@@ -109,7 +109,6 @@ export default class App extends Component {
         h: 2,
         x: 0,
         y: 0,
-        sql: true,
         query: 'total profit this month',
         title: 'Profit - Current Month'
       },
@@ -182,7 +181,7 @@ export default class App extends Component {
       },
       {
         key: '8',
-        w: 12,
+        w: 6,
         h: 5,
         x: 0,
         y: 10,
@@ -192,20 +191,10 @@ export default class App extends Component {
       },
       {
         key: '9',
-        w: 12,
-        h: 8,
-        x: 0,
-        y: 12,
-        query: 'total profit by customer by month ytd',
-        displayType: 'stacked_bar',
-        title: 'Customer Profitability'
-      },
-      {
-        key: '10',
-        w: 12,
+        w: 6,
         h: 5,
-        x: 0,
-        y: 19,
+        x: 6,
+        y: 12,
         query: 'total profit by customer by month ytd',
         displayType: 'heatmap',
         title: 'Customer Profitability'
