@@ -75,7 +75,7 @@ export default class QueryTipsTab extends React.Component {
           <ReactPaginate
             pageCount={this.props.totalPages}
             pageRangeDisplayed={1}
-            initialPage={this.props.currentPage}
+            forcePage={this.props.currentPage}
             pageRangeDisplayed={1}
             marginPagesDisplayed={2}
             containerClassName={'pagination'}
