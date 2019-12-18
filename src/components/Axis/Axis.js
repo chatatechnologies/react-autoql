@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 import dayjs from 'dayjs'
+import uuid from 'uuid'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
@@ -15,6 +16,7 @@ import './Axis.scss'
 
 export default class Axis extends Component {
   LEGEND_PADDING = 130
+  LEGEND_ID = `axis-${uuid.v4()}`
 
   static propTypes = {
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -29,6 +31,7 @@ export default class Axis extends Component {
     col: PropTypes.shape({}),
     hasRightLegend: PropTypes.bool,
     hasBottomLegend: PropTypes.bool,
+    onLegendClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -44,16 +47,11 @@ export default class Axis extends Component {
     orient: 'Bottom',
     hasRightLegend: false,
     hasBottomLegend: false,
-    dataFormatting: {}
+    dataFormatting: {},
+    onLegendClick: () => {}
   }
 
   componentDidMount = () => {
-    if (this.props.legendLabels) {
-      this.legendScale = scaleOrdinal()
-        .domain(this.props.legendLabels)
-        .range(this.props.chartColors)
-    }
-
     this.renderAxis()
   }
 
@@ -69,11 +67,16 @@ export default class Axis extends Component {
       return
     }
 
+    const legendScale = this.getLegendScale()
+
     const svg = select(this.legendElement)
 
     svg
       .append('g')
-      .attr('class', 'legendOrdinal')
+      .attr(
+        'class',
+        `legendOrdinal${this.props.hasBottomLegend ? ' interactive' : ''}`
+      )
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
@@ -90,7 +93,10 @@ export default class Axis extends Component {
         .orient('vertical')
         .shapePadding(5)
         .labelWrap(120)
-        .scale(this.legendScale)
+        .scale(legendScale)
+      // .on('cellclick', function(d) {
+      //   alert('clicked ' + d)
+      // })
     } else if (this.props.hasBottomLegend) {
       var legendOrdinal = legendColor()
         .shape(
@@ -99,6 +105,8 @@ export default class Axis extends Component {
             .type(symbolCircle)
             .size(75)()
         )
+        // .useClass(true)
+        // .classPrefix('item-')
         .orient('horizontal')
         .shapePadding(self.LEGEND_PADDING)
         .labelWrap(120)
@@ -108,10 +116,59 @@ export default class Axis extends Component {
         // })
         // .labels(formattedLabels)
         // .titleWidth(600)
-        .scale(this.legendScale)
+        .scale(legendScale)
+        .on('cellclick', function(d) {
+          self.props.onLegendClick(d)
+        })
+      // .on('cellover', function(d) {
+      //   alert('cell over ' + d)
+      // })
+      // .on('cellout', function(d) {
+      //   alert('cell out ' + d)
+      // })
     }
 
     svg.select('.legendOrdinal').call(legendOrdinal)
+
+    this.applyStylesForHiddenSeries()
+  }
+
+  applyStylesForHiddenSeries = () => {
+    const legendLabelTexts = this.props.legendLabels
+      .filter(l => l.hidden)
+      .map(l => l.label)
+
+    const legendSwatchElements = document.querySelectorAll(
+      `#${this.LEGEND_ID} .label tspan`
+    )
+
+    if (legendSwatchElements) {
+      legendSwatchElements.forEach(el => {
+        const swatchElement = el.parentElement.parentElement.querySelector(
+          '.swatch'
+        )
+
+        if (legendLabelTexts.includes(el.textContent)) {
+          swatchElement.style.opacity = 0.3
+        } else {
+          swatchElement.style.opacity = 1
+        }
+      })
+    }
+  }
+
+  getLegendScale = () => {
+    const colorRange = this.props.legendLabels.map(obj => {
+      return obj.color
+    })
+
+    return scaleOrdinal()
+      .domain(
+        this.props.legendLabels.map(obj => {
+          return obj.label
+        })
+      )
+      .range(colorRange)
   }
 
   renderAxis = () => {
@@ -205,6 +262,7 @@ export default class Axis extends Component {
           ref={el => {
             this.legendElement = el
           }}
+          id={this.LEGEND_ID}
           className="legendOrdinal-container"
           transform={
             this.props.hasRightLegend

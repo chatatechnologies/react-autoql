@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
-import { max, min } from 'd3-array'
+
+import { getMinAndMaxValues } from '../Charts/helpers.js'
 
 export default class ChataBarChart extends Component {
   xScale = scaleBand()
@@ -19,7 +20,6 @@ export default class ChataBarChart extends Component {
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
-    dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     dataFormatting: PropTypes.shape({
@@ -34,7 +34,6 @@ export default class ChataBarChart extends Component {
   }
 
   static defaultProps = {
-    dataValues: 'values',
     labelValue: 'label',
     dataFormatting: {},
     tooltipFormatter: () => {}
@@ -45,13 +44,14 @@ export default class ChataBarChart extends Component {
       activeChartElementKey,
       bottomLegendMargin,
       tooltipFormatter,
+      onLegendClick,
       chartColors,
       bottomMargin,
       onChartClick,
+      legendLabels,
       rightMargin,
       leftMargin,
       labelValue,
-      dataValues,
       topMargin,
       columns,
       height,
@@ -60,22 +60,7 @@ export default class ChataBarChart extends Component {
     } = this.props
 
     // Get max and min values from all series
-    const numberOfSeries = data[0][dataValues].length
-    const maxValuesFromArrays = []
-    const minValuesFromArrays = []
-
-    for (let i = 0; i < numberOfSeries; i++) {
-      maxValuesFromArrays.push(max(data, d => d[dataValues][i]))
-      minValuesFromArrays.push(min(data, d => d[dataValues][i]))
-    }
-
-    const maxValue = max(maxValuesFromArrays)
-    let minValue = min(minValuesFromArrays)
-
-    // Make sure 0 is always visible on the y axis
-    if (minValue > 0) {
-      minValue = 0
-    }
+    const { minValue, maxValue } = getMinAndMaxValues(data)
 
     const xScale = this.xScale
       .domain(data.map(d => d[labelValue]))
@@ -98,10 +83,6 @@ export default class ChataBarChart extends Component {
       })
     }
 
-    const legendLabels = columns.slice(1).map(column => {
-      return column.title
-    })
-
     return (
       <g>
         <Axes
@@ -120,9 +101,10 @@ export default class ChataBarChart extends Component {
           xTicks={xTickValues}
           rotateLabels={barWidth < 135}
           dataFormatting={this.props.dataFormatting}
-          hasBottomLegend={data[0].values.length > 1}
+          hasBottomLegend={data[0].origRow.length > 2}
           bottomLegendWidth={this.props.bottomLegendWidth}
           legendLabels={legendLabels}
+          onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
         />
@@ -138,7 +120,6 @@ export default class ChataBarChart extends Component {
           maxValue={maxValue}
           width={width}
           height={height}
-          dataValues={dataValues}
           labelValue={labelValue}
           onChartClick={onChartClick}
           tooltipFormatter={tooltipFormatter}

@@ -29,6 +29,13 @@ export default class ChataStackedColumnChart extends Component {
     this.legendScale = scaleOrdinal()
       .domain(this.uniqueYLabels)
       .range(chartColors)
+
+    this.legendLabels = this.uniqueXLabels.map((label, i) => {
+      return {
+        label,
+        color: this.legendScale(i)
+      }
+    })
   }
 
   static propTypes = {
@@ -131,7 +138,7 @@ export default class ChataStackedColumnChart extends Component {
             dataFormatting={dataFormatting}
             chartColors={chartColors}
             legendColumn={columns[0]}
-            legendLabels={this.uniqueXLabels}
+            legendLabels={this.legendLabels}
             legendScale={this.legendScale}
             hasRightLegend
             yGridLines

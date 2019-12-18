@@ -6,11 +6,7 @@ import { Axes } from '../Axes'
 import { StackedBars } from '../StackedBars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  getMaxValueFromKeyValueObj,
-  getMinValueFromKeyValueObj,
-  onlyUnique
-} from '../../js/Util'
+import { calculateMinAndMaxSums, onlyUnique } from '../../js/Util'
 
 export default class ChataStackedBarChart extends Component {
   xScale = scaleLinear()
@@ -33,6 +29,13 @@ export default class ChataStackedBarChart extends Component {
     this.legendScale = scaleOrdinal()
       .domain(this.uniqueXLabels)
       .range(chartColors)
+
+    this.legendLabels = this.uniqueXLabels.map((label, i) => {
+      return {
+        label,
+        color: this.legendScale(i)
+      }
+    })
   }
 
   static propTypes = {
@@ -68,42 +71,6 @@ export default class ChataStackedBarChart extends Component {
 
   state = {}
 
-  calculateMinAndMaxSums = (data, labelValueY, dataValue) => {
-    const positiveSumsObject = {}
-    const negativeSumsObject = {}
-
-    // Loop through data array to get maximum and minimum sums of postive and negative values
-    // These will be used to get the max and min values for the x Scale (data values)
-    for (let i = 0; i < data.length; i++) {
-      const value = data[i][dataValue]
-
-      if (value >= 0) {
-        // Calculate positive sum
-        if (positiveSumsObject[data[i][labelValueY]]) {
-          positiveSumsObject[data[i][labelValueY]] += value
-        } else {
-          positiveSumsObject[data[i][labelValueY]] = value
-        }
-      } else if (value < 0) {
-        // Calculate negative sum
-        if (negativeSumsObject[data[i][labelValueY]]) {
-          negativeSumsObject[data[i][labelValueY]] -= value
-        } else {
-          negativeSumsObject[data[i][labelValueY]] = value
-        }
-      }
-    }
-
-    // Get max and min sums from those sum objects
-    const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
-    const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
-
-    return {
-      max: maxValue,
-      min: minValue
-    }
-  }
-
   render = () => {
     const {
       activeChartElementKey,
@@ -124,11 +91,7 @@ export default class ChataStackedBarChart extends Component {
       data
     } = this.props
 
-    const { max, min } = this.calculateMinAndMaxSums(
-      data,
-      labelValueY,
-      dataValue
-    )
+    const { max, min } = calculateMinAndMaxSums(data, labelValueY, dataValue)
 
     const xScale = this.xScale
       .domain([min, max])
@@ -174,7 +137,7 @@ export default class ChataStackedBarChart extends Component {
             dataFormatting={dataFormatting}
             chartColors={chartColors}
             xGridLines
-            legendLabels={this.uniqueXLabels}
+            legendLabels={this.legendLabels}
             legendColumn={columns[0]}
             hasRightLegend
           />

@@ -25,7 +25,8 @@ export default class Axes extends React.Component {
       hasRightLegend,
       hasBottomLegend,
       bottomLegendWidth,
-      chartColors
+      chartColors,
+      onLegendClick
     } = this.props
 
     const xProps = {
@@ -46,7 +47,8 @@ export default class Axes extends React.Component {
       legendLabels,
       legendColumn,
       dataFormatting,
-      chartColors
+      chartColors,
+      onLegendClick
     }
 
     const yProps = {
@@ -61,7 +63,8 @@ export default class Axes extends React.Component {
       col: yCol,
       showGridLines: yGridLines,
       dataFormatting,
-      chartColors
+      chartColors,
+      onLegendClick
     }
 
     return (

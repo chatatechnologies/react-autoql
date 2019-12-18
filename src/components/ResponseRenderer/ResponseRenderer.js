@@ -7,6 +7,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
+import { scaleOrdinal } from 'd3-scale'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
@@ -122,6 +123,7 @@ export default class ResponseRenderer extends React.Component {
   componentDidMount = () => {
     try {
       this.RESPONSE_COMPONENT_KEY = uuid.v4()
+      this.colorScale = scaleOrdinal().range(this.props.chartColors)
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
@@ -415,6 +417,40 @@ export default class ResponseRenderer extends React.Component {
     }
   }
 
+  onLegendClick = d => {
+    const newChartData = this.chartData.map(data => {
+      const newCells = data.cells.map(cell => {
+        if (cell.label === d) {
+          return {
+            ...cell,
+            hidden: !cell.hidden
+          }
+        }
+        return cell
+      })
+
+      return {
+        ...data,
+        cells: newCells
+      }
+    })
+
+    const newColumns = this.tableColumns.map(col => {
+      if (col.title === d) {
+        return {
+          ...col,
+          isSeriesHidden: !col.isSeriesHidden
+        }
+      }
+      return col
+    })
+
+    this.tableColumns = newColumns
+    this.chartData = newChartData
+
+    this.forceUpdate()
+  }
+
   renderTable = () => {
     if (
       !this.tableData ||
@@ -489,6 +525,7 @@ export default class ResponseRenderer extends React.Component {
           chartColors={this.props.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
+          onLegendClick={this.onLegendClick}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
@@ -550,10 +587,15 @@ export default class ResponseRenderer extends React.Component {
         this.chartData = Object.values(
           tableData.reduce((chartDataObject, row) => {
             // Loop through columns and create a series for each
-            const values = []
+            const cells = []
             row.forEach((value, i) => {
               if (i > 0) {
-                values.push(Number(value) || value)
+                cells.push({
+                  value: Number(value) || value,
+                  label: columns[i].title,
+                  color: this.colorScale(i),
+                  hidden: false
+                })
               }
             })
 
@@ -563,7 +605,7 @@ export default class ResponseRenderer extends React.Component {
                 origColumns: columns,
                 origRow: row,
                 label: row[0],
-                values,
+                cells,
                 formatter: (value, column) => {
                   return formatElement({
                     element: value,
@@ -574,6 +616,7 @@ export default class ResponseRenderer extends React.Component {
               }
             } else {
               // If this label already exists, just add the values together
+              // The BE should prevent this from happening though
               chartDataObject[row[1]].value += Number(row[1])
             }
             return chartDataObject
@@ -688,7 +731,8 @@ export default class ResponseRenderer extends React.Component {
       console.warn(`unexpected nameFragments.length ${nameFragments.length}`)
     }
 
-    title = col.name.replace(/_/g, ' ')
+    // replace underscores with spaces, then collapse all consecutive spaces to 1
+    title = col.name.replace(/_/g, ' ').replace(/\s+/g, ' ')
     title = `${title.toProperCase()}`
 
     return title
@@ -709,6 +753,7 @@ export default class ResponseRenderer extends React.Component {
 
       col.field = `${i}`
       col.title = this.getColTitle(col)
+      col.id = uuid.v4()
 
       // Visibility flag: this can be changed through the column visibility editor modal
       col.visible = col.is_visible

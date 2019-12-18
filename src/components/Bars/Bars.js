@@ -1,14 +1,7 @@
 import React, { Component } from 'react'
-import { scaleOrdinal } from 'd3-scale'
+import _get from 'lodash.get'
 
 export default class Bars extends Component {
-  constructor(props) {
-    super(props)
-    const { chartColors } = props
-
-    this.colorScale = scaleOrdinal().range(chartColors)
-  }
-
   static propTypes = {}
 
   state = {
@@ -16,13 +9,13 @@ export default class Bars extends Component {
   }
 
   X0 = () => this.props.scales.xScale(0)
-  X = (d, i) => this.props.scales.xScale(d[this.props.dataValues][i])
+  X = (d, i) => this.props.scales.xScale(_get(d, `cells[${i}].value`))
 
   render() {
-    const { scales, margins, data, height, labelValue, dataValues } = this.props
-    const { xScale, yScale } = scales
+    const { scales, data, labelValue } = this.props
+    const { yScale } = scales
 
-    const numberOfSeries = data[0][dataValues].length
+    const numberOfSeries = data[0].cells.length
     const barHeight = yScale.bandwidth() / numberOfSeries
 
     // Loop through each data value to make each series
@@ -43,7 +36,7 @@ export default class Bars extends Component {
                 this.state.activeKey === d[labelValue] ? ' active' : ''
               }`}
               y={finalBarYPosition}
-              x={d[dataValues][i] > 0 ? this.X0() : this.X(d, i)}
+              x={d.cells[i].value > 0 ? this.X0() : this.X(d, i)}
               width={Math.abs(this.X(d, i) - this.X0())}
               height={barHeight}
               onClick={() => {
@@ -55,7 +48,7 @@ export default class Bars extends Component {
               }}
               data-tip={this.props.tooltipFormatter(d, i)}
               data-for="chart-element-tooltip"
-              style={{ fill: this.colorScale(i), fillOpacity: 0.7 }}
+              style={{ fill: d.cells[i].color, fillOpacity: 0.7 }}
             />
           )
         })

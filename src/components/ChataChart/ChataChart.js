@@ -6,6 +6,7 @@ import _get from 'lodash.get'
 
 import { select } from 'd3-selection'
 import { max } from 'd3-array'
+import { scaleOrdinal } from 'd3-scale'
 
 import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBarChart } from '../ChataBarChart'
@@ -17,10 +18,18 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 
 import { svgToPng, formatElement } from '../../js/Util.js'
+import { getLegendLabelsForMultiSeries } from '../Charts/helpers.js'
 
 import './ChataChart.scss'
 
 export default class ChataChart extends Component {
+  constructor(props) {
+    super(props)
+    const { chartColors } = props
+
+    this.colorScale = scaleOrdinal().range(chartColors)
+  }
+
   DEFAULT_MARGINS = {
     left: 50,
     right: 10,
@@ -35,6 +44,7 @@ export default class ChataChart extends Component {
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    onLegendClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -47,7 +57,8 @@ export default class ChataChart extends Component {
   }
 
   static defaultProps = {
-    dataFormatting: {}
+    dataFormatting: {},
+    onLegendClick: () => {}
   }
 
   state = {
@@ -169,7 +180,7 @@ export default class ChataChart extends Component {
       })}
       </div>
       <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement({
-        element: data.values[colIndex],
+        element: data.cells[colIndex].value,
         column: valueCols[colIndex],
         config: this.props.dataFormatting
       })}
@@ -263,11 +274,15 @@ export default class ChataChart extends Component {
       onChartClick,
       chartColors,
       activeChartElementKey,
-      dataFormatting
+      dataFormatting,
+      onLegendClick
     } = this.props
 
+    const filteredSeriesData = this.getFilteredSeriesData(data)
+
     return {
-      data,
+      data: filteredSeriesData,
+      colorScale: this.colorScale,
       height,
       width,
       columns,
@@ -280,41 +295,73 @@ export default class ChataChart extends Component {
       onChartClick,
       dataFormatting,
       chartColors,
-      activeChartElementKey
+      activeChartElementKey,
+      onLegendClick
     }
+  }
+
+  getFilteredSeriesData = data => {
+    if (_get(data, '[0].cells')) {
+      try {
+        const filteredSeriesData = data.map(d => {
+          const newCells = d.cells.filter(cell => {
+            return !cell.hidden
+          })
+
+          return {
+            ...d,
+            cells: newCells
+          }
+        })
+
+        return filteredSeriesData
+      } catch (error) {
+        console.error(error)
+        return data
+      }
+    }
+    return data
   }
 
   renderColumnChart = () => (
     <ChataColumnChart
       {...this.getCommonChartProps()}
-      dataValue="values"
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
+      legendLabels={getLegendLabelsForMultiSeries(
+        this.props.columns,
+        this.colorScale
+      )}
     />
   )
 
   renderBarChart = () => (
     <ChataBarChart
       {...this.getCommonChartProps()}
-      dataValues="values"
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
+      legendLabels={getLegendLabelsForMultiSeries(
+        this.props.columns,
+        this.colorScale
+      )}
     />
   )
 
   renderLineChart = () => (
     <ChataLineChart
       {...this.getCommonChartProps()}
-      dataValues="values"
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
+      legendLabels={getLegendLabelsForMultiSeries(
+        this.props.columns,
+        this.colorScale
+      )}
     />
   )
 
   renderPieChart = () => (
     <ChataPieChart
       {...this.getCommonChartProps()}
-      dataValue="values"
       labelValue="label"
       backgroundColor={this.props.backgroundColor}
       tooltipFormatter={d => {

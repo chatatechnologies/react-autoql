@@ -101,7 +101,7 @@ export default class Axis extends Component {
       .range(this.props.chartColors)
 
     const pieChart = pie().value(d => {
-      return d.value[self.props.dataValue]
+      return d.value.cells[0].value
     })
 
     this.dataReady = pieChart(entries(self.sortedData))
@@ -190,14 +190,14 @@ export default class Axis extends Component {
 
   renderLegend = () => {
     const self = this
-    const { height, margin, labelValue, dataValue, chartColors } = this.props
+    const { height, margin, labelValue, chartColors } = this.props
 
     const legendLabels = this.sortedData.map(d => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
         column: _get(d, 'origColumns[0]')
       })}: ${formatElement({
-        element: d[dataValue][0] || 0,
+        element: d.cells[0].value || 0,
         column: _get(d, 'origColumns[1]'),
         config: this.props.dataFormatting
       })}`
@@ -284,9 +284,7 @@ export default class Axis extends Component {
     this.sortedData = data
       .concat() // this copies the array so the original isn't mutated
       .sort(
-        (a, b) =>
-          parseFloat(a[self.props.dataValue]) -
-          parseFloat(b[self.props.dataValue])
+        (a, b) => parseFloat(a.cells[0].value) - parseFloat(b.cells[0].value)
       )
 
     this.renderPieContainer()

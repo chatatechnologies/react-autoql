@@ -161,44 +161,46 @@ export default class App extends Component {
 
 #### ChatDrawer Props
 
-| Prop                  | Type                                                                         | Default Value                                                                   |
-| :-------------------- | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| token (Required)      | String                                                                       | -                                                                               |
-| apiKey (Required)     | String                                                                       | -                                                                               |
-| customerId (Required) | String                                                                       | -                                                                               |
-| userId (Required)     | String                                                                       | -                                                                               |
-| domain (Required)     | String                                                                       | -                                                                               |
-| isVisible             | Boolean                                                                      | false                                                                           |
-| placement             | String: 'left' &#124;&#124; 'right' &#124;&#124; 'top' &#124;&#124; 'bottom' | 'right'                                                                         |
-| width                 | String &#124;&#124; Number                                                   | 500                                                                             |
-| height                | String &#124;&#124; Number                                                   | 350                                                                             |
-| theme                 | String: 'light' &#124;&#124; 'dark'                                          | 'light'                                                                         |
-| accentColor           | String                                                                       | light theme: '#28a8e0', dark theme: '#525252'                                   |
-| title                 | String                                                                       | 'Data Messenger'                                                                |
-| showHandle            | Boolean                                                                      | true                                                                            |
-| handleStyles          | Object                                                                       | {}                                                                              |
-| onVisibleChange       | Function                                                                     | () => {}                                                                        |
-| onHandleClick         | Function                                                                     | () => {}                                                                        |
-| onMaskClick           | Function                                                                     | onHandleClick                                                                   |
-| maskClosable          | Boolean                                                                      | true                                                                            |
-| shiftScreen           | Boolean                                                                      | false                                                                           |
-| customerName          | String                                                                       | 'there'                                                                         |
-| introMessage          | String                                                                       | 'Hi {customerName}! I'm here to help you access, search and analyze your data.' |
-| maxMessages           | Number                                                                       | undefined                                                                       |
-| clearOnClose          | Boolean                                                                      | false                                                                           |
-| enableVoiceRecord     | Boolean                                                                      | true                                                                            |
-| enableAutocomplete    | Boolean                                                                      | true                                                                            |
-| autocompleteStyles    | Object                                                                       | {}                                                                              |
-| enableSafetyNet       | Boolean                                                                      | true                                                                            |
-| disableDrilldowns     | Boolean                                                                      | false                                                                           |
-| demo                  | Boolean                                                                      | false                                                                           |
-| currencyCode          | String                                                                       | 'USD'                                                                           |
-| languageCode          | String                                                                       | 'en-US'                                                                         |
-| currencyDecimals      | Number                                                                       | 2                                                                               |
-| quantityDecimals      | Number                                                                       | 1                                                                               |
-| comparisonDisplay     | String                                                                       | 'ratio' &#124;&#124; 'percent'                                                  |
-| fontFamily            | String                                                                       | 'sans-serif'                                                                    |
-| chartColors           | Array                                                                        | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195']                         |
+| Prop                             | Type                                                                                                                             | Default Value                                                                   |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| token (Required)                 | String                                                                                                                           | -                                                                               |
+| apiKey (Required)                | String                                                                                                                           | -                                                                               |
+| customerId (Required)            | String                                                                                                                           | -                                                                               |
+| userId (Required)                | String                                                                                                                           | -                                                                               |
+| domain (Required)                | String                                                                                                                           | -                                                                               |
+| isVisible                        | Boolean                                                                                                                          | false                                                                           |
+| placement                        | String: 'left' &#124;&#124; 'right' &#124;&#124; 'top' &#124;&#124; 'bottom'                                                     | 'right'                                                                         |
+| width                            | String &#124;&#124; Number                                                                                                       | 500                                                                             |
+| height                           | String &#124;&#124; Number                                                                                                       | 350                                                                             |
+| theme                            | String: 'light' &#124;&#124; 'dark'                                                                                              | 'light'                                                                         |
+| accentColor                      | String                                                                                                                           | light theme: '#28a8e0', dark theme: '#525252'                                   |
+| title                            | String                                                                                                                           | 'Data Messenger'                                                                |
+| showHandle                       | Boolean                                                                                                                          | true                                                                            |
+| handleStyles                     | Object                                                                                                                           | {}                                                                              |
+| onVisibleChange                  | Function                                                                                                                         | () => {}                                                                        |
+| onHandleClick                    | Function                                                                                                                         | () => {}                                                                        |
+| onMaskClick                      | Function                                                                                                                         | onHandleClick                                                                   |
+| maskClosable                     | Boolean                                                                                                                          | true                                                                            |
+| shiftScreen                      | Boolean                                                                                                                          | false                                                                           |
+| customerName                     | String                                                                                                                           | 'there'                                                                         |
+| introMessage                     | String                                                                                                                           | 'Hi {customerName}! I'm here to help you access, search and analyze your data.' |
+| maxMessages                      | Number                                                                                                                           | undefined                                                                       |
+| clearOnClose                     | Boolean                                                                                                                          | false                                                                           |
+| enableVoiceRecord                | Boolean                                                                                                                          | true                                                                            |
+| enableAutocomplete               | Boolean                                                                                                                          | true                                                                            |
+| autocompleteStyles               | Object                                                                                                                           | {}                                                                              |
+| enableSafetyNet                  | Boolean                                                                                                                          | true                                                                            |
+| disableDrilldowns                | Boolean                                                                                                                          | false                                                                           |
+| demo                             | Boolean                                                                                                                          | false                                                                           |
+| dataFormatting                   | Object: { currencyCode, languageCode, qualityDecimals, quantityDecimals, comparisonDisplay, monthDayFormat, monthDayYearFormat } | {}                                                                              |
+| dataFormatting.currencyCode      | String                                                                                                                           | 'USD'                                                                           |
+| dataFormatting.languageCode      | String                                                                                                                           | 'en-US'                                                                         |
+| dataFormatting.currencyDecimals  | Number                                                                                                                           | 2                                                                               |
+| dataFormatting.quantityDecimals  | Number                                                                                                                           | 1                                                                               |
+| dataFormatting.comparisonDisplay | String: 'ratio' &#124;&#124; 'percent'                                                                                           | 'percent'                                                                       |
+
+| fontFamily | String | 'sans-serif' |
+| chartColors | Array | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
 
 #### ChatBar Props
 
@@ -226,50 +228,51 @@ export default class App extends Component {
 
 #### ResponseRenderer Props
 
-| Prop                | Type                     | Default Value                                           |
-| :------------------ | :----------------------- | :------------------------------------------------------ |
-| response (Required) | Object                   | -                                                       |
-| chatBarRef          | Instance of `<ChatBar/>` | undefined                                               |
-| supportsSuggestions | Boolean                  | true                                                    |
-| processDrilldown    | Function                 | () => {}                                                |
-| onSuggestionClick   | Function                 | undefined                                               |
-| tableBorderColor    | String                   | undefined                                               |
-| tableHoverColor     | String                   | undefined                                               |
-| displayType         | String                   | undefined                                               |
-| renderTooltips      | Boolean                  | true                                                    |
-| currencyCode        | String                   | 'USD'                                                   |
-| languageCode        | String                   | 'en-US'                                                 |
-| currencyDecimals    | Number                   | 2                                                       |
-| quantityDecimals    | Number                   | 1                                                       |
-| comparisonDisplay   | String                   | 'ratio' &#124;&#124; 'percent'                          |
-| fontFamily          | String                   | 'sans-serif'                                            |
-| chartColors         | Array                    | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
+| Prop                             | Type                                                                                                                             | Default Value                                           |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| response (Required)              | Object                                                                                                                           | -                                                       |
+| chatBarRef                       | Instance of `<ChatBar/>`                                                                                                         | undefined                                               |
+| supportsSuggestions              | Boolean                                                                                                                          | true                                                    |
+| processDrilldown                 | Function                                                                                                                         | () => {}                                                |
+| onSuggestionClick                | Function                                                                                                                         | undefined                                               |
+| tableBorderColor                 | String                                                                                                                           | undefined                                               |
+| tableHoverColor                  | String                                                                                                                           | undefined                                               |
+| displayType                      | String                                                                                                                           | undefined                                               |
+| renderTooltips                   | Boolean                                                                                                                          | true                                                    |
+| fontFamily                       | String                                                                                                                           | 'sans-serif'                                            |
+| chartColors                      | Array                                                                                                                            | ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'] |
+| dataFormatting                   | Object: { currencyCode, languageCode, qualityDecimals, quantityDecimals, comparisonDisplay, monthDayFormat, monthDayYearFormat } | {}                                                      |
+| dataFormatting.currencyCode      | String                                                                                                                           | 'USD'                                                   |
+| dataFormatting.languageCode      | String                                                                                                                           | 'en-US'                                                 |
+| dataFormatting.currencyDecimals  | Number                                                                                                                           | 2                                                       |
+| dataFormatting.quantityDecimals  | Number                                                                                                                           | 1                                                       |
+| dataFormatting.comparisonDisplay | String: 'ratio' &#124;&#124; 'percent'                                                                                           | 'percent'                                               |
 
 #### Dashboard Props
 
-| Prop                  | Type                  | Default Value                                           |
-| :-------------------- | :-------------------- | :------------------------------------------------------ |
-| token (Required)      | String                | -                                                       |
-| apiKey (Required)     | String                | -                                                       |
-| customerId (Required) | String                | -                                                       |
-| userId (Required)     | String                | -                                                       |
-| domain (Required)     | String                | -                                                       |
-| tiles (Required)      | Array of Tile Objects | []                                                      |
-| onChangeCallback      | Function              | () => {}                                                |
-| isEditing             | Boolean               | false                                                   |
-| currencyCode          | String                | 'USD'                                                   |
-| languageCode          | String                | 'en-US'                                                 |
-| currencyDecimals      | Number                | 2                                                       |
-| quantityDecimals      | Number                | 1                                                       |
-| comparisonDisplay     | String                | 'ratio' &#124;&#124; 'percent'                          |
-| fontFamily            | String                | 'sans-serif'                                            |
-| chartColors           | Array                 | ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'] |
-| titleColor            | string                | '#2466AE'                                               |
-| executeOnMount        | Boolean               | true                                                    |
-| executeOnStopEditing  | Boolean               | true                                                    |
-| notExecutedText       | String                | 'Hit "Execute" to run this dashboard'                   |
-| demo                  | Boolean               | false                                                   |
-| debug                 | Boolean               | false                                                   |
+| Prop                  | Type                                   | Default Value                                           |
+| :-------------------- | :------------------------------------- | :------------------------------------------------------ |
+| token (Required)      | String                                 | -                                                       |
+| apiKey (Required)     | String                                 | -                                                       |
+| customerId (Required) | String                                 | -                                                       |
+| userId (Required)     | String                                 | -                                                       |
+| domain (Required)     | String                                 | -                                                       |
+| tiles (Required)      | Array of Tile Objects                  | []                                                      |
+| onChangeCallback      | Function                               | () => {}                                                |
+| isEditing             | Boolean                                | false                                                   |
+| currencyCode          | String                                 | 'USD'                                                   |
+| languageCode          | String                                 | 'en-US'                                                 |
+| currencyDecimals      | Number                                 | 2                                                       |
+| quantityDecimals      | Number                                 | 1                                                       |
+| comparisonDisplay     | String: 'ratio' &#124;&#124; 'percent' | 'percent'                                               |
+| fontFamily            | String                                 | 'sans-serif'                                            |
+| chartColors           | Array                                  | ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'] |
+| titleColor            | string                                 | '#2466AE'                                               |
+| executeOnMount        | Boolean                                | true                                                    |
+| executeOnStopEditing  | Boolean                                | true                                                    |
+| notExecutedText       | String                                 | 'Hit "Execute" to run this dashboard'                   |
+| demo                  | Boolean                                | false                                                   |
+| debug                 | Boolean                                | false                                                   |
 
 #### Prop Descriptions
 
