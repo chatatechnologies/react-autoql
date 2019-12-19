@@ -24,13 +24,13 @@
 }
 
 .chata-dashboard-tile-inner-div {
-  height: calc(100% - 55px);
+  height: 100%;
   width: 100%;
   background: inherit;
   position: relative;
   text-align: center;
   display: flex;
-  justify-content: center;
+  justify-content: start;
   flex-direction: column;
   align-items: center;
 }
@@ -40,7 +40,7 @@
 }
 
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
-  height: 100%;
+  height: calc(100% - 55px);
   width: 100%;
   /* padding: 20px; */
   padding: 30px;
