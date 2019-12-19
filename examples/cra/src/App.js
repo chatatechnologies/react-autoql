@@ -17,10 +17,11 @@ import {
   Switch,
   Button,
   Menu,
-  Select,
   Form,
   message,
-  Icon
+  Icon,
+  Modal,
+  Spin
 } from 'antd'
 
 import locateLogo from './locate_logo.png'
@@ -55,9 +56,109 @@ class Item extends React.Component {
 
 const SortableItem = sortable(Item)
 
+const demoDashboard = [
+  {
+    key: '0',
+    w: 3,
+    h: 2,
+    x: 0,
+    y: 0,
+    query: 'total profit this month',
+    title: 'Profit - Current Month'
+  },
+  {
+    key: '1',
+    w: 3,
+    h: 2,
+    x: 3,
+    y: 0,
+    query: 'total profit last month',
+    title: 'Profit - Previous Month'
+  },
+  {
+    key: '2',
+    w: 3,
+    h: 2,
+    x: 6,
+    y: 0,
+    query: 'total profit ytd',
+    title: 'Profit - YTD'
+  },
+  {
+    key: '3',
+    w: 3,
+    h: 2,
+    x: 9,
+    y: 0,
+    query: 'last years profit',
+    title: 'Profit - Previous Year'
+  },
+  {
+    key: '4',
+    w: 6,
+    h: 5,
+    x: 0,
+    y: 2,
+    query: 'profit by month ytd',
+    displayType: 'line',
+    title: 'Monthly YTD Profit'
+  },
+  {
+    key: '5',
+    w: 6,
+    h: 5,
+    x: 6,
+    y: 2,
+    query: 'profit by month last year',
+    displayType: 'line',
+    title: '2018 Monthly Profit'
+  },
+  {
+    key: '6',
+    w: 6,
+    h: 5,
+    x: 0,
+    y: 7,
+    query: 'profit by class this year',
+    displayType: 'column',
+    title: 'Total Profit by Class (2019)'
+  },
+  {
+    key: '7',
+    w: 6,
+    h: 5,
+    x: 6,
+    y: 7,
+    query: 'profit by customer this year',
+    displayType: 'bar',
+    title: 'Total Profit by Customer (2019)'
+  },
+  {
+    key: '8',
+    w: 6,
+    h: 5,
+    x: 0,
+    y: 10,
+    query: 'total profit by class by month ytd',
+    displayType: 'stacked_column',
+    title: 'Product Profitability'
+  },
+  {
+    key: '9',
+    w: 6,
+    h: 5,
+    x: 6,
+    y: 12,
+    query: 'total profit by customer by month ytd',
+    displayType: 'heatmap',
+    title: 'Customer Profitability'
+  }
+]
+
 export default class App extends Component {
   state = {
     currentPage: 'drawer',
+    isNewDashboardModalOpen: false,
     componentKey: uuid.v4(),
     isVisible: false,
     placement: 'right',
@@ -102,104 +203,63 @@ export default class App extends Component {
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     monthFormat: 'MMM YYYY',
     dayFormat: 'MMM DD, YYYY',
-    dashboardTiles: [
-      {
-        key: '0',
-        w: 3,
-        h: 2,
-        x: 0,
-        y: 0,
-        query: 'total profit this month',
-        title: 'Profit - Current Month'
-      },
-      {
-        key: '1',
-        w: 3,
-        h: 2,
-        x: 3,
-        y: 0,
-        query: 'total profit last month',
-        title: 'Profit - Previous Month'
-      },
-      {
-        key: '2',
-        w: 3,
-        h: 2,
-        x: 6,
-        y: 0,
-        query: 'total profit ytd',
-        title: 'Profit - YTD'
-      },
-      {
-        key: '3',
-        w: 3,
-        h: 2,
-        x: 9,
-        y: 0,
-        query: 'last years profit',
-        title: 'Profit - Previous Year'
-      },
-      {
-        key: '4',
-        w: 6,
-        h: 5,
-        x: 0,
-        y: 2,
-        query: 'profit by month ytd',
-        displayType: 'line',
-        title: 'Monthly YTD Profit'
-      },
-      {
-        key: '5',
-        w: 6,
-        h: 5,
-        x: 6,
-        y: 2,
-        query: 'profit by month last year',
-        displayType: 'line',
-        title: '2018 Monthly Profit'
-      },
-      {
-        key: '6',
-        w: 6,
-        h: 5,
-        x: 0,
-        y: 7,
-        query: 'profit by class this year',
-        displayType: 'column',
-        title: 'Total Profit by Class (2019)'
-      },
-      {
-        key: '7',
-        w: 6,
-        h: 5,
-        x: 6,
-        y: 7,
-        query: 'profit by customer this year',
-        displayType: 'bar',
-        title: 'Total Profit by Customer (2019)'
-      },
-      {
-        key: '8',
-        w: 6,
-        h: 5,
-        x: 0,
-        y: 10,
-        query: 'total profit by class by month ytd',
-        displayType: 'stacked_column',
-        title: 'Product Profitability'
-      },
-      {
-        key: '9',
-        w: 6,
-        h: 5,
-        x: 6,
-        y: 12,
-        query: 'total profit by customer by month ytd',
-        displayType: 'heatmap',
-        title: 'Customer Profitability'
+    dashboardTiles: undefined,
+    activeDashboardId: undefined
+  }
+
+  componentDidMount = () => {
+    this.fetchDashboard()
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (prevState.demo !== this.state.demo) {
+      this.fetchDashboard()
+    }
+  }
+
+  fetchDashboard = async () => {
+    this.setState({
+      isFetchingDashboard: true
+    })
+
+    try {
+      const jwtToken = localStorage.getItem('jwtToken')
+      if (jwtToken && !this.state.demo) {
+        const baseUrl = window.location.href.includes('prod')
+          ? 'https://backend.chata.io'
+          : 'https://backend-staging.chata.io'
+
+        const url = `${baseUrl}/api/v1/dashboards?key=${this.state.apiKey}`
+        const dashboardResponse = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+            'Integrator-Domain': this.state.domain
+          }
+        })
+
+        this.setState({
+          dashboardTiles: dashboardResponse.data.data,
+          dashboardError: false,
+          isFetchingDashboard: false,
+          activeDashboardId: dashboardResponse.data.id
+        })
+      } else {
+        // use demo endpoint if there is one
+        this.setState({
+          dashboardTiles: demoDashboard,
+          dashboardError: false,
+          isFetchingDashboard: false
+        })
       }
-    ]
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        dashboardTiles: undefined,
+        dashboardError: true,
+        isFetchingDashboard: false,
+        activeDashboardId: null
+      })
+    }
   }
 
   onLogin = async e => {
@@ -239,8 +299,13 @@ export default class App extends Component {
       const jwtToken = jwtResponse.data
       localStorage.setItem('jwtToken', jwtToken)
 
-      this.setState({ isAuthenticated: true, componentKey: uuid.v4() })
+      this.setState({
+        isAuthenticated: true,
+        componentKey: uuid.v4(),
+        activeIntegrator: this.getActiveIntegrator()
+      })
 
+      this.fetchDashboard()
       return message.success(
         'Login Sucessful! Your token will be valid for 6 hours if you do not clear your cache.'
       )
@@ -249,8 +314,30 @@ export default class App extends Component {
       // Clear tokens
       localStorage.setItem('loginToken', null)
       localStorage.setItem('jwtToken', null)
-      this.setState({ isAuthenticated: false })
+      this.setState({
+        isAuthenticated: false,
+        activeIntegrator: null,
+        componentKey: uuid.v4()
+      })
+
+      this.fetchDashboard()
       return message.error('Login Unsuccessful. Check logs for details.')
+    }
+  }
+
+  getActiveIntegrator = () => {
+    const { domain } = this.state
+
+    if (domain.includes('spira')) {
+      return 'spira'
+    } else if (domain.includes('locate')) {
+      return 'locate'
+    } else if (domain.includes('purefacts')) {
+      return 'purefacts'
+    } else if (domain.includes('bluelink')) {
+      return 'bluelink'
+    } else if (domain.includes('lefort')) {
+      return 'lefort'
     }
   }
 
@@ -291,6 +378,42 @@ export default class App extends Component {
   onSortChartColors = items => {
     this.setState({
       items: items
+    })
+  }
+
+  saveDashboard = () => {
+    const { tiles, domain, apiKey } = this.state
+    // GET, PUT, DELETE  /api/v1/dashboards/{id}?key=abcdef
+    // {
+    //   "name": "My First Dashboard",
+    //   "customer_id": "locate-demo1",
+    //   "user_id": "test@test.test",
+    //   "data": [...]
+    // }
+
+    const data = {
+      name: this.state.activeDashboardName,
+      customer_id: this.state.customerId,
+      user_id: this.state.userId,
+      data: this.state.dashboardTiles.map(tile => {
+        return {
+          ...tile,
+          response: undefined
+        }
+      })
+    }
+
+    const baseUrl = window.location.href.includes('prod')
+      ? 'https://backend.chata.io'
+      : 'https://backend-staging.chata.io'
+
+    const url = `${baseUrl}/api/v1/dashboards/${this.state.activeDashboardId}?key=${this.state.apiKey}`
+
+    axios.put(url, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+        'Integrator-Domain': this.state.domain
+      }
     })
   }
 
@@ -395,7 +518,7 @@ export default class App extends Component {
         <h1>Data Source</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
         {this.state.isAuthenticated &&
-          this.state.domain.includes('locate') &&
+          this.state.activeIntegrator === 'locate' &&
           this.createBooleanRadioGroup('Locate Demo', 'locateUiOverlay', [
             true,
             false
@@ -745,22 +868,31 @@ export default class App extends Component {
 
   renderChatDrawerPage = () => {
     let handleImage
-    if (this.state.isAuthenticated && this.state.domain.includes('purefacts')) {
+    if (
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'purefacts' &&
+      !this.state.demo
+    ) {
       handleImage = purefactsLogo
     } else if (
       this.state.isAuthenticated &&
-      this.state.domain.includes('locate')
+      this.state.activeIntegrator === 'locate' &&
+      !this.state.demo
     ) {
       handleImage = locateLogo
     }
 
     const lightAccentColor =
-      this.state.isAuthenticated && this.state.domain.includes('purefacts')
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'purefacts' &&
+      !this.state.demo
         ? '#253340'
         : this.state.lightAccentColor
 
     const darkAccentColor =
-      this.state.isAuthenticated && this.state.domain.includes('purefacts')
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'purefacts' &&
+      !this.state.demo
         ? '#253340'
         : this.state.darkAccentColor
 
@@ -830,6 +962,10 @@ export default class App extends Component {
   }
 
   renderDashboardPage = () => {
+    if (this.state.isFetchingDashboard) {
+      return <Spin />
+    }
+
     return (
       <div
         className="dashboard-container"
@@ -838,12 +974,34 @@ export default class App extends Component {
         <div
           className="dashboard-toolbar-container"
           style={{
-            display: 'flex',
-            justifyContent: 'center',
+            textAlign: 'center',
             background: '#fafafa',
             padding: '10px'
           }}
         >
+          <div style={{ paddingTop: '6px', marginLeft: '10px' }}>
+            Run Dashboard Automatically&nbsp;&nbsp;
+            <Switch
+              defaultChecked={this.state.runDashboardAutomatically}
+              checked={this.state.runDashboardAutomatically === true}
+              onChange={e => {
+                if (e) {
+                  executeDashboard(this.dashboardRef)
+                }
+                this.setState({ runDashboardAutomatically: e })
+              }}
+            />
+          </div>
+          {
+            //   !this.state.isEditing && (
+            //   <Button
+            //     onClick={() => this.setState({ isNewDashboardModalOpen: true })}
+            //     icon="plus"
+            //   >
+            //     New Dashboard
+            //   </Button>
+            // )
+          }
           <Button
             onClick={() => this.setState({ isEditing: !this.state.isEditing })}
             icon={this.state.isEditing ? 'stop' : 'edit'}
@@ -863,19 +1021,8 @@ export default class App extends Component {
           >
             Log Current Tile State
           </Button>
-          <div style={{ paddingTop: '6px', marginLeft: '10px' }}>
-            Run Dashboard Automatically&nbsp;&nbsp;
-            <Switch
-              defaultChecked={this.state.runDashboardAutomatically}
-              checked={this.state.runDashboardAutomatically === true}
-              onChange={e => {
-                if (e) {
-                  executeDashboard(this.dashboardRef)
-                }
-                this.setState({ runDashboardAutomatically: e })
-              }}
-            />
-          </div>
+
+          <br />
           {this.state.isEditing && (
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
@@ -894,6 +1041,16 @@ export default class App extends Component {
               style={{ marginLeft: '10px' }}
             >
               Undo
+            </Button>
+          )}
+          {this.state.isEditing && !this.state.demo && (
+            <Button
+              onClick={this.saveDashboard}
+              type="primary"
+              icon="save"
+              style={{ marginLeft: '10px' }}
+            >
+              Save Dashboard
             </Button>
           )}
         </div>
@@ -946,8 +1103,30 @@ export default class App extends Component {
       >
         <Menu.Item key="drawer">Chat Drawer</Menu.Item>
         <Menu.Item key="dashboard">Dashboard</Menu.Item>
+        <Menu.Item key="notifications">Notifications</Menu.Item>
       </Menu>
     )
+  }
+
+  renderNewDashboardModal = () => {
+    return (
+      <Modal
+        visible={this.state.isNewDashboardModalOpen}
+        onOk={() => {}}
+        onCancel={() => {}}
+        title="New Dashboard"
+      >
+        <Input
+          placeholder="Dashboard Name"
+          value={this.state.dashboardNameInput}
+          onChange={e => this.setState({ dashboardNameInput: e.target.value })}
+        />
+      </Modal>
+    )
+  }
+
+  renderNotificationsPage = () => {
+    return <div style={{ height: '100vh' }} />
   }
 
   render = () => {
@@ -963,6 +1142,10 @@ export default class App extends Component {
         pageToRender = this.renderDashboardPage()
         break
       }
+      case 'notifications': {
+        pageToRender = this.renderNotificationsPage()
+        break
+      }
       default: {
         break
       }
@@ -971,12 +1154,20 @@ export default class App extends Component {
     return (
       <Fragment>
         {this.state.isAuthenticated &&
-          this.state.domain.includes('locate') &&
-          !this.state.demo && <div className="ui-overlay locate" />}
+          this.state.activeIntegrator === 'locate' &&
+          !this.state.demo &&
+          this.state.currentPage === 'drawer' && (
+            <div className="ui-overlay locate" />
+          )}
         {this.state.isAuthenticated &&
-          this.state.domain.includes('purefacts') &&
-          !this.state.demo && <div className="ui-overlay purefacts" />}
-        {this.state.demo && <div className="ui-overlay qbo-demo" />}
+          this.state.activeIntegrator === 'purefacts' &&
+          !this.state.demo &&
+          this.state.currentPage === 'drawer' && (
+            <div className="ui-overlay purefacts" />
+          )}
+        {this.state.demo && this.state.currentPage === 'drawer' && (
+          <div className="ui-overlay qbo-demo" />
+        )}
         {
           // this.state.demo && <div className="ui-overlay sage-demo" />
         }

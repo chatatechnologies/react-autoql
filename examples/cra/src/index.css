@@ -36,3 +36,7 @@
 /* .ui-overlay.sage-demo {
   background-image: url("./sage_ui.png");
 } */
+
+.dashboard-toolbar-container .ant-btn {
+  margin-top: 10px;
+}
