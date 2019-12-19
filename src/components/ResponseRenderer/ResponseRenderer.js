@@ -617,7 +617,14 @@ export default class ResponseRenderer extends React.Component {
             } else {
               // If this label already exists, just add the values together
               // The BE should prevent this from happening though
-              chartDataObject[row[1]].value += Number(row[1])
+              chartDataObject[row[0]].cells = chartDataObject[row[0]].cells.map(
+                (cell, index) => {
+                  return {
+                    ...cell,
+                    value: cell.value + Number(cells[index].value)
+                  }
+                }
+              )
             }
             return chartDataObject
           }, {})

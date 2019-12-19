@@ -112,6 +112,14 @@ export const formatStringDate = (value, config) => {
 }
 
 export const formatChartLabel = ({ d, col, config = {} }) => {
+  if (d == null) {
+    return {
+      fullWidthLabel: 'Untitled Category',
+      formattedLabel: 'Untitled Category',
+      isTruncated: false
+    }
+  }
+
   if (!col || !col.type) {
     return d
   }
