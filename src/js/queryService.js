@@ -198,6 +198,7 @@ export const runQuery = ({
     demo,
     debug,
     test,
+    token,
     domain,
     apiKey,
     customerId,

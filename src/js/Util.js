@@ -449,7 +449,8 @@ export const getSupportedDisplayTypes = response => {
   return ['table']
 }
 
-export const isDisplayTypeValid = (displayType, supportedDisplayTypes) => {
+export const isDisplayTypeValid = (response, displayType) => {
+  const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = supportedDisplayTypes.includes(displayType)
   if (!isValid) {
     console.error('provided display type is not valid for this response data')

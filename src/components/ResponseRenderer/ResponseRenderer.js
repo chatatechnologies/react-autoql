@@ -131,8 +131,8 @@ export default class ResponseRenderer extends React.Component {
       // Set the initial display type based on prop value, response, and supported display types
       this.setState({
         displayType: isDisplayTypeValid(
-          this.props.displayType,
-          this.supportedDisplayTypes
+          this.props.response,
+          this.props.displayType
         )
           ? this.props.displayType
           : getInitialDisplayType(this.props.response)
@@ -410,7 +410,7 @@ export default class ResponseRenderer extends React.Component {
       this.state.displayType === 'table'
     ) {
       setTimeout(() => {
-        const newTableData = this.tableRef.ref.table.getData(true)
+        const newTableData = _get(this.tableRef, 'ref.table.getData(true)')
         this.generateChartData(newTableData)
         this.props.onTableFilterCallback(newTableData)
       }, 500)

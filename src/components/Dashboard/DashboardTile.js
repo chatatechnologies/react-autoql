@@ -12,8 +12,12 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import { Select } from '../Select'
 
-import { getSupportedDisplayTypes } from '../../js/Util'
 import { runQuery, runQueryOnly } from '../../js/queryService'
+import {
+  getSupportedDisplayTypes,
+  getInitialDisplayType,
+  isDisplayTypeValid
+} from '../../js/Util'
 
 import './DashboardTile.scss'
 
@@ -98,7 +102,6 @@ export default class DashboardTile extends React.Component {
     this.props.setParamsForTile(
       {
         queryResponse: null,
-        displayType: null,
         isNewTile: false,
         selectedSuggestion: undefined,
         safetyNetSelection: undefined
@@ -108,10 +111,17 @@ export default class DashboardTile extends React.Component {
   }
 
   endQuery = response => {
+    const newDisplayType = isDisplayTypeValid(response, this.props.displayType)
+      ? this.props.displayType
+      : getInitialDisplayType(response)
+
     this.props.setParamsForTile(
       {
         queryResponse: response,
         isNewTile: false,
+        // We want to keep the saved display type if possible
+        // If not, we need to reset to the new default display type for that query
+        displayType: newDisplayType,
         selectedSuggestion: undefined,
         safetyNetSelection: undefined
       },
@@ -375,7 +385,10 @@ export default class DashboardTile extends React.Component {
               />
               {this.props.isEditing && (
                 <VizToolbar
-                  displayType={this.props.displayType}
+                  displayType={
+                    this.props.displayType ||
+                    getInitialDisplayType(this.props.queryResponse)
+                  }
                   onDisplayTypeChange={displayType =>
                     this.props.setParamsForTile(
                       { displayType },

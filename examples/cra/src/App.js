@@ -238,10 +238,11 @@ export default class App extends Component {
         })
 
         this.setState({
-          dashboardTiles: dashboardResponse.data.data,
+          dashboardTiles: dashboardResponse.data[0].data,
           dashboardError: false,
           isFetchingDashboard: false,
-          activeDashboardId: dashboardResponse.data.id
+          activeDashboardId: dashboardResponse.data[0].id,
+          activeDashboardName: dashboardResponse.data[0].name
         })
       } else {
         // use demo endpoint if there is one
@@ -381,40 +382,50 @@ export default class App extends Component {
     })
   }
 
-  saveDashboard = () => {
-    const { tiles, domain, apiKey } = this.state
-    // GET, PUT, DELETE  /api/v1/dashboards/{id}?key=abcdef
-    // {
-    //   "name": "My First Dashboard",
-    //   "customer_id": "locate-demo1",
-    //   "user_id": "test@test.test",
-    //   "data": [...]
-    // }
+  saveDashboard = async () => {
+    this.setState({
+      isSavingDashboard: true
+    })
 
-    const data = {
-      name: this.state.activeDashboardName,
-      customer_id: this.state.customerId,
-      user_id: this.state.userId,
-      data: this.state.dashboardTiles.map(tile => {
-        return {
-          ...tile,
-          response: undefined
+    try {
+      const { tiles, domain, apiKey } = this.state
+
+      const data = {
+        name: this.state.activeDashboardName,
+        customer_id: this.state.customerId,
+        user_id: this.state.userId,
+        data: this.state.dashboardTiles.map(tile => {
+          return {
+            ...tile,
+            queryResponse: undefined
+          }
+        })
+      }
+
+      const baseUrl = window.location.href.includes('prod')
+        ? 'https://backend.chata.io'
+        : 'https://backend-staging.chata.io'
+
+      const url = `${baseUrl}/api/v1/dashboards/${this.state.activeDashboardId}?key=${this.state.apiKey}`
+
+      await axios.put(url, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+          'Integrator-Domain': this.state.domain
         }
       })
+
+      this.setState({
+        isSavingDashboard: false,
+        isEditing: false
+      })
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        isSavingDashboard: false,
+        dashboardError: true
+      })
     }
-
-    const baseUrl = window.location.href.includes('prod')
-      ? 'https://backend.chata.io'
-      : 'https://backend-staging.chata.io'
-
-    const url = `${baseUrl}/api/v1/dashboards/${this.state.activeDashboardId}?key=${this.state.apiKey}`
-
-    axios.put(url, data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
-        'Integrator-Domain': this.state.domain
-      }
-    })
   }
 
   renderChartColorsList = () => {
@@ -1046,6 +1057,7 @@ export default class App extends Component {
           {this.state.isEditing && !this.state.demo && (
             <Button
               onClick={this.saveDashboard}
+              loading={this.state.isSavingDashboard}
               type="primary"
               icon="save"
               style={{ marginLeft: '10px' }}
