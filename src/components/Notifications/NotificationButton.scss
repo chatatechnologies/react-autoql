@@ -1,0 +1,24 @@
+.chata-notifications-button-container {
+  position: relative;
+
+  .chata-notifications-button {
+    // font-size: inherit;
+    font-size: 24px;
+    vertical-align: middle;
+    line-height: inherit;
+  }
+
+  .chata-notifications-badge {
+    border: 2px solid #fff;
+    background: #f5222d;
+    border-radius: 31px;
+    position: absolute;
+    top: 4px;
+    left: 10px;
+    height: 22px;
+    line-height: 18px;
+    color: white;
+    font-size: 10px;
+    padding: 0px 6px;
+  }
+}

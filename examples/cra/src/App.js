@@ -5,7 +5,8 @@ import {
   ResponseRenderer,
   ChatBar,
   Dashboard,
-  executeDashboard
+  executeDashboard,
+  NotificationButton
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -528,20 +529,10 @@ export default class App extends Component {
       <div>
         <h1>Data Source</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
-        {this.state.isAuthenticated &&
-          this.state.activeIntegrator === 'locate' &&
-          this.createBooleanRadioGroup('Locate Demo', 'locateUiOverlay', [
-            true,
-            false
-          ])}
-        {
-          // this.state.isAuthenticated &&
-          // this.state.domain.includes('purefacts') &&
-          // this.createBooleanRadioGroup('PureFacts Demo', 'purefactsUiOverlay', [
-          //   true,
-          //   false
-          // ])
-        }
+        {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
+          true,
+          false
+        ])}
         {!this.state.demo && (
           <Fragment>
             <h3>You must login to access data</h3>
@@ -1109,13 +1100,20 @@ export default class App extends Component {
   renderNavMenu = () => {
     return (
       <Menu
-        onClick={({ key }) => this.setState({ currentPage: key })}
+        onClick={({ key }) => {
+          this.setState({ currentPage: key })
+          if (key === 'notifications' && this.notificationBadgeRef) {
+            this.notificationBadgeRef.resetCount()
+          }
+        }}
         selectedKeys={[this.state.currentPage]}
         mode="horizontal"
       >
         <Menu.Item key="drawer">Chat Drawer</Menu.Item>
         <Menu.Item key="dashboard">Dashboard</Menu.Item>
-        <Menu.Item key="notifications">Notifications</Menu.Item>
+        <Menu.Item key="notifications">
+          <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
+        </Menu.Item>
       </Menu>
     )
   }
@@ -1138,7 +1136,52 @@ export default class App extends Component {
   }
 
   renderNotificationsPage = () => {
-    return <div style={{ height: '100vh' }} />
+    return (
+      <div
+        style={{
+          minHeight: '100%',
+          padding: '50px',
+          color: 'gray',
+          fontStyle: 'italic',
+          textAlign: 'center'
+        }}
+      >
+        <div style={{ fontSize: '20px' }}>Coming Soon!</div>
+        <br /> Your list of custom notifications will show up here. Visit{' '}
+        <a target="_blank" href="https://balsamiq.cloud/stp154f/p7k5dww/rB9F5">
+          here
+        </a>{' '}
+        for a WIP wireframe
+      </div>
+    )
+  }
+
+  renderUIOverlay = () => {
+    // Only render overlay if drawer is active and prop is enabled
+    if (!this.state.uiOverlay || this.state.currentPage !== 'drawer') {
+      return null
+    }
+
+    // Use QBO for demo project
+    if (this.state.demo) {
+      return <div className="ui-overlay qbo-demo" />
+      // this.state.demo && <div className="ui-overlay sage-demo" />
+    }
+
+    // If using custom integrator but not authenticated
+    if (!this.state.demo && !this.state.isAuthenticated) {
+      return null
+    }
+
+    // Locate
+    if (this.state.activeIntegrator === 'locate') {
+      return <div className="ui-overlay locate" />
+    }
+
+    // Purefacts
+    if (this.state.activeIntegrator === 'purefacts') {
+      return <div className="ui-overlay purefacts" />
+    }
   }
 
   render = () => {
@@ -1165,24 +1208,7 @@ export default class App extends Component {
 
     return (
       <Fragment>
-        {this.state.isAuthenticated &&
-          this.state.activeIntegrator === 'locate' &&
-          !this.state.demo &&
-          this.state.currentPage === 'drawer' && (
-            <div className="ui-overlay locate" />
-          )}
-        {this.state.isAuthenticated &&
-          this.state.activeIntegrator === 'purefacts' &&
-          !this.state.demo &&
-          this.state.currentPage === 'drawer' && (
-            <div className="ui-overlay purefacts" />
-          )}
-        {this.state.demo && this.state.currentPage === 'drawer' && (
-          <div className="ui-overlay qbo-demo" />
-        )}
-        {
-          // this.state.demo && <div className="ui-overlay sage-demo" />
-        }
+        {this.renderUIOverlay()}
         {this.renderNavMenu()}
         {pageToRender}
       </Fragment>

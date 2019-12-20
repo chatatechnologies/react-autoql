@@ -363,3 +363,31 @@ export const fetchQueryTips = ({
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
+
+export const fetchNotificationCount = ({
+  customerId,
+  userId,
+  domain,
+  apiKey,
+  token
+}) => {
+  return new Promise((resolve, reject) => {
+    return setTimeout(() => {
+      resolve({ data: { count: 1 } })
+    })
+  })
+}
+
+export const resetNotificationCount = ({
+  customerId,
+  userId,
+  domain,
+  apiKey,
+  token
+}) => {
+  return new Promise((resolve, reject) => {
+    return setTimeout(() => {
+      resolve()
+    })
+  })
+}
