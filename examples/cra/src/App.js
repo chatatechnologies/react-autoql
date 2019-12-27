@@ -6,7 +6,8 @@ import {
   ChatBar,
   Dashboard,
   executeDashboard,
-  NotificationButton
+  NotificationButton,
+  NotificationList
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -389,7 +390,7 @@ export default class App extends Component {
     })
 
     try {
-      const { tiles, domain, apiKey } = this.state
+      // const { tiles, domain, apiKey } = this.state
 
       const data = {
         name: this.state.activeDashboardName,
@@ -1111,6 +1112,7 @@ export default class App extends Component {
       >
         <Menu.Item key="drawer">Chat Drawer</Menu.Item>
         <Menu.Item key="dashboard">Dashboard</Menu.Item>
+        <Menu.Item key="settings">Settings</Menu.Item>
         <Menu.Item key="notifications">
           <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
         </Menu.Item>
@@ -1137,6 +1139,14 @@ export default class App extends Component {
 
   renderNotificationsPage = () => {
     return (
+      <div style={{ height: '100vh', background: 'rgb(250,250,250)' }}>
+        <NotificationList />
+      </div>
+    )
+  }
+
+  renderSettingsPage = () => {
+    return (
       <div
         style={{
           minHeight: '100%',
@@ -1147,8 +1157,12 @@ export default class App extends Component {
         }}
       >
         <div style={{ fontSize: '20px' }}>Coming Soon!</div>
-        <br /> Your list of custom notifications will show up here. Visit{' '}
-        <a target="_blank" href="https://balsamiq.cloud/stp154f/p7k5dww/rB9F5">
+        <br /> You will be able to add and edit your custom notifications here.
+        Visit{' '}
+        <a
+          target="_blank"
+          href="https://balsamiq.cloud/stp154f/p7k5dww/r4C03?f=N4IgUiBcAMA0IDkpxAYWfAMhkAhHAsjgFo4DSUA2gLoC%2BQA%3D"
+        >
           here
         </a>{' '}
         for a WIP wireframe
@@ -1199,6 +1213,10 @@ export default class App extends Component {
       }
       case 'notifications': {
         pageToRender = this.renderNotificationsPage()
+        break
+      }
+      case 'settings': {
+        pageToRender = this.renderSettingsPage()
         break
       }
       default: {

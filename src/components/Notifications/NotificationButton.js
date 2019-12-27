@@ -11,7 +11,9 @@ import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
   // Open event source http connection here to receive SSE
-  notificationEventSource = new EventSource('chata-notifications')
+  // notificationEventSource = new EventSource(
+  //   'https://backend.chata.io/notifications'
+  // )
 
   static propTypes = {
     overflowCount: PropTypes.number,

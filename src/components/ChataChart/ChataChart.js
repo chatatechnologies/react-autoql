@@ -118,14 +118,14 @@ export default class ChataChart extends Component {
         // Legend goes on the side for these types
         (this.props.type === 'stacked_bar' ||
           this.props.type === 'stacked_column') &&
-        legendBBox
+        _get(legendBBox, 'width')
       ) {
         rightMargin = legendBBox.width + this.DEFAULT_MARGINS.right
       } else if (
         (this.props.type === 'bar' ||
           this.props.type === 'column' ||
           this.props.type === 'line') &&
-        legendBBox
+        _get(legendBBox, 'height')
       ) {
         // Legend goes on the bottom
         bottomLegendMargin = legendBBox.height + 20

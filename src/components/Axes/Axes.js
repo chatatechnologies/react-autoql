@@ -86,7 +86,7 @@ export default class Axes extends React.Component {
           className="x-axis-label"
           textAnchor="middle"
           fontWeight="bold"
-          y={xProps.height - (xProps.margins.bottomLegend || 0)}
+          y={xProps.height - (xProps.margins.bottomLegend || 0) - 5}
           x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
           style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
         >

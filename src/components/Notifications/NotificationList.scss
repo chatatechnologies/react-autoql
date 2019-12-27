@@ -1,0 +1,191 @@
+.chata-notification-list-container {
+  --accent-color: #26a7df;
+
+  height: 100%;
+  padding: 20px;
+  overflow: hidden;
+
+  .chata-notification-list-item {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+    height: 50px;
+
+    margin-bottom: 12px;
+
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+    font-family: var(--chata-dashboard-font-family), sans-serif;
+    line-height: 50px;
+
+    transition: all 1s ease;
+    transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+    animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
+    animation-fill-mode: both;
+    animation-delay: 0s;
+
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.01);
+    }
+
+    &.expanded {
+      height: 300px;
+      .chata-notification-alert-strip {
+        height: 300px;
+      }
+      .chata-notification-list-item-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+
+  .chata-notification-list-item-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    padding-left: 25px;
+    padding-right: 10px;
+
+    cursor: pointer;
+  }
+
+  .chata-notification-data-container {
+    width: 100%;
+    height: 205px;
+    padding: 0 20px;
+    padding-top: 5px;
+  }
+
+  .chata-notification-data-title {
+    line-height: 22px;
+    font-size: 12px;
+    text-align: right;
+    color: rgba(0, 0, 0, 0.3);
+    padding: 8px 20px;
+
+    svg {
+      margin-top: -3px;
+      vertical-align: middle;
+    }
+  }
+
+  .chata-notification-dismiss-all {
+    text-align: right;
+    margin-bottom: 12px;
+    padding-right: 10px;
+    color: rgba(0, 0, 0, 0.4);
+    transition: color 0.1s ease;
+    cursor: pointer;
+
+    &:hover {
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  // .chata-notification-dismiss-btn {
+  //   color: white;
+  //   // background: #f5222d;
+  //   background: var(--accent-color);
+  //   padding: 10px 20px;
+  //   margin: 9px 0;
+  //   line-height: 12px;
+  //   border-radius: 20px;
+  //   box-shadow: 0px 2px 6px -1px #bbbbbb;
+  //   cursor: pointer;
+  // }
+
+  .chata-notification-dismiss-icon {
+    font-size: 18px;
+    height: 50px;
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 20px;
+    margin-top: 7px;
+    margin-right: 3px;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #ececec;
+    }
+  }
+
+  .chata-notification-alert-icon {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    // color: #f5222d;
+    color: var(--accent-color);
+    line-height: 10px;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .chata-notification-alert-strip {
+    opacity: 0;
+    position: absolute;
+    height: 50px;
+    left: 0px;
+    top: 0;
+    width: 4px;
+    // background: #f5222d;
+
+    background: var(--accent-color);
+
+    transition-property: opacity, height;
+    transition-duration: 0.2s, 0.3s;
+    transition-timing-function: ease, cubic-bezier(0.26, 0.26, 0, 1);
+  }
+
+  .chata-notification-enable-checkbox {
+    margin-top: 6px;
+  }
+
+  .chata-notification-list-item.triggered {
+    .chata-notification-list-item-header {
+      color: var(--accent-color);
+      // color: #f5222d;
+    }
+
+    .chata-notification-display-name {
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .chata-notification-click-to-dismiss {
+      color: white;
+      text-align: center;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+    }
+
+    .chata-notification-alert-strip {
+      opacity: 1;
+    }
+  }
+}
+
+// Set delay per List Item, max out at 15 as it shouldnt exceed this
+@for $i from 1 through 100 {
+  .chata-notification-list-item:nth-of-type(#{$i}) {
+    animation-delay: 0.1s * $i;
+  }
+}
+
+@-webkit-keyframes slideIn {
+  0% {
+    top: 2000px;
+  }
+  100% {
+    top: 0;
+  }
+}

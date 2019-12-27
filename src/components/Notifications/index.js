@@ -1,2 +1,2 @@
 export { default as NotificationButton } from './NotificationButton'
-// export { NotificationsView } from './NotificationsView'
+export { default as NotificationList } from './NotificationList'

@@ -73,7 +73,7 @@ export default class Checkbox extends React.Component {
     `
 
     return (
-      <div>
+      <div style={{ display: 'inline-block' }}>
         {
           //   // <label>
           // <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
@@ -113,13 +113,13 @@ export default class Checkbox extends React.Component {
           //   // <span>Label Text</span>
           //   // </label>
           // }
-          <div className={checkboxClassname}>
+          <div className={`${checkboxClassname} ${this.props.className}`}>
             <input
+              {...inputProps}
               type="checkbox"
               className={inputClassname}
               ref={el => (this.selector = el)}
               id={this.ID}
-              {...inputProps}
               checked={this.props.checked}
               onChange={this.onCheckedChange}
             />
