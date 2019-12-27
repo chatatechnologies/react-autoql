@@ -373,7 +373,7 @@ export const fetchNotificationCount = ({
 }) => {
   return new Promise((resolve, reject) => {
     return setTimeout(() => {
-      resolve({ data: { count: 1 } })
+      resolve({ data: { count: 2 } })
     })
   })
 }

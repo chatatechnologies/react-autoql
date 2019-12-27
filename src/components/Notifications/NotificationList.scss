@@ -80,10 +80,12 @@
     padding-right: 10px;
     color: rgba(0, 0, 0, 0.4);
     transition: color 0.1s ease;
-    cursor: pointer;
 
-    &:hover {
-      color: rgba(0, 0, 0, 0.6);
+    span {
+      cursor: pointer;
+      &:hover {
+        color: rgba(0, 0, 0, 0.6);
+      }
     }
   }
 
