@@ -7,15 +7,8 @@ import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
 
-// Icons
-import { MdClose } from 'react-icons/md'
-import { MdLightbulbOutline } from 'react-icons/md'
-import { FaRegTrashAlt } from 'react-icons/fa'
-import { MdError } from 'react-icons/md'
-import chataBubblesSVG from '../../images/chata-bubbles.svg'
-import { bubblesIcon } from '../../svgIcons.js'
-
 // Components
+import { Icon } from '../Icon'
 import { ChatBar } from '../ChatBar'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
@@ -241,14 +234,16 @@ export default class ChatDrawer extends React.Component {
           className={`drawer-handle${this.props.isVisible ? ' hide' : ''}`}
           style={this.props.handleStyles}
         >
-          <img
-            className="chata-bubbles-icon"
-            src={this.props.handleImage || chataBubblesSVG}
-            alt="chata.ai"
-            height="22px"
-            width="22px"
-            draggable="false"
-          />
+          {this.props.handleImage ? (
+            <img
+              src={this.props.handleImage}
+              height="22px"
+              width="22px"
+              draggable="false"
+            />
+          ) : (
+            <Icon type="chata-bubbles" />
+          )}
         </div>
       )
     }
@@ -528,7 +523,7 @@ export default class ChatDrawer extends React.Component {
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
             >
-              {bubblesIcon}
+              <Icon type="chata-bubbles-outline" />
             </div>
             <div
               className={`tab${page === 'tips' ? ' active' : ''}`}
@@ -538,7 +533,7 @@ export default class ChatDrawer extends React.Component {
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
             >
-              <MdLightbulbOutline size={22} />
+              <Icon type="light-bulb" size={22} />
             </div>
           </div>
         </div>
@@ -558,7 +553,7 @@ export default class ChatDrawer extends React.Component {
           content={
             <div className="clear-messages-confirm-popover">
               <div className="chata-confirm-text">
-                <MdError className="chata-confirm-icon" />
+                <Icon className="chata-confirm-icon" type="warning" />
                 Clear all messages?
               </div>
               <Button
@@ -588,7 +583,7 @@ export default class ChatDrawer extends React.Component {
             data-tip="Clear Messages"
             data-for="chata-header-tooltip"
           >
-            <FaRegTrashAlt />
+            <Icon type="trash" />
           </button>
         </Popover>
       )
@@ -616,7 +611,7 @@ export default class ChatDrawer extends React.Component {
             data-tip="Close Drawer"
             data-for="chata-header-tooltip"
           >
-            <MdClose />
+            <Icon type="close" />
           </button>
         </div>
         <div className="chata-header-center-container">
@@ -717,7 +712,9 @@ export default class ChatDrawer extends React.Component {
           </div>
         )}
         <div className="chat-bar-container">
-          <div className="watermark">{bubblesIcon} We run on chata</div>
+          <div className="watermark">
+            <Icon type="chata-bubbles-outline" /> We run on chata
+          </div>
           <ChatBar
             ref={this.setChatBarRef}
             token={this.props.token}

@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { IoMdNotificationsOutline } from 'react-icons/io'
+
+import { Icon } from '../Icon'
 
 import {
   fetchNotificationCount,
@@ -98,7 +99,7 @@ export default class NotificationButton extends React.Component {
   render = () => {
     return (
       <div className="chata-notifications-button-container">
-        <IoMdNotificationsOutline className="chata-notifications-button" />
+        <Icon type="notification" className="chata-notifications-button" />
         {this.renderBadge()}
       </div>
     )

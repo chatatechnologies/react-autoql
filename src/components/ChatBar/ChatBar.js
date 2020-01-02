@@ -3,11 +3,11 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 
+import { Icon } from '../Icon'
 import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
-import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
 
 import './ChatBar.scss'
@@ -307,14 +307,7 @@ export default class ChatBar extends React.Component {
         )}
         {this.props.showChataIcon && (
           <div className="chat-bar-input-icon">
-            <img
-              className="chata-bubbles-icon"
-              src={chataBubblesSVG}
-              alt="chata.ai"
-              height="22px"
-              width="22px"
-              draggable="false"
-            />
+            <Icon type="chata-bubbles" />
           </div>
         )}
         {this.props.showLoadingDots && this.state.isQueryRunning && (

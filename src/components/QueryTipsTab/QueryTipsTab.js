@@ -1,10 +1,8 @@
 import React, { Fragment } from 'react'
+import PropTypes from 'prop-types'
 import { Scrollbars } from 'react-custom-scrollbars'
-import { IoIosSearch } from 'react-icons/io'
 import ReactPaginate from 'react-paginate'
 import _get from 'lodash.get'
-import PropTypes from 'prop-types'
-import { MdPlayCircleOutline } from 'react-icons/md'
 
 import { Spinner } from '../Spinner'
 
@@ -113,7 +111,8 @@ export default class QueryTipsTab extends React.Component {
               autoFocus
             />
             <div className="chat-bar-input-icon">
-              <IoIosSearch
+              <Icon
+                type="search"
                 style={{ width: '19px', height: '20px', color: '#999' }}
               />
             </div>

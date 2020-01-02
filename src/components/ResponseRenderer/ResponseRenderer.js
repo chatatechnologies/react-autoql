@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import { IoIosGlobe } from 'react-icons/io'
 import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
@@ -13,6 +12,7 @@ import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
+import { Icon } from '../Icon'
 // import { ChataForecast } from '../ChataForecast'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -561,7 +561,7 @@ export default class ResponseRenderer extends React.Component {
             target="_blank"
             onClick={() => window.open(url, '_blank')}
           >
-            <IoIosGlobe className="chata-help-link-icon" />
+            <Icon type="globe" className="chata-help-link-icon" />
             {linkText}
           </button>
         }

@@ -1,14 +1,12 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-// import { IoMdNotificationsOutline } from 'react-icons/io'
-import { MdEdit } from 'react-icons/md'
-import { FiPlus } from 'react-icons/fi'
 
 import { Modal } from '../Modal'
 import { Steps } from '../Steps'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Checkbox } from '../Checkbox'
+import { Icon } from '../Icon'
 
 import './NotificationSettings.scss'
 
@@ -161,7 +159,7 @@ export default class NotificationSettings extends React.Component {
   renderAddNotificationButton = () => (
     <div className="chata-notification-add-btn-container">
       <div className="chata-notification-add-btn" onClick={this.onAddClick}>
-        <FiPlus className="chata-notification-add-icon" />
+        <Icon type="plus" className="chata-notification-add-icon" />
       </div>
     </div>
   )
@@ -183,7 +181,8 @@ export default class NotificationSettings extends React.Component {
                   <div className="chata-notification-setting-display-name">
                     {notification.displayName}
                   </div>
-                  <MdEdit
+                  <Icon
+                    type="edit"
                     className="chata-notification-edit-icon"
                     onClick={e => this.onEditClick(e, notification)}
                   />

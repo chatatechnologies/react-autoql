@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
-import { MdClose } from 'react-icons/md'
 
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 
 import './Modal.scss'
 
@@ -57,7 +57,8 @@ export default class Modal extends React.Component {
           >
             <div className="chata-modal-header">
               {this.props.title}
-              <MdClose
+              <Icon
+                type="close"
                 className="chata-modal-close-btn"
                 onClick={this.props.onClose}
               />

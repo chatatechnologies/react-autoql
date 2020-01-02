@@ -1,13 +1,10 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import { FaExclamationCircle } from 'react-icons/fa'
-import { FiBellOff, FiCalendar } from 'react-icons/fi'
-import { IoMdNotificationsOff } from 'react-icons/io'
 import dayjs from 'dayjs'
 
 import { Checkbox } from '../Checkbox'
-import { fetchNotificationList } from '../../js/queryService'
 import { ResponseRenderer } from '../ResponseRenderer'
+import { Icon } from '../Icon'
 
 import './NotificationList.scss'
 
@@ -156,7 +153,8 @@ export default class NotificationList extends React.Component {
   renderDismissAllButton = () => (
     <div className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllclick}>
-        <FiBellOff style={{ verticalAlign: 'middle' }} /> Dismiss All
+        <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
+        Dismiss All
       </span>
     </div>
   )
@@ -186,7 +184,8 @@ export default class NotificationList extends React.Component {
                   // <div className="chata-notification-dismiss-btn">
                   //   Dismiss
                   // </div>
-                  <FiBellOff
+                  <Icon
+                    type="notification-off"
                     className="chata-notification-dismiss-icon"
                     onClick={e => this.onDismissClick(e, notification)}
                   />
@@ -202,7 +201,7 @@ export default class NotificationList extends React.Component {
               {notification.expanded && (
                 <Fragment>
                   <div className="chata-notification-data-title">
-                    <FiCalendar />{' '}
+                    <Icon type="calendar" />{' '}
                     <em>
                       Triggered on {dayjs(notification.last_triggered).format()}
                     </em>

@@ -1,19 +1,13 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
-import {
-  MdContentCopy,
-  MdFileDownload,
-  MdFilterList,
-  MdInfoOutline
-} from 'react-icons/md'
-import { FaEye } from 'react-icons/fa'
 import ReactTooltip from 'react-tooltip'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
+import { VizToolbar } from '../VizToolbar'
+import { Icon } from '../Icon'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import {
@@ -22,8 +16,6 @@ import {
   changeTooltipText
 } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
-
-import { VizToolbar } from '../VizToolbar'
 
 import './ChatMessage.scss'
 
@@ -370,7 +362,7 @@ export default class ChatMessage extends React.Component {
               data-tip="Filter Table"
               data-for="chata-toolbar-btn-tooltip"
             >
-              <MdFilterList />
+              <Icon type="filter" />
             </button>
           )}
           {shouldShowButton.showHideColumnsButton && (
@@ -380,7 +372,7 @@ export default class ChatMessage extends React.Component {
               data-tip="Show/Hide Columns"
               data-for="chata-toolbar-btn-tooltip"
             >
-              <FaEye />
+              <Icon type="eye" />
             </button>
           )}
           {shouldShowButton.showCopyButton && (
@@ -394,7 +386,7 @@ export default class ChatMessage extends React.Component {
               }
               data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
             >
-              <MdContentCopy />
+              <Icon type="copy" />
             </button>
           )}
           {shouldShowButton.showSaveAsCSVButton && (
@@ -404,7 +396,7 @@ export default class ChatMessage extends React.Component {
               data-tip="Download as CSV"
               data-for="chata-toolbar-btn-tooltip"
             >
-              <MdFileDownload />
+              <Icon type="download" />
             </button>
           )}
           {shouldShowButton.showSaveAsPNGButton && (
@@ -414,11 +406,12 @@ export default class ChatMessage extends React.Component {
               data-tip="Download as PNG"
               data-for="chata-toolbar-btn-tooltip"
             >
-              <MdFileDownload />
+              <Icon type="download" />
             </button>
           )}
           {shouldShowButton.showInterpretationButton && (
-            <MdInfoOutline
+            <Icon
+              type="info"
               className="interpretation-icon"
               data-tip={this.renderInterpretationTip()}
               data-for="interpretation-tooltip"

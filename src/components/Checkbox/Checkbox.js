@@ -38,7 +38,6 @@ export default class Checkbox extends React.Component {
 
   onCheckedChange = e => {
     this.props.onChange(e)
-    // this.setState({ checked: e.target.checked })
   }
 
   render = () => {
@@ -63,63 +62,27 @@ export default class Checkbox extends React.Component {
 
     return (
       <div style={{ display: 'inline-block' }}>
-        {
-          //   // <label>
-          // <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-          //   <input
-          //     type="checkbox"
-          //     style={{
-          //       border: 0,
-          //       clip: 'rect(0 0 0 0)',
-          //       clippath: 'inset(50%)',
-          //       height: '1px',
-          //       margin: '-1px',
-          //       overflow: 'hidden',
-          //       padding: 0,
-          //       position: 'absolute',
-          //       whiteSpace: 'nowrap',
-          //       width: '1px'
-          //     }}
-          //     {...this.props}
-          //     checked={this.props.checked}
-          //   />
-          //   <div
-          //     style={{
-          //       display: 'inline-block',
-          //       width: '16px',
-          //       height: '16px',
-          //       background: this.props.checked ? 'salmon' : 'papayawhip',
-          //       borderRadius: '3px',
-          //       transition: 'all 150ms'
-          //     }}
-          //   >
-          //     <svg viewBox="0 0 24 24">
-          //       <polyline points="20 6 9 17 4 12" />
-          //     </svg>
-          //   </div>
-          // </div>
-          // {
-          //   // <span>Label Text</span>
-          //   // </label>
-          // }
-          <div className={`${checkboxClassname} ${this.props.className}`}>
-            <input
-              {...inputProps}
-              type="checkbox"
-              className={inputClassname}
-              ref={el => (this.selector = el)}
-              id={this.ID}
-              checked={this.props.checked}
-              onChange={this.onCheckedChange}
-            />
-            {label && (
-              // <label className={labelClassname} htmlFor={this.ID}>
-              //   {label}
-              // </label>
-              <div className="chata-checkbox-label">{label}</div>
-            )}
-          </div>
-        }
+        <div className={`${checkboxClassname} ${this.props.className}`}>
+          <input
+            {...inputProps}
+            type="checkbox"
+            className={inputClassname}
+            ref={el => (this.selector = el)}
+            id={this.ID}
+            checked={this.props.checked}
+            onChange={this.onCheckedChange}
+          />
+          {label && (
+            <div
+              className="chata-checkbox-label"
+              onClick={e => {
+                this.selector.click()
+              }}
+            >
+              {label}
+            </div>
+          )}
+        </div>
       </div>
     )
   }

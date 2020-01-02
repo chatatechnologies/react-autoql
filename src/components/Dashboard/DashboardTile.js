@@ -2,15 +2,13 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
-import { MdClose, MdPlayCircleOutline } from 'react-icons/md'
-import { FaDatabase } from 'react-icons/fa'
-import { MdChatBubble } from 'react-icons/md'
 
 import { ResponseRenderer } from '../ResponseRenderer'
 import { VizToolbar } from '../VizToolbar'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import { Select } from '../Select'
+import { Icon } from '../Icon'
 
 import { runQuery, runQueryOnly } from '../../js/queryService'
 import {
@@ -201,8 +199,8 @@ export default class DashboardTile extends React.Component {
     return (
       <Select
         options={[
-          { value: 'sql', label: <FaDatabase /> },
-          { value: 'nl', label: <MdChatBubble /> }
+          { value: 'sql', label: <Icon type="database" /> },
+          { value: 'nl', label: <Icon type="chata-bubbles-outline" /> }
         ]}
         value={this.state.languageSelectValue}
         className="chata-sql-selector"
@@ -260,14 +258,14 @@ export default class DashboardTile extends React.Component {
               !this.isQueryValid(this.state.query) ? ' disabled' : ''
             }`}
           >
-            <MdPlayCircleOutline onClick={() => this.processTile()} />
+            <Icon type="play" onClick={() => this.processTile()} />
           </div>
           <div
             className="dashboard-tile-delete-button"
             onMouseDown={e => e.stopPropagation()}
             onClick={() => this.props.deleteTile(this.props.tile.i)}
           >
-            <MdClose />
+            <Icon type="close" />
           </div>
         </div>
       )

@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import { IoIosCloseCircleOutline } from 'react-icons/io'
-import { MdPlayCircleOutline } from 'react-icons/md'
+
+import { Icon } from '../Icon'
 
 export default class SafetyNetMessage extends React.Component {
   originalReplaceWords = []
@@ -236,7 +236,8 @@ export default class SafetyNetMessage extends React.Component {
             )
           })}
         </select>
-        <IoIosCloseCircleOutline
+        <Icon
+          type="close-circle"
           className="chata-safety-net-delete-button"
           onClick={() => {
             this.deleteSafetyNetSuggestion(suggestionDropdownIndex)
@@ -304,7 +305,7 @@ export default class SafetyNetMessage extends React.Component {
               )
             }}
           >
-            <MdPlayCircleOutline className="chata-execute-query-icon" />
+            <Icon type="play" className="chata-execute-query-icon" />
             Run Query
           </button>
         </span>
