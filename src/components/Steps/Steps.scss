@@ -1,0 +1,33 @@
+.chata-steps-container {
+  margin: 10px;
+}
+
+.chata-step-container {
+  position: relative;
+  border-left: 1px solid lightgray;
+  margin-left: 10px;
+  padding-left: 25px;
+  padding-bottom: 20px;
+}
+
+.chata-step-dot {
+  position: absolute;
+  top: 0;
+  left: -8px;
+  height: 15px;
+  width: 15px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid lightgray;
+}
+
+.chata-step-title {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 15px;
+  margin-bottom: 15px;
+}
+
+.chata-step-content {
+  padding: 0 15px;
+}

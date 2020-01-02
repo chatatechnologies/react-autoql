@@ -2,7 +2,7 @@
   margin: 2rem;
 }
 
-.m-checkbox {
+.chata-checkbox {
   --accent-color: #26a7df;
 
   display: flex;
@@ -10,18 +10,18 @@
   padding: 0.5rem;
   // height: 100%;
 
-  .m-checkbox--switch__input:checked {
+  .chata-checkbox--switch__input:checked {
     border-color: var(--accent-color);
     background: var(--accent-color);
   }
 }
-.m-checkbox__label {
+.chata-checkbox__label {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
   color: #fff;
   cursor: pointer;
 }
-.m-checkbox__input {
+.chata-checkbox__input {
   position: relative;
   flex-shrink: 0;
   width: 20px;
@@ -30,57 +30,61 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   outline: none;
-
   background: transparent;
-  cursor: pointer;
-  // border: 1px solid transparent;
+  border: 1px solid;
   border-radius: 3px;
+
+  cursor: pointer;
 }
-.m-checkbox__input::before {
+.chata-checkbox__input::before {
   content: " ";
   position: absolute;
   top: 50%;
   right: 50%;
   bottom: 50%;
   left: 50%;
-  transition: all 0.1s;
+  transition: all 0.2s;
   background: #fff;
+}
+
+.chata-checkbox--switch__input::before {
   box-shadow: 0 0 2px 1px #00000030;
 }
-.m-checkbox__input:checked::before,
-.m-checkbox__input:indeterminate::before {
+
+.chata-checkbox__input:checked::before,
+.chata-checkbox__input:indeterminate::before {
   top: 2px;
   right: 2px;
   bottom: 2px;
   left: 2px;
 }
-.m-checkbox__input:indeterminate::before {
+.chata-checkbox__input:indeterminate::before {
   top: 7px;
   bottom: 7px;
 }
-.m-checkbox__input:disabled {
+.chata-checkbox__input:disabled {
   border-color: #5a5358;
   cursor: default;
 }
-.m-checkbox__input:disabled::before {
+.chata-checkbox__input:disabled::before {
   background-color: #5a5358;
 }
-.m-checkbox__input:disabled + .m-checkbox__label {
+.chata-checkbox__input:disabled + .chata-checkbox__label {
   color: gray;
   cursor: default;
 }
-.m-checkbox--has-error__input {
+.chata-checkbox--has-error__input {
   border-color: red;
   background-color: rgba(255, 0, 0, 0.2);
 }
-.m-checkbox--has-error__input::before {
+.chata-checkbox--has-error__input::before {
   background-color: red;
 }
-.m-checkbox--switch__label::after {
+.chata-checkbox--switch__label::after {
   content: "off";
   margin-left: 0.25rem;
 }
-.m-checkbox--switch__input {
+.chata-checkbox--switch__input {
   width: 36px;
   height: 20px;
   // border: 2px solid #5a5358;
@@ -88,7 +92,7 @@
   background: #cccccc;
   border: 1px solid #cccccc;
 }
-.m-checkbox--switch__input::before {
+.chata-checkbox--switch__input::before {
   top: 2px;
   right: 18px;
   bottom: 2px;
@@ -96,10 +100,14 @@
   border-radius: 50%;
   background: #fff;
 }
-.m-checkbox--switch__input:checked + .m-checkbox--switch__label::after {
+.chata-checkbox--switch__input:checked + .chata-checkbox--switch__label::after {
   content: "on";
 }
-.m-checkbox--switch__input:checked::before {
+.chata-checkbox--switch__input:checked::before {
   right: 2px;
   left: 18px;
+}
+
+.chata-checkbox-label {
+  padding-left: 10px;
 }

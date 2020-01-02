@@ -256,13 +256,16 @@
 }
 
 /* Use drawer theme colors for the UI component accent colors */
-.chata-modal-container .m-checkbox__input,
-.chata-drawer .m-checkbox__input {
+.chata-modal-container
+  .chata-checkbox__input:not(.chata-checkbox--switch__input),
+.chata-drawer .chata-checkbox__input:not(.chata-checkbox--switch__input) {
   border-color: var(--chata-drawer-accent-color);
 }
 
-.chata-modal-container .m-checkbox__input::before,
-.chata-drawer .m-checkbox__input::before {
+.chata-modal-container
+  .chata-checkbox__input::before:not(.chata-checkbox--switch__input),
+.chata-drawer
+  .chata-checkbox__input::before:not(.chata-checkbox--switch__input) {
   background: var(--chata-drawer-accent-color);
 }
 

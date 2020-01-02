@@ -7,7 +7,8 @@ import {
   Dashboard,
   executeDashboard,
   NotificationButton,
-  NotificationList
+  NotificationList,
+  NotificationSettings
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -1139,7 +1140,13 @@ export default class App extends Component {
 
   renderNotificationsPage = () => {
     return (
-      <div style={{ height: '100vh', background: 'rgb(250,250,250)' }}>
+      <div
+        style={{
+          height: 'calc(100vh - 48px)',
+          background: 'rgb(250,250,250)',
+          overflow: 'auto'
+        }}
+      >
         <NotificationList />
       </div>
     )
@@ -1147,25 +1154,34 @@ export default class App extends Component {
 
   renderSettingsPage = () => {
     return (
+      // <div
+      //   style={{
+      //     minHeight: '100%',
+      //     padding: '50px',
+      //     color: 'gray',
+      //     fontStyle: 'italic',
+      //     textAlign: 'center'
+      //   }}
+      // >
+      //   <div style={{ fontSize: '20px' }}>Coming Soon!</div>
+      //   <br /> You will be able to add and edit your custom notifications here.
+      //   Visit{' '}
+      //   <a
+      //     target="_blank"
+      //     href="https://balsamiq.cloud/stp154f/p7k5dww/r4C03?f=N4IgUiBcAMA0IDkpxAYWfAMhkAhHAsjgFo4DSUA2gLoC%2BQA%3D"
+      //   >
+      //     here
+      //   </a>{' '}
+      //   for a WIP wireframe
+      // </div>
       <div
         style={{
-          minHeight: '100%',
-          padding: '50px',
-          color: 'gray',
-          fontStyle: 'italic',
-          textAlign: 'center'
+          height: 'calc(100vh - 48px)',
+          background: 'rgb(250,250,250)',
+          overflow: 'auto'
         }}
       >
-        <div style={{ fontSize: '20px' }}>Coming Soon!</div>
-        <br /> You will be able to add and edit your custom notifications here.
-        Visit{' '}
-        <a
-          target="_blank"
-          href="https://balsamiq.cloud/stp154f/p7k5dww/r4C03?f=N4IgUiBcAMA0IDkpxAYWfAMhkAhHAsjgFo4DSUA2gLoC%2BQA%3D"
-        >
-          here
-        </a>{' '}
-        for a WIP wireframe
+        <NotificationSettings />
       </div>
     )
   }

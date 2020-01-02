@@ -1,5 +1,6 @@
 .chata-notification-list-container {
   --accent-color: #26a7df;
+  // --accent-color: #f9ba00;
 
   height: 100%;
   padding: 20px;
@@ -16,7 +17,7 @@
     margin-bottom: 12px;
 
     color: rgba(0, 0, 0, 0.6);
-    font-weight: 500;
+    // font-weight: 500;
     font-family: var(--chata-dashboard-font-family), sans-serif;
     line-height: 50px;
 
@@ -158,7 +159,7 @@
     }
 
     .chata-notification-display-name {
-      font-weight: 500;
+      // font-weight: 500;
       transition: color 0.2s ease;
     }
 
@@ -174,6 +175,11 @@
       opacity: 1;
     }
   }
+}
+
+// Edit Modal
+.chata-notification-display-name-input {
+  width: 100%;
 }
 
 // Set delay per List Item, max out at 15 as it shouldnt exceed this

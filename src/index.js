@@ -4,5 +4,6 @@ export * from './components/Dashboard'
 export * from './components/ResponseRenderer'
 export {
   NotificationButton,
-  NotificationList
+  NotificationList,
+  NotificationSettings
 } from './components/Notifications'

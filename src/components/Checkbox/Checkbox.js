@@ -9,11 +9,11 @@ export default class Checkbox extends React.Component {
 
   static propTypes = {
     hasError: PropTypes.bool,
-    id: PropTypes.string,
     indeterminate: PropTypes.bool,
     label: PropTypes.string,
     type: PropTypes.oneOf(['default', 'switch']),
-    checked: PropTypes.bool
+    checked: PropTypes.bool,
+    onChange: PropTypes.func
   }
 
   static defaultProps = {
@@ -21,12 +21,8 @@ export default class Checkbox extends React.Component {
     indeterminate: undefined,
     type: 'default',
     label: '',
-    id: undefined,
-    checked: false
-  }
-
-  state = {
-    // checked: this.props.checked
+    checked: false,
+    onChange: () => {}
   }
 
   componentDidMount = () => {
@@ -46,30 +42,23 @@ export default class Checkbox extends React.Component {
   }
 
   render = () => {
-    const {
-      id,
-      label,
-      type,
-      indeterminate,
-      hasError,
-      ...inputProps
-    } = this.props
+    const { label, type, indeterminate, hasError, ...inputProps } = this.props
 
     const checkboxClassname = `
-      m-checkbox
-      ${type === 'switch' && 'm-checkbox--switch'}
-      ${hasError && 'm-checkbox--has-error'}
+      chata-checkbox
+      ${type === 'switch' && 'chata-checkbox--switch'}
+      ${hasError && 'chata-checkbox--has-error'}
     `
 
     const inputClassname = `
-      m-checkbox__input
-      ${type === 'switch' && 'm-checkbox--switch__input'}
-      ${hasError && 'm-checkbox--has-error__input'}
+      chata-checkbox__input
+      ${type === 'switch' && 'chata-checkbox--switch__input'}
+      ${hasError && 'chata-checkbox--has-error__input'}
     `
 
     const labelClassname = `
-      m-checkbox__label
-      ${type === 'switch' && 'm-checkbox--switch__label'}
+      chata-checkbox__label
+      ${type === 'switch' && 'chata-checkbox--switch__label'}
     `
 
     return (
@@ -123,10 +112,11 @@ export default class Checkbox extends React.Component {
               checked={this.props.checked}
               onChange={this.onCheckedChange}
             />
-            {label && id && (
-              <label className={labelClassname} htmlFor={this.ID}>
-                {label}
-              </label>
+            {label && (
+              // <label className={labelClassname} htmlFor={this.ID}>
+              //   {label}
+              // </label>
+              <div className="chata-checkbox-label">{label}</div>
             )}
           </div>
         }
