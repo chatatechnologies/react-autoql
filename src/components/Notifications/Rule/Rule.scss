@@ -5,14 +5,12 @@
 
   .chata-rule-input {
     flex: 1;
-    &.hidden {
-      pointer-events: none;
-      visibility: hidden;
-    }
+    width: 100%;
   }
 
   .chata-rule-condition-select {
     flex: 0;
+    flex-basis: 33px;
   }
 
   .chata-rule-delete-btn {
@@ -29,5 +27,62 @@
     pointer-events: none;
     cursor: default;
     visibility: hidden;
+  }
+
+  .chata-rule-second-input-container {
+    position: relative;
+    margin: 2px 5px;
+    flex: 1;
+
+    &.hidden {
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .chata-input-container {
+      margin: 0;
+    }
+    .chata-input-container .chata-input {
+      padding-left: 48px;
+    }
+    .chata-input-container:hover + .chata-rule-term-type-selector,
+    .chata-input-container.focus + .chata-rule-term-type-selector {
+      color: var(--chata-drawer-accent-color);
+      border-color: var(--chata-drawer-accent-color);
+    }
+  }
+
+  .chata-rule-term-type-selector {
+    position: absolute;
+    margin: 0;
+    top: 1px;
+    left: 1px;
+    height: 32px;
+    border: none;
+    background: white;
+    color: rgba(0, 0, 0, 0.25);
+    border-right: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    width: 40px;
+
+    &:hover {
+      color: var(--chata-drawer-accent-color);
+      // border-color: var(--chata-drawer-accent-color);
+    }
+
+    svg {
+      height: 17px;
+      width: 17px;
+      margin-top: 7px;
+    }
+  }
+}
+
+.rule-input-select-bubbles-icon {
+  svg {
+    height: 17px;
+    width: 17px;
   }
 }

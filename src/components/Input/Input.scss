@@ -16,6 +16,13 @@
     &.with-icon {
       padding-left: 38px;
     }
+
+    &::placeholder {
+      /* Chrome, Firefox, Opera, Safari 10.1+ */
+      color: rgba(0, 0, 0, 0.2);
+      opacity: 1; /* Firefox */
+      font-style: italic;
+    }
   }
 
   .chata-input-icon {

@@ -20,6 +20,7 @@ import {
   IoIosGlobe,
   IoIosCloseCircleOutline
 } from 'react-icons/io'
+import { TiSortNumerically } from 'react-icons/ti'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import { bubblesIcon } from '../../svgIcons.js'
 
@@ -59,7 +60,10 @@ export default class Icon extends React.Component {
 
       case 'chata-bubbles-outline': {
         icon = (
-          <div style={{ display: 'inline-block' }} {...nativeProps}>
+          <div
+            {...nativeProps}
+            style={{ display: 'inline-block', ...this.props.style }}
+          >
             {bubblesIcon}
           </div>
         )
@@ -115,6 +119,10 @@ export default class Icon extends React.Component {
       }
       case 'notification-off': {
         icon = <FiBellOff {...nativeProps} />
+        break
+      }
+      case 'numbers': {
+        icon = <TiSortNumerically {...nativeProps} />
         break
       }
       case 'play': {
