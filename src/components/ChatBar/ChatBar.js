@@ -276,7 +276,7 @@ export default class ChatBar extends React.Component {
               <Fragment>{suggestion.name}</Fragment>
             )}
             inputProps={{
-              className: `${this.UNIQUE_ID} chata-input${
+              className: `${this.UNIQUE_ID} chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`,
               placeholder: 'Ask me anything...',
@@ -289,9 +289,9 @@ export default class ChatBar extends React.Component {
             }}
           />
         ) : (
-          <div className="chata-input-container">
+          <div className="chata-chatbar-input-container">
             <input
-              className={`chata-input${
+              className={`chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`}
               placeholder="Ask me anything..."

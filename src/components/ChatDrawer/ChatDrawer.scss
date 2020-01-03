@@ -200,11 +200,11 @@
 .chata-drawer .chata-bar-container .react-autosuggest__suggestion {
   color: var(--chata-drawer-text-color-primary);
 }
-.chata-drawer .chata-input {
+.chata-drawer .chata-chatbar-input {
   border: 1px solid var(--chata-drawer-border-color);
   color: var(--chata-drawer-text-color-primary);
 }
-.chata-drawer .chata-input::placeholder {
+.chata-drawer .chata-chatbar-input::placeholder {
   color: var(--chata-drawer-text-color-placeholder);
 }
 

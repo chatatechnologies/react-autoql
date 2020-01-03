@@ -1,0 +1,27 @@
+.notification-rule-and-or-select {
+  display: block;
+  position: absolute;
+  margin: 0 auto;
+  padding: 0 10px;
+  background: white;
+  top: -15px;
+  left: calc(50% - 126px);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.notification-rule-btn-container {
+  display: flex;
+  margin-top: 10px;
+  width: calc(100% - 25px);
+
+  .notification-rule-add-btn {
+    flex: 1;
+    text-align: center;
+    border-style: dashed;
+    height: 42px;
+    line-height: 29px;
+    margin-right: 0 !important;
+    background: white;
+    overflow: hidden;
+  }
+}

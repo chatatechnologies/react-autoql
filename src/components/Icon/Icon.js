@@ -25,11 +25,16 @@ import { bubblesIcon } from '../../svgIcons.js'
 
 export default class Icon extends React.Component {
   static propTypes = {
-    type: PropTypes.string.isRequired
+    type: PropTypes.string.isRequired,
+    size: PropTypes.number // used for the image icons ie. chata-bubbles
+  }
+
+  static defaultProps = {
+    size: undefined
   }
 
   render = () => {
-    const nativeProps = { ...this.props, type: undefined }
+    const nativeProps = { ...this.props, type: undefined, size: undefined }
 
     let icon = null
     switch (this.props.type) {

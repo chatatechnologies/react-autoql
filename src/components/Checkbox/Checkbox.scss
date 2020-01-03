@@ -3,7 +3,8 @@
 }
 
 .chata-checkbox {
-  --accent-color: #26a7df;
+  // --accent-color: #26a7df;
+  // --accent-color: var(--chata-drawer-accent-color) || #26a7df;
 
   display: flex;
   align-items: center;
@@ -12,8 +13,8 @@
   cursor: pointer;
 
   .chata-checkbox--switch__input:checked {
-    border-color: var(--accent-color);
-    background: var(--accent-color);
+    border-color: var(--chata-drawer-accent-color);
+    background: var(--chata-drawer-accent-color);
   }
 }
 .chata-checkbox__label {

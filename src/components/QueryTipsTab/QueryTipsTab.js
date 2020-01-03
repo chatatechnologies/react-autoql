@@ -98,11 +98,11 @@ export default class QueryTipsTab extends React.Component {
       >
         <div className="query-tips-page-container">
           <div
-            className="chata-input-container"
+            className="chata-chatbar-input-container"
             style={{ animation: 'slideDown 0.5s ease' }}
           >
             <input
-              className="chata-input left-padding"
+              className="chata-chatbar-input left-padding"
               placeholder="Enter a Topic..."
               value={this.props.queryTipsInputValue}
               onChange={this.props.onQueryTipsInputKeyPress}

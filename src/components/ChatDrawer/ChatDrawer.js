@@ -873,6 +873,12 @@ export default class ChatDrawer extends React.Component {
           effect="solid"
           html
         />
+        <ReactTooltip
+          id="select-tooltip"
+          className="chata-drawer-tooltip"
+          effect="solid"
+          delayShow={500}
+        />
       </Fragment>
     )
   }

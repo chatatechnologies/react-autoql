@@ -1,3 +1,3 @@
-export { default as NotificationButton } from './NotificationButton'
-export { default as NotificationList } from './NotificationList'
-export { default as NotificationSettings } from './NotificationSettings'
+export { NotificationButton } from './NotificationButton'
+export { NotificationList } from './NotificationList'
+export { NotificationSettings } from './NotificationSettings'

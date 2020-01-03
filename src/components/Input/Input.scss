@@ -1,0 +1,43 @@
+.chata-input-container {
+  position: relative;
+  margin: 2px 5px;
+  display: inline-block;
+
+  .chata-input {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    background: white;
+    line-height: 32px;
+    padding: 0 10px;
+    width: 100%;
+    outline: none !important;
+    transition: all 0.2s ease;
+
+    &.with-icon {
+      padding-left: 38px;
+    }
+  }
+
+  .chata-input-icon {
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    opacity: 0.4;
+    transition: all 0.2s ease;
+
+    svg {
+      height: 17px;
+      width: 17px;
+    }
+  }
+
+  &:hover .chata-input,
+  .chata-input:focus {
+    border-color: var(--chata-drawer-accent-color);
+  }
+  &:hover .chata-input-icon,
+  .chata-input-icon.focus {
+    opacity: 1;
+    color: var(--chata-drawer-accent-color);
+  }
+}

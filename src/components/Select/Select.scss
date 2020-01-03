@@ -1,18 +1,19 @@
 .chata-select {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+  background: white;
   display: inline-block;
   font-size: 13px;
   line-height: 33px;
   height: 35px;
   margin: 0 3px;
   padding: 0 11px;
-  cursor: pointer;
-  color: var(--chata-dashboard-accent-color);
+  color: var(--chata-drawer-accent-color);
   transition: all 0.2s ease;
+  cursor: pointer;
 
   &:hover {
-    border-color: var(--chata-dashboard-accent-color);
+    border-color: var(--chata-drawer-accent-color);
   }
 }
 

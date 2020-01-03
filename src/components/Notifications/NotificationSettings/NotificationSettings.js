@@ -1,12 +1,12 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
+import ReactTooltip from 'react-tooltip'
 
-import { Modal } from '../Modal'
-import { Steps } from '../Steps'
-import { Input } from '../Input'
-import { Button } from '../Button'
-import { Checkbox } from '../Checkbox'
-import { Icon } from '../Icon'
+import { Modal } from '../../Modal'
+import { Steps } from '../../Steps'
+import { Input } from '../../Input'
+import { Icon } from '../../Icon'
+import { NotificationRules } from '../NotificationRules'
 
 import './NotificationSettings.scss'
 
@@ -45,7 +45,8 @@ export default class NotificationSettings extends React.Component {
     isEditModalVisible: false,
     activeNotification: undefined,
 
-    eventBasedToggleValue: undefined
+    eventBasedToggleValue: undefined,
+    displayNameInput: ''
   }
 
   onItemClick = notification => {
@@ -94,47 +95,52 @@ export default class NotificationSettings extends React.Component {
   }
 
   getModalContent = () => {
-    const steps = [{}, {}, {}]
-    return steps
-  }
-
-  renderNotificationEditModal = () => {
     const steps = [
       {
         // step: 1,
         title: 'Display Name',
         content: (
           <div>
-            <Input className="chata-notification-display-name-input" />
+            <Input
+              className="chata-notification-display-name-input"
+              value={this.state.displayNameInput}
+              onChange={e =>
+                this.setState({ displayNameInput: e.target.value })
+              }
+            />
           </div>
-        )
+        ),
+        complete: !!this.state.displayNameInput
       },
       {
         // step: 2,
         title: 'Rules',
-        content: (
-          <div>
-            <Button>+ Add Rule</Button>
-          </div>
-        )
+        content: <NotificationRules />
       },
       {
         // step: 3,
         title: 'Schedule',
         content: (
           <div>
-            <Checkbox
-              type="switch"
-              label="Event Based"
-              checked={this.state.eventBasedToggleValue}
-              onChange={e =>
-                this.setState({ eventBasedToggleValue: e.target.checked })
-              }
-            />
+            {
+              // <Checkbox
+              //   type="switch"
+              //   label="Event Based"
+              //   checked={this.state.eventBasedToggleValue}
+              //   onChange={e =>
+              //     this.setState({ eventBasedToggleValue: e.target.checked })
+              //   }
+              // />
+            }
           </div>
         )
       }
     ]
+    return steps
+  }
+
+  renderNotificationEditModal = () => {
+    const steps = this.getModalContent()
 
     return (
       <Modal
@@ -146,7 +152,8 @@ export default class NotificationSettings extends React.Component {
         confirmText="Save"
         enableBodyScroll
         width="85vw"
-        style={{ marginTop: '45px', maxWidth: '800px', maxHeight: '85vh' }}
+        style={{ marginTop: '45px', maxWidth: '1000px', maxHeight: '85vh' }}
+        confirmDisabled={!!steps.find(step => !step.complete)}
         // height: PropTypes.number,
         // showCancelButton: PropTypes.bool,
         // showFooter: PropTypes.bool,

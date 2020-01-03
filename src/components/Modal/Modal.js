@@ -20,6 +20,7 @@ export default class Modal extends React.Component {
     enableBodyScroll: PropTypes.bool,
     confirmLoading: PropTypes.bool,
     confirmText: PropTypes.string,
+    confirmDisabled: PropTypes.bool,
     footer: PropTypes.instanceOf(<div></div>)
   }
 
@@ -34,6 +35,7 @@ export default class Modal extends React.Component {
     confirmLoading: false,
     confirmText: undefined,
     footer: undefined,
+    confirmDisabled: false,
     onClose: () => {},
     onConfirm: () => {}
   }
@@ -85,6 +87,7 @@ export default class Modal extends React.Component {
                       type="primary"
                       onClick={this.props.onConfirm}
                       loading={this.props.confirmLoading}
+                      disabled={this.props.confirmDisabled}
                     >
                       {this.props.confirmText || 'Ok'}
                     </Button>

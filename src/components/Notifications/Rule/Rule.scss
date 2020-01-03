@@ -1,0 +1,33 @@
+.chata-notification-rule-container {
+  display: flex;
+  align-items: baseline;
+  // width: calc(100% - 20px);
+
+  .chata-rule-input {
+    flex: 1;
+    &.hidden {
+      pointer-events: none;
+      visibility: hidden;
+    }
+  }
+
+  .chata-rule-condition-select {
+    flex: 0;
+  }
+
+  .chata-rule-delete-btn {
+    opacity: 0.4;
+    margin-left: 5px;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  &:first-child .chata-rule-delete-btn {
+    pointer-events: none;
+    cursor: default;
+    visibility: hidden;
+  }
+}

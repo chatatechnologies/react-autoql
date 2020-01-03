@@ -2,9 +2,9 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import dayjs from 'dayjs'
 
-import { Checkbox } from '../Checkbox'
-import { ResponseRenderer } from '../ResponseRenderer'
-import { Icon } from '../Icon'
+import { Checkbox } from '../../Checkbox'
+import { ResponseRenderer } from '../../ResponseRenderer'
+import { Icon } from '../../Icon'
 
 import './NotificationList.scss'
 

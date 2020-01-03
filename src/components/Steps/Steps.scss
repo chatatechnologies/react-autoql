@@ -8,6 +8,15 @@
   margin-left: 10px;
   padding-left: 25px;
   padding-bottom: 20px;
+  transition: all 0.5s ease;
+
+  &.complete {
+    border-color: var(--chata-drawer-accent-color);
+    .chata-step-dot {
+      border-color: var(--chata-drawer-accent-color);
+      background: var(--chata-drawer-accent-color);
+    }
+  }
 }
 
 .chata-step-dot {
@@ -19,6 +28,7 @@
   background: white;
   border-radius: 8px;
   border: 1px solid lightgray;
+  transition: all 0.5s ease;
 }
 
 .chata-step-title {

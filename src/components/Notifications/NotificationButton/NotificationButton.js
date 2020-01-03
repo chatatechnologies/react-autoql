@@ -1,12 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-import { Icon } from '../Icon'
+import { Icon } from '../../Icon'
 
 import {
   fetchNotificationCount,
   resetNotificationCount
-} from '../../js/queryService'
+} from '../../../js/queryService'
 
 import './NotificationButton.scss'
 
