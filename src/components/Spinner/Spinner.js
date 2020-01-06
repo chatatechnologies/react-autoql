@@ -2,8 +2,10 @@ import React from 'react'
 
 import './Spinner.scss'
 
-function LoadingDots (props) {
-  return <div className="spinner-loader" {...props}></div>
+function Spinner (props) {
+  return (
+    <div className="spinner-loader" data-test="chata-spinner" {...props}></div>
+  )
 }
 
-export default LoadingDots
+export default Spinner

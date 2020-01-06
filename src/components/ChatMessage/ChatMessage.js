@@ -479,6 +479,7 @@ export default class ChatMessage extends React.Component {
           style={{
             maxHeight: chartHeight ? chartHeight + 20 : '85%'
           }}
+          data-test="chat-message"
         >
           <div
             className={`chat-message-bubble

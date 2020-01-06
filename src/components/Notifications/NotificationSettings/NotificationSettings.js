@@ -173,7 +173,7 @@ export default class NotificationSettings extends React.Component {
 
   render = () => {
     return (
-      <Fragment>
+      <Fragment data-test="notification-settings">
         {this.renderAddNotificationButton()}
         <div className="chata-notification-settings-container">
           {this.state.notificationList.map((notification, i) => {

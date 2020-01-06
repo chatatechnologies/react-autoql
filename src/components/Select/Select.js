@@ -34,7 +34,7 @@ export default class Select extends React.Component {
     }
 
     return (
-      <Fragment>
+      <Fragment data-test="chata-select">
         <Popover
           isOpen={this.state.isOpen}
           position="bottom" // if you'd like, supply an array of preferred positions ordered by priority

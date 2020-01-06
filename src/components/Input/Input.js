@@ -44,6 +44,7 @@ export default class Input extends React.Component {
         className={`chata-input-container${
           this.state.focused ? ' focus' : ''
         } ${className} `}
+        data-test="chata-input"
       >
         <input
           {...nativeProps}

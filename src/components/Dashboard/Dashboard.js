@@ -8,7 +8,7 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
 import { Modal } from '../Modal'
-import DashboardTile from './DashboardTile'
+import { DashboardTile } from './DashboardTile'
 import { ResponseRenderer } from '../ResponseRenderer'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
@@ -487,6 +487,7 @@ class Dashboard extends React.Component {
             className={`chata-dashboard-container${
               this.props.isEditing ? ' edit-mode' : ''
             }`}
+            data-test="chata-dashboard"
           >
             <ReactGridLayout
               onLayoutChange={layout => {

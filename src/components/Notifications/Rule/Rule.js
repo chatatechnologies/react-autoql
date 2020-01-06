@@ -28,7 +28,7 @@ export default class Rule extends React.Component {
     }
 
     return (
-      <div className="chata-notification-rule-container">
+      <div className="chata-notification-rule-container" data-test="rule">
         {' '}
         <Input
           className="chata-rule-input"

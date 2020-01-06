@@ -9,7 +9,7 @@ import _get from 'lodash.get'
 import { scaleOrdinal } from 'd3-scale'
 
 import { ChataTable } from '../ChataTable'
-import { ChataChart } from '../ChataChart'
+import { ChataChart } from '../Charts/ChataChart'
 import { ChatBar } from '../ChatBar'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { Icon } from '../Icon'

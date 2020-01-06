@@ -165,7 +165,10 @@ export default class NotificationList extends React.Component {
 
   render = () => {
     return (
-      <div className="chata-notification-list-container">
+      <div
+        className="chata-notification-list-container"
+        data-test="notification-list"
+      >
         {this.renderDismissAllButton()}
         {this.state.notificationList.map((notification, i) => {
           return (

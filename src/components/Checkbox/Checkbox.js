@@ -27,7 +27,9 @@ export default class Checkbox extends React.Component {
 
   componentDidMount = () => {
     // Apply the indeterminate attribute of the checkbox input
-    this.selector.indeterminate = this.props.indeterminate
+    if (this.selector) {
+      this.selector.indeterminate = this.props.indeterminate
+    }
   }
 
   componentDidUpdate = prevProps => {
@@ -61,7 +63,7 @@ export default class Checkbox extends React.Component {
     `
 
     return (
-      <div style={{ display: 'inline-block' }}>
+      <div style={{ display: 'inline-block' }} data-test="chata-checkbox">
         <div className={`${checkboxClassname} ${this.props.className}`}>
           <input
             {...inputProps}

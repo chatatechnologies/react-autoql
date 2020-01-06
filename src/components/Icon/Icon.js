@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 
 // Icons
@@ -149,6 +149,6 @@ export default class Icon extends React.Component {
         break
       }
     }
-    return icon
+    return <Fragment data-test="chata-icon">{icon}</Fragment>
   }
 }

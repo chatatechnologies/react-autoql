@@ -133,6 +133,7 @@ export default class ChataTable extends React.Component {
     return (
       <div
         id={`chata-table-container-${this.TABLE_CONTAINER_ID}`}
+        data-test="chata-table"
         className="chata-table-container"
       >
         <ReactTabulator

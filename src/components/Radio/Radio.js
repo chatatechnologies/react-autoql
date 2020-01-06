@@ -21,7 +21,7 @@ export default class Radio extends React.Component {
     }
 
     return (
-      <div className="chata-radio-btn-container">
+      <div className="chata-radio-btn-container" data-test="chata-radio">
         {this.props.options.map(option => {
           return (
             <div

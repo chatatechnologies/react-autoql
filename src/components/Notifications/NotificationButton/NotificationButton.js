@@ -98,7 +98,10 @@ export default class NotificationButton extends React.Component {
 
   render = () => {
     return (
-      <div className="chata-notifications-button-container">
+      <div
+        className="chata-notifications-button-container"
+        data-test="notification-button"
+      >
         <Icon type="notification" className="chata-notifications-button" />
         {this.renderBadge()}
       </div>

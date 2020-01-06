@@ -261,6 +261,7 @@ export default class ChatBar extends React.Component {
             ? 'autosuggest-bottom'
             : 'autosuggest-top'
         }`}
+        data-test="chat-bar"
       >
         {this.props.enableAutocomplete ? (
           <Autosuggest

@@ -102,7 +102,10 @@ export default class Group extends React.Component {
 
   render = () => {
     return (
-      <div className="chata-notification-group-container">
+      <div
+        className="chata-notification-group-container"
+        data-test="rule-group"
+      >
         {this.state.rules.map(rule => {
           return rule.rule
         })}

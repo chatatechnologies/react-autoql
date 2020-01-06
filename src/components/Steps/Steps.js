@@ -5,12 +5,12 @@ import './Steps.scss'
 
 export default class Steps extends React.Component {
   static propTypes = {
-    steps: PropTypes.arrayOf(PropTypes.shape({}))
+    steps: PropTypes.arrayOf(PropTypes.shape({})).isRequired
   }
 
   render = () => {
     return (
-      <div className="chata-steps-container">
+      <div className="chata-steps-container" data-test="chata-steps">
         {this.props.steps.map(step => {
           return (
             <div

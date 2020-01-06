@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import uuid from 'uuid'
 
 import { Group } from '../Group'
@@ -13,6 +13,10 @@ export default class NotificationRules extends React.Component {
   state = {}
 
   render = () => {
-    return <Group groupId="first-group" />
+    return (
+      <Fragment data-test="notification-rules">
+        <Group groupId="first-group" />
+      </Fragment>
+    )
   }
 }

@@ -48,6 +48,7 @@ export default class Modal extends React.Component {
         // position={'bottom'} // preferred position
         containerClassName="chata-modal-container"
         contentLocation={{ top: 0, left: 0 }}
+        data-test="chata-modal"
         content={
           <div
             className="chata-modal"
