@@ -806,14 +806,15 @@ export default class ResponseRenderer extends React.Component {
       }
 
       // Allow proper chronological sorting for date strings
-      if (col.type === 'DATE') {
+      if (col.type === 'DATE' || col.type === 'DATE_STRING') {
         col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
-          const aDate = dayjs.unix(a)
-          const bDate = dayjs.unix(b)
+          const aDate = dayjs(a).unix()
+          const bDate = dayjs(b).unix()
 
           if (!aDate || !bDate) {
             return a - b
           }
+
           return aDate - bDate
         }
       }
