@@ -526,7 +526,7 @@ export default class ChatDrawer extends React.Component {
               <Icon type="chata-bubbles-outline" />
             </div>
             <div
-              className={`tab${page === 'tips' ? ' active' : ''}`}
+              className={`tab${page === 'tips' ? ' active' : ''} tips`}
               onClick={() => this.setState({ activePage: 'tips' })}
               data-tip="Query Inspiration"
               data-for="chata-header-tooltip"

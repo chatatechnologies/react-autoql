@@ -351,6 +351,11 @@
   transition-property: background, color, transform, line-height, height, width,
     margin-right, margin-top, margin-left, margin-bottom, z-index;
   transition-duration: 0.2s;
+
+  &.tips svg {
+    height: 22px;
+    width: 23px;
+  }
 }
 .page-switcher-container.right .tab {
   text-align: left;

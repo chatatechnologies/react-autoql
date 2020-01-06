@@ -20,6 +20,7 @@ export default class Axis extends Component {
 
   static propTypes = {
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    margins: PropTypes.shape({}),
     height: PropTypes.number,
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
@@ -48,6 +49,7 @@ export default class Axis extends Component {
     hasRightLegend: false,
     hasBottomLegend: false,
     dataFormatting: {},
+    margins: {},
     onLegendClick: () => {}
   }
 
@@ -194,7 +196,9 @@ export default class Axis extends Component {
       axis.tickSizeInner(this.props.tickSizeInner)
     }
 
-    select(this.axisElement).call(axis)
+    if (this.axisElement) {
+      select(this.axisElement).call(axis)
+    }
 
     if (this.props.orient === 'Bottom' && this.props.rotateLabels) {
       // translate labels slightly to line up with ticks once rotated
@@ -249,7 +253,7 @@ export default class Axis extends Component {
     const marginLeft = this.props.margins.left || 0
 
     return (
-      <g>
+      <g data-test="axis">
         <g
           className={`axis axis-${this.props.orient}
         ${this.props.rotateLabels ? ' rotated' : ''}`}

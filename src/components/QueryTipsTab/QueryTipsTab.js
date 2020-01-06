@@ -5,6 +5,7 @@ import ReactPaginate from 'react-paginate'
 import _get from 'lodash.get'
 
 import { Spinner } from '../Spinner'
+import { Icon } from '../Icon'
 
 import './QueryTipsTab.scss'
 
@@ -96,7 +97,7 @@ export default class QueryTipsTab extends React.Component {
           this.queryTipsScrollComponent = c
         }}
       >
-        <div className="query-tips-page-container">
+        <div className="query-tips-page-container" data-test="query-tips-tab">
           <div
             className="chata-chatbar-input-container"
             style={{ animation: 'slideDown 0.5s ease' }}

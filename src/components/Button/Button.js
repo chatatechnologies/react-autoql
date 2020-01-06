@@ -74,6 +74,7 @@ export default class Button extends React.Component {
         className={`chata-btn ${type} ${this.props.className || ''}${
           isDisabled ? ' disabled' : ''
         }`}
+        data-test="chata-btn"
         style={{ ...sizeCss, ...this.props.style }}
         onClick={this.props.onClick}
       >
