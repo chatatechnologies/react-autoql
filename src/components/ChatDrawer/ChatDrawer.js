@@ -316,9 +316,9 @@ export default class ChatDrawer extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = suggestion => {
+  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet) => {
     if (this.chatBarRef) {
-      this.chatBarRef.animateInputTextAndSubmit(suggestion)
+      this.chatBarRef.animateInputTextAndSubmit(suggestion, skipSafetyNet)
     }
 
     // then(() => {

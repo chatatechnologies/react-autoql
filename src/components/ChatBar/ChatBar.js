@@ -67,7 +67,7 @@ export default class ChatBar extends React.Component {
     isQueryRunning: false
   }
 
-  animateInputTextAndSubmit = text => {
+  animateInputTextAndSubmit = (text, skipSafetyNet) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
@@ -76,7 +76,7 @@ export default class ChatBar extends React.Component {
           })
           if (i === text.length) {
             setTimeout(() => {
-              this.submitQuery(text)
+              this.submitQuery(text, skipSafetyNet)
             }, 300)
           }
         }, i * 50)
@@ -118,7 +118,7 @@ export default class ChatBar extends React.Component {
           demo: this.props.demo,
           debug: this.props.debug,
           test: this.props.test,
-          useSafetyNet: this.props.enableSafetyNet,
+          useSafetyNet: this.props.enableSafetyNet && !skipSafetyNet,
           domain: this.props.domain,
           apiKey: this.props.apiKey,
           customerId: this.props.customerId,

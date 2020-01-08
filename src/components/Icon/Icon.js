@@ -149,6 +149,6 @@ export default class Icon extends React.Component {
         break
       }
     }
-    return <Fragment data-test="chata-icon">{icon}</Fragment>
+    return <span data-test="chata-icon">{icon}</span>
   }
 }

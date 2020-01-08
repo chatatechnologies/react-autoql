@@ -23,11 +23,18 @@
       height: 300px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
+
+    // &:last-of-type {
+    //   .chata-notification-setting-item-header {
+    //     border:
+    //   }
+    // }
   }
 
   .chata-notification-setting-item-header {
     display: flex;
     justify-content: space-between;
+    height: 56px;
     padding-left: 20px;
     padding-right: 8px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);

@@ -6,7 +6,7 @@ import './Radio.scss'
 
 export default class Radio extends React.Component {
   static propTypes = {
-    options: PropTypes.shape([]),
+    options: PropTypes.arrayOf(PropTypes.string),
     onChange: PropTypes.func
   }
 

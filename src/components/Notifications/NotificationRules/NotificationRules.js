@@ -14,9 +14,9 @@ export default class NotificationRules extends React.Component {
 
   render = () => {
     return (
-      <Fragment data-test="notification-rules">
+      <div data-test="notification-rules">
         <Group groupId="first-group" />
-      </Fragment>
+      </div>
     )
   }
 }

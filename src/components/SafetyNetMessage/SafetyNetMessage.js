@@ -205,7 +205,7 @@ export default class SafetyNetMessage extends React.Component {
     suggestionDiv.style.position = 'absolute'
     suggestionDiv.style.visibility = 'hidden'
     document.body.appendChild(suggestionDiv)
-    const selectWidth = suggestionDiv.clientWidth + 28
+    const selectWidth = suggestionDiv.clientWidth + 36
 
     return (
       <div

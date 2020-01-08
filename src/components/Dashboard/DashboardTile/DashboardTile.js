@@ -109,7 +109,6 @@ export default class DashboardTile extends React.Component {
   }
 
   endQuery = response => {
-    console.log(JSON.stringify(response))
     const newDisplayType = isDisplayTypeValid(response, this.props.displayType)
       ? this.props.displayType
       : getInitialDisplayType(response)

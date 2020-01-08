@@ -13,7 +13,8 @@ import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import {
   getNumberOfGroupables,
   getInitialDisplayType,
-  changeTooltipText
+  changeTooltipText,
+  isTableType
 } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 
@@ -86,9 +87,14 @@ export default class ChatMessage extends React.Component {
 
     // We must explicitly set the message height in order to avoid scroll jumping
     // when message bubbles resize due to their content
-    // const messageContainer = document.getElementById(`message-${this.props.id}`)
-    // this.MESSAGE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
-    // messageContainer.style.height = `${this.MESSAGE_CONTAINER_HEIGHT}px`
+
+    if (isTableType(this.state.displayType) && !this.TABLE_CONTAINER_HEIGHT) {
+      const messageContainer = document.getElementById(
+        `message-${this.props.id}`
+      )
+      this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
+      messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
+    }
   }
 
   switchView = displayType => {
@@ -477,7 +483,10 @@ export default class ChatMessage extends React.Component {
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
           style={{
-            maxHeight: chartHeight ? chartHeight + 20 : '85%'
+            maxHeight: chartHeight ? chartHeight + 20 : '85%',
+            height: isTableType(this.state.displayType)
+              ? this.TABLE_CONTAINER_HEIGHT
+              : undefined
           }}
           data-test="chat-message"
         >

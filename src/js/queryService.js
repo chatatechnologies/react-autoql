@@ -1,20 +1,7 @@
 import axios from 'axios'
-import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { TABLE_TYPES } from './Constants'
-
-const queryTipsSampleData = [
-  'List all sales',
-  'Sales per month last year',
-  'Total sales this year',
-  'All sales per customer',
-  'Sales per service per month',
-  'All sales last year',
-  'Sales for porcelain sink',
-  'Sales per product per month',
-  'Sales per year',
-  'All sales over $1000'
-]
 
 // axios.defaults.timeout = 10000
 
@@ -156,13 +143,38 @@ export const runQuery = ({
       .get(url, config)
       .then(response => {
         if (
-          response &&
-          response.data &&
-          response.data.full_suggestion &&
-          response.data.full_suggestion.length > 0
+          _get(response, 'data.full_suggestion.length') > 0 ||
+          _get(response, 'data.data.replacements.length') > 0
           // && !this.state.skipSafetyNet
         ) {
-          return Promise.resolve(response)
+          let newResponse = response
+          if (_get(response, 'data.data.replacements')) {
+            newResponse = {
+              ...newResponse,
+              data: {
+                ...newResponse.data,
+                full_suggestion: response.data.data.replacements.map(suggs => {
+                  let newSuggestionList =
+                    suggs.suggestionList || suggs.suggestions
+                  if (newSuggestionList) {
+                    newSuggestionList = suggs.suggestionList.map(sugg => {
+                      return {
+                        ...sugg,
+                        value_label: sugg.value_label
+                      }
+                    })
+                  }
+                  return {
+                    ...suggs,
+                    suggestion_list: newSuggestionList
+                  }
+                }),
+                query: response.data.data.query
+              }
+            }
+          }
+
+          return Promise.resolve(newResponse)
         }
         return runQueryOnly({
           query,

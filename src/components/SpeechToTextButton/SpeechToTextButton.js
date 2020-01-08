@@ -60,9 +60,10 @@ class Dictaphone extends React.Component {
     }
 
     return (
-      <Fragment data-test="speech-to-text-btn">
+      <Fragment>
         <button
           id="chata-voice-record-button"
+          data-test="speech-to-text-btn"
           className={`chat-voice-record-button${listening ? ' listening' : ''}`}
           onMouseDown={this.onMouseDown}
           onMouseUp={stopListening}

@@ -412,6 +412,8 @@ export default class ResponseRenderer extends React.Component {
       setTimeout(() => {
         const newTableData = _get(this.tableRef, 'ref.table.getData(true)')
         this.generateChartData(newTableData)
+        console.log('new table data after filtering')
+        console.log(newTableData)
         this.props.onTableFilterCallback(newTableData)
       }, 500)
     }
@@ -947,9 +949,9 @@ export default class ResponseRenderer extends React.Component {
     this.pivotTableData = pivotTableData
   }
 
-  onSuggestionClick = (suggestion, isButtonClick) => {
+  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet) => {
     if (this.props.onSuggestionClick) {
-      this.props.onSuggestionClick(suggestion, isButtonClick)
+      this.props.onSuggestionClick(suggestion, isButtonClick, skipSafetyNet)
     }
     if (this.props.chatBarRef) {
       if (suggestion === 'None of these') {
@@ -996,7 +998,9 @@ export default class ResponseRenderer extends React.Component {
       return (
         <SafetyNetMessage
           response={this.props.response}
-          onSuggestionClick={this.onSuggestionClick}
+          onSuggestionClick={query =>
+            this.onSuggestionClick(query, undefined, true)
+          }
           onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
           initialSelections={this.props.safetyNetSelections}
           autoSelectSuggestion={this.props.autoSelectSafetyNetSuggestion}
