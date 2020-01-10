@@ -410,11 +410,12 @@ export default class ResponseRenderer extends React.Component {
       this.state.displayType === 'table'
     ) {
       setTimeout(() => {
-        const newTableData = _get(this.tableRef, 'ref.table.getData(true)')
-        this.generateChartData(newTableData)
-        console.log('new table data after filtering')
-        console.log(newTableData)
-        this.props.onTableFilterCallback(newTableData)
+        const tableRef = _get(this.tableRef, 'ref.table')
+        if (tableRef) {
+          const newTableData = tableRef.getData(true)
+          this.generateChartData(newTableData)
+          this.props.onTableFilterCallback(newTableData)
+        }
       }, 500)
     }
   }
