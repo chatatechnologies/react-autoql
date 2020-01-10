@@ -14,7 +14,8 @@ import {
   getNumberOfGroupables,
   getInitialDisplayType,
   changeTooltipText,
-  isTableType
+  isTableType,
+  isChartType
 } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 
@@ -87,13 +88,29 @@ export default class ChatMessage extends React.Component {
 
     // We must explicitly set the message height in order to avoid scroll jumping
     // when message bubbles resize due to their content
+    this.setMessageHeightCss(prevState)
+  }
 
-    if (isTableType(this.state.displayType) && !this.TABLE_CONTAINER_HEIGHT) {
+  setMessageHeightCss = prevState => {
+    if (
+      isTableType(this.state.displayType) &&
+      isTableType(prevState.displayType) &&
+      !this.TABLE_CONTAINER_HEIGHT
+    ) {
       const messageContainer = document.getElementById(
         `message-${this.props.id}`
       )
       this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
       messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
+    } else if (this.state.displayType !== prevState.displayType) {
+      const messageContainer = document.getElementById(
+        `message-${this.props.id}`
+      )
+      if (messageContainer) {
+        messageContainer.style.height = 'unset'
+        this.TABLE_CONTAINER_HEIGHT = undefined
+      }
+      this.forceUpdate()
     }
   }
 
@@ -455,14 +472,7 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  adjustHeightOfMessageContainer = () => {
-    const messageContainer = document.getElementById(`message-${this.props.id}`)
-    const messageBubble = document.querySelector(
-      `#message-${this.props.id} .chat-message-bubble`
-    )
-  }
-
-  render = () => {
+  getChartDimensions = () => {
     let chartWidth = 0
     let chartHeight = 0
     const chatContainer = document.querySelector('.chat-message-container')
@@ -476,6 +486,22 @@ export default class ChatMessage extends React.Component {
       chartHeight = 330
     }
 
+    return { chartWidth, chartHeight }
+  }
+
+  getMessageHeight = () => {
+    let messageHeight = 'unset'
+    if (isTableType(this.state.displayType)) {
+      messageHeight = this.TABLE_CONTAINER_HEIGHT || 'unset'
+    }
+
+    return messageHeight
+  }
+
+  render = () => {
+    const { chartWidth, chartHeight } = this.getChartDimensions()
+    const messageHeight = this.getMessageHeight()
+
     return (
       <Fragment>
         <div
@@ -484,9 +510,7 @@ export default class ChatMessage extends React.Component {
           ${this.props.isResponse ? ' response' : ' request'}`}
           style={{
             maxHeight: chartHeight ? chartHeight + 20 : '85%',
-            height: isTableType(this.state.displayType)
-              ? this.TABLE_CONTAINER_HEIGHT
-              : undefined
+            height: messageHeight
           }}
           data-test="chat-message"
         >
