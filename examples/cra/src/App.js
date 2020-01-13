@@ -965,6 +965,64 @@ export default class App extends Component {
     )
   }
 
+  renderChatBarPage = () => {
+    return (
+      <div>
+        <ChatBar
+          token={localStorage.getItem('jwtToken')}
+          apiKey={this.state.apiKey} // required if demo is false
+          customerId={this.state.customerId} // required if demo is false
+          userId={this.state.userId} // required if demo is false
+          domain={this.state.domain}
+          username={this.state.username}
+          demo={this.state.demo}
+          ref={r => (this.chatBarRef = r)}
+          autoCompletePlacement="bottom"
+          onSubmit={() => this.setState({ response: null })}
+          onResponseCallback={response => {
+            this.setState({ response })
+          }}
+          showChataIcon
+          showLoadingDots
+        />
+        {
+          // this.state.response ? (
+          <div
+            style={{
+              // height: 'auto',
+              // minHeight: '100px',
+              height: 'calc(100vh - 120px)',
+              overflow: 'hidden',
+              padding: '20px',
+              paddingTop: '0',
+              fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
+              color: '#565656' // Text, tables, and charts will inherit text color
+            }}
+          >
+            <ResponseRenderer
+              chatBarRef={this.chatBarRef}
+              response={this.state.response}
+              demo={this.state.demo}
+            />
+          </div>
+          // ) : (
+          //   <div
+          //     style={{
+          //       height: '75px',
+          //       width: 'calc(100% - 60px)',
+          //       padding: '30px',
+          //       fontFamily: 'Helvetica, Arial, Sans-Serif',
+          //       color: '#999',
+          //       textAlign: 'center',
+          //       fontSize: '14px'
+          //     }}
+          //   ></div>
+          // )
+        }
+      </div>
+    )
+  }
+
   renderDashboardPage = () => {
     if (this.state.isFetchingDashboard) {
       return <Spin />
@@ -1113,7 +1171,8 @@ export default class App extends Component {
       >
         <Menu.Item key="drawer">Chat Drawer</Menu.Item>
         <Menu.Item key="dashboard">Dashboard</Menu.Item>
-        <Menu.Item key="settings">Settings</Menu.Item>
+        <Menu.Item key="chatbar">Chat Bar</Menu.Item>
+        <Menu.Item key="settings">Notification Settings</Menu.Item>
         <Menu.Item key="notifications">
           <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
         </Menu.Item>
@@ -1221,6 +1280,10 @@ export default class App extends Component {
     switch (currentPage) {
       case 'drawer': {
         pageToRender = this.renderChatDrawerPage()
+        break
+      }
+      case 'chatbar': {
+        pageToRender = this.renderChatBarPage()
         break
       }
       case 'dashboard': {

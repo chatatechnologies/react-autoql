@@ -143,6 +143,11 @@ export default class ResponseRenderer extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.props.response && !prevProps.response) {
+      this.setResponseData(this.state.displayType)
+      this.forceUpdate()
+    }
+
     // Initial display type has been determined, set the table and chart data now
     if (!prevState.displayType && this.state.displayType) {
       this.setResponseData(this.state.displayType)
@@ -178,7 +183,7 @@ export default class ResponseRenderer extends React.Component {
     const { displayType } = this.state
     const { response } = this.props
 
-    if (response && response.data && response.data.data && displayType) {
+    if (_get(response, 'data.data') && displayType) {
       const responseBody = response.data.data
       this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation
@@ -984,7 +989,8 @@ export default class ResponseRenderer extends React.Component {
     // No response prop was provided to <ResponseRenderer />
     if (!response) {
       console.warn('Warning: No response object supplied')
-      return this.renderErrorMessage()
+      // return this.renderErrorMessage()
+      return null
     }
 
     // Response prop was provided, but it has no response data

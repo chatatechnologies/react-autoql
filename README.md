@@ -51,9 +51,11 @@ export default class App extends Component {
     return (
       <ChatDrawer
         apiKey="your-api-key"
-        customerId = "your-customer-id"
-        userId = "your@email.com"
-        domain = "https://yourdomain.com"
+        customerId="your-customer-id"
+        userId="your-user-id"
+        username="your@email.com"
+        domain="https://yourdomain.com"
+        token="your-jwt-token"
 
         isVisible={this.state.isVisible}
         onHandleClick={() =>
@@ -85,9 +87,11 @@ export default class App extends Component {
       <Fragment>
         <ChatBar
           apiKey="your-api-key"
-          customerId = "your-customer-id"
-          userId = "your@email.com"
-          domain = "https://yourdomain.com"
+          customerId="your-customer-id"
+          userId="your-user-id"
+          username="your@email.com"
+          domain="https://yourdomain.com"
+          token="your-jwt-token"
 
           ref={r => (this.chatBarRef = r)}
           onResponseCallback={response => {
@@ -144,9 +148,11 @@ export default class App extends Component {
     return (
       <Dashboard
         apiKey="your-api-key"
-        customerId = "your-customer-id"
-        userId = "your@email.com"
-        domain = "https://yourdomain.com"
+        customerId="your-customer-id"
+        userId="your-user-id"
+        username="your@email.com"
+        domain="https://yourdomain.com"
+        token="your-jwt-token"
 
         ref={r => (this.dashboardRef = r)}
         tiles={this.tiles}
@@ -443,9 +449,11 @@ export default class App extends Component {
         </button>
         <Dashboard
           apiKey="your-api-key"
-          customerId = "your-customer-id"
-          userId = "your@email.com"
-          domain = "https://yourdomain.com"
+          customerId="your-customer-id"
+          userId="your-user-id"
+          username="your@email.com"
+          domain="https://yourdomain.com"
+          token="your-jwt-token"
 
           tiles={this.state.tiles}
           onChangeCallback={tiles => this.setState(tiles)}
@@ -537,9 +545,11 @@ export default class App extends Component {
         </button>
         <Dashboard
           apiKey="your-api-key"
-          customerId = "your-customer-id"
-          userId = "your@email.com"
-          domain = "https://yourdomain.com"
+          customerId="your-customer-id"
+          userId="your-user-id"
+          username="your@email.com"
+          domain="https://yourdomain.com"
+          token="your-jwt-token"
 
           ref={r => (this.dashboardRef = r)}
           isEditing={this.state.isEditingDashboard}
