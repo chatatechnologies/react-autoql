@@ -32,7 +32,7 @@ const transformSafetyNetResponse = response => {
             suggestion_list: newSuggestionList
           }
         }),
-        query: response.data.data.query
+        query: response.data.data.query || response.data.data.text
       }
     }
   }
@@ -63,7 +63,6 @@ export const runQueryOnly = ({
   token,
   username
 }) => {
-  const text = query
   const axiosInstance = axios.create({})
 
   // if (!queryCall) {
@@ -71,10 +70,10 @@ export const runQueryOnly = ({
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query`
-    : `${domain}/api/v1/chata/query?key=${apiKey}`
+    : `${domain}/autoql/api/v1/query?key=${apiKey}`
 
   const data = {
-    text,
+    text: query,
     username: demo ? 'widget-demo' : username || 'widget-user',
     customer_id: customerId,
     user_id: userId,
@@ -225,7 +224,7 @@ export const runSafetyNet = ({
     ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
       query
     )}&projectId=1`
-    : `${domain}/api/v1/chata/safetynet?text=${encodeURIComponent(
+    : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
       query
     )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
@@ -285,7 +284,7 @@ export const runDrilldown = ({
 
   const url = demo
     ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
-    : `${domain}/api/v1/chata/query/${queryID}/drilldown?key=${apiKey}`
+    : `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
   return axiosInstance
     .post(url, data, config)
@@ -315,7 +314,7 @@ export const fetchSuggestions = (
     ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
     )}&projectid=1`
-    : `${domain}/api/v1/chata/autocomplete?text=${encodeURIComponent(
+    : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
       suggestion
     )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
 
@@ -387,7 +386,7 @@ export const fetchQueryTips = ({
   token,
   skipSafetyNet
 } = {}) => {
-  const queryTipsUrl = `${domain}/api/v1/chata/inspirations?key=${apiKey}&keywords=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/related-queries?key=${apiKey}&search=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
 
   const axiosInstance = axios.create({
     headers: {
@@ -397,7 +396,7 @@ export const fetchQueryTips = ({
 
   if (!skipSafetyNet) {
     return runSafetyNet({
-      query: keywords,
+      text: keywords,
       demo: false,
       domain,
       apiKey,
