@@ -69,7 +69,8 @@ export default class ChataLineChart extends Component {
     const xScale = this.xScale
       .domain(data.map(d => d[labelValue]))
       .range([leftMargin, width - rightMargin])
-      .paddingInner(0.1)
+      .paddingInner(0.5)
+      .paddingOuter(2)
 
     const yScale = this.yScale
       .domain([minValue, maxValue])

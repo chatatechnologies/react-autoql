@@ -100,7 +100,8 @@ export default class ChataStackedBarChart extends Component {
     const yScale = this.yScale
       .domain(this.uniqueYLabels)
       .range([height - bottomMargin, topMargin])
-      .paddingInner(0.1)
+      .paddingInner(0.5)
+      .paddingOuter(2)
 
     const tickWidth = (width - leftMargin - rightMargin) / 6
 
