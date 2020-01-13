@@ -18,9 +18,9 @@ const transformSafetyNetResponse = response => {
       data: {
         ...newResponse.data,
         full_suggestion: response.data.data.replacements.map(suggs => {
-          let newSuggestionList = suggs.suggestionList || suggs.suggestions
+          let newSuggestionList = suggs.suggestions
           if (newSuggestionList) {
-            newSuggestionList = suggs.suggestionList.map(sugg => {
+            newSuggestionList = suggs.suggestions.map(sugg => {
               return {
                 ...sugg,
                 value_label: sugg.value_label
