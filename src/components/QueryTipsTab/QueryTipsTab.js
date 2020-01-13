@@ -6,6 +6,7 @@ import _get from 'lodash.get'
 
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
+import { SafetyNetMessage } from '../SafetyNetMessage'
 
 import './QueryTipsTab.scss'
 
@@ -24,14 +25,24 @@ export default class QueryTipsTab extends React.Component {
   // }
 
   renderQueryTipsContent = () => {
+    if (this.props.queryTipsSafetyNetResponse) {
+      return (
+        <SafetyNetMessage
+          response={this.props.queryTipsSafetyNetResponse}
+          onSuggestionClick={this.props.onSafetyNetSuggestionClick}
+          autoSelectSuggestion={true}
+          // message="Did you mean"
+          submitText="Search"
+          submitIcon="search"
+        />
+      )
+    }
+
     if (!this.props.queryTipsList) {
       return (
         <div className="query-tips-result-placeholder">
           <p>Your query suggestions will show up here.</p>
-          <p>
-            You can copy them for later use or execute them in the data
-            messenger by hitting the “execute” button
-          </p>
+          <p>Click on the suggestion to execute it in Data Messenger</p>
         </div>
       )
     }

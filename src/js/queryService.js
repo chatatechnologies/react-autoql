@@ -10,6 +10,35 @@ var autoCompleteCall = null
 // var safetyNetCall = null
 // var drilldownCall = null
 
+const transformSafetyNetResponse = response => {
+  let newResponse = response
+  if (_get(response, 'data.data.replacements')) {
+    newResponse = {
+      ...newResponse,
+      data: {
+        ...newResponse.data,
+        full_suggestion: response.data.data.replacements.map(suggs => {
+          let newSuggestionList = suggs.suggestionList || suggs.suggestions
+          if (newSuggestionList) {
+            newSuggestionList = suggs.suggestionList.map(sugg => {
+              return {
+                ...sugg,
+                value_label: sugg.value_label
+              }
+            })
+          }
+          return {
+            ...suggs,
+            suggestion_list: newSuggestionList
+          }
+        }),
+        query: response.data.data.query
+      }
+    }
+  }
+  return newResponse
+}
+
 export const cancelQuery = () => {
   // if (queryCall) {
   //   queryCall.cancel('Query operation cancelled by the user.')
@@ -118,62 +147,24 @@ export const runQuery = ({
   token,
   username
 }) => {
-  const axiosInstance = axios.create({})
-
   if (useSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
-
-    const url = demo
-      ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
-        query
-      )}&projectId=1`
-      : `${domain}/api/v1/chata/safetynet?text=${encodeURIComponent(
-        query
-      )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
-
-    const config = {}
-    // config.cancelToken = safetyNetCall.token
-    if (token && !demo) {
-      config.headers = {
-        Authorization: `Bearer ${token}`
-      }
-    }
-
-    return axiosInstance
-      .get(url, config)
+    return runSafetyNet({
+      query,
+      demo,
+      domain,
+      apiKey,
+      customerId,
+      userId,
+      token
+    })
       .then(response => {
         if (
           _get(response, 'data.full_suggestion.length') > 0 ||
           _get(response, 'data.data.replacements.length') > 0
           // && !this.state.skipSafetyNet
         ) {
-          let newResponse = response
-          if (_get(response, 'data.data.replacements')) {
-            newResponse = {
-              ...newResponse,
-              data: {
-                ...newResponse.data,
-                full_suggestion: response.data.data.replacements.map(suggs => {
-                  let newSuggestionList =
-                    suggs.suggestionList || suggs.suggestions
-                  if (newSuggestionList) {
-                    newSuggestionList = suggs.suggestionList.map(sugg => {
-                      return {
-                        ...sugg,
-                        value_label: sugg.value_label
-                      }
-                    })
-                  }
-                  return {
-                    ...suggs,
-                    suggestion_list: newSuggestionList
-                  }
-                }),
-                query: response.data.data.query
-              }
-            }
-          }
-
+          const newResponse = transformSafetyNetResponse(response)
           return Promise.resolve(newResponse)
         }
         return runQueryOnly({
@@ -217,6 +208,39 @@ export const runQuery = ({
     userId,
     username
   })
+}
+
+export const runSafetyNet = ({
+  query,
+  demo,
+  domain,
+  apiKey,
+  customerId,
+  userId,
+  token
+}) => {
+  const axiosInstance = axios.create({})
+
+  const url = demo
+    ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
+      query
+    )}&projectId=1`
+    : `${domain}/api/v1/chata/safetynet?text=${encodeURIComponent(
+      query
+    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
+
+  const config = {}
+  // config.cancelToken = safetyNetCall.token
+  if (token && !demo) {
+    config.headers = {
+      Authorization: `Bearer ${token}`
+    }
+  }
+
+  return axiosInstance
+    .get(url, config)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
 }
 
 export const runDrilldown = ({
@@ -360,9 +384,10 @@ export const fetchQueryTips = ({
   offset,
   domain,
   apiKey,
-  token
+  token,
+  skipSafetyNet
 } = {}) => {
-  const url = `${domain}/api/v1/chata/inspirations?key=${apiKey}&keywords=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/api/v1/chata/inspirations?key=${apiKey}&keywords=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
 
   const axiosInstance = axios.create({
     headers: {
@@ -370,8 +395,40 @@ export const fetchQueryTips = ({
     }
   })
 
+  if (!skipSafetyNet) {
+    return runSafetyNet({
+      query: keywords,
+      demo: false,
+      domain,
+      apiKey,
+      customerId,
+      userId,
+      token
+    })
+      .then(safetyNetResponse => {
+        if (
+          _get(safetyNetResponse, 'data.full_suggestion.length') > 0 ||
+          _get(safetyNetResponse, 'data.data.replacements.length') > 0
+          // && !this.state.skipSafetyNet
+        ) {
+          const newResponse = transformSafetyNetResponse(safetyNetResponse)
+          return Promise.resolve(newResponse)
+        }
+        return axiosInstance
+          .get(queryTipsUrl)
+          .then(response => Promise.resolve(response))
+          .catch(error => Promise.reject(error))
+      })
+      .catch(() => {
+        return axiosInstance
+          .get(queryTipsUrl)
+          .then(response => Promise.resolve(response))
+          .catch(error => Promise.reject(error))
+      })
+  }
+
   return axiosInstance
-    .get(url)
+    .get(queryTipsUrl)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }

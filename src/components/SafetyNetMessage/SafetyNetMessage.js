@@ -14,12 +14,14 @@ export default class SafetyNetMessage extends React.Component {
     autoSelectSuggestion: PropTypes.bool.isRequired,
     isQueryRunning: PropTypes.bool,
     initialSelections: PropTypes.arrayOf(PropTypes.shape({})),
-    onSafetyNetSelectOption: PropTypes.func.isRequired
+    onSafetyNetSelectOption: PropTypes.func.isRequired,
+    message: PropTypes.string
   }
 
   static defaultProps = {
     initialSelections: undefined,
-    isQueryRunning: false
+    isQueryRunning: false,
+    message: undefined
   }
 
   state = {
@@ -291,9 +293,10 @@ export default class SafetyNetMessage extends React.Component {
     return (
       <div className="chata-safety-net-container">
         <div className="chata-safety-net-description">
-          Before I can try to find your answer, I need your help understanding a
-          term you used that I don't see in your data. Click the dropdown to
-          view suggestions so I can ensure you get the right data!
+          {this.props.message ||
+            `Before I can try to find your answer, I need your help understanding a
+            term you used that I don't see in your data. Click the dropdown to
+            view suggestions so I can ensure you get the right data!`}
         </div>
         <span>
           {this.renderSafetyNetQuery()}
@@ -305,8 +308,11 @@ export default class SafetyNetMessage extends React.Component {
               )
             }}
           >
-            <Icon type="play" className="chata-execute-query-icon" />
-            Run Query
+            <Icon
+              type={this.props.submitIcon || 'play'}
+              className="chata-execute-query-icon"
+            />
+            {this.props.submitText || 'Run Query'}
           </button>
         </span>
       </div>

@@ -478,8 +478,8 @@ export default class ChatMessage extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 20 - 40 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight - 20 // 88% of chat height minus message margins
+      chartWidth = chatContainer.clientWidth - 40 // 100% of chat width minus message margins minus chat container margins
+      chartHeight = 0.85 * chatContainer.clientHeight // 88% of chat height minus message margins
     }
 
     if (this.state.displayType === 'pie' && chartHeight > 330) {
@@ -509,7 +509,7 @@ export default class ChatMessage extends React.Component {
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
           style={{
-            maxHeight: chartHeight ? chartHeight + 20 : '85%',
+            maxHeight: chartHeight ? chartHeight + 30 : '85%',
             height: messageHeight
           }}
           data-test="chat-message"

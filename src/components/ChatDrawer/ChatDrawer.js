@@ -742,7 +742,7 @@ export default class ChatDrawer extends React.Component {
     )
   }
 
-  fetchQueryTipsList = (keywords, offset) => {
+  fetchQueryTipsList = (keywords, offset, skipSafetyNet) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
     const containerElement = document.querySelector(
@@ -758,26 +758,37 @@ export default class ChatDrawer extends React.Component {
       offset,
       domain: this.props.domain,
       apiKey: this.props.apiKey,
-      token: this.props.token
+      token: this.props.token,
+      skipSafetyNet
     })
       .then(response => {
-        const totalQueries = Number(_get(response, 'data.data.total'))
-        const offset = Number(_get(response, 'data.data.offset'))
+        // if caught by safetynet...
+        if (_get(response, 'data.full_suggestion')) {
+          this.setState({
+            queryTipsLoading: false,
+            queryTipsSafetyNetResponse: response
+          })
+        } else {
+          const totalQueries = Number(_get(response, 'data.data.total'))
+          const offset = Number(_get(response, 'data.data.offset'))
 
-        this.setState({
-          queryTipsList: _get(response, 'data.data.queries'),
-          queryTipsLoading: false,
-          queryTipsError: false,
-          queryTipsTotalPages: totalQueries
-            ? Math.ceil(totalQueries / limit)
-            : 0,
-          queryTipsCurrentPage: offset ? offset / limit : 0
-        })
+          this.setState({
+            queryTipsList: _get(response, 'data.data.queries'),
+            queryTipsLoading: false,
+            queryTipsError: false,
+            queryTipsTotalPages: totalQueries
+              ? Math.ceil(totalQueries / limit)
+              : 0,
+            queryTipsCurrentPage: offset ? offset / limit : 0,
+            queryTipsSafetyNetResponse: undefined
+          })
+        }
       })
       .catch(() =>
         this.setState({
           queryTipsLoading: false,
-          queryTipsError: true
+          queryTipsError: true,
+          queryTipsSafetyNetResponse: undefined
         })
       )
   }
@@ -796,12 +807,19 @@ export default class ChatDrawer extends React.Component {
     )
     const limit = Math.floor((containerElement.clientHeight - 150) / 50)
     const nextOffset = limit * selected
-    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextOffset)
+    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextOffset, true)
+  }
+
+  onQueryTipsSafetyNetSuggestionClick = keywords => {
+    this.setState({ queryTipsInputValue: keywords })
+    this.fetchQueryTipsList(keywords, 0, true)
   }
 
   renderQueryTipsContent = () => (
     <QueryTipsTab
       onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
+      queryTipsSafetyNetResponse={this.state.queryTipsSafetyNetResponse}
+      onSafetyNetSuggestionClick={this.onQueryTipsSafetyNetSuggestionClick}
       loading={this.state.queryTipsLoading}
       error={this.state.queryTipsError}
       queryTipsList={this.state.queryTipsList}
