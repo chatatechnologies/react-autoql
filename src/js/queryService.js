@@ -149,7 +149,7 @@ export const runQuery = ({
   if (useSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
-      query,
+      text: query,
       demo,
       domain,
       apiKey,
@@ -210,7 +210,7 @@ export const runQuery = ({
 }
 
 export const runSafetyNet = ({
-  query,
+  text,
   demo,
   domain,
   apiKey,
@@ -222,10 +222,10 @@ export const runSafetyNet = ({
 
   const url = demo
     ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
-      query
+      text
     )}&projectId=1`
     : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
-      query
+      text
     )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
   const config = {}
