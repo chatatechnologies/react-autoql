@@ -16,6 +16,7 @@ let autoCompleteArray = []
 
 export default class ChatBar extends React.Component {
   UNIQUE_ID = uuid.v4()
+  autoCompleteTimer = undefined
 
   static propTypes = {
     token: PropTypes.string,
@@ -65,6 +66,12 @@ export default class ChatBar extends React.Component {
     inputValue: '',
     suggestions: [],
     isQueryRunning: false
+  }
+
+  componentWillUnmount = () => {
+    if (this.autoCompleteTimer) {
+      clearTimeout(this.autoCompleteTimer)
+    }
   }
 
   animateInputTextAndSubmit = (text, skipSafetyNet) => {
@@ -184,47 +191,52 @@ export default class ChatBar extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    fetchSuggestions(
-      value,
-      this.props.demo,
-      this.props.domain,
-      this.props.apiKey,
-      this.props.customerId,
-      this.props.userId,
-      this.props.token
-    )
-      .then(response => {
-        const body = this.props.demo
-          ? response.data
-          : _get(response, 'data.data')
+    if (this.autoCompleteTimer) {
+      clearTimeout(this.autoCompleteTimer)
+    }
+    this.autoCompleteTimer = setTimeout(() => {
+      fetchSuggestions(
+        value,
+        this.props.demo,
+        this.props.domain,
+        this.props.apiKey,
+        this.props.customerId,
+        this.props.userId,
+        this.props.token
+      )
+        .then(response => {
+          const body = this.props.demo
+            ? response.data
+            : _get(response, 'data.data')
 
-        const sortingArray = []
-        let suggestionsMatchArray = []
-        autoCompleteArray = []
-        suggestionsMatchArray = body.matches
-        for (let i = 0; i < suggestionsMatchArray.length; i++) {
-          sortingArray.push(suggestionsMatchArray[i])
+          const sortingArray = []
+          let suggestionsMatchArray = []
+          autoCompleteArray = []
+          suggestionsMatchArray = body.matches
+          for (let i = 0; i < suggestionsMatchArray.length; i++) {
+            sortingArray.push(suggestionsMatchArray[i])
 
-          if (i === 4) {
-            break
+            if (i === 4) {
+              break
+            }
           }
-        }
 
-        sortingArray.sort((a, b) => b.length - a.length)
-        for (let idx = 0; idx < sortingArray.length; idx++) {
-          const anObject = {
-            name: sortingArray[idx]
+          sortingArray.sort((a, b) => b.length - a.length)
+          for (let idx = 0; idx < sortingArray.length; idx++) {
+            const anObject = {
+              name: sortingArray[idx]
+            }
+            autoCompleteArray.push(anObject)
           }
-          autoCompleteArray.push(anObject)
-        }
 
-        this.setState({
-          suggestions: autoCompleteArray
+          this.setState({
+            suggestions: autoCompleteArray
+          })
         })
-      })
-      .catch(() => {
-        console.warn('Autocomplete operation cancelled by the user.')
-      })
+        .catch(() => {
+          console.warn('Autocomplete operation cancelled by the user.')
+        })
+    }, 500)
   }
 
   onSuggestionsClearRequested = () => {
@@ -280,7 +292,7 @@ export default class ChatBar extends React.Component {
               className: `${this.UNIQUE_ID} chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`,
-              placeholder: 'Ask me anything...',
+              placeholder: this.props.placeholder || 'Ask me anything...',
               disabled: this.props.isDisabled,
               onChange: this.onInputChange,
               onKeyPress: this.onKeyPress,
@@ -295,7 +307,7 @@ export default class ChatBar extends React.Component {
               className={`chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`}
-              placeholder="Ask me anything..."
+              placeholder={this.props.placeholder || 'Ask me anything...'}
               value={this.state.inputValue}
               onChange={e => this.setState({ inputValue: e.target.value })}
               onKeyPress={this.onKeyPress}
