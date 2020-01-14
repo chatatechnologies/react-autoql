@@ -386,7 +386,7 @@ export const fetchQueryTips = ({
   token,
   skipSafetyNet
 } = {}) => {
-  const queryTipsUrl = `${domain}/autoql/api/v1/related-queries?key=${apiKey}&search=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${keywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
 
   const axiosInstance = axios.create({
     headers: {
