@@ -149,6 +149,14 @@ export default class Icon extends React.Component {
         break
       }
     }
-    return <span data-test="chata-icon">{icon}</span>
+    return (
+      <span
+        // style={{ verticalAlign: 'middle', lineHeight: '100%' }}
+        data-test="chata-icon"
+        className="chata-icon"
+      >
+        {icon}
+      </span>
+    )
   }
 }

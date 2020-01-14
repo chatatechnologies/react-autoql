@@ -1,0 +1,27 @@
+.notification-rule-add-btn-outer {
+  text-align: center;
+  border-style: dashed !important;
+  height: 38px;
+  line-height: 25px;
+  margin-right: 0 !important;
+  margin-top: 15px !important;
+  overflow: hidden;
+}
+
+.notification-rule-outer-container {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 4px;
+
+  &.outlined {
+    border-color: rgba(0, 0, 0, 0.15);
+    padding: 0 20px;
+    padding-bottom: 12px;
+  }
+}
+
+.notification-outer-all-any {
+  position: absolute;
+  left: 0;
+  top: 50%;
+}

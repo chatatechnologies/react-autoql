@@ -18,6 +18,12 @@
       color: #fff;
       z-index: 3;
     }
+    &.active.outlined {
+      background-color: inherit;
+      color: var(--chata-drawer-accent-color);
+      // font-weight: 600;
+      z-index: 3;
+    }
 
     &:hover:not(.active) {
       border-color: var(--chata-drawer-accent-color);

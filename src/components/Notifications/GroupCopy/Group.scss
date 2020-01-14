@@ -1,7 +1,7 @@
-.chata-notification-group-container {
+.chata-notification-group-container-copy {
   position: relative;
   padding: 20px;
-  padding-top: 30px;
+  padding-top: 50px;
   padding-bottom: 20px;
   margin: 0 6px;
   margin-top: 40px;
@@ -10,7 +10,10 @@
   border-radius: 4px;
 
   &:first-of-type {
-    margin-top: 24px;
+    margin-top: 10px;
+  }
+  &:last-of-type {
+    // margin-top: 24px;
     margin-bottom: 0;
   }
 
@@ -74,14 +77,15 @@
     margin: 0 auto;
     padding: 0 10px;
     background: white;
-    top: -15px;
-    left: calc(50% - 126px);
+    // text-align: left;
+    top: 16px;
+    // left: calc(50% - 126px);
     color: rgba(0, 0, 0, 0.5);
   }
 
   .notification-rule-btn-container {
     display: flex;
-    margin-top: 10px;
+    margin-top: 5px;
     width: calc(100% - 25px);
 
     .notification-rule-add-btn {
@@ -95,4 +99,31 @@
       overflow: hidden;
     }
   }
+
+  .chata-notification-rule-add-btn {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    border-radius: 20px;
+    margin-left: 5px;
+    line-height: 22px;
+    // padding-left: 1px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.2);
+    border: 1px solid;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      color: rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+.notification-and-or-break {
+  position: absolute;
+  top: -31px;
+  width: 100%;
+  text-align: center;
 }

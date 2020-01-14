@@ -14,14 +14,15 @@ export default class SafetyNetMessage extends React.Component {
     autoSelectSuggestion: PropTypes.bool.isRequired,
     isQueryRunning: PropTypes.bool,
     initialSelections: PropTypes.arrayOf(PropTypes.shape({})),
-    onSafetyNetSelectOption: PropTypes.func.isRequired,
+    onSafetyNetSelectOption: PropTypes.func,
     message: PropTypes.string
   }
 
   static defaultProps = {
     initialSelections: undefined,
     isQueryRunning: false,
-    message: undefined
+    message: undefined,
+    onSafetyNetSelectOption: () => {}
   }
 
   state = {
@@ -158,12 +159,10 @@ export default class SafetyNetMessage extends React.Component {
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for safetynet selection
-    if (this.props.onSafetyNetSelectOption) {
-      this.props.onSafetyNetSelectOption(
-        this.getSafetyNetQueryText(newSelectedSuggestions),
-        newSelectedSuggestions
-      )
-    }
+    this.props.onSafetyNetSelectOption(
+      this.getSafetyNetQueryText(newSelectedSuggestions),
+      newSelectedSuggestions
+    )
 
     this.setState({ selectedSuggestions: newSelectedSuggestions })
   }
@@ -182,12 +181,10 @@ export default class SafetyNetMessage extends React.Component {
     )
 
     // Update list in callback
-    if (this.props.onSafetyNetSelectOption) {
-      this.props.onSafetyNetSelectOption(
-        this.getSafetyNetQueryText(newSelectedSuggestions),
-        newSelectedSuggestions
-      )
-    }
+    this.props.onSafetyNetSelectOption(
+      this.getSafetyNetQueryText(newSelectedSuggestions),
+      newSelectedSuggestions
+    )
 
     this.setState({
       selectedSuggestions: newSelectedSuggestions

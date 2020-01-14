@@ -27,7 +27,8 @@ export default class Radio extends React.Component {
             <div
               className={`chata-radio-btn${
                 this.props.value === option ? ' active' : ''
-              }`}
+              }
+              ${this.props.outlined ? ' outlined' : ''}`}
               onClick={() => this.props.onChange(option)}
             >
               {option}

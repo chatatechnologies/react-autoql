@@ -6,7 +6,9 @@ import { Modal } from '../../Modal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Icon } from '../../Icon'
+import { Checkbox } from '../../Checkbox'
 import { NotificationRules } from '../NotificationRules'
+import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
 import './NotificationSettings.scss'
 
@@ -15,7 +17,8 @@ const notificationList = [
     id: 1,
     displayName: 'Transactions exceeded $1000',
     expanded: false,
-    last_triggered: new Date(),
+    enabled: true,
+    // last_triggered: '2020-01-14T18:28:56.520Z',
     history: [],
     logic: {}
   },
@@ -23,7 +26,8 @@ const notificationList = [
     id: 2,
     displayName: 'Over budget this month',
     expanded: false,
-    last_triggered: new Date(),
+    enabled: true,
+    // last_triggered: '2020-01-10T16:40:56.520Z',
     history: [],
     logic: {}
   },
@@ -31,7 +35,8 @@ const notificationList = [
     id: 3,
     displayName: 'Balance fell below $500',
     expanded: false,
-    last_triggered: new Date(),
+    enabled: false,
+    // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
     logic: {}
   }
@@ -94,7 +99,26 @@ export default class NotificationSettings extends React.Component {
     }, 2000)
   }
 
+  onEnableSwitchChange = notification => {
+    const newList = this.state.notificationList.map(n => {
+      if (notification.id === n.id) {
+        return {
+          ...n,
+          enabled: !n.enabled
+        }
+      }
+      return n
+    })
+    this.setState({ notificationList: newList })
+  }
+
   getModalContent = () => {
+    const ruleContent =
+      this.state.option === 2 ? (
+        <NotificationRulesCopy />
+      ) : (
+        <NotificationRules />
+      )
     const steps = [
       {
         // step: 1,
@@ -115,7 +139,7 @@ export default class NotificationSettings extends React.Component {
       {
         // step: 2,
         title: 'Rules',
-        content: <NotificationRules />
+        content: ruleContent
       },
       {
         // step: 3,
@@ -171,10 +195,52 @@ export default class NotificationSettings extends React.Component {
     </div>
   )
 
+  renderABTestButtons = () => {
+    return (
+      <div
+        style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}
+      >
+        <div
+          style={{
+            padding: '10px',
+            border: '1px solid',
+            cursor: 'pointer',
+            display: 'inline-block',
+            margin: '10px'
+          }}
+          onClick={() => {
+            this.onAddClick()
+            this.setState({ option: 1 })
+          }}
+        >
+          Modal Option 1
+        </div>
+        <div
+          style={{
+            padding: '10px',
+            border: '1px solid',
+            cursor: 'pointer',
+            display: 'inline-block',
+            margin: '10px'
+          }}
+          onClick={() => {
+            this.onAddClick()
+            this.setState({ option: 2 })
+          }}
+        >
+          Modal Option 2
+        </div>
+      </div>
+    )
+  }
+
   render = () => {
     return (
       <div data-test="notification-settings">
-        {this.renderAddNotificationButton()}
+        {
+          // this.renderAddNotificationButton()
+        }
+        {this.renderABTestButtons()}
         <div className="chata-notification-settings-container">
           {this.state.notificationList.map((notification, i) => {
             return (
@@ -182,17 +248,34 @@ export default class NotificationSettings extends React.Component {
                 key={`chata-notification-setting-item-${i}`}
                 className={`chata-notification-setting-item
                           ${notification.expanded ? ' expanded' : ''}`}
-                onClick={() => this.onItemClick(notification)}
+                // onClick={() => this.onItemClick(notification)}
+                onClick={e => this.onEditClick(e, notification)}
               >
                 <div className="chata-notification-setting-item-header">
                   <div className="chata-notification-setting-display-name">
                     {notification.displayName}
                   </div>
-                  <Icon
-                    type="edit"
-                    className="chata-notification-edit-icon"
-                    onClick={e => this.onEditClick(e, notification)}
-                  />
+                  <div className="chata-notification-setting-actions">
+                    <Checkbox
+                      type="switch"
+                      checked={notification.enabled}
+                      className="chata-notification-enable-checkbox"
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => {
+                        // console.log(e)
+                        // e.stopPropagation()
+                        // e.preventDefault()
+                        this.onEnableSwitchChange(notification)
+                      }}
+                    />
+                    {
+                      // <Icon
+                      //   type="edit"
+                      //   className="chata-notification-edit-icon"
+                      //   onClick={e => this.onEditClick(e, notification)}
+                      // />
+                    }
+                  </div>
                 </div>
                 {notification.expanded && <div></div>}
               </div>

@@ -15,11 +15,13 @@ export default class Group extends React.Component {
   static propTypes = {
     groupId: PropTypes.string.isRequired,
     onDelete: PropTypes.func,
-    disableAddGroupBtn: PropTypes.bool
+    disableAddGroupBtn: PropTypes.bool,
+    hideTopCondition: PropTypes.bool
   }
 
   static defaultProps = {
     disableAddGroupBtn: false,
+    hideTopCondition: false,
     onDelete: () => {}
   }
 
@@ -90,6 +92,7 @@ export default class Group extends React.Component {
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           onChange={value => this.setState({ andOrSelectValue: value })}
+          outlined
         />{' '}
         condition(s)
       </div>
@@ -113,10 +116,7 @@ export default class Group extends React.Component {
 
   renderAddBtn = () => {
     return (
-      <div
-        className="chata-notification-group-add-btn"
-        onClick={this.onAddGroup}
-      >
+      <div className="chata-notification-group-add-btn" onClick={this.addRule}>
         <Icon type="plus" />
       </div>
     )
@@ -125,17 +125,19 @@ export default class Group extends React.Component {
   renderAddButtons = () => {
     return (
       <div className="notification-rule-btn-container">
-        <Button className="notification-rule-add-btn" onClick={this.addRule}>
-          + Add New Rule
-        </Button>
-        {!this.props.disableAddGroupBtn && (
-          <Button
-            className="notification-rule-add-btn"
-            onClick={this.onAddGroup}
-          >
-            + Add New Group
-          </Button>
-        )}
+        <div className="chata-notification-rule-add-btn" onClick={this.addRule}>
+          <Icon type="plus" className="chata-notification-add-icon" />
+        </div>
+        {
+          //   !this.props.disableAddGroupBtn && (
+          //   <Button
+          //     className="notification-rule-add-btn"
+          //     onClick={this.onAddGroup}
+          //   >
+          //     + Add New Group
+          //   </Button>
+          // )
+        }
       </div>
     )
   }
@@ -145,21 +147,54 @@ export default class Group extends React.Component {
       this.state.rules.filter(rule => rule.type === 'rule').length <= 1
 
     return (
-      <div
-        className={`chata-notification-group-container${
-          hasOnlyOneRule ? ' disable-first-delete' : ''
-        }`}
-        data-test="rule-group"
-      >
-        {this.state.rules.map(rule => {
-          return rule.rule
-        })}
-        {this.renderAllAnySelect()}
-        {this.renderDeleteGroupBtn()}
-        {
-          // this.renderAddBtn()
-        }
-        {this.renderAddButtons()}
+      <div style={{ position: 'relative' }}>
+        {!this.props.hideTopCondition && (
+          <div
+            className="notification-and-or-break"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              opacity: '0.7'
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '10px',
+                width: '200px',
+                borderBottom: '1px solid'
+              }}
+            />
+            <div
+              style={{
+                background: 'white',
+                padding: '0 10px',
+                margin: '0 auto',
+                padding: '0px 10px',
+                width: '50px',
+                zIndex: '999999'
+              }}
+            >
+              {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
+            </div>
+          </div>
+        )}
+        <div
+          className={`chata-notification-group-container-copy${
+            hasOnlyOneRule ? ' disable-first-delete' : ''
+          }`}
+          data-test="rule-group"
+        >
+          {this.state.rules.map(rule => {
+            return rule.rule
+          })}
+          {this.renderAllAnySelect()}
+          {this.renderDeleteGroupBtn()}
+          {
+            // this.renderAddBtn()
+          }
+          {this.renderAddButtons()}
+        </div>
       </div>
     )
   }

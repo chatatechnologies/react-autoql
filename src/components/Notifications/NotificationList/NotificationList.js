@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import dayjs from 'dayjs'
+import ReactTooltip from 'react-tooltip'
 
 import { Checkbox } from '../../Checkbox'
 import { ResponseRenderer } from '../../ResponseRenderer'
@@ -64,24 +65,21 @@ const notificationList = [
     displayName: 'Transactions exceeded $1000',
     triggered: true,
     expanded: false,
-    enabled: true,
-    last_triggered: new Date()
+    timestamp: '2020-01-14T18:28:56.520Z'
   },
   {
     id: 2,
     displayName: 'Over budget this month',
     triggered: true,
     expanded: false,
-    enabled: true,
-    last_triggered: new Date()
+    timestamp: '2020-01-13T16:40:56.520Z'
   },
   {
     id: 3,
     displayName: 'Balance fell below $500',
     triggered: false,
     expanded: false,
-    enabled: true,
-    last_triggered: new Date()
+    timestamp: '2020-01-02T12:10:56.520Z'
   }
 ]
 
@@ -95,6 +93,12 @@ export default class NotificationList extends React.Component {
 
   state = {
     notificationList: notificationList
+  }
+
+  componentDidUpdate = () => {
+    // setTimeout(() => {
+    //   ReactTooltip.hide()
+    // }, 100)
   }
 
   onItemClick = notification => {
@@ -137,17 +141,16 @@ export default class NotificationList extends React.Component {
     this.setState({ notificationList: newList })
   }
 
-  onEnableSwitchChange = notification => {
-    const newList = this.state.notificationList.map(n => {
-      if (notification.id === n.id) {
-        return {
-          ...n,
-          enabled: !n.enabled
-        }
-      }
-      return n
-    })
-    this.setState({ notificationList: newList })
+  formatTimestamp = timestamp => {
+    const time = dayjs(timestamp).format('h:mma')
+    if (dayjs().isSame(timestamp, 'day')) {
+      return `Today at ${time}`
+    } else if (dayjs().diff(timestamp, 'day') === 1) {
+      return `Yesterday at ${time}`
+    } else if (dayjs().isSame(timestamp, 'year')) {
+      return `${dayjs(timestamp).format('MMMM D')} at ${time}`
+    }
+    return `${dayjs(timestamp).format('MMMM D, YYYY')} at ${time}`
   }
 
   renderDismissAllButton = () => (
@@ -169,6 +172,13 @@ export default class NotificationList extends React.Component {
         className="chata-notification-list-container"
         data-test="notification-list"
       >
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-notification-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
         {this.renderDismissAllButton()}
         {this.state.notificationList.map((notification, i) => {
           return (
@@ -180,35 +190,40 @@ export default class NotificationList extends React.Component {
               onClick={() => this.onItemClick(notification)}
             >
               <div className="chata-notification-list-item-header">
-                <div className="chata-notification-display-name">
-                  {notification.displayName}
+                <div className="chata-notification-display-name-container">
+                  <div className="chata-notification-display-name">
+                    {notification.displayName}
+                  </div>
+                  <div className="chata-notification-timestamp">
+                    <Icon type="calendar" />{' '}
+                    {this.formatTimestamp(notification.timestamp)}
+                  </div>
                 </div>
-                {notification.triggered ? (
-                  // <div className="chata-notification-dismiss-btn">
-                  //   Dismiss
-                  // </div>
-                  <Icon
-                    type="notification-off"
-                    className="chata-notification-dismiss-icon"
-                    onClick={e => this.onDismissClick(e, notification)}
-                  />
-                ) : (
-                  <Checkbox
-                    type="switch"
-                    checked={notification.enabled}
-                    className="chata-notification-enable-checkbox"
-                    onChange={() => this.onEnableSwitchChange(notification)}
-                  />
+                {notification.triggered && (
+                  <div className="chata-notification-dismiss-btn">
+                    <Icon
+                      type="notification-off"
+                      className="chata-notification-dismiss-icon"
+                      data-tip="Dismiss"
+                      data-for="chata-notification-tooltip"
+                      onClick={e => {
+                        this.onDismissClick(e, notification)
+                        ReactTooltip.hide()
+                      }}
+                    />
+                  </div>
                 )}
               </div>
               {notification.expanded && (
                 <Fragment>
-                  <div className="chata-notification-data-title">
-                    <Icon type="calendar" />{' '}
-                    <em>
-                      Triggered on {dayjs(notification.last_triggered).format()}
-                    </em>
-                  </div>
+                  {
+                    // <div className="chata-notification-data-title">
+                    //   <Icon type="calendar" />{' '}
+                    //   <em>
+                    //     Triggered on {dayjs(notification.last_triggered).format()}
+                    //   </em>
+                    // </div>
+                  }
                   <div className="chata-notification-data-container">
                     <ResponseRenderer
                       response={sampleNotificationData}
@@ -218,20 +233,6 @@ export default class NotificationList extends React.Component {
                 </Fragment>
               )}
               {this.renderAlertColorStrip()}
-              {
-                // notification.triggered && (
-                //   <div className="chata-notification-click-to-dismiss">
-                //     Click to Dismiss
-                //   </div>
-                // )
-              }
-              {
-                //   notification.triggered && (
-                //   <div className="chata-notification-alert-icon">
-                //     <FaExclamationCircle />
-                //   </div>
-                // )
-              }
             </div>
           )
         })}

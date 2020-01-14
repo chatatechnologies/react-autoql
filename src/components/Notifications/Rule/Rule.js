@@ -9,12 +9,12 @@ import './Rule.scss'
 
 export default class Rule extends React.Component {
   static propTypes = {
-    onDelete: PropTypes.func
+    ruleId: PropTypes.string.isRequired,
+    onDelete: PropTypes.func.isRequred,
+    onAdd: PropTypes.func.isRequired
   }
 
-  static defaultProps = {
-    onDelete: () => {}
-  }
+  static defaultProps = {}
 
   state = {
     conditionSelectValue: 'greater-than',
@@ -89,8 +89,17 @@ export default class Rule extends React.Component {
         <Icon
           className="chata-rule-delete-btn"
           type="close"
-          onClick={() => this.props.onDelete(this.props.ruleId)}
+          onClick={() => {
+            this.props.onDelete(this.props.ruleId)
+          }}
         />
+        {
+          //   <Icon
+          //   className="chata-rule-add-btn"
+          //   type="plus"
+          //   onClick={this.props.onAdd}
+          // />
+        }
       </div>
     )
   }

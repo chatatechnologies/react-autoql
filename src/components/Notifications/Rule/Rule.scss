@@ -13,20 +13,23 @@
     flex-basis: 33px;
   }
 
-  .chata-rule-delete-btn {
+  .chata-rule-delete-btn,
+  .chata-rule-add-btn {
     opacity: 0.4;
-    margin-left: 5px;
+    transition: all 0.2s ease;
     cursor: pointer;
 
     &:hover {
-      opacity: 0.7;
+      opacity: 0.8;
     }
   }
 
-  &:first-child .chata-rule-delete-btn {
-    pointer-events: none;
-    cursor: default;
-    visibility: hidden;
+  .chata-rule-delete-btn {
+    margin-left: 5px;
+  }
+
+  .chata-rule-add-btn {
+    margin-left: 10px;
   }
 
   .chata-rule-second-input-container {
@@ -85,4 +88,11 @@
     height: 17px;
     width: 17px;
   }
+}
+
+.chata-notification-group-container.disable-first-delete
+  .chata-rule-delete-btn {
+  pointer-events: none;
+  opacity: 0.1;
+  cursor: default;
 }
