@@ -138,7 +138,7 @@ export default class NotificationSettings extends React.Component {
       },
       {
         // step: 2,
-        title: 'Rules',
+        title: 'Conditions',
         content: ruleContent
       },
       {

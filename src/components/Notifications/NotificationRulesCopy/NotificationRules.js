@@ -59,7 +59,7 @@ export default class NotificationRules extends React.Component {
         {!hasOnlyOneGroup && (
           <div
             className="notification-rule-and-or-select"
-            style={{ textAlign: 'center' }}
+            // style={{ textAlign: 'center' }}
           >
             Match{' '}
             <Radio
@@ -99,6 +99,7 @@ export default class NotificationRules extends React.Component {
                 // getTopCondition={this.getAndOrValue}
                 // onAdd={this.onAddGroup}
                 topCondition={this.state.andOrValue}
+                onlyGroup={hasOnlyOneGroup}
               />
             )
           })}
@@ -107,7 +108,7 @@ export default class NotificationRules extends React.Component {
               className="notification-rule-add-btn-outer"
               onClick={this.onAddGroup}
             >
-              + Add New Group
+              + Add Condition Group
             </Button>
           </span>
         </div>

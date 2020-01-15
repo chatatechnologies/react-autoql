@@ -92,7 +92,7 @@ export default class Group extends React.Component {
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           onChange={value => this.setState({ andOrSelectValue: value })}
-          outlined
+          // outlined
         />{' '}
         condition(s)
       </div>
@@ -122,22 +122,12 @@ export default class Group extends React.Component {
     )
   }
 
-  renderAddButtons = () => {
+  renderAddBtn = () => {
     return (
       <div className="notification-rule-btn-container">
         <div className="chata-notification-rule-add-btn" onClick={this.addRule}>
           <Icon type="plus" className="chata-notification-add-icon" />
         </div>
-        {
-          //   !this.props.disableAddGroupBtn && (
-          //   <Button
-          //     className="notification-rule-add-btn"
-          //     onClick={this.onAddGroup}
-          //   >
-          //     + Add New Group
-          //   </Button>
-          // )
-        }
       </div>
     )
   }
@@ -147,36 +137,29 @@ export default class Group extends React.Component {
       this.state.rules.filter(rule => rule.type === 'rule').length <= 1
 
     return (
-      <div style={{ position: 'relative' }}>
-        {!this.props.hideTopCondition && (
+      <div
+        className="notification-group-wrapper"
+        style={{ marginLeft: this.props.onlyGroup ? '0px' : '50px' }}
+      >
+        {!this.props.onlyGroup && (
           <div
             className="notification-and-or-break"
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              opacity: '0.7'
+              top: this.props.hideTopCondition ? '0px' : '-19px',
+              height: this.props.hideTopCondition ? '100%' : 'calc(100% + 19px)'
             }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: '10px',
-                width: '200px',
-                borderBottom: '1px solid'
-              }}
-            />
-            <div
-              style={{
-                background: 'white',
-                padding: '0 10px',
-                margin: '0 auto',
-                padding: '0px 10px',
-                width: '50px',
-                zIndex: '999999'
-              }}
-            >
-              {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
-            </div>
+            {!this.props.hideTopCondition && (
+              <div
+                className="notification-and-or-text"
+                style={{
+                  background:
+                    this.props.topCondition === 'ALL' ? '#bae9ff' : '#ffe5a7'
+                }}
+              >
+                {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
+              </div>
+            )}
           </div>
         )}
         <div
@@ -190,10 +173,7 @@ export default class Group extends React.Component {
           })}
           {this.renderAllAnySelect()}
           {this.renderDeleteGroupBtn()}
-          {
-            // this.renderAddBtn()
-          }
-          {this.renderAddButtons()}
+          {this.renderAddBtn()}
         </div>
       </div>
     )

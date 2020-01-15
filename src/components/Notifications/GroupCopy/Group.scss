@@ -1,129 +1,123 @@
-.chata-notification-group-container-copy {
+.notification-group-wrapper {
   position: relative;
-  padding: 20px;
-  padding-top: 50px;
-  padding-bottom: 20px;
-  margin: 0 6px;
-  margin-top: 40px;
+  margin-right: 0px;
+  margin-top: 20px;
   margin-bottom: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
 
   &:first-of-type {
     margin-top: 10px;
   }
   &:last-of-type {
-    // margin-top: 24px;
     margin-bottom: 0;
   }
 
-  // .chata-notification-group-delete-btn {
-  //   position: absolute;
-  //
-  //
-  //   height: 21px;
-  //   background: white;
-  //   color: rgba(0, 0, 0, 0.3);
-  //   transition: all 0.3s ease;
-  //   cursor: pointer;
-
-  //   svg {
-  //     width: 21px;
-  //     height: 21px;
-  //   }
-
-  //   &:hover {
-  //     color: rgba(0, 0, 0, 0.6);
-  //   }
-  // }
-
-  .chata-notification-group-add-btn,
-  .chata-notification-group-delete-btn {
+  .notification-and-or-break {
     position: absolute;
-    height: 21px;
-    width: 21px;
-    border-radius: 10px;
-    border: 1px solid;
-    line-height: 23px;
+    color: rgba(0, 0, 0, 0.4);
+    left: -35px;
+    border-left: 1px dashed rgba(0, 0, 0, 0.15);
+  }
+
+  .notification-and-or-text {
+    width: 50px;
+    z-index: 999999;
+    position: absolute;
+    left: -25px;
+    top: -7px;
+    padding: 5px;
+    border-radius: 25px;
     text-align: center;
-    background: white;
-    color: rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    cursor: pointer;
-
-    svg {
-      width: 15px;
-      height: 15px;
-    }
-
-    &:hover {
-      color: rgba(0, 0, 0, 0.6);
-    }
   }
 
-  .chata-notification-group-add-btn {
-    bottom: -11px;
-    left: calc(50% - 10px);
-  }
+  .chata-notification-group-container-copy {
+    position: relative;
+    padding: 20px;
+    padding-top: 50px;
+    padding-bottom: 20px;
 
-  .chata-notification-group-delete-btn {
-    top: -10px;
-    right: -10px;
-  }
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 
-  .notification-rule-and-or-select {
-    display: block;
-    position: absolute;
-    margin: 0 auto;
-    padding: 0 10px;
-    background: white;
-    // text-align: left;
-    top: 16px;
-    // left: calc(50% - 126px);
-    color: rgba(0, 0, 0, 0.5);
-  }
-
-  .notification-rule-btn-container {
-    display: flex;
-    margin-top: 5px;
-    width: calc(100% - 25px);
-
-    .notification-rule-add-btn {
-      flex: 1;
+    .chata-notification-group-add-btn,
+    .chata-notification-group-delete-btn {
+      position: absolute;
+      height: 21px;
+      width: 21px;
+      border-radius: 10px;
+      border: 1px solid;
+      line-height: 23px;
       text-align: center;
-      border-style: dashed;
-      height: 42px;
-      line-height: 29px;
-      margin-right: 0 !important;
       background: white;
-      overflow: hidden;
+      color: rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      cursor: pointer;
+
+      svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      &:hover {
+        color: rgba(0, 0, 0, 0.6);
+      }
     }
-  }
 
-  .chata-notification-rule-add-btn {
-    display: inline-block;
-    height: 20px;
-    width: 20px;
-    border-radius: 20px;
-    margin-left: 5px;
-    line-height: 22px;
-    // padding-left: 1px;
-    text-align: center;
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.2);
-    border: 1px solid;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    .chata-notification-group-add-btn {
+      bottom: -11px;
+      left: calc(50% - 10px);
+    }
 
-    &:hover {
+    .chata-notification-group-delete-btn {
+      top: -10px;
+      right: -10px;
+    }
+
+    .notification-rule-and-or-select {
+      display: block;
+      position: absolute;
+      margin: 0 auto;
+      padding: 0 10px;
+      background: white;
+      // text-align: left;
+      top: 16px;
+      // left: calc(50% - 126px);
       color: rgba(0, 0, 0, 0.5);
     }
-  }
-}
 
-.notification-and-or-break {
-  position: absolute;
-  top: -31px;
-  width: 100%;
-  text-align: center;
+    .notification-rule-btn-container {
+      display: flex;
+      margin-top: 5px;
+      width: calc(100% - 25px);
+
+      .notification-rule-add-btn {
+        flex: 1;
+        text-align: center;
+        border-style: dashed;
+        height: 42px;
+        line-height: 29px;
+        margin-right: 0 !important;
+        background: white;
+        overflow: hidden;
+      }
+    }
+
+    .chata-notification-rule-add-btn {
+      display: inline-block;
+      height: 20px;
+      width: 20px;
+      border-radius: 20px;
+      margin-left: 5px;
+      line-height: 22px;
+      text-align: center;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.2);
+      border: 1px solid;
+      transition: all 0.2s ease;
+      cursor: pointer;
+
+      &:hover {
+        color: rgba(0, 0, 0, 0.5);
+      }
+    }
+  }
 }
