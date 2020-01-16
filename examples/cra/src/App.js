@@ -161,6 +161,7 @@ const demoDashboard = [
 
 export default class App extends Component {
   state = {
+    maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
     componentKey: uuid.v4(),
@@ -174,10 +175,10 @@ export default class App extends Component {
     customerName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
-    enableSafetyNet: false,
+    enableSafetyNet: true,
     disableDrilldowns: false,
     enableQueryTipsTab: true,
-    enableColumnEditor: false,
+    enableColumnEditor: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
     clearOnClose: false,
@@ -1177,13 +1178,11 @@ export default class App extends Component {
         <Menu.Item key="dashboard">
           <ChataIcon type="dashboard" /> Dashboard
         </Menu.Item>
-        {
-          // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
-          // <Menu.Item key="settings">Notification Settings</Menu.Item>
-          // <Menu.Item key="notifications">
-          //   <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
-          // </Menu.Item>
-        }
+        <Menu.Item key="chatbar">Chat Bar</Menu.Item>
+        <Menu.Item key="settings">Notification Settings</Menu.Item>
+        <Menu.Item key="notifications">
+          <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
+        </Menu.Item>
       </Menu>
     )
   }
@@ -1281,7 +1280,33 @@ export default class App extends Component {
     }
   }
 
+  renderMaintenancePage = () => (
+    <div
+      style={{
+        margin: '0 auto',
+        width: '300px',
+        textAlign: 'center',
+        paddingTop: '111px'
+      }}
+    >
+      <Icon type="tool" style={{ fontSize: '75px', marginBottom: '20px' }} />
+      <br />
+      <div style={{ fontSize: '25px' }}>
+        We're undergoing a bit of scheduled maintenance.
+      </div>
+      <hr style={{ margin: '25px 0px' }} />
+      <div>
+        Sorry for the inconvenience. We will be back up and running as soon as
+        possible.
+      </div>
+    </div>
+  )
+
   render = () => {
+    if (this.state.maintenance) {
+      return this.renderMaintenancePage()
+    }
+
     const { currentPage } = this.state
 
     let pageToRender = null

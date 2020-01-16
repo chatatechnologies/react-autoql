@@ -577,15 +577,6 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
-  formatDateElement = (title, value) => {
-    if (title && title.includes('Year')) {
-      return dayjs.unix(value).format('YYYY')
-    } else if (title && title.includes('Month')) {
-      return dayjs.unix(value).format('MMMM YYYY')
-    }
-    return dayjs.unix(value).format('MMMM D, YYYY')
-  }
-
   generateChartData = data => {
     try {
       const columns = this.tableColumns
@@ -665,18 +656,28 @@ export default class ResponseRenderer extends React.Component {
 
   setFilterFunction = col => {
     const self = this
-    if (col.type === 'DATE') {
+    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
       return (headerValue, rowValue, rowData, filterParams) => {
         // headerValue - the value of the header filter element
         // rowValue - the value of the column in this row
         // rowData - the data for the row being filtered
         // filterParams - params object passed to the headerFilterFuncParams property
 
-        const formattedElement = self
-          .formatDateElement(col.title, rowValue)
-          .toLowerCase()
+        try {
+          const formattedElement = formatElement({
+            element: rowValue,
+            column: col,
+            config: self.props.dataFormatting
+          })
 
-        return formattedElement.includes(headerValue.toLowerCase())
+          const shouldFilter = formattedElement
+            .toLowerCase()
+            .includes(headerValue.toLowerCase())
+
+          return shouldFilter
+        } catch (error) {
+          return false
+        }
       }
     } else if (
       col.type === 'DOLLAR_AMT' ||
