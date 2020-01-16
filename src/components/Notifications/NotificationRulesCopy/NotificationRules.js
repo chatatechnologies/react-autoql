@@ -4,6 +4,7 @@ import uuid from 'uuid'
 import { Group } from '../GroupCopy'
 import { Button } from '../../Button'
 import { Radio } from '../../Radio'
+import { Icon } from '../../Icon'
 
 import './NotificationRules.scss'
 
@@ -108,7 +109,7 @@ export default class NotificationRules extends React.Component {
               className="notification-rule-add-btn-outer"
               onClick={this.onAddGroup}
             >
-              + Add Condition Group
+              <Icon type="plus" /> Add Condition Group
             </Button>
           </span>
         </div>

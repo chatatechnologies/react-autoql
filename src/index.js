@@ -7,3 +7,4 @@ export {
   NotificationList,
   NotificationSettings
 } from './components/Notifications'
+export { Icon } from './components/Icon'

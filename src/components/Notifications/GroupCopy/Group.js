@@ -94,7 +94,7 @@ export default class Group extends React.Component {
           onChange={value => this.setState({ andOrSelectValue: value })}
           // outlined
         />{' '}
-        condition(s)
+        conditions
       </div>
     )
   }

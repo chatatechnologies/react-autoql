@@ -10,8 +10,12 @@ import './Rule.scss'
 export default class Rule extends React.Component {
   static propTypes = {
     ruleId: PropTypes.string.isRequired,
-    onDelete: PropTypes.func.isRequred,
-    onAdd: PropTypes.func.isRequired
+    onAdd: PropTypes.func.isRequired,
+    onDelete: PropTypes.func
+  }
+
+  static defaultProps = {
+    onDelete: () => {}
   }
 
   static defaultProps = {}
@@ -32,7 +36,7 @@ export default class Rule extends React.Component {
         {' '}
         <Input
           className="chata-rule-input"
-          icon="chata-bubbles-outline"
+          icon="chata-bubbles-outlined"
           placeholder="query"
         />
         <Select
@@ -55,7 +59,7 @@ export default class Rule extends React.Component {
         >
           <Input
             className="chata-rule-input"
-            icon="chata-bubbles-outline"
+            icon="chata-bubbles-outlined"
             type={inputType}
             placeholder={inputType === 'number' ? 'constant' : 'query'}
           />
@@ -65,7 +69,7 @@ export default class Rule extends React.Component {
                 value: 'query',
                 label: (
                   <Icon
-                    type="chata-bubbles-outline"
+                    type="chata-bubbles-outlined"
                     className="rule-input-select-bubbles-icon"
                   />
                 ),

@@ -65,21 +65,21 @@ const notificationList = [
     displayName: 'Transactions exceeded $1000',
     triggered: true,
     expanded: false,
-    timestamp: '2020-01-14T18:28:56.520Z'
+    timestamp: new Date()
   },
   {
     id: 2,
     displayName: 'Over budget this month',
     triggered: true,
     expanded: false,
-    timestamp: '2020-01-13T16:40:56.520Z'
+    timestamp: dayjs().subtract(1, 'd')
   },
   {
     id: 3,
     displayName: 'Balance fell below $500',
     triggered: false,
     expanded: false,
-    timestamp: '2020-01-02T12:10:56.520Z'
+    timestamp: dayjs().subtract(2, 'd')
   }
 ]
 
@@ -143,9 +143,15 @@ export default class NotificationList extends React.Component {
 
   formatTimestamp = timestamp => {
     const time = dayjs(timestamp).format('h:mma')
-    if (dayjs().isSame(timestamp, 'day')) {
+    const day = dayjs(timestamp).format('MM-DD-YY')
+    const today = dayjs().format('MM-DD-YY')
+    const yesterday = dayjs()
+      .subtract(1, 'd')
+      .format('MM-DD-YY')
+
+    if (day === today) {
       return `Today at ${time}`
-    } else if (dayjs().diff(timestamp, 'day') === 1) {
+    } else if (day === yesterday) {
       return `Yesterday at ${time}`
     } else if (dayjs().isSame(timestamp, 'year')) {
       return `${dayjs(timestamp).format('MMMM D')} at ${time}`

@@ -8,7 +8,8 @@ import {
   executeDashboard,
   NotificationButton,
   NotificationList,
-  NotificationSettings
+  NotificationSettings,
+  Icon as ChataIcon
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -173,10 +174,10 @@ export default class App extends Component {
     customerName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
-    enableSafetyNet: true,
+    enableSafetyNet: false,
     disableDrilldowns: false,
     enableQueryTipsTab: true,
-    enableColumnEditor: true,
+    enableColumnEditor: false,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
     clearOnClose: false,
@@ -1169,13 +1170,20 @@ export default class App extends Component {
         selectedKeys={[this.state.currentPage]}
         mode="horizontal"
       >
-        <Menu.Item key="drawer">Chat Drawer</Menu.Item>
-        <Menu.Item key="dashboard">Dashboard</Menu.Item>
-        <Menu.Item key="chatbar">Chat Bar</Menu.Item>
-        <Menu.Item key="settings">Notification Settings</Menu.Item>
-        <Menu.Item key="notifications">
-          <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
+        <Menu.Item key="drawer">
+          <ChataIcon type="chata-bubbles-outlined" />
+          Chat Drawer
         </Menu.Item>
+        <Menu.Item key="dashboard">
+          <ChataIcon type="dashboard" /> Dashboard
+        </Menu.Item>
+        {
+          // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
+          // <Menu.Item key="settings">Notification Settings</Menu.Item>
+          // <Menu.Item key="notifications">
+          //   <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
+          // </Menu.Item>
+        }
       </Menu>
     )
   }

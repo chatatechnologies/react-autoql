@@ -523,7 +523,7 @@ export default class ChatDrawer extends React.Component {
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
             >
-              <Icon type="chata-bubbles-outline" />
+              <Icon type="chata-bubbles-outlined" />
             </div>
             <div
               className={`tab${page === 'tips' ? ' active' : ''} tips`}
@@ -713,7 +713,8 @@ export default class ChatDrawer extends React.Component {
         )}
         <div className="chat-bar-container">
           <div className="watermark">
-            <Icon type="chata-bubbles-outline" /> We run on chata
+            <Icon type="chata-bubbles-outlined" />
+            We run on chata
           </div>
           <ChatBar
             ref={this.setChatBarRef}

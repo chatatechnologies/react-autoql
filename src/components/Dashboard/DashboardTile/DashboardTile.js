@@ -199,7 +199,7 @@ export default class DashboardTile extends React.Component {
       <Select
         options={[
           { value: 'sql', label: <Icon type="database" /> },
-          { value: 'nl', label: <Icon type="chata-bubbles-outline" /> }
+          { value: 'nl', label: <Icon type="chata-bubbles-outlined" /> }
         ]}
         value={this.state.languageSelectValue}
         className="chata-sql-selector"

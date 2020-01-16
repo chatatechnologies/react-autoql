@@ -21,8 +21,15 @@ import {
   IoIosCloseCircleOutline
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
+import { AiOutlineDashboard } from 'react-icons/ai'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
-import { bubblesIcon } from '../../svgIcons.js'
+import {
+  bubblesIcon,
+  bubblesIconFilled,
+  bubblesIconFilledAlt
+} from '../../svgIcons.js'
+
+import './Icon.scss'
 
 export default class Icon extends React.Component {
   static propTypes = {
@@ -40,7 +47,7 @@ export default class Icon extends React.Component {
     let icon = null
     switch (this.props.type) {
       case 'calendar': {
-        icon = <FiCalendar {...nativeProps} />
+        icon = <FiCalendar />
         break
       }
       case 'chata-bubbles': {
@@ -49,100 +56,102 @@ export default class Icon extends React.Component {
             className="chata-bubbles-icon"
             src={chataBubblesSVG}
             alt="chata.ai"
-            height={this.props.size || '22px'}
-            width={this.props.size || '22px'}
+            style={{ ...this.props.style, height: '1em', width: '1em' }}
             draggable="false"
-            {...nativeProps}
           />
         )
         break
       }
-
-      case 'chata-bubbles-outline': {
-        icon = (
-          <div
-            {...nativeProps}
-            style={{ display: 'inline-block', ...this.props.style }}
-          >
-            {bubblesIcon}
-          </div>
-        )
+      case 'chata-bubbles-outlined': {
+        icon = bubblesIcon
+        break
+      }
+      case 'chata-bubbles-filled': {
+        icon = bubblesIconFilled
+        break
+      }
+      case 'chata-bubbles-filled-alt': {
+        icon = bubblesIconFilledAlt
         break
       }
       case 'close': {
-        icon = <MdClose {...nativeProps} />
+        icon = <MdClose />
         break
       }
       case 'close-circle': {
-        icon = <IoIosCloseCircleOutline {...nativeProps} />
+        icon = <IoIosCloseCircleOutline />
         break
       }
       case 'copy': {
-        icon = <MdContentCopy {...nativeProps} />
+        icon = <MdContentCopy />
+        break
+      }
+      case 'dashboard': {
+        icon = <AiOutlineDashboard />
         break
       }
       case 'database': {
-        icon = <FaDatabase {...nativeProps} />
+        icon = <FaDatabase />
         break
       }
       case 'download': {
-        icon = <MdFileDownload {...nativeProps} />
+        icon = <MdFileDownload />
         break
       }
       case 'edit': {
-        icon = <MdEdit {...nativeProps} />
+        icon = <MdEdit />
         break
       }
       case 'eye': {
-        icon = <FaEye {...nativeProps} />
+        icon = <FaEye />
         break
       }
       case 'filter': {
-        icon = <MdFilterList {...nativeProps} />
+        icon = <MdFilterList />
         break
       }
       case 'globe': {
-        icon = <IoIosGlobe {...nativeProps} />
+        icon = <IoIosGlobe />
         break
       }
       case 'info': {
-        icon = <MdInfoOutline {...nativeProps} />
+        icon = <MdInfoOutline />
         break
       }
       case 'light-bulb': {
-        icon = <MdLightbulbOutline {...nativeProps} />
+        icon = <MdLightbulbOutline />
         break
       }
       case 'notification': {
-        icon = <FiBell {...nativeProps} />
+        icon = <FiBell />
         break
       }
       case 'notification-off': {
-        icon = <FiBellOff {...nativeProps} />
+        icon = <FiBellOff />
         break
       }
       case 'numbers': {
-        icon = <TiSortNumerically {...nativeProps} />
+        icon = <TiSortNumerically />
         break
       }
       case 'play': {
-        icon = <MdPlayCircleOutline {...nativeProps} />
+        icon = <MdPlayCircleOutline />
         break
       }
       case 'plus': {
-        icon = <FiPlus {...nativeProps} />
+        icon = <FiPlus />
         break
       }
       case 'search': {
-        icon = <IoIosSearch {...nativeProps} />
+        icon = <IoIosSearch />
         break
       }
       case 'trash': {
-        icon = <FaRegTrashAlt {...nativeProps} />
+        icon = <FaRegTrashAlt />
         break
       }
       case 'warning': {
-        icon = <MdError {...nativeProps} />
+        icon = <MdError />
         break
       }
       default: {
@@ -152,8 +161,9 @@ export default class Icon extends React.Component {
     return (
       <span
         // style={{ verticalAlign: 'middle', lineHeight: '100%' }}
+        {...nativeProps}
         data-test="chata-icon"
-        className="chata-icon"
+        className={`chata-icon ${this.props.className}`}
       >
         {icon}
       </span>
