@@ -181,6 +181,10 @@
 // Edit Modal
 .chata-notification-display-name-input {
   width: 100%;
+  // max-width: 400px;
+}
+.chata-notification-message-input {
+  width: 100%;
 }
 
 // Set delay per List Item, max out at 15 as it shouldnt exceed this

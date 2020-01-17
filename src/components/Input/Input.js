@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
@@ -7,11 +7,13 @@ import './Input.scss'
 
 export default class Input extends React.Component {
   static propTypes = {
-    icon: PropTypes.string
+    icon: PropTypes.string,
+    type: PropTypes.string
   }
 
   static defaultProps = {
-    icon: undefined
+    icon: undefined,
+    type: 'single'
   }
 
   state = {
@@ -46,18 +48,32 @@ export default class Input extends React.Component {
         } ${className} `}
         data-test="chata-input"
       >
-        <input
-          {...nativeProps}
-          ref={r => (this.inputRef = r)}
-          className={`chata-input ${icon ? 'with-icon' : ''}`}
-          onFocus={this.onFocus}
-          onBlur={this.onBlur}
-        />
-        {icon && (
-          <Icon
-            className={`chata-input-icon ${this.state.focused ? ' focus' : ''}`}
-            type={icon}
+        {this.props.type === 'multi' ? (
+          <textarea
+            {...nativeProps}
+            ref={r => (this.inputRef = r)}
+            className="chata-input area"
+            onFocus={this.onFocus}
+            onBlur={this.onBlur}
           />
+        ) : (
+          <Fragment>
+            <input
+              {...nativeProps}
+              ref={r => (this.inputRef = r)}
+              className={`chata-input ${icon ? 'with-icon' : ''}`}
+              onFocus={this.onFocus}
+              onBlur={this.onBlur}
+            />
+            {icon && (
+              <Icon
+                className={`chata-input-icon ${
+                  this.state.focused ? ' focus' : ''
+                }`}
+                type={icon}
+              />
+            )}
+          </Fragment>
         )}
       </div>
     )

@@ -7,7 +7,7 @@
   border-left: 1px solid lightgray;
   margin-left: 10px;
   padding-left: 25px;
-  padding-bottom: 20px;
+  // padding-bottom: 20px;
   transition: all 0.5s ease;
 
   &.complete {
@@ -35,9 +35,16 @@
   font-weight: 500;
   font-size: 15px;
   line-height: 15px;
-  margin-bottom: 15px;
+  // margin-bottom: 15px;
+}
+
+.chata-step-subtitle {
+  font-size: 13px;
+  margin-top: 6px;
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .chata-step-content {
-  padding: 0 15px;
+  padding: 15px;
+  padding-bottom: 25px;
 }

@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
+import isEqual from 'lodash.isequal'
 
 import { Button } from '../../Button'
 import { Radio } from '../../Radio'
@@ -15,6 +16,7 @@ export default class Group extends React.Component {
   static propTypes = {
     groupId: PropTypes.string.isRequired,
     onDelete: PropTypes.func,
+    onUpdate: PropTypes.func,
     disableAddGroupBtn: PropTypes.bool,
     hideTopCondition: PropTypes.bool
   }
@@ -22,7 +24,8 @@ export default class Group extends React.Component {
   static defaultProps = {
     disableAddGroupBtn: false,
     hideTopCondition: false,
-    onDelete: () => {}
+    onDelete: () => {},
+    onUpdate: () => {}
   }
 
   state = {
@@ -35,8 +38,52 @@ export default class Group extends React.Component {
     this.addRule()
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!isEqual(this.state, prevState)) {
+      this.props.onUpdate(this.props.groupId, this.isComplete(), this.getJSON())
+    }
+  }
+
+  getJSON = () => {
+    return this.state.rules.map((rule, i) => {
+      let condition = this.state.andOrSelectValue === 'ALL' ? 'AND' : 'OR'
+      if (i === this.state.rules.length - 1) {
+        condition = 'TERMINATOR'
+      }
+
+      return {
+        term_type: 'group',
+        condition,
+        term_value: rule.termValue
+      }
+    })
+  }
+
+  isComplete = () => {
+    // If we can find one rule that is not complete, then the whole group is incomplete
+    return (
+      this.state.rules.length &&
+      !this.state.rules.find(rule => !rule.isComplete)
+    )
+  }
+
   deleteRuleOrGroup = id => {
     const newRules = this.state.rules.filter(rule => rule.id !== id)
+    this.setState({ rules: newRules })
+  }
+
+  onRuleUpdate = (id, isComplete, termValue) => {
+    const newRules = this.state.rules.map(rule => {
+      if (rule.id === id) {
+        return {
+          ...rule,
+          isComplete,
+          termValue
+        }
+      }
+      return rule
+    })
+
     this.setState({ rules: newRules })
   }
 
@@ -47,11 +94,14 @@ export default class Group extends React.Component {
       {
         id: newId,
         type: 'rule',
-        rule: (
+        isComplete: false,
+        termValue: [],
+        component: (
           <Rule
             ruleId={newId}
             key={newId}
             onDelete={() => this.deleteRuleOrGroup(newId)}
+            onUpdate={this.onRuleUpdate}
             onAdd={this.addRule}
           />
         )
@@ -67,7 +117,9 @@ export default class Group extends React.Component {
       {
         id: newId,
         type: 'group',
-        rule: (
+        isComplete: false,
+        groupJSON: {},
+        component: (
           <Group
             key={newId}
             groupId={newId}
@@ -169,7 +221,7 @@ export default class Group extends React.Component {
           data-test="rule-group"
         >
           {this.state.rules.map(rule => {
-            return rule.rule
+            return rule.component
           })}
           {this.renderAllAnySelect()}
           {this.renderDeleteGroupBtn()}

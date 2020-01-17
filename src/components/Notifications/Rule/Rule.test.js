@@ -16,7 +16,7 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with equired props', () => {
+  test('renders correctly with required props', () => {
     const wrapper = setup()
     const ruleComponent = findByTestAttr(wrapper, 'rule')
     expect(ruleComponent.exists()).toBe(true)

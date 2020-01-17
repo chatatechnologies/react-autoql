@@ -1,5 +1,7 @@
 import React, { Fragment } from 'react'
+import PropTypes from 'prop-types'
 import uuid from 'uuid'
+import isEqual from 'lodash.isequal'
 
 import { Group } from '../GroupCopy'
 import { Button } from '../../Button'
@@ -9,9 +11,13 @@ import { Icon } from '../../Icon'
 import './NotificationRules.scss'
 
 export default class NotificationRules extends React.Component {
-  static propTypes = {}
+  static propTypes = {
+    onUpdate: PropTypes.func
+  }
 
-  static defaultProps = {}
+  static defaultProps = {
+    onUpdate: () => {}
+  }
 
   state = {
     groups: [],
@@ -22,12 +28,42 @@ export default class NotificationRules extends React.Component {
     this.onAddGroup(undefined, true)
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    if (!isEqual(prevState, this.state)) {
+      this.props.onUpdate(this.isComplete(), this.getJSON())
+    }
+  }
+
+  isComplete = () => {
+    return (
+      this.state.groups.length &&
+      !this.state.groups.find(group => !group.isComplete)
+    )
+  }
+
+  getJSON = () => {
+    return this.state.groups.map((group, i) => {
+      let condition = this.state.andOrValue === 'ALL' ? 'AND' : 'OR'
+      if (i === this.state.groups.length - 1) {
+        condition = 'TERMINATOR'
+      }
+
+      return {
+        term_type: 'group',
+        condition,
+        term_value: group.groupJSON
+      }
+    })
+  }
+
   onAddGroup = (e, hideTopCondition) => {
     const newId = uuid.v4()
     const newGroups = [
       ...this.state.groups,
       {
-        id: newId
+        id: newId,
+        isComplete: false,
+        groupJSON: {}
         // element: (
         //   <Group
         //     groupId={newId}
@@ -52,6 +88,21 @@ export default class NotificationRules extends React.Component {
     return this.state.andOrValue
   }
 
+  onGroupUpdate = (id, isComplete, groupJSON) => {
+    const newGroups = this.state.groups.map(group => {
+      if (group.id === id) {
+        return {
+          ...group,
+          isComplete,
+          groupJSON
+        }
+      }
+      return group
+    })
+
+    this.setState({ groups: newGroups })
+  }
+
   render = () => {
     const hasOnlyOneGroup = this.state.groups.length <= 1
 
@@ -60,7 +111,7 @@ export default class NotificationRules extends React.Component {
         {!hasOnlyOneGroup && (
           <div
             className="notification-rule-and-or-select"
-            // style={{ textAlign: 'center' }}
+            style={{ marginBottom: '10px' }}
           >
             Match{' '}
             <Radio
@@ -96,6 +147,7 @@ export default class NotificationRules extends React.Component {
                 groupId={group.id}
                 disableAddGroupBtn={true}
                 onDelete={this.onDeleteGroup}
+                onUpdate={this.onGroupUpdate}
                 hideTopCondition={i === 0}
                 // getTopCondition={this.getAndOrValue}
                 // onAdd={this.onAddGroup}

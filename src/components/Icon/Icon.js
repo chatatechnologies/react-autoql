@@ -11,17 +11,29 @@ import {
   MdFilterList,
   MdInfoOutline,
   MdPlayCircleOutline,
-  MdEdit
+  MdEdit,
+  MdTitle,
+  MdDescription
 } from 'react-icons/md'
 import { FaRegTrashAlt, FaEye, FaDatabase } from 'react-icons/fa'
-import { FiBell, FiBellOff, FiCalendar, FiPlus } from 'react-icons/fi'
+import {
+  FiBell,
+  FiBellOff,
+  FiCalendar,
+  FiPlus,
+  FiFileText
+} from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
-import { AiOutlineDashboard } from 'react-icons/ai'
+import {
+  AiOutlineDashboard,
+  AiOutlineFileText,
+  AiOutlineBook
+} from 'react-icons/ai'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
   bubblesIcon,
@@ -94,6 +106,10 @@ export default class Icon extends React.Component {
         icon = <FaDatabase />
         break
       }
+      case 'description': {
+        icon = <AiOutlineFileText />
+        break
+      }
       case 'download': {
         icon = <MdFileDownload />
         break
@@ -144,6 +160,10 @@ export default class Icon extends React.Component {
       }
       case 'search': {
         icon = <IoIosSearch />
+        break
+      }
+      case 'title': {
+        icon = <AiOutlineBook />
         break
       }
       case 'trash': {

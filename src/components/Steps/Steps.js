@@ -22,6 +22,9 @@ export default class Steps extends React.Component {
                 ${step.complete ? ' complete' : ''}`}
             >
               <div className="chata-step-title">{step.title}</div>
+              {step.subtitle && (
+                <div className="chata-step-subtitle">{step.subtitle}</div>
+              )}
               <div className="chata-step-content">{step.content}</div>
               <div className="chata-step-dot" />
             </div>

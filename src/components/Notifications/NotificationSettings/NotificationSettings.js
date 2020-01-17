@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+// import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
@@ -7,7 +7,7 @@ import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Icon } from '../../Icon'
 import { Checkbox } from '../../Checkbox'
-import { NotificationRules } from '../NotificationRules'
+// import { NotificationRules } from '../NotificationRules'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
 import './NotificationSettings.scss'
@@ -51,24 +51,27 @@ export default class NotificationSettings extends React.Component {
     activeNotification: undefined,
 
     eventBasedToggleValue: undefined,
-    displayNameInput: ''
+    displayNameInput: '',
+    isMessageChecked: true,
+    messageInput: '',
+    isRulesSectionComplete: false
   }
 
-  onItemClick = notification => {
-    const newList = this.state.notificationList.map(n => {
-      if (notification.id === n.id) {
-        return {
-          ...n,
-          expanded: !n.expanded
-        }
-      }
-      return {
-        ...n,
-        expanded: false
-      }
-    })
-    this.setState({ notificationList: newList })
-  }
+  // onItemClick = notification => {
+  //   const newList = this.state.notificationList.map(n => {
+  //     if (notification.id === n.id) {
+  //       return {
+  //         ...n,
+  //         expanded: !n.expanded
+  //       }
+  //     }
+  //     return {
+  //       ...n,
+  //       expanded: false
+  //     }
+  //   })
+  //   this.setState({ notificationList: newList })
+  // }
 
   onEditClick = (e, notification) => {
     e.stopPropagation()
@@ -94,7 +97,11 @@ export default class NotificationSettings extends React.Component {
       this.setState({
         isEditModalVisible: false,
         activeNotification: undefined,
-        isSavingNotification: false
+        isSavingNotification: false,
+
+        eventBasedToggleValue: undefined,
+        displayNameInput: '',
+        isRulesSectionComplete: false
       })
     }, 2000)
   }
@@ -112,52 +119,103 @@ export default class NotificationSettings extends React.Component {
     this.setState({ notificationList: newList })
   }
 
+  onRulesUpdate = (isRulesSectionComplete, rulesJSON) => {
+    this.setState({ isRulesSectionComplete, rulesJSON })
+  }
+
+  renderDisplayNameStep = () => (
+    <div>
+      <Input
+        className="chata-notification-display-name-input"
+        placeholder="Title (max 50 characters)"
+        icon="title"
+        maxLength="50"
+        value={this.state.displayNameInput}
+        onChange={e => this.setState({ displayNameInput: e.target.value })}
+      />
+      {
+        // <Checkbox checked={this.state.isMessageChecked} onChange={e => this.setState({ isMessageChecked: e.target.checked })} />
+      }
+      <Input
+        className="chata-notification-message-input"
+        placeholder="Notification Message (max 200 characters)"
+        // icon="description"
+        type="multi"
+        maxLength="200"
+        value={this.state.messageInput}
+        onChange={e => this.setState({ messageInput: e.target.value })}
+      />
+    </div>
+  )
+
+  renderFrequencyStep = () => {
+    return (
+      <div>
+        {
+          // <Checkbox
+          //   type="switch"
+          //   label="Event Based"
+          //   checked={this.state.eventBasedToggleValue}
+          //   onChange={e =>
+          //     this.setState({ eventBasedToggleValue: e.target.checked })
+          //   }
+          // />
+        }
+      </div>
+    )
+  }
+
+  isScheduleSectionComplete = () => {
+    return true
+  }
+
   getModalContent = () => {
-    const ruleContent =
-      this.state.option === 2 ? (
-        <NotificationRulesCopy />
-      ) : (
-        <NotificationRules />
-      )
     const steps = [
       {
-        // step: 1,
-        title: 'Display Name',
+        title: 'Appearance',
+        content: this.renderDisplayNameStep(),
+        complete: !!this.state.displayNameInput
+      },
+      {
+        title: 'Notification Conditions',
+        subtitle: 'Notify me when the following conditions are met',
+        content: <NotificationRulesCopy onUpdate={this.onRulesUpdate} />,
+        complete: this.state.isRulesSectionComplete
+      },
+      {
+        title: 'Data Return',
+        subtitle: 'Retrieve this data when the notification is clicked',
         content: (
           <div>
+            {
+              //   <div
+              //   style={{
+              //     marginLeft: '8px',
+              //     marginBottom: '5px',
+              //     color: 'rgba(0, 0, 0, 0.5)'
+              //   }}
+              // >
+              //   Run this query when the user expands the notification:
+              // </div>
+            }
+
             <Input
               className="chata-notification-display-name-input"
-              value={this.state.displayNameInput}
+              icon="chata-bubbles-outlined"
+              placeholder="Query"
+              value={this.state.dataReturnQueryInput}
               onChange={e =>
-                this.setState({ displayNameInput: e.target.value })
+                this.setState({ dataReturnQueryInput: e.target.value })
               }
             />
           </div>
         ),
-        complete: !!this.state.displayNameInput
+        complete: !!this.state.dataReturnQueryInput
       },
       {
-        // step: 2,
-        title: 'Conditions',
-        content: ruleContent
-      },
-      {
-        // step: 3,
-        title: 'Schedule',
-        content: (
-          <div>
-            {
-              // <Checkbox
-              //   type="switch"
-              //   label="Event Based"
-              //   checked={this.state.eventBasedToggleValue}
-              //   onChange={e =>
-              //     this.setState({ eventBasedToggleValue: e.target.checked })
-              //   }
-              // />
-            }
-          </div>
-        )
+        title: 'Frequency',
+        content: this.renderFrequencyStep(),
+        complete: this.isScheduleSectionComplete()
       }
     ]
     return steps
@@ -237,10 +295,17 @@ export default class NotificationSettings extends React.Component {
   render = () => {
     return (
       <div data-test="notification-settings">
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-notification-settings-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
+        {this.renderAddNotificationButton()}
         {
-          // this.renderAddNotificationButton()
+          // this.renderABTestButtons()
         }
-        {this.renderABTestButtons()}
         <div className="chata-notification-settings-container">
           {this.state.notificationList.map((notification, i) => {
             return (
@@ -248,7 +313,6 @@ export default class NotificationSettings extends React.Component {
                 key={`chata-notification-setting-item-${i}`}
                 className={`chata-notification-setting-item
                           ${notification.expanded ? ' expanded' : ''}`}
-                // onClick={() => this.onItemClick(notification)}
                 onClick={e => this.onEditClick(e, notification)}
               >
                 <div className="chata-notification-setting-item-header">
@@ -261,20 +325,14 @@ export default class NotificationSettings extends React.Component {
                       checked={notification.enabled}
                       className="chata-notification-enable-checkbox"
                       onClick={e => e.stopPropagation()}
+                      data-tip={notification.enabled ? 'Disable' : 'Enable'}
+                      data-for="chata-notification-settings-tooltip"
                       onChange={e => {
-                        // console.log(e)
-                        // e.stopPropagation()
-                        // e.preventDefault()
                         this.onEnableSwitchChange(notification)
+                        ReactTooltip.hide()
+                        ReactTooltip.rebuild()
                       }}
                     />
-                    {
-                      // <Icon
-                      //   type="edit"
-                      //   className="chata-notification-edit-icon"
-                      //   onClick={e => this.onEditClick(e, notification)}
-                      // />
-                    }
                   </div>
                 </div>
                 {notification.expanded && <div></div>}
