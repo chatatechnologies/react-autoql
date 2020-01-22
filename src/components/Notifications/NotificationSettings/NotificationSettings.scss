@@ -35,7 +35,8 @@
   }
 
   .chata-notification-enable-checkbox {
-    margin-top: 18px;
+    margin-bottom: 4px;
+    margin-right: 8px;
   }
 
   .chata-notification-edit-icon {
@@ -85,4 +86,22 @@
       box-shadow: 0 1px 3px 0px rgba(0, 0, 0, 0.32);
     }
   }
+}
+
+.chata-notification-setting-display-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+  .chata-notification-setting-display-name-title {
+  }
+  .chata-notification-setting-display-name-message {
+    opacity: 0.5;
+  }
+}
+
+.notification-frequency-select {
+  position: absolute;
+  left: 115px;
+  top: 9px;
 }

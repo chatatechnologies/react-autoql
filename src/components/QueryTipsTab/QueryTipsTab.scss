@@ -1,6 +1,10 @@
 .query-tips-page-container {
   height: 100%;
   padding: 10px;
+
+  .chat-bar-input-icon {
+    top: 20px;
+  }
 }
 .query-tips-result-container {
   color: var(--chata-drawer-text-color-primary);

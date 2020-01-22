@@ -34,14 +34,62 @@ export default class Group extends React.Component {
   }
 
   componentDidMount = () => {
-    // Populate first rule in the group
-    this.addRule()
+    if (this.props.initialData) {
+      this.parseJSON(this.props.initialData)
+    } else {
+      // This is a new notification
+      // Populate first rule in the group
+      this.addRule()
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.groupId, this.isComplete(), this.getJSON())
     }
+  }
+
+  parseJSON = rulesJSON => {
+    const rules = rulesJSON.map(rule => {
+      const newId = uuid.v4()
+      if (rule.term_type === 'group') {
+        return {
+          id: newId,
+          type: 'rule',
+          isComplete: false,
+          termValue: [],
+          component: (
+            <Rule
+              ruleId={newId}
+              key={newId}
+              initialData={rule.term_value}
+              onDelete={() => this.deleteRuleOrGroup(newId)}
+              onUpdate={this.onRuleUpdate}
+              onAdd={this.addRule}
+            />
+          )
+        }
+      } else {
+        return {
+          id: newId,
+          type: 'group',
+          isComplete: false,
+          termValue: [],
+          component: (
+            <Group
+              groupId={newId}
+              key={newId}
+              initialData={rule.term_value}
+              onDelete={() => this.deleteRuleOrGroup(newId)}
+            />
+          )
+        }
+      }
+    })
+    this.setState({
+      rules,
+      andOrSelectValue: rulesJSON[0].condition === 'OR' ? 'ANY' : 'ALL'
+    })
   }
 
   getJSON = () => {
@@ -95,7 +143,7 @@ export default class Group extends React.Component {
         id: newId,
         type: 'rule',
         isComplete: false,
-        termValue: [],
+        // initialData: undefined,
         component: (
           <Rule
             ruleId={newId}
@@ -110,7 +158,7 @@ export default class Group extends React.Component {
     this.setState({ rules: newRules })
   }
 
-  onAddGroup = () => {
+  addGroup = () => {
     const newId = uuid.v4()
     const newRules = [
       ...this.state.rules,
@@ -118,7 +166,7 @@ export default class Group extends React.Component {
         id: newId,
         type: 'group',
         isComplete: false,
-        groupJSON: {},
+        initialData: undefined,
         component: (
           <Group
             key={newId}
@@ -152,10 +200,6 @@ export default class Group extends React.Component {
   }
 
   renderDeleteGroupBtn = () => {
-    if (this.props.groupId === 'first-group') {
-      return null
-    }
-
     return (
       <div
         className="chata-notification-group-delete-btn"
@@ -166,13 +210,13 @@ export default class Group extends React.Component {
     )
   }
 
-  renderAddBtn = () => {
-    return (
-      <div className="chata-notification-group-add-btn" onClick={this.addRule}>
-        <Icon type="plus" />
-      </div>
-    )
-  }
+  // renderAddBtn = () => {
+  //   return (
+  //     <div className="chata-notification-group-add-btn" onClick={this.addRule}>
+  //       <Icon type="plus" />
+  //     </div>
+  //   )
+  // }
 
   renderAddBtn = () => {
     return (

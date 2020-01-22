@@ -38,8 +38,9 @@
     flex: 1;
 
     &.hidden {
-      pointer-events: none;
-      visibility: hidden;
+      // pointer-events: none;
+      // visibility: hidden;
+      display: none;
     }
 
     .chata-input-container {

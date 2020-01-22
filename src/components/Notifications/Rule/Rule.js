@@ -18,20 +18,28 @@ export default class Rule extends React.Component {
     ruleId: PropTypes.string.isRequired,
     onAdd: PropTypes.func.isRequired,
     onDelete: PropTypes.func,
-    onUpdate: PropTypes.func
+    onUpdate: PropTypes.func,
+    initialData: PropTypes.arrayOf(PropTypes.shape({}))
   }
 
   static defaultProps = {
     onDelete: () => {},
-    onUpdate: () => {}
+    onUpdate: () => {},
+    initialData: undefined
   }
 
   state = {
     input1Value: '',
     input2Value: '',
     conditionSelectValue: 'GREATER_THAN',
-    secondTermType: 'query',
-    suggestions: []
+    secondTermType: 'query'
+    // suggestions: []
+  }
+
+  componentDidMount = () => {
+    if (this.props.initialData) {
+      this.parseJSON(this.props.initialData)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -43,6 +51,22 @@ export default class Rule extends React.Component {
   componentWillUnmount = () => {
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
+    }
+  }
+
+  parseJSON = initialData => {
+    if (initialData.length === 1) {
+      this.setState({
+        input1Value: initialData[0].term_value,
+        conditionSelectValue: 'EXISTS'
+      })
+    } else if (initialData.length > 1) {
+      this.setState({
+        input1Value: initialData[0].term_value,
+        input2Value: initialData[1].term_value,
+        conditionSelectValue: initialData[0].condition,
+        secondTermType: initialData[1].term_type
+      })
     }
   }
 
@@ -124,9 +148,6 @@ export default class Rule extends React.Component {
             }
           }
 
-          console.log('match array')
-          console.log(suggestionsMatchArray)
-
           sortingArray.sort((a, b) => b.length - a.length)
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
@@ -134,9 +155,6 @@ export default class Rule extends React.Component {
             }
             autoCompleteArray.push(anObject)
           }
-
-          console.log('setting suggestions to')
-          console.log(autoCompleteArray)
 
           this.setState({
             suggestions: autoCompleteArray
@@ -202,8 +220,8 @@ export default class Rule extends React.Component {
           ]}
           value={this.state.conditionSelectValue}
           className="chata-rule-condition-select"
-          onOptionClick={option => {
-            this.setState({ conditionSelectValue: option.value })
+          onChange={value => {
+            this.setState({ conditionSelectValue: value })
           }}
         />
         <div
@@ -241,8 +259,8 @@ export default class Rule extends React.Component {
             ]}
             value={this.state.secondTermType}
             className="chata-rule-term-type-selector"
-            onOptionClick={option => {
-              this.setState({ secondTermType: option.value })
+            onChange={value => {
+              this.setState({ secondTermType: value })
             }}
           />
         </div>

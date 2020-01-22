@@ -1,46 +1,19 @@
 import React, { Fragment } from 'react'
 // import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
+import _get from 'lodash.get'
 
 import { Modal } from '../../Modal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Icon } from '../../Icon'
+import { Select } from '../../Select'
 import { Checkbox } from '../../Checkbox'
 // import { NotificationRules } from '../NotificationRules'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
+import notificationList from './sampleNotifications.js'
 import './NotificationSettings.scss'
-
-const notificationList = [
-  {
-    id: 1,
-    displayName: 'Transactions exceeded $1000',
-    expanded: false,
-    enabled: true,
-    // last_triggered: '2020-01-14T18:28:56.520Z',
-    history: [],
-    logic: {}
-  },
-  {
-    id: 2,
-    displayName: 'Over budget this month',
-    expanded: false,
-    enabled: true,
-    // last_triggered: '2020-01-10T16:40:56.520Z',
-    history: [],
-    logic: {}
-  },
-  {
-    id: 3,
-    displayName: 'Balance fell below $500',
-    expanded: false,
-    enabled: false,
-    // last_triggered: '2020-01-02T12:10:56.520Z',
-    history: [],
-    logic: {}
-  }
-]
 
 export default class NotificationSettings extends React.Component {
   static propTypes = {}
@@ -51,10 +24,16 @@ export default class NotificationSettings extends React.Component {
     activeNotification: undefined,
 
     eventBasedToggleValue: undefined,
-    displayNameInput: '',
+    titleInput: '',
     isMessageChecked: true,
     messageInput: '',
-    isRulesSectionComplete: false
+    isRulesSectionComplete: false,
+    rulesJSON: [],
+    dataReturnQueryInput: '',
+    isDataReturnDirty: false,
+    frequencyCategorySelectValue: 'once',
+    frequencySelectValue: 'month',
+    everyCheckboxValue: false
   }
 
   // onItemClick = notification => {
@@ -77,14 +56,34 @@ export default class NotificationSettings extends React.Component {
     e.stopPropagation()
     this.setState({
       isEditModalVisible: true,
-      activeNotification: notification
+      activeNotification: notification,
+
+      titleInput: notification.title,
+      messageInput: notification.message,
+      dataReturnQueryInput: notification.dataReturnQuery,
+      isDataReturnDirty: true
+
+      // frequencyCategorySelectValue: 'once',
+      // frequencySelectValue: 'month',
+      // everyCheckboxValue: false
     })
   }
 
   onAddClick = () => {
     this.setState({
       isEditModalVisible: true,
-      activeNotification: {}
+      activeNotification: undefined,
+      eventBasedToggleValue: undefined,
+      titleInput: '',
+      isMessageChecked: true,
+      messageInput: '',
+      isRulesSectionComplete: false,
+      rulesJSON: [],
+      dataReturnQueryInput: '',
+      isDataReturnDirty: false,
+      frequencyCategorySelectValue: 'once',
+      frequencySelectValue: 'month',
+      everyCheckboxValue: false
     })
   }
 
@@ -100,7 +99,7 @@ export default class NotificationSettings extends React.Component {
         isSavingNotification: false,
 
         eventBasedToggleValue: undefined,
-        displayNameInput: '',
+        titleInput: '',
         isRulesSectionComplete: false
       })
     }, 2000)
@@ -123,15 +122,15 @@ export default class NotificationSettings extends React.Component {
     this.setState({ isRulesSectionComplete, rulesJSON })
   }
 
-  renderDisplayNameStep = () => (
+  rendertitleStep = () => (
     <div>
       <Input
         className="chata-notification-display-name-input"
         placeholder="Title (max 50 characters)"
         icon="title"
         maxLength="50"
-        value={this.state.displayNameInput}
-        onChange={e => this.setState({ displayNameInput: e.target.value })}
+        value={this.state.titleInput}
+        onChange={e => this.setState({ titleInput: e.target.value })}
       />
       {
         // <Checkbox checked={this.state.isMessageChecked} onChange={e => this.setState({ isMessageChecked: e.target.checked })} />
@@ -161,6 +160,71 @@ export default class NotificationSettings extends React.Component {
           //   }
           // />
         }
+        Notify me{' '}
+        <Select
+          options={[
+            { value: 'once', label: 'Once, when this happens' },
+            { value: 'every', label: 'Every time this happens' }
+          ]}
+          value={this.state.frequencyCategorySelectValue}
+          onChange={value =>
+            this.setState({ frequencyCategorySelectValue: value })
+          }
+        />
+        {this.state.frequencyCategorySelectValue === 'once' && (
+          <div style={{ paddingTop: '14px', position: 'relative' }}>
+            <Checkbox
+              label="Repeat every"
+              checked={this.state.everyCheckboxValue}
+              onChange={e => {
+                this.setState({ everyCheckboxValue: e.target.checked })
+              }}
+            />
+            {this.state.everyCheckboxValue && (
+              <Select
+                options={[
+                  { value: 'day', label: 'day' },
+                  { value: 'week', label: 'week' },
+                  { value: 'month', label: 'month' },
+                  { value: 'year', label: 'year' }
+                ]}
+                className="notification-frequency-select"
+                value={this.state.frequencySelectValue}
+                onChange={value =>
+                  this.setState({ frequencySelectValue: value })
+                }
+              />
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  renderDataReturnStep = () => {
+    return (
+      <div>
+        {
+          //   <div
+          //   style={{
+          //     marginLeft: '8px',
+          //     marginBottom: '5px',
+          //     color: 'rgba(0, 0, 0, 0.5)'
+          //   }}
+          // >
+          //   Run this query when the user expands the notification:
+          // </div>
+        }
+
+        <Input
+          className="chata-notification-display-name-input"
+          icon="chata-bubbles-outlined"
+          placeholder="Query"
+          value={this.state.dataReturnQueryInput}
+          onChange={e =>
+            this.setState({ dataReturnQueryInput: e.target.value })
+          }
+        />
       </div>
     )
   }
@@ -173,43 +237,25 @@ export default class NotificationSettings extends React.Component {
     const steps = [
       {
         title: 'Appearance',
-        content: this.renderDisplayNameStep(),
-        complete: !!this.state.displayNameInput
+        content: this.rendertitleStep(),
+        complete: !!this.state.titleInput
       },
       {
         title: 'Notification Conditions',
         subtitle: 'Notify me when the following conditions are met',
-        content: <NotificationRulesCopy onUpdate={this.onRulesUpdate} />,
+        content: (
+          <NotificationRulesCopy
+            onUpdate={this.onRulesUpdate}
+            notificationData={_get(this.state.activeNotification, 'logic')}
+          />
+        ),
         complete: this.state.isRulesSectionComplete
       },
       {
         title: 'Data Return',
-        subtitle: 'Retrieve this data when the notification is clicked',
-        content: (
-          <div>
-            {
-              //   <div
-              //   style={{
-              //     marginLeft: '8px',
-              //     marginBottom: '5px',
-              //     color: 'rgba(0, 0, 0, 0.5)'
-              //   }}
-              // >
-              //   Run this query when the user expands the notification:
-              // </div>
-            }
-
-            <Input
-              className="chata-notification-display-name-input"
-              icon="chata-bubbles-outlined"
-              placeholder="Query"
-              value={this.state.dataReturnQueryInput}
-              onChange={e =>
-                this.setState({ dataReturnQueryInput: e.target.value })
-              }
-            />
-          </div>
-        ),
+        subtitle:
+          'Return the data from this query when the notification is triggered',
+        content: this.renderDataReturnStep(),
         complete: !!this.state.dataReturnQueryInput
       },
       {
@@ -317,7 +363,13 @@ export default class NotificationSettings extends React.Component {
               >
                 <div className="chata-notification-setting-item-header">
                   <div className="chata-notification-setting-display-name">
-                    {notification.displayName}
+                    <span className="chata-notification-setting-display-name-title">
+                      {notification.title}
+                    </span>
+                    <span className="chata-notification-setting-display-name-message">
+                      {' '}
+                      - {notification.message}
+                    </span>
                   </div>
                   <div className="chata-notification-setting-actions">
                     <Checkbox

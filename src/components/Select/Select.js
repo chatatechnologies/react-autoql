@@ -11,14 +11,14 @@ export default class Select extends React.Component {
   ID = uuid.v4()
 
   static propTypes = {
-    onOptionClick: PropTypes.func,
+    onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     value: PropTypes.string,
     label: PropTypes.string
   }
 
   static defaultProps = {
-    onOptionClick: () => {},
+    onChange: () => {},
     options: [],
     value: undefined,
     label: undefined
@@ -63,7 +63,7 @@ export default class Select extends React.Component {
                       key={`select-option-${this.ID}-${option.value}`}
                       onClick={() => {
                         this.setState({ isOpen: false })
-                        this.props.onOptionClick(option)
+                        this.props.onChange(option.value)
                       }}
                       data-tip={option.tooltip || null}
                       data-for={`select-tooltip-${this.ID}`}

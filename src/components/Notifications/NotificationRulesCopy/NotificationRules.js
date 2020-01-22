@@ -25,7 +25,16 @@ export default class NotificationRules extends React.Component {
   }
 
   componentDidMount = () => {
-    this.onAddGroup(undefined, true)
+    if (this.props.notificationData) {
+      this.props.notificationData.map(groupItem => {
+        this.addGroup({
+          initialData: groupItem.term_value,
+          isComplete: this.isComplete(groupItem)
+        })
+      })
+    } else {
+      this.addGroup({})
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -56,14 +65,14 @@ export default class NotificationRules extends React.Component {
     })
   }
 
-  onAddGroup = (e, hideTopCondition) => {
-    const newId = uuid.v4()
+  addGroup = ({ initialData, isComplete = false, id }) => {
+    const newId = id || uuid.v4()
     const newGroups = [
       ...this.state.groups,
       {
         id: newId,
-        isComplete: false,
-        groupJSON: {}
+        isComplete,
+        initialData
         // element: (
         //   <Group
         //     groupId={newId}
@@ -71,7 +80,7 @@ export default class NotificationRules extends React.Component {
         //     onDelete={this.onDeleteGroup}
         //     hideTopCondition={!!hideTopCondition}
         //     getTopCondition={this.getAndOrValue}
-        //     // onAdd={this.onAddGroup}
+        //     // onAdd={this.addGroup}
         //   />
         // )
       }
@@ -140,26 +149,28 @@ export default class NotificationRules extends React.Component {
             // <div className="notification-rules-container">
             // </div>
           }
-          {this.state.groups.map((group, i) => {
-            return (
-              <Group
-                key={group.id}
-                groupId={group.id}
-                disableAddGroupBtn={true}
-                onDelete={this.onDeleteGroup}
-                onUpdate={this.onGroupUpdate}
-                hideTopCondition={i === 0}
-                // getTopCondition={this.getAndOrValue}
-                // onAdd={this.onAddGroup}
-                topCondition={this.state.andOrValue}
-                onlyGroup={hasOnlyOneGroup}
-              />
-            )
-          })}
+          {this.state.groups.length &&
+            this.state.groups.map((group, i) => {
+              return (
+                <Group
+                  key={group.id}
+                  groupId={group.id}
+                  disableAddGroupBtn={true}
+                  onDelete={this.onDeleteGroup}
+                  onUpdate={this.onGroupUpdate}
+                  hideTopCondition={i === 0}
+                  // getTopCondition={this.getAndOrValue}
+                  // onAdd={this.addGroup}
+                  topCondition={this.state.andOrValue}
+                  onlyGroup={hasOnlyOneGroup}
+                  initialData={group.initialData}
+                />
+              )
+            })}
           <span>
             <Button
               className="notification-rule-add-btn-outer"
-              onClick={this.onAddGroup}
+              onClick={this.addGroup}
             >
               <Icon type="plus" /> Add Condition Group
             </Button>

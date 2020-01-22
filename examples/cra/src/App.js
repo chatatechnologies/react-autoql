@@ -872,7 +872,7 @@ export default class App extends Component {
     )
   }
 
-  renderChatDrawerPage = () => {
+  renderChatDrawer = () => {
     let handleImage
     if (
       this.state.isAuthenticated &&
@@ -903,66 +903,74 @@ export default class App extends Component {
         : this.state.darkAccentColor
 
     return (
+      <ChatDrawer
+        token={localStorage.getItem('jwtToken')}
+        apiKey={this.state.apiKey} // required if demo is false
+        customerId={this.state.customerId} // required if demo is false
+        userId={this.state.userId} // required if demo is false
+        domain={this.state.domain}
+        username={this.state.username}
+        key={this.state.componentKey}
+        isVisible={this.state.isVisible}
+        onHandleClick={() =>
+          this.setState({ isVisible: !this.state.isVisible })
+        }
+        onMaskClick={() => this.setState({ isVisible: false })}
+        showHandle={this.state.showHandle}
+        placement={
+          this.state.currentPage === 'drawer' ||
+          this.state.currentPage === 'dashboard'
+            ? this.state.placement
+            : 'bottom'
+        }
+        customerName={this.state.customerName}
+        introMessage={this.state.introMessage}
+        showMask={this.state.showMask}
+        shiftScreen={this.state.shiftScreen}
+        enableAutocomplete={this.state.enableAutocomplete}
+        enableVoiceRecord={this.state.enableVoiceRecord}
+        clearOnClose={this.state.clearOnClose}
+        width={this.state.width}
+        height={this.state.height}
+        title={this.state.title}
+        enableSafetyNet={this.state.enableSafetyNet}
+        disableDrilldowns={this.state.disableDrilldowns}
+        theme={this.state.theme}
+        accentColor={
+          this.state.theme === 'light' ? lightAccentColor : darkAccentColor
+        }
+        fontFamily={this.state.fontFamily}
+        maxMessages={this.state.maxMessages}
+        demo={this.state.demo}
+        debug={this.state.debug}
+        test={this.state.test}
+        dataFormatting={{
+          currencyCode: this.state.currencyCode,
+          languageCode: this.state.languageCode,
+          currencyDecimals: this.state.currencyDecimals,
+          quantityDecimals: this.state.quantityDecimals,
+          comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
+          monthYearFormat: this.state.monthFormat,
+          dayMonthYearFormat: this.state.dayFormat
+        }}
+        chartColors={this.state.chartColors}
+        handleImage={handleImage}
+        enableQueryTipsTab={this.state.enableQueryTipsTab}
+        enableColumnEditor={this.state.enableColumnEditor}
+        // inputStyles
+        // autocompleteStyles
+        // handleStyles={{ right: '25px' }}
+      />
+    )
+  }
+
+  renderChatDrawerPage = () => {
+    return (
       <div className="test-page-container">
         {
           // this.renderChatBarAndResponse()
         }
         {this.renderPropOptions()}
-        <ChatDrawer
-          token={localStorage.getItem('jwtToken')}
-          apiKey={this.state.apiKey} // required if demo is false
-          customerId={this.state.customerId} // required if demo is false
-          userId={this.state.userId} // required if demo is false
-          domain={this.state.domain}
-          username={this.state.username}
-          key={this.state.componentKey}
-          isVisible={this.state.isVisible}
-          onHandleClick={() =>
-            this.setState({ isVisible: !this.state.isVisible })
-          }
-          onMaskClick={() => this.setState({ isVisible: false })}
-          showHandle={this.state.showHandle}
-          placement={this.state.placement}
-          customerName={this.state.customerName}
-          introMessage={this.state.introMessage}
-          showMask={this.state.showMask}
-          shiftScreen={this.state.shiftScreen}
-          enableAutocomplete={this.state.enableAutocomplete}
-          enableVoiceRecord={this.state.enableVoiceRecord}
-          clearOnClose={this.state.clearOnClose}
-          width={this.state.width}
-          height={this.state.height}
-          title={this.state.title}
-          enableSafetyNet={this.state.enableSafetyNet}
-          disableDrilldowns={this.state.disableDrilldowns}
-          theme={this.state.theme}
-          accentColor={
-            this.state.theme === 'light' ? lightAccentColor : darkAccentColor
-          }
-          fontFamily={this.state.fontFamily}
-          maxMessages={this.state.maxMessages}
-          demo={this.state.demo}
-          debug={this.state.debug}
-          test={this.state.test}
-          dataFormatting={{
-            currencyCode: this.state.currencyCode,
-            languageCode: this.state.languageCode,
-            currencyDecimals: this.state.currencyDecimals,
-            quantityDecimals: this.state.quantityDecimals,
-            comparisonDisplay: this.state.comparisonDisplay
-              ? 'PERCENT'
-              : 'RATIO',
-            monthYearFormat: this.state.monthFormat,
-            dayMonthYearFormat: this.state.dayFormat
-          }}
-          chartColors={this.state.chartColors}
-          handleImage={handleImage}
-          enableQueryTipsTab={this.state.enableQueryTipsTab}
-          enableColumnEditor={this.state.enableColumnEditor}
-          // inputStyles
-          // autocompleteStyles
-          // handleStyles={{ right: '25px' }}
-        />
       </div>
     )
   }
@@ -1340,6 +1348,7 @@ export default class App extends Component {
       <Fragment>
         {this.renderUIOverlay()}
         {this.renderNavMenu()}
+        {this.renderChatDrawer()}
         {pageToRender}
       </Fragment>
     )

@@ -175,6 +175,10 @@ export default class ResponseRenderer extends React.Component {
     ReactTooltip.rebuild()
   }
 
+  componentWillUnmount = () => {
+    ReactTooltip.hide()
+  }
+
   setResponseData = () => {
     // Initialize ID's of tables
     this.tableID = uuid.v4()

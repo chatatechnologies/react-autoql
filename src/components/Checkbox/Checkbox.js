@@ -53,8 +53,8 @@ export default class Checkbox extends React.Component {
 
     const inputClassname = `
       chata-checkbox__input
-      ${type === 'switch' && 'chata-checkbox--switch__input'}
-      ${hasError && 'chata-checkbox--has-error__input'}
+      ${type === 'switch' ? 'chata-checkbox--switch__input' : ''}
+      ${hasError ? 'chata-checkbox--has-error__input' : ''}
     `
 
     const labelClassname = `
@@ -63,7 +63,10 @@ export default class Checkbox extends React.Component {
     `
 
     return (
-      <div style={{ display: 'inline-block' }} data-test="chata-checkbox">
+      <div
+        style={{ display: 'inline-block', verticalAlign: 'middle' }}
+        data-test="chata-checkbox"
+      >
         <div className={`${checkboxClassname} ${this.props.className}`}>
           <input
             {...inputProps}

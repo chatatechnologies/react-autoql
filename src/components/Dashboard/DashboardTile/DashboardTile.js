@@ -203,8 +203,8 @@ export default class DashboardTile extends React.Component {
         ]}
         value={this.state.languageSelectValue}
         className="chata-sql-selector"
-        onOptionClick={option => {
-          this.setState({ languageSelectValue: option.value })
+        onChange={value => {
+          this.setState({ languageSelectValue: value })
         }}
       />
     )
