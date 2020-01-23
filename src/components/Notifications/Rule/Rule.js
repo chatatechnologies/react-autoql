@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
+import uuid from 'uuid'
 
 import { Input } from '../../Input'
 import { Select } from '../../Select'
@@ -39,6 +40,10 @@ export default class Rule extends React.Component {
   componentDidMount = () => {
     if (this.props.initialData) {
       this.parseJSON(this.props.initialData)
+    } else {
+      // Set new id's for term 1 and 2
+      this.TERM_ID_1 = uuid.v4()
+      this.TERM_ID_2 = uuid.v4()
     }
   }
 
@@ -56,11 +61,15 @@ export default class Rule extends React.Component {
 
   parseJSON = initialData => {
     if (initialData.length === 1) {
+      this.TERM_ID_1 = initialData[0].id
+      this.TERM_ID_2 = uuid.v4()
       this.setState({
         input1Value: initialData[0].term_value,
         conditionSelectValue: 'EXISTS'
       })
     } else if (initialData.length > 1) {
+      this.TERM_ID_1 = initialData[0].id
+      this.TERM_ID_2 = initialData[1].id
       this.setState({
         input1Value: initialData[0].term_value,
         input2Value: initialData[1].term_value,
@@ -74,6 +83,7 @@ export default class Rule extends React.Component {
     if (this.state.conditionSelectValue === 'EXISTS') {
       return [
         {
+          id: this.TERM_ID_1,
           term_type: 'query',
           condition: this.state.conditionSelectValue,
           term_value: this.state.input1Value
@@ -83,11 +93,13 @@ export default class Rule extends React.Component {
 
     return [
       {
+        id: this.TERM_ID_1,
         term_type: 'query',
         condition: this.state.conditionSelectValue,
         term_value: this.state.input1Value
       },
       {
+        id: this.TERM_ID_2,
         term_type: this.state.secondTermType,
         condition: 'TERMINATOR',
         term_value: this.state.input2Value

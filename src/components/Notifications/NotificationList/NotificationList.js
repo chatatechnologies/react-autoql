@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import dayjs from 'dayjs'
+import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
 
 import { Checkbox } from '../../Checkbox'
@@ -8,6 +9,8 @@ import { ResponseRenderer } from '../../ResponseRenderer'
 import { Icon } from '../../Icon'
 
 import './NotificationList.scss'
+
+dayjs.extend(advancedFormat)
 
 const sampleNotificationData = {
   data: {
@@ -154,9 +157,9 @@ export default class NotificationList extends React.Component {
     } else if (day === yesterday) {
       return `Yesterday at ${time}`
     } else if (dayjs().isSame(timestamp, 'year')) {
-      return `${dayjs(timestamp).format('MMMM D')} at ${time}`
+      return `${dayjs(timestamp).format('MMMM Do')} at ${time}`
     }
-    return `${dayjs(timestamp).format('MMMM D, YYYY')} at ${time}`
+    return `${dayjs(timestamp).format('MMMM Do, YYYY')} at ${time}`
   }
 
   renderDismissAllButton = () => (

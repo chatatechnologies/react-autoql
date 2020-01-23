@@ -8,14 +8,17 @@ export default [
     history: [],
     logic: [
       {
+        id: 11,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 111,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 111,
                 term_type: 'query',
                 condition: 'EXISTS',
                 term_value: 'All bank transactions over 1000'
@@ -25,7 +28,13 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'All bank transactions over 1000 today'
+    data_return_query: 'All bank transactions over 1000 today',
+    notification_type: 'SCHEDULED',
+    reset_period: null,
+    cycle: 'YEAR',
+    month_number: [7],
+    day_number: [1],
+    run_times: ['9:00']
   },
   {
     id: 2,
@@ -37,19 +46,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 22,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 222,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 2221,
                 term_type: 'query',
                 condition: 'LESS_THAN',
                 term_value: 'total bank balance'
               },
               {
+                id: 2222,
                 term_type: 'constant',
                 condition: 'TERMINATOR',
                 term_value: '50000'
@@ -59,7 +72,12 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'total bank balance'
+    data_return_query: 'total bank balance',
+    notification_type: 'SCHEDULED',
+    reset_period: null,
+    cycle: 'MONTH',
+    day_number: [15, -1],
+    run_times: ['9:00']
   },
   {
     id: 3,
@@ -71,19 +89,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 33,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 333,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 3331,
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'Total credit card balance'
               },
               {
+                id: 3332,
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'Credit card limit'
@@ -93,7 +115,12 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'Total credit card balance'
+    data_return_query: 'Total credit card balance',
+    notification_type: 'SINGLE_EVENT',
+    reset_period: 'MONTH',
+    cycle: 'WEEK',
+    day_number: [0, 1, 2, 3, 4, 5, 6],
+    run_times: []
   },
   {
     id: 4,
@@ -105,19 +132,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 44,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 444,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 4441,
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'Total credit card balance'
               },
               {
+                id: 4442,
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: '80% of Credit card limit'
@@ -127,7 +158,12 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'Total credit card balance'
+    data_return_query: 'Total credit card balance',
+    notification_type: 'REPEAT_EVENT',
+    reset_period: null,
+    cycle: 'WEEK',
+    day_number: [1, 2, 3, 4, 5],
+    run_times: []
   },
   {
     id: 5,
@@ -139,19 +175,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 55,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 555,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 5551,
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total credits'
               },
               {
+                id: 5552,
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'total debits'
@@ -161,7 +201,12 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'Total credits and total debits'
+    data_return_query: 'Total credits and total debits',
+    notification_type: 'REPEAT_EVENT',
+    reset_period: null,
+    cycle: 'WEEK',
+    day_number: [1, 2, 3, 4, 5],
+    run_times: []
   },
   {
     id: 6,
@@ -173,19 +218,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 66,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            id: 666,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 6661,
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total debits'
               },
               {
+                id: 6662,
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: '90% total credits'
@@ -195,7 +244,12 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'Total debits and total credits'
+    data_return_query: 'Total debits and total credits',
+    notification_type: 'REPEAT_EVENT',
+    reset_period: null,
+    cycle: 'WEEK',
+    day_number: [1, 2, 3, 4, 5],
+    run_times: []
   },
   {
     id: 7,
@@ -207,19 +261,23 @@ export default [
     history: [],
     logic: [
       {
+        id: 77,
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
+            i: 777,
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
+                id: 7771,
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total credits this month'
               },
               {
+                id: 7772,
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'total credits last month'
@@ -229,6 +287,11 @@ export default [
         ]
       }
     ],
-    dataReturnQuery: 'total credits this month vs total credits last month'
+    data_return_query: 'total credits this month vs total credits last month',
+    notification_type: 'REPEAT_EVENT',
+    reset_period: null,
+    cycle: 'WEEK',
+    day_number: [1, 2, 3, 4, 5],
+    run_times: []
   }
 ]
