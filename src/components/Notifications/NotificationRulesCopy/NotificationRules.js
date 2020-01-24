@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
+import _get from 'lodash.get'
 
 import { Group } from '../GroupCopy'
 import { Button } from '../../Button'
@@ -20,6 +21,7 @@ export default class NotificationRules extends React.Component {
   }
 
   state = {
+    // outerId: _get(this.props.notificationData, '[0].id', uuid.v4()),
     groups: [],
     andOrValue: 'ALL'
   }
@@ -29,7 +31,8 @@ export default class NotificationRules extends React.Component {
       this.props.notificationData.map(groupItem => {
         this.addGroup({
           initialData: groupItem.term_value,
-          isComplete: this.isComplete(groupItem)
+          isComplete: this.isComplete(groupItem),
+          id: groupItem.id
         })
       })
     } else {
@@ -39,6 +42,7 @@ export default class NotificationRules extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(prevState, this.state)) {
+      console.log(this.getJSON())
       this.props.onUpdate(this.isComplete(), this.getJSON())
     }
   }
@@ -58,6 +62,9 @@ export default class NotificationRules extends React.Component {
       }
 
       return {
+        // id: this.state.outerId,
+        // id: _get(this.props.notificationData, '[0].id', uuid.v4()),
+        id: group.id || uuid.v4(),
         term_type: 'group',
         condition,
         term_value: group.groupJSON
@@ -149,7 +156,7 @@ export default class NotificationRules extends React.Component {
             // <div className="notification-rules-container">
             // </div>
           }
-          {this.state.groups.length &&
+          {!!this.state.groups.length &&
             this.state.groups.map((group, i) => {
               return (
                 <Group

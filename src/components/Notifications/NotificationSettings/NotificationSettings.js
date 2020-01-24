@@ -9,10 +9,14 @@ import { Input } from '../../Input'
 import { Icon } from '../../Icon'
 import { Select } from '../../Select'
 import { Checkbox } from '../../Checkbox'
-// import { NotificationRules } from '../NotificationRules'
+import { WeekSelect } from '../../DateSelect/WeekSelect'
+import { MonthSelect } from '../../DateSelect/MonthSelect'
+import { YearSelect } from '../../DateSelect/YearSelect'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
-import notificationList from './sampleNotifications.js'
+import notificationList from './sampleNotifications'
+import { getScheduleDescription } from '../helpers'
+
 import './NotificationSettings.scss'
 
 export default class NotificationSettings extends React.Component {
@@ -31,9 +35,28 @@ export default class NotificationSettings extends React.Component {
     rulesJSON: [],
     dataReturnQueryInput: '',
     isDataReturnDirty: false,
-    frequencyCategorySelectValue: 'once',
-    frequencySelectValue: 'month',
+    frequencyCategorySelectValue: 'SINGLE_EVENT',
+    frequencySelectValue: 'MONTH',
+    weekSelectValue: [2],
+    monthSelectValue: [1],
+    yearSelectValue: [1],
     everyCheckboxValue: false
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (
+      this.state.frequencyCategorySelectValue !==
+      prevState.frequencyCategorySelectValue
+    ) {
+      // Reset checkbox and frequency select values
+      this.setState({
+        everyCheckboxValue: false,
+        frequencySelectValue: 'MONTH',
+        weekSelectValue: [2],
+        monthSelectValue: [1],
+        yearSelectValue: [1]
+      })
+    }
   }
 
   // onItemClick = notification => {
@@ -60,7 +83,7 @@ export default class NotificationSettings extends React.Component {
 
       titleInput: notification.title,
       messageInput: notification.message,
-      dataReturnQueryInput: notification.dataReturnQuery,
+      dataReturnQueryInput: notification.data_return_query,
       isDataReturnDirty: true
 
       // frequencyCategorySelectValue: 'once',
@@ -82,7 +105,7 @@ export default class NotificationSettings extends React.Component {
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
       frequencyCategorySelectValue: 'once',
-      frequencySelectValue: 'month',
+      frequencySelectValue: 'MONTH',
       everyCheckboxValue: false
     })
   }
@@ -147,56 +170,157 @@ export default class NotificationSettings extends React.Component {
     </div>
   )
 
+  renderFrequencySelector = options => {
+    return (
+      <Select
+        options={options}
+        className="notification-frequency-select"
+        value={this.state.frequencySelectValue}
+        onChange={value => this.setState({ frequencySelectValue: value })}
+      />
+    )
+  }
+
+  renderWeekSelector = () => (
+    <WeekSelect
+      multiSelect
+      value={this.state.weekSelectValue}
+      onChange={value => this.setState({ weekSelectValue: value })}
+    />
+  )
+
+  renderMonthSelector = () => (
+    <MonthSelect
+      multiSelect
+      value={this.state.monthSelectValue}
+      onChange={value => this.setState({ monthSelectValue: value })}
+    />
+  )
+
+  renderYearSelector = () => (
+    <YearSelect
+      multiSelect
+      value={this.state.yearSelectValue}
+      onChange={value => this.setState({ yearSelectValue: value })}
+    />
+  )
+
+  renderDateSelector = type => {
+    let selector
+    switch (type) {
+      case 'WEEK': {
+        selector = this.renderWeekSelector()
+        break
+      }
+      case 'MONTH': {
+        selector = this.renderMonthSelector()
+        break
+      }
+      case 'YEAR': {
+        selector = this.renderYearSelector()
+        break
+      }
+      default: {
+        return null
+      }
+    }
+
+    return <div className="frequency-date-select-container">{selector}</div>
+  }
+
+  renderRepeatCheckbox = label => {
+    return (
+      <Checkbox
+        label={label}
+        className="frequency-repeat-checkbox"
+        checked={this.state.everyCheckboxValue}
+        onChange={e => {
+          this.setState({ everyCheckboxValue: e.target.checked })
+        }}
+      />
+    )
+  }
+
+  renderFrequencyDescription = () => {
+    let selection
+    if (this.state.frequencySelectValue === 'WEEK') {
+      selection = this.state.weekSelectValue
+    } else if (this.state.frequencySelectValue === 'MONTH') {
+      selection = this.state.monthSelectValue
+    } else if (this.state.frequencySelectValue === 'YEAR') {
+      selection = this.state.yearSelectValue
+    }
+
+    const description = getScheduleDescription(
+      this.state.frequencyCategorySelectValue,
+      this.state.frequencySelectValue,
+      this.state.everyCheckboxValue,
+      selection
+    )
+
+    return (
+      <div className="frequency-description-box">
+        <div className="frequency-description-title">Description:</div>
+        {description}
+      </div>
+    )
+  }
+
   renderFrequencyStep = () => {
     return (
-      <div>
-        {
-          // <Checkbox
-          //   type="switch"
-          //   label="Event Based"
-          //   checked={this.state.eventBasedToggleValue}
-          //   onChange={e =>
-          //     this.setState({ eventBasedToggleValue: e.target.checked })
-          //   }
-          // />
-        }
-        Notify me{' '}
-        <Select
-          options={[
-            { value: 'once', label: 'Once, when this happens' },
-            { value: 'every', label: 'Every time this happens' }
-          ]}
-          value={this.state.frequencyCategorySelectValue}
-          onChange={value =>
-            this.setState({ frequencyCategorySelectValue: value })
-          }
-        />
-        {this.state.frequencyCategorySelectValue === 'once' && (
-          <div style={{ paddingTop: '14px', position: 'relative' }}>
-            <Checkbox
-              label="Repeat every"
-              checked={this.state.everyCheckboxValue}
-              onChange={e => {
-                this.setState({ everyCheckboxValue: e.target.checked })
-              }}
-            />
-            {this.state.everyCheckboxValue && (
-              <Select
-                options={[
-                  { value: 'day', label: 'day' },
-                  { value: 'week', label: 'week' },
-                  { value: 'month', label: 'month' },
-                  { value: 'year', label: 'year' }
-                ]}
-                className="notification-frequency-select"
-                value={this.state.frequencySelectValue}
-                onChange={value =>
-                  this.setState({ frequencySelectValue: value })
-                }
-              />
-            )}
-          </div>
-        )}
+      <div className="notification-frequency-step">
+        <div className="frequency-settings-container">
+          Notify me{' '}
+          <Select
+            options={[
+              { value: 'SINGLE_EVENT', label: 'Once, when this happens' },
+              { value: 'REPEAT_EVENT', label: 'Every time this happens' },
+              { value: 'SCHEDULE', label: 'On a schedule' }
+            ]}
+            value={this.state.frequencyCategorySelectValue}
+            onChange={value =>
+              this.setState({ frequencyCategorySelectValue: value })
+            }
+          />
+          {this.state.frequencyCategorySelectValue === 'SINGLE_EVENT' && (
+            <div className="frequency-category-select">
+              {this.renderRepeatCheckbox('Repeat')}
+              {this.state.everyCheckboxValue && (
+                <Fragment>
+                  {this.renderFrequencySelector([
+                    { value: 'DAY', label: 'Daily' },
+                    { value: 'WEEK', label: 'Weekly' },
+                    { value: 'MONTH', label: 'Monthly' },
+                    { value: 'YEAR', label: 'Yearly' }
+                  ])}
+                  {this.state.frequencySelectValue !== 'DAY' && (
+                    <span className="frequency-repeat-follow-text"> on:</span>
+                  )}
+                  {this.renderDateSelector(this.state.frequencySelectValue)}
+                </Fragment>
+              )}
+            </div>
+          )}
+          {this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
+            <div className="frequency-category-select">
+              {this.renderRepeatCheckbox('Only on')}
+              {this.state.everyCheckboxValue && (
+                <Fragment>
+                  {this.renderFrequencySelector([
+                    { value: 'WEEK', label: 'Certain days of the week' },
+                    { value: 'MONTH', label: 'Certain days of the month' },
+                    { value: 'YEAR', label: 'Certain months of the year' }
+                  ])}
+                  {this.state.frequencySelectValue !== 'DAY' &&
+                    this.renderDateSelector(this.state.frequencySelectValue)}
+                </Fragment>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="frequency-description-box-container">
+          {this.renderFrequencyDescription()}
+        </div>
       </div>
     )
   }
@@ -204,18 +328,6 @@ export default class NotificationSettings extends React.Component {
   renderDataReturnStep = () => {
     return (
       <div>
-        {
-          //   <div
-          //   style={{
-          //     marginLeft: '8px',
-          //     marginBottom: '5px',
-          //     color: 'rgba(0, 0, 0, 0.5)'
-          //   }}
-          // >
-          //   Run this query when the user expands the notification:
-          // </div>
-        }
-
         <Input
           className="chata-notification-display-name-input"
           icon="chata-bubbles-outlined"
@@ -279,8 +391,8 @@ export default class NotificationSettings extends React.Component {
         confirmLoading={this.state.isSavingNotification}
         confirmText="Save"
         enableBodyScroll
-        width="85vw"
-        style={{ marginTop: '45px', maxWidth: '1000px', maxHeight: '85vh' }}
+        width="95vw"
+        style={{ marginTop: '21px', maxWidth: '1100px', maxHeight: '95vh' }}
         confirmDisabled={!!steps.find(step => !step.complete)}
         // height: PropTypes.number,
         // showCancelButton: PropTypes.bool,
@@ -299,45 +411,6 @@ export default class NotificationSettings extends React.Component {
     </div>
   )
 
-  renderABTestButtons = () => {
-    return (
-      <div
-        style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}
-      >
-        <div
-          style={{
-            padding: '10px',
-            border: '1px solid',
-            cursor: 'pointer',
-            display: 'inline-block',
-            margin: '10px'
-          }}
-          onClick={() => {
-            this.onAddClick()
-            this.setState({ option: 1 })
-          }}
-        >
-          Modal Option 1
-        </div>
-        <div
-          style={{
-            padding: '10px',
-            border: '1px solid',
-            cursor: 'pointer',
-            display: 'inline-block',
-            margin: '10px'
-          }}
-          onClick={() => {
-            this.onAddClick()
-            this.setState({ option: 2 })
-          }}
-        >
-          Modal Option 2
-        </div>
-      </div>
-    )
-  }
-
   render = () => {
     return (
       <div data-test="notification-settings">
@@ -349,9 +422,6 @@ export default class NotificationSettings extends React.Component {
           html
         />
         {this.renderAddNotificationButton()}
-        {
-          // this.renderABTestButtons()
-        }
         <div className="chata-notification-settings-container">
           {this.state.notificationList.map((notification, i) => {
             return (

@@ -61,6 +61,9 @@ export default class Select extends React.Component {
                   return (
                     <li
                       key={`select-option-${this.ID}-${option.value}`}
+                      className={`chata-select-option${
+                        option.value === this.props.value ? ' active' : ''
+                      }`}
                       onClick={() => {
                         this.setState({ isOpen: false })
                         this.props.onChange(option.value)

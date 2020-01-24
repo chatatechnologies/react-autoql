@@ -10,11 +10,13 @@ export default class Radio extends React.Component {
 
   static propTypes = {
     options: PropTypes.arrayOf(PropTypes.string),
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    multiSelect: PropTypes.bool
   }
 
   static defaultProps = {
     options: [],
+    multiSelect: false,
     onChange: () => {}
   }
 
@@ -26,11 +28,15 @@ export default class Radio extends React.Component {
     return (
       <div className="chata-radio-btn-container" data-test="chata-radio">
         {this.props.options.map((option, i) => {
+          let isActive = this.props.value === option
+          if (this.props.multiSelect) {
+            isActive = this.props.value.includes(option)
+          }
           return (
             <div
               key={`chata-radio-${this.COMPONENT_KEY}-${i}`}
               className={`chata-radio-btn
-                ${this.props.value === option ? ' active' : ''}
+                ${isActive ? ' active' : ''}
                 ${this.props.outlined ? ' outlined' : ''}`}
               onClick={() => this.props.onChange(option)}
             >

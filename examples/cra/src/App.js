@@ -1216,7 +1216,7 @@ export default class App extends Component {
     return (
       <div
         style={{
-          height: 'calc(100vh - 48px)',
+          height: 'calc(100vh - 50px)',
           background: 'rgb(250,250,250)',
           overflow: 'auto'
         }}
@@ -1250,7 +1250,7 @@ export default class App extends Component {
       // </div>
       <div
         style={{
-          height: 'calc(100vh - 48px)',
+          height: 'calc(100vh - 50px)',
           background: 'rgb(250,250,250)',
           overflow: 'auto'
         }}

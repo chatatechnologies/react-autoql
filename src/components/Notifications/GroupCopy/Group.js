@@ -29,6 +29,7 @@ export default class Group extends React.Component {
   }
 
   state = {
+    // rulesJSONArray: [],
     rules: [],
     andOrSelectValue: 'ALL'
   }
@@ -37,7 +38,6 @@ export default class Group extends React.Component {
     if (this.props.initialData) {
       this.parseJSON(this.props.initialData)
     } else {
-      // This is a new notification
       // Populate first rule in the group
       this.addRule()
     }
@@ -51,19 +51,19 @@ export default class Group extends React.Component {
 
   parseJSON = rulesJSON => {
     const rules = rulesJSON.map(rule => {
-      const newId = uuid.v4()
+      const id = rule.id || uuid.v4()
       if (rule.term_type === 'group') {
         return {
-          id: newId,
+          id,
           type: 'rule',
           isComplete: false,
           termValue: [],
           component: (
             <Rule
-              ruleId={newId}
-              key={newId}
+              ruleId={id}
+              key={id}
               initialData={rule.term_value}
-              onDelete={() => this.deleteRuleOrGroup(newId)}
+              onDelete={() => this.deleteRuleOrGroup(id)}
               onUpdate={this.onRuleUpdate}
               onAdd={this.addRule}
             />
@@ -71,16 +71,16 @@ export default class Group extends React.Component {
         }
       } else {
         return {
-          id: newId,
+          id,
           type: 'group',
           isComplete: false,
           termValue: [],
           component: (
             <Group
-              groupId={newId}
-              key={newId}
+              groupId={id}
+              key={id}
               initialData={rule.term_value}
-              onDelete={() => this.deleteRuleOrGroup(newId)}
+              onDelete={() => this.deleteRuleOrGroup(id)}
             />
           )
         }
@@ -100,6 +100,7 @@ export default class Group extends React.Component {
       }
 
       return {
+        id: rule.id || uuid.v4(),
         term_type: 'group',
         condition,
         term_value: rule.termValue
@@ -250,7 +251,11 @@ export default class Group extends React.Component {
                 className="notification-and-or-text"
                 style={{
                   background:
-                    this.props.topCondition === 'ALL' ? '#bae9ff' : '#ffe5a7'
+                    this.props.topCondition === 'ALL' ? '#bae9ff' : '#fffaca',
+                  border:
+                    this.props.topCondition === 'ALL'
+                      ? '1px solid rgb(144, 221, 255)'
+                      : '1px solid #FFEB3B'
                 }}
               >
                 {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}

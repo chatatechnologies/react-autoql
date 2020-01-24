@@ -100,8 +100,44 @@
   }
 }
 
-.notification-frequency-select {
-  position: absolute;
-  left: 115px;
-  top: 9px;
+.frequency-date-select-container {
+  margin-top: 10px;
+}
+
+.notification-frequency-step {
+  display: flex;
+
+  .frequency-category-select {
+    position: relative;
+    padding-top: 9px;
+  }
+
+  .notification-frequency-select {
+    margin-left: 8px;
+  }
+  .frequency-repeat-checkbox .chata-checkbox-label {
+    line-height: 33px;
+  }
+  .frequency-repeat-follow-text {
+    line-height: 32px;
+    vertical-align: top;
+  }
+  .frequency-settings-container {
+    flex: 0 1 350px;
+  }
+  .frequency-description-box-container {
+    flex: 1 1 0%;
+    .frequency-description-box {
+      border: 1px solid #ffeb3b;
+      border-radius: 4px;
+      padding: 20px;
+      background: #fffaca;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    .frequency-description-title {
+      color: rgba(0, 0, 0, 0.6);
+      font-weight: 600;
+    }
+  }
 }

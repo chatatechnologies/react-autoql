@@ -220,6 +220,7 @@ export default class ResponseRenderer extends React.Component {
     this.tableColumns = this.formatColumnsForTable(
       this.props.response.data.data.columns
     )
+
     this.tableData =
       typeof this.data === 'string' // This will change once the query response is refactored
         ? undefined
@@ -776,7 +777,7 @@ export default class ResponseRenderer extends React.Component {
       col.id = uuid.v4()
 
       // Visibility flag: this can be changed through the column visibility editor modal
-      col.visible = col.is_visible
+      // col.visible = col.is_visible
 
       // Cell alignment
       if (
