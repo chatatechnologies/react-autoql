@@ -12,11 +12,11 @@ import { Checkbox } from '../../Checkbox'
 import { WeekSelect } from '../../DateSelect/WeekSelect'
 import { MonthSelect } from '../../DateSelect/MonthSelect'
 import { YearSelect } from '../../DateSelect/YearSelect'
-
-// import { NotificationRules } from '../NotificationRules'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
-import notificationList from './sampleNotifications.js'
+import notificationList from './sampleNotifications'
+import { getScheduleDescription } from '../helpers'
+
 import './NotificationSettings.scss'
 
 export default class NotificationSettings extends React.Component {
@@ -242,54 +242,26 @@ export default class NotificationSettings extends React.Component {
   }
 
   renderFrequencyDescription = () => {
-    let categoryDescription = null
-    let frequencyDescription = null
-    if (this.state.frequencyCategorySelectValue === 'SINGLE_EVENT') {
-      categoryDescription = 'Notify me as soon as this happens'
-
-      if (this.state.everyCheckboxValue) {
-        if (this.state.frequencySelectValue === 'DAY') {
-          frequencyDescription =
-            ", but don't notify me again until the next day."
-        } else if (this.state.frequencySelectValue === 'WEEK') {
-          frequencyDescription =
-            ", but don't notify me again until the next (week day name(s))."
-        } else if (this.state.frequencySelectValue === 'MONTH') {
-          frequencyDescription =
-            ", but don't notify me again until the next (day of month #(s)) day(s) of the month."
-        } else if (this.state.frequencySelectValue === 'YEAR') {
-          frequencyDescription =
-            ", but don't notify me again until the next (month name)."
-        }
-      } else {
-        frequencyDescription = ", then don't notify me again."
-      }
-    } else if (this.state.frequencyCategorySelectValue === 'REPEAT_EVENT') {
-      categoryDescription = 'Notify me every time this happens'
-
-      if (this.state.everyCheckboxValue) {
-        if (this.state.frequencySelectValue === 'WEEK') {
-          frequencyDescription =
-            ', but only notify me on (week day name(s))/weekdays/weekends.'
-        } else if (this.state.frequencySelectValue === 'MONTH') {
-          frequencyDescription =
-            ', but only notify me on (day of month #(s)) day(s) of the month.'
-          // } else if (this.state.frequencySelectValue === 'YEAR') {
-          //   frequencyDescription =
-          //     ", but don't notify me again until the next (month name)."
-        }
-      } else {
-        frequencyDescription = '.'
-      }
-    } else if (this.state.frequencyCategorySelectValue === 'SCHEDULE') {
-      categoryDescription = 'Notify me every (description of schedule)'
+    let selection
+    if (this.state.frequencySelectValue === 'WEEK') {
+      selection = this.state.weekSelectValue
+    } else if (this.state.frequencySelectValue === 'MONTH') {
+      selection = this.state.monthSelectValue
+    } else if (this.state.frequencySelectValue === 'YEAR') {
+      selection = this.state.yearSelectValue
     }
+
+    const description = getScheduleDescription(
+      this.state.frequencyCategorySelectValue,
+      this.state.frequencySelectValue,
+      this.state.everyCheckboxValue,
+      selection
+    )
 
     return (
       <div className="frequency-description-box">
         <div className="frequency-description-title">Description:</div>
-        {categoryDescription}
-        {frequencyDescription}
+        {description}
       </div>
     )
   }
@@ -321,7 +293,9 @@ export default class NotificationSettings extends React.Component {
                     { value: 'MONTH', label: 'Monthly' },
                     { value: 'YEAR', label: 'Yearly' }
                   ])}
-                  <span className="frequency-repeat-follow-text"> on:</span>
+                  {this.state.frequencySelectValue !== 'DAY' && (
+                    <span className="frequency-repeat-follow-text"> on:</span>
+                  )}
                   {this.renderDateSelector(this.state.frequencySelectValue)}
                 </Fragment>
               )}
@@ -334,11 +308,10 @@ export default class NotificationSettings extends React.Component {
                 <Fragment>
                   {this.renderFrequencySelector([
                     { value: 'WEEK', label: 'Certain days of the week' },
-                    { value: 'MONTH', label: 'Certain days of the month' }
-                    // { value: 'YEAR', label: 'Certain months of the year' }
+                    { value: 'MONTH', label: 'Certain days of the month' },
+                    { value: 'YEAR', label: 'Certain months of the year' }
                   ])}
-                  {(this.state.frequencySelectValue === 'WEEK' ||
-                    this.state.frequencySelectValue === 'MONTH') &&
+                  {this.state.frequencySelectValue !== 'DAY' &&
                     this.renderDateSelector(this.state.frequencySelectValue)}
                 </Fragment>
               )}

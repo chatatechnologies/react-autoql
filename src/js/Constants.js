@@ -41,3 +41,13 @@ export const MONTH_NAMES = {
   11: 'November',
   12: 'December'
 }
+
+export const WEEKDAY_NAMES = {
+  1: 'Sunday',
+  2: 'Monday',
+  3: 'Tuesday',
+  4: 'Wednesday',
+  5: 'Thursday',
+  6: 'Friday',
+  7: 'Saturday'
+}

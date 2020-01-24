@@ -1,6 +1,8 @@
+import dayjs from 'dayjs'
+
 export default [
   {
-    id: 1,
+    id: '1',
     title: 'Large Transaction',
     message: 'We detected a transaction over $1000',
     expanded: false,
@@ -8,17 +10,17 @@ export default [
     history: [],
     logic: [
       {
-        id: 11,
+        id: '11',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 111,
+            id: '111',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 111,
+                id: '111',
                 term_type: 'query',
                 condition: 'EXISTS',
                 term_value: 'All bank transactions over 1000'
@@ -34,10 +36,13 @@ export default [
     cycle: 'YEAR',
     month_number: [7],
     day_number: [1],
-    run_times: ['9:00']
+    run_times: ['9:00'],
+    timestamp: new Date(),
+    triggered: true,
+    type: 'alert'
   },
   {
-    id: 2,
+    id: '2',
     title: 'Low Balance',
     message: 'Your bank balance fell below $50,000',
     expanded: false,
@@ -46,23 +51,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 22,
+        id: '22',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 222,
+            id: '222',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 2221,
+                id: '2221',
                 term_type: 'query',
                 condition: 'LESS_THAN',
                 term_value: 'total bank balance'
               },
               {
-                id: 2222,
+                id: '2222',
                 term_type: 'constant',
                 condition: 'TERMINATOR',
                 term_value: '50000'
@@ -77,10 +82,13 @@ export default [
     reset_period: null,
     cycle: 'MONTH',
     day_number: [15, -1],
-    run_times: ['9:00']
+    run_times: ['9:00'],
+    timestamp: dayjs().subtract(1, 'd'),
+    triggered: true,
+    type: 'alert'
   },
   {
-    id: 3,
+    id: '3',
     title: 'Credit Card Limit Exceeded',
     message: 'Your credit card balance has exceeded the limit',
     expanded: false,
@@ -89,23 +97,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 33,
+        id: '33',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 333,
+            id: '333',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 3331,
+                id: '3331',
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'Total credit card balance'
               },
               {
-                id: 3332,
+                id: '3332',
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'Credit card limit'
@@ -120,10 +128,13 @@ export default [
     reset_period: 'MONTH',
     cycle: 'WEEK',
     day_number: [0, 1, 2, 3, 4, 5, 6],
-    run_times: []
+    run_times: [],
+    timestamp: dayjs().subtract(2, 'd'),
+    triggered: true,
+    type: 'alert'
   },
   {
-    id: 4,
+    id: '4',
     title: 'High Credit Card Balance',
     message: 'Your credit card balance has reached 80% of the limit',
     expanded: false,
@@ -132,23 +143,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 44,
+        id: '44',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 444,
+            id: '444',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 4441,
+                id: '4441',
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'Total credit card balance'
               },
               {
-                id: 4442,
+                id: '4442',
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: '80% of Credit card limit'
@@ -163,10 +174,13 @@ export default [
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
-    run_times: []
+    run_times: [],
+    timestamp: dayjs().subtract(3, 'd'),
+    triggered: false,
+    type: 'warning'
   },
   {
-    id: 5,
+    id: '5',
     title: 'Over Spending',
     message: 'You spent more than you made this month',
     expanded: false,
@@ -175,23 +189,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 55,
+        id: '55',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 555,
+            id: '555',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 5551,
+                id: '5551',
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total credits'
               },
               {
-                id: 5552,
+                id: '5552',
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'total debits'
@@ -206,10 +220,13 @@ export default [
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
-    run_times: []
+    run_times: [],
+    timestamp: dayjs().subtract(4, 'd'),
+    triggered: false,
+    type: 'warning'
   },
   {
-    id: 6,
+    id: '6',
     title: 'Savings Goal Not Met',
     message: "You didn't meet your savings goal of 10% this month",
     expanded: false,
@@ -218,23 +235,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 66,
+        id: '66',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            id: 666,
+            id: '666',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 6661,
+                id: '6661',
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total debits'
               },
               {
-                id: 6662,
+                id: '6662',
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: '90% total credits'
@@ -249,10 +266,13 @@ export default [
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
-    run_times: []
+    run_times: [],
+    timestamp: dayjs().subtract(5, 'd'),
+    triggered: false,
+    type: 'info'
   },
   {
-    id: 7,
+    id: '7',
     title: 'Increased Spending',
     message: 'You spent more this month than you did last month',
     expanded: false,
@@ -261,23 +281,23 @@ export default [
     history: [],
     logic: [
       {
-        id: 77,
+        id: '77',
         term_type: 'group',
         condition: 'TERMINATOR',
         term_value: [
           {
-            i: 777,
+            i: '777',
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: 7771,
+                id: '7771',
                 term_type: 'query',
                 condition: 'GREATER_THAN',
                 term_value: 'total credits this month'
               },
               {
-                id: 7772,
+                id: '7772',
                 term_type: 'query',
                 condition: 'TERMINATOR',
                 term_value: 'total credits last month'
@@ -292,6 +312,9 @@ export default [
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
-    run_times: []
+    run_times: [],
+    timestamp: dayjs().subtract(6, 'd'),
+    triggered: false,
+    type: 'info'
   }
 ]

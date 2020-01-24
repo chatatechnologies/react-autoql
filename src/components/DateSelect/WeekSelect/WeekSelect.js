@@ -75,7 +75,7 @@ export default class WeekSelect extends React.Component {
         finalOption = [...this.props.value, selectedValue]
       }
     }
-    this.props.onChange(finalOption)
+    this.props.onChange(finalOption.sort())
   }
 
   render = () => {

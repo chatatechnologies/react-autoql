@@ -1,0 +1,170 @@
+.chata-notification-description {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+}
+
+.chata-notification-list-item {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  height: 93px;
+
+  margin-bottom: 8px;
+
+  color: rgba(0, 0, 0, 0.6);
+  // font-weight: 500;
+  font-family: var(--chata-dashboard-font-family), sans-serif;
+  line-height: 50px;
+
+  transition: all 1s ease;
+  transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+  animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
+  animation-fill-mode: both;
+  animation-delay: 0s;
+
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.01);
+  }
+
+  &.expanded {
+    height: 312px;
+    .chata-notification-alert-strip {
+      height: 312px;
+    }
+    // .chata-notification-list-item-header {
+    //   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    // }
+  }
+
+  .chata-notification-list-item-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    // height: 70px;
+
+    padding-left: 22px;
+    padding-right: 4px;
+
+    cursor: pointer;
+  }
+
+  .chata-notification-data-container {
+    width: 100%;
+    height: 230px;
+    padding: 7px 20px;
+  }
+
+  .chata-notification-data-title {
+    line-height: 22px;
+    font-size: 12px;
+    text-align: right;
+    color: rgba(0, 0, 0, 0.3);
+    padding: 8px 20px;
+
+    svg {
+      margin-top: -3px;
+      vertical-align: middle;
+    }
+  }
+
+  .chata-notification-dismiss-icon {
+    font-size: 18px;
+    height: 50px;
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 20px;
+    margin-top: 7px;
+    margin-right: 3px;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #ececec;
+    }
+  }
+
+  .chata-notification-alert-icon {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    // color: #f5222d;
+    color: var(--accent-color);
+    line-height: 10px;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .chata-notification-alert-strip {
+    opacity: 0;
+    position: absolute;
+    height: 93px;
+    left: 0px;
+    top: 0;
+    width: 4px;
+    // background: #f5222d;
+
+    background: var(--accent-color);
+
+    transition-property: opacity, height;
+    transition-duration: 0.2s, 0.3s;
+    transition-timing-function: ease, cubic-bezier(0.26, 0.26, 0, 1);
+  }
+
+  .chata-notification-img-container {
+    flex: 0 0 60px;
+
+    .chata-notification-img {
+      border-radius: 50px;
+      height: 45px;
+      width: 45px;
+      line-height: 45px;
+      font-size: 22px;
+      color: white;
+      background-color: var(--chata-drawer-accent-color);
+      text-align: center;
+      margin-top: 13px;
+      margin-right: 17px;
+    }
+  }
+
+  .chata-notification-display-name-container {
+    flex: 1;
+    line-height: 23px;
+    padding-top: 13px;
+    transition: color 0.2s ease;
+
+    .chata-notification-display-name {
+      font-size: 18px;
+    }
+    .chata-notification-timestamp {
+      font-size: 12px;
+      opacity: 0.5;
+
+      svg {
+        margin-bottom: -1px;
+      }
+    }
+  }
+
+  .chata-notification-list-item.triggered {
+    .chata-notification-display-name {
+      color: var(--accent-color);
+    }
+
+    .chata-notification-dismiss-btn {
+      margin-top: 3px;
+      color: var(--accent-color);
+    }
+
+    .chata-notification-alert-strip {
+      opacity: 1;
+    }
+  }
+}

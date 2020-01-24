@@ -26,6 +26,26 @@ export default class MonthSelect extends React.Component {
     allowNullValue: false
   }
 
+  sortFunction = (a, b) => {
+    try {
+      if (Number(a) === -1) {
+        return 1
+      }
+      if (Number(b) === -1) {
+        return -1
+      }
+      if (Number(a) < Number(b)) {
+        return -1
+      }
+      if (Number(a) > Number(b)) {
+        return 1
+      }
+      return 0
+    } catch (error) {
+      return 0
+    }
+  }
+
   onChange = selectedValue => {
     let finalOption = [selectedValue]
     if (this.props.multiSelect) {
@@ -41,7 +61,8 @@ export default class MonthSelect extends React.Component {
         finalOption = [...this.props.value, selectedValue]
       }
     }
-    this.props.onChange(finalOption)
+
+    this.props.onChange(finalOption.sort(this.sortFunction))
   }
 
   renderLastDaySelector = () => {
@@ -88,9 +109,8 @@ export default class MonthSelect extends React.Component {
       >
         {days.map((option, i) => {
           return (
-            <Fragment>
+            <Fragment key={`chata-radio-${this.COMPONENT_KEY}-${i}`}>
               <div
-                key={`chata-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`chata-radio-btn
                   ${this.getButtonClassNames(option, i)}`}
                 onClick={() => this.onChange(option)}

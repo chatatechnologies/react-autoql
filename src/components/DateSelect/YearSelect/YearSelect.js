@@ -85,6 +85,20 @@ export default class YearSelect extends React.Component {
     allowNullValue: false
   }
 
+  sortFunction = (a, b) => {
+    try {
+      if (Number(a) < Number(b)) {
+        return -1
+      }
+      if (Number(a) > Number(b)) {
+        return 1
+      }
+      return 0
+    } catch (error) {
+      return 0
+    }
+  }
+
   onChange = selectedValue => {
     let finalOption = [selectedValue]
     if (this.props.multiSelect) {
@@ -100,7 +114,7 @@ export default class YearSelect extends React.Component {
         finalOption = [...this.props.value, selectedValue]
       }
     }
-    this.props.onChange(finalOption)
+    this.props.onChange(finalOption.sort(this.sortFunction))
   }
 
   render = () => {
@@ -116,9 +130,8 @@ export default class YearSelect extends React.Component {
           }
 
           return (
-            <Fragment>
+            <Fragment key={`chata-radio-${this.COMPONENT_KEY}-${i}`}>
               <div
-                key={`chata-radio-${this.COMPONENT_KEY}-${i}`}
                 className={`chata-radio-btn
                   ${isActive ? ' active' : ''}
                   ${this.props.outlined ? ' outlined' : ''}
