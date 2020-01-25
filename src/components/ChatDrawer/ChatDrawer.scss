@@ -183,6 +183,42 @@
 .chata-drawer.drawer-bottom .drawer-content-wrapper {
   max-height: calc(100vh - 45px) !important;
 }
+.chata-drawer-resize-handle {
+  position: absolute;
+  background: transparent;
+
+  &.right {
+    top: 0;
+    left: -5px;
+    width: 5px;
+    height: 100vh;
+    cursor: ew-resize;
+  }
+
+  &.left {
+    top: 0;
+    right: -5px;
+    width: 5px;
+    height: 100vh;
+    cursor: ew-resize;
+  }
+
+  &.top {
+    bottom: -5px;
+    left: 0;
+    height: 5px;
+    width: 100vw;
+    cursor: ns-resize;
+  }
+
+  &.bottom {
+    top: -5px;
+    left: 0;
+    height: 5px;
+    width: 100vw;
+    cursor: ns-resize;
+  }
+}
 
 .chata-drawer .response-loading-container {
   position: absolute;
