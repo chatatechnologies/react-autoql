@@ -95,6 +95,7 @@ export default class ChatMessage extends React.Component {
     if (
       isTableType(this.state.displayType) &&
       isTableType(prevState.displayType) &&
+      this.props.type !== 'text' &&
       !this.TABLE_CONTAINER_HEIGHT
     ) {
       const messageContainer = document.getElementById(
@@ -491,7 +492,7 @@ export default class ChatMessage extends React.Component {
 
   getMessageHeight = () => {
     let messageHeight = 'unset'
-    if (isTableType(this.state.displayType)) {
+    if (isTableType(this.state.displayType) && this.props.type !== 'text') {
       messageHeight = this.TABLE_CONTAINER_HEIGHT || 'unset'
     }
 
@@ -536,9 +537,6 @@ export default class ChatMessage extends React.Component {
             />
           </div>
         </div>
-        {
-          // this.adjustHeightOfMessageContainer()
-        }
       </Fragment>
     )
   }

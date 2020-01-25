@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
+import { throttle, debounce } from 'throttle-debounce'
 
 // Components
 import { Icon } from '../Icon'
@@ -86,6 +87,7 @@ export default class ChatDrawer extends React.Component {
     enableQueryTipsTab: PropTypes.bool,
     enableColumnEditor: PropTypes.bool,
     chartColors: PropTypes.arrayOf(PropTypes.string),
+    resizable: PropTypes.bool,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -132,12 +134,16 @@ export default class ChatDrawer extends React.Component {
     chartColors: undefined,
     enableQueryTipsTab: true,
     enableColumnEditor: true,
+    resizable: true,
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
 
   state = {
     activePage: 'messenger',
+    width: this.props.width,
+    height: this.props.height,
+    isResizing: false,
 
     stateScrollTop: 0,
     lastMessageId: 'intro',
@@ -250,22 +256,22 @@ export default class ChatDrawer extends React.Component {
     return false
   }
 
-  getHeightProp = () => {
+  getDrawerHeight = () => {
     if (
       this.getPlacementProp() === 'right' ||
       this.getPlacementProp() === 'left'
     ) {
       return null
     }
-    return this.props.height
+    return this.state.height
   }
 
-  getWidthProp = () => {
+  getDrawerWidth = () => {
     if (
       this.getPlacementProp() === 'right' ||
       this.getPlacementProp() === 'left'
     ) {
-      return this.props.width
+      return this.state.width
     }
     return null
   }
@@ -837,6 +843,63 @@ export default class ChatDrawer extends React.Component {
     />
   )
 
+  resize = e => {
+    const self = this
+    const placement = this.getPlacementProp()
+
+    if (placement === 'right' || placement === 'left') {
+      const offset = _get(self.state.startingResizePosition, 'x') - e.pageX
+      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (Number(newWidth)) {
+        self.setState({
+          width: newWidth
+        })
+      }
+    } else if (placement === 'top' || placement === 'bottom') {
+      const offset = _get(self.state.startingResizePosition, 'y') - e.pageY
+      const newHeight =
+        _get(self.state.startingResizePosition, 'height') + offset
+      if (Number(newHeight)) {
+        self.setState({
+          height: newHeight
+        })
+      }
+    }
+  }
+
+  stopResize = () => {
+    this.setState({
+      isResizing: false
+    })
+    window.removeEventListener('mousemove', this.resize)
+  }
+
+  renderResizeHandle = () => {
+    const self = this
+    if (this.props.isVisible) {
+      const placement = this.getPlacementProp()
+      return (
+        <div
+          className={`chata-drawer-resize-handle ${placement}`}
+          onMouseDown={e => {
+            this.setState({
+              isResizing: true,
+              startingResizePosition: {
+                x: e.pageX,
+                y: e.pageY,
+                width: this.state.width,
+                height: this.state.height
+              }
+            })
+            window.addEventListener('mousemove', self.resize)
+            window.addEventListener('mouseup', self.stopResize)
+          }}
+        />
+      )
+    }
+    return null
+  }
+
   render = () => {
     return (
       <Fragment>
@@ -846,8 +909,8 @@ export default class ChatDrawer extends React.Component {
           open={this.props.isVisible}
           showMask={this.props.showMask}
           placement={this.getPlacementProp()}
-          width={this.getWidthProp()}
-          height={this.getHeightProp()}
+          width={this.getDrawerWidth()}
+          height={this.getDrawerHeight()}
           onMaskClick={this.handleMaskClick}
           onHandleClick={this.props.onHandleClick}
           afterVisibleChange={this.props.onVisibleChange}
@@ -856,6 +919,7 @@ export default class ChatDrawer extends React.Component {
           keyboard={false}
           // onKeyDown={this.escFunction}
         >
+          {this.props.resizable && this.renderResizeHandle()}
           {this.props.enableQueryTipsTab && this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
