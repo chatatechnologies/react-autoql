@@ -103,9 +103,9 @@ const demoDashboard = [
     h: 5,
     x: 0,
     y: 2,
-    query: 'profit by month ytd',
+    query: 'profit by month last 6 months',
     displayType: 'line',
-    title: 'Monthly YTD Profit'
+    title: 'Monthly Profit'
   },
   {
     key: '5',
@@ -115,7 +115,7 @@ const demoDashboard = [
     y: 2,
     query: 'profit by month last year',
     displayType: 'line',
-    title: '2018 Monthly Profit'
+    title: '2019 Monthly Profit'
   },
   {
     key: '6',
@@ -123,7 +123,7 @@ const demoDashboard = [
     h: 5,
     x: 0,
     y: 7,
-    query: 'profit by class this year',
+    query: 'profit by class last year',
     displayType: 'column',
     title: 'Total Profit by Class (2019)'
   },
@@ -133,8 +133,8 @@ const demoDashboard = [
     h: 5,
     x: 6,
     y: 7,
-    query: 'profit by customer this year',
-    displayType: 'bar',
+    query: 'profit by customer last year',
+    displayType: 'column',
     title: 'Total Profit by Customer (2019)'
   },
   {
@@ -143,8 +143,8 @@ const demoDashboard = [
     h: 5,
     x: 0,
     y: 10,
-    query: 'total profit by class by month ytd',
-    displayType: 'stacked_column',
+    query: 'total profit by class by month last 6 months',
+    displayType: 'heatmap',
     title: 'Product Profitability'
   },
   {
@@ -153,7 +153,7 @@ const demoDashboard = [
     h: 5,
     x: 6,
     y: 12,
-    query: 'total profit by customer by month ytd',
+    query: 'total profit by customer by month last 6 months',
     displayType: 'heatmap',
     title: 'Customer Profitability'
   }
