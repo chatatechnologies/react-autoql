@@ -178,10 +178,12 @@
 .chata-drawer.drawer-right .drawer-content-wrapper,
 .chata-drawer.drawer-left .drawer-content-wrapper {
   max-width: calc(100vw - 45px) !important;
+  min-width: 400px !important;
 }
 .chata-drawer.drawer-top .drawer-content-wrapper,
 .chata-drawer.drawer-bottom .drawer-content-wrapper {
   max-height: calc(100vh - 45px) !important;
+  min-height: 400px !important;
 }
 .chata-drawer-resize-handle {
   position: absolute;

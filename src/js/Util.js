@@ -193,8 +193,8 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
 
   const fullWidthLabel = formattedLabel
   let isTruncated = false
-  if (typeof formattedLabel === 'string' && formattedLabel.length > 25) {
-    formattedLabel = `${formattedLabel.substring(0, 18)}...`
+  if (typeof formattedLabel === 'string' && formattedLabel.length > 50) {
+    formattedLabel = `${formattedLabel.substring(0, 43)}...`
     isTruncated = true
   }
 
