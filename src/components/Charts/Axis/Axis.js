@@ -210,6 +210,15 @@ export default class Axis extends Component {
         .attr('dx', '-0.5em')
         .attr('fill-opacity', '0.7')
         .style('font-family', 'inherit')
+    } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
+      select(this.axisElement)
+        .selectAll('.tick text')
+        .style('transform', 'rotate(0deg)')
+        .style('text-anchor', 'middle')
+        .attr('dy', '10px')
+        .attr('dx', '0')
+        .attr('fill-opacity', '0.7')
+        .style('font-family', 'inherit')
     }
 
     if (this.props.hasRightLegend || this.props.hasBottomLegend) {
