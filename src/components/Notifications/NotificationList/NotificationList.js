@@ -20,6 +20,10 @@ export default class NotificationList extends React.Component {
     notificationList: notificationList
   }
 
+  componentDidMount = () => {
+    document.documentElement.style.setProperty('--accent-color', 'rgb(255,0,0)')
+  }
+
   onItemClick = notification => {
     const newList = this.state.notificationList.map(n => {
       if (notification.id === n.id) {
@@ -42,6 +46,19 @@ export default class NotificationList extends React.Component {
         ...n,
         triggered: false
       }
+    })
+    this.setState({ notificationList: newList })
+  }
+
+  onDismissClick = (e, notification) => {
+    const newList = this.state.notificationList.map(n => {
+      if (notification.id === n.id) {
+        return {
+          ...n,
+          triggered: false
+        }
+      }
+      return n
     })
     this.setState({ notificationList: newList })
   }

@@ -440,17 +440,22 @@ export const getSupportedDisplayTypes = response => {
       supportedDisplayTypes.push('pivot_table')
     }
     return supportedDisplayTypes
-  } else if (getNumberOfGroupables(columns) === 2) {
+  } else if (getNumberOfGroupables(columns) === 2 && columns.length === 3) {
     // Is pivot query (ie. Sale per customer per month)
-    return [
-      'multi_line',
-      'stacked_bar',
-      'stacked_column',
-      'bubble',
-      'heatmap',
-      'table',
-      'pivot_table'
-    ]
+
+    let supportedDisplayTypes = ['table']
+    if (_get(response, 'data.data.rows.length') < 1000) {
+      supportedDisplayTypes = [
+        'multi_line',
+        'stacked_bar',
+        'stacked_column',
+        'bubble',
+        'heatmap',
+        'table',
+        'pivot_table'
+      ]
+    }
+    return supportedDisplayTypes
   }
 
   // We should always be able to display the table type by default
