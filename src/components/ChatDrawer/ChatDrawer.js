@@ -872,6 +872,7 @@ export default class ChatDrawer extends React.Component {
       isResizing: false
     })
     window.removeEventListener('mousemove', this.resize)
+    window.removeEventListener('mouseup', this.stopResize)
   }
 
   renderResizeHandle = () => {

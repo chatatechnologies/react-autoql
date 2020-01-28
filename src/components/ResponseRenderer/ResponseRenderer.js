@@ -51,6 +51,7 @@ String.prototype.toProperCase = function() {
 
 export default class ResponseRenderer extends React.Component {
   supportedDisplayTypes = []
+  SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
     response: PropTypes.shape({}).isRequired,
@@ -1028,6 +1029,7 @@ export default class ResponseRenderer extends React.Component {
     if (responseBody.full_suggestion) {
       return (
         <SafetyNetMessage
+          key={this.SAFETYNET_KEY}
           response={this.props.response}
           onSuggestionClick={query =>
             this.onSuggestionClick(query, undefined, true)
