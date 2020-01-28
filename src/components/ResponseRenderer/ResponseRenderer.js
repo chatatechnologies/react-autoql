@@ -426,6 +426,7 @@ export default class ResponseRenderer extends React.Component {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
           const newTableData = tableRef.getData(true)
+          this.shouldGenerateChartData() && this.generateChartData(newTableData)
           this.props.onTableFilterCallback(newTableData)
         }
       }, 500)
