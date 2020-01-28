@@ -4,7 +4,6 @@ import { terser } from 'rollup-plugin-terser'
 import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
-import css from 'rollup-plugin-css-only'
 
 import pkg from './package.json'
 

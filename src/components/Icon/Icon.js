@@ -11,17 +11,17 @@ import {
   MdFilterList,
   MdInfoOutline,
   MdPlayCircleOutline,
-  MdEdit,
-  MdTitle,
-  MdDescription
+  MdEdit
+  // MdTitle,
+  // MdDescription
 } from 'react-icons/md'
 import { FaRegTrashAlt, FaEye, FaDatabase } from 'react-icons/fa'
 import {
   FiBell,
   FiBellOff,
   FiCalendar,
-  FiPlus,
-  FiFileText
+  FiPlus
+  // FiFileText
 } from 'react-icons/fi'
 import {
   IoIosSearch,

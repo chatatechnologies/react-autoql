@@ -8,9 +8,9 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 
-.chata-dashboard .react-grid-item:not(.dragging) {
-  /* transition: all 0.2s ease-in; */
-}
+// .chata-dashboard .react-grid-item:not(.dragging) {
+//   /* transition: all 0.2s ease-in; */
+// }
 
 .chata-dashboard-tile .viz-toolbar {
   transition: all 0.3s ease;
@@ -31,7 +31,7 @@
   position: relative;
   text-align: center;
   display: flex;
-  justify-content: start;
+  justify-content: flex-start;
   flex-direction: column;
   align-items: center;
 }
