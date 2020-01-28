@@ -227,12 +227,12 @@ export default class ResponseRenderer extends React.Component {
         : this.data
   }
 
-  generatePivotData = () => {
+  generatePivotData = newData => {
     try {
       if (this.tableColumns.length === 2) {
-        this.generateDatePivotData()
+        this.generateDatePivotData(newData)
       } else {
-        this.generatePivotTableData()
+        this.generatePivotTableData(newData)
       }
     } catch (error) {
       this.pivotTableData = undefined
@@ -339,14 +339,18 @@ export default class ResponseRenderer extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.tableRef) {
+    if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.copyToClipboard()
+    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+      this.pivotTableRef.copyToClipboard()
     }
   }
 
   saveTableAsCSV = () => {
-    if (this.tableRef) {
+    if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.saveAsCSV()
+    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+      this.pivotTableRef.saveAsCSV()
     }
   }
 
@@ -413,17 +417,27 @@ export default class ResponseRenderer extends React.Component {
   }
 
   onTableFilter = async filters => {
-    this.headerFilters = filters
-
     if (
-      _get(this.tableRef, 'ref.table') &&
-      this.state.displayType === 'table'
+      this.state.displayType === 'table' &&
+      _get(this.tableRef, 'ref.table')
     ) {
+      this.headerFilters = filters
       setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
           const newTableData = tableRef.getData(true)
-          this.generateChartData(newTableData)
+          this.props.onTableFilterCallback(newTableData)
+        }
+      }, 500)
+    } else if (
+      this.state.displayType === 'pivot_table' &&
+      _get(this.pivotTableRef, 'ref.table')
+    ) {
+      this.pivotHeaderFilters = filters
+      setTimeout(() => {
+        const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
+        if (pivotTableRef) {
+          const newTableData = pivotTableRef.getData(true)
           this.props.onTableFilterCallback(newTableData)
         }
       }, 500)
@@ -481,13 +495,13 @@ export default class ResponseRenderer extends React.Component {
       return (
         <ChataTable
           key={this.pivotTableID}
-          ref={ref => (this.tableRef = ref)}
+          ref={ref => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           borderColor={this.props.tableBorderColor}
           hoverColor={this.props.tableHoverColor}
           onCellClick={this.processCellClick}
-          headerFilters={this.headerFilters}
+          headerFilters={this.pivotHeaderFilters}
           onFilterCallback={this.onTableFilter}
           setFilterTagsCallback={this.props.setFilterTagsCallback}
         />
@@ -838,7 +852,7 @@ export default class ResponseRenderer extends React.Component {
     return formattedColumns
   }
 
-  generateDatePivotData = () => {
+  generateDatePivotData = newData => {
     const uniqueMonths = {
       January: 0,
       February: 1,
@@ -854,7 +868,9 @@ export default class ResponseRenderer extends React.Component {
       December: 11
     }
 
-    const uniqueYears = this.tableData
+    const tableData = newData || this.tableData
+
+    const uniqueYears = tableData
       .map(d => Number(dayjs.unix(d[0]).format('YYYY')))
       .filter(onlyUnique)
       .sort()
@@ -890,7 +906,7 @@ export default class ResponseRenderer extends React.Component {
       pivotTableData[i][0] = month
     })
     // Populate remaining columns
-    this.tableData.forEach(row => {
+    tableData.forEach(row => {
       const year = dayjs.unix(row[0]).format('YYYY')
       const month = dayjs.unix(row[0]).format('MMMM')
       pivotTableData[uniqueMonths[month]][uniqueYears[year]] = row[1]
@@ -906,8 +922,9 @@ export default class ResponseRenderer extends React.Component {
     this.pivotTableData = pivotTableData
   }
 
-  generatePivotTableData = () => {
-    const uniqueValues0 = this.tableData
+  generatePivotTableData = newData => {
+    const tableData = newData || this.tableData
+    const uniqueValues0 = tableData
       .map(d => d[0])
       .filter(onlyUnique)
       .sort()
@@ -916,7 +933,7 @@ export default class ResponseRenderer extends React.Component {
         return map
       }, {})
 
-    const uniqueValues1 = this.tableData
+    const uniqueValues1 = tableData
       .map(d => d[1])
       .filter(onlyUnique)
       .sort()
@@ -950,7 +967,7 @@ export default class ResponseRenderer extends React.Component {
       Object.keys(uniqueValues1).length,
       Object.keys(uniqueValues0).length
     )
-    this.tableData.forEach(row => {
+    tableData.forEach(row => {
       // Populate first column
       pivotTableData[uniqueValues0[row[0]]][0] = row[0]
       // Populate data for remaining columns

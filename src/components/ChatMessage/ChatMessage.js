@@ -124,7 +124,12 @@ export default class ChatMessage extends React.Component {
   }
 
   onTableFilter = newTableData => {
-    this.setState({ disableChartingOptions: _get(newTableData, 'length') < 2 })
+    if (this.state.displayType === 'table') {
+      // this shouldn't be affected when editing a pivot table
+      this.setState({
+        disableChartingOptions: _get(newTableData, 'length') < 2
+      })
+    }
   }
 
   renderContent = (chartWidth, chartHeight) => {
@@ -165,8 +170,12 @@ export default class ChatMessage extends React.Component {
     return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
   }
 
-  setFilterTags = isFilteringTable => {
-    const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+  setFilterTags = ({ isFilteringTable } = {}) => {
+    const tableRef =
+      this.state.displayType === 'pivot_table'
+        ? _get(this.responseRef, 'pivotTableRef.ref.table')
+        : _get(this.responseRef, 'tableRef.ref.table')
+
     if (!tableRef) {
       return
     }
@@ -223,7 +232,7 @@ export default class ChatMessage extends React.Component {
         colHeaderElements.forEach(element => {
           element.style.height = '72px !important'
         })
-        this.setFilterTags(true)
+        this.setFilterTags({ isFilteringTable: true })
       } else {
         messageElement.style.maxHeight = '85%'
         filterHeaderElements.forEach(element => {
@@ -232,7 +241,7 @@ export default class ChatMessage extends React.Component {
         colHeaderElements.forEach(element => {
           element.style.height = '37px !important'
         })
-        this.setFilterTags(false)
+        this.setFilterTags({ isFilteringTable: false })
       }
     } catch (error) {
       console.error(error)
