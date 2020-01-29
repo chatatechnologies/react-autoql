@@ -49,6 +49,8 @@ export default class ChataLineChart extends Component {
       backgroundColor,
       dataFormatting,
       onLegendClick,
+      innerPadding,
+      outerPadding,
       bottomMargin,
       legendLabels,
       onChartClick,
@@ -69,8 +71,8 @@ export default class ChataLineChart extends Component {
     const xScale = this.xScale
       .domain(data.map(d => d[labelValue]))
       .range([leftMargin, width - rightMargin])
-      .paddingInner(0.5)
-      .paddingOuter(2)
+      .paddingInner(innerPadding)
+      .paddingOuter(outerPadding)
 
     const yScale = this.yScale
       .domain([minValue, maxValue])

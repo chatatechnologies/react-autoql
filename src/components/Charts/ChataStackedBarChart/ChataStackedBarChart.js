@@ -6,7 +6,11 @@ import { Axes } from '../Axes'
 import { StackedBars } from '../StackedBars'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { calculateMinAndMaxSums, onlyUnique } from '../../../js/Util'
+import {
+  calculateMinAndMaxSums,
+  onlyUnique,
+  shouldRotateLabels
+} from '../../../js/Util'
 
 export default class ChataStackedBarChart extends Component {
   xScale = scaleLinear()
@@ -51,6 +55,7 @@ export default class ChataStackedBarChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
+    onLabelChange: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -66,10 +71,47 @@ export default class ChataStackedBarChart extends Component {
     dataValues: 'values',
     labelValue: 'label',
     dataFormatting: {},
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
 
   state = {}
+
+  handleLabelRotation = (tickWidth, labelArray) => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      tickWidth,
+      labelArray,
+      this.props.columns[2],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  getTickValues = barHeight => {
+    try {
+      const interval = Math.ceil(
+        (this.uniqueYLabels.length * 16) / this.props.height
+      )
+      let yTickValues
+      if (barHeight < 16) {
+        yTickValues = []
+        this.uniqueYLabels.forEach((element, index) => {
+          if (index % interval === 0) {
+            yTickValues.push(element)
+          }
+        })
+      }
+
+      return yTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
+  }
 
   render = () => {
     const {
@@ -80,6 +122,8 @@ export default class ChataStackedBarChart extends Component {
       leftMargin,
       topMargin,
       bottomMargin,
+      innerPadding,
+      outerPadding,
       dataValue,
       labelValueX,
       labelValueY,
@@ -100,22 +144,13 @@ export default class ChataStackedBarChart extends Component {
     const yScale = this.yScale
       .domain(this.uniqueYLabels)
       .range([height - bottomMargin, topMargin])
-      .paddingInner(0.5)
-      .paddingOuter(2)
+      .paddingInner(innerPadding)
+      .paddingOuter(outerPadding)
 
     const tickWidth = (width - leftMargin - rightMargin) / 6
-
     const barHeight = height / this.uniqueYLabels.length
-    const interval = Math.ceil((this.uniqueYLabels.length * 16) / height)
-    let yTickValues
-    if (barHeight < 16) {
-      yTickValues = []
-      this.uniqueYLabels.forEach((element, index) => {
-        if (index % interval === 0) {
-          yTickValues.push(element)
-        }
-      })
-    }
+    const yTickValues = this.getTickValues(barHeight)
+    this.handleLabelRotation(tickWidth, this.uniqueYLabels)
 
     return (
       <ErrorBoundary>

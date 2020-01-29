@@ -6,7 +6,12 @@ import { Axes } from '../Axes'
 import { StackedColumns } from '../StackedColumns'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { calculateMinAndMaxSums, onlyUnique } from '../../../js/Util'
+import {
+  calculateMinAndMaxSums,
+  onlyUnique,
+  shouldRotateLabels,
+  getTickWidth
+} from '../../../js/Util'
 
 export default class ChataStackedColumnChart extends Component {
   yScale = scaleLinear()
@@ -16,21 +21,21 @@ export default class ChataStackedColumnChart extends Component {
     super(props)
 
     // Only calculate these things one time. They will never change
-    const { data, labelValueX, labelValueY, chartColors } = props
+    const { data, labelValueY, labelValueX, chartColors } = props
 
-    this.uniqueYLabels = data
-      .map(d => d[labelValueY])
+    this.uniqueXLabels = data
+      .map(d => d[labelValueX])
       .filter(onlyUnique)
       .sort()
       .reverse() // sorts dates correctly
 
-    this.uniqueXLabels = data.map(d => d[labelValueX]).filter(onlyUnique)
+    this.uniqueYLabels = data.map(d => d[labelValueY]).filter(onlyUnique)
 
     this.legendScale = scaleOrdinal()
-      .domain(this.uniqueYLabels)
+      .domain(this.uniqueXLabels)
       .range(chartColors)
 
-    this.legendLabels = this.uniqueXLabels.map((label, i) => {
+    this.legendLabels = this.uniqueYLabels.map((label, i) => {
       return {
         label,
         color: this.legendScale(i)
@@ -51,6 +56,7 @@ export default class ChataStackedColumnChart extends Component {
     dataValues: PropTypes.string,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
+    onLabelChange: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -66,10 +72,47 @@ export default class ChataStackedColumnChart extends Component {
     dataValues: 'values',
     labelValue: 'label',
     dataFormatting: {},
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
 
   state = {}
+
+  handleLabelRotation = (tickWidth, labelArray) => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      tickWidth,
+      labelArray,
+      this.props.columns[1],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  getXTickValues = barWidth => {
+    try {
+      const interval = Math.ceil(
+        (this.uniqueXLabels.length * 16) / this.props.width
+      )
+      let xTickValues
+      if (barWidth < 16) {
+        xTickValues = []
+        this.uniqueXLabels.forEach((element, index) => {
+          if (index % interval === 0) {
+            xTickValues.push(element)
+          }
+        })
+      }
+
+      return xTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
+  }
 
   render = () => {
     const {
@@ -80,9 +123,11 @@ export default class ChataStackedColumnChart extends Component {
       leftMargin,
       topMargin,
       bottomMargin,
+      innerPadding,
+      outerPadding,
       dataValue,
-      labelValueX,
       labelValueY,
+      labelValueX,
       dataFormatting,
       chartColors,
       columns,
@@ -91,31 +136,21 @@ export default class ChataStackedColumnChart extends Component {
       data
     } = this.props
 
-    const { max, min } = calculateMinAndMaxSums(data, labelValueY, dataValue)
+    const { max, min } = calculateMinAndMaxSums(data, labelValueX, dataValue)
 
     const xScale = this.xScale
-      .domain(this.uniqueYLabels)
+      .domain(this.uniqueXLabels)
       .range([leftMargin, width - rightMargin])
-      .paddingInner(0.5)
-      .paddingOuter(2)
+      .paddingInner(innerPadding)
+      .paddingOuter(outerPadding)
 
     const yScale = this.yScale
       .domain([min, max])
       .range([height - bottomMargin, topMargin])
 
-    const barWidth =
-      (width - rightMargin - leftMargin) / this.uniqueYLabels.length
-    const interval = Math.ceil((this.uniqueYLabels.length * 16) / width)
-    let xTickValues
-
-    if (barWidth < 16) {
-      xTickValues = []
-      this.uniqueYLabels.forEach((element, index) => {
-        if (index % interval === 0) {
-          xTickValues.push(element)
-        }
-      })
-    }
+    const tickWidth = getTickWidth(xScale, innerPadding)
+    const xTickValues = this.getXTickValues(tickWidth)
+    this.handleLabelRotation(tickWidth, this.uniqueXLabels)
 
     return (
       <ErrorBoundary>
@@ -134,7 +169,7 @@ export default class ChataStackedColumnChart extends Component {
             width={width}
             height={height}
             xTicks={xTickValues}
-            rotateLabels={barWidth < 135}
+            rotateLabels={this.rotateLabels}
             legendColumn={columns[0]}
             dataFormatting={dataFormatting}
             chartColors={chartColors}
@@ -155,12 +190,12 @@ export default class ChataStackedColumnChart extends Component {
             }}
             data={data}
             maxValue={max}
-            uniqueYLabels={this.uniqueYLabels}
-            uniqueXLabels={this.uniqueXLabels}
+            uniqueYLabels={this.uniqueXLabels}
+            uniqueXLabels={this.uniqueYLabels}
             width={width}
             height={height}
-            labelValueX={labelValueX}
-            labelValueY={labelValueY}
+            labelValueY={labelValueX}
+            labelValueX={labelValueY}
             dataValue={dataValue}
             onChartClick={onChartClick}
             tooltipFormatter={tooltipFormatter}

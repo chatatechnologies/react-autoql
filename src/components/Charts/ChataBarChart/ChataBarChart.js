@@ -6,6 +6,7 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { getMinAndMaxValues } from '../helpers.js'
+import { shouldRotateLabels } from '../../../js/Util'
 
 export default class ChataBarChart extends Component {
   xScale = scaleLinear()
@@ -23,6 +24,7 @@ export default class ChataBarChart extends Component {
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
+    onLabelChange: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -37,7 +39,45 @@ export default class ChataBarChart extends Component {
   static defaultProps = {
     labelValue: 'label',
     dataFormatting: {},
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
+  }
+
+  handleLabelRotation = (tickWidth, labelArray) => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      tickWidth,
+      labelArray,
+      this.props.columns[1],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  getTickValues = (barHeight, labelArray) => {
+    try {
+      const interval = Math.ceil(
+        (this.props.data.length * 16) / this.props.height
+      )
+      let yTickValues
+
+      if (barHeight < 16) {
+        yTickValues = []
+        labelArray.forEach((label, index) => {
+          if (index % interval === 0) {
+            yTickValues.push(label)
+          }
+        })
+      }
+
+      return yTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   render = () => {
@@ -48,6 +88,8 @@ export default class ChataBarChart extends Component {
       tooltipFormatter,
       onLegendClick,
       legendLabels,
+      innerPadding,
+      outerPadding,
       chartColors,
       bottomMargin,
       onChartClick,
@@ -71,22 +113,14 @@ export default class ChataBarChart extends Component {
     const yScale = this.yScale
       .domain(data.map(d => d[labelValue]))
       .range([height - bottomMargin, topMargin])
-      .paddingInner(0.5)
-      .paddingOuter(2)
+      .paddingInner(innerPadding)
+      .paddingOuter(outerPadding)
 
+    const labelArray = data.map(element => element[labelValue])
     const tickWidth = (width - leftMargin - rightMargin) / 6
-
     const barHeight = height / data.length
-    const interval = Math.ceil((data.length * 16) / height)
-    let yTickValues
-    if (barHeight < 16) {
-      yTickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          yTickValues.push(element[labelValue])
-        }
-      })
-    }
+    const yTickValues = this.getTickValues(barHeight, labelArray)
+    this.handleLabelRotation(tickWidth, labelArray)
 
     return (
       <g data-test="chata-bar-chart">
@@ -104,7 +138,7 @@ export default class ChataBarChart extends Component {
           width={width}
           height={height}
           yTicks={yTickValues}
-          rotateLabels={tickWidth < 135}
+          rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
           hasBottomLegend={data[0].origRow.length > 2}
           bottomLegendWidth={bottomLegendWidth}

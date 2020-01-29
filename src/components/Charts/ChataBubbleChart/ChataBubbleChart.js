@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Axes } from '../Axes'
-import { onlyUnique } from '../../../js/Util.js'
-import { Circles } from '../Circles'
 import { scaleBand } from 'd3-scale'
 import { max } from 'd3-array'
+
+import { Axes } from '../Axes'
+import { Circles } from '../Circles'
+import { onlyUnique, shouldRotateLabels } from '../../../js/Util.js'
 
 export default class ChataBubbleChart extends Component {
   xScale = scaleBand()
@@ -24,6 +25,7 @@ export default class ChataBubbleChart extends Component {
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
     tooltipFormatter: PropTypes.func,
+    onLabelChange: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -40,7 +42,70 @@ export default class ChataBubbleChart extends Component {
     labelValueX: 'labelX',
     labelValueY: 'labelY',
     dataFormatting: {},
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
+  }
+
+  handleLabelRotation = labelArray => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      this.squareWidth,
+      labelArray,
+      this.props.columns[1],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  getXTickValues = uniqueXLabels => {
+    try {
+      this.squareWidth = this.props.width / uniqueXLabels.length
+      const intervalWidth = Math.ceil(
+        (uniqueXLabels.length * 16) / this.props.width
+      )
+
+      let xTickValues
+      if (this.squareWidth < 16) {
+        xTickValues = []
+        uniqueXLabels.forEach((element, index) => {
+          if (index % intervalWidth === 0) {
+            xTickValues.push(element)
+          }
+        })
+      }
+
+      return xTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
+  }
+
+  getYTickValues = uniqueYLabels => {
+    this.squareHeight = this.props.height / uniqueYLabels.length
+    const intervalHeight = Math.ceil(
+      (uniqueYLabels.length * 16) / this.props.height
+    )
+
+    try {
+      let yTickValues
+      if (this.squareHeight < 16) {
+        yTickValues = []
+        uniqueYLabels.forEach((element, index) => {
+          if (index % intervalHeight === 0) {
+            yTickValues.push(element)
+          }
+        })
+      }
+
+      return yTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   render = () => {
@@ -81,30 +146,9 @@ export default class ChataBubbleChart extends Component {
       .rangeRound([height - bottomMargin, topMargin])
       .paddingInner(0)
 
-    const squareHeight = height / uniqueYLabels.length
-    const squareWidth = width / uniqueXLabels.length
-
-    const intervalHeight = Math.ceil((uniqueYLabels.length * 16) / height)
-    const intervalWidth = Math.ceil((uniqueXLabels.length * 16) / width)
-
-    let xTickValues
-    if (squareWidth < 16) {
-      xTickValues = []
-      uniqueXLabels.forEach((element, index) => {
-        if (index % intervalWidth === 0) {
-          xTickValues.push(element)
-        }
-      })
-    }
-    let yTickValues
-    if (squareHeight < 16) {
-      yTickValues = []
-      uniqueYLabels.forEach((element, index) => {
-        if (index % intervalHeight === 0) {
-          yTickValues.push(element)
-        }
-      })
-    }
+    const xTickValues = this.getXTickValues(uniqueXLabels)
+    const yTickValues = this.getYTickValues(uniqueYLabels)
+    this.handleLabelRotation(uniqueXLabels)
 
     return (
       <g data-test="chata-bubble-chart">
@@ -124,7 +168,7 @@ export default class ChataBubbleChart extends Component {
           yTicks={yTickValues}
           xTicks={xTickValues}
           dataFormatting={this.props.dataFormatting}
-          rotateLabels={squareWidth < 135}
+          rotateLabels={this.rotateLabels}
           chartColors={chartColors}
         />
         {
