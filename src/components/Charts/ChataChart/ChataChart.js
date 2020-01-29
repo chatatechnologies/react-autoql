@@ -23,6 +23,9 @@ import { getLegendLabelsForMultiSeries } from '../helpers.js'
 import './ChataChart.scss'
 
 export default class ChataChart extends Component {
+  INNER_PADDING = 0.5
+  OUTER_PADDING = 2
+
   constructor(props) {
     super(props)
     const { chartColors } = props
@@ -73,8 +76,7 @@ export default class ChataChart extends Component {
   componentDidMount = () => {
     this.CHART_ID = uuid.v4()
     if (this.props.type !== 'pie') {
-      setTimeout(this.updateMargins, 100)
-      this.updateMargins()
+      this.iterativelyUpdateMargins()
     }
   }
 
@@ -84,18 +86,22 @@ export default class ChataChart extends Component {
       this.props.type !== prevProps.type &&
       this.props.type !== 'pie'
     ) {
-      setTimeout(this.updateMargins, 100)
-      this.updateMargins()
+      this.iterativelyUpdateMargins()
       ReactTooltip.rebuild()
     }
   }
 
+  iterativelyUpdateMargins = () => {
+    setTimeout(this.updateMargins, 100)
+    this.updateMargins()
+  }
+
   updateMargins = () => {
     try {
-      const xAxisBBox = select(this.chartRef)
+      const xAxis = select(this.chartRef)
         .select('.axis-Bottom')
         .node()
-        .getBBox()
+      const xAxisBBox = xAxis ? xAxis.getBBox() : {}
 
       const yAxisLabels = select(this.chartRef)
         .select('.axis-Left')
@@ -106,10 +112,11 @@ export default class ChataChart extends Component {
       )
 
       // Space for legend
-      const legendBBox = select(this.chartRef)
+      const legend = select(this.chartRef)
         .select('.legendOrdinal-container')
         .node()
-        .getBBox()
+
+      const legendBBox = legend ? legend.getBBox() : undefined
 
       let bottomLegendMargin = this.state.bottomLegendMargin
       let bottomLegendWidth = this.state.bottomLegendWidth
@@ -149,8 +156,8 @@ export default class ChataChart extends Component {
       }
 
       this.setState({
-        leftMargin,
-        bottomMargin,
+        leftMargin: leftMargin || this.state.leftMargin,
+        bottomMargin: bottomMargin || this.state.bottomMargin,
         rightMargin,
         bottomLegendMargin,
         bottomLegendWidth
@@ -283,6 +290,12 @@ export default class ChataChart extends Component {
     return {
       data: filteredSeriesData,
       colorScale: this.colorScale,
+      innerPadding: this.INNER_PADDING,
+      outerPadding: this.OUTER_PADDING,
+      onLabelChange: () =>
+        setTimeout(() => {
+          this.updateMargins()
+        }, 100),
       height,
       width,
       columns,
@@ -422,8 +435,8 @@ export default class ChataChart extends Component {
     <ChataStackedColumnChart
       {...this.getCommonChartProps()}
       dataValue="value"
-      labelValueX="labelY"
-      labelValueY="labelX"
+      labelValueX="labelX"
+      labelValueY="labelY"
       tooltipFormatter={this.tooltipFormatter3D}
     />
   )

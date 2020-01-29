@@ -4,6 +4,10 @@
   line-height: 22px;
 }
 
+.chata-drawer.disable-selection {
+  user-select: none;
+}
+
 .chata-drawer .chata-drawer-content-container {
   width: 100%;
   height: 100%;

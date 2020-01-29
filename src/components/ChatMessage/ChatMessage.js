@@ -491,8 +491,8 @@ export default class ChatMessage extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 40 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight // 88% of chat height minus message margins
+      chartWidth = chatContainer.clientWidth - 60 // 100% of chat width minus message margins minus chat container margins
+      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
     }
 
     if (this.state.displayType === 'pie' && chartHeight > 330) {

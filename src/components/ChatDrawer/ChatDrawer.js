@@ -6,7 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
-import { throttle, debounce } from 'throttle-debounce'
+// import { throttle, debounce } from 'throttle-debounce'
 
 // Components
 import { Icon } from '../Icon'
@@ -15,7 +15,6 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import {
-  runQueryOnly,
   runDrilldown,
   cancelQuery,
   fetchQueryTips
@@ -872,6 +871,7 @@ export default class ChatDrawer extends React.Component {
       isResizing: false
     })
     window.removeEventListener('mousemove', this.resize)
+    window.removeEventListener('mouseup', this.stopResize)
   }
 
   renderResizeHandle = () => {
@@ -905,7 +905,9 @@ export default class ChatDrawer extends React.Component {
       <Fragment>
         <Drawer
           data-test="chata-drawer-test"
-          className="chata-drawer"
+          className={`chata-drawer${
+            this.state.isResizing ? ' disable-selection' : ''
+          }`}
           open={this.props.isVisible}
           showMask={this.props.showMask}
           placement={this.getPlacementProp()}

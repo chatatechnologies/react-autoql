@@ -3,8 +3,10 @@ import PropTypes from 'prop-types'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import _get from 'lodash.get'
 
 import { getMinAndMaxValues } from '../helpers.js'
+import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
 
 export default class ChataBarChart extends Component {
   xScale = scaleBand()
@@ -22,6 +24,7 @@ export default class ChataBarChart extends Component {
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
+    onLabelChange: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -36,7 +39,45 @@ export default class ChataBarChart extends Component {
   static defaultProps = {
     labelValue: 'label',
     dataFormatting: {},
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
+  }
+
+  handleLabelRotation = (tickWidth, labelArray) => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      tickWidth,
+      labelArray,
+      this.props.columns[0],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  getTickValues = (tickWidth, labelArray) => {
+    try {
+      const interval = Math.ceil(
+        (this.props.data.length * 16) / this.props.width
+      ) // we should take into account the outer padding here
+      let xTickValues
+
+      if (tickWidth < 16) {
+        xTickValues = []
+        labelArray.forEach((label, index) => {
+          if (index % interval === 0) {
+            xTickValues.push(label)
+          }
+        })
+      }
+
+      return xTickValues
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   render = () => {
@@ -45,6 +86,8 @@ export default class ChataBarChart extends Component {
       bottomLegendMargin,
       tooltipFormatter,
       onLegendClick,
+      innerPadding,
+      outerPadding,
       chartColors,
       bottomMargin,
       onChartClick,
@@ -65,24 +108,17 @@ export default class ChataBarChart extends Component {
     const xScale = this.xScale
       .domain(data.map(d => d[labelValue]))
       .range([leftMargin, width - rightMargin])
-      .paddingInner(0.5)
-      .paddingOuter(2)
+      .paddingInner(innerPadding)
+      .paddingOuter(outerPadding)
 
     const yScale = this.yScale
       .domain([minValue, maxValue])
       .range([height - bottomMargin, topMargin])
 
-    const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 16) / width)
-    let xTickValues
-    if (barWidth < 16) {
-      xTickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          xTickValues.push(element[labelValue])
-        }
-      })
-    }
+    const labelArray = data.map(element => element[labelValue])
+    const tickWidth = getTickWidth(xScale, innerPadding)
+    const xTickValues = this.getTickValues(tickWidth, labelArray)
+    this.handleLabelRotation(tickWidth, labelArray)
 
     return (
       <g data-test="chata-column-chart">
@@ -100,7 +136,7 @@ export default class ChataBarChart extends Component {
           width={width}
           height={height}
           xTicks={xTickValues}
-          rotateLabels={barWidth < 135}
+          rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
           hasBottomLegend={data[0].origRow.length > 2}
           bottomLegendWidth={this.props.bottomLegendWidth}

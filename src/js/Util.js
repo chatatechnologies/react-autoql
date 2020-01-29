@@ -786,3 +786,51 @@ export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
     }, duration)
   }
 }
+
+export const getChartLabelTextWidthInPx = text => {
+  try {
+    const tempDiv = document.createElement('DIV')
+    tempDiv.innerHTML = text
+    tempDiv.style.display = 'inline-block'
+    tempDiv.style.position = 'absolute'
+    tempDiv.style.visibility = 'hidden'
+    tempDiv.style.fontSize = '14px'
+    document.body.appendChild(tempDiv)
+    const textWidth = tempDiv.clientWidth
+    document.body.removeChild(tempDiv)
+
+    return textWidth
+  } catch (error) {
+    console.error(error)
+    return 0
+  }
+}
+
+export const getLongestLabelInPx = (labels, col, config) => {
+  let max = getChartLabelTextWidthInPx(labels[0])
+  labels.forEach(label => {
+    const formattedLabel = formatChartLabel({ d: label, col, config })
+      .formattedLabel
+    const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
+
+    if (newLabelWidth > max) {
+      max = newLabelWidth
+    }
+  })
+
+  return max
+}
+
+export const shouldRotateLabels = (tickWidth, labels, col, config) => {
+  const labelWidth = getLongestLabelInPx(labels, col, config)
+  return tickWidth < labelWidth
+}
+
+export const getTickWidth = (scale, innerPadding) => {
+  try {
+    const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
+    return width
+  } catch (error) {
+    return 0
+  }
+}
