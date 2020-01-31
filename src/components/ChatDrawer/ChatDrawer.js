@@ -842,11 +842,11 @@ export default class ChatDrawer extends React.Component {
     />
   )
 
-  resize = e => {
+  resizeDrawer = e => {
     const self = this
     const placement = this.getPlacementProp()
 
-    if (placement === 'right' || placement === 'left') {
+    if (placement === 'right') {
       const offset = _get(self.state.startingResizePosition, 'x') - e.pageX
       const newWidth = _get(self.state.startingResizePosition, 'width') + offset
       if (Number(newWidth)) {
@@ -854,8 +854,25 @@ export default class ChatDrawer extends React.Component {
           width: newWidth
         })
       }
-    } else if (placement === 'top' || placement === 'bottom') {
+    } else if (placement === 'left') {
+      const offset = e.pageX - _get(self.state.startingResizePosition, 'x')
+      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (Number(newWidth)) {
+        self.setState({
+          width: newWidth
+        })
+      }
+    } else if (placement === 'bottom') {
       const offset = _get(self.state.startingResizePosition, 'y') - e.pageY
+      const newHeight =
+        _get(self.state.startingResizePosition, 'height') + offset
+      if (Number(newHeight)) {
+        self.setState({
+          height: newHeight
+        })
+      }
+    } else if (placement === 'top') {
+      const offset = e.pageY - _get(self.state.startingResizePosition, 'y')
       const newHeight =
         _get(self.state.startingResizePosition, 'height') + offset
       if (Number(newHeight)) {
@@ -866,12 +883,12 @@ export default class ChatDrawer extends React.Component {
     }
   }
 
-  stopResize = () => {
+  stopResizingDrawer = () => {
     this.setState({
       isResizing: false
     })
-    window.removeEventListener('mousemove', this.resize)
-    window.removeEventListener('mouseup', this.stopResize)
+    window.removeEventListener('mousemove', this.resizeDrawer)
+    window.removeEventListener('mouseup', this.stopResizingDrawer)
   }
 
   renderResizeHandle = () => {
@@ -891,8 +908,8 @@ export default class ChatDrawer extends React.Component {
                 height: this.state.height
               }
             })
-            window.addEventListener('mousemove', self.resize)
-            window.addEventListener('mouseup', self.stopResize)
+            window.addEventListener('mousemove', self.resizeDrawer)
+            window.addEventListener('mouseup', self.stopResizingDrawer)
           }}
         />
       )
