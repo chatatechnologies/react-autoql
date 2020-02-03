@@ -32,13 +32,13 @@ export default class ChataStackedColumnChart extends Component {
     this.uniqueYLabels = data.map(d => d[labelValueY]).filter(onlyUnique)
 
     this.legendScale = scaleOrdinal()
-      .domain(this.uniqueXLabels)
+      .domain(this.uniqueYLabels)
       .range(chartColors)
 
-    this.legendLabels = this.uniqueYLabels.map((label, i) => {
+    this.legendLabels = this.uniqueYLabels.map(label => {
       return {
         label,
-        color: this.legendScale(i)
+        color: this.legendScale(label)
       }
     })
   }
@@ -201,7 +201,6 @@ export default class ChataStackedColumnChart extends Component {
             tooltipFormatter={tooltipFormatter}
             legendColumn={columns[0]}
             legendScale={this.legendScale}
-            chartColors={chartColors}
             activeKey={activeChartElementKey}
           />
         </g>
