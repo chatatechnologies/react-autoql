@@ -14,7 +14,7 @@ export default class Bars extends Component {
     activeKey: this.props.activeKey
   }
 
-  X0 = () => this.props.scales.xScale(0)
+  X0 = () => this.props.scales.xScale(this.props.scales.xScale.domain()[0])
   X = (d, i) => this.props.scales.xScale(_get(d, `cells[${i}].value`))
 
   render = () => {

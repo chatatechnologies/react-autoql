@@ -103,19 +103,19 @@ export default class ChatMessage extends React.Component {
       )
       this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
       messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
+    } else if (
+      this.state.displayType !== prevState.displayType &&
+      isChartType(this.state.displayType)
+    ) {
+      const messageContainer = document.getElementById(
+        `message-${this.props.id}`
+      )
+      if (messageContainer) {
+        messageContainer.style.height = 'unset'
+        this.TABLE_CONTAINER_HEIGHT = undefined
+      }
+      this.forceUpdate()
     }
-    // else if (
-    //   this.state.displayType !== prevState.displayType
-    // ) {
-    //   const messageContainer = document.getElementById(
-    //     `message-${this.props.id}`
-    //   )
-    //   if (messageContainer) {
-    //     messageContainer.style.height = 'unset'
-    //     this.TABLE_CONTAINER_HEIGHT = undefined
-    //   }
-    //   this.forceUpdate()
-    // }
   }
 
   switchView = displayType => {

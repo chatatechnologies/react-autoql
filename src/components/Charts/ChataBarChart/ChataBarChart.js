@@ -109,6 +109,7 @@ export default class ChataBarChart extends Component {
     const xScale = this.xScale
       .domain([minValue, maxValue])
       .range([leftMargin, width - rightMargin])
+      .nice()
 
     const yScale = this.yScale
       .domain(data.map(d => d[labelValue]))

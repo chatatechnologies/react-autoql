@@ -8,7 +8,7 @@ export default class Columns extends Component {
     activeKey: this.props.activeKey
   }
 
-  Y0 = () => this.props.scales.yScale(0)
+  Y0 = () => this.props.scales.yScale(this.props.scales.yScale.domain()[0])
   Y = (d, i) => this.props.scales.yScale(_get(d, `cells[${i}].value`))
 
   render = () => {
