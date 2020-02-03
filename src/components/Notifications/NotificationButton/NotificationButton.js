@@ -6,7 +6,7 @@ import { Icon } from '../../Icon'
 import {
   fetchNotificationCount,
   resetNotificationCount
-} from '../../../js/queryService'
+} from '../../../js/notificationService'
 
 import './NotificationButton.scss'
 

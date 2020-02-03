@@ -8,6 +8,7 @@ import {
   executeDashboard,
   NotificationButton,
   NotificationList,
+  NotificationItem,
   NotificationSettings,
   Icon as ChataIcon
 } from '@chata-ai/core'
@@ -34,6 +35,58 @@ import purefactsLogo from './purefacts_logo.png'
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/chata.esm.css'
 import './index.css'
+
+import sampleNotifications from './sampleNotifications'
+
+const sampleNotificationData = {
+  data: {
+    message: '',
+    data: {
+      columns: [
+        {
+          type: 'DATE',
+          name: 'transaction__transaction_date__month',
+          groupable: true,
+          active: false
+        },
+        {
+          type: 'DOLLAR_AMT',
+          name: 'transaction___sum',
+          groupable: false,
+          active: false
+        }
+      ],
+      display_type: 'data',
+      rows: [
+        [1527724800, 202.52],
+        [1530316800, 221.55],
+        [1532995200, 228.21],
+        [1535673600, 252.14],
+        [1538265600, 252.12],
+        [1540944000, 299.05],
+        [1543536000, 271.28],
+        [1546214400, 297.41],
+        [1548892800, 341.56],
+        [1551312000, 241.74],
+        [1553990400, 330.45],
+        [1556582400, 444.06],
+        [1559260800, 501.55],
+        [1561852800, 621.61],
+        [1564531200, 993.41],
+        [1567209600, 891.82],
+        [1569801600, 807.31],
+        [1572480000, 920.89],
+        [1575072000, 1504.98]
+      ],
+      sql: [
+        'select distinct qbo57.txndatemonth transaction__transaction_date__month, sum(qbo57.hometotalamt) transaction___sum from transactions qbo57 group by qbo57.txndatemonth'
+      ],
+      query_id: 'q_BZV5JAS5Q4i0A2iqff5nnA',
+      interpretation: 'total transactions by transaction month'
+    },
+    reference_id: '1.1.0'
+  }
+}
 
 class Item extends React.Component {
   render() {
@@ -209,11 +262,15 @@ export default class App extends Component {
     monthFormat: 'MMM YYYY',
     dayFormat: 'MMM DD, YYYY',
     dashboardTiles: undefined,
-    activeDashboardId: undefined
+    activeDashboardId: undefined,
+    notifications: [],
+    notificationSettings: []
   }
 
   componentDidMount = () => {
     this.fetchDashboard()
+    this.fetchNotifications()
+    this.fetchNotificationSettings()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -266,6 +323,17 @@ export default class App extends Component {
         activeDashboardId: null
       })
     }
+  }
+
+  fetchNotifications = () => {
+    // insert axios call here
+    const notifications = sampleNotifications
+    this.setState({ notifications })
+  }
+
+  fetchNotificationSettings = () => {
+    const notificationSettings = sampleNotifications
+    this.setState({ notificationSettings })
   }
 
   onLogin = async e => {
@@ -1212,6 +1280,47 @@ export default class App extends Component {
     )
   }
 
+  fetchNotificationContent = notification => {
+    this.setState({
+      activeNotificationContent: null,
+      isFetchingNotificationContent: true
+    })
+
+    setTimeout(() => {
+      this.setState({
+        activeNotificationContent: sampleNotificationData,
+        isFetchingNotificationContent: false
+      })
+    }, 1000)
+  }
+
+  renderNotificationContent = notification => {
+    if (this.state.isFetchingNotificationContent) {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            justifyContent: 'center'
+          }}
+        >
+          <Spin />
+        </div>
+      )
+    } else if (!this.state.activeNotificationContent) {
+      return 'No data available'
+    }
+
+    return (
+      <ResponseRenderer
+        response={this.state.activeNotificationContent}
+        displayType="column"
+      />
+    )
+  }
+
   renderNotificationsPage = () => {
     return (
       <div
@@ -1221,7 +1330,30 @@ export default class App extends Component {
           overflow: 'auto'
         }}
       >
-        <NotificationList />
+        <NotificationList
+          notifications={this.state.notifications}
+          onExpandCallback={this.fetchNotificationContent}
+          onCollapseCallback={() => {
+            this.setState({ currentNotificationContent: null })
+          }}
+          expandedContent={this.renderNotificationContent()}
+        />
+        {
+          //     this.state.notifications.map((n, i) => {
+          //     return (
+          //       <NotificationItem
+          //         key={`notification-item-${i}`}
+          //         notification={n}
+          //         onExpandCallback={() => {}}
+          //         onCollapseCallback={() => {
+          //           this.setState({ currentNotificationContent: null })
+          //         }}
+          //         content={this.renderNotificationContent(n)}
+          //       />
+          //     )
+          //   })
+          // </NotificationList>
+        }
       </div>
     )
   }

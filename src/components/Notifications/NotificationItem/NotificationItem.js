@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { ResponseRenderer } from '../../ResponseRenderer'
 import { Icon } from '../../Icon'
@@ -12,78 +13,45 @@ import './NotificationItem.scss'
 
 dayjs.extend(advancedFormat)
 
-const sampleNotificationData = {
-  data: {
-    message: '',
-    data: {
-      columns: [
-        {
-          type: 'DATE',
-          name: 'transaction__transaction_date__month',
-          groupable: true,
-          active: false
-        },
-        {
-          type: 'DOLLAR_AMT',
-          name: 'transaction___sum',
-          groupable: false,
-          active: false
-        }
-      ],
-      display_type: 'data',
-      rows: [
-        [1527724800, 202.52],
-        [1530316800, 221.55],
-        [1532995200, 228.21],
-        [1535673600, 252.14],
-        [1538265600, 252.12],
-        [1540944000, 299.05],
-        [1543536000, 271.28],
-        [1546214400, 297.41],
-        [1548892800, 341.56],
-        [1551312000, 241.74],
-        [1553990400, 330.45],
-        [1556582400, 444.06],
-        [1559260800, 501.55],
-        [1561852800, 621.61],
-        [1564531200, 993.41],
-        [1567209600, 891.82],
-        [1569801600, 807.31],
-        [1572480000, 920.89],
-        [1575072000, 1504.98]
-      ],
-      sql: [
-        'select distinct qbo57.txndatemonth transaction__transaction_date__month, sum(qbo57.hometotalamt) transaction___sum from transactions qbo57 group by qbo57.txndatemonth'
-      ],
-      query_id: 'q_BZV5JAS5Q4i0A2iqff5nnA',
-      interpretation: 'total transactions by transaction month'
-    },
-    reference_id: '1.1.0'
-  }
-}
-
 export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    notification: PropTypes.shape({}).isRequired,
-    onClick: PropTypes.func.isRequired,
-    onDismissClick: PropTypes.func.isRequired
+    notification: PropTypes.shape({
+      triggered: PropTypes.bool
+    }).isRequired,
+    onExpandCallback: PropTypes.func,
+    onDismissCallback: PropTypes.func
+  }
+
+  static defaultProps = {
+    onExpandCallback: () => {},
+    onDismissCallback: () => {}
   }
 
   state = {
-    notification: this.props.notification
+    notification: this.props.notification,
+    triggered: _get(this.props.notification, 'triggered')
+    // expanded: false
   }
 
   onClick = notification => {
+    if (notification.expanded) {
+      this.props.onCollapseCallback(notification)
+    } else {
+      this.props.onExpandCallback(notification)
+    }
+
     this.props.onClick(notification)
+    // this.setState({ expanded: !this.state.expanded })
   }
 
   onDismissClick = (e, notification) => {
     e.stopPropagation()
-    this.props.onDismissClick(e, notification)
-    // this.setState({ triggered: false })
     // Make backend call to acknowledge notification
+    // this.props.onDismissClick(e, notification)
+    this.props.onDismissCallback()
+    this.setState({ triggered: false })
   }
 
   formatTimestamp = timestamp => {
@@ -115,7 +83,7 @@ export default class NotificationItem extends React.Component {
       <div
         key={`chata-notification-item-${this.COMPONENT_KEY}`}
         className={`chata-notification-list-item
-          ${notification.triggered ? ' triggered' : ''}
+          ${this.state.triggered ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}`}
         onClick={() => this.onClick(notification)}
       >
@@ -137,7 +105,7 @@ export default class NotificationItem extends React.Component {
               {this.formatTimestamp(notification.timestamp)}
             </div>
           </div>
-          {notification.triggered && (
+          {this.state.triggered && (
             <div className="chata-notification-dismiss-btn">
               <Icon
                 type="notification-off"
@@ -154,10 +122,13 @@ export default class NotificationItem extends React.Component {
         </div>
         {notification.expanded && (
           <div className="chata-notification-data-container">
-            <ResponseRenderer
-              response={sampleNotificationData}
-              displayType="column"
-            />
+            {this.props.expandedContent}
+            {
+              //   <ResponseRenderer
+              //   response={sampleNotificationData}
+              //   displayType="column"
+              // />
+            }
           </div>
         )}
         {this.renderAlertColorStrip()}

@@ -32,14 +32,11 @@
     .chata-notification-alert-strip {
       height: 312px;
     }
-    // .chata-notification-list-item-header {
-    //   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    // }
   }
 
   &.triggered {
     .chata-notification-display-name {
-      color: var(--accent-color);
+      color: var(--accent-color) !important;
     }
 
     .chata-notification-dismiss-btn {
@@ -90,7 +87,6 @@
 
   .chata-notification-dismiss-icon {
     font-size: 18px;
-    height: 50px;
     width: 36px;
     height: 36px;
     padding: 9px;
@@ -159,6 +155,8 @@
 
     .chata-notification-display-name {
       font-size: 18px;
+      color: rgba(0, 0, 0, 0.7);
+      // opacity: 0.9;
     }
     .chata-notification-timestamp {
       font-size: 12px;

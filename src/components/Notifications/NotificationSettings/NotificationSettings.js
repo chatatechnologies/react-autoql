@@ -104,7 +104,7 @@ export default class NotificationSettings extends React.Component {
       rulesJSON: [],
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
-      frequencyCategorySelectValue: 'once',
+      frequencyCategorySelectValue: 'SINGLE_EVENT',
       frequencySelectValue: 'MONTH',
       everyCheckboxValue: false
     })

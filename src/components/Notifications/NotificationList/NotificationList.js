@@ -1,10 +1,11 @@
 import React from 'react'
 import ReactTooltip from 'react-tooltip'
+import PropTypes from 'prop-types'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 
-import notificationList from '../NotificationSettings/sampleNotifications'
+// import notificationList from '../NotificationSettings/sampleNotifications'
 
 import './NotificationList.scss'
 
@@ -14,10 +15,16 @@ export default class NotificationList extends React.Component {
   //   'https://backend.chata.io/notifications'
   // )
 
-  static propTypes = {}
+  static propTypes = {
+    notifications: PropTypes.arrayOf(PropTypes.shape({})),
+    onCollapseCallback: PropTypes.func,
+    onExpandCallback: PropTypes.func
+  }
 
   state = {
-    notificationList: notificationList
+    notificationList: this.props.notifications,
+    onCollapseCallback: () => {},
+    onExpandCallback: () => {}
   }
 
   componentDidMount = () => {
@@ -25,6 +32,7 @@ export default class NotificationList extends React.Component {
   }
 
   onItemClick = notification => {
+    // fetch data stored in integrators DB and display
     const newList = this.state.notificationList.map(n => {
       if (notification.id === n.id) {
         return {
@@ -92,9 +100,14 @@ export default class NotificationList extends React.Component {
               notification={notification}
               onClick={this.onItemClick}
               onDismissClick={this.onDismissClick}
+              onExpandCallback={this.props.onExpandCallback}
+              onCollapseCallback={this.props.onCollapseCallback}
+              expandedContent={this.props.expandedContent}
             />
           )
-        })}
+        })
+        // this.props.children
+        }
       </div>
     )
   }

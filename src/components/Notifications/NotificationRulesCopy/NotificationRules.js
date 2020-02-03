@@ -72,6 +72,8 @@ export default class NotificationRules extends React.Component {
     })
   }
 
+  validateLogic = () => {}
+
   addGroup = ({ initialData, isComplete = false, id }) => {
     const newId = id || uuid.v4()
     const newGroups = [
@@ -174,14 +176,20 @@ export default class NotificationRules extends React.Component {
                 />
               )
             })}
-          <span>
+          <div className="notification-first-group-btn-container">
             <Button
               className="notification-rule-add-btn-outer"
               onClick={this.addGroup}
             >
               <Icon type="plus" /> Add Condition Group
             </Button>
-          </span>
+            <Button
+              className="notification-rule-validate-btn-outer"
+              onClick={this.validateLogic}
+            >
+              <Icon type="plus" /> Validate
+            </Button>
+          </div>
         </div>
       </Fragment>
     )
