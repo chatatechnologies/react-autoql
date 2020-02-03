@@ -274,8 +274,8 @@ export default class NotificationSettings extends React.Component {
           <Select
             options={[
               { value: 'SINGLE_EVENT', label: 'Once, when this happens' },
-              { value: 'REPEAT_EVENT', label: 'Every time this happens' },
-              { value: 'SCHEDULE', label: 'On a schedule' }
+              { value: 'REPEAT_EVENT', label: 'Every time this happens' }
+              // { value: 'SCHEDULE', label: 'On a schedule' }
             ]}
             value={this.state.frequencyCategorySelectValue}
             onChange={value =>
@@ -290,33 +290,37 @@ export default class NotificationSettings extends React.Component {
                   {this.renderFrequencySelector([
                     { value: 'DAY', label: 'Daily' },
                     { value: 'WEEK', label: 'Weekly' },
-                    { value: 'MONTH', label: 'Monthly' },
-                    { value: 'YEAR', label: 'Yearly' }
+                    { value: 'MONTH', label: 'Monthly' }
+                    // { value: 'YEAR', label: 'Yearly' }
                   ])}
-                  {this.state.frequencySelectValue !== 'DAY' && (
-                    <span className="frequency-repeat-follow-text"> on:</span>
-                  )}
-                  {this.renderDateSelector(this.state.frequencySelectValue)}
+                  {
+                    // {this.state.frequencySelectValue !== 'DAY' && (
+                    //   <span className="frequency-repeat-follow-text"> on:</span>
+                    // )}
+                    // {this.renderDateSelector(this.state.frequencySelectValue)}
+                  }
                 </Fragment>
               )}
             </div>
           )}
-          {this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
-            <div className="frequency-category-select">
-              {this.renderRepeatCheckbox('Only on')}
-              {this.state.everyCheckboxValue && (
-                <Fragment>
-                  {this.renderFrequencySelector([
-                    { value: 'WEEK', label: 'Certain days of the week' },
-                    { value: 'MONTH', label: 'Certain days of the month' },
-                    { value: 'YEAR', label: 'Certain months of the year' }
-                  ])}
-                  {this.state.frequencySelectValue !== 'DAY' &&
-                    this.renderDateSelector(this.state.frequencySelectValue)}
-                </Fragment>
-              )}
-            </div>
-          )}
+          {
+            //   this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
+            //   <div className="frequency-category-select">
+            //     {this.renderRepeatCheckbox('Only on')}
+            //     {this.state.everyCheckboxValue && (
+            //       <Fragment>
+            //         {this.renderFrequencySelector([
+            //           { value: 'WEEK', label: 'Certain days of the week' },
+            //           { value: 'MONTH', label: 'Certain days of the month' },
+            //           { value: 'YEAR', label: 'Certain months of the year' }
+            //         ])}
+            //         {this.state.frequencySelectValue !== 'DAY' &&
+            //           this.renderDateSelector(this.state.frequencySelectValue)}
+            //       </Fragment>
+            //     )}
+            //   </div>
+            // )
+          }
         </div>
         <div className="frequency-description-box-container">
           {this.renderFrequencyDescription()}
