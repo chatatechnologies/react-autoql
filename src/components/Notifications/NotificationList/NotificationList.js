@@ -5,7 +5,10 @@ import _get from 'lodash.get'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-import { fetchNotificationList } from '../../../js/notificationService'
+import {
+  fetchNotificationList,
+  dismissAllNotifications
+} from '../../../js/notificationService'
 
 import './NotificationList.scss'
 
@@ -22,7 +25,6 @@ export default class NotificationList extends React.Component {
     customerId: PropTypes.string,
     token: PropTypes.string,
     domain: PropTypes.string,
-    // notifications: PropTypes.arrayOf(PropTypes.shape({})),
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     expandedContent: PropTypes.element
@@ -36,7 +38,6 @@ export default class NotificationList extends React.Component {
     token: undefined,
     domain: undefined,
     expandedContent: undefined,
-    // notifications: [],
     onCollapseCallback: () => {},
     onExpandCallback: () => {}
   }
@@ -51,8 +52,15 @@ export default class NotificationList extends React.Component {
   }
 
   getNotifications = () => {
-    const { userId, username, apiKey, customerId, token } = this.props
-    fetchNotificationList({ userId, username, apiKey, customerId, token })
+    const { userId, username, apiKey, customerId, token, domain } = this.props
+    fetchNotificationList({
+      userId,
+      username,
+      apiKey,
+      customerId,
+      token,
+      domain
+    })
       .then(response => {
         this.setState({
           notificationList: response.notifications,
@@ -87,23 +95,33 @@ export default class NotificationList extends React.Component {
     this.setState({ notificationList: newList })
   }
 
-  onDismissAllclick = () => {
+  onDismissAllClick = () => {
     const newList = this.state.notificationList.map(n => {
       return {
         ...n,
-        triggered: false
+        state: 'DISMISSED'
       }
     })
 
     this.setState({ notificationList: newList })
+
+    const { userId, username, apiKey, customerId, token, domain } = this.props
+    dismissAllNotifications({
+      userId,
+      username,
+      apiKey,
+      customerId,
+      token,
+      domain
+    }).catch(error => console.error(error))
   }
 
-  onDismissClick = (e, notification) => {
+  onDismissClick = notification => {
     const newList = this.state.notificationList.map(n => {
       if (notification.id === n.id) {
         return {
           ...n,
-          triggered: false
+          state: 'DISMISSED'
         }
       }
       return n
@@ -113,7 +131,7 @@ export default class NotificationList extends React.Component {
 
   renderDismissAllButton = () => (
     <div className="chata-notification-dismiss-all">
-      <span onClick={this.onDismissAllclick}>
+      <span onClick={this.onDismissAllClick}>
         <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
         Dismiss All
       </span>
@@ -157,9 +175,15 @@ export default class NotificationList extends React.Component {
         {this.state.notificationList.map((notification, i) => {
           return (
             <NotificationItem
+              customerId={this.props.customerId}
+              userId={this.props.userId}
+              username={this.props.username}
+              domain={this.props.domain}
+              apiKey={this.props.apiKey}
+              token={this.props.token}
               notification={notification}
               onClick={this.onItemClick}
-              onDismissClick={this.onDismissClick}
+              onDismissCallback={this.onDismissClick}
               onExpandCallback={this.props.onExpandCallback}
               onCollapseCallback={this.props.onCollapseCallback}
               expandedContent={this.props.expandedContent}

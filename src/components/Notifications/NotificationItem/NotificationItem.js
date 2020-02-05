@@ -8,6 +8,7 @@ import _get from 'lodash.get'
 
 import { ResponseRenderer } from '../../ResponseRenderer'
 import { Icon } from '../../Icon'
+import { dismissNotification } from '../../../js/notificationService'
 
 import './NotificationItem.scss'
 
@@ -17,31 +18,38 @@ export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    notification: PropTypes.shape({
-      triggered: PropTypes.bool
-    }).isRequired,
+    customerId: PropTypes.string,
+    userId: PropTypes.string,
+    username: PropTypes.string,
+    domain: PropTypes.string,
+    apiKey: PropTypes.string,
+    token: PropTypes.string,
+    notification: PropTypes.shape({}).isRequired,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     expandedContent: PropTypes.element
   }
 
   static defaultProps = {
+    customerId: undefined,
+    userId: undefined,
+    username: undefined,
+    domain: undefined,
+    apiKey: undefined,
+    token: undefined,
     expandedContent: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {}
   }
 
   state = {
-    notification: this.props.notification,
-    triggered: ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(
-      _get(this.props.notification, 'state')
-    )
+    notification: this.props.notification
     // expanded: false
   }
 
-  // componentDidMount = () => {
-
-  // }
+  getIsTriggered = state => {
+    return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(state)
+  }
 
   onClick = notification => {
     if (notification.expanded) {
@@ -56,10 +64,18 @@ export default class NotificationItem extends React.Component {
 
   onDismissClick = (e, notification) => {
     e.stopPropagation()
-    // Make backend call to acknowledge notification
-    // this.props.onDismissClick(e, notification)
-    this.props.onDismissCallback()
-    this.setState({ triggered: false })
+    this.props.onDismissCallback(notification)
+
+    const { customerId, userId, username, domain, apiKey, token } = this.props
+    dismissNotification({
+      notificationId: notification.id,
+      customerId,
+      userId,
+      username,
+      domain,
+      apiKey,
+      token
+    }).catch(error => console.error(error))
   }
 
   formatTimestamp = timestamp => {
@@ -91,7 +107,7 @@ export default class NotificationItem extends React.Component {
       <div
         key={`chata-notification-item-${this.COMPONENT_KEY}`}
         className={`chata-notification-list-item
-          ${this.state.triggered ? ' triggered' : ''}
+          ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}`}
         onClick={() => this.onClick(notification)}
       >
@@ -113,7 +129,7 @@ export default class NotificationItem extends React.Component {
               {this.formatTimestamp(notification.created_at)}
             </div>
           </div>
-          {this.state.triggered && (
+          {this.getIsTriggered(notification.state) && (
             <div className="chata-notification-dismiss-btn">
               <Icon
                 type="notification-off"
