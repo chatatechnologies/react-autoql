@@ -1,11 +1,11 @@
 import React from 'react'
 import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
+import _get from 'lodash.get'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-
-// import notificationList from '../NotificationSettings/sampleNotifications'
+import { fetchNotificationList } from '../../../js/notificationService'
 
 import './NotificationList.scss'
 
@@ -16,19 +16,58 @@ export default class NotificationList extends React.Component {
   // )
 
   static propTypes = {
-    notifications: PropTypes.arrayOf(PropTypes.shape({})),
+    apiKey: PropTypes.string,
+    userId: PropTypes.string,
+    username: PropTypes.string,
+    customerId: PropTypes.string,
+    token: PropTypes.string,
+    domain: PropTypes.string,
+    // notifications: PropTypes.arrayOf(PropTypes.shape({})),
     onCollapseCallback: PropTypes.func,
-    onExpandCallback: PropTypes.func
+    onExpandCallback: PropTypes.func,
+    expandedContent: PropTypes.element
   }
 
-  state = {
-    notificationList: this.props.notifications,
+  static defaultProps = {
+    apiKey: undefined,
+    userId: undefined,
+    username: undefined,
+    customerId: undefined,
+    token: undefined,
+    domain: undefined,
+    expandedContent: undefined,
+    // notifications: [],
     onCollapseCallback: () => {},
     onExpandCallback: () => {}
   }
 
+  state = {
+    isFetchingFirstNotifications: true,
+    notificationList: []
+  }
+
   componentDidMount = () => {
-    document.documentElement.style.setProperty('--accent-color', 'rgb(255,0,0)')
+    this.getNotifications()
+  }
+
+  getNotifications = () => {
+    const { userId, username, apiKey, customerId, token } = this.props
+    fetchNotificationList({ userId, username, apiKey, customerId, token })
+      .then(response => {
+        this.setState({
+          notificationList: response.notifications,
+          isFetchingFirstNotifications: false
+        })
+      })
+      .catch(() => {
+        this.setState({
+          isFetchingFirstNotifications: false
+        })
+      })
+  }
+
+  refreshNotifications = () => {
+    this.getNotifications()
   }
 
   onItemClick = notification => {
@@ -55,6 +94,7 @@ export default class NotificationList extends React.Component {
         triggered: false
       }
     })
+
     this.setState({ notificationList: newList })
   }
 
@@ -81,6 +121,26 @@ export default class NotificationList extends React.Component {
   )
 
   render = () => {
+    if (this.state.isFetchingFirstNotifications) {
+      return (
+        <div
+          data-test="notification-list"
+          style={{ textAlign: 'center', marginTop: '100px' }}
+        >
+          Loading...
+        </div>
+      )
+    } else if (!_get(this.state.notificationList, 'length')) {
+      return (
+        <div
+          data-test="notification-list"
+          style={{ textAlign: 'center', marginTop: '100px' }}
+        >
+          No notifications to display
+        </div>
+      )
+    }
+
     return (
       <div
         className="chata-notification-list-container"
@@ -105,9 +165,7 @@ export default class NotificationList extends React.Component {
               expandedContent={this.props.expandedContent}
             />
           )
-        })
-        // this.props.children
-        }
+        })}
       </div>
     )
   }

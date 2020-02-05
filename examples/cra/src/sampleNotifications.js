@@ -75,7 +75,7 @@ export default [
         ]
       }
     ],
-    data_return_query: 'total bank balance',
+    data_return_query: 'total bank balance per day last 5 days',
     notification_type: 'SCHEDULED',
     reset_period: null,
     cycle: 'MONTH',

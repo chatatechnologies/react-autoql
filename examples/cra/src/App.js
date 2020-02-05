@@ -243,7 +243,7 @@ export default class App extends Component {
     darkAccentColor: '#525252',
     maxMessages: 10,
     isEditing: false,
-    demo: true,
+    demo: localStorage.getItem('demo') == 'true',
     debug: true,
     test: true,
     apiKey: localStorage.getItem('api-key') || '',
@@ -271,12 +271,18 @@ export default class App extends Component {
     this.fetchDashboard()
     this.fetchNotifications()
     this.fetchNotificationSettings()
+    this.checkAuthentication()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.demo !== this.state.demo) {
       this.fetchDashboard()
     }
+  }
+
+  checkAuthentication = () => {
+    const loginToken = localStorage.getItem('loginToken')
+    this.getJWT(loginToken)
   }
 
   fetchDashboard = async () => {
@@ -336,18 +342,54 @@ export default class App extends Component {
     this.setState({ notificationSettings })
   }
 
+  getBaseUrl = () => {
+    return window.location.href.includes('prod')
+      ? 'https://backend.chata.io'
+      : 'https://backend-staging.chata.io'
+  }
+
+  getJWT = async loginToken => {
+    if (!loginToken) {
+      throw new Error('Invalid Login Token')
+    }
+
+    const baseUrl = this.getBaseUrl()
+
+    // Use login token to get JWT token
+    const jwtResponse = await axios.get(
+      `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${loginToken}`
+        }
+      }
+    )
+
+    // Put jwt token into storage
+    const jwtToken = jwtResponse.data
+    localStorage.setItem('jwtToken', jwtToken)
+
+    this.setState({
+      isAuthenticated: true,
+      componentKey: uuid.v4(),
+      activeIntegrator: this.getActiveIntegrator()
+    })
+  }
+
   onLogin = async e => {
-    e.preventDefault()
+    if (e) {
+      e.preventDefault()
+    }
 
     try {
-      const baseUrl = window.location.href.includes('prod')
-        ? 'https://backend.chata.io'
-        : 'https://backend-staging.chata.io'
+      const baseUrl = this.getBaseUrl()
 
       // Login to get login token
       const loginFormData = new FormData()
       loginFormData.append('username', this.state.email)
       loginFormData.append('password', this.state.password)
+      // loginFormData.append('user_id', this.state.userId)
+      // loginFormData.append('customer_id', this.state.customerId)
       const loginResponse = await axios.post(
         `${baseUrl}/api/v1/login`,
         loginFormData,
@@ -362,27 +404,10 @@ export default class App extends Component {
       const loginToken = loginResponse.data
       localStorage.setItem('loginToken', loginToken)
 
-      // Use login token to get JWT token
-      const jwtResponse = await axios.get(`${baseUrl}/api/v1/jwt`, {
-        headers: {
-          Authorization: `Bearer ${loginToken}`
-        }
-      })
+      this.getJWT(loginToken)
 
-      // Put jwt token into storage
-      const jwtToken = jwtResponse.data
-      localStorage.setItem('jwtToken', jwtToken)
-
-      this.setState({
-        isAuthenticated: true,
-        componentKey: uuid.v4(),
-        activeIntegrator: this.getActiveIntegrator()
-      })
-
+      message.success('Login Sucessful!', 0.8)
       this.fetchDashboard()
-      return message.success(
-        'Login Sucessful! Your token will be valid for 6 hours if you do not clear your cache.'
-      )
     } catch (error) {
       console.error(error)
       // Clear tokens
@@ -394,8 +419,9 @@ export default class App extends Component {
         componentKey: uuid.v4()
       })
 
-      this.fetchDashboard()
-      return message.error('Login Unsuccessful. Check logs for details.')
+      // Dont fetch dashboard if authentication failed...
+      // this.fetchDashboard()
+      message.error('Login Unsuccessful. Check logs for details.')
     }
   }
 
@@ -443,7 +469,10 @@ export default class App extends Component {
         <Switch
           defaultChecked={this.state[propName]}
           checked={this.state[propName] === true}
-          onChange={e => this.setState({ [propName]: e })}
+          onChange={e => {
+            this.setState({ [propName]: e })
+            localStorage.setItem(propName, e)
+          }}
         />
       </div>
     )
@@ -609,35 +638,14 @@ export default class App extends Component {
           <Fragment>
             <h3>You must login to access data</h3>
             <Form onSubmit={this.onLogin}>
-              <h4>Username</h4>
+              <h4>Email (optional)</h4>
               <Input
+                name="username"
                 onChange={e => {
-                  this.setState({ email: e.target.value })
+                  this.setState({ username: e.target.value })
                 }}
-                value={this.state.email}
-              />
-              <h4>Password</h4>
-              <Input
-                type="password"
-                onChange={e => {
-                  this.setState({ password: e.target.value })
-                }}
-                value={this.state.password}
-              />
-              <br />
-              <Button type="primary" htmlType="submit">
-                Login
-              </Button>
-            </Form>
-            <Form onSubmit={e => e.preventDefault()}>
-              <h4>API key *</h4>
-              <Input
-                name="api-key"
-                onChange={e => {
-                  this.setState({ apiKey: e.target.value })
-                }}
-                onBlur={e => localStorage.setItem('api-key', e.target.value)}
-                value={this.state.apiKey}
+                onBlur={e => localStorage.setItem('user-id', e.target.value)}
+                value={this.state.username}
               />
               <h4>Customer ID *</h4>
               <Input
@@ -659,15 +667,16 @@ export default class App extends Component {
                 onBlur={e => localStorage.setItem('userid', e.target.value)}
                 value={this.state.userId}
               />
-              <h4>Username (email)</h4>
+              <h4>API key *</h4>
               <Input
-                name="username"
+                name="api-key"
                 onChange={e => {
-                  this.setState({ username: e.target.value })
+                  this.setState({ apiKey: e.target.value })
                 }}
-                onBlur={e => localStorage.setItem('user-id', e.target.value)}
-                value={this.state.username}
+                onBlur={e => localStorage.setItem('api-key', e.target.value)}
+                value={this.state.apiKey}
               />
+
               <h4>Domain URL *</h4>
               <Input
                 name="domain-url"
@@ -677,7 +686,27 @@ export default class App extends Component {
                 onBlur={e => localStorage.setItem('domain-url', e.target.value)}
                 value={this.state.domain}
               />
+              <h4>Username *</h4>
+              <Input
+                onChange={e => {
+                  this.setState({ email: e.target.value })
+                }}
+                value={this.state.email}
+              />
+              <h4>Password *</h4>
+              <Input
+                type="password"
+                onChange={e => {
+                  this.setState({ password: e.target.value })
+                }}
+                value={this.state.password}
+              />
+              <br />
+              <Button type="primary" htmlType="submit">
+                Authenticate
+              </Button>
             </Form>
+            <Form onSubmit={e => e.preventDefault()}></Form>
           </Fragment>
         )}
         <h1>Drawer Props</h1>
@@ -1255,10 +1284,31 @@ export default class App extends Component {
           <ChataIcon type="dashboard" /> Dashboard
         </Menu.Item>
         <Menu.Item key="chatbar">Chat Bar</Menu.Item>
-        <Menu.Item key="settings">Notification Settings</Menu.Item>
-        <Menu.Item key="notifications">
-          <NotificationButton ref={r => (this.notificationBadgeRef = r)} />
-        </Menu.Item>
+        {!this.state.demo && this.state.isAuthenticated && (
+          <Menu.Item key="settings">Notification Settings</Menu.Item>
+        )}
+        {!this.state.demo && this.state.isAuthenticated && (
+          <Menu.Item key="notifications">
+            <NotificationButton
+              ref={r => (this.notificationBadgeRef = r)}
+              apiKey={this.state.apiKey}
+              userId={this.state.userId}
+              customerId={this.state.customerId}
+              token={localStorage.getItem('jwtToken')}
+              domain={this.state.domain}
+              username={this.state.username}
+              onNewNotification={() => {
+                // If a new notification is detected, refresh the list
+                if (
+                  this.notificationListRef &&
+                  this.state.currentPage === 'notifications'
+                ) {
+                  this.notificationListRef.refreshNotifications()
+                }
+              }}
+            />
+          </Menu.Item>
+        )}
       </Menu>
     )
   }
@@ -1331,29 +1381,20 @@ export default class App extends Component {
         }}
       >
         <NotificationList
-          notifications={this.state.notifications}
+          ref={ref => (this.notificationListRef = ref)}
+          apiKey={this.state.apiKey}
+          userId={this.state.userId}
+          customerId={this.state.customerId}
+          token={localStorage.getItem('jwtToken')}
+          domain={this.state.domain}
+          username={this.state.username}
+          // notifications={this.state.notifications}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
-          expandedContent={this.renderNotificationContent()}
+          // expandedContent={this.renderNotificationContent()}
         />
-        {
-          //     this.state.notifications.map((n, i) => {
-          //     return (
-          //       <NotificationItem
-          //         key={`notification-item-${i}`}
-          //         notification={n}
-          //         onExpandCallback={() => {}}
-          //         onCollapseCallback={() => {
-          //           this.setState({ currentNotificationContent: null })
-          //         }}
-          //         content={this.renderNotificationContent(n)}
-          //       />
-          //     )
-          //   })
-          // </NotificationList>
-        }
       </div>
     )
   }
@@ -1387,7 +1428,14 @@ export default class App extends Component {
           overflow: 'auto'
         }}
       >
-        <NotificationSettings />
+        <NotificationSettings
+          apiKey={this.state.apiKey}
+          userId={this.state.userId}
+          customerId={this.state.customerId}
+          token={localStorage.getItem('jwtToken')}
+          domain={this.state.domain}
+          username={this.state.username}
+        />
       </div>
     )
   }

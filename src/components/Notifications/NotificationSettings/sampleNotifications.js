@@ -5,10 +5,9 @@ export default [
     id: '1',
     title: 'Large Transaction',
     message: 'We detected a transaction over $1000',
-    expanded: false,
-    enabled: true,
+    status: 'ACTIVE',
     history: [],
-    logic: [
+    expression: [
       {
         id: '11',
         term_type: 'group',
@@ -30,26 +29,25 @@ export default [
         ]
       }
     ],
-    data_return_query: 'All bank transactions over 1000 today',
+    query: 'All bank transactions over 1000 today',
     notification_type: 'SCHEDULED',
     reset_period: null,
     cycle: 'YEAR',
     month_number: [7],
     day_number: [1],
     run_times: ['9:00'],
-    timestamp: new Date(),
-    triggered: true,
+    created_at: new Date(),
+    state: 'ACKNOWLEDGED',
     type: 'alert'
   },
   {
     id: '2',
     title: 'Low Balance',
     message: 'Your bank balance fell below $50,000',
-    expanded: false,
-    enabled: true,
+    status: 'ACTIVE',
     // last_triggered: '2020-01-10T16:40:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '22',
         term_type: 'group',
@@ -77,25 +75,24 @@ export default [
         ]
       }
     ],
-    data_return_query: 'total bank balance',
+    query: 'total bank balance',
     notification_type: 'SCHEDULED',
     reset_period: null,
     cycle: 'MONTH',
     day_number: [15, -1],
     run_times: ['9:00'],
-    timestamp: dayjs().subtract(1, 'd'),
-    triggered: true,
+    created_at: dayjs().subtract(1, 'd'),
+    state: 'ACKNOWLEDGED',
     type: 'alert'
   },
   {
     id: '3',
     title: 'Credit Card Limit Exceeded',
     message: 'Your credit card balance has exceeded the limit',
-    expanded: false,
-    enabled: false,
+    status: 'INACTIVE',
     // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '33',
         term_type: 'group',
@@ -123,25 +120,24 @@ export default [
         ]
       }
     ],
-    data_return_query: 'Total credit card balance',
+    query: 'Total credit card balance',
     notification_type: 'SINGLE_EVENT',
     reset_period: 'MONTH',
     cycle: 'WEEK',
     day_number: [0, 1, 2, 3, 4, 5, 6],
     run_times: [],
-    timestamp: dayjs().subtract(2, 'd'),
-    triggered: true,
+    created_at: dayjs().subtract(2, 'd'),
+    state: 'ACKNOWLEDGED',
     type: 'alert'
   },
   {
     id: '4',
     title: 'High Credit Card Balance',
     message: 'Your credit card balance has reached 80% of the limit',
-    expanded: false,
-    enabled: false,
+    status: 'INACTIVE',
     // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '44',
         term_type: 'group',
@@ -169,25 +165,24 @@ export default [
         ]
       }
     ],
-    data_return_query: 'Total credit card balance',
+    query: 'Total credit card balance',
     notification_type: 'REPEAT_EVENT',
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
     run_times: [],
-    timestamp: dayjs().subtract(3, 'd'),
-    triggered: false,
+    created_at: dayjs().subtract(3, 'd'),
+    state: 'DISMISSED',
     type: 'warning'
   },
   {
     id: '5',
     title: 'Over Spending',
     message: 'You spent more than you made this month',
-    expanded: false,
-    enabled: false,
+    status: 'INACTIVE',
     // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '55',
         term_type: 'group',
@@ -215,25 +210,24 @@ export default [
         ]
       }
     ],
-    data_return_query: 'Total credits and total debits',
+    query: 'Total credits and total debits',
     notification_type: 'REPEAT_EVENT',
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
     run_times: [],
-    timestamp: dayjs().subtract(4, 'd'),
-    triggered: false,
+    created_at: dayjs().subtract(4, 'd'),
+    state: 'DISMISSED',
     type: 'warning'
   },
   {
     id: '6',
     title: 'Savings Goal Not Met',
     message: "You didn't meet your savings goal of 10% this month",
-    expanded: false,
-    enabled: false,
+    status: 'INACTIVE',
     // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '66',
         term_type: 'group',
@@ -261,25 +255,24 @@ export default [
         ]
       }
     ],
-    data_return_query: 'Total debits and total credits',
+    query: 'Total debits and total credits',
     notification_type: 'REPEAT_EVENT',
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
     run_times: [],
-    timestamp: dayjs().subtract(5, 'd'),
-    triggered: false,
+    created_at: dayjs().subtract(5, 'd'),
+    state: 'DISMISSED',
     type: 'info'
   },
   {
     id: '7',
     title: 'Increased Spending',
     message: 'You spent more this month than you did last month',
-    expanded: false,
-    enabled: false,
+    status: 'INACTIVE',
     // last_triggered: '2020-01-02T12:10:56.520Z',
     history: [],
-    logic: [
+    expression: [
       {
         id: '77',
         term_type: 'group',
@@ -307,14 +300,14 @@ export default [
         ]
       }
     ],
-    data_return_query: 'total credits this month vs total credits last month',
+    query: 'total credits this month vs total credits last month',
     notification_type: 'REPEAT_EVENT',
     reset_period: null,
     cycle: 'WEEK',
     day_number: [1, 2, 3, 4, 5],
     run_times: [],
-    timestamp: dayjs().subtract(6, 'd'),
-    triggered: false,
+    created_at: dayjs().subtract(6, 'd'),
+    state: 'DISMISSED',
     type: 'info'
   }
 ]

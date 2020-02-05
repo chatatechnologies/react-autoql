@@ -11,6 +11,9 @@ import {
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
+  NOTIFICATION_POLLING_INTERVAL = 60000
+  NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
+
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
   //   'https://backend.chata.io/notifications'
@@ -41,8 +44,32 @@ export default class NotificationButton extends React.Component {
   }
 
   componentDidMount = async () => {
-    const { token, apiKey, customerId, userId, username, domain } = this.props
+    this.startPollingForNotifications()
+
+    // Listen for new notification SSE's and update real-time
+    // this.notificationEventSource.onmessage = e =>
+    //   this.updateNotificationsCountAndList(JSON.parse(e.data))
+  }
+
+  componentWillUnmount = () => {
+    if (this.pollForNotificationsInterval) {
+      clearInterval(this.pollForNotificationsInterval)
+    }
+  }
+
+  startPollingForNotifications = () => {
     // Fetch initial existing notifications from the BE
+    this.getNotificationCount()
+
+    // Continue fetching every minute
+    this.pollForNotificationsInterval = setInterval(() => {
+      this.getNotificationCount()
+    }, this.NOTIFICATION_POLLING_INTERVAL)
+  }
+
+  getNotificationCount = () => {
+    const { token, apiKey, customerId, userId, username, domain } = this.props
+
     fetchNotificationCount({
       token,
       apiKey,
@@ -50,19 +77,11 @@ export default class NotificationButton extends React.Component {
       userId,
       username,
       domain
-    }).then(response => {
-      this.setState({
-        count: response.data.count
-      })
     })
-
-    // Listen for new notification SSE's and update real-time
-    // this.notificationEventSource.onmessage = e =>
-    //   this.updateNotificationsCountAndList(JSON.parse(e.data))
-  }
-
-  updateNotificationsCountAndList = data => {
-    console.log(data)
+      .then(count => {
+        this.setState({ count })
+      })
+      .catch(() => {})
   }
 
   resetCount = () => {
@@ -75,9 +94,13 @@ export default class NotificationButton extends React.Component {
       userId,
       username,
       domain
-    }).then(() => {
-      this.setState({ count: 0 })
     })
+      .catch(error => {
+        console.error(error)
+      })
+      .finally(() => {
+        this.setState({ count: 0 })
+      })
   }
 
   renderBadge = () => {

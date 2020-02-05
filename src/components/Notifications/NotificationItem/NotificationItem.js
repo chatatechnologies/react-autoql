@@ -21,19 +21,27 @@ export default class NotificationItem extends React.Component {
       triggered: PropTypes.bool
     }).isRequired,
     onExpandCallback: PropTypes.func,
-    onDismissCallback: PropTypes.func
+    onDismissCallback: PropTypes.func,
+    expandedContent: PropTypes.element
   }
 
   static defaultProps = {
+    expandedContent: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {}
   }
 
   state = {
     notification: this.props.notification,
-    triggered: _get(this.props.notification, 'triggered')
+    triggered: ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(
+      _get(this.props.notification, 'state')
+    )
     // expanded: false
   }
+
+  // componentDidMount = () => {
+
+  // }
 
   onClick = notification => {
     if (notification.expanded) {
@@ -102,7 +110,7 @@ export default class NotificationItem extends React.Component {
             </div>
             <div className="chata-notification-timestamp">
               <Icon type="calendar" />{' '}
-              {this.formatTimestamp(notification.timestamp)}
+              {this.formatTimestamp(notification.created_at)}
             </div>
           </div>
           {this.state.triggered && (
@@ -122,7 +130,11 @@ export default class NotificationItem extends React.Component {
         </div>
         {notification.expanded && (
           <div className="chata-notification-data-container">
-            {this.props.expandedContent}
+            {this.props.expandedContent || (
+              <div style={{ textAlign: 'center', marginTop: '50px' }}>
+                No data available
+              </div>
+            )}
             {
               //   <ResponseRenderer
               //   response={sampleNotificationData}

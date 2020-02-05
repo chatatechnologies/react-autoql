@@ -42,7 +42,6 @@ export default class NotificationRules extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(prevState, this.state)) {
-      console.log(this.getJSON())
       this.props.onUpdate(this.isComplete(), this.getJSON())
     }
   }
@@ -183,12 +182,14 @@ export default class NotificationRules extends React.Component {
             >
               <Icon type="plus" /> Add Condition Group
             </Button>
-            <Button
-              className="notification-rule-validate-btn-outer"
-              onClick={this.validateLogic}
-            >
-              <Icon type="plus" /> Validate
-            </Button>
+            {
+              //   <Button
+              //   className="notification-rule-validate-btn-outer"
+              //   onClick={this.validateLogic}
+              // >
+              //   <Icon type="plus" /> Validate
+              // </Button>
+            }
           </div>
         </div>
       </Fragment>
