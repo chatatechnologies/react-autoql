@@ -18,9 +18,6 @@ export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
     domain: PropTypes.string,
     apiKey: PropTypes.string,
     token: PropTypes.string,
@@ -31,9 +28,6 @@ export default class NotificationItem extends React.Component {
   }
 
   static defaultProps = {
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
     domain: undefined,
     apiKey: undefined,
     token: undefined,
@@ -66,12 +60,9 @@ export default class NotificationItem extends React.Component {
     e.stopPropagation()
     this.props.onDismissCallback(notification)
 
-    const { customerId, userId, username, domain, apiKey, token } = this.props
+    const { domain, apiKey, token } = this.props
     dismissNotification({
       notificationId: notification.id,
-      customerId,
-      userId,
-      username,
       domain,
       apiKey,
       token

@@ -1292,11 +1292,8 @@ export default class App extends Component {
             <NotificationButton
               ref={r => (this.notificationBadgeRef = r)}
               apiKey={this.state.apiKey}
-              userId={this.state.userId}
-              customerId={this.state.customerId}
               token={localStorage.getItem('jwtToken')}
               domain={this.state.domain}
-              username={this.state.username}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
                 if (
@@ -1383,11 +1380,8 @@ export default class App extends Component {
         <NotificationList
           ref={ref => (this.notificationListRef = ref)}
           apiKey={this.state.apiKey}
-          userId={this.state.userId}
-          customerId={this.state.customerId}
           token={localStorage.getItem('jwtToken')}
           domain={this.state.domain}
-          username={this.state.username}
           // notifications={this.state.notifications}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
@@ -1430,11 +1424,8 @@ export default class App extends Component {
       >
         <NotificationSettings
           apiKey={this.state.apiKey}
-          userId={this.state.userId}
-          customerId={this.state.customerId}
           token={localStorage.getItem('jwtToken')}
           domain={this.state.domain}
-          username={this.state.username}
         />
       </div>
     )

@@ -23,9 +23,6 @@ export default class NotificationButton extends React.Component {
     overflowCount: PropTypes.number,
     token: PropTypes.string,
     apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
     domain: PropTypes.string
   }
 
@@ -33,9 +30,6 @@ export default class NotificationButton extends React.Component {
     overflowCount: 99,
     token: undefined,
     apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
     domain: undefined
   }
 
@@ -68,14 +62,11 @@ export default class NotificationButton extends React.Component {
   }
 
   getNotificationCount = () => {
-    const { token, apiKey, customerId, userId, username, domain } = this.props
+    const { token, apiKey, domain } = this.props
 
     fetchNotificationCount({
       token,
       apiKey,
-      customerId,
-      userId,
-      username,
       domain
     })
       .then(count => {
@@ -85,14 +76,11 @@ export default class NotificationButton extends React.Component {
   }
 
   resetCount = () => {
-    const { token, apiKey, customerId, userId, username, domain } = this.props
+    const { token, apiKey, domain } = this.props
 
     resetNotificationCount({
       token,
       apiKey,
-      customerId,
-      userId,
-      username,
       domain
     })
       .catch(error => {

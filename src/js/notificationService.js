@@ -2,16 +2,9 @@ import axios from 'axios'
 import _get from 'lodash.get'
 
 // ----------------- GET --------------------
-export const fetchNotificationCount = ({
-  customerId,
-  userId,
-  username,
-  domain,
-  apiKey,
-  token
-}) => {
+export const fetchNotificationCount = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -21,7 +14,7 @@ export const fetchNotificationCount = ({
     }
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications/state-count?key=${apiKey}&user_id=${userId}&customer_id=${customerId}&username=${username}`
+  const url = `${domain}/autoql/api/v1/rules/notifications/state-count?key=${apiKey}`
 
   return axiosInstance
     .get(url)
@@ -31,14 +24,7 @@ export const fetchNotificationCount = ({
     .catch(error => Promise.reject(error))
 }
 
-export const fetchNotificationList = ({
-  customerId,
-  userId,
-  username,
-  domain,
-  apiKey,
-  token
-}) => {
+export const fetchNotificationList = ({ domain, apiKey, token }) => {
   // return new Promise((resolve, reject) => {
   //   return setTimeout(() => {
   //     resolve({
@@ -87,7 +73,7 @@ export const fetchNotificationList = ({
   // })
 
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -97,7 +83,7 @@ export const fetchNotificationList = ({
     }
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=0&limit=10&user_id=${userId}&customer_id=${customerId}&username=${username}`
+  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=0&limit=10`
 
   return axiosInstance
     .get(url)
@@ -107,14 +93,7 @@ export const fetchNotificationList = ({
     .catch(error => Promise.reject(error))
 }
 
-export const fetchNotificationSettings = ({
-  customerId,
-  userId,
-  username,
-  domain,
-  apiKey,
-  token
-}) => {
+export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
   // return new Promise((resolve, reject) => {
   //   return setTimeout(() => {
   //     resolve([
@@ -160,7 +139,7 @@ export const fetchNotificationSettings = ({
   // })
 
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -170,7 +149,7 @@ export const fetchNotificationSettings = ({
     }
   })
 
-  const url = `${domain}/autoql/api/v1/rules?key=${apiKey}&user_id=${userId}&customer_id=${customerId}&username=${username}`
+  const url = `${domain}/autoql/api/v1/rules?key=${apiKey}`
 
   return axiosInstance
     .get(url)
@@ -181,16 +160,9 @@ export const fetchNotificationSettings = ({
 }
 
 // ----------------- PUT --------------------
-export const resetNotificationCount = ({
-  customerId,
-  userId,
-  username,
-  domain,
-  apiKey,
-  token
-}) => {
+export const resetNotificationCount = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -201,9 +173,6 @@ export const resetNotificationCount = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     notification_id: null,
     state: 'ACKNOWLEDGED'
   }
@@ -220,15 +189,12 @@ export const resetNotificationCount = ({
 
 export const deleteNotification = ({
   notificationId,
-  customerId,
-  userId,
-  username,
   domain,
   apiKey,
   token
 }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -244,9 +210,6 @@ export const deleteNotification = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     notification_id: notificationId,
     state: 'DELETED'
   }
@@ -261,16 +224,9 @@ export const deleteNotification = ({
     .catch(error => Promise.reject(error))
 }
 
-export const dismissAllNotifications = ({
-  customerId,
-  userId,
-  username,
-  domain,
-  apiKey,
-  token
-}) => {
+export const dismissAllNotifications = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -281,9 +237,6 @@ export const dismissAllNotifications = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     notification_id: null,
     state: 'DISMISSED'
   }
@@ -300,15 +253,12 @@ export const dismissAllNotifications = ({
 
 export const dismissNotification = ({
   notificationId,
-  customerId,
-  userId,
-  username,
   domain,
   apiKey,
   token
 }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -324,9 +274,6 @@ export const dismissNotification = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     notification_id: notificationId,
     state: 'DISMISSED'
   }
@@ -344,15 +291,12 @@ export const dismissNotification = ({
 export const updateNotificationStatus = ({
   notificationId,
   status,
-  customerId,
-  userId,
-  username,
   domain,
   apiKey,
   token
 }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -368,9 +312,6 @@ export const updateNotificationStatus = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     status
   }
 
@@ -387,15 +328,12 @@ export const updateNotificationStatus = ({
 // ----------------- POST --------------------
 export const createNotificationRule = ({
   notification,
-  customerId,
-  userId,
-  username,
   domain,
   apiKey,
   token
 }) => {
   // If there is missing data, dont bother making the call
-  if (!token || !apiKey || !userId || !customerId || !domain) {
+  if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
@@ -406,9 +344,6 @@ export const createNotificationRule = ({
   })
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    username,
     ...notification
   }
 

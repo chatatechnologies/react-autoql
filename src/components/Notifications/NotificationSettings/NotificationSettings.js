@@ -28,18 +28,12 @@ import './NotificationSettings.scss'
 export default class NotificationSettings extends React.Component {
   static propTypes = {
     apiKey: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    customerId: PropTypes.string,
     token: PropTypes.string,
     domain: PropTypes.string
   }
 
   static defaultProps = {
     apiKey: undefined,
-    userId: undefined,
-    username: undefined,
-    customerId: undefined,
     token: undefined,
     domain: undefined
   }
@@ -85,12 +79,9 @@ export default class NotificationSettings extends React.Component {
   }
 
   getNotificationSettings = () => {
-    const { userId, username, apiKey, customerId, token, domain } = this.props
+    const { apiKey, token, domain } = this.props
     fetchNotificationSettings({
-      userId,
-      username,
       apiKey,
-      customerId,
       token,
       domain
     })
@@ -137,7 +128,7 @@ export default class NotificationSettings extends React.Component {
   }
 
   onNotificationSave = () => {
-    const { customerId, userId, username, domain, apiKey, token } = this.props
+    const { domain, apiKey, token } = this.props
     const {
       titleInput,
       dataReturnQueryInput,
@@ -174,9 +165,6 @@ export default class NotificationSettings extends React.Component {
 
     createNotificationRule({
       notification: newNotification,
-      customerId,
-      userId,
-      username,
       domain,
       apiKey,
       token
@@ -219,14 +207,11 @@ export default class NotificationSettings extends React.Component {
 
     this.setState({ notificationList: newList })
 
-    const { userId, username, apiKey, customerId, token, domain } = this.props
+    const { apiKey, token, domain } = this.props
     updateNotificationStatus({
       notificationId: notification.id,
       status: newStatus,
-      userId,
-      username,
       apiKey,
-      customerId,
       token,
       domain
     }).catch(error => console.error(error))

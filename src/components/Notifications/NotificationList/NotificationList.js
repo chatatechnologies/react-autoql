@@ -20,9 +20,6 @@ export default class NotificationList extends React.Component {
 
   static propTypes = {
     apiKey: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    customerId: PropTypes.string,
     token: PropTypes.string,
     domain: PropTypes.string,
     onCollapseCallback: PropTypes.func,
@@ -32,9 +29,6 @@ export default class NotificationList extends React.Component {
 
   static defaultProps = {
     apiKey: undefined,
-    userId: undefined,
-    username: undefined,
-    customerId: undefined,
     token: undefined,
     domain: undefined,
     expandedContent: undefined,
@@ -52,12 +46,9 @@ export default class NotificationList extends React.Component {
   }
 
   getNotifications = () => {
-    const { userId, username, apiKey, customerId, token, domain } = this.props
+    const { apiKey, token, domain } = this.props
     fetchNotificationList({
-      userId,
-      username,
       apiKey,
-      customerId,
       token,
       domain
     })
@@ -105,12 +96,9 @@ export default class NotificationList extends React.Component {
 
     this.setState({ notificationList: newList })
 
-    const { userId, username, apiKey, customerId, token, domain } = this.props
+    const { apiKey, token, domain } = this.props
     dismissAllNotifications({
-      userId,
-      username,
       apiKey,
-      customerId,
       token,
       domain
     }).catch(error => console.error(error))
@@ -175,9 +163,6 @@ export default class NotificationList extends React.Component {
         {this.state.notificationList.map((notification, i) => {
           return (
             <NotificationItem
-              customerId={this.props.customerId}
-              userId={this.props.userId}
-              username={this.props.username}
               domain={this.props.domain}
               apiKey={this.props.apiKey}
               token={this.props.token}
