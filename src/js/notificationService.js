@@ -94,50 +94,6 @@ export const fetchNotificationList = ({ domain, apiKey, token }) => {
 }
 
 export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
-  // return new Promise((resolve, reject) => {
-  //   return setTimeout(() => {
-  //     resolve([
-  //       {
-  //         id: '13459185913857',
-  //         customer_id: 'customer-1',
-  //         user_id: 'rschesnuk@chata.ai',
-  //         title: 'Large Transaction',
-  //         message: 'We detected a transaction over $1000',
-  //         query: 'All bank transactions over 1000 today',
-  //         notification_type: 'REPEAT_EVENT',
-  //         status: 'ACTIVE',
-  //         cycle: 'WEEK',
-  //         reset_period: 'MONTH',
-  //         day_numbers: [1, 2, 3, 4, 5, 6, 7],
-  //         month_number: [],
-  //         run_times: [],
-  //         expression: [
-  //           {
-  //             id: '11',
-  //             term_type: 'group',
-  //             condition: 'TERMINATOR',
-  //             term_value: [
-  //               {
-  //                 id: '111',
-  //                 term_type: 'group',
-  //                 condition: 'TERMINATOR',
-  //                 term_value: [
-  //                   {
-  //                     id: '111',
-  //                     term_type: 'query',
-  //                     condition: 'EXISTS',
-  //                     term_value: 'All bank transactions over 1000'
-  //                   }
-  //                 ]
-  //               }
-  //             ]
-  //           }
-  //         ]
-  //       }
-  //     ])
-  //   }, 1000)
-  // })
-
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -154,7 +110,11 @@ export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
   return axiosInstance
     .get(url)
     .then(response => {
-      return Promise.resolve(_get(response, 'data'))
+      const fullList = _get(response, 'data.data.rules')
+      const filteredList = fullList
+        ? fullList.filter(rule => rule.status !== 'DELETED')
+        : []
+      return Promise.resolve(filteredList)
     })
     .catch(error => Promise.reject(error))
 }
@@ -288,21 +248,15 @@ export const dismissNotification = ({
     .catch(error => Promise.reject(error))
 }
 
-export const updateNotificationStatus = ({
-  notificationId,
-  status,
-  domain,
-  apiKey,
-  token
-}) => {
+export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
   // Make sure there is an id, or it will batch all notifications
-  if (!notificationId) {
-    return Promise.reject(new Error('No ID provided'))
+  if (!rule) {
+    return Promise.reject(new Error('No rule to update'))
   }
 
   const axiosInstance = axios.create({
@@ -312,10 +266,10 @@ export const updateNotificationStatus = ({
   })
 
   const data = {
-    status
+    ...rule
   }
 
-  const url = `${domain}/autoql/api/v1/rules/${notificationId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/rules/${rule.id}?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -351,6 +305,29 @@ export const createNotificationRule = ({
 
   return axiosInstance
     .post(url, data)
+    .then(response => {
+      return Promise.resolve(response)
+    })
+    .catch(error => Promise.reject(error))
+}
+
+// DELETE
+export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
+  // If there is missing data, dont bother making the call
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+
+  return axiosInstance
+    .delete(url)
     .then(response => {
       return Promise.resolve(response)
     })

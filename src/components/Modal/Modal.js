@@ -78,7 +78,6 @@ export default class Modal extends React.Component {
               <div className="chata-modal-footer">
                 {this.props.footer || (
                   <div>
-                    {' '}
                     {this.props.showCancelButton && (
                       <Button type="default" onClick={this.props.onClose}>
                         Cancel
