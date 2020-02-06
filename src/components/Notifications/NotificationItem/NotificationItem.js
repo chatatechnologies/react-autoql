@@ -70,8 +70,8 @@ export default class NotificationItem extends React.Component {
   }
 
   formatTimestamp = timestamp => {
-    const time = dayjs(timestamp).format('h:mma')
-    const day = dayjs(timestamp).format('MM-DD-YY')
+    const time = dayjs.unix(timestamp).format('h:mma')
+    const day = dayjs.unix(timestamp).format('MM-DD-YY')
     const today = dayjs().format('MM-DD-YY')
     const yesterday = dayjs()
       .subtract(1, 'd')
@@ -82,9 +82,9 @@ export default class NotificationItem extends React.Component {
     } else if (day === yesterday) {
       return `Yesterday at ${time}`
     } else if (dayjs().isSame(timestamp, 'year')) {
-      return `${dayjs(timestamp).format('MMMM Do')} at ${time}`
+      return `${dayjs.unix(timestamp).format('MMMM Do')} at ${time}`
     }
-    return `${dayjs(timestamp).format('MMMM Do, YYYY')} at ${time}`
+    return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
   }
 
   renderAlertColorStrip = () => (
