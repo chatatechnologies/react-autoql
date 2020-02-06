@@ -17,17 +17,26 @@
   color: inherit;
   border: 1px solid #00000026;
   background: inherit;
-}
-.chata-btn.default:hover {
-  border-color: var(--chata-drawer-accent-color);
-  color: var(--chata-drawer-accent-color);
+  &:hover {
+    border-color: var(--chata-drawer-accent-color);
+    color: var(--chata-drawer-accent-color);
+  }
 }
 
 .chata-btn.primary {
   background: var(--chata-drawer-accent-color);
   border: 1px solid var(--chata-drawer-accent-color);
   color: white;
+  &:hover {
+    opacity: 0.8;
+  }
 }
-.chata-btn.primary:hover {
-  opacity: 0.8;
+.chata-btn.danger {
+  color: #ca0b00;
+  border: 1px solid #ca0b00;
+  background: inherit;
+  &:hover {
+    background-color: #ca0b00;
+    color: #fff;
+  }
 }
