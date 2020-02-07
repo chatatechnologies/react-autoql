@@ -15,12 +15,13 @@ import {
   // MdTitle,
   // MdDescription
 } from 'react-icons/md'
-import { FaRegTrashAlt, FaEye, FaDatabase } from 'react-icons/fa'
+import { FaRegTrashAlt, FaEye } from 'react-icons/fa'
 import {
   FiBell,
   FiBellOff,
   FiCalendar,
-  FiPlus
+  FiPlus,
+  FiDatabase
   // FiFileText
 } from 'react-icons/fi'
 import {
@@ -103,7 +104,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'database': {
-        icon = <FaDatabase />
+        icon = <FiDatabase />
         break
       }
       case 'description': {
