@@ -117,6 +117,13 @@ export default class NotificationList extends React.Component {
     this.setState({ notificationList: newList })
   }
 
+  onDeleteClick = notification => {
+    const newList = this.state.notificationList.filter(
+      n => n.id !== notification.id
+    )
+    this.setState({ notificationList: newList })
+  }
+
   renderDismissAllButton = () => (
     <div className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllClick}>
@@ -169,6 +176,7 @@ export default class NotificationList extends React.Component {
               notification={notification}
               onClick={this.onItemClick}
               onDismissCallback={this.onDismissClick}
+              onDeleteCallback={this.onDeleteClick}
               onExpandCallback={this.props.onExpandCallback}
               onCollapseCallback={this.props.onCollapseCallback}
               expandedContent={this.props.expandedContent}

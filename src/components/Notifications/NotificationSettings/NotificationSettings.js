@@ -513,15 +513,17 @@ export default class NotificationSettings extends React.Component {
         confirmDisabled={!!steps.find(step => !step.complete)}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            {this.state.activeRule && (
-              <Button
-                type="danger"
-                onClick={this.onRuleDelete}
-                loading={this.state.isDeletingRule}
-              >
-                Delete Notification
-              </Button>
-            )}
+            <div>
+              {this.state.activeRule && (
+                <Button
+                  type="danger"
+                  onClick={this.onRuleDelete}
+                  loading={this.state.isDeletingRule}
+                >
+                  Delete Notification
+                </Button>
+              )}
+            </div>
             <div>
               <Button
                 onClick={() => this.setState({ isEditModalVisible: false })}

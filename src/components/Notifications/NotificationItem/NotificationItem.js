@@ -6,9 +6,11 @@ import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 
-import { ResponseRenderer } from '../../ResponseRenderer'
 import { Icon } from '../../Icon'
-import { dismissNotification } from '../../../js/notificationService'
+import {
+  dismissNotification,
+  deleteNotification
+} from '../../../js/notificationService'
 
 import './NotificationItem.scss'
 
@@ -24,6 +26,7 @@ export default class NotificationItem extends React.Component {
     notification: PropTypes.shape({}).isRequired,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
+    onDeleteCallback: PropTypes.func,
     expandedContent: PropTypes.element
   }
 
@@ -33,7 +36,8 @@ export default class NotificationItem extends React.Component {
     token: undefined,
     expandedContent: undefined,
     onExpandCallback: () => {},
-    onDismissCallback: () => {}
+    onDismissCallback: () => {},
+    onDeleteCallback: () => {}
   }
 
   state = {
@@ -62,6 +66,19 @@ export default class NotificationItem extends React.Component {
 
     const { domain, apiKey, token } = this.props
     dismissNotification({
+      notificationId: notification.id,
+      domain,
+      apiKey,
+      token
+    }).catch(error => console.error(error))
+  }
+
+  onDeleteClick = (e, notification) => {
+    e.stopPropagation()
+    this.props.onDeleteCallback(notification)
+
+    const { domain, apiKey, token } = this.props
+    deleteNotification({
       notificationId: notification.id,
       domain,
       apiKey,
@@ -120,7 +137,7 @@ export default class NotificationItem extends React.Component {
               {this.formatTimestamp(notification.created_at)}
             </div>
           </div>
-          {this.getIsTriggered(notification.state) && (
+          {this.getIsTriggered(notification.state) ? (
             <div className="chata-notification-dismiss-btn">
               <Icon
                 type="notification-off"
@@ -129,6 +146,19 @@ export default class NotificationItem extends React.Component {
                 data-for="chata-notification-tooltip"
                 onClick={e => {
                   this.onDismissClick(e, notification)
+                  ReactTooltip.hide()
+                }}
+              />
+            </div>
+          ) : (
+            <div className="chata-notification-dismiss-btn">
+              <Icon
+                type="close"
+                className="chata-notification-dismiss-icon"
+                data-tip="Delete"
+                data-for="chata-notification-tooltip"
+                onClick={e => {
+                  this.onDeleteClick(e, notification)
                   ReactTooltip.hide()
                 }}
               />

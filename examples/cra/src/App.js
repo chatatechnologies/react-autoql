@@ -213,6 +213,8 @@ const demoDashboard = [
 ]
 
 export default class App extends Component {
+  authTimer = undefined
+
   state = {
     maintenance: false,
     currentPage: 'drawer',
@@ -278,6 +280,61 @@ export default class App extends Component {
     if (prevState.demo !== this.state.demo) {
       this.fetchDashboard()
     }
+  }
+
+  componentWillUnmount = () => {
+    if (this.authTimer) {
+      clearTimeout(this.authTimer)
+    }
+  }
+
+  executeQuery = query => {
+    const url = `${this.state.domain}/autoql/api/v1/query?key=${this.state.apiKey}`
+
+    const data = {
+      text: query,
+      username: 'notification-data',
+      customer_id: this.state.customerId,
+      user_id: this.state.userId
+    }
+
+    const token = localStorage.getItem('jwtToken')
+
+    const config = {}
+    if (token) {
+      config.headers = {
+        Authorization: `Bearer ${token}`
+      }
+    }
+
+    if (
+      !this.state.userId ||
+      !this.state.customerId ||
+      !this.state.apiKey ||
+      !this.state.domain
+    ) {
+      return Promise.reject({ error: 'unauthenticated' })
+    }
+
+    return axios
+      .post(url, data, config)
+      .then(response => {
+        if (response.data && typeof response.data === 'string') {
+          return Promise.reject({ error: 'parse error' })
+        }
+        if (
+          !response ||
+          !response.data ||
+          !response.data.data ||
+          response.data.data.display_type !== 'data'
+        ) {
+          return Promise.reject()
+        }
+        return Promise.resolve(response)
+      })
+      .catch(error => {
+        return Promise.reject(error)
+      })
   }
 
   checkAuthentication = () => {
@@ -368,6 +425,15 @@ export default class App extends Component {
     // Put jwt token into storage
     const jwtToken = jwtResponse.data
     localStorage.setItem('jwtToken', jwtToken)
+
+    if (this.authTimer) {
+      clearTimeout(this.authTimer)
+    }
+    this.authTimer = setTimeout(() => {
+      this.setState({
+        isAuthenticated: false
+      })
+    }, 2.16e7)
 
     this.setState({
       isAuthenticated: true,
@@ -1283,7 +1349,9 @@ export default class App extends Component {
         <Menu.Item key="dashboard">
           <ChataIcon type="dashboard" /> Dashboard
         </Menu.Item>
-        <Menu.Item key="chatbar">Chat Bar</Menu.Item>
+        {
+          // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
+        }
         {!this.state.demo && this.state.isAuthenticated && (
           <Menu.Item key="settings">Notification Settings</Menu.Item>
         )}
@@ -1296,6 +1364,7 @@ export default class App extends Component {
               domain={this.state.domain}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
+                console.log('NEW NOTIFICATION DETECTED')
                 if (
                   this.notificationListRef &&
                   this.state.currentPage === 'notifications'
@@ -1333,12 +1402,27 @@ export default class App extends Component {
       isFetchingNotificationContent: true
     })
 
-    setTimeout(() => {
-      this.setState({
-        activeNotificationContent: sampleNotificationData,
-        isFetchingNotificationContent: false
+    this.executeQuery(notification.query)
+      .then(response => {
+        this.setState({
+          activeNotificationContent: response,
+          isFetchingNotificationContent: false
+        })
       })
-    }, 1000)
+      .catch(error => {
+        this.setState({
+          activeNotificationContent: {
+            error: 'Something went wrong with this query.'
+          },
+          isFetchingNotificationContent: false
+        })
+      })
+    // .finally(response => {
+    //   this.setState({
+    //     activeNotificationContent: response,
+    //     isFetchingNotificationContent: false
+    //   })
+    // })
   }
 
   renderNotificationContent = notification => {
@@ -1358,6 +1442,8 @@ export default class App extends Component {
       )
     } else if (!this.state.activeNotificationContent) {
       return 'No data available'
+    } else if (this.state.activeNotificationContent.error) {
+      return this.state.activeNotificationContent.error
     }
 
     return (
@@ -1382,12 +1468,11 @@ export default class App extends Component {
           apiKey={this.state.apiKey}
           token={localStorage.getItem('jwtToken')}
           domain={this.state.domain}
-          // notifications={this.state.notifications}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
-          // expandedContent={this.renderNotificationContent()}
+          expandedContent={this.renderNotificationContent()}
         />
       </div>
     )
@@ -1395,26 +1480,6 @@ export default class App extends Component {
 
   renderSettingsPage = () => {
     return (
-      // <div
-      //   style={{
-      //     minHeight: '100%',
-      //     padding: '50px',
-      //     color: 'gray',
-      //     fontStyle: 'italic',
-      //     textAlign: 'center'
-      //   }}
-      // >
-      //   <div style={{ fontSize: '20px' }}>Coming Soon!</div>
-      //   <br /> You will be able to add and edit your custom notifications here.
-      //   Visit{' '}
-      //   <a
-      //     target="_blank"
-      //     href="https://balsamiq.cloud/stp154f/p7k5dww/r4C03?f=N4IgUiBcAMA0IDkpxAYWfAMhkAhHAsjgFo4DSUA2gLoC%2BQA%3D"
-      //   >
-      //     here
-      //   </a>{' '}
-      //   for a WIP wireframe
-      // </div>
       <div
         style={{
           height: 'calc(100vh - 50px)',

@@ -13,7 +13,6 @@
   color: rgba(0, 0, 0, 0.6);
   // font-weight: 500;
   font-family: var(--chata-dashboard-font-family), sans-serif;
-  line-height: 50px;
 
   transition: all 1s ease;
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
@@ -29,10 +28,7 @@
   }
 
   &.expanded {
-    height: 312px;
-    .chata-notification-alert-strip {
-      height: 312px;
-    }
+    height: 320px;
   }
 
   &.triggered {
@@ -59,11 +55,7 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    // height: 70px;
-
     padding-left: 22px;
-    padding-right: 4px;
-
     cursor: pointer;
   }
 
@@ -92,8 +84,10 @@
     height: 36px;
     padding: 9px;
     border-radius: 20px;
-    margin-top: 7px;
+    margin-top: 3px;
     margin-right: 3px;
+    display: inline-block;
+    line-height: 20px;
     background-color: transparent;
     transition: background-color 0.2s ease;
     cursor: pointer;
@@ -107,7 +101,6 @@
     position: absolute;
     top: -7px;
     left: -7px;
-    // color: #f5222d;
     color: var(--accent-color);
     line-height: 10px;
     background: #fff;
@@ -116,13 +109,12 @@
   }
 
   .chata-notification-alert-strip {
+    height: 100%;
     opacity: 0;
     position: absolute;
-    height: 93px;
     left: 0px;
     top: 0;
     width: 4px;
-    // background: #f5222d;
 
     background: var(--accent-color);
 

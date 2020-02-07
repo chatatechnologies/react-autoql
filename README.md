@@ -2,7 +2,11 @@
 
 Live demo of ChatDrawer component: https://chata-ai-test-page.herokuapp.com/
 
-# Installation
+# Documentation
+
+Please visit https://chata.readme.io/docs/react-data-chat-drawer for thorough docs and a quick start guide
+
+<!-- # Installation
 
 This is a library of react widgets. React must be installed as a prerequisite
 
@@ -589,4 +593,4 @@ export default class App extends Component {
     )
   }
 }
-```
+``` -->

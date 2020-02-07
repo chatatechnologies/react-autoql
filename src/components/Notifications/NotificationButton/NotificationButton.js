@@ -23,14 +23,16 @@ export default class NotificationButton extends React.Component {
     overflowCount: PropTypes.number,
     token: PropTypes.string,
     apiKey: PropTypes.string,
-    domain: PropTypes.string
+    domain: PropTypes.string,
+    onNewNotification: PropTypes.func
   }
 
   static defaultProps = {
     overflowCount: 99,
     token: undefined,
     apiKey: undefined,
-    domain: undefined
+    domain: undefined,
+    onNewNotification: () => {}
   }
 
   state = {
@@ -71,6 +73,9 @@ export default class NotificationButton extends React.Component {
     })
       .then(count => {
         this.setState({ count })
+        if (count > 0) {
+          this.props.onNewNotification()
+        }
       })
       .catch(() => {})
   }
