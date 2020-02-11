@@ -719,7 +719,7 @@ export default class ChatDrawer extends React.Component {
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="chata-bubbles-outlined" />
-            We run on chata
+            We run on AutoQL by Chata
           </div>
           <ChatBar
             ref={this.setChatBarRef}

@@ -25,53 +25,6 @@ export const fetchNotificationCount = ({ domain, apiKey, token }) => {
 }
 
 export const fetchNotificationList = ({ domain, apiKey, token }) => {
-  // return new Promise((resolve, reject) => {
-  //   return setTimeout(() => {
-  //     resolve({
-  //       notifications: [
-  //         {
-  //           id: 9,
-  //           rule_id: 2,
-  //           title: 'Large Transaction',
-  //           message: 'We detected a transaction over $1000',
-  //           query: 'All bank transactions over 1000 today',
-  //           outcome: 'TRUE',
-  //           state: 'UNACKNOWLEDGED',
-  //           created_at: '2020-02-04T06:25:08.144+0000'
-  //         },
-  //         {
-  //           id: 8,
-  //           rule_id: 2,
-  //           title: 'Low Balance',
-  //           message: 'Your bank balance fell below $50,000',
-  //           query: 'total bank balance per day last 5 days',
-  //           outcome: 'TRUE',
-  //           state: 'ACKNOWLEDGED',
-  //           created_at: '2020-02-03T18:14:05.401+0000'
-  //         },
-  //         {
-  //           id: 7,
-  //           rule_id: 2,
-  //           title: 'Credit Card Limit Exceeded',
-  //           message: 'Your credit card balance has exceeded the limit',
-  //           query: 'Total credit card balance',
-  //           outcome: 'TRUE',
-  //           state: 'DISMISSED',
-  //           created_at: '2020-02-03T18:13:46.892+0000'
-  //         }
-  //       ],
-  //       offset: 0,
-  //       limit: 10,
-  //       page_number: 0,
-  //       total_elements: 3,
-  //       total_pages: 1,
-  //       unacknowledged_count: 1,
-  //       acknowledged_count: 0,
-  //       dismissed_count: 2
-  //     })
-  //   }, 1000)
-  // })
-
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -88,7 +41,11 @@ export const fetchNotificationList = ({ domain, apiKey, token }) => {
   return axiosInstance
     .get(url)
     .then(response => {
-      return Promise.resolve(_get(response, 'data.data'))
+      const fullList = _get(response, 'data.data.notifications')
+      const filteredList = fullList
+        ? fullList.filter(notification => notification.state !== 'DELETED')
+        : []
+      return Promise.resolve(filteredList)
     })
     .catch(error => Promise.reject(error))
 }

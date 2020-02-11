@@ -42,7 +42,6 @@ export default class NotificationItem extends React.Component {
 
   state = {
     notification: this.props.notification
-    // expanded: false
   }
 
   getIsTriggered = state => {
@@ -57,7 +56,6 @@ export default class NotificationItem extends React.Component {
     }
 
     this.props.onClick(notification)
-    // this.setState({ expanded: !this.state.expanded })
   }
 
   onDismissClick = (e, notification) => {
@@ -154,7 +152,7 @@ export default class NotificationItem extends React.Component {
             <div className="chata-notification-dismiss-btn">
               <Icon
                 type="close"
-                className="chata-notification-dismiss-icon"
+                className="chata-notification-delete-icon"
                 data-tip="Delete"
                 data-for="chata-notification-tooltip"
                 onClick={e => {
@@ -166,7 +164,10 @@ export default class NotificationItem extends React.Component {
           )}
         </div>
         {notification.expanded && (
-          <div className="chata-notification-data-container">
+          <div
+            className="chata-notification-data-container"
+            onClick={e => e.stopPropagation()}
+          >
             {this.props.expandedContent || (
               <div style={{ textAlign: 'center', marginTop: '50px' }}>
                 No data available

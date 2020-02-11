@@ -25,6 +25,10 @@
 
   &:hover {
     background: rgba(0, 0, 0, 0.01);
+
+    .chata-notification-delete-icon {
+      opacity: 1;
+    }
   }
 
   &.expanded {
@@ -79,17 +83,40 @@
   }
 
   .chata-notification-dismiss-icon {
-    font-size: 18px;
-    width: 36px;
-    height: 36px;
-    padding: 9px;
-    border-radius: 20px;
-    margin-top: 3px;
-    margin-right: 3px;
+    font-size: 21px;
+    margin-top: 21px;
+    margin-right: 20px;
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+    border-radius: 26px;
+
     display: inline-block;
     line-height: 20px;
     background-color: transparent;
     transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #ececec;
+    }
+  }
+
+  .chata-notification-delete-icon {
+    font-size: 18px;
+    margin-top: 3px;
+    margin-right: 3px;
+    opacity: 0;
+
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 20px;
+
+    display: inline-block;
+    line-height: 20px;
+    background-color: transparent;
+    transition: all 0.2s ease;
     cursor: pointer;
 
     &:hover {
