@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.1.75",
+  "version": "0.1.77",
   "description": "React widget library",
   "main": "dist/chata.cjs.js",
   "module": "dist/chata.esm.js",

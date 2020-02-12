@@ -1144,14 +1144,16 @@ export default class ResponseRenderer extends React.Component {
           {this.renderResponse(width, height)}
         </div>
         {this.renderContextMenu()}
-        {this.props.renderTooltips && (
-          <ReactTooltip
-            className="chata-chart-tooltip"
-            id="chart-element-tooltip"
-            effect="solid"
-            html
-          />
-        )}
+        {
+          //   this.props.renderTooltips && (
+          //   <ReactTooltip
+          //     className="chata-chart-tooltip"
+          //     id="chart-element-tooltip"
+          //     effect="solid"
+          //     html
+          //   />
+          // )
+        }
       </Fragment>
     )
   }

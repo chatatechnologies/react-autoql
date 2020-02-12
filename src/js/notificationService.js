@@ -127,11 +127,10 @@ export const deleteNotification = ({
   })
 
   const data = {
-    notification_id: notificationId,
     state: 'DELETED'
   }
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -154,7 +153,6 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
   })
 
   const data = {
-    notification_id: null,
     state: 'DISMISSED'
   }
 
@@ -191,11 +189,10 @@ export const dismissNotification = ({
   })
 
   const data = {
-    notification_id: notificationId,
     state: 'DISMISSED'
   }
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)

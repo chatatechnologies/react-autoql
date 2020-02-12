@@ -52,15 +52,17 @@ export default class NotificationList extends React.Component {
       token,
       domain
     })
-      .then(response => {
+      .then(notifications => {
         this.setState({
-          notificationList: response.notifications,
+          notificationList: notifications,
           isFetchingFirstNotifications: false
         })
       })
-      .catch(() => {
+      .catch(error => {
+        console.error(error)
         this.setState({
           isFetchingFirstNotifications: false
+          // fetchNotificationsError: error
         })
       })
   }
@@ -143,6 +145,15 @@ export default class NotificationList extends React.Component {
           Loading...
         </div>
       )
+      // } else if (this.state.fetchNotificationsError) {
+      //   return (
+      //     <div
+      //       data-test="notification-list"
+      //       style={{ textAlign: 'center', marginTop: '100px' }}
+      //     >
+      //       Something went wrong
+      //     </div>
+      //   )
     } else if (!_get(this.state.notificationList, 'length')) {
       return (
         <div

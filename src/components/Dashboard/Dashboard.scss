@@ -8,15 +8,6 @@
   padding-bottom: 200px;
 }
 
-.chata-drawer-tooltip {
-  font-family: var(--chata-dashboard-font-family), sans-serif;
-  letter-spacing: 0.04em;
-  padding: 7px 15px;
-  transition: none;
-  opacity: 1 !important;
-  z-index: 99999; /* necessary to show up on top of rc drawer */
-}
-
 .chata-dashboard-drilldown-original {
   flex: 0 0 34vh;
   height: 34vh;

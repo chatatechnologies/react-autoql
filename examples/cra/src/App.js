@@ -8,7 +8,6 @@ import {
   executeDashboard,
   NotificationButton,
   NotificationList,
-  NotificationItem,
   NotificationSettings,
   Icon as ChataIcon
 } from '@chata-ai/core'
@@ -38,54 +37,26 @@ import './index.css'
 
 import sampleNotifications from './sampleNotifications'
 
-const sampleNotificationData = {
-  data: {
-    message: '',
-    data: {
-      columns: [
-        {
-          type: 'DATE',
-          name: 'transaction__transaction_date__month',
-          groupable: true,
-          active: false
-        },
-        {
-          type: 'DOLLAR_AMT',
-          name: 'transaction___sum',
-          groupable: false,
-          active: false
-        }
-      ],
-      display_type: 'data',
-      rows: [
-        [1527724800, 202.52],
-        [1530316800, 221.55],
-        [1532995200, 228.21],
-        [1535673600, 252.14],
-        [1538265600, 252.12],
-        [1540944000, 299.05],
-        [1543536000, 271.28],
-        [1546214400, 297.41],
-        [1548892800, 341.56],
-        [1551312000, 241.74],
-        [1553990400, 330.45],
-        [1556582400, 444.06],
-        [1559260800, 501.55],
-        [1561852800, 621.61],
-        [1564531200, 993.41],
-        [1567209600, 891.82],
-        [1569801600, 807.31],
-        [1572480000, 920.89],
-        [1575072000, 1504.98]
-      ],
-      sql: [
-        'select distinct qbo57.txndatemonth transaction__transaction_date__month, sum(qbo57.hometotalamt) transaction___sum from transactions qbo57 group by qbo57.txndatemonth'
-      ],
-      query_id: 'q_BZV5JAS5Q4i0A2iqff5nnA',
-      interpretation: 'total transactions by transaction month'
-    },
-    reference_id: '1.1.0'
+const getStoredProp = name => {
+  if (getBaseUrl() === 'https://backend-staging.chata.io') {
+    return localStorage.getItem(`staging-${name}`)
   }
+
+  return localStorage.getItem(name)
+}
+
+const setStoredProp = (name, value) => {
+  if (getBaseUrl() === 'https://backend-staging.chata.io') {
+    localStorage.setItem(`staging-${name}`, value)
+  }
+
+  localStorage.setItem(name, value)
+}
+
+const getBaseUrl = () => {
+  return window.location.href.includes('prod')
+    ? 'https://backend.chata.io'
+    : 'https://backend-staging.chata.io'
 }
 
 class Item extends React.Component {
@@ -245,14 +216,14 @@ export default class App extends Component {
     darkAccentColor: '#525252',
     maxMessages: 10,
     isEditing: false,
-    demo: true,
     debug: true,
     test: true,
-    apiKey: '',
-    customerId: '',
-    domain: '',
-    username: '',
-    userId: '',
+    demo: getStoredProp('demo') == 'true',
+    apiKey: getStoredProp('api-key') || '',
+    customerId: getStoredProp('customer-id') || '',
+    domain: getStoredProp('domain-url') || '',
+    username: getStoredProp('user-id') || '',
+    userId: getStoredProp('userid') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
@@ -270,19 +241,13 @@ export default class App extends Component {
   }
 
   componentDidMount = () => {
-    this.checkAuthentication()
-    this.setState({
-      demo: this.getStoredProp('demo') == 'true',
-      apiKey: this.getStoredProp('api-key') || '',
-      customerId: this.getStoredProp('customer-id') || '',
-      domain: this.getStoredProp('domain-url') || '',
-      username: this.getStoredProp('user-id') || '',
-      userId: this.getStoredProp('userid') || ''
-    })
+    this.checkAuthentication().then(() => {
+      this.fetchDashboard()
+      this.fetchNotifications()
+      this.fetchNotificationSettings()
 
-    this.fetchDashboard()
-    this.fetchNotifications()
-    this.fetchNotificationSettings()
+      this.setState({})
+    })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -307,7 +272,7 @@ export default class App extends Component {
       user_id: this.state.userId
     }
 
-    const token = this.getStoredProp('jwtToken')
+    const token = getStoredProp('jwtToken')
 
     const config = {}
     if (token) {
@@ -347,8 +312,8 @@ export default class App extends Component {
   }
 
   checkAuthentication = () => {
-    const loginToken = this.getStoredProp('loginToken')
-    this.getJWT(loginToken)
+    const loginToken = getStoredProp('loginToken')
+    return this.getJWT(loginToken)
   }
 
   fetchDashboard = async () => {
@@ -357,9 +322,9 @@ export default class App extends Component {
     })
 
     try {
-      const jwtToken = this.getStoredProp('jwtToken')
+      const jwtToken = getStoredProp('jwtToken')
       if (jwtToken && !this.state.demo) {
-        const baseUrl = this.getBaseUrl()
+        const baseUrl = getBaseUrl()
 
         const url = `${baseUrl}/api/v1/dashboards?key=${this.state.apiKey}`
         const dashboardResponse = await axios.get(url, {
@@ -406,18 +371,12 @@ export default class App extends Component {
     this.setState({ notificationSettings })
   }
 
-  getBaseUrl = () => {
-    return window.location.href.includes('prod')
-      ? 'https://backend.chata.io'
-      : 'https://backend-staging.chata.io'
-  }
-
   getJWT = async loginToken => {
     if (!loginToken) {
       throw new Error('Invalid Login Token')
     }
 
-    const baseUrl = this.getBaseUrl()
+    const baseUrl = getBaseUrl()
     let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}`
 
     // Use login token to get JWT token
@@ -429,7 +388,7 @@ export default class App extends Component {
 
     // Put jwt token into storage
     const jwtToken = jwtResponse.data
-    this.setStoredProp('jwtToken', jwtToken)
+    setStoredProp('jwtToken', jwtToken)
 
     if (this.authTimer) {
       clearTimeout(this.authTimer)
@@ -447,29 +406,13 @@ export default class App extends Component {
     })
   }
 
-  getStoredProp = name => {
-    if (this.getBaseUrl() === 'https://backend-staging.chata.io') {
-      return localStorage.getItem(`staging-${name}`)
-    }
-
-    return localStorage.getItem(name)
-  }
-
-  setStoredProp = (name, value) => {
-    if (this.getBaseUrl() === 'https://backend-staging.chata.io') {
-      localStorage.setItem(`staging-${name}`, value)
-    }
-
-    localStorage.setItem(name, value)
-  }
-
   onLogin = async e => {
     if (e) {
       e.preventDefault()
     }
 
     try {
-      const baseUrl = this.getBaseUrl()
+      const baseUrl = getBaseUrl()
 
       // Login to get login token
       const loginFormData = new FormData()
@@ -487,7 +430,7 @@ export default class App extends Component {
 
       // Put login token in local storage
       const loginToken = loginResponse.data
-      this.setStoredProp('loginToken', loginToken)
+      setStoredProp('loginToken', loginToken)
 
       this.getJWT(loginToken)
 
@@ -496,8 +439,8 @@ export default class App extends Component {
     } catch (error) {
       console.error(error)
       // Clear tokens
-      this.setStoredProp('loginToken', null)
-      this.setStoredProp('jwtToken', null)
+      setStoredProp('loginToken', null)
+      setStoredProp('jwtToken', null)
       this.setState({
         isAuthenticated: false,
         activeIntegrator: null,
@@ -556,7 +499,7 @@ export default class App extends Component {
           checked={this.state[propName] === true}
           onChange={e => {
             this.setState({ [propName]: e })
-            this.setStoredProp(propName, e)
+            setStoredProp(propName, e)
           }}
         />
       </div>
@@ -589,13 +532,13 @@ export default class App extends Component {
         })
       }
 
-      const baseUrl = this.getBaseUrl()
+      const baseUrl = getBaseUrl()
 
       const url = `${baseUrl}/api/v1/dashboards/${this.state.activeDashboardId}?key=${this.state.apiKey}`
 
       await axios.put(url, data, {
         headers: {
-          Authorization: `Bearer ${this.getStoredProp('jwtToken')}`,
+          Authorization: `Bearer ${getStoredProp('jwtToken')}`,
           'Integrator-Domain': this.state.domain
         }
       })
@@ -727,7 +670,7 @@ export default class App extends Component {
                 onChange={e => {
                   this.setState({ username: e.target.value })
                 }}
-                onBlur={e => this.setStoredProp('user-id', e.target.value)}
+                onBlur={e => setStoredProp('user-id', e.target.value)}
                 value={this.state.username}
               />
               <h4>Customer ID *</h4>
@@ -736,7 +679,7 @@ export default class App extends Component {
                 onChange={e => {
                   this.setState({ customerId: e.target.value })
                 }}
-                onBlur={e => this.setStoredProp('customer-id', e.target.value)}
+                onBlur={e => setStoredProp('customer-id', e.target.value)}
                 value={this.state.customerId}
               />
               <h4>User ID *</h4>
@@ -745,7 +688,7 @@ export default class App extends Component {
                 onChange={e => {
                   this.setState({ userId: e.target.value })
                 }}
-                onBlur={e => this.setStoredProp('userid', e.target.value)}
+                onBlur={e => setStoredProp('userid', e.target.value)}
                 value={this.state.userId}
               />
               <h4>API key *</h4>
@@ -754,7 +697,7 @@ export default class App extends Component {
                 onChange={e => {
                   this.setState({ apiKey: e.target.value })
                 }}
-                onBlur={e => this.setStoredProp('api-key', e.target.value)}
+                onBlur={e => setStoredProp('api-key', e.target.value)}
                 value={this.state.apiKey}
               />
 
@@ -764,7 +707,7 @@ export default class App extends Component {
                 onChange={e => {
                   this.setState({ domain: e.target.value })
                 }}
-                onBlur={e => this.setStoredProp('domain-url', e.target.value)}
+                onBlur={e => setStoredProp('domain-url', e.target.value)}
                 value={this.state.domain}
               />
               <h4>Username *</h4>
@@ -1082,7 +1025,7 @@ export default class App extends Component {
 
     return (
       <ChatDrawer
-        token={this.getStoredProp('jwtToken')}
+        token={getStoredProp('jwtToken')}
         apiKey={this.state.apiKey} // required if demo is false
         customerId={this.state.customerId} // required if demo is false
         userId={this.state.userId} // required if demo is false
@@ -1157,7 +1100,7 @@ export default class App extends Component {
     return (
       <div>
         <ChatBar
-          token={this.getStoredProp('jwtToken')}
+          token={getStoredProp('jwtToken')}
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
@@ -1307,7 +1250,7 @@ export default class App extends Component {
         </div>
         <Dashboard
           ref={ref => (this.dashboardRef = ref)}
-          token={this.getStoredProp('jwtToken')}
+          token={getStoredProp('jwtToken')}
           apiKey={this.state.apiKey} // required if demo is false
           customerId={this.state.customerId} // required if demo is false
           userId={this.state.userId} // required if demo is false
@@ -1375,11 +1318,10 @@ export default class App extends Component {
             <NotificationButton
               ref={r => (this.notificationBadgeRef = r)}
               apiKey={this.state.apiKey}
-              token={this.getStoredProp('jwtToken')}
+              token={getStoredProp('jwtToken')}
               domain={this.state.domain}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
-                console.log('NEW NOTIFICATION DETECTED')
                 if (
                   this.notificationListRef &&
                   this.state.currentPage === 'notifications'
@@ -1481,7 +1423,7 @@ export default class App extends Component {
         <NotificationList
           ref={ref => (this.notificationListRef = ref)}
           apiKey={this.state.apiKey}
-          token={this.getStoredProp('jwtToken')}
+          token={getStoredProp('jwtToken')}
           domain={this.state.domain}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
@@ -1504,7 +1446,7 @@ export default class App extends Component {
       >
         <NotificationSettings
           apiKey={this.state.apiKey}
-          token={this.getStoredProp('jwtToken')}
+          token={getStoredProp('jwtToken')}
           domain={this.state.domain}
         />
       </div>
@@ -1562,6 +1504,9 @@ export default class App extends Component {
   )
 
   render = () => {
+    console.log('is authenticated?')
+    console.log(this.state.isAuthenticated)
+
     if (this.state.maintenance) {
       return this.renderMaintenancePage()
     }

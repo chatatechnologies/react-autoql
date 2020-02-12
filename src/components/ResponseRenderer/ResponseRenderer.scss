@@ -130,10 +130,10 @@
   line-height: 22px;
   font-size: 13px;
   padding: 7px 15px;
-  transition: all 0.2s ease;
-  text-align: left;
+  transition: all 0.2s ease !important;
+  text-align: left !important;
   opacity: 1 !important;
-  z-index: 99999; /* necessary to show up on top of rc drawer */
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 .single-value-response {
   color: inherit;

@@ -507,10 +507,10 @@ export default class NotificationSettings extends React.Component {
         // onConfirm={this.onRuleSave}
         // confirmLoading={this.state.isSavingRule}
         // confirmText="Save"
+        // confirmDisabled={!!steps.find(step => !step.complete)}
         enableBodyScroll
         width="95vw"
         style={{ marginTop: '21px', maxWidth: '1100px', maxHeight: '95vh' }}
-        confirmDisabled={!!steps.find(step => !step.complete)}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
@@ -534,6 +534,7 @@ export default class NotificationSettings extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
+                disabled={!!steps.find(step => !step.complete)}
               >
                 Save
               </Button>
