@@ -980,7 +980,7 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Debug Mode (Shows SQL in the info tooltip)',
+          'Debug Mode - Show copy to SQL button in message toolbar',
           'debug',
           [true, false]
         )}
@@ -1504,9 +1504,6 @@ export default class App extends Component {
   )
 
   render = () => {
-    console.log('is authenticated?')
-    console.log(this.state.isAuthenticated)
-
     if (this.state.maintenance) {
       return this.renderMaintenancePage()
     }

@@ -2,6 +2,7 @@
   /* font-family: sans-serif; */
   font-family: var(--chata-drawer-font-family), sans-serif;
   line-height: 22px;
+  z-index: 10000;
 }
 
 .chata-drawer.disable-selection {

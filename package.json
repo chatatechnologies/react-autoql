@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.1.77",
+  "version": "0.1.78",
   "description": "React widget library",
   "main": "dist/chata.cjs.js",
   "module": "dist/chata.esm.js",
@@ -76,7 +76,7 @@
     "react-speech-recognition": "^2.0.4",
     "react-tabulator": "^0.10.3",
     "react-tiny-popover": "^3.4.5",
-    "react-tooltip": "^3.11.1",
+    "react-tooltip": "^4.0.3",
     "throttle-debounce": "^2.1.0",
     "uuid": "https://registry.npmjs.org/uuid/-/uuid-2.0.3.tgz"
   },

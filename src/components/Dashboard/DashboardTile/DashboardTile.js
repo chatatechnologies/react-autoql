@@ -219,25 +219,74 @@ export default class DashboardTile extends React.Component {
             onMouseDown={e => e.stopPropagation()}
           >
             {this.props.enableSQLInput && this.renderSQLSelector()}
-            <input
-              className={`dashboard-tile-input query ${
-                this.props.enableSQLInput ? ' left-padding' : ''
-              }`}
-              placeholder={
-                this.state.languageSelectValue === 'sql' ? 'SQL Hash' : 'Query'
-              }
-              value={this.state.query}
-              onChange={e => this.setState({ query: e.target.value })}
-              onKeyDown={this.onQueryTextKeyDown}
-              onBlur={e => {
-                if (_get(this.props, 'tile.query') !== e.target.value) {
-                  this.props.setParamsForTile(
-                    { query: e.target.value, displayType: undefined },
-                    this.props.tile.i
-                  )
+            {this.props.enableAutoComplete ? (
+              // <div className="chata-bar-container">
+              // <Autosuggest
+              //   className="auto-complete-chata"
+              //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+              //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+              //   getSuggestionValue={this.userSelectedSuggestionHandler}
+              //   suggestions={this.state.suggestions}
+              //   ref={ref => {
+              //     this.autoSuggest = ref
+              //   }}
+              //   renderSuggestion={suggestion => (
+              //     <Fragment>{suggestion.name}</Fragment>
+              //   )}
+              //   inputProps={{
+              //     className: 'chata-rule-input chata-input',
+              //     // icon:"chata-bubbles-outlined"
+              //     placeholder: 'query',
+              //     value: this.state.input1Value,
+              //     onChange: e => this.setState({ input1Value: e.target.value })
+              //   }}
+              // />
+              // </div>
+              <input
+                className={`dashboard-tile-input query ${
+                  this.props.enableSQLInput ? ' left-padding' : ''
+                }`}
+                placeholder={
+                  this.state.languageSelectValue === 'sql'
+                    ? 'SQL Hash'
+                    : 'Query'
                 }
-              }}
-            />
+                value={this.state.query}
+                onChange={e => this.setState({ query: e.target.value })}
+                onKeyDown={this.onQueryTextKeyDown}
+                onBlur={e => {
+                  if (_get(this.props, 'tile.query') !== e.target.value) {
+                    this.props.setParamsForTile(
+                      { query: e.target.value, displayType: undefined },
+                      this.props.tile.i
+                    )
+                  }
+                }}
+              />
+            ) : (
+              <input
+                className={`dashboard-tile-input query ${
+                  this.props.enableSQLInput ? ' left-padding' : ''
+                }`}
+                placeholder={
+                  this.state.languageSelectValue === 'sql'
+                    ? 'SQL Hash'
+                    : 'Query'
+                }
+                value={this.state.query}
+                onChange={e => this.setState({ query: e.target.value })}
+                onKeyDown={this.onQueryTextKeyDown}
+                onBlur={e => {
+                  if (_get(this.props, 'tile.query') !== e.target.value) {
+                    this.props.setParamsForTile(
+                      { query: e.target.value, displayType: undefined },
+                      this.props.tile.i
+                    )
+                  }
+                }}
+              />
+            )}
+
             <input
               className="dashboard-tile-input title"
               placeholder="Title (optional)"

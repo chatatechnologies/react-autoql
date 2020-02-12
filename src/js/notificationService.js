@@ -41,11 +41,7 @@ export const fetchNotificationList = ({ domain, apiKey, token }) => {
   return axiosInstance
     .get(url)
     .then(response => {
-      const fullList = _get(response, 'data.data.notifications')
-      const filteredList = fullList
-        ? fullList.filter(notification => notification.state !== 'DELETED')
-        : []
-      return Promise.resolve(filteredList)
+      return Promise.resolve(_get(response, 'data.data.notifications'))
     })
     .catch(error => Promise.reject(error))
 }
@@ -67,11 +63,7 @@ export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
   return axiosInstance
     .get(url)
     .then(response => {
-      const fullList = _get(response, 'data.data.rules')
-      const filteredList = fullList
-        ? fullList.filter(rule => rule.status !== 'DELETED')
-        : []
-      return Promise.resolve(filteredList)
+      return Promise.resolve(_get(response, 'data.data.rules'))
     })
     .catch(error => Promise.reject(error))
 }
@@ -202,6 +194,41 @@ export const dismissNotification = ({
     .catch(error => Promise.reject(error))
 }
 
+export const updateNotificationRuleStatus = ({
+  ruleId,
+  status,
+  domain,
+  apiKey,
+  token
+}) => {
+  // If there is missing data, dont bother making the call
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  // Make sure there is an id, or it will batch all notifications
+  if (!ruleId) {
+    return Promise.reject(new Error('No rule to update'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  const data = {
+    status
+  }
+
+  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+
+  return axiosInstance
+    .put(url, data)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(error))
+}
+
 export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
@@ -227,19 +254,12 @@ export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
 
   return axiosInstance
     .put(url, data)
-    .then(response => {
-      return Promise.resolve(response)
-    })
+    .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
 }
 
 // ----------------- POST --------------------
-export const createNotificationRule = ({
-  notification,
-  domain,
-  apiKey,
-  token
-}) => {
+export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -252,7 +272,7 @@ export const createNotificationRule = ({
   })
 
   const data = {
-    ...notification
+    ...rule
   }
 
   const url = `${domain}/autoql/api/v1/rules?key=${apiKey}`
