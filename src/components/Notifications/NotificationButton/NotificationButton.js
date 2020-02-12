@@ -11,7 +11,7 @@ import {
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
-  NOTIFICATION_POLLING_INTERVAL = 60000
+  NOTIFICATION_POLLING_INTERVAL = 10000
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
 
   // Open event source http connection here to receive SSE
