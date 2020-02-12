@@ -200,23 +200,28 @@ export default class NotificationSettings extends React.Component {
             }
             return r
           })
+          this.setState({
+            ruleList: newRuleList,
+            isEditModalVisible: false,
+            activeRule: undefined,
+            isSavingRule: false
+          })
         })
       } else {
         createNotificationRule({
           ...requestParams
         }).then(ruleResponse => {
-          if (_get(rulesResponse, 'data.data')) {
-            newRuleList.push(_get(ruleResponse, 'data.data'))
+          if (_get(ruleResponse, 'data.data')) {
+            newRuleList.unshift(_get(ruleResponse, 'data.data'))
           }
+          this.setState({
+            ruleList: newRuleList,
+            isEditModalVisible: false,
+            activeRule: undefined,
+            isSavingRule: false
+          })
         })
       }
-
-      this.setState({
-        ruleList: newRuleList,
-        isEditModalVisible: false,
-        activeRule: undefined,
-        isSavingRule: false
-      })
     } catch (error) {
       // TODO: alert user that error occured
       console.error(error)
