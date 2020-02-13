@@ -513,6 +513,12 @@ export default class App extends Component {
     })
   }
 
+  onError = error => {
+    if (error && error.message) {
+      message.error(error.message, 2)
+    }
+  }
+
   saveDashboard = async () => {
     this.setState({
       isSavingDashboard: true
@@ -1449,6 +1455,7 @@ export default class App extends Component {
           apiKey={this.state.apiKey}
           token={getStoredProp('jwtToken')}
           domain={this.state.domain}
+          onErrorCallback={this.onError}
         />
       </div>
     )

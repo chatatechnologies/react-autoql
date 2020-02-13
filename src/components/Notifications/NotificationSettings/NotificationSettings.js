@@ -31,13 +31,15 @@ export default class NotificationSettings extends React.Component {
   static propTypes = {
     apiKey: PropTypes.string,
     token: PropTypes.string,
-    domain: PropTypes.string
+    domain: PropTypes.string,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
     apiKey: undefined,
     token: undefined,
-    domain: undefined
+    domain: undefined,
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -93,7 +95,9 @@ export default class NotificationSettings extends React.Component {
           isFetchingList: false
         })
       })
-      .catch(() => {
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
         this.setState({
           isFetchingList: false
         })
@@ -179,21 +183,21 @@ export default class NotificationSettings extends React.Component {
       isSavingRule: true
     })
 
-    try {
-      const { domain, apiKey, token } = this.props
-      var newRuleList = [...this.state.ruleList]
-      const newRule = this.getActiveRuleData()
-      const requestParams = {
-        rule: newRule,
-        domain,
-        apiKey,
-        token
-      }
+    const { domain, apiKey, token } = this.props
+    var newRuleList = [...this.state.ruleList]
+    const newRule = this.getActiveRuleData()
+    const requestParams = {
+      rule: newRule,
+      domain,
+      apiKey,
+      token
+    }
 
-      if (newRule.id) {
-        updateNotificationRule({
-          ...requestParams
-        }).then(ruleResponse => {
+    if (newRule.id) {
+      updateNotificationRule({
+        ...requestParams
+      })
+        .then(ruleResponse => {
           newRuleList = this.state.ruleList.map(r => {
             if (r.id === newRule.id) {
               return _get(ruleResponse, 'data.data', newRule)
@@ -207,10 +211,18 @@ export default class NotificationSettings extends React.Component {
             isSavingRule: false
           })
         })
-      } else {
-        createNotificationRule({
-          ...requestParams
-        }).then(ruleResponse => {
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingRule: false
+          })
+        })
+    } else {
+      createNotificationRule({
+        ...requestParams
+      })
+        .then(ruleResponse => {
           if (_get(ruleResponse, 'data.data')) {
             newRuleList.unshift(_get(ruleResponse, 'data.data'))
           }
@@ -221,13 +233,13 @@ export default class NotificationSettings extends React.Component {
             isSavingRule: false
           })
         })
-      }
-    } catch (error) {
-      // TODO: alert user that error occured
-      console.error(error)
-      this.setState({
-        isSavingRule: false
-      })
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingRule: false
+          })
+        })
     }
   }
 
@@ -250,6 +262,7 @@ export default class NotificationSettings extends React.Component {
         })
         .catch(error => {
           console.error(error)
+          this.props.onErrorCallback(error)
           this.setState({
             isDeletingRule: false
           })
@@ -278,7 +291,10 @@ export default class NotificationSettings extends React.Component {
       apiKey,
       token,
       domain
-    }).catch(error => console.error(error))
+    }).catch(error => {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    })
   }
 
   onRulesUpdate = (isRulesSectionComplete, rulesJSON) => {
