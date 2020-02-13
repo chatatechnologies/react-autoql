@@ -269,7 +269,8 @@ export default class App extends Component {
       text: query,
       username: 'notification-data',
       customer_id: this.state.customerId,
-      user_id: this.state.userId
+      user_id: this.state.userId,
+      source: 'notification'
     }
 
     const token = getStoredProp('jwtToken')

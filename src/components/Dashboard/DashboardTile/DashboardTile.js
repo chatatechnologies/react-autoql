@@ -148,7 +148,8 @@ export default class DashboardTile extends React.Component {
           customerId: this.props.customerId,
           userId: this.props.userId,
           username: this.props.username,
-          token: this.props.token
+          token: this.props.token,
+          source: 'dashboard'
         })
           .then(response => this.endQuery(response))
           .catch(error => this.endQuery(error))
@@ -165,7 +166,8 @@ export default class DashboardTile extends React.Component {
           token: this.props.token,
           useSafetyNet: !this.props.isEditing
             ? false
-            : this.props.enableSafetyNet
+            : this.props.enableSafetyNet,
+          source: 'dashboard'
         })
           .then(response => this.endQuery(response))
           .catch(error => this.endQuery(error))

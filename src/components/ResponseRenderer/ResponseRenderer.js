@@ -253,7 +253,12 @@ export default class ResponseRenderer extends React.Component {
               key={uuid.v4()}
               onChange={e => {
                 this.setState({ suggestionSelection: e.target.value })
-                this.onSuggestionClick(e.target.value)
+                this.onSuggestionClick(
+                  e.target.value,
+                  undefined,
+                  undefined,
+                  'suggestion'
+                )
               }}
               value={this.state.suggestionSelection}
               className="chata-suggestions-select"
@@ -275,7 +280,14 @@ export default class ResponseRenderer extends React.Component {
                 <div key={uuid.v4()}>
                   <button
                     // disabled={this.props.isQueryRunning}
-                    onClick={() => this.onSuggestionClick(suggestion[0], true)}
+                    onClick={() =>
+                      this.onSuggestionClick(
+                        suggestion[0],
+                        true,
+                        undefined,
+                        'suggestion'
+                      )
+                    }
                     className="chata-suggestion-btn"
                   >
                     {suggestion}
@@ -980,15 +992,24 @@ export default class ResponseRenderer extends React.Component {
     this.pivotTableData = pivotTableData
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet) => {
+  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
     if (this.props.onSuggestionClick) {
-      this.props.onSuggestionClick(suggestion, isButtonClick, skipSafetyNet)
+      this.props.onSuggestionClick(
+        suggestion,
+        isButtonClick,
+        skipSafetyNet,
+        source
+      )
     }
     if (this.props.chatBarRef) {
       if (suggestion === 'None of these') {
         this.setState({ customResponse: 'Thank you for your feedback.' })
       } else {
-        this.props.chatBarRef.submitQuery(suggestion, skipSafetyNet)
+        this.props.chatBarRef.submitQuery({
+          queryText: suggestion,
+          skipSafetyNet: true,
+          source
+        })
       }
     }
   }
@@ -1032,7 +1053,7 @@ export default class ResponseRenderer extends React.Component {
           key={this.SAFETYNET_KEY}
           response={this.props.response}
           onSuggestionClick={query =>
-            this.onSuggestionClick(query, undefined, true)
+            this.onSuggestionClick(query, undefined, true, 'safety_net')
           }
           onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
           initialSelections={this.props.safetyNetSelections}

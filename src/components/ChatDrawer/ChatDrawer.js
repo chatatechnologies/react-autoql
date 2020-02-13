@@ -321,9 +321,13 @@ export default class ChatDrawer extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet) => {
+  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
     if (this.chatBarRef) {
-      this.chatBarRef.animateInputTextAndSubmit(suggestion, skipSafetyNet)
+      this.chatBarRef.animateInputTextAndSubmit(
+        suggestion,
+        skipSafetyNet,
+        source
+      )
     }
 
     // then(() => {
@@ -836,7 +840,7 @@ export default class ChatDrawer extends React.Component {
       executeQuery={query => {
         this.setState({ activePage: 'messenger' })
         setTimeout(() => {
-          this.onSuggestionClick(query)
+          this.onSuggestionClick(query, undefined, undefined, 'inspirations')
         }, 500)
       }}
     />
