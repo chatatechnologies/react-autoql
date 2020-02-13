@@ -24,7 +24,18 @@ export const fetchNotificationCount = ({ domain, apiKey, token }) => {
     .catch(error => Promise.reject(error))
 }
 
-export const fetchNotificationList = ({ domain, apiKey, token }) => {
+export const fetchNotificationList = ({
+  domain,
+  apiKey,
+  token,
+  offset,
+  limit
+}) => {
+  // return new Promise(resolve => {
+  //   setTimeout(() => {
+  //     resolve(sampleNotificationsResponse)
+  //   }, 1000)
+  // })
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -36,14 +47,26 @@ export const fetchNotificationList = ({ domain, apiKey, token }) => {
     }
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=0&limit=10`
+  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=${offset}&limit=${limit}`
 
   return axiosInstance
     .get(url)
     .then(response => {
-      return Promise.resolve(_get(response, 'data.data.notifications'))
+      const formattedResponse = {
+        notifications: _get(response, 'data.data.notifications'),
+        pagination: {
+          offset: _get(response, 'data.data.offset'),
+          limit: _get(response, 'data.data.limit'),
+          page_number: _get(response, 'data.data.page_number'),
+          total_elements: _get(response, 'data.data.total_elements'),
+          total_pages: _get(response, 'data.data.total_pages')
+        }
+      }
+      return Promise.resolve(formattedResponse)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      Promise.reject(error)
+    })
 }
 
 export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
@@ -282,7 +305,9 @@ export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(response)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 // DELETE

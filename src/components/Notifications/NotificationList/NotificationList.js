@@ -2,6 +2,7 @@ import React from 'react'
 import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import InfiniteScroll from 'react-infinite-scroller'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
@@ -13,6 +14,7 @@ import {
 import './NotificationList.scss'
 
 export default class NotificationList extends React.Component {
+  NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
   //   'https://backend.chata.io/notifications'
@@ -38,23 +40,28 @@ export default class NotificationList extends React.Component {
 
   state = {
     isFetchingFirstNotifications: true,
-    notificationList: []
+    notificationList: [],
+    pagination: {},
+    nextOffset: this.NOTIFICATION_FETCH_LIMIT
   }
 
   componentDidMount = () => {
-    this.getNotifications()
+    this.getInitialNotifications()
   }
 
-  getNotifications = () => {
+  getInitialNotifications = () => {
     const { apiKey, token, domain } = this.props
     fetchNotificationList({
       apiKey,
       token,
-      domain
+      domain,
+      offset: 0,
+      limit: this.NOTIFICATION_FETCH_LIMIT
     })
-      .then(notifications => {
+      .then(response => {
         this.setState({
-          notificationList: notifications,
+          notificationList: response.notifications,
+          pagination: response.pagination,
           isFetchingFirstNotifications: false
         })
       })
@@ -68,7 +75,60 @@ export default class NotificationList extends React.Component {
   }
 
   refreshNotifications = () => {
-    this.getNotifications()
+    // Regardless of how many notifications are loaded, we only want to add the new ones to the top
+    const { apiKey, token, domain } = this.props
+
+    fetchNotificationList({
+      apiKey,
+      token,
+      domain,
+      offset: 0,
+      limit: 10 // Likely wont have more than 10 notifications. If so, we will just reset the whole list
+    }).then(response => {
+      const newNotifications = this.detectNewNotifications(
+        response.notifications
+      )
+
+      if (!newNotifications.length) {
+        return
+      }
+
+      if (newNotifications.length === 10) {
+        // Reset list and pagination to new list
+        // This will probably never happen
+        this.setState({
+          notificationList: response.notifications,
+          pagination: response.pagination
+        })
+      } else {
+        const newList = [...newNotifications, ...this.state.notificationList]
+        const newPageNumber =
+          Math.ceil(newList.length / this.NOTIFICATION_FETCH_LIMIT) - 1
+
+        this.setState({
+          notificationList: newList,
+          pagination: {
+            ...response.pagination,
+            page_number: newPageNumber
+          },
+          nextOffset: newList.length - 1
+        })
+      }
+    })
+  }
+
+  detectNewNotifications = notificationList => {
+    const newNotifications = []
+    notificationList.every(notification => {
+      // If we have reached a notification that is already loaded, stop looping
+      if (this.state.notificationList.find(n => n.id === notification.id)) {
+        return false
+      }
+
+      newNotifications.push(notification)
+      return true
+    })
+    return newNotifications
   }
 
   onItemClick = notification => {
@@ -123,7 +183,10 @@ export default class NotificationList extends React.Component {
     const newList = this.state.notificationList.filter(
       n => n.id !== notification.id
     )
-    this.setState({ notificationList: newList })
+    this.setState({
+      notificationList: newList,
+      nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0
+    })
   }
 
   renderDismissAllButton = () => (
@@ -136,6 +199,8 @@ export default class NotificationList extends React.Component {
   )
 
   render = () => {
+    console.log('next offset to use:')
+    console.log(this.state.nextOffset)
     if (this.state.isFetchingFirstNotifications) {
       return (
         <div
@@ -178,22 +243,60 @@ export default class NotificationList extends React.Component {
           html
         />
         {this.renderDismissAllButton()}
-        {this.state.notificationList.map((notification, i) => {
-          return (
-            <NotificationItem
-              domain={this.props.domain}
-              apiKey={this.props.apiKey}
-              token={this.props.token}
-              notification={notification}
-              onClick={this.onItemClick}
-              onDismissCallback={this.onDismissClick}
-              onDeleteCallback={this.onDeleteClick}
-              onExpandCallback={this.props.onExpandCallback}
-              onCollapseCallback={this.props.onCollapseCallback}
-              expandedContent={this.props.expandedContent}
-            />
-          )
-        })}
+        <InfiniteScroll
+          initialLoad={false}
+          pageStart={0}
+          loadMore={() => {
+            const { apiKey, token, domain } = this.props
+
+            fetchNotificationList({
+              apiKey,
+              token,
+              domain,
+              offset: this.state.nextOffset,
+              limit: this.NOTIFICATION_FETCH_LIMIT
+            }).then(response => {
+              if (response.notifications.length) {
+                this.setState({
+                  notificationList: [
+                    ...this.state.notificationList,
+                    ...response.notifications
+                  ],
+                  pagination: response.pagination,
+                  nextOffset:
+                    this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT
+                })
+              }
+            })
+          }}
+          hasMore={
+            this.state.pagination.page_number !==
+            this.state.pagination.total_pages - 1
+          }
+          // loader={
+          //   <div className="loader" key={0}>
+          //     Loading ...
+          //   </div>
+          // }
+          useWindow={false}
+        >
+          {this.state.notificationList.map((notification, i) => {
+            return (
+              <NotificationItem
+                domain={this.props.domain}
+                apiKey={this.props.apiKey}
+                token={this.props.token}
+                notification={notification}
+                onClick={this.onItemClick}
+                onDismissCallback={this.onDismissClick}
+                onDeleteCallback={this.onDeleteClick}
+                onExpandCallback={this.props.onExpandCallback}
+                onCollapseCallback={this.props.onCollapseCallback}
+                expandedContent={this.props.expandedContent}
+              />
+            )
+          })}
+        </InfiniteScroll>
       </div>
     )
   }
