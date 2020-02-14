@@ -35,8 +35,6 @@ import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/chata.esm.css'
 import './index.css'
 
-import sampleNotifications from './sampleNotifications'
-
 const getStoredProp = name => {
   if (getBaseUrl() === 'https://backend-staging.chata.io') {
     return localStorage.getItem(`staging-${name}`)
@@ -235,18 +233,12 @@ export default class App extends Component {
     monthFormat: 'MMM YYYY',
     dayFormat: 'MMM DD, YYYY',
     dashboardTiles: undefined,
-    activeDashboardId: undefined,
-    notifications: [],
-    notificationSettings: []
+    activeDashboardId: undefined
   }
 
   componentDidMount = () => {
     this.checkAuthentication().then(() => {
       this.fetchDashboard()
-      this.fetchNotifications()
-      this.fetchNotificationSettings()
-
-      this.setState({})
     })
   }
 
@@ -359,17 +351,6 @@ export default class App extends Component {
         activeDashboardId: null
       })
     }
-  }
-
-  fetchNotifications = () => {
-    // insert axios call here
-    const notifications = sampleNotifications
-    this.setState({ notifications })
-  }
-
-  fetchNotificationSettings = () => {
-    const notificationSettings = sampleNotifications
-    this.setState({ notificationSettings })
   }
 
   getJWT = async loginToken => {

@@ -33,11 +33,6 @@ export const fetchNotificationList = ({
   offset,
   limit
 }) => {
-  // return new Promise(resolve => {
-  //   setTimeout(() => {
-  //     resolve(sampleNotificationsResponse)
-  //   }, 1000)
-  // })
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))

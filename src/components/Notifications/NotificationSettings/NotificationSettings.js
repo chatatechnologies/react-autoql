@@ -15,7 +15,6 @@ import { MonthSelect } from '../../DateSelect/MonthSelect'
 import { YearSelect } from '../../DateSelect/YearSelect'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
-// import ruleList from './sampleNotifications'
 import { getScheduleDescription } from '../helpers'
 import {
   createNotificationRule,
