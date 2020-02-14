@@ -515,7 +515,7 @@ export default class App extends Component {
 
   onError = error => {
     if (error && error.message) {
-      message.error(error.message, 2)
+      message.error(`${error.message}`)
     }
   }
 
@@ -1336,6 +1336,7 @@ export default class App extends Component {
                   this.notificationListRef.refreshNotifications()
                 }
               }}
+              onErrorCallback={this.onError}
             />
           </Menu.Item>
         )}

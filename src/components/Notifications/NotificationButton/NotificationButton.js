@@ -24,7 +24,8 @@ export default class NotificationButton extends React.Component {
     token: PropTypes.string,
     apiKey: PropTypes.string,
     domain: PropTypes.string,
-    onNewNotification: PropTypes.func
+    onNewNotification: PropTypes.func,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -32,7 +33,8 @@ export default class NotificationButton extends React.Component {
     token: undefined,
     apiKey: undefined,
     domain: undefined,
-    onNewNotification: () => {}
+    onNewNotification: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -77,7 +79,10 @@ export default class NotificationButton extends React.Component {
           this.props.onNewNotification()
         }
       })
-      .catch(() => {})
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   resetCount = () => {
@@ -90,6 +95,7 @@ export default class NotificationButton extends React.Component {
     })
       .catch(error => {
         console.error(error)
+        this.props.onErrorCallback(error)
       })
       .finally(() => {
         this.setState({ count: 0 })

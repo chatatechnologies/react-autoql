@@ -26,7 +26,8 @@ export default class NotificationList extends React.Component {
     domain: PropTypes.string,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
-    expandedContent: PropTypes.element
+    expandedContent: PropTypes.element,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -35,7 +36,8 @@ export default class NotificationList extends React.Component {
     domain: undefined,
     expandedContent: undefined,
     onCollapseCallback: () => {},
-    onExpandCallback: () => {}
+    onExpandCallback: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -62,14 +64,16 @@ export default class NotificationList extends React.Component {
         this.setState({
           notificationList: response.notifications,
           pagination: response.pagination,
-          isFetchingFirstNotifications: false
+          isFetchingFirstNotifications: false,
+          fetchNotificationsError: null
         })
       })
       .catch(error => {
         console.error(error)
+        this.props.onErrorCallback(error)
         this.setState({
-          isFetchingFirstNotifications: false
-          // fetchNotificationsError: error
+          isFetchingFirstNotifications: false,
+          fetchNotificationsError: error
         })
       })
   }
@@ -163,7 +167,10 @@ export default class NotificationList extends React.Component {
       apiKey,
       token,
       domain
-    }).catch(error => console.error(error))
+    }).catch(error => {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    })
   }
 
   onDismissClick = notification => {
@@ -199,8 +206,6 @@ export default class NotificationList extends React.Component {
   )
 
   render = () => {
-    console.log('next offset to use:')
-    console.log(this.state.nextOffset)
     if (this.state.isFetchingFirstNotifications) {
       return (
         <div
@@ -210,15 +215,15 @@ export default class NotificationList extends React.Component {
           Loading...
         </div>
       )
-      // } else if (this.state.fetchNotificationsError) {
-      //   return (
-      //     <div
-      //       data-test="notification-list"
-      //       style={{ textAlign: 'center', marginTop: '100px' }}
-      //     >
-      //       Something went wrong
-      //     </div>
-      //   )
+    } else if (this.state.fetchNotificationsError) {
+      return (
+        <div
+          data-test="notification-list"
+          style={{ textAlign: 'center', marginTop: '100px' }}
+        >
+          Something went wrong
+        </div>
+      )
     } else if (!_get(this.state.notificationList, 'length')) {
       return (
         <div
@@ -258,6 +263,7 @@ export default class NotificationList extends React.Component {
             }).then(response => {
               if (response.notifications.length) {
                 this.setState({
+                  fetchNotificationsError: null,
                   notificationList: [
                     ...this.state.notificationList,
                     ...response.notifications
@@ -293,6 +299,7 @@ export default class NotificationList extends React.Component {
                 onExpandCallback={this.props.onExpandCallback}
                 onCollapseCallback={this.props.onCollapseCallback}
                 expandedContent={this.props.expandedContent}
+                onErrorCallback={this.props.onErrorCallback}
               />
             )
           })}

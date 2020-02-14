@@ -21,7 +21,9 @@ export const fetchNotificationCount = ({ domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(_get(response, 'data.data.unacknowledged'))
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const fetchNotificationList = ({
@@ -65,7 +67,7 @@ export const fetchNotificationList = ({
       return Promise.resolve(formattedResponse)
     })
     .catch(error => {
-      Promise.reject(error)
+      return Promise.reject(_get(error, 'response.data'))
     })
 }
 
@@ -88,7 +90,9 @@ export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(_get(response, 'data.data.rules'))
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 // ----------------- PUT --------------------
@@ -116,7 +120,9 @@ export const resetNotificationCount = ({ domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(_get(response, 'data.data'))
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const deleteNotification = ({
@@ -152,7 +158,9 @@ export const deleteNotification = ({
     .then(response => {
       return Promise.resolve(response)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const dismissAllNotifications = ({ domain, apiKey, token }) => {
@@ -178,7 +186,9 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(response)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const dismissNotification = ({
@@ -214,7 +224,9 @@ export const dismissNotification = ({
     .then(response => {
       return Promise.resolve(response)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const updateNotificationRuleStatus = ({
@@ -249,7 +261,9 @@ export const updateNotificationRuleStatus = ({
   return axiosInstance
     .put(url, data)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
@@ -278,7 +292,9 @@ export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
   return axiosInstance
     .put(url, data)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 // ----------------- POST --------------------
@@ -306,7 +322,7 @@ export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
       return Promise.resolve(response)
     })
     .catch(error => {
-      Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(_get(error, 'response.data'))
     })
 }
 
@@ -330,5 +346,7 @@ export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
     .then(response => {
       return Promise.resolve(response)
     })
-    .catch(error => Promise.reject(error))
+    .catch(error => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }

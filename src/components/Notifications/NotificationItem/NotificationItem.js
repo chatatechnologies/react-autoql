@@ -27,7 +27,8 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
-    expandedContent: PropTypes.element
+    expandedContent: PropTypes.element,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -37,7 +38,8 @@ export default class NotificationItem extends React.Component {
     expandedContent: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {},
-    onDeleteCallback: () => {}
+    onDeleteCallback: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -68,7 +70,10 @@ export default class NotificationItem extends React.Component {
       domain,
       apiKey,
       token
-    }).catch(error => console.error(error))
+    }).catch(error => {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    })
   }
 
   onDeleteClick = (e, notification) => {
@@ -81,7 +86,10 @@ export default class NotificationItem extends React.Component {
       domain,
       apiKey,
       token
-    }).catch(error => console.error(error))
+    }).catch(error => {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    })
   }
 
   formatTimestamp = timestamp => {
