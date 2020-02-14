@@ -181,12 +181,6 @@ export default class NotificationItem extends React.Component {
                 No data available
               </div>
             )}
-            {
-              //   <ResponseRenderer
-              //   response={sampleNotificationData}
-              //   displayType="column"
-              // />
-            }
           </div>
         )}
         {this.renderAlertColorStrip()}
