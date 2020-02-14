@@ -103,19 +103,19 @@ export default class ChatMessage extends React.Component {
       )
       this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
       messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
+    } else if (
+      this.state.displayType !== prevState.displayType &&
+      isChartType(this.state.displayType)
+    ) {
+      const messageContainer = document.getElementById(
+        `message-${this.props.id}`
+      )
+      if (messageContainer) {
+        messageContainer.style.height = 'unset'
+        this.TABLE_CONTAINER_HEIGHT = undefined
+      }
+      this.forceUpdate()
     }
-    // else if (
-    //   this.state.displayType !== prevState.displayType
-    // ) {
-    //   const messageContainer = document.getElementById(
-    //     `message-${this.props.id}`
-    //   )
-    //   if (messageContainer) {
-    //     messageContainer.style.height = 'unset'
-    //     this.TABLE_CONTAINER_HEIGHT = undefined
-    //   }
-    //   this.forceUpdate()
-    // }
   }
 
   switchView = displayType => {
@@ -260,12 +260,13 @@ export default class ChatMessage extends React.Component {
     if (this.responseRef) {
       this.responseRef.copyTableToClipboard()
       this.setTemporaryState('copiedTable', true, 1000)
-      changeTooltipText(
-        `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
-        'Copied!',
-        32,
-        1000
-      )
+      ReactTooltip.hide()
+      // changeTooltipText(
+      //   `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
+      //   'Copied!',
+      //   32,
+      //   1000
+      // )
     } else {
       this.setTemporaryState('copiedTable', false, 1000)
     }
@@ -298,15 +299,15 @@ export default class ChatMessage extends React.Component {
       </span>`
 
     let sql = ''
-    if (this.props.debug) {
-      sql = `
-        <br />
-        <br />
-        <span>
-          <strong>SQL: </strong>
-          ${_get(this.props.response, 'data.data.sql')}
-        </span>`
-    }
+    // if (this.props.debug) {
+    //   sql = `
+    //     <br />
+    //     <br />
+    //     <span>
+    //       <strong>SQL: </strong>
+    //       ${_get(this.props.response, 'data.data.sql')}
+    //     </span>`
+    // }
     return `<div>
         ${interpretation}
         ${sql}
@@ -334,6 +335,24 @@ export default class ChatMessage extends React.Component {
         console.error(error)
         this.setState({ isSettingColumnVisibility: false })
       })
+  }
+
+  copySQL = () => {
+    const sql = _get(this.props.response, 'data.data.sql')
+    const el = document.createElement('textarea')
+    el.value = sql
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+    this.setTemporaryState('copiedSQL', true, 1000)
+    ReactTooltip.hide()
+    // changeTooltipText(
+    //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,
+    //   'Copied!',
+    //   32,
+    //   1000
+    // )
   }
 
   renderHideColumnsModal = () => {
@@ -373,7 +392,8 @@ export default class ChatMessage extends React.Component {
           _get(this.props, 'response.data.data.columns')
         ) === 0 &&
         _get(this.props, 'response.data.data.columns.length') > 1 &&
-        _get(this.props, 'response.data.data.rows.length') > 1
+        _get(this.props, 'response.data.data.rows.length') > 1,
+      showSQLButton: this.props.debug
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -417,9 +437,7 @@ export default class ChatMessage extends React.Component {
               className={`chata-toolbar-btn${
                 this.state.copiedTable === true ? ' green' : ''
               }${this.state.copiedTable === false ? ' red' : ''}`}
-              data-tip={
-                this.state.copyTableMessage ? 'Copied!' : 'Copy to Clipboard'
-              }
+              data-tip="Copy Table to Clipboard"
               data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
             >
               <Icon type="copy" />
@@ -452,6 +470,18 @@ export default class ChatMessage extends React.Component {
               data-tip={this.renderInterpretationTip()}
               data-for="interpretation-tooltip"
             />
+          )}
+          {shouldShowButton.showSQLButton && (
+            <button
+              onClick={this.copySQL}
+              className={`chata-toolbar-btn${
+                this.state.copiedSQL === true ? ' green' : ''
+              }${this.state.copiedSQL === false ? ' red' : ''}`}
+              data-tip="Copy SQL to Clipboard"
+              data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+            >
+              <Icon type="database" />
+            </button>
           )}
         </div>
       )
@@ -491,7 +521,7 @@ export default class ChatMessage extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 60 // 100% of chat width minus message margins minus chat container margins
+      chartWidth = chatContainer.clientWidth - 80 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
     }
 
@@ -540,9 +570,13 @@ export default class ChatMessage extends React.Component {
             <ReactTooltip
               className="chata-drawer-tooltip"
               id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-              getContent={() =>
-                this.state.copyTableMessage ? 'Copied!' : 'Copy to Clipboard'
-              }
+              effect="solid"
+              delayShow={500}
+              html
+            />
+            <ReactTooltip
+              className="chata-drawer-tooltip"
+              id={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
               effect="solid"
               delayShow={500}
               html

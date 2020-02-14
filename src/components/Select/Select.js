@@ -53,7 +53,7 @@ export default class Select extends React.Component {
                 id={`select-tooltip-${this.ID}`}
                 className="chata-drawer-tooltip"
                 effect="solid"
-                place="right"
+                // place="right"
                 delayShow={500}
               />
               <ul className="chata-select-popup">

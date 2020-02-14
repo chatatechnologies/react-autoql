@@ -5,6 +5,7 @@ export * from './components/ResponseRenderer'
 export {
   NotificationButton,
   NotificationList,
+  NotificationItem,
   NotificationSettings
 } from './components/Notifications'
 export { Icon } from './components/Icon'

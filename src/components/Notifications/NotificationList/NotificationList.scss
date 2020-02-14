@@ -30,8 +30,8 @@
   width: 100%;
 }
 
-// Set delay per List Item, max out at 15 as it shouldnt exceed this
-@for $i from 1 through 100 {
+// Set delay per List Item
+@for $i from 0 through 10 {
   .chata-notification-list-item:nth-of-type(#{$i}) {
     animation-delay: 0.1s * $i;
   }
@@ -39,9 +39,11 @@
 
 @-webkit-keyframes slideIn {
   0% {
-    top: 2000px;
+    opacity: 0;
+    top: 500px;
   }
   100% {
+    opacity: 1;
     top: 0;
   }
 }

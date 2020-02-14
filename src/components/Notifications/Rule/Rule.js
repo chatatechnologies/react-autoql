@@ -72,7 +72,7 @@ export default class Rule extends React.Component {
       this.TERM_ID_2 = initialData[1].id
       this.setState({
         input1Value: initialData[0].term_value,
-        input2Value: initialData[1].term_value,
+        input2Value: `${initialData[1].term_value}`,
         conditionSelectValue: initialData[0].condition,
         secondTermType: initialData[1].term_type
       })
@@ -91,6 +91,7 @@ export default class Rule extends React.Component {
       ]
     }
 
+    const { input2Value } = this.state
     return [
       {
         id: this.TERM_ID_1,
@@ -100,11 +101,17 @@ export default class Rule extends React.Component {
       },
       {
         id: this.TERM_ID_2,
-        term_type: this.state.secondTermType,
+        term_type: this.isNumerical(input2Value) ? 'constant' : 'query',
         condition: 'TERMINATOR',
-        term_value: this.state.input2Value
+        term_value: this.isNumerical(input2Value)
+          ? Number(input2Value)
+          : input2Value
       }
     ]
+  }
+
+  isNumerical = num => {
+    return !Number.isNaN(Number(num))
   }
 
   isComplete = () => {
@@ -185,11 +192,6 @@ export default class Rule extends React.Component {
   }
 
   render = () => {
-    let inputType = 'text'
-    if (this.state.secondTermType === 'constant') {
-      inputType = 'number'
-    }
-
     return (
       <div className="chata-notification-rule-container" data-test="rule">
         <Input
@@ -244,37 +246,46 @@ export default class Rule extends React.Component {
           <Input
             className="chata-rule-input"
             icon="chata-bubbles-outlined"
-            type={inputType}
-            placeholder={inputType === 'number' ? 'Constant' : 'Query'}
+            placeholder="Query or Number"
             value={this.state.input2Value}
             onChange={e => this.setState({ input2Value: e.target.value })}
           />
-          <Select
-            options={[
-              {
-                value: 'query',
-                label: (
-                  <Icon
-                    type="chata-bubbles-outlined"
-                    className="rule-input-select-bubbles-icon"
-                  />
-                ),
-                tooltip: 'Query'
-              },
-              {
-                value: 'constant',
-                // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
-                label: <div style={{ fontSize: '9px' }}>123</div>,
-                tooltip: 'Constant'
-              }
-              // { value: 'equation', label: 'Eq' }
-            ]}
-            value={this.state.secondTermType}
-            className="chata-rule-term-type-selector"
-            onChange={value => {
-              this.setState({ secondTermType: value })
-            }}
-          />
+          {
+            // <Input
+            //   className="chata-rule-input"
+            //   icon="chata-bubbles-outlined"
+            //   type={inputType}
+            //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
+            //   value={this.state.input2Value}
+            //   onChange={e => this.setState({ input2Value: e.target.value })}
+            // />
+            // <Select
+            //   options={[
+            //     {
+            //       value: 'query',
+            //       label: (
+            //         <Icon
+            //           type="chata-bubbles-outlined"
+            //           className="rule-input-select-bubbles-icon"
+            //         />
+            //       ),
+            //       tooltip: 'Query'
+            //     },
+            //     {
+            //       value: 'constant',
+            //       // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
+            //       label: <div style={{ fontSize: '9px' }}>123</div>,
+            //       tooltip: 'Constant'
+            //     }
+            //     // { value: 'equation', label: 'Eq' }
+            //   ]}
+            //   value={this.state.secondTermType}
+            //   className="chata-rule-term-type-selector"
+            //   onChange={value => {
+            //     this.setState({ secondTermType: value })
+            //   }}
+            // />
+          }
         </div>
         <Icon
           className="chata-rule-delete-btn"
@@ -283,13 +294,6 @@ export default class Rule extends React.Component {
             this.props.onDelete(this.props.ruleId)
           }}
         />
-        {
-          //   <Icon
-          //   className="chata-rule-add-btn"
-          //   type="plus"
-          //   onClick={this.props.onAdd}
-          // />
-        }
       </div>
     )
   }

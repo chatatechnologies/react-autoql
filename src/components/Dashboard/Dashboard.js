@@ -543,12 +543,6 @@ class Dashboard extends React.Component {
           </div>
           {this.renderDrilldownModal()}
           <ReactTooltip
-            className="chata-chart-tooltip"
-            id="chart-element-tooltip"
-            effect="solid"
-            html
-          />
-          <ReactTooltip
             className="chata-dashboard-tooltip"
             id="chata-toolbar-btn-tooltip"
             effect="solid"

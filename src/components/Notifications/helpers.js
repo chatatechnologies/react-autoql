@@ -132,9 +132,13 @@ export const getScheduleDescription = (
       if (frequency === 'DAY') {
         frequencyDescription = ", but don't notify me again until the next day."
       } else if (frequency === 'WEEK') {
-        frequencyDescription = getSingleEventWeekDescription(selection)
+        // frequencyDescription = getSingleEventWeekDescription(selection)
+        frequencyDescription =
+          ", but don't notify me again until the next Monday."
       } else if (frequency === 'MONTH') {
-        frequencyDescription = getSingleEventMonthDescription(selection)
+        // frequencyDescription = getSingleEventMonthDescription(selection)
+        frequencyDescription =
+          ", but don't notify me again until the first of the next month."
       } else if (frequency === 'YEAR') {
         frequencyDescription = getSingleEventYearDescription(selection)
       }

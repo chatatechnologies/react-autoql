@@ -74,7 +74,7 @@ export default class ChatBar extends React.Component {
     }
   }
 
-  animateInputTextAndSubmit = (text, skipSafetyNet) => {
+  animateInputTextAndSubmit = (text, skipSafetyNet, source) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
@@ -83,7 +83,7 @@ export default class ChatBar extends React.Component {
           })
           if (i === text.length) {
             setTimeout(() => {
-              this.submitQuery(text, skipSafetyNet)
+              this.submitQuery({ queryText: text, skipSafetyNet: true, source })
             }, 300)
           }
         }, i * 50)
@@ -91,7 +91,7 @@ export default class ChatBar extends React.Component {
     }
   }
 
-  submitQuery = (queryText, skipSafetyNet) => {
+  submitQuery = ({ queryText, skipSafetyNet, source }) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
 
@@ -109,7 +109,8 @@ export default class ChatBar extends React.Component {
           customerId: this.props.customerId,
           userId: this.props.userId,
           username: this.props.username,
-          token: this.props.token
+          token: this.props.token,
+          source: source || 'data_messenger'
         })
           .then(response => {
             this.props.onResponseCallback(response)
@@ -131,7 +132,8 @@ export default class ChatBar extends React.Component {
           customerId: this.props.customerId,
           userId: this.props.userId,
           username: this.props.username,
-          token: this.props.token
+          token: this.props.token,
+          source: source || 'data_messenger'
         })
           .then(response => {
             this.props.onResponseCallback(response)
@@ -148,7 +150,7 @@ export default class ChatBar extends React.Component {
 
   onKeyPress = e => {
     if (e.key == 'Enter') {
-      this.submitQuery()
+      this.submitQuery({ source: 'data_messenger' })
     }
   }
 
@@ -255,7 +257,7 @@ export default class ChatBar extends React.Component {
       this.setState({ inputValue: e.target.value })
     } else {
       // User clicked on autosuggest item
-      this.submitQuery(this.userSelectedValue)
+      this.submitQuery({ queryText: this.userSelectedValue })
     }
   }
 

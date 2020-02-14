@@ -61,7 +61,8 @@ export const runQueryOnly = ({
   customerId,
   userId,
   token,
-  username
+  username,
+  source
 }) => {
   const axiosInstance = axios.create({})
 
@@ -77,6 +78,7 @@ export const runQueryOnly = ({
     username: demo ? 'widget-demo' : username || 'widget-user',
     customer_id: customerId,
     user_id: userId,
+    source,
     debug,
     test
   }
@@ -144,7 +146,8 @@ export const runQuery = ({
   customerId,
   userId,
   token,
-  username
+  username,
+  source
 }) => {
   if (useSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
@@ -176,7 +179,8 @@ export const runQuery = ({
           customerId,
           userId,
           token,
-          username
+          username,
+          source
         })
       })
       .catch(() => {
@@ -190,7 +194,8 @@ export const runQuery = ({
           customerId,
           userId,
           token,
-          username
+          username,
+          source
         })
       })
   }
@@ -205,7 +210,8 @@ export const runQuery = ({
     apiKey,
     customerId,
     userId,
-    username
+    username,
+    source
   })
 }
 
@@ -431,32 +437,4 @@ export const fetchQueryTips = ({
     .get(queryTipsUrl)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(error))
-}
-
-export const fetchNotificationCount = ({
-  customerId,
-  userId,
-  domain,
-  apiKey,
-  token
-}) => {
-  return new Promise((resolve, reject) => {
-    return setTimeout(() => {
-      resolve({ data: { count: 2 } })
-    })
-  })
-}
-
-export const resetNotificationCount = ({
-  customerId,
-  userId,
-  domain,
-  apiKey,
-  token
-}) => {
-  return new Promise((resolve, reject) => {
-    return setTimeout(() => {
-      resolve()
-    })
-  })
 }

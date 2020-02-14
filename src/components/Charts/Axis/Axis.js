@@ -94,7 +94,7 @@ export default class Axis extends Component {
         )
         .orient('vertical')
         .shapePadding(5)
-        .labelWrap(120)
+        .labelWrap(100)
         .scale(legendScale)
       // .on('cellclick', function(d) {
       //   alert('clicked ' + d)

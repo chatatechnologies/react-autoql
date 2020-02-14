@@ -5,7 +5,7 @@ import { Spinner } from '../Spinner'
 
 import './Button.scss'
 
-const validTypes = ['default', 'primary']
+const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
 
 export default class Button extends React.Component {

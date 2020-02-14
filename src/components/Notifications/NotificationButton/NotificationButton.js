@@ -6,11 +6,14 @@ import { Icon } from '../../Icon'
 import {
   fetchNotificationCount,
   resetNotificationCount
-} from '../../../js/queryService'
+} from '../../../js/notificationService'
 
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
+  NOTIFICATION_POLLING_INTERVAL = 10000
+  NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
+
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
   //   'https://backend.chata.io/notifications'
@@ -20,20 +23,18 @@ export default class NotificationButton extends React.Component {
     overflowCount: PropTypes.number,
     token: PropTypes.string,
     apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    domain: PropTypes.string
+    domain: PropTypes.string,
+    onNewNotification: PropTypes.func,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
     overflowCount: 99,
     token: undefined,
     apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
-    domain: undefined
+    domain: undefined,
+    onNewNotification: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -41,43 +42,64 @@ export default class NotificationButton extends React.Component {
   }
 
   componentDidMount = async () => {
-    const { token, apiKey, customerId, userId, username, domain } = this.props
-    // Fetch initial existing notifications from the BE
-    fetchNotificationCount({
-      token,
-      apiKey,
-      customerId,
-      userId,
-      username,
-      domain
-    }).then(response => {
-      this.setState({
-        count: response.data.count
-      })
-    })
+    this.startPollingForNotifications()
 
     // Listen for new notification SSE's and update real-time
     // this.notificationEventSource.onmessage = e =>
     //   this.updateNotificationsCountAndList(JSON.parse(e.data))
   }
 
-  updateNotificationsCountAndList = data => {
-    console.log(data)
+  componentWillUnmount = () => {
+    if (this.pollForNotificationsInterval) {
+      clearInterval(this.pollForNotificationsInterval)
+    }
+  }
+
+  startPollingForNotifications = () => {
+    // Fetch initial existing notifications from the BE
+    this.getNotificationCount()
+
+    // Continue fetching every minute
+    this.pollForNotificationsInterval = setInterval(() => {
+      this.getNotificationCount()
+    }, this.NOTIFICATION_POLLING_INTERVAL)
+  }
+
+  getNotificationCount = () => {
+    const { token, apiKey, domain } = this.props
+
+    fetchNotificationCount({
+      token,
+      apiKey,
+      domain
+    })
+      .then(count => {
+        this.setState({ count })
+        if (count > 0) {
+          this.props.onNewNotification()
+        }
+      })
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   resetCount = () => {
-    const { token, apiKey, customerId, userId, username, domain } = this.props
+    const { token, apiKey, domain } = this.props
 
     resetNotificationCount({
       token,
       apiKey,
-      customerId,
-      userId,
-      username,
       domain
-    }).then(() => {
-      this.setState({ count: 0 })
     })
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
+      .finally(() => {
+        this.setState({ count: 0 })
+      })
   }
 
   renderBadge = () => {

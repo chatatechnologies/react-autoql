@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-// import PropTypes from 'prop-types'
+import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 
@@ -8,28 +8,46 @@ import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Icon } from '../../Icon'
 import { Select } from '../../Select'
+import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { WeekSelect } from '../../DateSelect/WeekSelect'
 import { MonthSelect } from '../../DateSelect/MonthSelect'
 import { YearSelect } from '../../DateSelect/YearSelect'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
 
-import notificationList from './sampleNotifications'
 import { getScheduleDescription } from '../helpers'
+import {
+  createNotificationRule,
+  deleteNotificationRule,
+  fetchNotificationSettings,
+  updateNotificationRule,
+  updateNotificationRuleStatus
+} from '../../../js/notificationService'
 
 import './NotificationSettings.scss'
 
 export default class NotificationSettings extends React.Component {
-  static propTypes = {}
+  static propTypes = {
+    apiKey: PropTypes.string,
+    token: PropTypes.string,
+    domain: PropTypes.string,
+    onErrorCallback: PropTypes.func
+  }
+
+  static defaultProps = {
+    apiKey: undefined,
+    token: undefined,
+    domain: undefined,
+    onErrorCallback: () => {}
+  }
 
   state = {
-    notificationList: notificationList,
+    isFetchingList: true,
+    ruleList: [],
     isEditModalVisible: false,
-    activeNotification: undefined,
+    activeRule: undefined,
 
-    eventBasedToggleValue: undefined,
     titleInput: '',
-    isMessageChecked: true,
     messageInput: '',
     isRulesSectionComplete: false,
     rulesJSON: [],
@@ -41,6 +59,10 @@ export default class NotificationSettings extends React.Component {
     monthSelectValue: [1],
     yearSelectValue: [1],
     everyCheckboxValue: false
+  }
+
+  componentDidMount = () => {
+    this.getNotificationSettings()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -59,86 +81,219 @@ export default class NotificationSettings extends React.Component {
     }
   }
 
-  // onItemClick = notification => {
-  //   const newList = this.state.notificationList.map(n => {
-  //     if (notification.id === n.id) {
-  //       return {
-  //         ...n,
-  //         expanded: !n.expanded
-  //       }
-  //     }
-  //     return {
-  //       ...n,
-  //       expanded: false
-  //     }
-  //   })
-  //   this.setState({ notificationList: newList })
-  // }
+  getNotificationSettings = () => {
+    const { apiKey, token, domain } = this.props
+    fetchNotificationSettings({
+      apiKey,
+      token,
+      domain
+    })
+      .then(list => {
+        this.setState({
+          ruleList: list,
+          isFetchingList: false
+        })
+      })
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+        this.setState({
+          isFetchingList: false
+        })
+      })
+  }
 
   onEditClick = (e, notification) => {
     e.stopPropagation()
     this.setState({
       isEditModalVisible: true,
-      activeNotification: notification,
+      activeRule: notification,
 
       titleInput: notification.title,
       messageInput: notification.message,
-      dataReturnQueryInput: notification.data_return_query,
-      isDataReturnDirty: true
+      dataReturnQueryInput: notification.query,
+      isDataReturnDirty: true,
+      frequencyCategorySelectValue: notification.notification_type,
+      frequencySelectValue: notification.reset_period || undefined,
+      everyCheckboxValue:
+        notification.notification_type === 'SINGLE_EVENT' &&
+        !!notification.reset_period
 
-      // frequencyCategorySelectValue: 'once',
-      // frequencySelectValue: 'month',
-      // everyCheckboxValue: false
+      // weekSelectValue: [2],
+      // monthSelectValue: [1],
+      // yearSelectValue: [1],
     })
   }
 
   onAddClick = () => {
     this.setState({
       isEditModalVisible: true,
-      activeNotification: undefined,
-      eventBasedToggleValue: undefined,
+      activeRule: undefined,
       titleInput: '',
-      isMessageChecked: true,
       messageInput: '',
       isRulesSectionComplete: false,
       rulesJSON: [],
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
-      frequencyCategorySelectValue: 'once',
+      frequencyCategorySelectValue: 'SINGLE_EVENT',
       frequencySelectValue: 'MONTH',
       everyCheckboxValue: false
     })
   }
 
-  onNotificationSave = () => {
-    this.setState({
-      isSavingNotification: true
-    })
+  getActiveRuleData = () => {
+    const {
+      titleInput,
+      dataReturnQueryInput,
+      messageInput,
+      frequencyCategorySelectValue,
+      everyCheckboxValue,
+      frequencySelectValue,
+      rulesJSON,
+      activeRule
+    } = this.state
 
-    setTimeout(() => {
-      this.setState({
-        isEditModalVisible: false,
-        activeNotification: undefined,
-        isSavingNotification: false,
+    const newRule = {
+      id: _get(activeRule, 'id'),
+      title: titleInput,
+      query: dataReturnQueryInput,
+      message: messageInput,
+      notification_type: frequencyCategorySelectValue,
+      cycle: frequencyCategorySelectValue === 'REPEAT_EVENT' ? 'WEEK' : null, // Hardcoded WEEK for MVP
+      reset_period:
+        !everyCheckboxValue || frequencyCategorySelectValue === 'REPEAT_EVENT'
+          ? null
+          : frequencySelectValue,
+      day_numbers:
+        frequencyCategorySelectValue === 'REPEAT_EVENT'
+          ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
+          : null,
+      // Commenting out for MVP
+      // month_number: [],
+      // run_times: [],
+      expression: rulesJSON
+    }
 
-        eventBasedToggleValue: undefined,
-        titleInput: '',
-        isRulesSectionComplete: false
-      })
-    }, 2000)
+    return newRule
   }
 
-  onEnableSwitchChange = notification => {
-    const newList = this.state.notificationList.map(n => {
-      if (notification.id === n.id) {
+  onRuleSave = () => {
+    this.setState({
+      isSavingRule: true
+    })
+
+    const { domain, apiKey, token } = this.props
+    var newRuleList = [...this.state.ruleList]
+    const newRule = this.getActiveRuleData()
+    const requestParams = {
+      rule: newRule,
+      domain,
+      apiKey,
+      token
+    }
+
+    if (newRule.id) {
+      updateNotificationRule({
+        ...requestParams
+      })
+        .then(ruleResponse => {
+          newRuleList = this.state.ruleList.map(r => {
+            if (r.id === newRule.id) {
+              return _get(ruleResponse, 'data.data', newRule)
+            }
+            return r
+          })
+          this.setState({
+            ruleList: newRuleList,
+            isEditModalVisible: false,
+            activeRule: undefined,
+            isSavingRule: false
+          })
+        })
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingRule: false
+          })
+        })
+    } else {
+      createNotificationRule({
+        ...requestParams
+      })
+        .then(ruleResponse => {
+          if (_get(ruleResponse, 'data.data')) {
+            newRuleList.unshift(_get(ruleResponse, 'data.data'))
+          }
+          this.setState({
+            ruleList: newRuleList,
+            isEditModalVisible: false,
+            activeRule: undefined,
+            isSavingRule: false
+          })
+        })
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isSavingRule: false
+          })
+        })
+    }
+  }
+
+  onRuleDelete = () => {
+    const ruleId = _get(this.state.activeRule, 'id')
+    if (ruleId) {
+      this.setState({
+        isDeletingRule: true
+      })
+
+      const { domain, apiKey, token } = this.props
+      deleteNotificationRule({ ruleId, domain, apiKey, token })
+        .then(() => {
+          const newList = this.state.ruleList.filter(rule => rule.id !== ruleId)
+          this.setState({
+            ruleList: newList,
+            isDeletingRule: false,
+            isEditModalVisible: false
+          })
+        })
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isDeletingRule: false
+          })
+        })
+    }
+  }
+
+  onEnableSwitchChange = (e, rule) => {
+    const newStatus = e.target.checked ? 'ACTIVE' : 'INACTIVE'
+    const newList = this.state.ruleList.map(n => {
+      if (rule.id === n.id) {
         return {
           ...n,
-          enabled: !n.enabled
+          status: newStatus
         }
       }
       return n
     })
-    this.setState({ notificationList: newList })
+
+    this.setState({ ruleList: newList })
+
+    const { apiKey, token, domain } = this.props
+    updateNotificationRuleStatus({
+      ruleId: rule.id,
+      status: newStatus,
+      apiKey,
+      token,
+      domain
+    }).catch(error => {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    })
   }
 
   onRulesUpdate = (isRulesSectionComplete, rulesJSON) => {
@@ -155,13 +310,9 @@ export default class NotificationSettings extends React.Component {
         value={this.state.titleInput}
         onChange={e => this.setState({ titleInput: e.target.value })}
       />
-      {
-        // <Checkbox checked={this.state.isMessageChecked} onChange={e => this.setState({ isMessageChecked: e.target.checked })} />
-      }
       <Input
         className="chata-notification-message-input"
         placeholder="Notification Message (max 200 characters)"
-        // icon="description"
         type="multi"
         maxLength="200"
         value={this.state.messageInput}
@@ -274,8 +425,9 @@ export default class NotificationSettings extends React.Component {
           <Select
             options={[
               { value: 'SINGLE_EVENT', label: 'Once, when this happens' },
-              { value: 'REPEAT_EVENT', label: 'Every time this happens' },
-              { value: 'SCHEDULE', label: 'On a schedule' }
+              { value: 'REPEAT_EVENT', label: 'Every time this happens' }
+              // Commenting out for MVP
+              // { value: 'SCHEDULE', label: 'On a schedule' }
             ]}
             value={this.state.frequencyCategorySelectValue}
             onChange={value =>
@@ -290,33 +442,40 @@ export default class NotificationSettings extends React.Component {
                   {this.renderFrequencySelector([
                     { value: 'DAY', label: 'Daily' },
                     { value: 'WEEK', label: 'Weekly' },
-                    { value: 'MONTH', label: 'Monthly' },
-                    { value: 'YEAR', label: 'Yearly' }
+                    { value: 'MONTH', label: 'Monthly' }
+                    // Commenting out for MVP
+                    // { value: 'YEAR', label: 'Yearly' }
                   ])}
-                  {this.state.frequencySelectValue !== 'DAY' && (
-                    <span className="frequency-repeat-follow-text"> on:</span>
-                  )}
-                  {this.renderDateSelector(this.state.frequencySelectValue)}
+                  {
+                    // Commenting out for MVP
+                    // {this.state.frequencySelectValue !== 'DAY' && (
+                    //   <span className="frequency-repeat-follow-text"> on:</span>
+                    // )}
+                    // {this.renderDateSelector(this.state.frequencySelectValue)}
+                  }
                 </Fragment>
               )}
             </div>
           )}
-          {this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
-            <div className="frequency-category-select">
-              {this.renderRepeatCheckbox('Only on')}
-              {this.state.everyCheckboxValue && (
-                <Fragment>
-                  {this.renderFrequencySelector([
-                    { value: 'WEEK', label: 'Certain days of the week' },
-                    { value: 'MONTH', label: 'Certain days of the month' },
-                    { value: 'YEAR', label: 'Certain months of the year' }
-                  ])}
-                  {this.state.frequencySelectValue !== 'DAY' &&
-                    this.renderDateSelector(this.state.frequencySelectValue)}
-                </Fragment>
-              )}
-            </div>
-          )}
+          {
+            // Commenting out for MVP
+            //   this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
+            //   <div className="frequency-category-select">
+            //     {this.renderRepeatCheckbox('Only on')}
+            //     {this.state.everyCheckboxValue && (
+            //       <Fragment>
+            //         {this.renderFrequencySelector([
+            //           { value: 'WEEK', label: 'Certain days of the week' },
+            //           { value: 'MONTH', label: 'Certain days of the month' },
+            //           { value: 'YEAR', label: 'Certain months of the year' }
+            //         ])}
+            //         {this.state.frequencySelectValue !== 'DAY' &&
+            //           this.renderDateSelector(this.state.frequencySelectValue)}
+            //       </Fragment>
+            //     )}
+            //   </div>
+            // )
+          }
         </div>
         <div className="frequency-description-box-container">
           {this.renderFrequencyDescription()}
@@ -358,7 +517,7 @@ export default class NotificationSettings extends React.Component {
         content: (
           <NotificationRulesCopy
             onUpdate={this.onRulesUpdate}
-            notificationData={_get(this.state.activeNotification, 'logic')}
+            notificationData={_get(this.state.activeRule, 'expression')}
           />
         ),
         complete: this.state.isRulesSectionComplete
@@ -387,13 +546,43 @@ export default class NotificationSettings extends React.Component {
         title="Custom Notification"
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        onConfirm={this.onNotificationSave}
-        confirmLoading={this.state.isSavingNotification}
-        confirmText="Save"
+        // onConfirm={this.onRuleSave}
+        // confirmLoading={this.state.isSavingRule}
+        // confirmText="Save"
+        // confirmDisabled={!!steps.find(step => !step.complete)}
         enableBodyScroll
         width="95vw"
-        style={{ marginTop: '21px', maxWidth: '1100px', maxHeight: '95vh' }}
-        confirmDisabled={!!steps.find(step => !step.complete)}
+        style={{ marginTop: '21px', maxWidth: '1100px', maxHeight: '85vh' }}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              {this.state.activeRule && (
+                <Button
+                  type="danger"
+                  onClick={this.onRuleDelete}
+                  loading={this.state.isDeletingRule}
+                >
+                  Delete Notification
+                </Button>
+              )}
+            </div>
+            <div>
+              <Button
+                onClick={() => this.setState({ isEditModalVisible: false })}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                loading={this.state.isSavingRule}
+                onClick={this.onRuleSave}
+                disabled={!!steps.find(step => !step.complete)}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        }
         // height: PropTypes.number,
         // showCancelButton: PropTypes.bool,
         // showFooter: PropTypes.bool,
@@ -411,7 +600,81 @@ export default class NotificationSettings extends React.Component {
     </div>
   )
 
+  renderNotificationlist = () => (
+    <Fragment>
+      {this.renderAddNotificationButton()}
+      <div className="chata-notification-settings-container">
+        {this.state.ruleList.map((notification, i) => {
+          return (
+            <div
+              key={`chata-notification-setting-item-${i}`}
+              className="chata-notification-setting-item"
+              onClick={e => this.onEditClick(e, notification)}
+            >
+              <div className="chata-notification-setting-item-header">
+                <div className="chata-notification-setting-display-name">
+                  <span className="chata-notification-setting-display-name-title">
+                    {notification.title}
+                  </span>
+                  <span className="chata-notification-setting-display-name-message">
+                    {notification.message && (
+                      <span> - {notification.message}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="chata-notification-setting-actions">
+                  <Checkbox
+                    type="switch"
+                    checked={
+                      notification.status === 'ACTIVE' ||
+                      notification.status === 'WAITING'
+                    }
+                    className="chata-notification-enable-checkbox"
+                    onClick={e => e.stopPropagation()}
+                    data-tip={
+                      notification.status === 'ACTIVE' ||
+                      notification.status === 'WAITING'
+                        ? 'Disable'
+                        : 'Enable'
+                    }
+                    data-for="chata-notification-settings-tooltip"
+                    onChange={e => {
+                      this.onEnableSwitchChange(e, notification)
+                      ReactTooltip.hide()
+                      ReactTooltip.rebuild()
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Fragment>
+  )
+
+  renderEmptyListMessage = () => (
+    <div style={{ textAlign: 'center', marginTop: '100px' }}>
+      You don't have any notifications yet.
+      <br />
+      <Button type="primary" onClick={this.onAddClick}>
+        Create a New Notification
+      </Button>
+    </div>
+  )
+
   render = () => {
+    if (this.state.isFetchingList) {
+      return (
+        <div
+          data-test="notification-settings"
+          style={{ textAlign: 'center', marginTop: '100px' }}
+        >
+          Loading...
+        </div>
+      )
+    }
+
     return (
       <div data-test="notification-settings">
         <ReactTooltip
@@ -421,47 +684,9 @@ export default class NotificationSettings extends React.Component {
           delayShow={500}
           html
         />
-        {this.renderAddNotificationButton()}
-        <div className="chata-notification-settings-container">
-          {this.state.notificationList.map((notification, i) => {
-            return (
-              <div
-                key={`chata-notification-setting-item-${i}`}
-                className={`chata-notification-setting-item
-                          ${notification.expanded ? ' expanded' : ''}`}
-                onClick={e => this.onEditClick(e, notification)}
-              >
-                <div className="chata-notification-setting-item-header">
-                  <div className="chata-notification-setting-display-name">
-                    <span className="chata-notification-setting-display-name-title">
-                      {notification.title}
-                    </span>
-                    <span className="chata-notification-setting-display-name-message">
-                      {' '}
-                      - {notification.message}
-                    </span>
-                  </div>
-                  <div className="chata-notification-setting-actions">
-                    <Checkbox
-                      type="switch"
-                      checked={notification.enabled}
-                      className="chata-notification-enable-checkbox"
-                      onClick={e => e.stopPropagation()}
-                      data-tip={notification.enabled ? 'Disable' : 'Enable'}
-                      data-for="chata-notification-settings-tooltip"
-                      onChange={e => {
-                        this.onEnableSwitchChange(notification)
-                        ReactTooltip.hide()
-                        ReactTooltip.rebuild()
-                      }}
-                    />
-                  </div>
-                </div>
-                {notification.expanded && <div></div>}
-              </div>
-            )
-          })}
-        </div>
+        {_get(this.state.ruleList, 'length')
+          ? this.renderNotificationlist()
+          : this.renderEmptyListMessage()}
         {this.renderNotificationEditModal()}
       </div>
     )

@@ -1,3 +1,7 @@
+.chata-chart-container {
+  position: relative;
+}
+
 /* These are not inline styles since they do not apply to saved PNG charts */
 .chata-chart-container .square {
   transition: fill-opacity 0.3s ease;

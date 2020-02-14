@@ -1,10 +1,10 @@
-.notification-rule-add-btn-outer {
+.notification-rule-add-btn-outer,
+.notification-rule-validate-btn-outer {
   text-align: center;
   border-style: dashed !important;
   height: 38px;
   line-height: 25px;
   margin: 0 !important;
-  margin-top: 15px !important;
   overflow: hidden;
 }
 
@@ -24,4 +24,9 @@
   position: absolute;
   left: 0;
   top: 50%;
+}
+
+.notification-first-group-btn-container {
+  display: flex;
+  justify-content: space-between;
 }

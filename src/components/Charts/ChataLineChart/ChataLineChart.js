@@ -77,6 +77,7 @@ export default class ChataLineChart extends Component {
     const yScale = this.yScale
       .domain([minValue, maxValue])
       .range([height - bottomMargin, topMargin])
+      .nice()
 
     const barWidth = width / data.length
     const interval = Math.ceil((data.length * 16) / width)

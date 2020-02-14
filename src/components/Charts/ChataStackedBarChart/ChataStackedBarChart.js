@@ -34,10 +34,10 @@ export default class ChataStackedBarChart extends Component {
       .domain(this.uniqueXLabels)
       .range(chartColors)
 
-    this.legendLabels = this.uniqueXLabels.map((label, i) => {
+    this.legendLabels = this.uniqueXLabels.map(label => {
       return {
         label,
-        color: this.legendScale(i)
+        color: this.legendScale(label)
       }
     })
   }

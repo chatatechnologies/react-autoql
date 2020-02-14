@@ -4,7 +4,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import NotificationList from './NotificationList'
 
-const defaultProps = {}
+const defaultProps = {
+  notifications: []
+}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }

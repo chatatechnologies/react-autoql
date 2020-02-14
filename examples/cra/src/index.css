@@ -40,3 +40,7 @@
 .dashboard-toolbar-container .ant-btn {
   margin-top: 10px;
 }
+
+.ant-message {
+  z-index: 99999;
+}

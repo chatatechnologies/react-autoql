@@ -32,7 +32,8 @@ const common = {
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
-      extract: true
+      extract: true,
+      minimize: false
     }),
     svg(),
     babel({
