@@ -11,6 +11,9 @@ import {
   dismissAllNotifications
 } from '../../../js/notificationService'
 
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault } from '../../../props/defaults'
+
 import './NotificationList.scss'
 
 export default class NotificationList extends React.Component {
@@ -21,9 +24,7 @@ export default class NotificationList extends React.Component {
   // )
 
   static propTypes = {
-    apiKey: PropTypes.string,
-    token: PropTypes.string,
-    domain: PropTypes.string,
+    authentication: authenticationType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     expandedContent: PropTypes.element,
@@ -31,9 +32,7 @@ export default class NotificationList extends React.Component {
   }
 
   static defaultProps = {
-    apiKey: undefined,
-    token: undefined,
-    domain: undefined,
+    authentication: authenticationDefault,
     expandedContent: undefined,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
@@ -52,11 +51,8 @@ export default class NotificationList extends React.Component {
   }
 
   getInitialNotifications = () => {
-    const { apiKey, token, domain } = this.props
     fetchNotificationList({
-      apiKey,
-      token,
-      domain,
+      ...this.props.authentication,
       offset: 0,
       limit: this.NOTIFICATION_FETCH_LIMIT
     })
@@ -80,12 +76,8 @@ export default class NotificationList extends React.Component {
 
   refreshNotifications = () => {
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
-    const { apiKey, token, domain } = this.props
-
     fetchNotificationList({
-      apiKey,
-      token,
-      domain,
+      ...this.props.authentication,
       offset: 0,
       limit: 10 // Likely wont have more than 10 notifications. If so, we will just reset the whole list
     }).then(response => {
@@ -162,12 +154,7 @@ export default class NotificationList extends React.Component {
 
     this.setState({ notificationList: newList })
 
-    const { apiKey, token, domain } = this.props
-    dismissAllNotifications({
-      apiKey,
-      token,
-      domain
-    }).catch(error => {
+    dismissAllNotifications({ ...this.props.authentication }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -252,12 +239,8 @@ export default class NotificationList extends React.Component {
           initialLoad={false}
           pageStart={0}
           loadMore={() => {
-            const { apiKey, token, domain } = this.props
-
             fetchNotificationList({
-              apiKey,
-              token,
-              domain,
+              ...this.props.authentication,
               offset: this.state.nextOffset,
               limit: this.NOTIFICATION_FETCH_LIMIT
             }).then(response => {
@@ -289,9 +272,7 @@ export default class NotificationList extends React.Component {
           {this.state.notificationList.map((notification, i) => {
             return (
               <NotificationItem
-                domain={this.props.domain}
-                apiKey={this.props.apiKey}
-                token={this.props.token}
+                authentication={this.props.authentication}
                 notification={notification}
                 onClick={this.onItemClick}
                 onDismissCallback={this.onDismissClick}

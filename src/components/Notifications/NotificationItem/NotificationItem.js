@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
@@ -12,6 +12,9 @@ import {
   deleteNotification
 } from '../../../js/notificationService'
 
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault } from '../../../props/defaults'
+
 import './NotificationItem.scss'
 
 dayjs.extend(advancedFormat)
@@ -20,9 +23,7 @@ export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    domain: PropTypes.string,
-    apiKey: PropTypes.string,
-    token: PropTypes.string,
+    authentication: authenticationType,
     notification: PropTypes.shape({}).isRequired,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
@@ -32,9 +33,7 @@ export default class NotificationItem extends React.Component {
   }
 
   static defaultProps = {
-    domain: undefined,
-    apiKey: undefined,
-    token: undefined,
+    authentication: authenticationDefault,
     expandedContent: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {},
@@ -64,12 +63,9 @@ export default class NotificationItem extends React.Component {
     e.stopPropagation()
     this.props.onDismissCallback(notification)
 
-    const { domain, apiKey, token } = this.props
     dismissNotification({
-      notificationId: notification.id,
-      domain,
-      apiKey,
-      token
+      ...this.props.authentication,
+      notificationId: notification.id
     }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -80,12 +76,9 @@ export default class NotificationItem extends React.Component {
     e.stopPropagation()
     this.props.onDeleteCallback(notification)
 
-    const { domain, apiKey, token } = this.props
     deleteNotification({
-      notificationId: notification.id,
-      domain,
-      apiKey,
-      token
+      ...this.props.authentication,
+      notificationId: notification.id
     }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)

@@ -834,3 +834,12 @@ export const getTickWidth = (scale, innerPadding) => {
     return 0
   }
 }
+
+export const setStyleVars = ({ themeStyles, prefix }) => {
+  for (let property in themeStyles) {
+    document.documentElement.style.setProperty(
+      `${prefix}${property}`,
+      themeStyles[property]
+    )
+  }
+}

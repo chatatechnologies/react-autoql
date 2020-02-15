@@ -139,16 +139,12 @@ export default class Rule extends React.Component {
     }
 
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions(
-        value,
-        true
-        // this.props.demo,
-        // this.props.domain,
-        // this.props.apiKey,
-        // this.props.customerId,
-        // this.props.userId,
-        // this.props.token
-      )
+      fetchSuggestions({
+        suggestion: value,
+        // ...this.props.authentication,
+        // ...this.props.autoQLConfig,
+        demo: true
+      })
         .then(response => {
           // const body = this.props.demo
           //   ? response.data

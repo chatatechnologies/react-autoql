@@ -4,6 +4,20 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import ReactTooltip from 'react-tooltip'
 
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  themeConfigType
+} from '../../props/types'
+
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  themeConfigDefault
+} from '../../props/defaults'
+
 import { ResponseRenderer } from '../ResponseRenderer'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { VizToolbar } from '../VizToolbar'
@@ -26,6 +40,11 @@ export default class ChatMessage extends React.Component {
   filtering = false
 
   static propTypes = {
+    authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
+
     isResponse: PropTypes.bool.isRequired,
     lastMessageId: PropTypes.string.isRequired,
     setActiveMessage: PropTypes.func,
@@ -34,32 +53,20 @@ export default class ChatMessage extends React.Component {
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     displayType: PropTypes.string,
-    tableBorderColor: PropTypes.string.isRequired,
-    tableHoverColor: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     response: PropTypes.shape({}),
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
-    debug: PropTypes.bool,
-    demo: PropTypes.bool,
     enableColumnEditor: PropTypes.bool,
-    apiKey: PropTypes.string,
-    userId: PropTypes.string,
-    token: PropTypes.string,
-    domain: PropTypes.string,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
+    dataFormatting: dataFormattingType
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
+
     setActiveMessage: () => {},
     displayType: undefined,
     response: undefined,
@@ -68,14 +75,7 @@ export default class ChatMessage extends React.Component {
     type: 'text',
     text: null,
     tableOptions: undefined,
-    debug: false,
-    demo: false,
-    enableColumnEditor: true,
-    apiKey: undefined,
-    userId: undefined,
-    token: undefined,
-    domain: undefined,
-    dataFormatting: {}
+    enableColumnEditor: true
   }
 
   state = {
@@ -146,18 +146,17 @@ export default class ChatMessage extends React.Component {
           disableDrilldowns={!!response.disableDrilldowns}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
-          tableBorderColor={this.props.tableBorderColor}
-          tableHoverColor={this.props.tableHoverColor}
+          themeConfig={this.props.themeConfig}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
           dataFormatting={this.props.dataFormatting}
-          chartColors={this.props.chartColors}
           setFilterTagsCallback={this.setFilterTags}
           hideColumnCallback={this.hideColumnCallback}
           onTableFilterCallback={this.onTableFilter}
           height={chartHeight}
           width={chartWidth}
-          demo={this.props.demo}
+          demo={this.props.authentication.demo}
+          enableSuggestions={this.props.autoQLConfig.enableSuggestions}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--chata-drawer-background-color'
           )}
@@ -320,10 +319,10 @@ export default class ChatMessage extends React.Component {
     this.setState({ isHideColumnsModalVisible: true })
 
   onColumnVisibilitySave = columns => {
-    const { apiKey, userId, token, domain } = this.props
+    const { authentication } = this.props
 
     this.setState({ isSettingColumnVisibility: true })
-    setColumnVisibility({ apiKey, userId, domain, token, columns })
+    setColumnVisibility({ ...authentication, columns })
       .then(() => {
         this.setState({
           isHideColumnsModalVisible: false,

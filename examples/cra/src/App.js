@@ -254,6 +254,65 @@ export default class App extends Component {
     }
   }
 
+  getAuthProp = () => {
+    return {
+      token: getStoredProp('jwtToken'),
+      apiKey: this.state.apiKey, // required if demo is false
+      customerId: this.state.customerId, // required if demo is false
+      userId: this.state.userId, // required if demo is false
+      domain: this.state.domain,
+      username: this.state.username,
+      demo: this.state.demo
+    }
+  }
+
+  getAutoQLConfigProp = () => {
+    return {
+      enableSafetyNet: this.state.enableSafetyNet,
+      enableAutocomplete: this.state.enableAutocomplete,
+      disableDrilldowns: this.state.disableDrilldowns,
+      debug: this.state.debug,
+      test: this.state.test
+    }
+  }
+
+  getDataFormattingProp = () => {
+    return {
+      currencyCode: this.state.currencyCode,
+      languageCode: this.state.languageCode,
+      currencyDecimals: this.state.currencyDecimals,
+      quantityDecimals: this.state.quantityDecimals,
+      comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
+      monthYearFormat: this.state.monthFormat,
+      dayMonthYearFormat: this.state.dayFormat
+    }
+  }
+
+  getThemeConfigProp = () => {
+    const lightAccentColor =
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'purefacts' &&
+      !this.state.demo
+        ? '#253340'
+        : this.state.lightAccentColor
+
+    const darkAccentColor =
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'purefacts' &&
+      !this.state.demo
+        ? '#253340'
+        : this.state.darkAccentColor
+
+    return {
+      theme: this.state.theme,
+      accentColor:
+        this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
+      fontFamily: this.state.fontFamily,
+      chartColors: this.state.chartColors,
+      titleColor: this.state.dashboardTitleColor
+    }
+  }
+
   executeQuery = query => {
     const url = `${this.state.domain}/autoql/api/v1/query?key=${this.state.apiKey}`
 
@@ -997,28 +1056,12 @@ export default class App extends Component {
       handleImage = locateLogo
     }
 
-    const lightAccentColor =
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-        ? '#253340'
-        : this.state.lightAccentColor
-
-    const darkAccentColor =
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-        ? '#253340'
-        : this.state.darkAccentColor
-
     return (
       <ChatDrawer
-        token={getStoredProp('jwtToken')}
-        apiKey={this.state.apiKey} // required if demo is false
-        customerId={this.state.customerId} // required if demo is false
-        userId={this.state.userId} // required if demo is false
-        domain={this.state.domain}
-        username={this.state.username}
+        authentication={this.getAuthProp()}
+        autoQLConfig={this.getAutoQLConfigProp()}
+        dataFormatting={this.getDataFormattingProp()}
+        themeConfig={this.getThemeConfigProp()}
         key={this.state.componentKey}
         isVisible={this.state.isVisible}
         onHandleClick={() =>
@@ -1036,33 +1079,12 @@ export default class App extends Component {
         introMessage={this.state.introMessage}
         showMask={this.state.showMask}
         shiftScreen={this.state.shiftScreen}
-        enableAutocomplete={this.state.enableAutocomplete}
         enableVoiceRecord={this.state.enableVoiceRecord}
         clearOnClose={this.state.clearOnClose}
         width={this.state.width}
         height={this.state.height}
         title={this.state.title}
-        enableSafetyNet={this.state.enableSafetyNet}
-        disableDrilldowns={this.state.disableDrilldowns}
-        theme={this.state.theme}
-        accentColor={
-          this.state.theme === 'light' ? lightAccentColor : darkAccentColor
-        }
-        fontFamily={this.state.fontFamily}
         maxMessages={this.state.maxMessages}
-        demo={this.state.demo}
-        debug={this.state.debug}
-        test={this.state.test}
-        dataFormatting={{
-          currencyCode: this.state.currencyCode,
-          languageCode: this.state.languageCode,
-          currencyDecimals: this.state.currencyDecimals,
-          quantityDecimals: this.state.quantityDecimals,
-          comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
-          monthYearFormat: this.state.monthFormat,
-          dayMonthYearFormat: this.state.dayFormat
-        }}
-        chartColors={this.state.chartColors}
         handleImage={handleImage}
         enableQueryTipsTab={this.state.enableQueryTipsTab}
         enableColumnEditor={this.state.enableColumnEditor}
@@ -1088,13 +1110,10 @@ export default class App extends Component {
     return (
       <div>
         <ChatBar
-          token={getStoredProp('jwtToken')}
-          apiKey={this.state.apiKey} // required if demo is false
-          customerId={this.state.customerId} // required if demo is false
-          userId={this.state.userId} // required if demo is false
-          domain={this.state.domain}
-          username={this.state.username}
-          demo={this.state.demo}
+          authentication={this.getAuthProp()}
+          autoQLConfig={this.getAutoQLConfigProp()}
+          dataFormatting={this.getDataFormattingProp()}
+          themeConfig={this.getThemeConfigProp()}
           ref={r => (this.chatBarRef = r)}
           autoCompletePlacement="bottom"
           onSubmit={() => this.setState({ response: null })}
@@ -1238,39 +1257,18 @@ export default class App extends Component {
         </div>
         <Dashboard
           ref={ref => (this.dashboardRef = ref)}
-          token={getStoredProp('jwtToken')}
-          apiKey={this.state.apiKey} // required if demo is false
-          customerId={this.state.customerId} // required if demo is false
-          userId={this.state.userId} // required if demo is false
-          username={this.state.username}
-          domain={this.state.domain} // required if demo is false
-          demo={this.state.demo}
-          debug={this.state.debug}
-          test={this.state.test}
-          enableSafetyNet={this.state.enableSafetyNet}
+          authentication={this.getAuthProp()}
+          autoQLConfig={this.getAutoQLConfigProp()}
+          dataFormatting={this.getDataFormattingProp()}
+          themeConfig={this.getThemeConfigProp()}
           isEditing={this.state.isEditing}
-          dataFormatting={{
-            currencyCode: this.state.currencyCode,
-            languageCode: this.state.languageCode,
-            currencyDecimals: this.state.currencyDecimals,
-            quantityDecimals: this.state.quantityDecimals,
-            comparisonDisplay: this.state.comparisonDisplay
-              ? 'PERCENT'
-              : 'RATIO',
-            monthYearFormat: this.state.monthFormat,
-            dayMonthYearFormat: this.state.dayFormat
-          }}
-          fontFamily={this.state.fontFamily}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
-          chartColors={this.state.chartColors}
-          titleColor={this.state.dashboardTitleColor}
           onChangeCallback={newTiles => {
             this.setState({ dashboardTiles: newTiles })
           }}
-          enableSQLInput={false}
         />
       </div>
     )
@@ -1305,9 +1303,7 @@ export default class App extends Component {
           <Menu.Item key="notifications">
             <NotificationButton
               ref={r => (this.notificationBadgeRef = r)}
-              apiKey={this.state.apiKey}
-              token={getStoredProp('jwtToken')}
-              domain={this.state.domain}
+              authentication={this.getAuthProp()}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
                 if (
@@ -1411,9 +1407,7 @@ export default class App extends Component {
       >
         <NotificationList
           ref={ref => (this.notificationListRef = ref)}
-          apiKey={this.state.apiKey}
-          token={getStoredProp('jwtToken')}
-          domain={this.state.domain}
+          authentication={this.getAuthProp()}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
@@ -1434,9 +1428,7 @@ export default class App extends Component {
         }}
       >
         <NotificationSettings
-          apiKey={this.state.apiKey}
-          token={getStoredProp('jwtToken')}
-          domain={this.state.domain}
+          authentication={this.getAuthProp()}
           onErrorCallback={this.onError}
         />
       </div>

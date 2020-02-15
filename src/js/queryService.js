@@ -140,7 +140,7 @@ export const runQuery = ({
   demo,
   debug,
   test,
-  useSafetyNet,
+  enableSafetyNet,
   domain,
   apiKey,
   customerId,
@@ -149,7 +149,7 @@ export const runQuery = ({
   username,
   source
 }) => {
-  if (useSafetyNet) {
+  if (enableSafetyNet) {
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
       text: query,
@@ -298,15 +298,15 @@ export const runDrilldown = ({
     .catch(error => Promise.reject(error))
 }
 
-export const fetchSuggestions = (
+export const fetchSuggestions = ({
   suggestion,
   demo,
   domain,
-  api_key,
-  customer_id,
-  user_id,
+  apiKey,
+  customerId,
+  userId,
   token
-) => {
+}) => {
   const axiosInstance = axios.create({})
 
   // Cancel current autocomplete call if there is one
@@ -322,7 +322,7 @@ export const fetchSuggestions = (
     )}&projectid=1`
     : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
       suggestion
-    )}&key=${api_key}&customer_id=${customer_id}&user_id=${user_id}`
+    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
 
   const config = {}
   // config.cancelToken = autoCompleteCall.token

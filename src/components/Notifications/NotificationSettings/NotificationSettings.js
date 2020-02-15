@@ -24,20 +24,19 @@ import {
   updateNotificationRuleStatus
 } from '../../../js/notificationService'
 
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault } from '../../../props/defaults'
+
 import './NotificationSettings.scss'
 
 export default class NotificationSettings extends React.Component {
   static propTypes = {
-    apiKey: PropTypes.string,
-    token: PropTypes.string,
-    domain: PropTypes.string,
+    authentication: authenticationType,
     onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
-    apiKey: undefined,
-    token: undefined,
-    domain: undefined,
+    authentication: authenticationDefault,
     onErrorCallback: () => {}
   }
 
@@ -82,11 +81,8 @@ export default class NotificationSettings extends React.Component {
   }
 
   getNotificationSettings = () => {
-    const { apiKey, token, domain } = this.props
     fetchNotificationSettings({
-      apiKey,
-      token,
-      domain
+      ...this.props.authentication
     })
       .then(list => {
         this.setState({
@@ -182,14 +178,11 @@ export default class NotificationSettings extends React.Component {
       isSavingRule: true
     })
 
-    const { domain, apiKey, token } = this.props
     var newRuleList = [...this.state.ruleList]
     const newRule = this.getActiveRuleData()
     const requestParams = {
       rule: newRule,
-      domain,
-      apiKey,
-      token
+      ...this.props.authentication
     }
 
     if (newRule.id) {
@@ -249,8 +242,7 @@ export default class NotificationSettings extends React.Component {
         isDeletingRule: true
       })
 
-      const { domain, apiKey, token } = this.props
-      deleteNotificationRule({ ruleId, domain, apiKey, token })
+      deleteNotificationRule({ ruleId, ...this.props.authentication })
         .then(() => {
           const newList = this.state.ruleList.filter(rule => rule.id !== ruleId)
           this.setState({
@@ -283,13 +275,10 @@ export default class NotificationSettings extends React.Component {
 
     this.setState({ ruleList: newList })
 
-    const { apiKey, token, domain } = this.props
     updateNotificationRuleStatus({
       ruleId: rule.id,
       status: newStatus,
-      apiKey,
-      token,
-      domain
+      ...this.props.authentication
     }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)
