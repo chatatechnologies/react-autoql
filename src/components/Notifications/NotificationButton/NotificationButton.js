@@ -8,6 +8,9 @@ import {
   resetNotificationCount
 } from '../../../js/notificationService'
 
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault } from '../../../props/defaults'
+
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
@@ -20,19 +23,15 @@ export default class NotificationButton extends React.Component {
   // )
 
   static propTypes = {
+    authentication: authenticationType,
     overflowCount: PropTypes.number,
-    token: PropTypes.string,
-    apiKey: PropTypes.string,
-    domain: PropTypes.string,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     overflowCount: 99,
-    token: undefined,
-    apiKey: undefined,
-    domain: undefined,
     onNewNotification: () => {},
     onErrorCallback: () => {}
   }
@@ -66,13 +65,7 @@ export default class NotificationButton extends React.Component {
   }
 
   getNotificationCount = () => {
-    const { token, apiKey, domain } = this.props
-
-    fetchNotificationCount({
-      token,
-      apiKey,
-      domain
-    })
+    fetchNotificationCount({ ...this.props.authentication })
       .then(count => {
         this.setState({ count })
         if (count > 0) {
@@ -86,13 +79,7 @@ export default class NotificationButton extends React.Component {
   }
 
   resetCount = () => {
-    const { token, apiKey, domain } = this.props
-
-    resetNotificationCount({
-      token,
-      apiKey,
-      domain
-    })
+    resetNotificationCount({ ...this.props.authentication })
       .catch(error => {
         console.error(error)
         this.props.onErrorCallback(error)

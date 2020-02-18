@@ -1,7 +1,18 @@
 import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import { bool, string, func } from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType
+} from '../../props/types'
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault
+} from '../../props/defaults'
 
 import { Icon } from '../Icon'
 import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
@@ -19,45 +30,29 @@ export default class ChatBar extends React.Component {
   autoCompleteTimer = undefined
 
   static propTypes = {
-    token: PropTypes.string,
-    apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    domain: PropTypes.string,
-    enableVoiceRecord: PropTypes.bool,
-    isDisabled: PropTypes.bool,
-    onSubmit: PropTypes.func,
-    onResponseCallback: PropTypes.func,
-    className: PropTypes.string,
-    enableAutocomplete: PropTypes.bool,
-    autoCompletePlacement: PropTypes.string,
-    showLoadingDots: PropTypes.bool,
-    enableSafetyNet: PropTypes.bool,
-    showChataIcon: PropTypes.bool,
-    demo: PropTypes.bool,
-    debug: PropTypes.bool,
-    test: PropTypes.bool
-    // clearQueryOnSubmit: PropTypes.bool
+    authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
+    enableVoiceRecord: bool,
+    isDisabled: bool,
+    onSubmit: func,
+    onResponseCallback: func,
+    className: string,
+    autoCompletePlacement: string,
+    showLoadingDots: bool,
+    showChataIcon: bool
   }
 
   static defaultProps = {
-    token: undefined,
-    apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
+    authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
     enableVoiceRecord: false,
     isDisabled: false,
-    enableAutocomplete: true,
     autoCompletePlacement: 'top',
-    enableSafetyNet: true,
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
-    demo: false,
-    debug: false,
-    test: false,
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -101,15 +96,8 @@ export default class ChatBar extends React.Component {
       if (skipSafetyNet) {
         runQueryOnly({
           query,
-          demo: this.props.demo,
-          debug: this.props.debug,
-          test: this.props.test,
-          domain: this.props.domain,
-          apiKey: this.props.apiKey,
-          customerId: this.props.customerId,
-          userId: this.props.userId,
-          username: this.props.username,
-          token: this.props.token,
+          ...this.props.authentication,
+          ...this.props.autoQLConfig,
           source: source || 'data_messenger'
         })
           .then(response => {
@@ -123,16 +111,8 @@ export default class ChatBar extends React.Component {
       } else {
         runQuery({
           query,
-          demo: this.props.demo,
-          debug: this.props.debug,
-          test: this.props.test,
-          useSafetyNet: this.props.enableSafetyNet && !skipSafetyNet,
-          domain: this.props.domain,
-          apiKey: this.props.apiKey,
-          customerId: this.props.customerId,
-          userId: this.props.userId,
-          username: this.props.username,
-          token: this.props.token,
+          ...this.props.authentication,
+          ...this.props.autoQLConfig,
           source: source || 'data_messenger'
         })
           .then(response => {
@@ -197,15 +177,10 @@ export default class ChatBar extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions(
-        value,
-        this.props.demo,
-        this.props.domain,
-        this.props.apiKey,
-        this.props.customerId,
-        this.props.userId,
-        this.props.token
-      )
+      fetchSuggestions({
+        suggestion: value,
+        ...this.props.authentication
+      })
         .then(response => {
           const body = this.props.demo
             ? response.data

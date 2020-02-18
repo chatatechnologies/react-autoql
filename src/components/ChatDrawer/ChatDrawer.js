@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
+import { number, bool, string, func, shape } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
@@ -7,6 +7,22 @@ import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
 // import { throttle, debounce } from 'throttle-debounce'
+
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  themeConfigType
+} from '../../props/types'
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  themeConfigDefault
+} from '../../props/defaults'
+
+import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+import { setStyleVars } from '../../js/Util'
 
 // Components
 import { Icon } from '../Icon'
@@ -25,27 +41,6 @@ import 'rc-drawer/assets/index.css'
 import './ChatDrawer.scss'
 
 export default class ChatDrawer extends React.Component {
-  LIGHT_THEME = {
-    '--chata-drawer-accent-color': '#28a8e0',
-    '--chata-drawer-background-color': '#fff',
-    '--chata-drawer-border-color': '#d3d3d352',
-    '--chata-drawer-hover-color': '#ececec',
-    '--chata-drawer-text-color-primary': '#5d5d5d',
-    '--chata-drawer-text-color-placeholder': '#0000009c',
-    '--chata-drawer-font-family': 'sans-serif'
-  }
-
-  DARK_THEME = {
-    '--chata-drawer-accent-color': '#525252', // dark gray
-    // '--chata-drawer-accent-color': '#193a48', // dark blue
-    '--chata-drawer-background-color': '#636363',
-    '--chata-drawer-border-color': '#d3d3d329',
-    '--chata-drawer-hover-color': '#5a5a5a',
-    '--chata-drawer-text-color-primary': '#fff',
-    '--chata-drawer-text-color-placeholder': '#ffffff9c',
-    '--chata-drawer-font-family': 'sans-serif'
-  }
-
   introMessageObject = {
     id: 'intro',
     isResponse: true,
@@ -54,86 +49,65 @@ export default class ChatDrawer extends React.Component {
   }
 
   static propTypes = {
-    token: PropTypes.string,
-    apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    domain: PropTypes.string,
-    placement: PropTypes.string,
-    maskClosable: PropTypes.bool,
-    onVisibleChange: PropTypes.func,
-    isVisible: PropTypes.bool,
-    showHandle: PropTypes.bool,
-    // customHandle: PropTypes.ReactElement,
-    handleImage: PropTypes.string,
-    theme: PropTypes.string,
-    handleStyles: PropTypes.shape({}),
-    shiftScreen: PropTypes.bool,
-    disableDrilldowns: PropTypes.bool,
-    customerName: PropTypes.string,
-    enableAutocomplete: PropTypes.bool,
-    clearOnClose: PropTypes.bool,
-    accentColor: PropTypes.string,
-    enableSafetyNet: PropTypes.bool,
-    enableAutocomplete: PropTypes.bool,
-    enableVoiceRecord: PropTypes.bool,
-    title: PropTypes.string,
-    maxMessages: PropTypes.number,
-    demo: PropTypes.bool,
-    debug: PropTypes.bool,
-    test: PropTypes.bool,
-    enableQueryTipsTab: PropTypes.bool,
-    enableColumnEditor: PropTypes.bool,
-    chartColors: PropTypes.arrayOf(PropTypes.string),
-    resizable: PropTypes.bool,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
+    // Global
+    authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
+
+    // UI
+    placement: string,
+    maskClosable: bool,
+    isVisible: bool,
+    width: number,
+    height: number,
+    showHandle: bool,
+    handleImage: string,
+    handleStyles: shape({}),
+    shiftScreen: bool,
+    customerName: string,
+    clearOnClose: bool,
+    enableVoiceRecord: bool,
+    title: string,
+    maxMessages: number,
+    introMessage: string,
+    enableQueryTipsTab: bool,
+    enableColumnEditor: bool,
+    resizable: bool,
+
+    // Callbacks
+    onVisibleChange: func,
+    onHandleClick: func
   }
 
   static defaultProps = {
-    token: undefined,
-    apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
+    // Global
+    authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
+
+    // UI
     placement: 'right',
     maskClosable: true,
     isVisible: true,
     width: 500,
     height: 350,
-    customHandle: undefined, // not working atm
-    handleImage: undefined,
     showHandle: true,
-    theme: 'light',
-    handleStyles: {},
+    handleImage: undefined,
+    handleStyles: undefined,
     shiftScreen: false,
-    disableDrilldowns: false,
     customerName: 'there',
-    enableAutocomplete: true,
     clearOnClose: false,
-    accentColor: undefined,
-    enableSafetyNet: true,
-    enableAutocomplete: true,
     enableVoiceRecord: true,
     title: 'Data Messenger',
     maxMessages: undefined,
-    demo: false,
-    debug: false,
-    test: false,
     introMessage: undefined,
-    dataFormatting: {},
-    chartColors: undefined,
     enableQueryTipsTab: true,
     enableColumnEditor: true,
     resizable: true,
+
+    // Callbacks
     onHandleClick: () => {},
     onVisibleChange: () => {}
   }
@@ -183,7 +157,10 @@ export default class ChatDrawer extends React.Component {
     ) {
       this.clearMessages()
     }
-    if (this.props.theme && this.props.theme !== prevProps.theme) {
+
+    const thisTheme = this.props.themeConfig.theme
+    const prevTheme = prevProps.themeConfig.theme
+    if (thisTheme && thisTheme !== prevTheme) {
       this.setStyles()
     }
   }
@@ -208,26 +185,16 @@ export default class ChatDrawer extends React.Component {
   }
 
   setStyles = () => {
-    const themeStyles =
-      this.props.theme === 'light' ? this.LIGHT_THEME : this.DARK_THEME
-    for (let property in themeStyles) {
-      document.documentElement.style.setProperty(
-        property,
-        themeStyles[property]
-      )
+    const { theme, accentColor, fontFamily } = this.props.themeConfig
+    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+    if (accentColor) {
+      themeStyles['accent-color'] = accentColor
     }
-    if (this.props.accentColor) {
-      document.documentElement.style.setProperty(
-        '--chata-drawer-accent-color',
-        this.props.accentColor
-      )
+    if (fontFamily) {
+      themeStyles['font-family'] = fontFamily
     }
-    if (this.props.fontFamily) {
-      document.documentElement.style.setProperty(
-        '--chata-drawer-font-family',
-        this.props.fontFamily
-      )
-    }
+
+    setStyleVars({ themeStyles, prefix: '--chata-drawer-' })
   }
 
   getHandlerProp = () => {
@@ -329,38 +296,6 @@ export default class ChatDrawer extends React.Component {
         source
       )
     }
-
-    // then(() => {
-    //   this.addRequestMessage(suggestion)
-    //   this.setState({ isChataThinking: true })
-
-    //   if (suggestion === 'None of these') {
-    //     setTimeout(() => {
-    //       this.addResponseMessage({ content: 'Thank you for your feedback.' })
-    //       this.setState({ isChataThinking: false })
-    //     }, 1000)
-    //     return
-    //   }
-
-    //   runQueryOnly({
-    //     query: suggestion,
-    //     demo: this.props.demo,
-    //     debug: this.props.debug,
-    //     test: this.props.test,
-    //     domain: this.props.domain,
-    //     apiKey: this.props.apiKey,
-    //     customerId: this.props.customerId,
-    //     userId: this.props.userId,
-    //     username: this.props.username,
-    //     token: this.props.token
-    //   })
-    //     .then(response => {
-    //       this.onResponse(response)
-    //     })
-    //     .catch(error => {
-    //       this.onResponse(error)
-    //     })
-    // })
   }
 
   onResponse = response => {
@@ -372,7 +307,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   processDrilldown = (groupByObject, queryID, singleValueResponse) => {
-    if (!this.props.disableDrilldowns) {
+    if (!this.props.autoQLConfig.disableDrilldowns) {
       // We only want to allow empty groupByObjects for single value responses
       if (
         !singleValueResponse &&
@@ -393,17 +328,9 @@ export default class ChatDrawer extends React.Component {
       this.setState({ isChataThinking: true })
 
       runDrilldown({
+        ...this.props.authentication,
         queryID,
-        groupByObject,
-        demo: this.props.demo,
-        debug: this.props.debug,
-        test: this.props.test,
-        domain: this.props.domain,
-        apiKey: this.props.apiKey,
-        customerId: this.props.customerId,
-        userId: this.props.userId,
-        username: this.props.username,
-        token: this.props.token
+        groupByObject
       })
         .then(response => {
           this.addResponseMessage({
@@ -653,18 +580,16 @@ export default class ChatDrawer extends React.Component {
           }}
           className="chat-message-container"
         >
-          <div
-            style={{
-              // height: 'calc(100% - 20px)'
-              height: 'calc(100% - 20px)'
-              // width: '100%',
-              // position: 'relative'
-            }}
-          >
+          <div style={{ height: 'calc(100% - 20px)' }}>
             {this.state.messages.length > 0 &&
               this.state.messages.map(message => {
                 return (
                   <ChatMessage
+                    key={message.id}
+                    id={message.id}
+                    authentication={this.props.authentication}
+                    autoQLConfig={this.props.autoQLConfig}
+                    themeConfig={this.props.themeConfig}
                     scrollRef={this.messengerScrollComponent}
                     setActiveMessage={this.setActiveMessage}
                     isActive={this.state.activeMessageId === message.id}
@@ -676,35 +601,13 @@ export default class ChatDrawer extends React.Component {
                     scrollToBottom={this.scrollToBottom}
                     lastMessageId={this.state.lastMessageId}
                     dataFormatting={this.props.dataFormatting}
-                    chartColors={this.props.chartColors}
                     enableColumnEditor={this.props.enableColumnEditor}
-                    tableBorderColor={
-                      this.props.theme === 'light'
-                        ? this.LIGHT_THEME['--chata-drawer-border-color']
-                        : this.DARK_THEME['--chata-drawer-border-color']
-                    }
-                    tableHoverColor={
-                      this.props.theme === 'light'
-                        ? this.LIGHT_THEME['--chata-drawer-hover-color']
-                        : this.DARK_THEME['--chata-drawer-hover-color']
-                    }
                     displayType={
                       message.displayType ||
-                      (message.response &&
-                        message.response.data &&
-                        message.response.data.data &&
-                        message.response.data.data.display_type)
+                      _get(message, 'response.data.data.display_type')
                     }
                     response={message.response}
                     type={message.type}
-                    key={message.id}
-                    id={message.id}
-                    debug={this.props.debug}
-                    demo={this.props.demo}
-                    apiKey={this.props.apiKey}
-                    userId={this.props.userId}
-                    token={this.props.token}
-                    domain={this.props.domain}
                   />
                 )
               })}
@@ -726,22 +629,14 @@ export default class ChatDrawer extends React.Component {
             We run on AutoQL by Chata
           </div>
           <ChatBar
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
             ref={this.setChatBarRef}
-            token={this.props.token}
-            apiKey={this.props.apiKey}
-            customerId={this.props.customerId}
-            userId={this.props.userId}
-            username={this.props.username}
-            domain={this.props.domain}
-            demo={this.props.demo}
-            debug={this.props.debug}
-            test={this.props.test}
+            test={this.props.autoQLConfig.test}
             className="chat-drawer-chat-bar"
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
-            enableAutocomplete={this.props.enableAutocomplete}
-            enableSafetyNet={this.props.enableSafetyNet}
             enableVoiceRecord={this.props.enableVoiceRecord}
             autoCompletePlacement="top"
             showChataIcon={false}
@@ -761,14 +656,10 @@ export default class ChatDrawer extends React.Component {
     const limit = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
+      ...this.props.authentication,
       keywords,
-      customerId: this.props.customerId,
-      userId: this.props.userId,
       limit,
       offset,
-      domain: this.props.domain,
-      apiKey: this.props.apiKey,
-      token: this.props.token,
       skipSafetyNet
     })
       .then(response => {

@@ -13,7 +13,23 @@ import { ResponseRenderer } from '../ResponseRenderer'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
 import { CHART_TYPES } from '../../js/Constants'
+import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+import { setStyleVars } from '../../js/Util'
+
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  themeConfigType
+} from '../../props/types'
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  themeConfigDefault
+} from '../../props/defaults'
 
 import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
@@ -33,88 +49,34 @@ const executeDashboard = ref => {
 class Dashboard extends React.Component {
   tileRefs = {}
 
-  LIGHT_THEME = {
-    '--chata-dashboard-accent-color': '#28a8e0',
-    '--chata-dashboard-background-color': '#fff',
-    '--chata-dashboard-border-color': '#d3d3d352',
-    '--chata-dashboard-hover-color': '#ececec',
-    '--chata-dashboard-text-color-primary': '#5d5d5d',
-    '--chata-dashboard-text-color-placeholder': '#0000009c'
-  }
-
-  DARK_THEME = {
-    '--chata-dashboard-accent-color': '#525252', // dark gray
-    // '--chata-dashboard-accent-color': '#193a48', // dark blue
-    '--chata-dashboard-background-color': '#636363',
-    '--chata-dashboard-border-color': '#d3d3d329',
-    '--chata-dashboard-hover-color': '#5a5a5a',
-    '--chata-dashboard-text-color-primary': '#fff',
-    '--chata-dashboard-text-color-placeholder': '#ffffff9c'
-  }
-
   static propTypes = {
+    // Global
+    authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
+
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
-    onChangeCallback: PropTypes.func,
-    token: PropTypes.string,
-    apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    domain: PropTypes.string,
     executeOnMount: PropTypes.bool,
     executeOnStopEditing: PropTypes.bool,
-    theme: PropTypes.string,
-    disableDrilldowns: PropTypes.bool,
-    enableSafetyNet: PropTypes.bool,
-    enableAutocomplete: PropTypes.bool,
-    enableAutocomplete: PropTypes.bool,
-    accentColor: PropTypes.string,
-    demo: PropTypes.bool,
-    debug: PropTypes.bool,
-    test: PropTypes.bool,
     isEditing: PropTypes.bool,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    }),
-    fontFamily: PropTypes.string,
     notExecutedText: PropTypes.string,
-    chartColors: PropTypes.arrayOf(PropTypes.string),
-    titleColor: PropTypes.string,
-    enableSQLInput: PropTypes.bool
+    onChangeCallback: PropTypes.func
   }
 
   static defaultProps = {
+    // Global
+    authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
+
     tiles: [],
-    token: undefined,
-    apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
-    domain: undefined,
-    theme: 'light',
-    disableDrilldowns: false,
-    enableAutocomplete: true,
-    accentColor: undefined,
-    enableSafetyNet: true,
-    enableAutocomplete: true,
-    demo: false,
-    debug: false,
-    test: false,
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
-    dataFormatting: {},
-    fontFamily: undefined,
-    notExecutedText: undefined,
-    chartColors: undefined,
-    titleColor: '#356f90',
-    enableSQLInput: false
+    notExecutedText: undefined
+    // onChangeCallback: () => {}
   }
 
   state = {
@@ -132,8 +94,8 @@ class Dashboard extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (
-      this.props.fontFamily &&
-      this.props.fontFamily !== prevProps.fontFamily
+      this.props.themeConfig.fontFamily &&
+      this.props.themeConfig.fontFamily !== prevProps.themeConfig.fontFamily
     ) {
       this.setStyles()
     }
@@ -170,26 +132,16 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    const themeStyles =
-      this.props.theme === 'light' ? this.LIGHT_THEME : this.DARK_THEME
-    for (let property in themeStyles) {
-      document.documentElement.style.setProperty(
-        property,
-        themeStyles[property]
-      )
+    const { theme, accentColor, fontFamily } = this.props.themeConfig
+    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+    if (accentColor) {
+      themeStyles['accent-color'] = accentColor
     }
-    if (this.props.accentColor) {
-      document.documentElement.style.setProperty(
-        '--chata-dashboard-accent-color',
-        this.props.accentColor
-      )
+    if (fontFamily) {
+      themeStyles['font-family'] = fontFamily
     }
-    if (this.props.fontFamily) {
-      document.documentElement.style.setProperty(
-        '--chata-dashboard-font-family',
-        this.props.fontFamily
-      )
-    }
+
+    setStyleVars({ themeStyles, prefix: '--chata-dashboard-' })
   }
 
   setPreviousTileState = tiles => {
@@ -352,15 +304,8 @@ class Dashboard extends React.Component {
     runDrilldown({
       queryID,
       groupByObject,
-      demo: this.props.demo,
-      debug: this.props.debug,
-      test: this.props.test,
-      domain: this.props.domain,
-      apiKey: this.props.apiKey,
-      customerId: this.props.customerId,
-      userId: this.props.userId,
-      username: this.props.username,
-      token: this.props.token
+      ...this.props.authentication,
+      ...this.props.autoQLConfig
     })
       .then(drilldownResponse => {
         this.setState({
@@ -378,8 +323,6 @@ class Dashboard extends React.Component {
   }
 
   processDrilldown = (tileId, groupByObject, queryID, activeKey) => {
-    // document.documentElement.style.setProperty('overflow', 'hidden')
-
     this.setState({
       isDrilldownModalVisible: true,
       activeDrilldownTile: tileId,
@@ -426,12 +369,13 @@ class Dashboard extends React.Component {
           {tile && this.shouldShowOriginalQuery(tile) && (
             <div className="chata-dashboard-drilldown-original">
               <ResponseRenderer
+                autoQLConfig={this.props.autoQLConfig}
+                themeConfig={this.props.themeConfig}
                 response={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
-                chartColors={this.props.chartColors}
                 processDrilldown={this.startDrilldown}
-                demo={this.props.demo}
+                demo={this.props.authentication.demo}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey
                 }
@@ -448,18 +392,16 @@ class Dashboard extends React.Component {
               </div>
             ) : (
               <ResponseRenderer
+                authentication={this.props.authentication}
+                autoQLConfig={this.props.autoQLConfig}
+                themeConfig={this.props.themeConfig}
                 response={this.state.activeDrilldownResponse}
                 renderTooltips={false}
-                enableSafetyNet={false}
-                enableSuggestions={false}
-                disableDrilldowns={true}
                 dataFormatting={this.props.dataFormatting}
-                // chartColors={this.props.chartColors}
+                demo={this.props.authentication.demo}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
                 )}
-                // height={300}
-                demo={this.props.demo}
               />
             )}
           </div>
@@ -514,29 +456,19 @@ class Dashboard extends React.Component {
                   } ${tile.i}`}
                   ref={ref => (this.tileRefs[tile.key] = ref)}
                   key={tile.key}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
                   tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
                   displayType={tile.displayType}
                   queryResponse={tile.queryResponse}
-                  token={this.props.token}
-                  apiKey={this.props.apiKey}
-                  customerId={this.props.customerId}
-                  userId={this.props.userId}
-                  username={this.props.username}
-                  domain={this.props.domain}
-                  demo={this.props.demo}
-                  debug={this.props.debug}
-                  test={this.props.test}
-                  enableSafetyNet={this.props.enableSafetyNet}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}
                   setParamsForTile={this.setParamsForTile}
                   deleteTile={this.deleteTile}
                   dataFormatting={this.props.dataFormatting}
                   notExecutedText={this.props.notExecutedText}
-                  chartColors={this.props.chartColors}
                   processDrilldown={this.processDrilldown}
-                  titleColor={this.props.titleColor}
-                  enableSQLInput={this.props.enableSQLInput}
                 />
               ))}
             </ReactGridLayout>

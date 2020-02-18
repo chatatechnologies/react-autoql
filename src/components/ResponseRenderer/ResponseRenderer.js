@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react'
-import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
@@ -7,6 +6,19 @@ import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import { scaleOrdinal } from 'd3-scale'
+import {
+  number,
+  bool,
+  string,
+  func,
+  shape,
+  arrayOf,
+  instanceOf
+} from 'prop-types'
+
+import { dataFormattingType, themeConfigType } from '../../props/types'
+import { dataFormattingDefault, themeConfigDefault } from '../../props/defaults'
+import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -54,45 +66,36 @@ export default class ResponseRenderer extends React.Component {
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
-    response: PropTypes.shape({}).isRequired,
-    chatBarRef: PropTypes.instanceOf(ChatBar),
-    supportsSuggestions: PropTypes.bool,
-    processDrilldown: PropTypes.func,
-    onSuggestionClick: PropTypes.func,
-    isQueryRunning: PropTypes.bool,
-    tableBorderColor: PropTypes.string,
-    tableHoverColor: PropTypes.string,
-    displayType: PropTypes.string,
-    renderTooltips: PropTypes.bool,
-    onSafetyNetSelectOption: PropTypes.func,
-    autoSelectSafetyNetSuggestion: PropTypes.bool,
-    safetyNetSelections: PropTypes.arrayOf(PropTypes.shape({})),
-    renderSuggestionsAsDropdown: PropTypes.bool,
-    suggestionSelection: PropTypes.string,
-    enableSuggestions: PropTypes.bool,
-    chartColors: PropTypes.arrayOf(PropTypes.string),
-    height: PropTypes.number,
-    width: PropTypes.number,
-    demo: PropTypes.bool,
-    hideColumnCallback: PropTypes.func,
-    activeChartElementKey: PropTypes.string,
-    onTableFilterCallback: PropTypes.func,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
+    response: shape({}).isRequired,
+    chatBarRef: instanceOf(ChatBar),
+    themeConfig: themeConfigType,
+    supportsSuggestions: bool,
+    processDrilldown: func,
+    onSuggestionClick: func,
+    isQueryRunning: bool,
+    displayType: string,
+    renderTooltips: bool,
+    onSafetyNetSelectOption: func,
+    autoSelectSafetyNetSuggestion: bool,
+    safetyNetSelections: arrayOf(shape({})),
+    renderSuggestionsAsDropdown: bool,
+    suggestionSelection: string,
+    enableSuggestions: bool,
+    height: number,
+    width: number,
+    demo: bool,
+    hideColumnCallback: func,
+    activeChartElementKey: string,
+    onTableFilterCallback: func,
+    dataFormatting: dataFormattingType
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     supportsSuggestions: true,
     isQueryRunning: false,
-    tableBorderColor: undefined, // this should be what it is in light theme by default
-    tableHoverColor: undefined, // this should be what it is in light theme by default
+    // tableBorderColor: undefined, // this should be what it is in light theme by default
+    // tableHoverColor: undefined, // this should be what it is in light theme by default
     displayType: undefined,
     chatBarRef: undefined,
     onSuggestionClick: undefined,
@@ -102,13 +105,11 @@ export default class ResponseRenderer extends React.Component {
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
     enableSuggestions: true,
-    dataFormatting: {},
+    dataFormatting: dataFormattingDefault,
     height: undefined,
     width: undefined,
     demo: false,
-    chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     activeChartElementKey: undefined,
-    dateFormats: {},
     processDrilldown: () => {},
     onSafetyNetSelectOption: () => {},
     hideColumnCallback: () => {},
@@ -124,7 +125,7 @@ export default class ResponseRenderer extends React.Component {
   componentDidMount = () => {
     try {
       this.RESPONSE_COMPONENT_KEY = uuid.v4()
-      this.colorScale = scaleOrdinal().range(this.props.chartColors)
+      this.colorScale = scaleOrdinal().range(this.props.themeConfig.chartColors)
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
@@ -505,6 +506,16 @@ export default class ResponseRenderer extends React.Component {
       return this.renderSingleValueResponse()
     }
 
+    const tableBorderColor =
+      this.props.themeConfig.theme === 'light'
+        ? LIGHT_THEME['--chata-drawer-border-color']
+        : DARK_THEME['--chata-drawer-border-color']
+
+    const tableHoverColor =
+      this.props.themeConfig.theme === 'light'
+        ? LIGHT_THEME['--chata-drawer-hover-color']
+        : DARK_THEME['--chata-drawer-hover-color']
+
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
@@ -512,8 +523,8 @@ export default class ResponseRenderer extends React.Component {
           ref={ref => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
-          borderColor={this.props.tableBorderColor}
-          hoverColor={this.props.tableHoverColor}
+          borderColor={tableBorderColor}
+          hoverColor={tableHoverColor}
           onCellClick={this.processCellClick}
           headerFilters={this.pivotHeaderFilters}
           onFilterCallback={this.onTableFilter}
@@ -528,8 +539,8 @@ export default class ResponseRenderer extends React.Component {
         ref={ref => (this.tableRef = ref)}
         columns={this.tableColumns}
         data={this.tableData}
-        borderColor={this.props.tableBorderColor}
-        hoverColor={this.props.tableHoverColor}
+        borderColor={tableBorderColor}
+        hoverColor={tableHoverColor}
         onCellClick={this.processCellClick}
         headerFilters={this.headerFilters}
         onFilterCallback={this.onTableFilter}
@@ -563,7 +574,7 @@ export default class ResponseRenderer extends React.Component {
           height={height}
           width={width}
           dataFormatting={this.props.dataFormatting}
-          chartColors={this.props.chartColors}
+          chartColors={this.props.themeConfig.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}

@@ -11,11 +11,25 @@ import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
 import { runQuery, runQueryOnly } from '../../../js/queryService'
+
 import {
   getSupportedDisplayTypes,
   getInitialDisplayType,
   isDisplayTypeValid
 } from '../../../js/Util'
+
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  themeConfigType
+} from '../../../props/types'
+import {
+  authenticationDefault,
+  autoQLConfigDefault,
+  dataFormattingDefault,
+  themeConfigDefault
+} from '../../../props/defaults'
 
 import './DashboardTile.scss'
 
@@ -23,48 +37,31 @@ export default class DashboardTile extends React.Component {
   TILE_ID = uuid.v4()
 
   static propTypes = {
-    token: PropTypes.string,
-    apiKey: PropTypes.string,
-    customerId: PropTypes.string,
-    userId: PropTypes.string,
-    username: PropTypes.string,
-    domain: PropTypes.string,
-    demo: PropTypes.bool.isRequired,
-    debug: PropTypes.bool.isRequired,
-    test: PropTypes.bool.isRequired,
-    enableSafetyNet: PropTypes.bool.isRequired,
+    // Global
+    authentication: authenticationType,
+    autoQLConfig: autoQLConfigType,
+    dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
+
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string),
-    queryResponse: PropTypes.shape({}),
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    }).isRequired,
-    titleColor: PropTypes.string.isRequired,
-    enableSQLInput: PropTypes.bool.isRequired
+    queryResponse: PropTypes.shape({})
   }
 
   static defaultProps = {
+    // Global
+    authentication: authenticationDefault,
+    autoQLConfig: autoQLConfigDefault,
+    dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
+
     query: '',
     title: '',
     displayType: 'table',
-    token: undefined,
-    apiKey: undefined,
-    customerId: undefined,
-    userId: undefined,
-    username: undefined,
-    domain: undefined,
     isNewTile: false,
     safetyNetSelections: undefined,
-    selectedSuggestion: undefined,
-    chartColors: undefined
+    selectedSuggestion: undefined
   }
 
   state = {
@@ -85,8 +82,6 @@ export default class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
-
-    // If user changes to SQL we need to reset the query
   }
 
   isQueryValid = query => {
@@ -141,14 +136,8 @@ export default class DashboardTile extends React.Component {
       ) {
         runQueryOnly({
           query: q,
-          demo: this.props.demo,
-          debug: this.props.debug,
-          domain: this.props.domain,
-          apiKey: this.props.apiKey,
-          customerId: this.props.customerId,
-          userId: this.props.userId,
-          username: this.props.username,
-          token: this.props.token,
+          ...this.props.authentication,
+          ...this.propa.autoQLConfig,
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))
@@ -156,17 +145,11 @@ export default class DashboardTile extends React.Component {
       } else {
         runQuery({
           query: q,
-          demo: this.props.demo,
-          debug: this.props.debug,
-          domain: this.props.domain,
-          apiKey: this.props.apiKey,
-          customerId: this.props.customerId,
-          userId: this.props.userId,
-          username: this.props.username,
-          token: this.props.token,
-          useSafetyNet: !this.props.isEditing
+          ...this.props.authentication,
+          ...this.props.autoQLConfig,
+          enableSafetyNet: !this.props.isEditing
             ? false
-            : this.props.enableSafetyNet,
+            : this.props.autoQLConfig.enableSafetyNet,
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))
@@ -220,7 +203,6 @@ export default class DashboardTile extends React.Component {
             className="dashboard-tile-input-container"
             onMouseDown={e => e.stopPropagation()}
           >
-            {this.props.enableSQLInput && this.renderSQLSelector()}
             {this.props.enableAutoComplete ? (
               // <div className="chata-bar-container">
               // <Autosuggest
@@ -245,9 +227,7 @@ export default class DashboardTile extends React.Component {
               // />
               // </div>
               <input
-                className={`dashboard-tile-input query ${
-                  this.props.enableSQLInput ? ' left-padding' : ''
-                }`}
+                className="dashboard-tile-input query"
                 placeholder={
                   this.state.languageSelectValue === 'sql'
                     ? 'SQL Hash'
@@ -267,9 +247,7 @@ export default class DashboardTile extends React.Component {
               />
             ) : (
               <input
-                className={`dashboard-tile-input query ${
-                  this.props.enableSQLInput ? ' left-padding' : ''
-                }`}
+                className="dashboard-tile-input query"
                 placeholder={
                   this.state.languageSelectValue === 'sql'
                     ? 'SQL Hash'
@@ -325,7 +303,7 @@ export default class DashboardTile extends React.Component {
       <div className="dashboard-tile-title-container">
         <span
           className="dashboard-tile-title"
-          style={{ color: this.props.titleColor }}
+          style={{ color: this.props.themeConfig.titleColor }}
         >
           {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>
@@ -399,6 +377,8 @@ export default class DashboardTile extends React.Component {
             <Fragment>
               <ResponseRenderer
                 ref={ref => (this.responseRef = ref)}
+                themeConfig={this.props.themeConfig}
+                autoQLConfig={this.props.autoQLConfig}
                 displayType={this.props.displayType}
                 response={this.props.queryResponse}
                 renderTooltips={false}
@@ -407,9 +387,7 @@ export default class DashboardTile extends React.Component {
                 renderSuggestionsAsDropdown={this.props.tile.h < 4}
                 onSuggestionClick={this.onSuggestionClick}
                 selectedSuggestion={this.props.tile.selectedSuggestion}
-                enableSuggestions={this.props.isEditing}
                 dataFormatting={this.props.dataFormatting}
-                chartColors={this.props.chartColors}
                 processDrilldown={(groupByObject, queryID, activeKey) =>
                   this.props.processDrilldown(
                     this.props.tile.i,
@@ -421,7 +399,7 @@ export default class DashboardTile extends React.Component {
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
                 )}
-                demo={this.props.demo}
+                demo={this.props.authentication.demo}
                 onSafetyNetSelectOption={(queryText, suggestionList) => {
                   this.setState({ query: queryText })
                   this.props.setParamsForTile(

@@ -13,7 +13,6 @@ const defaultProps = {
   isEditing: false,
   dataFormatting: {},
   titleColor: '#000',
-  enableSQLInput: false,
   deleteTile: () => {}
 }
 
