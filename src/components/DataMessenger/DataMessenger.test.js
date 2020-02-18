@@ -3,7 +3,7 @@ import { shallow, mount } from 'enzyme'
 import renderer from 'react-test-renderer'
 
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
-import { ChatDrawer } from '../..'
+import { DataMessenger } from '../..'
 
 const defaultProps = {
   placement: 'right',
@@ -24,7 +24,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<ChatDrawer {...setupProps} />)
+  const wrapper = shallow(<DataMessenger {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -33,7 +33,7 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with only token prop', () => {
-    const wrapper = shallow(<ChatDrawer apiKey="apiKey" />)
+    const wrapper = shallow(<DataMessenger apiKey="apiKey" />)
     expect(wrapper.exists()).toBe(true)
   })
   test('renders correctly with default props', () => {
@@ -44,16 +44,16 @@ describe('renders correctly', () => {
 
 describe('props', () => {
   test('does not throw warning with expected props', () => {
-    checkProps(ChatDrawer, defaultProps)
+    checkProps(DataMessenger, defaultProps)
   })
   describe('showMask', () => {
     test('showMask false does not show mask on drawer open', () => {
-      const html = mount(<ChatDrawer token="token" showMask={false} />)
+      const html = mount(<DataMessenger token="token" showMask={false} />)
       const mask = html.find('.drawer-mask')
       expect(mask.exists()).toBe(false)
     })
     test('showMask true shows mask on drawer open', () => {
-      const html = mount(<ChatDrawer token="token" showMask={true} />)
+      const html = mount(<DataMessenger token="token" showMask={true} />)
       const mask = html.find('.drawer-mask')
       expect(mask.exists()).toBe(true)
     })

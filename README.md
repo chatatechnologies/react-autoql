@@ -1,6 +1,6 @@
 # Demo
 
-Live demo of ChatDrawer component: https://chata-ai-test-page.herokuapp.com/
+Live demo of DataMessenger component: https://chata-ai-test-page.herokuapp.com/
 
 # Documentation
 
@@ -36,13 +36,13 @@ For more information on these requirements or how to retrieve/refresh your token
 
 # Components
 
-#### ChatDrawer
+#### DataMessenger
 
 A chat panel that slides open from the edge of the screen. You will find a list of available props and their defaults in the next section.
 
 ```
 import React, { Component } from 'react'
-import { ChatDrawer } from 'react-chata';
+import { DataMessenger } from 'react-chata';
 
 import 'react-chata/dist/chata.esm.css'
 
@@ -53,7 +53,7 @@ export default class App extends Component {
 
   render = () => {
     return (
-      <ChatDrawer
+      <DataMessenger
         apiKey="your-api-key"
         customerId="your-customer-id"
         userId="your-user-id"
@@ -169,7 +169,7 @@ export default class App extends Component {
 
 # Props
 
-#### ChatDrawer Props
+#### DataMessenger Props
 
 | Prop                             | Type                                                                                                                             | Default Value                                                                   |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
@@ -356,7 +356,7 @@ For more information on the structure of a query response, please visit the API 
 
 **supportsSuggestions**: If this is true, the response message can have a list of suggestions if the query is not understood. If it is false, there will be a general error message in its place.
 
-**processDrilldown**: Function to be called when a table or chart element is clicked. The ChatDrawer uses the drilldown endpoint from the chata.io open API https://chata.readme.io/reference/queries-1#querydrilldown
+**processDrilldown**: Function to be called when a table or chart element is clicked. The DataMessenger uses the drilldown endpoint from the chata.io open API https://chata.readme.io/reference/queries-1#querydrilldown
 
 **onSuggestionClick**: Function to be called when a button from a suggestion response is clicked. By default, the query will be submitted through the ChatBar component.
 
@@ -568,7 +568,7 @@ export default class App extends Component {
 
 ```
 import React, { Component } from 'react'
-import { ChatDrawer } from 'react-chata'
+import { DataMessenger } from 'react-chata'
 
 import 'react-chata/dist/chata.esm.css'
 
@@ -579,7 +579,7 @@ export default class App extends Component {
 
   render = () => {
     return (
-      <ChatDrawer
+      <DataMessenger
         isVisible={this.state.isVisible}
         onHandleClick={() =>
           this.setState({ isVisible: !this.state.isVisible })

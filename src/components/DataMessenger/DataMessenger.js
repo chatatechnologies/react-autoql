@@ -38,9 +38,9 @@ import {
 
 // Styles
 import 'rc-drawer/assets/index.css'
-import './ChatDrawer.scss'
+import './DataMessenger.scss'
 
-export default class ChatDrawer extends React.Component {
+export default class DataMessenger extends React.Component {
   introMessageObject = {
     id: 'intro',
     isResponse: true,

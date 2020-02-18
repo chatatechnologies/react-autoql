@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
 import {
-  ChatDrawer,
+  DataMessenger,
   ResponseRenderer,
   ChatBar,
   Dashboard,
@@ -1040,7 +1040,7 @@ export default class App extends Component {
     )
   }
 
-  renderChatDrawer = () => {
+  renderDataMessenger = () => {
     let handleImage
     if (
       this.state.isAuthenticated &&
@@ -1057,7 +1057,7 @@ export default class App extends Component {
     }
 
     return (
-      <ChatDrawer
+      <DataMessenger
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
         dataFormatting={this.getDataFormattingProp()}
@@ -1095,7 +1095,7 @@ export default class App extends Component {
     )
   }
 
-  renderChatDrawerPage = () => {
+  renderDataMessengerPage = () => {
     return (
       <div className="test-page-container">
         {
@@ -1495,7 +1495,7 @@ export default class App extends Component {
     let pageToRender = null
     switch (currentPage) {
       case 'drawer': {
-        pageToRender = this.renderChatDrawerPage()
+        pageToRender = this.renderDataMessengerPage()
         break
       }
       case 'chatbar': {
@@ -1523,7 +1523,7 @@ export default class App extends Component {
       <Fragment>
         {this.renderUIOverlay()}
         {this.renderNavMenu()}
-        {this.renderChatDrawer()}
+        {this.renderDataMessenger()}
         {pageToRender}
       </Fragment>
     )
