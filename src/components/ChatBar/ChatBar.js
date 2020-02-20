@@ -252,7 +252,7 @@ export default class ChatBar extends React.Component {
         }`}
         data-test="chat-bar"
       >
-        {this.props.enableAutocomplete ? (
+        {this.props.autoQLConfig.enableAutocomplete ? (
           <Autosuggest
             className="auto-complete-chata"
             onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}

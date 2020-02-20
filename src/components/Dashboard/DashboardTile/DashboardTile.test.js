@@ -9,7 +9,7 @@ const defaultProps = {
   demo: true,
   debug: false,
   test: false,
-  enableSafetyNet: true,
+  enableQueryValidation: true,
   isEditing: false,
   dataFormatting: {},
   titleColor: '#000',

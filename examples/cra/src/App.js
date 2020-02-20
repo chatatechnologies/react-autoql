@@ -32,7 +32,7 @@ import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
 
 import 'antd/dist/antd.css'
-import '@chata-ai/core/dist/chata.esm.css'
+import '@chata-ai/core/dist/autoql.esm.css'
 import './index.css'
 
 const getStoredProp = name => {
@@ -199,9 +199,9 @@ export default class App extends Component {
     customerName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
-    enableSafetyNet: true,
-    disableDrilldowns: false,
-    enableQueryTipsTab: true,
+    enableQueryValidation: true,
+    enableDrilldowns: true,
+    enableQueryInspirationTab: true,
     enableColumnEditor: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
@@ -268,9 +268,10 @@ export default class App extends Component {
 
   getAutoQLConfigProp = () => {
     return {
-      enableSafetyNet: this.state.enableSafetyNet,
+      enableQueryValidation: this.state.enableQueryValidation,
       enableAutocomplete: this.state.enableAutocomplete,
-      disableDrilldowns: this.state.disableDrilldowns,
+      enableDrilldowns: this.state.enableDrilldowns,
+      enableColumnEditor: this.state.enableColumnEditor,
       debug: this.state.debug,
       test: this.state.test
     }
@@ -365,7 +366,13 @@ export default class App extends Component {
 
   checkAuthentication = () => {
     const loginToken = getStoredProp('loginToken')
-    return this.getJWT(loginToken)
+    if (loginToken) {
+      return this.getJWT(loginToken)
+    }
+    this.setState({
+      isAuthenticated: false
+    })
+    return Promise.reject()
   }
 
   fetchDashboard = async () => {
@@ -507,6 +514,8 @@ export default class App extends Component {
       return 'bluelink'
     } else if (domain.includes('lefort')) {
       return 'lefort'
+    } else if (domain.includes('nbccontest')) {
+      return 'nb-comp'
     }
   }
 
@@ -1002,18 +1011,18 @@ export default class App extends Component {
           'enableAutocomplete',
           [true, false]
         )}
-        {this.createBooleanRadioGroup('Enable Safety Net', 'enableSafetyNet', [
+        {this.createBooleanRadioGroup(
+          'Enable Safety Net',
+          'enableQueryValidation',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
           true,
           false
         ])}
         {this.createBooleanRadioGroup(
-          'Disable Drilldowns',
-          'disableDrilldowns',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
           'Enable Query Inspiration Tab',
-          'enableQueryTipsTab',
+          'enableQueryInspirationTab',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
@@ -1086,8 +1095,8 @@ export default class App extends Component {
         title={this.state.title}
         maxMessages={this.state.maxMessages}
         handleImage={handleImage}
-        enableQueryTipsTab={this.state.enableQueryTipsTab}
-        enableColumnEditor={this.state.enableColumnEditor}
+        enableQueryInspirationTab={this.state.enableQueryInspirationTab}
+        onErrorCallback={this.onError}
         // inputStyles
         // autocompleteStyles
         // handleStyles={{ right: '25px' }}
@@ -1266,7 +1275,7 @@ export default class App extends Component {
           executeOnStopEditing={this.state.runDashboardAutomatically}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
-          onChangeCallback={newTiles => {
+          onChange={newTiles => {
             this.setState({ dashboardTiles: newTiles })
           }}
         />
@@ -1296,27 +1305,31 @@ export default class App extends Component {
         {
           // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
         }
-        {!this.state.demo && this.state.isAuthenticated && (
-          <Menu.Item key="settings">Notification Settings</Menu.Item>
-        )}
-        {!this.state.demo && this.state.isAuthenticated && (
-          <Menu.Item key="notifications">
-            <NotificationButton
-              ref={r => (this.notificationBadgeRef = r)}
-              authentication={this.getAuthProp()}
-              onNewNotification={() => {
-                // If a new notification is detected, refresh the list
-                if (
-                  this.notificationListRef &&
-                  this.state.currentPage === 'notifications'
-                ) {
-                  this.notificationListRef.refreshNotifications()
-                }
-              }}
-              onErrorCallback={this.onError}
-            />
-          </Menu.Item>
-        )}
+        {!this.state.demo &&
+          this.state.isAuthenticated &&
+          this.getActiveIntegrator() === 'nb-comp' && (
+            <Menu.Item key="settings">Notification Settings</Menu.Item>
+          )}
+        {!this.state.demo &&
+          this.state.isAuthenticated &&
+          this.getActiveIntegrator() === 'nb-comp' && (
+            <Menu.Item key="notifications">
+              <NotificationButton
+                ref={r => (this.notificationBadgeRef = r)}
+                authentication={this.getAuthProp()}
+                onNewNotification={() => {
+                  // If a new notification is detected, refresh the list
+                  if (
+                    this.notificationListRef &&
+                    this.state.currentPage === 'notifications'
+                  ) {
+                    this.notificationListRef.refreshNotifications()
+                  }
+                }}
+                onErrorCallback={this.onError}
+              />
+            </Menu.Item>
+          )}
       </Menu>
     )
   }
@@ -1520,12 +1533,12 @@ export default class App extends Component {
     }
 
     return (
-      <Fragment>
+      <div>
         {this.renderUIOverlay()}
         {this.renderNavMenu()}
         {this.renderDataMessenger()}
         {pageToRender}
-      </Fragment>
+      </div>
     )
   }
 }

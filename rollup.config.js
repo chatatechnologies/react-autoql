@@ -8,7 +8,7 @@ import postcss from 'rollup-plugin-postcss'
 import pkg from './package.json'
 
 const dist = 'dist'
-const bundle = 'chata'
+const bundle = 'autoql'
 
 const production = !process.env.ROLLUP_WATCH
 
@@ -72,7 +72,7 @@ const outputs = [
       resolve(),
       postcss({
         plugins: [autoprefixer],
-        extensions: ['.css']
+        extensions: ['.css', '.scss']
       }),
       svg(),
       babel({

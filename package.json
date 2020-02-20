@@ -1,9 +1,9 @@
 {
   "name": "@chata-ai/core",
   "version": "0.1.82",
-  "description": "React widget library",
-  "main": "dist/chata.cjs.js",
-  "module": "dist/chata.esm.js",
+  "description": "React Widget Library",
+  "main": "dist/autoql.cjs.js",
+  "module": "dist/autoql.esm.js",
   "sideEffects": false,
   "files": [
     "dist"
