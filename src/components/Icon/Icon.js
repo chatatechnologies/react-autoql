@@ -8,7 +8,6 @@ import {
   MdError,
   MdContentCopy,
   MdFileDownload,
-  MdFilterList,
   MdInfoOutline,
   MdPlayCircleOutline,
   MdEdit
@@ -21,7 +20,8 @@ import {
   FiBellOff,
   FiCalendar,
   FiPlus,
-  FiDatabase
+  FiDatabase,
+  FiFilter
   // FiFileText
 } from 'react-icons/fi'
 import {
@@ -39,7 +39,15 @@ import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
   bubblesIcon,
   bubblesIconFilled,
-  bubblesIconFilledAlt
+  bubblesIconFilledAlt,
+  tableIcon,
+  pivotTableIcon,
+  columnChartIcon,
+  barChartIcon,
+  lineChartIcon,
+  pieChartIcon,
+  heatmapIcon,
+  bubbleChartIcon
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -59,6 +67,14 @@ export default class Icon extends React.Component {
 
     let icon = null
     switch (this.props.type) {
+      case 'bar-chart': {
+        icon = barChartIcon
+        break
+      }
+      case 'bubble-chart': {
+        icon = bubbleChartIcon
+        break
+      }
       case 'calendar': {
         icon = <FiCalendar />
         break
@@ -95,6 +111,10 @@ export default class Icon extends React.Component {
         icon = <IoIosCloseCircleOutline />
         break
       }
+      case 'column-chart': {
+        icon = columnChartIcon
+        break
+      }
       case 'copy': {
         icon = <MdContentCopy />
         break
@@ -124,11 +144,15 @@ export default class Icon extends React.Component {
         break
       }
       case 'filter': {
-        icon = <MdFilterList />
+        icon = <FiFilter />
         break
       }
       case 'globe': {
         icon = <IoIosGlobe />
+        break
+      }
+      case 'heatmap': {
+        icon = heatmapIcon
         break
       }
       case 'info': {
@@ -137,6 +161,10 @@ export default class Icon extends React.Component {
       }
       case 'light-bulb': {
         icon = <MdLightbulbOutline />
+        break
+      }
+      case 'line-chart': {
+        icon = lineChartIcon
         break
       }
       case 'notification': {
@@ -151,8 +179,16 @@ export default class Icon extends React.Component {
         icon = <TiSortNumerically />
         break
       }
+      case 'pie-chart': {
+        icon = pieChartIcon
+        break
+      }
       case 'play': {
         icon = <MdPlayCircleOutline />
+        break
+      }
+      case 'pivot-table': {
+        icon = pivotTableIcon
         break
       }
       case 'plus': {
@@ -161,6 +197,10 @@ export default class Icon extends React.Component {
       }
       case 'search': {
         icon = <IoIosSearch />
+        break
+      }
+      case 'table': {
+        icon = tableIcon
         break
       }
       case 'title': {
