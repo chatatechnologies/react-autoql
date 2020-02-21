@@ -147,9 +147,9 @@ export default class DashboardTile extends React.Component {
           query: q,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          enableSafetyNet: !this.props.isEditing
+          enableQueryValidation: !this.props.isEditing
             ? false
-            : this.props.autoQLConfig.enableSafetyNet,
+            : this.props.autoQLConfig.enableQueryValidation,
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))
@@ -203,7 +203,7 @@ export default class DashboardTile extends React.Component {
             className="dashboard-tile-input-container"
             onMouseDown={e => e.stopPropagation()}
           >
-            {this.props.enableAutoComplete ? (
+            {this.props.autoQLConfig.enableAutoComplete ? (
               // <div className="chata-bar-container">
               // <Autosuggest
               //   className="auto-complete-chata"
@@ -388,7 +388,7 @@ export default class DashboardTile extends React.Component {
                 onSuggestionClick={this.onSuggestionClick}
                 selectedSuggestion={this.props.tile.selectedSuggestion}
                 dataFormatting={this.props.dataFormatting}
-                processDrilldown={(groupByObject, queryID, activeKey) =>
+                onDataClick={(groupByObject, queryID, activeKey) =>
                   this.props.processDrilldown(
                     this.props.tile.i,
                     groupByObject,

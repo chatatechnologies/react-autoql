@@ -38,9 +38,9 @@ import {
 
 // Styles
 import 'rc-drawer/assets/index.css'
-import './ChatDrawer.scss'
+import './DataMessenger.scss'
 
-export default class ChatDrawer extends React.Component {
+export default class DataMessenger extends React.Component {
   introMessageObject = {
     id: 'intro',
     isResponse: true,
@@ -71,13 +71,13 @@ export default class ChatDrawer extends React.Component {
     title: string,
     maxMessages: number,
     introMessage: string,
-    enableQueryTipsTab: bool,
-    enableColumnEditor: bool,
+    enableQueryInspirationTab: bool,
     resizable: bool,
 
     // Callbacks
     onVisibleChange: func,
-    onHandleClick: func
+    onHandleClick: func,
+    onErrorCallback: func
   }
 
   static defaultProps = {
@@ -103,13 +103,13 @@ export default class ChatDrawer extends React.Component {
     title: 'Data Messenger',
     maxMessages: undefined,
     introMessage: undefined,
-    enableQueryTipsTab: true,
-    enableColumnEditor: true,
+    enableQueryInspirationTab: true,
     resizable: true,
 
     // Callbacks
     onHandleClick: () => {},
-    onVisibleChange: () => {}
+    onVisibleChange: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -145,6 +145,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   componentDidUpdate = prevProps => {
+    ReactTooltip.rebuild()
     if (this.props.isVisible && !prevProps.isVisible) {
       if (this.chatBarRef) {
         this.chatBarRef.focus()
@@ -307,7 +308,7 @@ export default class ChatDrawer extends React.Component {
   }
 
   processDrilldown = (groupByObject, queryID, singleValueResponse) => {
-    if (!this.props.autoQLConfig.disableDrilldowns) {
+    if (this.props.autoQLConfig.enableDrilldowns) {
       // We only want to allow empty groupByObjects for single value responses
       if (
         !singleValueResponse &&
@@ -334,7 +335,7 @@ export default class ChatDrawer extends React.Component {
       })
         .then(response => {
           this.addResponseMessage({
-            response: { ...response, disableDrilldowns: true }
+            response: { ...response, enableDrilldowns: true }
           })
           this.setState({ isChataThinking: false })
         })
@@ -353,6 +354,13 @@ export default class ChatDrawer extends React.Component {
       messages: [this.introMessageObject],
       lastMessageId: 'intro',
       isClearMessageConfirmVisible: false
+    })
+  }
+
+  deleteMessage = id => {
+    const newMessages = this.state.messages.filter(message => message.id !== id)
+    this.setState({
+      messages: newMessages
     })
   }
 
@@ -601,13 +609,14 @@ export default class ChatDrawer extends React.Component {
                     scrollToBottom={this.scrollToBottom}
                     lastMessageId={this.state.lastMessageId}
                     dataFormatting={this.props.dataFormatting}
-                    enableColumnEditor={this.props.enableColumnEditor}
                     displayType={
                       message.displayType ||
                       _get(message, 'response.data.data.display_type')
                     }
                     response={message.response}
                     type={message.type}
+                    onErrorCallback={this.props.onErrorCallback}
+                    deleteMessageCallback={this.deleteMessage}
                   />
                 )
               })}
@@ -834,7 +843,7 @@ export default class ChatDrawer extends React.Component {
           // onKeyDown={this.escFunction}
         >
           {this.props.resizable && this.renderResizeHandle()}
-          {this.props.enableQueryTipsTab && this.renderPageSwitcher()}
+          {this.props.enableQueryInspirationTab && this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}
@@ -847,6 +856,9 @@ export default class ChatDrawer extends React.Component {
           id="chata-header-tooltip"
           effect="solid"
           delayShow={500}
+          // place="right"
+          countTransform={false}
+          html
         />
         <ReactTooltip
           className="chata-drawer-tooltip"

@@ -24,13 +24,7 @@ import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import {
-  getNumberOfGroupables,
-  getInitialDisplayType,
-  changeTooltipText,
-  isTableType,
-  isChartType
-} from '../../js/Util'
+import { getInitialDisplayType, isTableType, isChartType } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 
 import './ChatMessage.scss'
@@ -58,7 +52,8 @@ export default class ChatMessage extends React.Component {
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
     enableColumnEditor: PropTypes.bool,
-    dataFormatting: dataFormattingType
+    dataFormatting: dataFormattingType,
+    onErrorCallback: PropTypes.func
   }
 
   static defaultProps = {
@@ -68,6 +63,7 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigDefault,
 
     setActiveMessage: () => {},
+    onErrorCallback: () => {},
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -140,10 +136,11 @@ export default class ChatMessage extends React.Component {
       return (
         <ResponseRenderer
           ref={ref => (this.responseRef = ref)}
-          processDrilldown={this.props.processDrilldown}
+          autoQLConfig={this.props.autoQLConfig}
+          onDataClick={this.props.processDrilldown}
           response={response}
           displayType={this.state.displayType}
-          disableDrilldowns={!!response.disableDrilldowns}
+          // enableDrilldowns={response.enableDrilldowns}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           themeConfig={this.props.themeConfig}
@@ -156,7 +153,7 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={this.props.authentication.demo}
-          enableSuggestions={this.props.autoQLConfig.enableSuggestions}
+          // enableQuerySuggestions={this.props.autoQLConfig.enableQuerySuggestions}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--chata-drawer-background-color'
           )}
@@ -313,27 +310,74 @@ export default class ChatMessage extends React.Component {
       </div>`
   }
 
-  hideColumnCallback = column => {}
+  hideColumnCallback = column => {
+    if (!column) {
+      return
+    }
+
+    const columnDefinition = column.getDefinition()
+    setColumnVisibility({
+      ...this.props.authentication,
+      columns: [
+        {
+          name: columnDefinition.name,
+          is_visible: false
+        }
+      ]
+    })
+      .then(() => {
+        column.hide()
+      })
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+        this.setState({ isSettingColumnVisibility: false })
+      })
+  }
 
   showHideColumnsModal = () =>
     this.setState({ isHideColumnsModalVisible: true })
 
   onColumnVisibilitySave = columns => {
     const { authentication } = this.props
+    const formattedColumns = columns.map(col => {
+      return {
+        name: col.name,
+        is_visible: col.is_visible
+      }
+    })
 
     this.setState({ isSettingColumnVisibility: true })
-    setColumnVisibility({ ...authentication, columns })
+    setColumnVisibility({ ...authentication, columns: formattedColumns })
       .then(() => {
+        const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+        if (tableRef) {
+          const columnComponents = tableRef.getColumns()
+          columnComponents.forEach(component => {
+            const id = component.getDefinition().id
+            const isVisible = columns.find(col => col.id === id).is_visible
+            if (isVisible) {
+              component.show()
+            } else {
+              component.hide()
+            }
+          })
+        }
+
         this.setState({
           isHideColumnsModalVisible: false,
           isSettingColumnVisibility: false
         })
       })
       .catch(error => {
-        // We will want some sort of alert here
         console.error(error)
+        this.props.onErrorCallback(error)
         this.setState({ isSettingColumnVisibility: false })
       })
+  }
+
+  deleteMessage = () => {
+    this.props.deleteMessageCallback(this.props.id)
   }
 
   copySQL = () => {
@@ -386,13 +430,15 @@ export default class ChatMessage extends React.Component {
         'response.data.data.interpretation'
       ),
       showHideColumnsButton:
-        this.props.enableColumnEditor &&
-        getNumberOfGroupables(
-          _get(this.props, 'response.data.data.columns')
-        ) === 0 &&
-        _get(this.props, 'response.data.data.columns.length') > 1 &&
-        _get(this.props, 'response.data.data.rows.length') > 1,
-      showSQLButton: this.props.debug
+        this.props.autoQLConfig.enableColumnEditor &&
+        // getNumberOfGroupables(
+        //   _get(this.props, 'response.data.data.columns')
+        // ) === 0 &&
+        this.state.displayType === 'table' &&
+        !this.props.authentication.demo &&
+        _get(this.props, 'response.data.data.columns.length') > 1,
+      showSQLButton: this.props.autoQLConfig.debug,
+      showDeleteButton: true
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -480,6 +526,16 @@ export default class ChatMessage extends React.Component {
               data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
             >
               <Icon type="database" />
+            </button>
+          )}
+          {shouldShowButton.showDeleteButton && (
+            <button
+              onClick={this.deleteMessage}
+              className="chata-toolbar-btn"
+              data-tip="Delete Message"
+              data-for="chata-toolbar-btn-tooltip"
+            >
+              <Icon type="trash" />
             </button>
           )}
         </div>

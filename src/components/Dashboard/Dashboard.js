@@ -61,7 +61,7 @@ class Dashboard extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     notExecutedText: PropTypes.string,
-    onChangeCallback: PropTypes.func
+    onChange: PropTypes.func
   }
 
   static defaultProps = {
@@ -76,7 +76,7 @@ class Dashboard extends React.Component {
     executeOnStopEditing: true,
     isEditing: false,
     notExecutedText: undefined
-    // onChangeCallback: () => {}
+    // onChange: () => {}
   }
 
   state = {
@@ -226,7 +226,7 @@ class Dashboard extends React.Component {
       // re-adjustment of all tiles after moving a single tile. So we do not
       // want to trigger the undo state on this action. Only on main actions
       // directly caused from user interaction
-      this.props.onChangeCallback(tiles)
+      this.props.onChange(tiles)
     } catch (error) {
       console.error(error)
     }
@@ -250,7 +250,7 @@ class Dashboard extends React.Component {
         isNewTile: true
       })
 
-      this.props.onChangeCallback(tiles)
+      this.props.onChange(tiles)
     } catch (error) {
       console.error(error)
     }
@@ -258,7 +258,7 @@ class Dashboard extends React.Component {
 
   undo = () => {
     try {
-      this.props.onChangeCallback(this.state.previousTileState)
+      this.props.onChange(this.state.previousTileState)
       this.setState({
         previousTileState: this.props.tiles,
         justPerformedUndo: true
@@ -276,7 +276,7 @@ class Dashboard extends React.Component {
       const tileIndex = tiles.map(item => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
-      this.props.onChangeCallback(tiles)
+      this.props.onChange(tiles)
     } catch (error) {
       console.error(error)
     }
@@ -293,7 +293,7 @@ class Dashboard extends React.Component {
         ...params
       }
 
-      this.props.onChangeCallback(tiles)
+      this.props.onChange(tiles)
     } catch (error) {
       console.error(error)
     }
@@ -374,7 +374,7 @@ class Dashboard extends React.Component {
                 response={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
-                processDrilldown={this.startDrilldown}
+                onDataClick={this.startDrilldown}
                 demo={this.props.authentication.demo}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey

@@ -92,7 +92,7 @@ export const runQueryOnly = ({
     }
   }
 
-  if (!demo && (!userId || !customerId || !apiKey || !domain)) {
+  if (!demo && (!apiKey || !domain)) {
     return Promise.reject({ error: 'unauthenticated' })
   }
 
@@ -127,7 +127,7 @@ export const runQueryOnly = ({
       if (axios.isCancel(error)) {
         error.data = { message: 'Query Cancelled' }
       }
-      return Promise.reject(error)
+      return Promise.reject(_get(error, 'response.data'))
     })
   // } else {
   //   queryCall = null
@@ -140,7 +140,7 @@ export const runQuery = ({
   demo,
   debug,
   test,
-  enableSafetyNet,
+  enableQueryValidation,
   domain,
   apiKey,
   customerId,
@@ -149,7 +149,7 @@ export const runQuery = ({
   username,
   source
 }) => {
-  if (enableSafetyNet) {
+  if (enableQueryValidation) {
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
       text: query,
@@ -245,7 +245,7 @@ export const runSafetyNet = ({
   return axiosInstance
     .get(url, config)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
 export const runDrilldown = ({
@@ -295,7 +295,7 @@ export const runDrilldown = ({
   return axiosInstance
     .post(url, data, config)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
 export const fetchSuggestions = ({
@@ -335,7 +335,7 @@ export const fetchSuggestions = ({
   return axiosInstance
     .get(url, config)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
 export const fetchApiId = (apiKey, token) => {
@@ -349,36 +349,24 @@ export const fetchApiId = (apiKey, token) => {
       }
     })
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const setColumnVisibility = ({
-  apiKey,
-  userId,
-  token,
-  // domain,
-  columns
-}) => {
-  return fetchApiId(apiKey, token)
-    .then(response => {
-      const apiId = response.data
-      const url = `https://backend-staging.chata.io/api/v1/colvisibilitySetting/set/${apiId}/${userId}`
-      const data = { columns }
+export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
+  const url = `${domain}/autoql/api/v1/query/column-visibility?key=${apiKey}`
+  const data = { columns }
+  const config = {}
+  if (token) {
+    config.headers = {
+      Authorization: `Bearer ${token}`
+    }
+  }
 
-      const config = {}
-      if (token) {
-        config.headers = {
-          Authorization: `Bearer ${token}`
-        }
-      }
-
-      const axiosInstance = axios.create({})
-      return axiosInstance
-        .put(url, data, config)
-        .then(response => Promise.resolve(response))
-        .catch(error => Promise.reject(error))
-    })
-    .catch(error => Promise.reject(error))
+  const axiosInstance = axios.create({})
+  return axiosInstance
+    .put(url, data, config)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
 export const fetchQueryTips = ({
@@ -423,18 +411,18 @@ export const fetchQueryTips = ({
         return axiosInstance
           .get(queryTipsUrl)
           .then(response => Promise.resolve(response))
-          .catch(error => Promise.reject(error))
+          .catch(error => Promise.reject(_get(error, 'response.data')))
       })
       .catch(() => {
         return axiosInstance
           .get(queryTipsUrl)
           .then(response => Promise.resolve(response))
-          .catch(error => Promise.reject(error))
+          .catch(error => Promise.reject(_get(error, 'response.data')))
       })
   }
 
   return axiosInstance
     .get(queryTipsUrl)
     .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(error))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
 }

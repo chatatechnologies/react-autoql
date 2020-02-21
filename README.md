@@ -1,10 +1,10 @@
 # Demo
 
-Live demo of ChatDrawer component: https://chata-ai-test-page.herokuapp.com/
+Live demo: https://chata-ai-test-page.herokuapp.com/
 
 # Documentation
 
-Please visit https://chata.readme.io/docs/react-data-chat-drawer for thorough docs and a quick start guide
+Please visit https://chata.readme.io/docs/react-components for complete documentation.
 
 <!-- # Installation
 
@@ -36,15 +36,15 @@ For more information on these requirements or how to retrieve/refresh your token
 
 # Components
 
-#### ChatDrawer
+#### DataMessenger
 
 A chat panel that slides open from the edge of the screen. You will find a list of available props and their defaults in the next section.
 
 ```
 import React, { Component } from 'react'
-import { ChatDrawer } from 'react-chata';
+import { DataMessenger } from 'react-chata';
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   state = {
@@ -53,7 +53,7 @@ export default class App extends Component {
 
   render = () => {
     return (
-      <ChatDrawer
+      <DataMessenger
         apiKey="your-api-key"
         customerId="your-customer-id"
         userId="your-user-id"
@@ -81,7 +81,7 @@ You will find a list of available props and their defaults in the next section.
 import React, { Component, Fragment } from 'react'
 import { ChatBar, ResponseRenderer } from 'react-chata';
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   chatBarRef = null;
@@ -122,7 +122,7 @@ You will find a list of available props and their defaults in the next section.
 import React, { Component } from 'react'
 import { Dashboard } from 'react-chata';
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   state = {
@@ -169,7 +169,7 @@ export default class App extends Component {
 
 # Props
 
-#### ChatDrawer Props
+#### DataMessenger Props
 
 | Prop                             | Type                                                                                                                             | Default Value                                                                   |
 | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
@@ -199,8 +199,8 @@ export default class App extends Component {
 | enableVoiceRecord                | Boolean                                                                                                                          | true                                                                            |
 | enableAutocomplete               | Boolean                                                                                                                          | true                                                                            |
 | autocompleteStyles               | Object                                                                                                                           | {}                                                                              |
-| enableSafetyNet                  | Boolean                                                                                                                          | true                                                                            |
-| disableDrilldowns                | Boolean                                                                                                                          | false                                                                           |
+| enableQueryValidation                  | Boolean                                                                                                                          | true                                                                            |
+| enableDrilldowns                | Boolean                                                                                                                          | false                                                                           |
 | demo                             | Boolean                                                                                                                          | false                                                                           |
 | dataFormatting                   | Object: { currencyCode, languageCode, qualityDecimals, quantityDecimals, comparisonDisplay, monthDayFormat, monthDayYearFormat } | {}                                                                              |
 | dataFormatting.currencyCode      | String                                                                                                                           | 'USD'                                                                           |
@@ -230,8 +230,8 @@ export default class App extends Component {
 | enableVoiceRecord     | Boolean  | true          |
 | enableAutocomplete    | Boolean  | true          |
 | autocompleteStyles    | Object   | {}            |
-| enableSafetyNet       | Boolean  | true          |
-| disableDrilldowns     | Boolean  | false         |
+| enableQueryValidation       | Boolean  | true          |
+| enableDrilldowns     | Boolean  | false         |
 | demo                  | Boolean  | false         |
 | debug                 | Boolean  | false         |
 | fontFamily            | String   | 'sans-serif'  |
@@ -336,13 +336,13 @@ export default class App extends Component {
 
 **autocompleteStyles**: Object with jsx css to style the auto-complete popup (ie. { borderRadius: '4px' }).
 
-**enableSafetyNet**: If this is enabled, the query will first go through a "safetynet" endpoint. If chata detects that a label might be misspelled, suggestions for that label will be returned in a message.
+**enableQueryValidation**: If this is enabled, the query will first go through a "safetynet" endpoint. If chata detects that a label might be misspelled, suggestions for that label will be returned in a message.
 
 For example: If you query 'How much money does Nikk owe me?', safetynet may detect that there is no label called 'Nikk', but there are labels called 'Nikki', and 'Nick' in your database. The message will then let you choose a different label and re-run the query.
 
 If this value is false, the query will bypass the "safetynet" endpoint and be sent straight to the "query" endpoint.
 
-**disableDrilldowns**: A new query will be sent when clicking on a table or chart element to "drill down" into the data. A new message will be sent to the user with more detailed data related to that clicked element. If this is true, nothing will happen when a table or chart element is clicked.
+**enableDrilldowns**: A new query will be sent when clicking on a table or chart element to "drill down" into the data. A new message will be sent to the user with more detailed data related to that clicked element. If this is true, nothing will happen when a table or chart element is clicked.
 
 **demo**: If this value is true, the widget will use chata's demo Plumbing Co. as a data source.
 
@@ -356,7 +356,7 @@ For more information on the structure of a query response, please visit the API 
 
 **supportsSuggestions**: If this is true, the response message can have a list of suggestions if the query is not understood. If it is false, there will be a general error message in its place.
 
-**processDrilldown**: Function to be called when a table or chart element is clicked. The ChatDrawer uses the drilldown endpoint from the chata.io open API https://chata.readme.io/reference/queries-1#querydrilldown
+**processDrilldown**: Function to be called when a table or chart element is clicked. The DataMessenger uses the drilldown endpoint from the chata.io open API https://chata.readme.io/reference/queries-1#querydrilldown
 
 **onSuggestionClick**: Function to be called when a button from a suggestion response is clicked. By default, the query will be submitted through the ChatBar component.
 
@@ -424,7 +424,7 @@ If you want to persist the dashboard, simply store the tile array in your own da
 import React, { Component, Fragment } from 'react'
 import { Dashboard, getDashboardTileState } from 'react-chata';
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   state = {
@@ -481,7 +481,7 @@ Using the ref of ResponseRenderer, you can access the `supportedDisplayTypes` ar
 import React, { Component } from 'react'
 import { ResponseRenderer } from 'react-chata'
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
 
@@ -518,7 +518,7 @@ export default class App extends Component {
 import React, { Component, Fragment } from 'react'
 import { Dashboard, getDashboardTileState } from 'react-chata';
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   state = {
@@ -568,9 +568,9 @@ export default class App extends Component {
 
 ```
 import React, { Component } from 'react'
-import { ChatDrawer } from 'react-chata'
+import { DataMessenger } from 'react-chata'
 
-import 'react-chata/dist/chata.esm.css'
+import 'react-chata/dist/autoql.esm.css'
 
 export default class App extends Component {
   state = {
@@ -579,7 +579,7 @@ export default class App extends Component {
 
   render = () => {
     return (
-      <ChatDrawer
+      <DataMessenger
         isVisible={this.state.isVisible}
         onHandleClick={() =>
           this.setState({ isVisible: !this.state.isVisible })

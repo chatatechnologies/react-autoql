@@ -16,8 +16,16 @@ import {
   instanceOf
 } from 'prop-types'
 
-import { dataFormattingType, themeConfigType } from '../../props/types'
-import { dataFormattingDefault, themeConfigDefault } from '../../props/defaults'
+import {
+  dataFormattingType,
+  themeConfigType,
+  autoQLConfigType
+} from '../../props/types'
+import {
+  dataFormattingDefault,
+  themeConfigDefault,
+  autoQLConfigDefault
+} from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 
 import { ChataTable } from '../ChataTable'
@@ -70,7 +78,7 @@ export default class ResponseRenderer extends React.Component {
     chatBarRef: instanceOf(ChatBar),
     themeConfig: themeConfigType,
     supportsSuggestions: bool,
-    processDrilldown: func,
+    // processDrilldown: func,
     onSuggestionClick: func,
     isQueryRunning: bool,
     displayType: string,
@@ -80,7 +88,7 @@ export default class ResponseRenderer extends React.Component {
     safetyNetSelections: arrayOf(shape({})),
     renderSuggestionsAsDropdown: bool,
     suggestionSelection: string,
-    enableSuggestions: bool,
+    enableQuerySuggestions: bool,
     height: number,
     width: number,
     demo: bool,
@@ -104,13 +112,13 @@ export default class ResponseRenderer extends React.Component {
     safetyNetSelections: undefined,
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
-    enableSuggestions: true,
+    enableQuerySuggestions: true,
     dataFormatting: dataFormattingDefault,
     height: undefined,
     width: undefined,
     demo: false,
     activeChartElementKey: undefined,
-    processDrilldown: () => {},
+    onDataClick: () => {},
     onSafetyNetSelectOption: () => {},
     hideColumnCallback: () => {},
     onTableFilterCallback: () => {}
@@ -304,7 +312,7 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderSuggestionMessage = () => {
-    if (!this.props.enableSuggestions) {
+    if (!this.props.enableQuerySuggestions) {
       return this.renderErrorMessage("Oops! We didn't understand that query.")
     }
     // There is actually a suggestion for this case
@@ -336,11 +344,7 @@ export default class ResponseRenderer extends React.Component {
       <a
         className="single-value-response"
         onClick={() => {
-          this.props.processDrilldown(
-            this.props.demo ? {} : [],
-            this.queryID,
-            true
-          )
+          this.props.onDataClick(this.props.demo ? {} : [], this.queryID, true)
         }}
       >
         {formatElement({
@@ -400,9 +404,7 @@ export default class ResponseRenderer extends React.Component {
         )
       }
 
-      if (!this.props.disableDrilldowns) {
-        this.props.processDrilldown(groupByObject, this.queryID)
-      }
+      this.props.onDataClick(groupByObject, this.queryID)
     }
   }
 
@@ -425,9 +427,8 @@ export default class ResponseRenderer extends React.Component {
         this.props.demo
       )
     }
-    if (!this.props.disableDrilldowns) {
-      this.props.processDrilldown(groupByObject, this.queryID, activeKey)
-    }
+
+    this.props.onDataClick(groupByObject, this.queryID, activeKey)
   }
 
   onTableFilter = async filters => {
@@ -816,7 +817,7 @@ export default class ResponseRenderer extends React.Component {
       col.id = uuid.v4()
 
       // Visibility flag: this can be changed through the column visibility editor modal
-      // col.visible = col.is_visible
+      col.visible = col.is_visible
 
       // Cell alignment
       if (
@@ -919,7 +920,8 @@ export default class ResponseRenderer extends React.Component {
         ...this.tableColumns[1], // value column
         name: year,
         title: year,
-        field: `${i + 1}`
+        field: `${i + 1}`,
+        headerContext: undefined
       })
     })
 
@@ -971,7 +973,8 @@ export default class ResponseRenderer extends React.Component {
     const pivotTableColumns = [
       {
         ...this.tableColumns[0],
-        frozen: true
+        frozen: true,
+        headerContext: undefined
       }
     ]
     Object.keys(uniqueValues1).forEach((columnName, i) => {
@@ -984,7 +987,8 @@ export default class ResponseRenderer extends React.Component {
         ...this.tableColumns[2], // value column
         name: columnName,
         title: formattedColumnName,
-        field: `${i + 1}`
+        field: `${i + 1}`,
+        headerContext: undefined
       })
     })
 

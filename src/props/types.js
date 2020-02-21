@@ -24,9 +24,10 @@ export const autoQLConfigType = shape({
   debug: bool,
   test: bool,
   enableAutocomplete: bool,
-  enableSafetyNet: bool,
-  disableDrilldowns: bool,
-  enableSuggestions: bool
+  enableQueryValidation: bool,
+  enableDrilldowns: bool,
+  enableQuerySuggestions: bool,
+  enableColumnEditor: bool
 })
 
 export const themeConfigType = shape({

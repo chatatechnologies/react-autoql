@@ -1,9 +1,9 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.1.82",
-  "description": "React widget library",
-  "main": "dist/chata.cjs.js",
-  "module": "dist/chata.esm.js",
+  "version": "0.2.1",
+  "description": "React Widget Library",
+  "main": "dist/autoql.cjs.js",
+  "module": "dist/autoql.esm.js",
   "sideEffects": false,
   "files": [
     "dist"
@@ -39,15 +39,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chatatechnologies/chata-ai.git"
+    "url": "https://github.com/chatatechnologies/react-autoql.git"
   },
   "keywords": [],
   "author": "Nicole Moore",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/chatatechnologies/chata-ai/issues"
+    "url": "https://github.com/chatatechnologies/react-autoql/issues"
   },
-  "homepage": "https://chatatechnologies.github.io/chata-ai/",
+  "homepage": "https://github.com/chatatechnologies/react-autoql/",
   "dependencies": {
     "axios": "^0.19.0",
     "d3": "^5.12.0",

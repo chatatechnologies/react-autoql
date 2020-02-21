@@ -19,6 +19,8 @@ import {
   // stackedBarChartIcon
 } from '../../svgIcons.js'
 
+import { Icon } from '../Icon'
+
 class VizToolbar extends React.Component {
   static propTypes = {
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -85,23 +87,39 @@ class VizToolbar extends React.Component {
           className={`${this.props.className || ''} viz-toolbar`}
           data-test="viz-toolbar"
         >
-          {this.createVisButton('table', 'Table', tableIcon)}
-          {this.createVisButton('pivot_table', 'Pivot Table', pivotTableIcon)}
-          {this.createVisButton('column', 'Column Chart', columnChartIcon)}
-          {this.createVisButton('bar', 'Bar Chart', barChartIcon)}
-          {this.createVisButton('line', 'Line Chart', lineChartIcon)}
-          {this.createVisButton('pie', 'Pie Chart', pieChartIcon)}
-          {this.createVisButton('heatmap', 'Heatmap', heatmapIcon)}
-          {this.createVisButton('bubble', 'Bubble Chart', bubbleChartIcon)}
+          {this.createVisButton('table', 'Table', <Icon type="table" />)}
+          {this.createVisButton(
+            'pivot_table',
+            'Pivot Table',
+            <Icon type="pivot-table" />
+          )}
+          {this.createVisButton(
+            'column',
+            'Column Chart',
+            <Icon type="column-chart" />
+          )}
+          {this.createVisButton('bar', 'Bar Chart', <Icon type="bar-chart" />)}
+          {this.createVisButton(
+            'line',
+            'Line Chart',
+            <Icon type="line-chart" />
+          )}
+          {this.createVisButton('pie', 'Pie Chart', <Icon type="pie-chart" />)}
+          {this.createVisButton('heatmap', 'Heatmap', <Icon type="heatmap" />)}
+          {this.createVisButton(
+            'bubble',
+            'Bubble Chart',
+            <Icon type="bubble-chart" />
+          )}
           {this.createVisButton(
             'stacked_bar',
             'Stacked Bar Chart',
-            barChartIcon
+            <Icon type="bar-chart" />
           )}
           {this.createVisButton(
             'stacked_column',
             'Stacked Column Chart',
-            columnChartIcon
+            <Icon type="column-chart" />
           )}
         </div>
       )
