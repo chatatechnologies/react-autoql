@@ -452,6 +452,8 @@ export default class App extends Component {
       componentKey: uuid.v4(),
       activeIntegrator: this.getActiveIntegrator()
     })
+
+    return Promise.resolve()
   }
 
   onLogin = async e => {
@@ -480,7 +482,7 @@ export default class App extends Component {
       const loginToken = loginResponse.data
       setStoredProp('loginToken', loginToken)
 
-      this.getJWT(loginToken)
+      await this.getJWT(loginToken)
 
       message.success('Login Sucessful!', 0.8)
       this.fetchDashboard()
@@ -784,6 +786,20 @@ export default class App extends Component {
               <br />
               <Button type="primary" htmlType="submit">
                 Authenticate
+              </Button>
+              <br />
+              <Button
+                type="default"
+                onClick={() => {
+                  this.setState({
+                    isAuthenticated: false,
+                    dashboardTiles: undefined
+                  })
+                  setStoredProp('loginToken', undefined)
+                  setStoredProp('jwtToken', undefined)
+                }}
+              >
+                Log Out
               </Button>
             </Form>
             <Form onSubmit={e => e.preventDefault()}></Form>
@@ -1299,9 +1315,11 @@ export default class App extends Component {
           <ChataIcon type="chata-bubbles-outlined" />
           Chat Drawer
         </Menu.Item>
-        <Menu.Item key="dashboard">
-          <ChataIcon type="dashboard" /> Dashboard
-        </Menu.Item>
+        {this.state.dashboardTiles && (
+          <Menu.Item key="dashboard">
+            <ChataIcon type="dashboard" /> Dashboard
+          </Menu.Item>
+        )}
         {
           // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
         }

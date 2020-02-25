@@ -268,7 +268,7 @@ export const runDrilldown = ({
   const data = {
     customer_id: customerId,
     user_id: userId,
-    debug,
+    debug: debug || false,
     test,
     username
   }
