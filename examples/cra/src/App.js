@@ -218,10 +218,9 @@ export default class App extends Component {
     test: true,
     demo: getStoredProp('demo') == 'true',
     apiKey: getStoredProp('api-key') || '',
-    customerId: getStoredProp('customer-id') || '',
     domain: getStoredProp('domain-url') || '',
-    username: getStoredProp('user-id') || '',
-    userId: getStoredProp('userid') || '',
+    customerId: getStoredProp('customer-id') || '',
+    userId: getStoredProp('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
@@ -258,10 +257,7 @@ export default class App extends Component {
     return {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
-      customerId: this.state.customerId, // required if demo is false
-      userId: this.state.userId, // required if demo is false
       domain: this.state.domain,
-      username: this.state.username,
       demo: this.state.demo
     }
   }
@@ -319,9 +315,6 @@ export default class App extends Component {
 
     const data = {
       text: query,
-      username: 'notification-data',
-      customer_id: this.state.customerId,
-      user_id: this.state.userId,
       source: 'notification'
     }
 
@@ -334,12 +327,7 @@ export default class App extends Component {
       }
     }
 
-    if (
-      !this.state.userId ||
-      !this.state.customerId ||
-      !this.state.apiKey ||
-      !this.state.domain
-    ) {
+    if (!this.state.apiKey || !this.state.domain) {
       return Promise.reject({ error: 'unauthenticated' })
     }
 
@@ -580,8 +568,6 @@ export default class App extends Component {
 
       const data = {
         name: this.state.activeDashboardName,
-        customer_id: this.state.customerId,
-        user_id: this.state.userId,
         data: this.state.dashboardTiles.map(tile => {
           return {
             ...tile,
@@ -723,14 +709,6 @@ export default class App extends Component {
             <h3>You must login to access data</h3>
             <Form onSubmit={this.onLogin}>
               <h4>Email (optional)</h4>
-              <Input
-                name="username"
-                onChange={e => {
-                  this.setState({ username: e.target.value })
-                }}
-                onBlur={e => setStoredProp('user-id', e.target.value)}
-                value={this.state.username}
-              />
               <h4>Customer ID *</h4>
               <Input
                 name="customer-id"
@@ -758,7 +736,6 @@ export default class App extends Component {
                 onBlur={e => setStoredProp('api-key', e.target.value)}
                 value={this.state.apiKey}
               />
-
               <h4>Domain URL *</h4>
               <Input
                 name="domain-url"

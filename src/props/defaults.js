@@ -1,9 +1,6 @@
 export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
-  customerId: undefined,
-  userId: undefined,
-  username: undefined,
   domain: undefined,
   demo: false
 }

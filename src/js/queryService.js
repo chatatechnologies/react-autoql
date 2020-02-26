@@ -58,10 +58,7 @@ export const runQueryOnly = ({
   test,
   domain,
   apiKey,
-  customerId,
-  userId,
   token,
-  username,
   source
 }) => {
   const axiosInstance = axios.create({})
@@ -75,9 +72,6 @@ export const runQueryOnly = ({
 
   const data = {
     text: query,
-    username: demo ? 'widget-demo' : username || 'widget-user',
-    customer_id: customerId,
-    user_id: userId,
     source,
     debug,
     test
@@ -143,10 +137,7 @@ export const runQuery = ({
   enableQueryValidation,
   domain,
   apiKey,
-  customerId,
-  userId,
   token,
-  username,
   source
 }) => {
   if (enableQueryValidation) {
@@ -156,8 +147,6 @@ export const runQuery = ({
       demo,
       domain,
       apiKey,
-      customerId,
-      userId,
       token
     })
       .then(response => {
@@ -176,10 +165,7 @@ export const runQuery = ({
           test,
           domain,
           apiKey,
-          customerId,
-          userId,
           token,
-          username,
           source
         })
       })
@@ -191,10 +177,7 @@ export const runQuery = ({
           test,
           domain,
           apiKey,
-          customerId,
-          userId,
           token,
-          username,
           source
         })
       })
@@ -208,22 +191,11 @@ export const runQuery = ({
     token,
     domain,
     apiKey,
-    customerId,
-    userId,
-    username,
     source
   })
 }
 
-export const runSafetyNet = ({
-  text,
-  demo,
-  domain,
-  apiKey,
-  customerId,
-  userId,
-  token
-}) => {
+export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
   const axiosInstance = axios.create({})
 
   const url = demo
@@ -232,7 +204,7 @@ export const runSafetyNet = ({
     )}&projectId=1`
     : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
       text
-    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
+    )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
@@ -256,21 +228,15 @@ export const runDrilldown = ({
   test,
   domain,
   apiKey,
-  customerId,
-  userId,
-  token,
-  username
+  token
 }) => {
   const axiosInstance = axios.create({})
 
   // drilldownCall = axios.CancelToken.source()
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
     debug: debug || false,
-    test,
-    username
+    test
   }
 
   if (demo) {
@@ -303,8 +269,6 @@ export const fetchSuggestions = ({
   demo,
   domain,
   apiKey,
-  customerId,
-  userId,
   token
 }) => {
   const axiosInstance = axios.create({})
@@ -322,7 +286,7 @@ export const fetchSuggestions = ({
     )}&projectid=1`
     : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
       suggestion
-    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
+    )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = autoCompleteCall.token
@@ -371,8 +335,6 @@ export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
 
 export const fetchQueryTips = ({
   keywords,
-  customerId,
-  userId,
   limit,
   offset,
   domain,
@@ -381,7 +343,7 @@ export const fetchQueryTips = ({
   skipSafetyNet
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&limit=${limit}&offset=${offset}`
 
   const axiosInstance = axios.create({
     headers: {
@@ -395,8 +357,6 @@ export const fetchQueryTips = ({
       demo: false,
       domain,
       apiKey,
-      customerId,
-      userId,
       token
     })
       .then(safetyNetResponse => {
