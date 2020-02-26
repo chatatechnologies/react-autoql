@@ -343,7 +343,7 @@ export default class ChatMessage extends React.Component {
     const formattedColumns = columns.map(col => {
       return {
         name: col.name,
-        is_visible: col.is_visible
+        is_visible: col.visible
       }
     })
 
@@ -355,7 +355,7 @@ export default class ChatMessage extends React.Component {
           const columnComponents = tableRef.getColumns()
           columnComponents.forEach(component => {
             const id = component.getDefinition().id
-            const isVisible = columns.find(col => col.id === id).is_visible
+            const isVisible = columns.find(col => col.id === id).visible
             if (isVisible) {
               component.show()
             } else {
@@ -399,9 +399,22 @@ export default class ChatMessage extends React.Component {
   }
 
   renderHideColumnsModal = () => {
+    const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+
+    if (!tableRef) {
+      return
+    }
+
+    const columns = tableRef.getColumns().map(col => {
+      return {
+        ...col.getDefinition(),
+        visible: col.getVisibility() // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+      }
+    })
+
     return (
       <ColumnVisibilityModal
-        columns={_get(this.props, 'response.data.data.columns')}
+        columns={columns}
         isVisible={this.state.isHideColumnsModalVisible}
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
         isSettingColumns={this.state.isSettingColumnVisibility}

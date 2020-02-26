@@ -51,9 +51,9 @@ export default class ColumnVisibilityModal extends React.Component {
                   <div>{col.display_name || col.title}</div>
                   <div>
                     <Checkbox
-                      checked={col.is_visible}
+                      checked={col.visible}
                       onChange={() => {
-                        columns[index].is_visible = !columns[index].is_visible
+                        columns[index].visible = !columns[index].visible
                         this.setState({ columns })
                       }}
                     />
