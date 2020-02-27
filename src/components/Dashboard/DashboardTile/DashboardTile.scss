@@ -311,6 +311,11 @@
 .react-grid-item:hover > .react-resizable-handle::after {
   opacity: 1;
 }
+
+.react-grid-placeholder {
+  background: rgba(0, 0, 0, 0.13) !important;
+}
+
 /* This fixes the flickering bug in RGL when resizing elements */
 .react-draggable-transparent-selection span::selection,
 .react-draggable-transparent-selection div::selection,
