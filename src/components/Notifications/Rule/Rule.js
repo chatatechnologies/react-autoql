@@ -140,15 +140,11 @@ export default class Rule extends React.Component {
 
     this.autoCompleteTimer = setTimeout(() => {
       fetchSuggestions({
-        suggestion: value,
-        // ...this.props.authentication,
-        // ...this.props.autoQLConfig,
-        demo: true
+        ...this.props.authentication,
+        ...this.props.autoQLConfig,
+        suggestion: value
       })
         .then(response => {
-          // const body = this.props.demo
-          //   ? response.data
-          //   : _get(response, 'data.data')
           const body = response.data
 
           const sortingArray = []

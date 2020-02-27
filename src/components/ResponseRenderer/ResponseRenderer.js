@@ -344,7 +344,11 @@ export default class ResponseRenderer extends React.Component {
       <a
         className="single-value-response"
         onClick={() => {
-          this.props.onDataClick(this.props.demo ? {} : [], this.queryID, true)
+          this.props.onDataClick(
+            this.props.authentication.demo ? {} : [],
+            this.queryID,
+            true
+          )
         }}
       >
         {formatElement({
@@ -394,13 +398,13 @@ export default class ResponseRenderer extends React.Component {
           this.tableColumns,
           this.pivotTableColumns,
           this.pivotOriginalColumnData,
-          this.props.demo
+          this.props.authentication.demo
         )
       } else {
         groupByObject = getGroupBysFromTable(
           cell,
           this.tableColumns,
-          this.props.demo
+          this.props.authentication.demo
         )
       }
 
@@ -418,13 +422,13 @@ export default class ResponseRenderer extends React.Component {
         row,
         column,
         this.tableColumns,
-        this.props.demo
+        this.props.authentication.demo
       )
     } else {
       groupByObject = getGroupBysFrom2dChart(
         row,
         this.tableColumns,
-        this.props.demo
+        this.props.authentication.demo
       )
     }
 

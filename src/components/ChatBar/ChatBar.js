@@ -182,7 +182,7 @@ export default class ChatBar extends React.Component {
         ...this.props.authentication
       })
         .then(response => {
-          const body = this.props.demo
+          const body = this.props.authentication.demo
             ? response.data
             : _get(response, 'data.data')
 
@@ -213,7 +213,7 @@ export default class ChatBar extends React.Component {
         .catch(() => {
           console.warn('Autocomplete operation cancelled by the user.')
         })
-    }, 500)
+    }, 300)
   }
 
   onSuggestionsClearRequested = () => {

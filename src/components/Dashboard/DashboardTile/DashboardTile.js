@@ -2,15 +2,19 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import Autosuggest from 'react-autosuggest'
 
 import { ResponseRenderer } from '../../ResponseRenderer'
 import { VizToolbar } from '../../VizToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
-import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
-import { runQuery, runQueryOnly } from '../../../js/queryService'
+import {
+  runQuery,
+  runQueryOnly,
+  fetchSuggestions
+} from '../../../js/queryService'
 
 import {
   getSupportedDisplayTypes,
@@ -33,8 +37,11 @@ import {
 
 import './DashboardTile.scss'
 
+let autoCompleteArray = []
+
 export default class DashboardTile extends React.Component {
   TILE_ID = uuid.v4()
+  autoCompleteTimer = undefined
 
   static propTypes = {
     // Global
@@ -69,8 +76,8 @@ export default class DashboardTile extends React.Component {
     sql: this.props.tile.sql,
     title: this.props.tile.title,
     isSql: !!this.props.tile.sql,
-    languageSelectValue: !!this.props.tile.sql ? 'sql' : 'nl',
-    isExecuting: false
+    isExecuting: false,
+    suggestions: []
   }
 
   componentDidUpdate = prevProps => {
@@ -81,6 +88,12 @@ export default class DashboardTile extends React.Component {
 
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
+    }
+  }
+
+  componentWillUnmount = () => {
+    if (this.autoCompleteTimer) {
+      clearTimeout(this.autoCompleteTimer)
     }
   }
 
@@ -179,20 +192,80 @@ export default class DashboardTile extends React.Component {
     }
   }
 
-  renderSQLSelector = () => {
-    return (
-      <Select
-        options={[
-          { value: 'sql', label: <Icon type="database" /> },
-          { value: 'nl', label: <Icon type="chata-bubbles-outlined" /> }
-        ]}
-        value={this.state.languageSelectValue}
-        className="chata-sql-selector"
-        onChange={value => {
-          this.setState({ languageSelectValue: value })
-        }}
-      />
-    )
+  onSuggestionsFetchRequested = ({ value }) => {
+    if (this.autoCompleteTimer) {
+      clearTimeout(this.autoCompleteTimer)
+    }
+    this.autoCompleteTimer = setTimeout(() => {
+      fetchSuggestions({
+        suggestion: value,
+        ...this.props.authentication
+      })
+        .then(response => {
+          const body = this.props.authentication.demo
+            ? response.data
+            : _get(response, 'data.data')
+
+          const sortingArray = []
+          let suggestionsMatchArray = []
+          autoCompleteArray = []
+          suggestionsMatchArray = body.matches
+
+          for (let i = 0; i < suggestionsMatchArray.length; i++) {
+            sortingArray.push(suggestionsMatchArray[i])
+
+            if (i === 4) {
+              break
+            }
+          }
+
+          sortingArray.sort((a, b) => b.length - a.length)
+          for (let idx = 0; idx < sortingArray.length; idx++) {
+            const anObject = {
+              name: sortingArray[idx]
+            }
+            autoCompleteArray.push(anObject)
+          }
+
+          this.setState({
+            suggestions: autoCompleteArray
+          })
+        })
+        .catch(error => {
+          console.error(error)
+        })
+    }, 300)
+  }
+
+  onSuggestionsClearRequested = () => {
+    this.setState({
+      suggestions: []
+    })
+  }
+
+  userSelectedSuggestionHandler = userSelectedValueFromSuggestionBox => {
+    if (
+      userSelectedValueFromSuggestionBox &&
+      userSelectedValueFromSuggestionBox.name
+    ) {
+      this.userSelectedValue = userSelectedValueFromSuggestionBox.name
+      this.userSelectedSuggestion = true
+      this.setState({ query: userSelectedValueFromSuggestionBox.name })
+    }
+  }
+
+  onQueryInputChange = e => {
+    if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
+      // keyup or keydown
+      return // return to let the component handle it...
+    }
+
+    if (_get(e, 'target.value') || _get(e, 'target.value') === '') {
+      this.setState({ query: e.target.value })
+    } else {
+      // User clicked on autosuggest item
+      this.processTile(this.userSelectedValue)
+    }
   }
 
   renderHeader = () => {
@@ -200,59 +273,45 @@ export default class DashboardTile extends React.Component {
       return (
         <div className="dashboard-tile-edit-wrapper">
           <div
-            className="dashboard-tile-input-container"
+            className={`dashboard-tile-input-container ${
+              this.state.isQueryInputFocused ? 'query-focused' : ''
+            }`}
             onMouseDown={e => e.stopPropagation()}
           >
-            {this.props.autoQLConfig.enableAutoComplete ? (
-              // <div className="chata-bar-container">
-              // <Autosuggest
-              //   className="auto-complete-chata"
-              //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-              //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-              //   getSuggestionValue={this.userSelectedSuggestionHandler}
-              //   suggestions={this.state.suggestions}
-              //   ref={ref => {
-              //     this.autoSuggest = ref
-              //   }}
-              //   renderSuggestion={suggestion => (
-              //     <Fragment>{suggestion.name}</Fragment>
-              //   )}
-              //   inputProps={{
-              //     className: 'chata-rule-input chata-input',
-              //     // icon:"chata-bubbles-outlined"
-              //     placeholder: 'query',
-              //     value: this.state.input1Value,
-              //     onChange: e => this.setState({ input1Value: e.target.value })
-              //   }}
-              // />
-              // </div>
-              <input
-                className="dashboard-tile-input query"
-                placeholder={
-                  this.state.languageSelectValue === 'sql'
-                    ? 'SQL Hash'
-                    : 'Query'
-                }
-                value={this.state.query}
-                onChange={e => this.setState({ query: e.target.value })}
-                onKeyDown={this.onQueryTextKeyDown}
-                onBlur={e => {
-                  if (_get(this.props, 'tile.query') !== e.target.value) {
-                    this.props.setParamsForTile(
-                      { query: e.target.value, displayType: undefined },
-                      this.props.tile.i
-                    )
+            {this.props.autoQLConfig.enableAutocomplete ? (
+              <Autosuggest
+                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                getSuggestionValue={this.userSelectedSuggestionHandler}
+                suggestions={this.state.suggestions}
+                ref={ref => {
+                  this.autoSuggest = ref
+                }}
+                renderSuggestion={suggestion => {
+                  return <Fragment>{suggestion.name}</Fragment>
+                }}
+                inputProps={{
+                  className: `dashboard-tile-autocomplete-input`,
+                  placeholder: 'Query',
+                  value: this.state.query,
+                  onFocus: () => this.setState({ isQueryInputFocused: true }),
+                  onChange: this.onQueryInputChange,
+                  onKeyDown: this.onQueryTextKeyDown,
+                  onBlur: e => {
+                    if (_get(this.props, 'tile.query') !== e.target.value) {
+                      this.props.setParamsForTile(
+                        { query: e.target.value, displayType: undefined },
+                        this.props.tile.i
+                      )
+                    }
+                    this.setState({ isQueryInputFocused: false })
                   }
                 }}
               />
             ) : (
               <input
                 className="dashboard-tile-input query"
-                placeholder={
-                  this.state.languageSelectValue === 'sql'
-                    ? 'SQL Hash'
-                    : 'Query'
-                }
+                placeholder="Query"
                 value={this.state.query}
                 onChange={e => this.setState({ query: e.target.value })}
                 onKeyDown={this.onQueryTextKeyDown}
@@ -266,7 +325,6 @@ export default class DashboardTile extends React.Component {
                 }}
               />
             )}
-
             <input
               className="dashboard-tile-input title"
               placeholder="Title (optional)"
