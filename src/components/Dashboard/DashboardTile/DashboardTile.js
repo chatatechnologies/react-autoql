@@ -150,7 +150,7 @@ export default class DashboardTile extends React.Component {
         runQueryOnly({
           query: q,
           ...this.props.authentication,
-          ...this.propa.autoQLConfig,
+          ...this.props.autoQLConfig,
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))

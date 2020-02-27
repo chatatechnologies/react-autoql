@@ -1072,7 +1072,7 @@ export default class ResponseRenderer extends React.Component {
           key={this.SAFETYNET_KEY}
           response={this.props.response}
           onSuggestionClick={query =>
-            this.onSuggestionClick(query, undefined, true, 'safety_net')
+            this.onSuggestionClick(query, true, true, 'safety_net')
           }
           onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
           initialSelections={this.props.safetyNetSelections}
