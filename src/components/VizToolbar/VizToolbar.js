@@ -121,6 +121,13 @@ class VizToolbar extends React.Component {
             'Stacked Column Chart',
             <Icon type="column-chart" />
           )}
+          {
+            //   this.createVisButton(
+            //   'split',
+            //   'Split View',
+            //   <Icon type="split-view" />
+            // )
+          }
         </div>
       )
     }

@@ -567,6 +567,9 @@ export default class App extends Component {
       // const { tiles, domain, apiKey } = this.state
 
       const data = {
+        user_id: this.state.userId,
+        customer_id: this.state.customerId,
+        username: this.state.username,
         name: this.state.activeDashboardName,
         data: this.state.dashboardTiles.map(tile => {
           return {

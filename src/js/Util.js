@@ -425,7 +425,13 @@ export const getSupportedDisplayTypes = response => {
 
   if (getNumberOfGroupables(columns) === 1) {
     // Is direct key-value query (ie. Avg days to pay per customer)
-    const supportedDisplayTypes = ['bar', 'column', 'line', 'table']
+    const supportedDisplayTypes = [
+      'bar',
+      'column',
+      'line',
+      'table'
+      // 'split'
+    ]
 
     if (columns.length === 2) {
       supportedDisplayTypes.push('pie')
@@ -453,6 +459,7 @@ export const getSupportedDisplayTypes = response => {
         'heatmap',
         'table',
         'pivot_table'
+        // 'split'
       ]
     }
     return supportedDisplayTypes

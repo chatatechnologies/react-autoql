@@ -28,7 +28,7 @@ export const autoQLConfigDefault = {
 export const themeConfigDefault = {
   theme: 'light',
   chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
-  accentColor: undefined,
+  accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
   titleColor: '#356f90' // DASHBOARD TILES ONLY
 }

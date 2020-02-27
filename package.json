@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -75,6 +75,7 @@
     "react-infinite-scroller": "^1.2.4",
     "react-paginate": "^6.3.2",
     "react-speech-recognition": "^2.0.4",
+    "react-splitter-layout": "^4.0.0",
     "react-tabulator": "^0.10.3",
     "react-tiny-popover": "^3.4.5",
     "react-tooltip": "^4.0.3",

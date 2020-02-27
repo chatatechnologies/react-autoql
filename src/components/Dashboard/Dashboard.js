@@ -461,6 +461,8 @@ class Dashboard extends React.Component {
                   themeConfig={this.props.themeConfig}
                   tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
                   displayType={tile.displayType}
+                  secondDisplayType={tile.secondDisplayType}
+                  secondDisplayPercentage={tile.secondDisplayPercentage}
                   queryResponse={tile.queryResponse}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}
@@ -476,7 +478,7 @@ class Dashboard extends React.Component {
           {this.renderDrilldownModal()}
           <ReactTooltip
             className="chata-dashboard-tooltip"
-            id="chata-toolbar-btn-tooltip"
+            id="chata-dashboard-toolbar-btn-tooltip"
             effect="solid"
             delayShow={500}
             html

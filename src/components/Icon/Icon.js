@@ -33,7 +33,8 @@ import { TiSortNumerically } from 'react-icons/ti'
 import {
   AiOutlineDashboard,
   AiOutlineFileText,
-  AiOutlineBook
+  AiOutlineBook,
+  AiOutlineBorderVerticle
 } from 'react-icons/ai'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
@@ -197,6 +198,10 @@ export default class Icon extends React.Component {
       }
       case 'search': {
         icon = <IoIosSearch />
+        break
+      }
+      case 'split-view': {
+        icon = <AiOutlineBorderVerticle />
         break
       }
       case 'table': {

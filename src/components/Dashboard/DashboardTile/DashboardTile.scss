@@ -12,18 +12,6 @@
 //   /* transition: all 0.2s ease-in; */
 // }
 
-.chata-dashboard-tile .viz-toolbar {
-  transition: all 0.3s ease;
-  visibility: hidden;
-  opacity: 0;
-  bottom: 7px;
-  left: 7px;
-}
-.chata-dashboard-tile:hover .viz-toolbar {
-  visibility: visible;
-  opacity: 1;
-}
-
 .chata-dashboard-tile-inner-div {
   height: 100%;
   width: 100%;
@@ -34,6 +22,38 @@
   justify-content: flex-start;
   flex-direction: column;
   align-items: center;
+}
+
+// Toolbar
+.chata-dashboard-tile-inner-div.split .viz-toolbar:not(.split-view-btn) {
+  bottom: 7px;
+  left: 7px;
+}
+// .chata-dashboard-tile-inner-div
+//   .layout-pane-primary
+//   .viz-toolbar:not(.split-view-btn) {
+//   bottom: 5px;
+// }
+.chata-dashboard-tile-inner-div .viz-toolbar {
+  transition: opacity 0.3s ease, color 0.3s ease;
+  visibility: hidden;
+  opacity: 0;
+}
+.chata-dashboard-tile-inner-div:not(.split) .split-view-btn {
+  bottom: -23px;
+  left: calc(50% - 20px);
+}
+.chata-dashboard-tile-inner-div.split .split-view-btn {
+  bottom: 7px;
+  left: calc(50% - 20px);
+}
+.chata-dashboard-tile-inner-div .viz-toolbar:not(.split-view-btn) {
+  bottom: -24px;
+  left: -23px;
+}
+.chata-dashboard-tile:hover .viz-toolbar {
+  visibility: visible;
+  opacity: 1;
 }
 
 .chata-dashboard-tile-inner-div .single-value-response {
@@ -47,9 +67,31 @@
   padding: 30px;
   padding-top: 0;
   background: inherit;
+
+  .layout-splitter {
+    display: none;
+  }
+  .layout-pane {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+  .layout-pane:not(.layout-pane-primary) {
+    padding-top: 10px;
+    padding-bottom: 30px;
+  }
+  .layout-pane-primary {
+    padding-bottom: 10px;
+  }
+}
+.chata-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
+  padding: 0;
 }
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   cursor: move;
+
+  .layout-splitter {
+    display: block;
+  }
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -69,11 +111,13 @@
 }
 
 .dashboard-tile-response-wrapper .dashboard-tile-response-container {
+  position: relative;
   height: 100%;
   width: 100%;
   padding-top: 21px;
-  cursor: default;
   background: inherit;
+
+  cursor: default;
 }
 
 .dashboard-tile-title-container {
@@ -335,4 +379,19 @@
   &:hover {
     opacity: 0.7;
   }
+}
+// Splitter styles
+.dashboard-tile-response-container .layout-pane-primary {
+  overflow: hidden;
+}
+.dashboard-tile-response-container .splitter-layout {
+  height: calc(100% - 20px);
+}
+.dashboard-tile-response-container .splitter-layout,
+.dashboard-tile-response-container .layout-pane,
+.dashboard-tile-response-container .dashboard-tile-split-pane-container {
+  background: inherit;
+}
+.dashboard-tile-split-pane-container {
+  height: 100%;
 }

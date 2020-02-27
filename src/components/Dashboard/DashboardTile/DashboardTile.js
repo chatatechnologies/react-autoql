@@ -3,6 +3,9 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import Autosuggest from 'react-autosuggest'
+import ReactTooltip from 'react-tooltip'
+import SplitterLayout from 'react-splitter-layout'
+import 'react-splitter-layout/lib/index.css'
 
 import { ResponseRenderer } from '../../ResponseRenderer'
 import { VizToolbar } from '../../VizToolbar'
@@ -268,6 +271,14 @@ export default class DashboardTile extends React.Component {
     }
   }
 
+  onDisplayTypeChange = displayType => {
+    this.props.setParamsForTile({ displayType }, this.props.tile.i)
+  }
+
+  onSecondDisplayTypeChange = secondDisplayType => {
+    this.props.setParamsForTile({ secondDisplayType }, this.props.tile.i)
+  }
+
   renderHeader = () => {
     if (this.props.isEditing) {
       return (
@@ -420,7 +431,117 @@ export default class DashboardTile extends React.Component {
     return <div className="dashboard-tile-loading-container">{content}</div>
   }
 
+  renderSingleResponse = (displayType, onDisplayTypeChange) => {
+    return (
+      <Fragment>
+        <ResponseRenderer
+          ref={ref => (this.responseRef = ref)}
+          themeConfig={this.props.themeConfig}
+          autoQLConfig={this.props.autoQLConfig}
+          displayType={displayType || this.props.displayType}
+          response={this.props.queryResponse}
+          renderTooltips={false}
+          autoSelectSafetyNetSuggestion={false}
+          safetyNetSelections={this.props.tile.safetyNetSelections}
+          renderSuggestionsAsDropdown={this.props.tile.h < 4}
+          onSuggestionClick={this.onSuggestionClick}
+          selectedSuggestion={this.props.tile.selectedSuggestion}
+          dataFormatting={this.props.dataFormatting}
+          onDataClick={(groupByObject, queryID, activeKey) =>
+            this.props.processDrilldown(
+              this.props.tile.i,
+              groupByObject,
+              queryID,
+              activeKey
+            )
+          }
+          backgroundColor={document.documentElement.style.getPropertyValue(
+            '--chata-dashboard-background-color'
+          )}
+          demo={this.props.authentication.demo}
+          onSafetyNetSelectOption={(queryText, suggestionList) => {
+            this.setState({ query: queryText })
+            this.props.setParamsForTile(
+              {
+                query: queryText,
+                safetyNetSelections: suggestionList
+              },
+              this.props.tile.i
+            )
+          }}
+        />
+        {this.props.isEditing && (
+          <VizToolbar
+            displayType={displayType}
+            onDisplayTypeChange={onDisplayTypeChange}
+            supportedDisplayTypes={
+              getSupportedDisplayTypes(this.props.queryResponse) || []
+            }
+          />
+        )}
+      </Fragment>
+    )
+  }
+
+  renderSplitResponse = () => {
+    // const width = 0
+    // const height = 0
+    // const chartHeight = this.state.splitViewChartHeight || height / 2
+    const firstDisplayType =
+      this.props.displayType || getInitialDisplayType(this.props.queryResponse)
+
+    const secondDisplayType =
+      this.props.secondDisplayType ||
+      getInitialDisplayType(this.props.queryResponse)
+
+    return (
+      <SplitterLayout
+        vertical={true}
+        onDragStart={e => {}}
+        percentage={true}
+        secondaryInitialSize={this.props.secondDisplayPercentage || 50}
+        onDragEnd={() => {
+          // this.setState({})
+          // this.forceUpdate()
+          const secondaryContainer = document.querySelector(
+            `#chata-dashboard-tile-inner-div-${this.TILE_ID} .layout-pane:not(.layout-pane-primary)`
+          )
+
+          const percentString = _get(secondaryContainer, 'style.height', '')
+          const percentNumber = Number(
+            percentString.substring(0, percentString.length - 1)
+          )
+
+          if (!Number.isNaN(percentNumber)) {
+            this.props.setParamsForTile(
+              {
+                secondDisplayPercentage: percentNumber
+              },
+              this.props.tile.i
+            )
+          }
+        }}
+      >
+        <div className="dashboard-tile-split-pane-container">
+          {this.renderSingleResponse(
+            firstDisplayType,
+            this.onDisplayTypeChange
+          )}
+        </div>
+        <div className="dashboard-tile-split-pane-container">
+          {this.renderSingleResponse(
+            secondDisplayType,
+            this.onSecondDisplayTypeChange
+          )}
+        </div>
+      </SplitterLayout>
+    )
+  }
+
   renderContent = () => {
+    const displayType =
+      this.props.displayType || getInitialDisplayType(this.props.queryResponse)
+
     return (
       <div
         className={`dashboard-tile-response-wrapper
@@ -433,58 +554,45 @@ export default class DashboardTile extends React.Component {
         >
           {this.props.queryResponse && !this.state.isExecuting ? (
             <Fragment>
-              <ResponseRenderer
-                ref={ref => (this.responseRef = ref)}
-                themeConfig={this.props.themeConfig}
-                autoQLConfig={this.props.autoQLConfig}
-                displayType={this.props.displayType}
-                response={this.props.queryResponse}
-                renderTooltips={false}
-                autoSelectSafetyNetSuggestion={false}
-                safetyNetSelections={this.props.tile.safetyNetSelections}
-                renderSuggestionsAsDropdown={this.props.tile.h < 4}
-                onSuggestionClick={this.onSuggestionClick}
-                selectedSuggestion={this.props.tile.selectedSuggestion}
-                dataFormatting={this.props.dataFormatting}
-                onDataClick={(groupByObject, queryID, activeKey) =>
-                  this.props.processDrilldown(
-                    this.props.tile.i,
-                    groupByObject,
-                    queryID,
-                    activeKey
-                  )
-                }
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--chata-dashboard-background-color'
-                )}
-                demo={this.props.authentication.demo}
-                onSafetyNetSelectOption={(queryText, suggestionList) => {
-                  this.setState({ query: queryText })
-                  this.props.setParamsForTile(
-                    {
-                      query: queryText,
-                      safetyNetSelections: suggestionList
-                    },
-                    this.props.tile.i
-                  )
-                }}
-              />
+              {this.props.tile.splitView
+                ? this.renderSplitResponse()
+                : this.renderSingleResponse(
+                    displayType,
+                    this.onDisplayTypeChange
+                  )}
               {this.props.isEditing && (
-                <VizToolbar
-                  displayType={
-                    this.props.displayType ||
-                    getInitialDisplayType(this.props.queryResponse)
-                  }
-                  onDisplayTypeChange={displayType =>
-                    this.props.setParamsForTile(
-                      { displayType },
-                      this.props.tile.i
-                    )
-                  }
-                  supportedDisplayTypes={
-                    getSupportedDisplayTypes(this.props.queryResponse) || []
-                  }
-                />
+                <div
+                  className="viz-toolbar split-view-btn"
+                  data-test="split-view-btn"
+                >
+                  <button
+                    // onClick={() => this.props.onDisplayTypeChange(displayType)}
+                    onClick={() => {
+                      this.props.setParamsForTile(
+                        { splitView: !this.props.tile.splitView },
+                        this.props.tile.i
+                      )
+                      ReactTooltip.hide()
+                    }}
+                    className="chata-toolbar-btn"
+                    data-tip={
+                      this.props.tile.splitView
+                        ? 'Turn Off Split View'
+                        : 'Turn On Split View'
+                    }
+                    data-for="chata-dashboard-toolbar-btn-tooltip"
+                    data-test="viz-toolbar-button"
+                  >
+                    <Icon
+                      type="split-view"
+                      style={{
+                        color: this.props.tile.splitView
+                          ? this.props.themeConfig.accentColor
+                          : 'inherit'
+                      }}
+                    />
+                  </button>
+                </div>
               )}
             </Fragment>
           ) : (
@@ -516,7 +624,9 @@ export default class DashboardTile extends React.Component {
           {this.props.children}
           <div
             id={`chata-dashboard-tile-inner-div-${this.TILE_ID}`}
-            className="chata-dashboard-tile-inner-div"
+            className={`chata-dashboard-tile-inner-div ${
+              this.props.tile.splitView ? 'split' : ''
+            }`}
           >
             {this.props.isDragging ? (
               this.renderDraggingPlaceholder()

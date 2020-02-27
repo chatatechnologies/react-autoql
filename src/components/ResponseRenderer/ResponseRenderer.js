@@ -554,7 +554,7 @@ export default class ResponseRenderer extends React.Component {
     )
   }
 
-  renderChart = (width, height) => {
+  renderChart = (width, height, displayType) => {
     if (!this.chartData) {
       return 'Error: There was no data supplied for this chart'
     }
@@ -573,7 +573,7 @@ export default class ResponseRenderer extends React.Component {
       <ErrorBoundary>
         <ChataChart
           ref={ref => (this.chartRef = ref)}
-          type={this.state.displayType}
+          type={displayType || this.state.displayType}
           data={this.chartData}
           columns={this.tableColumns}
           height={height}
@@ -1160,8 +1160,8 @@ export default class ResponseRenderer extends React.Component {
     let width = 0
 
     if (responseContainer) {
-      height = responseContainer.clientHeight
-      width = responseContainer.clientWidth
+      height = responseContainer.offsetHeight
+      width = responseContainer.offsetWidth
     }
 
     if (this.props.height) {
