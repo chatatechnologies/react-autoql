@@ -335,15 +335,15 @@ export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
 
 export const fetchQueryTips = ({
   keywords,
-  limit,
-  offset,
+  pageSize,
+  pageNumber,
   domain,
   apiKey,
   token,
   skipSafetyNet
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
 
   const axiosInstance = axios.create({
     headers: {

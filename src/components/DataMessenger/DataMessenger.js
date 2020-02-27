@@ -118,7 +118,6 @@ export default class DataMessenger extends React.Component {
     height: this.props.height,
     isResizing: false,
 
-    stateScrollTop: 0,
     lastMessageId: 'intro',
     isClearMessageConfirmVisible: false,
     messages: [this.introMessageObject],
@@ -126,9 +125,8 @@ export default class DataMessenger extends React.Component {
     queryTipsList: undefined,
     queryTipsLoading: false,
     queryTipsError: false,
-    queryTipsPage: 0,
     queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 0
+    queryTipsCurrentPage: 1
   }
 
   componentDidMount = () => {
@@ -656,19 +654,19 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  fetchQueryTipsList = (keywords, offset, skipSafetyNet) => {
+  fetchQueryTipsList = (keywords, pageNumber, skipSafetyNet) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
     const containerElement = document.querySelector(
       '.query-tips-page-container'
     )
-    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
+    const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
       ...this.props.authentication,
       keywords,
-      limit,
-      offset,
+      pageSize,
+      pageNumber,
       skipSafetyNet
     })
       .then(response => {
@@ -679,17 +677,23 @@ export default class DataMessenger extends React.Component {
             queryTipsSafetyNetResponse: response
           })
         } else {
-          const totalQueries = Number(_get(response, 'data.data.total'))
-          const offset = Number(_get(response, 'data.data.offset'))
+          const totalQueries = Number(
+            _get(response, 'data.data.pagination.total_items')
+          )
+          const totalPages = Number(
+            _get(response, 'data.data.pagination.total_pages')
+          )
+          const pageNumber = Number(
+            _get(response, 'data.data.pagination.current_page')
+          )
 
           this.setState({
-            queryTipsList: _get(response, 'data.data.queries'),
+            queryTipsList: _get(response, 'data.data.items'),
             queryTipsLoading: false,
             queryTipsError: false,
-            queryTipsTotalPages: totalQueries
-              ? Math.ceil(totalQueries / limit)
-              : 0,
-            queryTipsCurrentPage: offset ? offset / limit : 0,
+            queryTipsTotalPages: totalPages,
+            queryTipsCurrentPage: pageNumber,
+            queryTipsTotalQueries: totalQueries,
             queryTipsSafetyNetResponse: undefined
           })
         }
@@ -705,24 +709,20 @@ export default class DataMessenger extends React.Component {
 
   onQueryTipsInputKeyPress = e => {
     if (e.key == 'Enter') {
-      this.fetchQueryTipsList(e.target.value, 0)
+      this.fetchQueryTipsList(e.target.value, 1)
     } else {
       this.setState({ queryTipsInputValue: e.target.value })
     }
   }
 
   onQueryTipsPageChange = ({ selected }) => {
-    const containerElement = document.querySelector(
-      '.query-tips-page-container'
-    )
-    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
-    const nextOffset = limit * selected
-    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextOffset, true)
+    const nextPage = selected + 1 // Because ReactPaginate is 0 indexed
+    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
   onQueryTipsSafetyNetSuggestionClick = keywords => {
     this.setState({ queryTipsInputValue: keywords })
-    this.fetchQueryTipsList(keywords, 0, true)
+    this.fetchQueryTipsList(keywords, 1, true)
   }
 
   renderQueryTipsContent = () => (
