@@ -74,7 +74,9 @@ export const runQueryOnly = ({
     text: query,
     source,
     debug,
-    test
+    test,
+    user_id: demo ? 'demo' : undefined,
+    customer_id: demo ? 'demo' : undefined
   }
 
   const config = {}
@@ -115,7 +117,9 @@ export const runQueryOnly = ({
       return Promise.resolve(queryResponse)
     })
     .catch(error => {
-      if (error.code === 'ECONNABORTED') {
+      if (error.response === 401) {
+        return Promise.reject({ error: 'unauthenticated' })
+      } else if (error.code === 'ECONNABORTED') {
         error.data = { message: 'Request Timed Out' }
       }
       if (axios.isCancel(error)) {
@@ -201,7 +205,7 @@ export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
   const url = demo
     ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
       text
-    )}&projectId=1`
+    )}&projectId=1&user_id=demo&customer_id=demo`
     : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
       text
     )}&key=${apiKey}`
@@ -242,6 +246,8 @@ export const runDrilldown = ({
   if (demo) {
     data.query_id = queryID
     data.group_bys = groupByObject
+    data.user_id = 'demo'
+    data.customer_id = 'demo'
   } else {
     data.columns = groupByObject
   }
@@ -283,7 +289,7 @@ export const fetchSuggestions = ({
   const url = demo
     ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
-    )}&projectid=1`
+    )}&projectid=1&user_id=demo&customer_id=demo`
     : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
       suggestion
     )}&key=${apiKey}`
@@ -298,20 +304,6 @@ export const fetchSuggestions = ({
 
   return axiosInstance
     .get(url, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
-}
-
-export const fetchApiId = (apiKey, token) => {
-  const url = `https://backend-staging.chata.io/api/v1/integrator?key=${apiKey}`
-  const axiosInstance = axios.create({})
-
-  return axiosInstance
-    .get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }

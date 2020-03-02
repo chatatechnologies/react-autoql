@@ -898,6 +898,14 @@ export default class App extends Component {
           }}
           value={this.state.introMessage}
         />
+        <h4>Query Input Placeholder</h4>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ inputPlaceholder: e.target.value })
+          }}
+          value={this.state.inputPlaceholder}
+        />
         {this.createBooleanRadioGroup(
           'Clear All Messages on Close',
           'clearOnClose',
@@ -1093,6 +1101,7 @@ export default class App extends Component {
         handleImage={handleImage}
         enableQueryInspirationTab={this.state.enableQueryInspirationTab}
         onErrorCallback={this.onError}
+        inputPlaceholder={this.state.inputPlaceholder}
         // inputStyles
         // autocompleteStyles
         // handleStyles={{ right: '25px' }}

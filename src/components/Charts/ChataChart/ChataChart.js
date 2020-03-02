@@ -260,7 +260,9 @@ export default class ChataChart extends Component {
         link.click()
         document.body.removeChild(link)
       })
-      .catch(err => {})
+      .catch(error => {
+        console.error(error)
+      })
   }
 
   getCommonChartProps = () => {

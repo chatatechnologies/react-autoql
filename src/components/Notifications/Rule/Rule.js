@@ -171,8 +171,8 @@ export default class Rule extends React.Component {
             suggestions: autoCompleteArray
           })
         })
-        .catch(() => {
-          console.warn('Autocomplete operation cancelled by the user.')
+        .catch(error => {
+          console.error(error)
         })
     }, 500)
   }

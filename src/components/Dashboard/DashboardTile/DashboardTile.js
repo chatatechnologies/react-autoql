@@ -157,7 +157,10 @@ export default class DashboardTile extends React.Component {
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))
-          .catch(error => this.endQuery(error))
+          .catch(error => {
+            console.error(error)
+            this.endQuery(error)
+          })
       } else {
         runQuery({
           query: q,
@@ -169,7 +172,10 @@ export default class DashboardTile extends React.Component {
           source: 'dashboard'
         })
           .then(response => this.endQuery(response))
-          .catch(error => this.endQuery(error))
+          .catch(error => {
+            console.error(error)
+            this.endQuery(error)
+          })
       }
     }
   }
@@ -277,6 +283,13 @@ export default class DashboardTile extends React.Component {
 
   onSecondDisplayTypeChange = secondDisplayType => {
     this.props.setParamsForTile({ secondDisplayType }, this.props.tile.i)
+  }
+
+  getIsSplitView = () => {
+    return (
+      _get(this.props.tile, 'splitView') &&
+      _get(this.props.queryResponse, 'data.data.display_type') === 'data'
+    )
   }
 
   renderHeader = () => {
@@ -542,6 +555,8 @@ export default class DashboardTile extends React.Component {
     const displayType =
       this.props.displayType || getInitialDisplayType(this.props.queryResponse)
 
+    console.log(this.props.queryResponse)
+
     return (
       <div
         className={`dashboard-tile-response-wrapper
@@ -554,46 +569,48 @@ export default class DashboardTile extends React.Component {
         >
           {this.props.queryResponse && !this.state.isExecuting ? (
             <Fragment>
-              {this.props.tile.splitView
+              {this.getIsSplitView()
                 ? this.renderSplitResponse()
                 : this.renderSingleResponse(
                     displayType,
                     this.onDisplayTypeChange
                   )}
-              {this.props.isEditing && (
-                <div
-                  className="viz-toolbar split-view-btn"
-                  data-test="split-view-btn"
-                >
-                  <button
-                    // onClick={() => this.props.onDisplayTypeChange(displayType)}
-                    onClick={() => {
-                      this.props.setParamsForTile(
-                        { splitView: !this.props.tile.splitView },
-                        this.props.tile.i
-                      )
-                      ReactTooltip.hide()
-                    }}
-                    className="chata-toolbar-btn"
-                    data-tip={
-                      this.props.tile.splitView
-                        ? 'Turn Off Split View'
-                        : 'Turn On Split View'
-                    }
-                    data-for="chata-dashboard-toolbar-btn-tooltip"
-                    data-test="viz-toolbar-button"
+              {this.props.isEditing &&
+                _get(this.props, 'queryResponse.data.data.display_type') ===
+                  'data' && (
+                  <div
+                    className="viz-toolbar split-view-btn"
+                    data-test="split-view-btn"
                   >
-                    <Icon
-                      type="split-view"
-                      style={{
-                        color: this.props.tile.splitView
-                          ? this.props.themeConfig.accentColor
-                          : 'inherit'
+                    <button
+                      // onClick={() => this.props.onDisplayTypeChange(displayType)}
+                      onClick={() => {
+                        this.props.setParamsForTile(
+                          { splitView: !this.props.tile.splitView },
+                          this.props.tile.i
+                        )
+                        ReactTooltip.hide()
                       }}
-                    />
-                  </button>
-                </div>
-              )}
+                      className="chata-toolbar-btn"
+                      data-tip={
+                        this.props.tile.splitView
+                          ? 'Turn Off Split View'
+                          : 'Turn On Split View'
+                      }
+                      data-for="chata-dashboard-toolbar-btn-tooltip"
+                      data-test="viz-toolbar-button"
+                    >
+                      <Icon
+                        type="split-view"
+                        style={{
+                          color: this.props.tile.splitView
+                            ? this.props.themeConfig.accentColor
+                            : 'inherit'
+                        }}
+                      />
+                    </button>
+                  </div>
+                )}
             </Fragment>
           ) : (
             this.renderContentPlaceholder()
@@ -625,7 +642,7 @@ export default class DashboardTile extends React.Component {
           <div
             id={`chata-dashboard-tile-inner-div-${this.TILE_ID}`}
             className={`chata-dashboard-tile-inner-div ${
-              this.props.tile.splitView ? 'split' : ''
+              this.getIsSplitView() ? 'split' : ''
             }`}
           >
             {this.props.isDragging ? (

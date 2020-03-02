@@ -73,6 +73,7 @@ export default class DataMessenger extends React.Component {
     introMessage: string,
     enableQueryInspirationTab: bool,
     resizable: bool,
+    inputPlaceholder: string,
 
     // Callbacks
     onVisibleChange: func,
@@ -105,6 +106,7 @@ export default class DataMessenger extends React.Component {
     introMessage: undefined,
     enableQueryInspirationTab: true,
     resizable: true,
+    inputPlaceholder: undefined,
 
     // Callbacks
     onHandleClick: () => {},
@@ -337,7 +339,9 @@ export default class DataMessenger extends React.Component {
           })
           this.setState({ isChataThinking: false })
         })
-        .catch(() => {
+        .catch(error => {
+          console.error(error)
+          this.props.onErrorCallback(error)
           this.setState({ isChataThinking: false })
         })
     }
@@ -648,6 +652,8 @@ export default class DataMessenger extends React.Component {
             autoCompletePlacement="top"
             showChataIcon={false}
             showLoadingDots={false}
+            placeholder={this.props.inputPlaceholder}
+            onErrorCallback={this.props.onErrorCallback}
           />
         </div>
       </Fragment>
@@ -698,13 +704,15 @@ export default class DataMessenger extends React.Component {
           })
         }
       })
-      .catch(() =>
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
           queryTipsSafetyNetResponse: undefined
         })
-      )
+      })
   }
 
   onQueryTipsInputKeyPress = e => {

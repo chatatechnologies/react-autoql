@@ -143,8 +143,8 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             maximumFractionDigits: 0
             // maximumSignificantDigits: sigDigs
           }).format(d)
-        } catch (err) {
-          console.error(err)
+        } catch (error) {
+          console.error(error)
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: 'USD',
@@ -238,8 +238,8 @@ export const formatElement = ({
                 minimumFractionDigits: validatedCurrencyDecimals,
                 maximumFractionDigits: validatedCurrencyDecimals
               }).format(element)
-            } catch (err) {
-              console.error(err)
+            } catch (error) {
+              console.error(error)
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
                 currency: 'USD',
@@ -310,6 +310,7 @@ export const formatElement = ({
     }
     return formattedElement
   } catch (error) {
+    console.error(error)
     // If something goes wrong, just display original value
     return element
   }
@@ -382,8 +383,9 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
 
       // load image
       img.src = image64
-    } catch (err) {
-      reject('failed to convert svg to png ' + err)
+    } catch (error) {
+      console.error(error)
+      reject('failed to convert svg to png ' + error)
     }
   })
 }
@@ -838,6 +840,7 @@ export const getTickWidth = (scale, innerPadding) => {
     const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
     return width
   } catch (error) {
+    console.error(error)
     return 0
   }
 }

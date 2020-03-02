@@ -19,12 +19,14 @@ import {
 import {
   dataFormattingType,
   themeConfigType,
-  autoQLConfigType
+  autoQLConfigType,
+  authenticationType
 } from '../../props/types'
 import {
   dataFormattingDefault,
   themeConfigDefault,
-  autoQLConfigDefault
+  autoQLConfigDefault,
+  authenticationDefault
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 
@@ -77,6 +79,9 @@ export default class ResponseRenderer extends React.Component {
     response: shape({}).isRequired,
     chatBarRef: instanceOf(ChatBar),
     themeConfig: themeConfigType,
+    autoQLConfig: autoQLConfigType,
+    authentication: authenticationType,
+    dataFormatting: dataFormattingType,
     supportsSuggestions: bool,
     // processDrilldown: func,
     onSuggestionClick: func,
@@ -94,12 +99,14 @@ export default class ResponseRenderer extends React.Component {
     demo: bool,
     hideColumnCallback: func,
     activeChartElementKey: string,
-    onTableFilterCallback: func,
-    dataFormatting: dataFormattingType
+    onTableFilterCallback: func
   }
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
+    autoQLConfig: autoQLConfigDefault,
+    authentication: authenticationDefault,
+    dataFormatting: dataFormattingDefault,
     supportsSuggestions: true,
     isQueryRunning: false,
     // tableBorderColor: undefined, // this should be what it is in light theme by default
@@ -113,7 +120,6 @@ export default class ResponseRenderer extends React.Component {
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
     enableQuerySuggestions: true,
-    dataFormatting: dataFormattingDefault,
     height: undefined,
     width: undefined,
     demo: false,
@@ -149,6 +155,7 @@ export default class ResponseRenderer extends React.Component {
       })
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback(error)
     }
   }
 
@@ -245,6 +252,8 @@ export default class ResponseRenderer extends React.Component {
         this.generatePivotTableData(newData)
       }
     } catch (error) {
+      console.error(error)
+      this.props.onErrorCallback(error)
       this.pivotTableData = undefined
     }
   }
@@ -696,10 +705,11 @@ export default class ResponseRenderer extends React.Component {
         })
       }
     } catch (error) {
+      console.error(error)
+      this.props.onErrorCallback(error)
       // Something went wrong. Do not show chart options
       this.supportedDisplayTypes = ['table']
       this.chartData = undefined
-      console.error(error)
     }
   }
 
@@ -725,6 +735,8 @@ export default class ResponseRenderer extends React.Component {
 
           return shouldFilter
         } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
           return false
         }
       }
@@ -763,8 +775,9 @@ export default class ResponseRenderer extends React.Component {
           // No logical operators detected, just compare strings
           const strippedHeader = headerValue.replace(/[^0-9.]/g, '')
           return rowValue.toString().includes(strippedHeader)
-        } catch (err) {
+        } catch (error) {
           console.error(error)
+          this.props.onErrorCallback(error)
           return false
         }
       }

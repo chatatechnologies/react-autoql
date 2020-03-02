@@ -160,6 +160,7 @@ export default class ChatMessage extends React.Component {
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}
+          onErrorCallback={this.props.onErrorCallback}
         />
       )
     }
@@ -199,6 +200,7 @@ export default class ChatMessage extends React.Component {
           }
         } catch (error) {
           console.error(error)
+          this.props.onErrorCallback(error)
         }
       })
     }
@@ -241,6 +243,7 @@ export default class ChatMessage extends React.Component {
       }
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback(error)
     }
   }
 

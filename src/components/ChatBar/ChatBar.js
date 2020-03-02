@@ -105,6 +105,7 @@ export default class ChatBar extends React.Component {
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
+            console.error(error)
             this.props.onResponseCallback(error)
             this.setState({ isQueryRunning: false })
           })
@@ -120,6 +121,7 @@ export default class ChatBar extends React.Component {
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
+            console.error(error)
             this.props.onResponseCallback(error)
             this.setState({ isQueryRunning: false })
           })
@@ -210,8 +212,8 @@ export default class ChatBar extends React.Component {
             suggestions: autoCompleteArray
           })
         })
-        .catch(() => {
-          console.warn('Autocomplete operation cancelled by the user.')
+        .catch(error => {
+          console.error(error)
         })
     }, 300)
   }
