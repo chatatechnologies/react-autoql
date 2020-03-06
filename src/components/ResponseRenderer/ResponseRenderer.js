@@ -1025,18 +1025,18 @@ export default class ResponseRenderer extends React.Component {
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    if (this.props.onSuggestionClick) {
-      this.props.onSuggestionClick(
-        suggestion,
-        isButtonClick,
-        skipSafetyNet,
-        source
-      )
-    }
-    if (this.props.chatBarRef) {
-      if (suggestion === 'None of these') {
-        this.setState({ customResponse: 'Thank you for your feedback.' })
-      } else {
+    if (suggestion === 'None of these') {
+      this.setState({ customResponse: 'Thank you for your feedback.' })
+    } else {
+      if (this.props.onSuggestionClick) {
+        this.props.onSuggestionClick(
+          suggestion,
+          isButtonClick,
+          skipSafetyNet,
+          source
+        )
+      }
+      if (this.props.chatBarRef) {
         this.props.chatBarRef.submitQuery({
           queryText: suggestion,
           skipSafetyNet: true,
@@ -1103,7 +1103,7 @@ export default class ResponseRenderer extends React.Component {
 
     if (!_get(responseData, 'rows.length')) {
       // This is not an error. There is just no data in the DB
-      return 'No data found.'
+      return _get(responseBody, 'message')
     }
 
     if (displayType && this.data) {

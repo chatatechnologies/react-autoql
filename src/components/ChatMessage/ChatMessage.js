@@ -380,6 +380,7 @@ export default class ChatMessage extends React.Component {
   }
 
   deleteMessage = () => {
+    ReactTooltip.hide()
     this.props.deleteMessageCallback(this.props.id)
   }
 
@@ -453,7 +454,9 @@ export default class ChatMessage extends React.Component {
         this.state.displayType === 'table' &&
         !this.props.authentication.demo &&
         _get(this.props, 'response.data.data.columns.length') > 1,
-      showSQLButton: this.props.autoQLConfig.debug,
+      showSQLButton:
+        this.props.autoQLConfig.debug &&
+        _get(this.props, 'response.data.data.display_type') === 'data',
       showDeleteButton: true
     }
 
@@ -592,7 +595,7 @@ export default class ChatMessage extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 80 // 100% of chat width minus message margins minus chat container margins
+      chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
     }
 

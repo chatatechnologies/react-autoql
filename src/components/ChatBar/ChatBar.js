@@ -6,12 +6,14 @@ import _get from 'lodash.get'
 import {
   authenticationType,
   autoQLConfigType,
-  dataFormattingType
+  dataFormattingType,
+  themeConfigType
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
-  dataFormattingDefault
+  dataFormattingDefault,
+  themeConfigDefault
 } from '../../props/defaults'
 
 import { Icon } from '../Icon'
@@ -33,6 +35,7 @@ export default class ChatBar extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
     enableVoiceRecord: bool,
     isDisabled: bool,
     onSubmit: func,
@@ -40,13 +43,15 @@ export default class ChatBar extends React.Component {
     className: string,
     autoCompletePlacement: string,
     showLoadingDots: bool,
-    showChataIcon: bool
+    showChataIcon: bool,
+    onErrorCallback: func
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
     enableVoiceRecord: false,
     isDisabled: false,
     autoCompletePlacement: 'top',
@@ -54,7 +59,8 @@ export default class ChatBar extends React.Component {
     showLoadingDots: true,
     showChataIcon: true,
     onSubmit: () => {},
-    onResponseCallback: () => {}
+    onResponseCallback: () => {},
+    onErrorCallback: () => {}
   }
 
   state = {
@@ -121,8 +127,12 @@ export default class ChatBar extends React.Component {
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
-            console.error(error)
-            this.props.onResponseCallback(error)
+            // If there is no error it did not make it past options
+            // and this is usually due to an authentication error
+            const finalError = error || {
+              error: 'unauthenticated'
+            }
+            this.props.onResponseCallback(finalError)
             this.setState({ isQueryRunning: false })
           })
       }

@@ -28,6 +28,13 @@ import {
   Spin
 } from 'antd'
 
+import {
+  ToolOutlined,
+  CloseOutlined,
+  MenuFoldOutlined,
+  ReloadOutlined
+} from '@ant-design/icons'
+
 import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
 
@@ -444,11 +451,7 @@ export default class App extends Component {
     return Promise.resolve()
   }
 
-  onLogin = async e => {
-    if (e) {
-      e.preventDefault()
-    }
-
+  onLogin = async () => {
     try {
       const baseUrl = getBaseUrl()
 
@@ -614,9 +617,8 @@ export default class App extends Component {
           sortId={i}
         >
           {item}
-          <Icon
+          <CloseOutlined
             style={{ float: 'right', cursor: 'pointer', marginTop: '3px' }}
-            type="close"
             onClick={() => {
               const newChartColors = this.state.chartColors.filter(
                 color => color !== item
@@ -698,105 +700,163 @@ export default class App extends Component {
     )
   }
 
+  renderAuthenticationForm = () => {
+    const layout = {
+      labelCol: { span: 8 },
+      wrapperCol: { span: 16 }
+    }
+    const tailLayout = {
+      wrapperCol: { offset: 8, span: 16 }
+    }
+
+    return (
+      <Fragment>
+        <Form
+          {...layout}
+          initialValues={{
+            customerId: this.state.customerId,
+            userId: this.state.userId,
+            apiKey: this.state.apiKey,
+            domain: this.state.domain
+          }}
+          style={{ marginTop: '20px' }}
+          onFinish={this.onLogin}
+          onFinishFailed={errorInfo => console.log('Failed:', errorInfo)}
+        >
+          <Form.Item
+            label="Customer ID"
+            name="customerId"
+            rules={[
+              { required: true, message: 'Please enter your customer ID' }
+            ]}
+          >
+            <Input
+              name="customer-id"
+              onChange={e => {
+                this.setState({ customerId: e.target.value })
+              }}
+              onBlur={e => setStoredProp('customer-id', e.target.value)}
+              initialValue={this.state.customerId}
+              value={this.state.customerId}
+            />
+          </Form.Item>
+          <Form.Item
+            label="User ID"
+            name="userId"
+            rules={[{ required: true, message: 'Please enter your user ID' }]}
+          >
+            <Input
+              name="user-id"
+              onChange={e => {
+                this.setState({ userId: e.target.value })
+              }}
+              onBlur={e => setStoredProp('userid', e.target.value)}
+              value={this.state.userId}
+            />
+          </Form.Item>
+          <Form.Item
+            label="API key"
+            name="apiKey"
+            rules={[{ required: true, message: 'Please enter your API key' }]}
+          >
+            <Input
+              name="api-key"
+              onChange={e => {
+                this.setState({ apiKey: e.target.value })
+              }}
+              onBlur={e => setStoredProp('api-key', e.target.value)}
+              value={this.state.apiKey}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Domain URL"
+            name="domain"
+            rules={[
+              { required: true, message: 'Please enter your domain URL' }
+            ]}
+          >
+            <Input
+              name="domain-url"
+              onChange={e => {
+                this.setState({ domain: e.target.value })
+              }}
+              onBlur={e => setStoredProp('domain-url', e.target.value)}
+              value={this.state.domain}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: 'Please enter your username' }]}
+          >
+            <Input
+              onChange={e => {
+                this.setState({ email: e.target.value })
+              }}
+              value={this.state.email}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[{ required: true, message: 'Please enter your password' }]}
+          >
+            <Input
+              type="password"
+              onChange={e => {
+                this.setState({ password: e.target.value })
+              }}
+              value={this.state.password}
+            />
+          </Form.Item>
+          <Form.Item {...tailLayout}>
+            <Button type="primary" htmlType="submit">
+              Authenticate
+            </Button>
+          </Form.Item>
+          <Form.Item {...tailLayout}>
+            <Button
+              type="default"
+              onClick={() => {
+                this.setState({
+                  isAuthenticated: false,
+                  dashboardTiles: undefined
+                })
+                setStoredProp('loginToken', undefined)
+                setStoredProp('jwtToken', undefined)
+                message.success('Successfully logged out')
+              }}
+            >
+              Log Out
+            </Button>
+          </Form.Item>
+        </Form>
+      </Fragment>
+    )
+  }
+
   renderPropOptions = () => {
     return (
       <div>
-        <h1>Data Source</h1>
+        <h1>Authentication</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
+        {!this.state.demo && this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
           false
         ])}
-        {!this.state.demo && (
-          <Fragment>
-            <h3>You must login to access data</h3>
-            <Form onSubmit={this.onLogin}>
-              <h4>Email (optional)</h4>
-              <h4>Customer ID *</h4>
-              <Input
-                name="customer-id"
-                onChange={e => {
-                  this.setState({ customerId: e.target.value })
-                }}
-                onBlur={e => setStoredProp('customer-id', e.target.value)}
-                value={this.state.customerId}
-              />
-              <h4>User ID *</h4>
-              <Input
-                name="user-id"
-                onChange={e => {
-                  this.setState({ userId: e.target.value })
-                }}
-                onBlur={e => setStoredProp('userid', e.target.value)}
-                value={this.state.userId}
-              />
-              <h4>API key *</h4>
-              <Input
-                name="api-key"
-                onChange={e => {
-                  this.setState({ apiKey: e.target.value })
-                }}
-                onBlur={e => setStoredProp('api-key', e.target.value)}
-                value={this.state.apiKey}
-              />
-              <h4>Domain URL *</h4>
-              <Input
-                name="domain-url"
-                onChange={e => {
-                  this.setState({ domain: e.target.value })
-                }}
-                onBlur={e => setStoredProp('domain-url', e.target.value)}
-                value={this.state.domain}
-              />
-              <h4>Username *</h4>
-              <Input
-                onChange={e => {
-                  this.setState({ email: e.target.value })
-                }}
-                value={this.state.email}
-              />
-              <h4>Password *</h4>
-              <Input
-                type="password"
-                onChange={e => {
-                  this.setState({ password: e.target.value })
-                }}
-                value={this.state.password}
-              />
-              <br />
-              <Button type="primary" htmlType="submit">
-                Authenticate
-              </Button>
-              <br />
-              <Button
-                type="default"
-                onClick={() => {
-                  this.setState({
-                    isAuthenticated: false,
-                    dashboardTiles: undefined
-                  })
-                  setStoredProp('loginToken', undefined)
-                  setStoredProp('jwtToken', undefined)
-                }}
-              >
-                Log Out
-              </Button>
-            </Form>
-            <Form onSubmit={e => e.preventDefault()}></Form>
-          </Fragment>
-        )}
         <h1>Drawer Props</h1>
         <Button
           onClick={() => this.setState({ componentKey: uuid.v4() })}
           style={{ marginRight: '10px' }}
-          icon="reload"
+          icon={<ReloadOutlined />}
         >
           Reload Drawer
         </Button>
         <Button
           onClick={() => this.setState({ isVisible: true })}
           type="primary"
-          icon="menu-unfold"
+          icon={<MenuFoldOutlined />}
         >
           Open Drawer
         </Button>
@@ -1492,7 +1552,7 @@ export default class App extends Component {
         paddingTop: '111px'
       }}
     >
-      <Icon type="tool" style={{ fontSize: '75px', marginBottom: '20px' }} />
+      <ToolOutlined style={{ fontSize: '75px', marginBottom: '20px' }} />
       <br />
       <div style={{ fontSize: '25px' }}>
         We're undergoing a bit of scheduled maintenance.

@@ -117,7 +117,7 @@ export const runQueryOnly = ({
       return Promise.resolve(queryResponse)
     })
     .catch(error => {
-      if (error.response === 401) {
+      if (error.response === 401 || !_get(error, 'response.data')) {
         return Promise.reject({ error: 'unauthenticated' })
       } else if (error.code === 'ECONNABORTED') {
         error.data = { message: 'Request Timed Out' }

@@ -50,6 +50,7 @@
   background: var(--chata-drawer-background-color);
   color: var(--chata-drawer-text-color-primary);
   border: 1px solid #d3d3d352;
+  min-width: 100px;
 }
 .chat-single-message-container.request .chat-message-bubble {
   background: var(--chata-drawer-accent-color);

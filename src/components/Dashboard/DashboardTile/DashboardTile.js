@@ -555,8 +555,6 @@ export default class DashboardTile extends React.Component {
     const displayType =
       this.props.displayType || getInitialDisplayType(this.props.queryResponse)
 
-    console.log(this.props.queryResponse)
-
     return (
       <div
         className={`dashboard-tile-response-wrapper
