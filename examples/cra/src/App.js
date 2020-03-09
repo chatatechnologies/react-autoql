@@ -23,7 +23,6 @@ import {
   Menu,
   Form,
   message,
-  Icon,
   Modal,
   Spin
 } from 'antd'
@@ -32,7 +31,13 @@ import {
   ToolOutlined,
   CloseOutlined,
   MenuFoldOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  StopOutlined,
+  EditOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+  RollbackOutlined,
+  SaveOutlined
 } from '@ant-design/icons'
 
 import locateLogo from './locate_logo.png'
@@ -206,10 +211,10 @@ export default class App extends Component {
     customerName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
-    enableQueryValidation: true,
+    enableQueryValidation: false,
     enableDrilldowns: true,
     enableQueryInspirationTab: true,
-    enableColumnEditor: true,
+    enableColumnEditor: false,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
     clearOnClose: false,
@@ -1278,13 +1283,13 @@ export default class App extends Component {
           }
           <Button
             onClick={() => this.setState({ isEditing: !this.state.isEditing })}
-            icon={this.state.isEditing ? 'stop' : 'edit'}
+            icon={this.state.isEditing ? <StopOutlined /> : <EditOutlined />}
           >
             {this.state.isEditing ? 'Stop Editing' : 'Edit'}
           </Button>
           <Button
             onClick={() => executeDashboard(this.dashboardRef)}
-            icon="play-circle"
+            icon={<PlayCircleOutlined />}
             style={{ marginLeft: '10px' }}
           >
             Execute Dashboard
@@ -1301,7 +1306,7 @@ export default class App extends Component {
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
               type="primary"
-              icon="plus"
+              icon={<PlusOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Add Tile
@@ -1311,7 +1316,7 @@ export default class App extends Component {
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.undo()}
               type="primary"
-              icon="rollback"
+              icon={<RollbackOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Undo
@@ -1322,7 +1327,7 @@ export default class App extends Component {
               onClick={this.saveDashboard}
               loading={this.state.isSavingDashboard}
               type="primary"
-              icon="save"
+              icon={<SaveOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Save Dashboard

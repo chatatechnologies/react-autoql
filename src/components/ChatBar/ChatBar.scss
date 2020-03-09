@@ -93,6 +93,22 @@
   list-style-type: none;
 }
 
+/* Autocomplete styles */
+.chata-bar-container .react-autosuggest__suggestions-container--open {
+  background-color: var(--chata-input-background-color);
+  border: 1px solid var(--chata-input-border-color);
+  color: var(--chata-input-text-color-primary);
+}
+.chata-bar-container .react-autosuggest__suggestion {
+  color: var(--chata-input-text-color-primary);
+}
+.chata-chatbar-input {
+  border: 1px solid var(--chata-input-border-color);
+  color: var(--chata-input-text-color-primary);
+}
+.chata-chatbar-input::placeholder {
+  color: var(--chata-input-text-color-placeholder);
+}
 .chata-bar-container .react-autosuggest__suggestion {
   cursor: pointer;
   padding: 2px;

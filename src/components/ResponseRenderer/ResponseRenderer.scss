@@ -33,7 +33,7 @@
 .chata-suggestion-btn:hover {
   border-color: transparent;
   color: white;
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-response-accent-color);
 }
 .chata-help-link-btn {
   padding: 6px 14px;
@@ -126,7 +126,7 @@
   margin-bottom: -2px;
 }
 .chata-chart-tooltip {
-  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: var(--chata-response-font-family), sans-serif;
   letter-spacing: 0.04em;
   line-height: 22px;
   font-size: 13px;
@@ -152,7 +152,7 @@
 }
 
 .context-menu {
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-response-background-color);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -164,7 +164,7 @@
   padding: 0;
 }
 .context-menu-list li {
-  color: var(--chata-drawer-text-color-primary);
+  color: var(--chata-response-text-color-primary);
   width: 100%;
   height: 35px;
   line-height: 35px;

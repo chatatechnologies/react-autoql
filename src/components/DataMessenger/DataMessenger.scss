@@ -233,25 +233,6 @@
   left: 20px;
 }
 
-/* Autocomplete styles */
-.chata-drawer
-  .chata-bar-container
-  .react-autosuggest__suggestions-container--open {
-  background-color: var(--chata-drawer-background-color);
-  border: 1px solid var(--chata-drawer-border-color);
-  color: var(--chata-drawer-text-color-primary);
-}
-.chata-drawer .chata-bar-container .react-autosuggest__suggestion {
-  color: var(--chata-drawer-text-color-primary);
-}
-.chata-drawer .chata-chatbar-input {
-  border: 1px solid var(--chata-drawer-border-color);
-  color: var(--chata-drawer-text-color-primary);
-}
-.chata-drawer .chata-chatbar-input::placeholder {
-  color: var(--chata-drawer-text-color-placeholder);
-}
-
 /* Tooltips */
 .chata-drawer-tooltip {
   font-family: var(--chata-drawer-font-family), sans-serif;

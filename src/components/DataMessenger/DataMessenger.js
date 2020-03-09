@@ -645,6 +645,7 @@ export default class DataMessenger extends React.Component {
           <ChatBar
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
+            themeConfig={this.props.themeConfig}
             ref={this.setChatBarRef}
             test={this.props.autoQLConfig.test}
             className="chat-drawer-chat-bar"

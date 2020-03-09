@@ -29,6 +29,7 @@ import {
   authenticationDefault
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+import { setStyleVars } from '../../js/Util'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -138,8 +139,11 @@ export default class ResponseRenderer extends React.Component {
 
   componentDidMount = () => {
     try {
+      const { theme, chartColors } = this.props.themeConfig
       this.RESPONSE_COMPONENT_KEY = uuid.v4()
-      this.colorScale = scaleOrdinal().range(this.props.themeConfig.chartColors)
+      this.colorScale = scaleOrdinal().range(chartColors)
+      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles, prefix: '--chata-response-' })
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
@@ -160,6 +164,15 @@ export default class ResponseRenderer extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      _get(prevProps, 'themeConfig.theme') !==
+      _get(this.props, 'themeConfig.theme')
+    ) {
+      const { theme } = this.props.themeConfig
+      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles, prefix: '--chata-response-' })
+    }
+
     if (this.props.response && !prevProps.response) {
       this.setResponseData(this.state.displayType)
       this.forceUpdate()

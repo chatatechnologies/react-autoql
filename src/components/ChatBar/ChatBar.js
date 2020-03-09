@@ -16,6 +16,9 @@ import {
   themeConfigDefault
 } from '../../props/defaults'
 
+import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+import { setStyleVars } from '../../js/Util'
+
 import { Icon } from '../Icon'
 import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
@@ -67,6 +70,23 @@ export default class ChatBar extends React.Component {
     inputValue: '',
     suggestions: [],
     isQueryRunning: false
+  }
+
+  componentDidMount = () => {
+    const { theme } = this.props.themeConfig
+    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+    setStyleVars({ themeStyles, prefix: '--chata-input-' })
+  }
+
+  componentDidUpdate = prevProps => {
+    if (
+      _get(prevProps, 'themeConfig.theme') !==
+      _get(this.props, 'themeConfig.theme')
+    ) {
+      const { theme } = this.props.themeConfig
+      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles, prefix: '--chata-input-' })
+    }
   }
 
   componentWillUnmount = () => {
