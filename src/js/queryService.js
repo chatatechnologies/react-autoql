@@ -277,6 +277,11 @@ export const fetchSuggestions = ({
   apiKey,
   token
 }) => {
+  // Do not run if text is blank
+  if (!suggestion || !suggestion.trim()) {
+    return
+  }
+
   const axiosInstance = axios.create({})
 
   // Cancel current autocomplete call if there is one

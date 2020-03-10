@@ -1,17 +1,1 @@
-.col-visibility-line-item {
-  display: flex;
-  justify-content: space-between;
-  line-height: 36px;
-}
 
-.col-visibility-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.col-visibility-line-item:not(:last-child) {
-  border-bottom: 1px solid #d3d3d34a;
-}

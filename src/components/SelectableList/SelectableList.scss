@@ -1,0 +1,29 @@
+.chata-list-item {
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  line-height: 36px;
+  user-select: none;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  &.selected {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.col-visibility-header {
+  // padding: 0 20px;
+  padding-left: 20px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.chata-list-item:not(:last-child) {
+  border-bottom: 1px solid #d3d3d34a;
+}
