@@ -2,12 +2,18 @@
   margin: 2rem;
 }
 
+.chata-checkbox-container {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .chata-checkbox {
   // --accent-color: #26a7df;
   // --accent-color: var(--chata-drawer-accent-color) || #26a7df;
 
   display: flex;
   align-items: center;
+  position: relative;
   // margin: 0.5rem;
   // height: 100%;
   cursor: pointer;
@@ -34,7 +40,7 @@
   outline: none;
   background: transparent;
   border: 1px solid;
-  border-radius: 3px;
+  border-radius: 2px;
 
   cursor: pointer;
 }
@@ -49,16 +55,25 @@
   background: var(--chata-drawer-accent-color);
 }
 
+.chata-checkbox-tick {
+  position: absolute;
+  color: white;
+  top: 0px;
+  left: 3px;
+  line-height: 20px;
+  pointer-events: none;
+}
+
 .chata-checkbox--switch__input::before {
   box-shadow: 0 0 2px 1px #00000030;
 }
 
 .chata-checkbox__input:checked::before,
 .chata-checkbox__input:indeterminate::before {
-  top: 2px;
-  right: 2px;
-  bottom: 2px;
-  left: 2px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 .chata-checkbox__input:indeterminate::before {
   top: 7px;

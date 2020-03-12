@@ -87,9 +87,10 @@ export default class Button extends React.Component {
               const allItemsChecked = items.every(col => col.checked)
               return (
                 <div>
-                  {col.name}{' '}
+                  {col.name}
                   <Checkbox
                     checked={allItemsChecked}
+                    style={{ marginLeft: '10px' }}
                     onChange={() => {
                       if (allItemsChecked) {
                         items.forEach(item => {

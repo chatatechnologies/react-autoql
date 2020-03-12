@@ -21,7 +21,8 @@ import {
   FiCalendar,
   FiPlus,
   FiDatabase,
-  FiFilter
+  FiFilter,
+  FiCheck
   // FiFileText
 } from 'react-icons/fi'
 import {
@@ -34,7 +35,9 @@ import {
   AiOutlineDashboard,
   AiOutlineFileText,
   AiOutlineBook,
-  AiOutlineBorderVerticle
+  AiOutlineBorderVerticle,
+  AiFillCaretRight,
+  AiFillCaretLeft
 } from 'react-icons/ai'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
@@ -80,6 +83,14 @@ export default class Icon extends React.Component {
         icon = <FiCalendar />
         break
       }
+      case 'caret-right': {
+        icon = <AiFillCaretRight />
+        break
+      }
+      case 'caret-left': {
+        icon = <AiFillCaretLeft />
+        break
+      }
       case 'chata-bubbles': {
         icon = (
           <img
@@ -102,6 +113,10 @@ export default class Icon extends React.Component {
       }
       case 'chata-bubbles-filled-alt': {
         icon = bubblesIconFilledAlt
+        break
+      }
+      case 'check': {
+        icon = <FiCheck />
         break
       }
       case 'close': {

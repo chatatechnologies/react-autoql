@@ -2,6 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 
+import { Icon } from '../Icon'
+
 import './Checkbox.scss'
 
 export default class Checkbox extends React.Component {
@@ -62,21 +64,29 @@ export default class Checkbox extends React.Component {
       ${type === 'switch' && 'chata-checkbox--switch__label'}
     `
 
+    console.log('input props', inputProps)
+
     return (
-      <div
-        style={{ display: 'inline-block', verticalAlign: 'middle' }}
-        data-test="chata-checkbox"
-      >
-        <div className={`${checkboxClassname} ${this.props.className}`}>
+      <div className="chata-checkbox-container" data-test="chata-checkbox">
+        <div
+          className={`${checkboxClassname} ${this.props.className}`}
+          style={this.props.style}
+        >
           <input
             {...inputProps}
             type="checkbox"
             className={inputClassname}
+            style={{}}
             ref={el => (this.selector = el)}
             id={this.ID}
             checked={this.props.checked}
             onChange={this.onCheckedChange}
           />
+          {this.props.checked && (
+            <div className="chata-checkbox-tick">
+              <Icon type="check" />
+            </div>
+          )}
           {label && (
             <div
               className="chata-checkbox-label"
