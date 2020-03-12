@@ -69,7 +69,7 @@
   background: inherit;
 
   .layout-splitter {
-    height: 1px;
+    height: 1px !important;
     color: var(--chata-dashboard-text-color-primary);
     opacity: 0.3;
     pointer-events: none;
