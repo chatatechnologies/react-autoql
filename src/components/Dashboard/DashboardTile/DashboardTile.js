@@ -610,10 +610,6 @@ export default class DashboardTile extends React.Component {
       this.props.secondDisplayType ||
       getInitialDisplayType(this.props.queryResponse)
 
-    const secondaryContainer = document.querySelector(
-      `#chata-dashboard-tile-inner-div-${this.TILE_ID} .layout-pane:not(.layout-pane-primary)`
-    )
-
     const innerTileDiv = document.querySelector(
       `#chata-dashboard-tile-inner-div-${this.TILE_ID}`
     )
@@ -629,19 +625,25 @@ export default class DashboardTile extends React.Component {
         percentage={true}
         secondaryInitialSize={this.props.secondDisplayPercentage || 50}
         onDragEnd={() => {
-          const percentString = _get(secondaryContainer, 'style.height', '')
-          const percentNumber = Number(
-            percentString.substring(0, percentString.length - 1)
-          )
-
-          if (!Number.isNaN(percentNumber)) {
-            this.props.setParamsForTile(
-              {
-                secondDisplayPercentage: percentNumber
-              },
-              this.props.tile.i
+          setTimeout(() => {
+            const secondaryContainer = document.querySelector(
+              `#chata-dashboard-tile-inner-div-${this.TILE_ID} .layout-pane:not(.layout-pane-primary)`
             )
-          }
+
+            const percentString = _get(secondaryContainer, 'style.height', '')
+            const percentNumber = Number(
+              percentString.substring(0, percentString.length - 1)
+            )
+
+            if (!Number.isNaN(percentNumber)) {
+              this.props.setParamsForTile(
+                {
+                  secondDisplayPercentage: percentNumber
+                },
+                this.props.tile.i
+              )
+            }
+          }, 1000)
         }}
       >
         <div className="dashboard-tile-split-pane-container">
@@ -758,7 +760,6 @@ export default class DashboardTile extends React.Component {
                     data-test="split-view-btn"
                   >
                     <button
-                      // onClick={() => this.props.onDisplayTypeChange(displayType)}
                       onClick={() => {
                         this.props.setParamsForTile(
                           { splitView: !this.props.tile.splitView },
