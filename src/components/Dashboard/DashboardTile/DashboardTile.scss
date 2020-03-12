@@ -69,7 +69,16 @@
   background: inherit;
 
   .layout-splitter {
-    display: none;
+    height: 1px;
+    color: var(--chata-dashboard-text-color-primary);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .chata-table {
+    opacity: 0.9;
+    color: var(--chata-dashboard-text-color-primary);
+    font-size: 11px;
   }
   .layout-pane {
     padding-left: 30px;
@@ -91,6 +100,10 @@
 
   .layout-splitter {
     display: block;
+    pointer-events: unset;
+    height: 4px;
+    color: var(--chata-dashboard-text-color-primary);
+    opacity: 0.8;
   }
 }
 
@@ -364,11 +377,11 @@
   z-index: 1;
 }
 .react-grid-item > .react-resizable-handle::after {
-  width: 8px;
-  height: 8px;
+  width: 8px !important;
+  height: 8px !important;
   opacity: 0;
-  border-right: 1px solid rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  border-right: 1px solid rgba(0, 0, 0, 0.4) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;
   transition: opacity 0.3s ease;
 }
 
