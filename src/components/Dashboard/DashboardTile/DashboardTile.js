@@ -430,7 +430,7 @@ export default class DashboardTile extends React.Component {
             )}
             <input
               className="dashboard-tile-input title"
-              placeholder="Title (optional)"
+              placeholder="Add descriptive title (optional)"
               value={this.state.title}
               onChange={e => this.setState({ title: e.target.value })}
               onBlur={e =>
@@ -491,9 +491,7 @@ export default class DashboardTile extends React.Component {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
-            1. Type your query in the search bar
-            <br />
-            2. Click{' '}
+            To get started, type a query in the search bar and click{' '}
             <Icon
               type="play"
               style={{
@@ -502,14 +500,13 @@ export default class DashboardTile extends React.Component {
                 marginBottom: '-2px'
               }}
             />
-            to fill this tile
           </em>
         </div>
       )
     } else if (this.props.tile.isNewTile) {
       content = (
         <div className="dashboard-tile-placeholder-text">
-          <em>This tile has no query</em>
+          <em>You haven’t filled this tile yet.</em>
         </div>
       )
     } else {

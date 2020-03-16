@@ -299,6 +299,9 @@
 .dashboard-tile-input-container .react-autosuggest__suggestion {
   color: var(--chata-dashboard-text-color-primary);
 }
+.dashboard-tile-input-container input::placeholder {
+  opacity: 0.5;
+}
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
   position: absolute;
