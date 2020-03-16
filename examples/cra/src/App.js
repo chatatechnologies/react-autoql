@@ -425,7 +425,7 @@ export default class App extends Component {
     }
 
     const baseUrl = getBaseUrl()
-    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}`
+    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}&project_id=${this.state.customerId}`
 
     // Use login token to get JWT token
     const jwtResponse = await axios.get(url, {
