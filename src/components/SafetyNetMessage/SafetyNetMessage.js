@@ -295,9 +295,7 @@ export default class SafetyNetMessage extends React.Component {
       <div className="chata-safety-net-container">
         <div className="chata-safety-net-description">
           {this.props.message ||
-            `Before I can try to find your answer, I need your help understanding a
-            term you used that I don't see in your data. Click the dropdown to
-            view suggestions so I can ensure you get the right data!`}
+            `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
         </div>
         <span>
           {this.renderSafetyNetQuery()}

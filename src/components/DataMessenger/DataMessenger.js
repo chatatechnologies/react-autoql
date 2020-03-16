@@ -23,6 +23,7 @@ import {
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 import { setStyleVars } from '../../js/Util'
+import errorMessages from '../../js/errorMessages'
 
 // Components
 import { Icon } from '../Icon'
@@ -180,7 +181,7 @@ export default class DataMessenger extends React.Component {
     this.introMessageObject.content = this.props.introMessage
       ? `${this.props.introMessage}`
       : `Hi ${this.props.customerName ||
-          'there'}! I'm here to help you access, search and analyze your data.`
+          'there'}! Let’s dive into your data. What can I help you discover today?`
 
     this.setState({ messages: [this.introMessageObject] })
   }
@@ -368,9 +369,7 @@ export default class DataMessenger extends React.Component {
 
   createErrorMessage = content => {
     return {
-      content:
-        content ||
-        'Oops... Something went wrong with this query. Please try again. If the problem persists, please contact the customer success team.',
+      content: content || errorMessages.GENERAL_ERROR_MESSAGE,
       id: uuid.v4(),
       type: 'error',
       isResponse: true
@@ -477,7 +476,7 @@ export default class DataMessenger extends React.Component {
             <div
               className={`tab${page === 'tips' ? ' active' : ''} tips`}
               onClick={() => this.setState({ activePage: 'tips' })}
-              data-tip="Query Inspiration"
+              data-tip="Explore Queries"
               data-for="chata-header-tooltip"
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
@@ -503,7 +502,7 @@ export default class DataMessenger extends React.Component {
             <div className="clear-messages-confirm-popover">
               <div className="chata-confirm-text">
                 <Icon className="chata-confirm-icon" type="warning" />
-                Clear all messages?
+                Clear all queries & responses?
               </div>
               <Button
                 type="default"
@@ -512,14 +511,14 @@ export default class DataMessenger extends React.Component {
                   this.setState({ isClearMessageConfirmVisible: false })
                 }
               >
-                No
+                Cancel
               </Button>
               <Button
                 type="primary"
                 size="small"
                 onClick={() => this.clearMessages()}
               >
-                Yes
+                Clear
               </Button>
             </div>
           }
@@ -529,7 +528,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="chata-button clear-all"
-            data-tip="Clear Messages"
+            data-tip="Clear data responses"
             data-for="chata-header-tooltip"
           >
             <Icon type="trash" />
@@ -545,7 +544,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'tips') {
-      title = 'What Can I Ask?'
+      title = 'Explore Queries'
     }
     return <div className="header-title">{title}</div>
   }
@@ -557,7 +556,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="chata-button close"
-            data-tip="Close Drawer"
+            data-tip="Close Data Messenger"
             data-for="chata-header-tooltip"
           >
             <Icon type="close" />

@@ -58,13 +58,13 @@ export default class ColumnVisibilityModal extends React.Component {
         title="Show/Hide Columns"
         enableBodyScroll={true}
         width={600}
-        confirmText="Save"
+        confirmText="Apply"
         style={{ marginTop: '45px' }}
         confirmLoading={this.props.isSettingColumns}
       >
         <div data-test="column-visibility-modal" style={{ padding: '0 15px' }}>
           <SelectableList
-            columns={[{ name: 'Column Name' }, { name: 'Visible' }]}
+            columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}
             onChange={columns => {
               this.setState({ columns })

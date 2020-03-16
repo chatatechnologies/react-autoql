@@ -41,8 +41,14 @@ export default class QueryTipsTab extends React.Component {
     if (!this.props.queryTipsList) {
       return (
         <div className="query-tips-result-placeholder">
-          <p>Your query suggestions will show up here.</p>
-          <p>Click on the suggestion to execute it in Data Messenger</p>
+          <p>
+            Discover what you can ask by entering a topic in the search bar
+            above.
+          </p>
+          <p>
+            Simply click on any of the returned options to run the query in Data
+            Messenger.
+          </p>
         </div>
       )
     }
@@ -50,7 +56,10 @@ export default class QueryTipsTab extends React.Component {
     if (_get(this.props.queryTipsList, 'length') === 0) {
       return (
         <div className="query-tips-result-placeholder">
-          <p>Sorry, we couldn't find any queries matching those keywords.</p>
+          <p>
+            Sorry, I couldn’t find any queries matching your input. Try entering
+            a different topic or keyword instead.
+          </p>
         </div>
       )
     }
@@ -115,7 +124,7 @@ export default class QueryTipsTab extends React.Component {
           >
             <input
               className="chata-chatbar-input left-padding"
-              placeholder="Enter a Topic..."
+              placeholder="Search relevant queries by topic"
               value={this.props.queryTipsInputValue}
               onChange={this.props.onQueryTipsInputKeyPress}
               onKeyPress={this.props.onQueryTipsInputKeyPress}

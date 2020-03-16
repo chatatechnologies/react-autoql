@@ -68,7 +68,7 @@ class Dictaphone extends React.Component {
           onMouseDown={this.onMouseDown}
           onMouseUp={stopListening}
           onMouseLeave={this.props.listening ? stopListening : undefined}
-          data-tip="Hold to Use Voice"
+          data-tip="Hold for voice-to-text"
           data-for="chata-speech-to-text-tooltip"
           data-tip-disable={this.props.listening}
         >

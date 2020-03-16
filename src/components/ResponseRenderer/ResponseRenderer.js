@@ -39,6 +39,7 @@ import { Icon } from '../Icon'
 // import { ChataForecast } from '../ChataForecast'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import errorMessages from '../../js/errorMessages'
 
 import {
   onlyUnique,
@@ -275,8 +276,8 @@ export default class ResponseRenderer extends React.Component {
     return (
       <div className="chata-suggestion-message">
         <div className="chata-suggestion-message-description">
-          I'm not sure what you mean by <strong>"{userInput}"</strong>. Did you
-          mean:
+          I want to make sure I understood <strong>"{userInput}"</strong>. Did
+          you mean:
         </div>
         <div className="chata-suggestions-container">
           {this.props.renderSuggestionsAsDropdown ? (
@@ -1063,7 +1064,8 @@ export default class ResponseRenderer extends React.Component {
     if (message) {
       return message
     }
-    return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
+
+    return errorMessages.GENERAL_ERROR_MESSAGE
   }
 
   renderResponse = (width, height) => {
@@ -1080,8 +1082,8 @@ export default class ResponseRenderer extends React.Component {
     // No response prop was provided to <ResponseRenderer />
     if (!response) {
       console.warn('Warning: No response object supplied')
-      // return this.renderErrorMessage()
-      return null
+      return this.renderErrorMessage()
+      // return null
     }
 
     // Response prop was provided, but it has no response data
@@ -1108,10 +1110,11 @@ export default class ResponseRenderer extends React.Component {
     }
 
     // Response is not a suggestion list, but no query data object was provided
+    // There is no valid query data. This is an error. Return message from UMS
     const responseData = responseBody.data
     if (!responseData) {
       console.warn('Warning: No response data supplied')
-      return this.renderErrorMessage(responseBody.message)
+      return this.renderErrorMessage(_get(response, 'message'))
     }
 
     if (!_get(responseData, 'rows.length')) {

@@ -26,6 +26,7 @@ import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import { getInitialDisplayType, isTableType, isChartType } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
+import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
 
@@ -164,7 +165,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
+    return errorMessages.GENERAL_ERROR_MESSAGE
   }
 
   setFilterTags = ({ isFilteringTable } = {}) => {
@@ -479,7 +480,7 @@ export default class ChatMessage extends React.Component {
             <button
               onClick={this.toggleTableFilter}
               className="chata-toolbar-btn"
-              data-tip="Filter Table"
+              data-tip="Filter table"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="filter" />
@@ -489,7 +490,7 @@ export default class ChatMessage extends React.Component {
             <button
               onClick={this.showHideColumnsModal}
               className="chata-toolbar-btn"
-              data-tip="Show/Hide Columns"
+              data-tip="Show/hide columns"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="eye" />
@@ -501,7 +502,7 @@ export default class ChatMessage extends React.Component {
               className={`chata-toolbar-btn${
                 this.state.copiedTable === true ? ' green' : ''
               }${this.state.copiedTable === false ? ' red' : ''}`}
-              data-tip="Copy Table to Clipboard"
+              data-tip="Copy table to clipboard"
               data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
             >
               <Icon type="copy" />
@@ -541,7 +542,7 @@ export default class ChatMessage extends React.Component {
               className={`chata-toolbar-btn${
                 this.state.copiedSQL === true ? ' green' : ''
               }${this.state.copiedSQL === false ? ' red' : ''}`}
-              data-tip="Copy SQL to Clipboard"
+              data-tip="Copy generated query to clipboard"
               data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
             >
               <Icon type="database" />
@@ -551,7 +552,7 @@ export default class ChatMessage extends React.Component {
             <button
               onClick={this.deleteMessage}
               className="chata-toolbar-btn"
-              data-tip="Delete Message"
+              data-tip="Delete data response"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="trash" />
