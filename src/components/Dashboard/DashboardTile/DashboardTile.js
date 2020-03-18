@@ -7,7 +7,7 @@ import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
 import 'react-splitter-layout/lib/index.css'
 
-import { ResponseRenderer } from '../../ResponseRenderer'
+import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
@@ -21,7 +21,7 @@ import {
 
 import {
   getSupportedDisplayTypes,
-  getInitialDisplayType,
+  getDefaultDisplayType,
   isDisplayTypeValid
 } from '../../../js/Util'
 
@@ -70,7 +70,7 @@ export default class DashboardTile extends React.Component {
     title: '',
     displayType: 'table',
     isNewTile: false,
-    safetyNetSelections: undefined,
+    queryValidationSelections: undefined,
     selectedSuggestion: undefined
   }
 
@@ -129,7 +129,7 @@ export default class DashboardTile extends React.Component {
     const response = responseArray[0]
     const newDisplayType = isDisplayTypeValid(response, this.props.displayType)
       ? this.props.displayType
-      : getInitialDisplayType(response)
+      : getDefaultDisplayType(response)
 
     this.props.setParamsForTile(
       {
@@ -151,7 +151,7 @@ export default class DashboardTile extends React.Component {
         this.props.secondDisplayType
       )
         ? this.props.secondDisplayType
-        : getInitialDisplayType(secondResponse)
+        : getDefaultDisplayType(secondResponse)
 
       this.props.setParamsForTile(
         {
@@ -520,12 +520,12 @@ export default class DashboardTile extends React.Component {
     return <div className="dashboard-tile-loading-container">{content}</div>
   }
 
-  onSafetyNetSelectOption = (queryText, suggestionList) => {
+  onQueryValidationSelectOption = (queryText, suggestionList) => {
     this.setState({ query: queryText })
     this.props.setParamsForTile(
       {
         query: queryText,
-        safetyNetSelections: suggestionList
+        queryValidationSelections: suggestionList
       },
       this.props.tile.i
     )
@@ -536,7 +536,7 @@ export default class DashboardTile extends React.Component {
     this.props.setParamsForTile(
       {
         secondQuery: queryText,
-        secondSafetyNetSelections: suggestionList
+        secondqueryValidationSelections: suggestionList
       },
       this.props.tile.i
     )
@@ -546,23 +546,24 @@ export default class DashboardTile extends React.Component {
     displayType,
     onDisplayTypeChange,
     response,
-    safetyNetSelections,
+    queryValidationSelections,
     selectedSuggestion,
     onSuggestionClick,
-    onSafetyNetSelectOption
+    onQueryValidationSelectOption
   }) => {
     return (
       <Fragment>
-        <ResponseRenderer
+        <QueryOutput
           ref={ref => (this.responseRef = ref)}
           themeConfig={this.props.themeConfig}
           autoQLConfig={this.props.autoQLConfig}
           displayType={displayType || this.props.displayType}
-          response={response || this.props.queryResponse}
+          queryResponse={response || this.props.queryResponse}
           renderTooltips={false}
-          autoSelectSafetyNetSuggestion={false}
-          safetyNetSelections={
-            safetyNetSelections || this.props.tile.safetyNetSelections
+          autoSelectQueryValidationSuggestion={false}
+          queryValidationSelections={
+            queryValidationSelections ||
+            this.props.tile.queryValidationSelections
           }
           renderSuggestionsAsDropdown={this.props.tile.h < 4}
           onSuggestionClick={onSuggestionClick || this.onSuggestionClick}
@@ -582,8 +583,8 @@ export default class DashboardTile extends React.Component {
             '--chata-dashboard-background-color'
           )}
           demo={this.props.authentication.demo}
-          onSafetyNetSelectOption={
-            onSafetyNetSelectOption || this.onSafetyNetSelectOption
+          onQueryValidationSelectOption={
+            onQueryValidationSelectOption || this.onQueryValidationSelectOption
           }
         />
         {this.props.isEditing && (
@@ -601,11 +602,11 @@ export default class DashboardTile extends React.Component {
 
   renderSplitResponse = () => {
     const firstDisplayType =
-      this.props.displayType || getInitialDisplayType(this.props.queryResponse)
+      this.props.displayType || getDefaultDisplayType(this.props.queryResponse)
 
     const secondDisplayType =
       this.props.secondDisplayType ||
-      getInitialDisplayType(this.props.queryResponse)
+      getDefaultDisplayType(this.props.queryResponse)
 
     const innerTileDiv = document.querySelector(
       `#chata-dashboard-tile-inner-div-${this.TILE_ID}`
@@ -654,10 +655,11 @@ export default class DashboardTile extends React.Component {
             displayType: secondDisplayType || 'table',
             onDisplayTypeChange: this.onSecondDisplayTypeChange,
             response: this.props.tile.secondQueryResponse,
-            safetyNetSelections: this.props.tile.secondSafetyNetSelections,
+            queryValidationSelections: this.props.tile
+              .secondqueryValidationSelections,
             selectedSuggestion: this.props.tile.secondSelectedSuggestion,
             onSuggestionClick: this.onSecondSuggestionClick,
-            onSafetyNetSelectOption: this.onSecondSafetyNetSelectOption
+            onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption
           })}
           {this.props.isEditing && (
             <div
@@ -729,7 +731,7 @@ export default class DashboardTile extends React.Component {
 
   renderContent = () => {
     const displayType =
-      this.props.displayType || getInitialDisplayType(this.props.queryResponse)
+      this.props.displayType || getDefaultDisplayType(this.props.queryResponse)
 
     return (
       <div

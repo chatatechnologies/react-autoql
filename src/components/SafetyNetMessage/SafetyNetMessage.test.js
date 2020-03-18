@@ -8,7 +8,7 @@ import SafetyNetMessage from './SafetyNetMessage'
 //   response: {},
 //   autoSelectSuggestion: true,
 //   onSuggestionClick: () => {},
-//   onSafetyNetSelectOption: () => {}
+//   onQueryValidationSelectOption: () => {}
 // }
 
 const defaultProps = {

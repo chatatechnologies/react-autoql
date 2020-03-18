@@ -19,7 +19,7 @@
   background: transparent;
   font-family: inherit;
 
-  /* Default styles outside of chat drawer */
+  /* Default styles outside of data messenger */
   border: 1px solid rgba(0, 0, 0, 0.1);
   color: #5d5d5d;
 }
@@ -33,7 +33,7 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-chatbar-input::placeholder {
-  /* Default color outside of chat drawer */
+  /* Default color outside of data messenger */
   color: #999 !important;
 }
 
@@ -70,7 +70,7 @@
   overflow: hidden;
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 
-  /* Default styles outside of chat drawer */
+  /* Default styles outside of data messenger */
   background-color: white;
   color: #5d5d5d;
 }
@@ -115,7 +115,7 @@
   padding-left: 18px;
   letter-spacing: 0.05em;
   line-height: 22.5px;
-  /* color: var(--chata-drawer-text-color-primary); */
+  /* color: var(--chata-messenger-text-color-primary); */
 }
 
 .chata-bar-container .react-autosuggest__suggestion--highlighted {

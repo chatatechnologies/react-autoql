@@ -1,6 +1,6 @@
 .chata-drawer {
   /* font-family: sans-serif; */
-  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: var(--chata-messenger-font-family), sans-serif;
   line-height: 22px;
   // z-index: 10000;
 }
@@ -13,7 +13,7 @@
   width: 100%;
   height: 100%;
   display: flex;
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-messenger-background-color);
   overflow: hidden;
   border-radius: 4px;
   flex-direction: column;
@@ -25,7 +25,7 @@
   justify-content: space-between;
   width: 100%;
   height: 60px;
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-messenger-accent-color);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
   flex-grow: 0;
   flex-shrink: 0;
@@ -94,7 +94,7 @@
 
 .chata-drawer .watermark {
   position: absolute;
-  color: var(--chata-drawer-text-color-primary);
+  color: var(--chata-messenger-text-color-primary);
   text-align: center;
   opacity: 0.2;
   top: 6px;
@@ -144,7 +144,7 @@
   overflow: visible;
 }
 .chata-drawer .drawer-handle {
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-messenger-background-color);
   transition: opacity 0.5s ease;
   overflow: hidden;
   width: 50px;
@@ -171,7 +171,7 @@
 .chata-drawer .drawer-handle-icon,
 .chata-drawer .drawer-handle-icon::before,
 .chata-drawer .drawer-handle-icon::after {
-  background: var(--chata-drawer-text-color-primary);
+  background: var(--chata-messenger-text-color-primary);
 }
 .chata-drawer .drawer-bottom .drawer-content-wrapper,
 .chata-drawer .drawer-top .drawer-content-wrapper {
@@ -235,7 +235,7 @@
 
 /* Tooltips */
 .chata-drawer-tooltip {
-  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: var(--chata-messenger-font-family), sans-serif;
   letter-spacing: 0.04em;
   padding: 7px 15px;
   transition: none;
@@ -243,7 +243,7 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 .interpretation-tooltip {
-  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: var(--chata-messenger-font-family), sans-serif;
   font-size: 12px;
   text-align: left;
   letter-spacing: 0.04em;
@@ -263,9 +263,9 @@
 }
 
 .clear-messages-confirm-popover {
-  color: var(--chata-drawer-text-color-primary);
+  color: var(--chata-messenger-text-color-primary);
   padding: 20px;
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-messenger-background-color);
   text-align: right;
   padding: 18px;
   width: 185px;
@@ -284,14 +284,14 @@
 .chata-modal-container
   .chata-checkbox__input:not(.chata-checkbox--switch__input),
 .chata-drawer .chata-checkbox__input:not(.chata-checkbox--switch__input) {
-  border-color: var(--chata-drawer-accent-color);
+  border-color: var(--chata-messenger-accent-color);
 }
 
 .chata-modal-container
   .chata-checkbox__input::before:not(.chata-checkbox--switch__input),
 .chata-drawer
   .chata-checkbox__input::before:not(.chata-checkbox--switch__input) {
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-messenger-accent-color);
 }
 
 /* Shadow container (this is used to cut off the shadow so it doesnt show in the drawer) */
@@ -330,7 +330,7 @@
     position: relative;
     z-index: 1;
 
-    background: var(--chata-drawer-accent-color);
+    background: var(--chata-messenger-accent-color);
     color: #fff;
     opacity: 1;
 
@@ -434,19 +434,19 @@
   vertical-align: top;
 }
 .page-switcher-container.bottom .tab {
-  background: var(--chata-drawer-background-color);
-  color: var(--chata-drawer-text-color-primary);
+  background: var(--chata-messenger-background-color);
+  color: var(--chata-messenger-text-color-primary);
 }
 .page-switcher-container .tab.active {
-  background: var(--chata-drawer-background-color);
-  color: var(--chata-drawer-text-color-primary);
+  background: var(--chata-messenger-background-color);
+  color: var(--chata-messenger-text-color-primary);
   box-shadow: -2px 0px 8px 2px rgba(0, 0, 0, 0.2);
   font-weight: bold;
   position: relative;
   z-index: 2;
 }
 .page-switcher-container.bottom .tab.active {
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-messenger-accent-color);
   color: #fff;
   font-weight: bold;
 }

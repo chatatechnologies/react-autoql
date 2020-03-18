@@ -9,7 +9,7 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import { Modal } from '../Modal'
 import { DashboardTile } from './DashboardTile'
-import { ResponseRenderer } from '../ResponseRenderer'
+import { QueryOutput } from '../QueryOutput'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -368,10 +368,10 @@ class Dashboard extends React.Component {
         <Fragment>
           {tile && this.shouldShowOriginalQuery(tile) && (
             <div className="chata-dashboard-drilldown-original">
-              <ResponseRenderer
+              <QueryOutput
                 autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
-                response={tile.queryResponse}
+                queryResponse={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
                 onDataClick={this.startDrilldown}
@@ -391,11 +391,11 @@ class Dashboard extends React.Component {
                 <LoadingDots />
               </div>
             ) : (
-              <ResponseRenderer
+              <QueryOutput
                 authentication={this.props.authentication}
                 autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
-                response={this.state.activeDrilldownResponse}
+                queryResponse={this.state.activeDrilldownResponse}
                 renderTooltips={false}
                 dataFormatting={this.props.dataFormatting}
                 demo={this.props.authentication.demo}

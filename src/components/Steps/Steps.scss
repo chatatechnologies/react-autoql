@@ -11,10 +11,10 @@
   transition: all 0.5s ease;
 
   &.complete {
-    border-color: var(--chata-drawer-accent-color);
+    border-color: var(--chata-messenger-accent-color);
     .chata-step-dot {
-      border-color: var(--chata-drawer-accent-color);
-      background: var(--chata-drawer-accent-color);
+      border-color: var(--chata-messenger-accent-color);
+      background: var(--chata-messenger-accent-color);
     }
   }
 }

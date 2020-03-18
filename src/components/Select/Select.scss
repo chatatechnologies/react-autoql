@@ -8,17 +8,17 @@
   height: 34px;
   margin: 0 3px;
   padding: 0 11px;
-  color: var(--chata-drawer-accent-color);
+  color: var(--chata-messenger-accent-color);
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--chata-drawer-accent-color);
+    border-color: var(--chata-messenger-accent-color);
   }
 }
 
 .chata-select-popup-container {
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-messenger-background-color);
   padding: 10px 0;
 
   .chata-select-option.active {
@@ -31,7 +31,7 @@
     padding: 0;
 
     li {
-      color: var(--chata-drawer-text-color-primary);
+      color: var(--chata-messenger-text-color-primary);
       width: 100%;
       height: 35px;
       line-height: 35px;

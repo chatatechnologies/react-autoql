@@ -47,15 +47,15 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: var(--chata-drawer-background-color);
-  color: var(--chata-drawer-text-color-primary);
+  background: var(--chata-messenger-background-color);
+  color: var(--chata-messenger-text-color-primary);
   border: 1px solid #d3d3d352;
   min-width: 100px;
 }
 .chat-single-message-container.request .chat-message-bubble {
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-messenger-accent-color);
   color: white;
-  border: 1px solid var(--chata-drawer-accent-color);
+  border: 1px solid var(--chata-messenger-accent-color);
 }
 /* Increase height of message to include table filters,
 so we dont have to redraw the whole table */
@@ -70,7 +70,7 @@ so we dont have to redraw the whole table */
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  border: 1px solid var(--chata-drawer-border-color);
+  border: 1px solid var(--chata-messenger-border-color);
 }
 .chat-message-toolbar.right {
   right: -9px;
@@ -83,7 +83,7 @@ so we dont have to redraw the whole table */
 }
 
 .interpretation-icon {
-  color: var(--chata-drawer-text-color-primary);
+  color: var(--chata-messenger-text-color-primary);
   vertical-align: top;
   height: 26px;
   margin: 0 3px;

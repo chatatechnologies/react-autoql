@@ -18,13 +18,13 @@ import {
   themeConfigDefault
 } from '../../props/defaults'
 
-import { ResponseRenderer } from '../ResponseRenderer'
+import { QueryOutput } from '../QueryOutput'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import { getInitialDisplayType, isTableType, isChartType } from '../../js/Util'
+import { getDefaultDisplayType, isTableType, isChartType } from '../../js/Util'
 import { setColumnVisibility } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
 
@@ -76,7 +76,7 @@ export default class ChatMessage extends React.Component {
   }
 
   state = {
-    displayType: getInitialDisplayType(this.props.response),
+    displayType: getDefaultDisplayType(this.props.response),
     isSettingColumnVisibility: false
   }
 
@@ -135,13 +135,12 @@ export default class ChatMessage extends React.Component {
       return content
     } else if (response) {
       return (
-        <ResponseRenderer
+        <QueryOutput
           ref={ref => (this.responseRef = ref)}
           autoQLConfig={this.props.autoQLConfig}
           onDataClick={this.props.processDrilldown}
-          response={response}
+          queryResponse={response}
           displayType={this.state.displayType}
-          // enableDrilldowns={response.enableDrilldowns}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           themeConfig={this.props.themeConfig}
@@ -154,14 +153,14 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={this.props.authentication.demo}
-          // enableQuerySuggestions={this.props.autoQLConfig.enableQuerySuggestions}
           backgroundColor={document.documentElement.style.getPropertyValue(
-            '--chata-drawer-background-color'
+            '--chata-messenger-background-color'
           )}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}
           onErrorCallback={this.props.onErrorCallback}
+          enableColumnHeaderContextMenu={true}
         />
       )
     }

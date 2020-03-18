@@ -480,7 +480,7 @@ export const isDisplayTypeValid = (response, displayType) => {
   return isValid
 }
 
-export const getInitialDisplayType = response => {
+export const getDefaultDisplayType = response => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
 

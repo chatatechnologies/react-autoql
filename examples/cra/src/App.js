@@ -2,14 +2,15 @@ import React, { Component, Fragment } from 'react'
 import axios from 'axios'
 import {
   DataMessenger,
-  ResponseRenderer,
-  ChatBar,
+  QueryOutput,
+  QueryInput,
   Dashboard,
   executeDashboard,
   NotificationButton,
   NotificationList,
   NotificationSettings,
-  Icon as ChataIcon
+  Icon as ChataIcon,
+  getSupportedDisplayTypes
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -425,7 +426,7 @@ export default class App extends Component {
     }
 
     const baseUrl = getBaseUrl()
-    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}&project_id=${this.state.customerId}`
+    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&project_id=${this.state.customerId}`
 
     // Use login token to get JWT token
     const jwtResponse = await axios.get(url, {
@@ -654,53 +655,6 @@ export default class App extends Component {
             }
           }}
         />
-      </div>
-    )
-  }
-
-  renderChatBarAndResponse = () => {
-    return (
-      <div>
-        <ChatBar
-          ref={r => (this.chatBarRef = r)}
-          autoCompletePlacement="bottom"
-          onSubmit={() => this.setState({ response: null })}
-          onResponseCallback={response => {
-            this.setState({ response })
-          }}
-          showChataIcon
-          showLoadingDots
-        />
-        {this.state.response ? (
-          <div
-            style={{
-              height: '300px',
-              padding: '30px',
-              fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
-              color: '#565656' // Text, tables, and charts will inherit text color
-            }}
-          >
-            <ResponseRenderer
-              chatBarRef={this.chatBarRef}
-              response={this.state.response}
-              demo={this.state.demo}
-            />
-          </div>
-        ) : (
-          <div
-            style={{
-              height: '75px',
-              width: 'calc(100% - 60px)',
-              padding: '30px',
-              fontFamily: 'Helvetica, Arial, Sans-Serif',
-              color: '#999',
-              textAlign: 'center',
-              fontSize: '14px'
-            }}
-          >
-            <em>The response will go here</em>
-          </div>
-        )}
       </div>
     )
   }
@@ -1168,33 +1122,25 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         inputPlaceholder={this.state.inputPlaceholder}
         // inputStyles
-        // autocompleteStyles
         // handleStyles={{ right: '25px' }}
       />
     )
   }
 
   renderDataMessengerPage = () => {
-    return (
-      <div className="test-page-container">
-        {
-          // this.renderChatBarAndResponse()
-        }
-        {this.renderPropOptions()}
-      </div>
-    )
+    return <div className="test-page-container">{this.renderPropOptions()}</div>
   }
 
-  renderChatBarPage = () => {
+  renderQueryInputPage = () => {
     return (
       <div>
-        <ChatBar
+        <QueryInput
           authentication={this.getAuthProp()}
           autoQLConfig={this.getAutoQLConfigProp()}
           dataFormatting={this.getDataFormattingProp()}
           themeConfig={this.getThemeConfigProp()}
-          ref={r => (this.chatBarRef = r)}
-          autoCompletePlacement="bottom"
+          ref={r => (this.queryInputRef = r)}
+          autoCompletePlacement="below"
           onSubmit={() => this.setState({ response: null })}
           onResponseCallback={response => {
             this.setState({ response })
@@ -1202,8 +1148,7 @@ export default class App extends Component {
           showChataIcon
           showLoadingDots
         />
-        {
-          // this.state.response ? (
+        {this.state.response && (
           <div
             style={{
               // height: 'auto',
@@ -1216,25 +1161,25 @@ export default class App extends Component {
               color: '#565656' // Text, tables, and charts will inherit text color
             }}
           >
-            <ResponseRenderer
-              chatBarRef={this.chatBarRef}
-              response={this.state.response}
+            <QueryOutput
+              queryInputRef={this.queryInputRef}
+              queryResponse={this.state.response}
               demo={this.state.demo}
             />
           </div>
-          // ) : (
-          //   <div
-          //     style={{
-          //       height: '75px',
-          //       width: 'calc(100% - 60px)',
-          //       padding: '30px',
-          //       fontFamily: 'Helvetica, Arial, Sans-Serif',
-          //       color: '#999',
-          //       textAlign: 'center',
-          //       fontSize: '14px'
-          //     }}
-          //   ></div>
-          // )
+        )
+        //   <div
+        //     style={{
+        //       height: '75px',
+        //       width: 'calc(100% - 60px)',
+        //       padding: '30px',
+        //       fontFamily: 'Helvetica, Arial, Sans-Serif',
+        //       color: '#999',
+        //       textAlign: 'center',
+        //       fontSize: '14px'
+        //     }}
+        //   ></div>
+        // )
         }
       </div>
     )
@@ -1367,16 +1312,14 @@ export default class App extends Component {
       >
         <Menu.Item key="drawer">
           <ChataIcon type="chata-bubbles-outlined" />
-          Chat Drawer
+          Data Messenger
         </Menu.Item>
         {this.state.dashboardTiles && (
           <Menu.Item key="dashboard">
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
         )}
-        {
-          // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
-        }
+        {<Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
         {!this.state.demo &&
           this.state.isAuthenticated &&
           this.getActiveIntegrator() === 'nb-comp' && (
@@ -1474,8 +1417,8 @@ export default class App extends Component {
     }
 
     return (
-      <ResponseRenderer
-        response={this.state.activeNotificationContent}
+      <QueryOutput
+        queryResponse={this.state.activeNotificationContent}
         displayType="column"
       />
     )
@@ -1584,7 +1527,7 @@ export default class App extends Component {
         break
       }
       case 'chatbar': {
-        pageToRender = this.renderChatBarPage()
+        pageToRender = this.renderQueryInputPage()
         break
       }
       case 'dashboard': {

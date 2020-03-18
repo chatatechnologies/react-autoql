@@ -24,13 +24,13 @@ import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
-import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
+import LoadingDots from '../LoadingDots/LoadingDots.js'
 
-import './ChatBar.scss'
+import './QueryInput.scss'
 
 let autoCompleteArray = []
 
-export default class ChatBar extends React.Component {
+export default class QueryInput extends React.Component {
   UNIQUE_ID = uuid.v4()
   autoCompleteTimer = undefined
 
@@ -46,8 +46,7 @@ export default class ChatBar extends React.Component {
     className: string,
     autoCompletePlacement: string,
     showLoadingDots: bool,
-    showChataIcon: bool,
-    onErrorCallback: func
+    showChataIcon: bool
   }
 
   static defaultProps = {
@@ -57,13 +56,12 @@ export default class ChatBar extends React.Component {
     themeConfig: themeConfigDefault,
     enableVoiceRecord: false,
     isDisabled: false,
-    autoCompletePlacement: 'top',
+    autoCompletePlacement: 'above',
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
     onSubmit: () => {},
-    onResponseCallback: () => {},
-    onErrorCallback: () => {}
+    onResponseCallback: () => {}
   }
 
   state = {
@@ -278,7 +276,7 @@ export default class ChatBar extends React.Component {
     return (
       <div
         className={`chata-bar-container ${this.props.className} ${
-          this.props.autoCompletePlacement === 'bottom'
+          this.props.autoCompletePlacement === 'below'
             ? 'autosuggest-bottom'
             : 'autosuggest-top'
         }`}

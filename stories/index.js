@@ -4,5 +4,5 @@ import { Button } from '@storybook/react/demo'
 import { DataMessenger } from '../src'
 
 storiesOf('Chat Components', module)
-  .add('Chat Drawer', () => <DataMessenger isVisible />)
+  .add('Data Messenger', () => <DataMessenger isVisible />)
   .add('Chat Embedded', () => <div />)

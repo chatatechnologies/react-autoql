@@ -27,7 +27,7 @@ import errorMessages from '../../js/errorMessages'
 
 // Components
 import { Icon } from '../Icon'
-import { ChatBar } from '../ChatBar'
+import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
@@ -148,8 +148,8 @@ export default class DataMessenger extends React.Component {
   componentDidUpdate = prevProps => {
     ReactTooltip.rebuild()
     if (this.props.isVisible && !prevProps.isVisible) {
-      if (this.chatBarRef) {
-        this.chatBarRef.focus()
+      if (this.queryInputRef) {
+        this.queryInputRef.focus()
       }
     }
     if (
@@ -196,7 +196,7 @@ export default class DataMessenger extends React.Component {
       themeStyles['font-family'] = fontFamily
     }
 
-    setStyleVars({ themeStyles, prefix: '--chata-drawer-' })
+    setStyleVars({ themeStyles, prefix: '--chata-messenger-' })
   }
 
   getHandlerProp = () => {
@@ -291,8 +291,8 @@ export default class DataMessenger extends React.Component {
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    if (this.chatBarRef) {
-      this.chatBarRef.animateInputTextAndSubmit(
+    if (this.queryInputRef) {
+      this.queryInputRef.animateInputTextAndSubmit(
         suggestion,
         skipSafetyNet,
         source
@@ -303,8 +303,8 @@ export default class DataMessenger extends React.Component {
   onResponse = response => {
     this.addResponseMessage({ response })
     this.setState({ isChataThinking: false })
-    if (this.chatBarRef) {
-      this.chatBarRef.focus()
+    if (this.queryInputRef) {
+      this.queryInputRef.focus()
     }
   }
 
@@ -349,8 +349,8 @@ export default class DataMessenger extends React.Component {
   }
 
   clearMessages = () => {
-    if (this.chatBarRef) {
-      this.chatBarRef.focus()
+    if (this.queryInputRef) {
+      this.queryInputRef.focus()
     }
 
     this.setState({
@@ -449,8 +449,8 @@ export default class DataMessenger extends React.Component {
     this.setState({ activeMessageId: id })
   }
 
-  setChatBarRef = ref => {
-    this.chatBarRef = ref
+  setQueryInputRef = ref => {
+    this.queryInputRef = ref
   }
 
   renderPageSwitcher = () => {
@@ -641,18 +641,17 @@ export default class DataMessenger extends React.Component {
             <Icon type="chata-bubbles-outlined" />
             We run on AutoQL by Chata
           </div>
-          <ChatBar
+          <QueryInput
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             themeConfig={this.props.themeConfig}
-            ref={this.setChatBarRef}
-            test={this.props.autoQLConfig.test}
+            ref={this.setQueryInputRef}
             className="chat-drawer-chat-bar"
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
             enableVoiceRecord={this.props.enableVoiceRecord}
-            autoCompletePlacement="top"
+            autoCompletePlacement="above"
             showChataIcon={false}
             showLoadingDots={false}
             placeholder={this.props.inputPlaceholder}

@@ -33,7 +33,7 @@ import { setStyleVars } from '../../js/Util'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
-import { ChatBar } from '../ChatBar'
+import { QueryInput } from '../QueryInput'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { Icon } from '../Icon'
 // import { ChataForecast } from '../ChataForecast'
@@ -47,7 +47,7 @@ import {
   makeEmptyArray,
   getNumberOfGroupables,
   getSupportedDisplayTypes,
-  getInitialDisplayType,
+  getDefaultDisplayType,
   isDisplayTypeValid,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
@@ -58,7 +58,7 @@ import {
   isForecastType
 } from '../../js/Util.js'
 
-import './ResponseRenderer.scss'
+import './QueryOutput.scss'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -73,35 +73,31 @@ String.prototype.toProperCase = function() {
   })
 }
 
-export default class ResponseRenderer extends React.Component {
+export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
-    response: shape({}).isRequired,
-    chatBarRef: instanceOf(ChatBar),
+    queryResponse: shape({}).isRequired,
+    queryInputRef: instanceOf(QueryInput),
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     authentication: authenticationType,
     dataFormatting: dataFormattingType,
-    supportsSuggestions: bool,
-    // processDrilldown: func,
     onSuggestionClick: func,
-    isQueryRunning: bool,
     displayType: string,
     renderTooltips: bool,
-    onSafetyNetSelectOption: func,
-    autoSelectSafetyNetSuggestion: bool,
-    safetyNetSelections: arrayOf(shape({})),
+    onQueryValidationSelectOption: func,
+    autoSelectQueryValidationSuggestion: bool,
+    queryValidationSelections: arrayOf(shape({})),
     renderSuggestionsAsDropdown: bool,
     suggestionSelection: string,
-    enableQuerySuggestions: bool,
     height: number,
     width: number,
-    demo: bool,
     hideColumnCallback: func,
     activeChartElementKey: string,
-    onTableFilterCallback: func
+    onTableFilterCallback: func,
+    enableColumnHeaderContextMenu: bool
   }
 
   static defaultProps = {
@@ -109,25 +105,20 @@ export default class ResponseRenderer extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
     dataFormatting: dataFormattingDefault,
-    supportsSuggestions: true,
-    isQueryRunning: false,
-    // tableBorderColor: undefined, // this should be what it is in light theme by default
-    // tableHoverColor: undefined, // this should be what it is in light theme by default
     displayType: undefined,
-    chatBarRef: undefined,
+    queryInputRef: undefined,
     onSuggestionClick: undefined,
     renderTooltips: true,
-    autoSelectSafetyNetSuggestion: true,
-    safetyNetSelections: undefined,
+    autoSelectQueryValidationSuggestion: true,
+    queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
-    enableQuerySuggestions: true,
     height: undefined,
     width: undefined,
-    demo: false,
     activeChartElementKey: undefined,
+    enableColumnHeaderContextMenu: false,
     onDataClick: () => {},
-    onSafetyNetSelectOption: () => {},
+    onQueryValidationSelectOption: () => {},
     hideColumnCallback: () => {},
     onTableFilterCallback: () => {}
   }
@@ -141,22 +132,24 @@ export default class ResponseRenderer extends React.Component {
   componentDidMount = () => {
     try {
       const { theme, chartColors } = this.props.themeConfig
-      this.RESPONSE_COMPONENT_KEY = uuid.v4()
+      this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
       const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--chata-response-' })
+      setStyleVars({ themeStyles, prefix: '--chata-output-' })
 
       // Determine the supported visualization types based on the response data
-      this.supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+      this.supportedDisplayTypes = getSupportedDisplayTypes(
+        this.props.queryResponse
+      )
 
       // Set the initial display type based on prop value, response, and supported display types
       this.setState({
         displayType: isDisplayTypeValid(
-          this.props.response,
+          this.props.queryResponse,
           this.props.displayType
         )
           ? this.props.displayType
-          : getInitialDisplayType(this.props.response)
+          : getDefaultDisplayType(this.props.queryResponse)
       })
     } catch (error) {
       console.error(error)
@@ -171,10 +164,10 @@ export default class ResponseRenderer extends React.Component {
     ) {
       const { theme } = this.props.themeConfig
       const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--chata-response-' })
+      setStyleVars({ themeStyles, prefix: '--chata-output-' })
     }
 
-    if (this.props.response && !prevProps.response) {
+    if (this.props.queryResponse && !prevProps.queryResponse) {
       this.setResponseData(this.state.displayType)
       this.forceUpdate()
     }
@@ -216,10 +209,10 @@ export default class ResponseRenderer extends React.Component {
     this.pivotTableID = uuid.v4()
 
     const { displayType } = this.state
-    const { response } = this.props
+    const { queryResponse } = this.props
 
-    if (_get(response, 'data.data') && displayType) {
-      const responseBody = response.data.data
+    if (_get(queryResponse, 'data.data') && displayType) {
+      const responseBody = queryResponse.data.data
       this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation
       this.data = responseBody.rows ? [...responseBody.rows] : null
@@ -249,7 +242,7 @@ export default class ResponseRenderer extends React.Component {
 
   generateTableData = () => {
     this.tableColumns = this.formatColumnsForTable(
-      this.props.response.data.data.columns
+      this.props.queryResponse.data.data.columns
     )
 
     this.tableData =
@@ -311,7 +304,6 @@ export default class ResponseRenderer extends React.Component {
               return (
                 <div key={uuid.v4()}>
                   <button
-                    // disabled={this.props.isQueryRunning}
                     onClick={() =>
                       this.onSuggestionClick(
                         suggestion[0],
@@ -335,19 +327,19 @@ export default class ResponseRenderer extends React.Component {
   }
 
   renderSuggestionMessage = () => {
-    if (!this.props.enableQuerySuggestions) {
+    if (!this.props.autoQLConfig.enableQuerySuggestions) {
       return this.renderErrorMessage("Oops! We didn't understand that query.")
     }
     // There is actually a suggestion for this case
-    const { response } = this.props
-    const responseBody = { ...response.data }
+    const { queryResponse } = this.props
+    const responseBody = { ...queryResponse.data }
     if (
       this.state.displayType === 'suggestion' &&
-      response.config &&
+      queryResponse.config &&
       responseBody.data.rows.length !== 0
     ) {
       const suggestions = responseBody.data.rows
-      const theUserInput = JSON.parse(response.config.data).text
+      const theUserInput = JSON.parse(queryResponse.config.data).text
       return this.createSuggestionMessage(theUserInput, suggestions)
     }
 
@@ -536,13 +528,13 @@ export default class ResponseRenderer extends React.Component {
 
     const tableBorderColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--chata-drawer-border-color']
-        : DARK_THEME['--chata-drawer-border-color']
+        ? LIGHT_THEME['--chata-messenger-border-color']
+        : DARK_THEME['--chata-messenger-border-color']
 
     const tableHoverColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--chata-drawer-hover-color']
-        : DARK_THEME['--chata-drawer-hover-color']
+        ? LIGHT_THEME['--chata-messenger-hover-color']
+        : DARK_THEME['--chata-messenger-hover-color']
 
     if (this.state.displayType === 'pivot_table') {
       return (
@@ -557,6 +549,9 @@ export default class ResponseRenderer extends React.Component {
           headerFilters={this.pivotHeaderFilters}
           onFilterCallback={this.onTableFilter}
           setFilterTagsCallback={this.props.setFilterTagsCallback}
+          enableColumnHeaderContextMenu={
+            this.props.enableColumnHeaderContextMenu
+          }
         />
       )
     }
@@ -1050,8 +1045,8 @@ export default class ResponseRenderer extends React.Component {
           source
         )
       }
-      if (this.props.chatBarRef) {
-        this.props.chatBarRef.submitQuery({
+      if (this.props.queryInputRef) {
+        this.props.queryInputRef.submitQuery({
           queryText: suggestion,
           skipSafetyNet: true,
           source
@@ -1070,7 +1065,7 @@ export default class ResponseRenderer extends React.Component {
 
   renderResponse = (width, height) => {
     const { displayType } = this.state
-    const { response } = this.props
+    const { queryResponse } = this.props
 
     // This is used for "Thank you for your feedback" response
     // when user clicks on "None of these" in the suggestion list
@@ -1079,15 +1074,15 @@ export default class ResponseRenderer extends React.Component {
       return this.state.customResponse
     }
 
-    // No response prop was provided to <ResponseRenderer />
-    if (!response) {
+    // No response prop was provided to <QueryOutput />
+    if (!queryResponse) {
       console.warn('Warning: No response object supplied')
-      return this.renderErrorMessage()
+      return this.renderErrorMessage('No response supplied')
       // return null
     }
 
     // Response prop was provided, but it has no response data
-    const responseBody = { ...response.data }
+    const responseBody = { ...queryResponse.data }
     if (!responseBody) {
       console.warn('Warning: No response body supplied')
       return this.renderErrorMessage()
@@ -1098,12 +1093,14 @@ export default class ResponseRenderer extends React.Component {
       return (
         <SafetyNetMessage
           key={this.SAFETYNET_KEY}
-          response={this.props.response}
+          response={this.props.queryResponse}
           onSuggestionClick={query =>
             this.onSuggestionClick(query, true, true, 'safety_net')
           }
-          onSafetyNetSelectOption={this.props.onSafetyNetSelectOption}
-          initialSelections={this.props.safetyNetSelections}
+          onQueryValidationSelectOption={
+            this.props.onQueryValidationSelectOption
+          }
+          initialSelections={this.props.queryValidationSelections}
           autoSelectSuggestion={this.props.autoSelectSafetyNetSuggestion}
         />
       )
@@ -1114,7 +1111,7 @@ export default class ResponseRenderer extends React.Component {
     const responseData = responseBody.data
     if (!responseData) {
       console.warn('Warning: No response data supplied')
-      return this.renderErrorMessage(_get(response, 'message'))
+      return this.renderErrorMessage(_get(queryResponse, 'message'))
     }
 
     if (!_get(responseData, 'rows.length')) {
@@ -1182,7 +1179,7 @@ export default class ResponseRenderer extends React.Component {
 
   render = () => {
     const responseContainer = document.getElementById(
-      `chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`
+      `chata-response-content-container-${this.COMPONENT_KEY}`
     )
 
     let height = 0
@@ -1204,8 +1201,8 @@ export default class ResponseRenderer extends React.Component {
     return (
       <Fragment>
         <div
-          key={this.RESPONSE_COMPONENT_KEY}
-          id={`chata-response-content-container-${this.RESPONSE_COMPONENT_KEY}`}
+          key={this.COMPONENT_KEY}
+          id={`chata-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
           className="chata-response-content-container"
           // style={{ ...style }}
