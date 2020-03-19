@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -78,7 +78,7 @@
     "react-splitter-layout": "^4.0.0",
     "react-tabulator": "^0.10.3",
     "react-tiny-popover": "^3.4.5",
-    "react-tooltip": "^4.0.3",
+    "react-tooltip": "^3.11.1",
     "throttle-debounce": "^2.1.0",
     "uuid": "https://registry.npmjs.org/uuid/-/uuid-2.0.3.tgz"
   },

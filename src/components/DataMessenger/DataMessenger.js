@@ -79,7 +79,8 @@ export default class DataMessenger extends React.Component {
     // Callbacks
     onVisibleChange: func,
     onHandleClick: func,
-    onErrorCallback: func
+    onErrorCallback: func,
+    onSuccessAlert: func
   }
 
   static defaultProps = {
@@ -112,7 +113,8 @@ export default class DataMessenger extends React.Component {
     // Callbacks
     onHandleClick: () => {},
     onVisibleChange: () => {},
-    onErrorCallback: () => {}
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {}
   }
 
   state = {
@@ -146,7 +148,9 @@ export default class DataMessenger extends React.Component {
   }
 
   componentDidUpdate = prevProps => {
-    ReactTooltip.rebuild()
+    setTimeout(() => {
+      ReactTooltip.rebuild()
+    }, 1000)
     if (this.props.isVisible && !prevProps.isVisible) {
       if (this.queryInputRef) {
         this.queryInputRef.focus()
@@ -497,7 +501,7 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() =>
             this.setState({ isClearMessageConfirmVisible: false })
           }
-          position={'bottom'} // preferred position
+          position="bottom" // preferred position
           content={
             <div className="clear-messages-confirm-popover">
               <div className="chata-confirm-text">
@@ -620,6 +624,7 @@ export default class DataMessenger extends React.Component {
                     response={message.response}
                     type={message.type}
                     onErrorCallback={this.props.onErrorCallback}
+                    onSuccessAlert={this.props.onSuccessAlert}
                     deleteMessageCallback={this.deleteMessage}
                   />
                 )
@@ -831,9 +836,66 @@ export default class DataMessenger extends React.Component {
     return null
   }
 
+  renderTooltips = () => {
+    return (
+      <Fragment>
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-header-tooltip"
+          effect="solid"
+          delayShow={500}
+          place="top"
+        />
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-toolbar-btn-tooltip"
+          effect="solid"
+          delayShow={500}
+          place="top"
+          html
+        />
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
+
+        {
+          // These are not currently being used
+          // ---------------------------------------------
+          //   <ReactTooltip
+          //   className="chata-drawer-tooltip"
+          //   id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+          //   effect="solid"
+          //   delayShow={500}
+          //   html
+          // />
+          // <ReactTooltip
+          //   className="interpretation-tooltip"
+          //   id="interpretation-tooltip"
+          //   effect="solid"
+          //   delayShow={500}
+          //   delayHide={200}
+          //   clickable
+          //   html
+          // />
+          // <ReactTooltip
+          //   className="chata-drawer-tooltip"
+          //   id={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+          //   effect="solid"
+          //   delayShow={500}
+          //   html
+          // />
+        }
+      </Fragment>
+    )
+  }
+
   render = () => {
     return (
       <Fragment>
+        {this.renderTooltips()}
         <Drawer
           data-test="chata-drawer-test"
           className={`chata-drawer${
@@ -861,43 +923,6 @@ export default class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-header-tooltip"
-          effect="solid"
-          delayShow={500}
-          // place="right"
-          countTransform={false}
-          html
-        />
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-toolbar-btn-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
-        <ReactTooltip
-          className="interpretation-tooltip"
-          id="interpretation-tooltip"
-          effect="solid"
-          delayShow={500}
-          delayHide={200}
-          clickable
-          html
-        />
-        <ReactTooltip
-          className="chata-chart-tooltip"
-          id="chart-element-tooltip"
-          effect="solid"
-          html
-        />
-        <ReactTooltip
-          id="select-tooltip"
-          className="chata-drawer-tooltip"
-          effect="solid"
-          delayShow={500}
-        />
       </Fragment>
     )
   }

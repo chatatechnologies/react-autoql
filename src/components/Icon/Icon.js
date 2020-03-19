@@ -14,7 +14,6 @@ import {
   // MdTitle,
   // MdDescription
 } from 'react-icons/md'
-import { FaRegTrashAlt, FaEye } from 'react-icons/fa'
 import {
   FiBell,
   FiBellOff,
@@ -22,13 +21,17 @@ import {
   FiPlus,
   FiDatabase,
   FiFilter,
-  FiCheck
+  FiCheck,
+  FiEye,
+  FiTrash2,
+  FiAlertTriangle
   // FiFileText
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
-  IoIosCloseCircleOutline
+  IoIosCloseCircleOutline,
+  IoMdMore
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
@@ -37,8 +40,10 @@ import {
   AiOutlineBook,
   AiOutlineBorderVerticle,
   AiFillCaretRight,
-  AiFillCaretLeft
+  AiFillCaretLeft,
+  AiOutlineWarning
 } from 'react-icons/ai'
+import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
   bubblesIcon,
@@ -156,7 +161,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'eye': {
-        icon = <FaEye />
+        icon = <FiEye />
         break
       }
       case 'filter': {
@@ -181,6 +186,10 @@ export default class Icon extends React.Component {
       }
       case 'line-chart': {
         icon = lineChartIcon
+        break
+      }
+      case 'more': {
+        icon = <IoMdMore />
         break
       }
       case 'notification': {
@@ -211,6 +220,10 @@ export default class Icon extends React.Component {
         icon = <FiPlus />
         break
       }
+      case 'report': {
+        icon = <GoReport />
+        break
+      }
       case 'search': {
         icon = <IoIosSearch />
         break
@@ -228,11 +241,15 @@ export default class Icon extends React.Component {
         break
       }
       case 'trash': {
-        icon = <FaRegTrashAlt />
+        icon = <FiTrash2 />
         break
       }
       case 'warning': {
         icon = <MdError />
+        break
+      }
+      case 'warning-triangle': {
+        icon = <FiAlertTriangle />
         break
       }
       default: {

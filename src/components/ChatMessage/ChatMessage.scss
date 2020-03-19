@@ -78,8 +78,19 @@ so we dont have to redraw the whole table */
 .chat-message-toolbar.left {
   left: -9px;
 }
-.chat-message-bubble:hover .chat-message-toolbar {
+.chat-message-bubble:hover .chat-message-toolbar,
+.chat-message-bubble .chat-message-toolbar.active {
   display: block;
+}
+
+.more-options-menu,
+.report-problem-menu {
+  background: var(--chata-messenger-background-color);
+  padding: 10px 0;
+
+  svg {
+    margin-right: 3px;
+  }
 }
 
 .interpretation-icon {

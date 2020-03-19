@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import ReactTooltip from 'react-tooltip'
+import Popover from 'react-tiny-popover'
+import uuid from 'uuid'
 
 import {
   authenticationType,
@@ -79,7 +81,8 @@ export default class ChatMessage extends React.Component {
 
   state = {
     displayType: getDefaultDisplayType(this.props.response),
-    isSettingColumnVisibility: false
+    isSettingColumnVisibility: false,
+    activeMenu: undefined
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -433,6 +436,77 @@ export default class ChatMessage extends React.Component {
     )
   }
 
+  renderReportProblemMenu = props => {
+    return (
+      <div className="report-problem-menu">
+        <ul className="context-menu-list">
+          <li>The data is incorrect</li>
+          <li>The data is incomplete</li>
+          <li>Other...</li>
+        </ul>
+      </div>
+    )
+  }
+
+  renderMoreOptionsMenu = (props, shouldShowButton) => {
+    return (
+      <div className="more-options-menu">
+        <ul className="context-menu-list">
+          {shouldShowButton.showSaveAsCSVButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.saveTableAsCSV()
+              }}
+            >
+              <Icon type="download" /> Download as CSV
+            </li>
+          )}
+          {shouldShowButton.showSaveAsPNGButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.saveChartAsPNG()
+              }}
+            >
+              <Icon type="download" /> Download as PNG
+            </li>
+          )}
+          {shouldShowButton.showCopyButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.copyTableToClipboard()
+              }}
+              // className={`chata-toolbar-btn${
+              //   this.state.copiedTable === true ? ' green' : ''
+              // }${this.state.copiedTable === false ? ' red' : ''}`}
+              // data-tip="Copy table to clipboard"
+              // data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+            >
+              <Icon type="copy" /> Copy table to clipboard
+            </li>
+          )}
+          {shouldShowButton.showSQLButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.copySQL()
+              }}
+              // className={`chata-toolbar-btn${
+              //   this.state.copiedSQL === true ? ' green' : ''
+              // }${this.state.copiedSQL === false ? ' red' : ''}`}
+              // data-tip="Copy generated query to clipboard"
+              // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+            >
+              <Icon type="database" /> Copy generated query to clipboard
+            </li>
+          )}
+        </ul>
+      </div>
+    )
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
       showFilterButton:
@@ -448,10 +522,11 @@ export default class ChatMessage extends React.Component {
         !this.isSingleValueResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
-      showInterpretationButton: !!_get(
-        this.props,
-        'response.data.data.interpretation'
-      ),
+      showInterpretationButton: false,
+      // !!_get(
+      //   this.props,
+      //   'response.data.data.interpretation'
+      // ),
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnEditor &&
         // getNumberOfGroupables(
@@ -463,7 +538,9 @@ export default class ChatMessage extends React.Component {
       showSQLButton:
         this.props.autoQLConfig.debug &&
         _get(this.props, 'response.data.data.display_type') === 'data',
-      showDeleteButton: true
+      showDeleteButton: true,
+      showMoreOptionsButton: true,
+      showReportProblemButton: false
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -480,7 +557,11 @@ export default class ChatMessage extends React.Component {
       this.state.displayType !== 'suggestion'
     ) {
       return (
-        <div className="chat-message-toolbar right">
+        <div
+          className={`chat-message-toolbar right ${
+            this.state.activeMenu ? 'active' : ''
+          }`}
+        >
           {shouldShowButton.showFilterButton && (
             <button
               onClick={this.toggleTableFilter}
@@ -501,38 +582,6 @@ export default class ChatMessage extends React.Component {
               <Icon type="eye" />
             </button>
           )}
-          {shouldShowButton.showCopyButton && (
-            <button
-              onClick={this.copyTableToClipboard}
-              className={`chata-toolbar-btn${
-                this.state.copiedTable === true ? ' green' : ''
-              }${this.state.copiedTable === false ? ' red' : ''}`}
-              data-tip="Copy table to clipboard"
-              data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-            >
-              <Icon type="copy" />
-            </button>
-          )}
-          {shouldShowButton.showSaveAsCSVButton && (
-            <button
-              onClick={this.saveTableAsCSV}
-              className="chata-toolbar-btn"
-              data-tip="Download as CSV"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="download" />
-            </button>
-          )}
-          {shouldShowButton.showSaveAsPNGButton && (
-            <button
-              onClick={this.saveChartAsPNG}
-              className="chata-toolbar-btn"
-              data-tip="Download as PNG"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="download" />
-            </button>
-          )}
           {shouldShowButton.showInterpretationButton && (
             <Icon
               type="info"
@@ -541,17 +590,31 @@ export default class ChatMessage extends React.Component {
               data-for="interpretation-tooltip"
             />
           )}
-          {shouldShowButton.showSQLButton && (
-            <button
-              onClick={this.copySQL}
-              className={`chata-toolbar-btn${
-                this.state.copiedSQL === true ? ' green' : ''
-              }${this.state.copiedSQL === false ? ' red' : ''}`}
-              data-tip="Copy generated query to clipboard"
-              data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+          {shouldShowButton.showReportProblemButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'report-problem'}
+              padding={8}
+              onClickOutside={() => {
+                console.log('on click outside report problem')
+                this.setState({ activeMenu: undefined })
+              }}
+              position="bottom" // preferred position
+              content={props => this.renderReportProblemMenu(props)}
             >
-              <Icon type="database" />
-            </button>
+              <button
+                onClick={e => {
+                  // e.preventDefault()
+                  this.setState({ activeMenu: 'report-problem' })
+                  // this.showReportProblemModal()
+                }}
+                className="chata-toolbar-btn"
+                data-tip="Report a problem"
+                data-for="chata-toolbar-btn-tooltip"
+              >
+                <Icon type="warning-triangle" />
+              </button>
+            </Popover>
           )}
           {shouldShowButton.showDeleteButton && (
             <button
@@ -562,6 +625,34 @@ export default class ChatMessage extends React.Component {
             >
               <Icon type="trash" />
             </button>
+          )}
+          {shouldShowButton.showMoreOptionsButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'more-options'}
+              position="bottom"
+              padding={8}
+              onClickOutside={() => {
+                console.log('on click outside more options')
+                this.setState({ activeMenu: undefined })
+              }}
+              // contentLocation={{}}
+              content={props =>
+                this.renderMoreOptionsMenu(props, shouldShowButton)
+              }
+            >
+              <button
+                onClick={() => {
+                  ReactTooltip.hide()
+                  this.setState({ activeMenu: 'more-options' })
+                }}
+                className="chata-toolbar-btn"
+                data-tip="More options"
+                data-for="chata-toolbar-btn-tooltip"
+              >
+                <Icon type="more" />
+              </button>
+            </Popover>
           )}
         </div>
       )
@@ -647,20 +738,6 @@ export default class ChatMessage extends React.Component {
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
             {this.renderHideColumnsModal()}
-            <ReactTooltip
-              className="chata-drawer-tooltip"
-              id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-              effect="solid"
-              delayShow={500}
-              html
-            />
-            <ReactTooltip
-              className="chata-drawer-tooltip"
-              id={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
-              effect="solid"
-              delayShow={500}
-              html
-            />
           </div>
         </div>
       </Fragment>
