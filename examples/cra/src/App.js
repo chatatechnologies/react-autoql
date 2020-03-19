@@ -1167,20 +1167,7 @@ export default class App extends Component {
               demo={this.state.demo}
             />
           </div>
-        )
-        //   <div
-        //     style={{
-        //       height: '75px',
-        //       width: 'calc(100% - 60px)',
-        //       padding: '30px',
-        //       fontFamily: 'Helvetica, Arial, Sans-Serif',
-        //       color: '#999',
-        //       textAlign: 'center',
-        //       fontSize: '14px'
-        //     }}
-        //   ></div>
-        // )
-        }
+        )}
       </div>
     )
   }
