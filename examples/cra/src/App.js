@@ -213,6 +213,7 @@ export default class App extends Component {
     introMessage: undefined,
     enableAutocomplete: true,
     enableQueryValidation: true,
+    enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableQueryInspirationTab: true,
     enableColumnEditor: true,
@@ -281,6 +282,7 @@ export default class App extends Component {
       enableAutocomplete: this.state.enableAutocomplete,
       enableDrilldowns: this.state.enableDrilldowns,
       enableColumnEditor: this.state.enableColumnEditor,
+      enableQuerySuggestions: this.state.enableQuerySuggestions,
       debug: this.state.debug,
       test: this.state.test
     }
@@ -1035,8 +1037,13 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Enable Safety Net',
+          'Enable Query Validation',
           'enableQueryValidation',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Query Suggestions',
+          'enableQuerySuggestions',
           [true, false]
         )}
         {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
