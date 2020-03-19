@@ -54,7 +54,8 @@ export default class ChatMessage extends React.Component {
     tableOptions: PropTypes.shape({}),
     enableColumnEditor: PropTypes.bool,
     dataFormatting: dataFormattingType,
-    onErrorCallback: PropTypes.func
+    onErrorCallback: PropTypes.func,
+    onSuccessAlert: PropTypes.func
   }
 
   static defaultProps = {
@@ -65,6 +66,7 @@ export default class ChatMessage extends React.Component {
 
     setActiveMessage: () => {},
     onErrorCallback: () => {},
+    onSuccessAlert: () => {},
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -258,6 +260,7 @@ export default class ChatMessage extends React.Component {
   copyTableToClipboard = () => {
     if (this.responseRef) {
       this.responseRef.copyTableToClipboard()
+      this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
       ReactTooltip.hide()
       // changeTooltipText(
@@ -393,6 +396,9 @@ export default class ChatMessage extends React.Component {
     document.execCommand('copy')
     document.body.removeChild(el)
     this.setTemporaryState('copiedSQL', true, 1000)
+    this.props.onSuccessAlert(
+      'Successfully copied generated query to clipboard!'
+    )
     ReactTooltip.hide()
     // changeTooltipText(
     //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,

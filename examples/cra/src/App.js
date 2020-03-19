@@ -569,6 +569,12 @@ export default class App extends Component {
     }
   }
 
+  onSuccess = alertText => {
+    if (alertText) {
+      message.success(alertText)
+    }
+  }
+
   saveDashboard = async () => {
     this.setState({
       isSavingDashboard: true
@@ -685,10 +691,10 @@ export default class App extends Component {
           onFinishFailed={errorInfo => console.log('Failed:', errorInfo)}
         >
           <Form.Item
-            label="Customer ID"
+            label="Project ID"
             name="customerId"
             rules={[
-              { required: true, message: 'Please enter your customer ID' }
+              { required: true, message: 'Please enter your project ID' }
             ]}
           >
             <Input
@@ -1127,6 +1133,7 @@ export default class App extends Component {
         handleImage={handleImage}
         enableQueryInspirationTab={this.state.enableQueryInspirationTab}
         onErrorCallback={this.onError}
+        onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
         // inputStyles
         // handleStyles={{ right: '25px' }}
