@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
+import uuid from 'uuid'
 
 import { Checkbox } from '../Checkbox'
 
@@ -86,7 +87,7 @@ export default class Button extends React.Component {
             if (index === this.props.columns.length - 1) {
               const allItemsChecked = items.every(col => col.checked)
               return (
-                <div>
+                <div key={uuid.v4()}>
                   {col.name}
                   <Checkbox
                     checked={allItemsChecked}
