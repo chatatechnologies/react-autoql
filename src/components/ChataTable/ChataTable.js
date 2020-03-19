@@ -87,8 +87,8 @@ export default class ChataTable extends React.Component {
   }
 
   cellClick = (e, cell) => {
-    e.preventDefault()
-    e.stopPropagation()
+    // e.preventDefault()
+    // e.stopPropagation()
     this.props.onCellClick(cell)
   }
 

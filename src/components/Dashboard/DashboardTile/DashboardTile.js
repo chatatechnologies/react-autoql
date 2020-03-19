@@ -592,7 +592,8 @@ export default class DashboardTile extends React.Component {
             displayType={displayType}
             onDisplayTypeChange={onDisplayTypeChange}
             supportedDisplayTypes={
-              getSupportedDisplayTypes(this.props.queryResponse) || []
+              getSupportedDisplayTypes(response || this.props.queryResponse) ||
+              []
             }
           />
         )}

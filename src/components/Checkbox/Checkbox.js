@@ -64,8 +64,6 @@ export default class Checkbox extends React.Component {
       ${type === 'switch' && 'chata-checkbox--switch__label'}
     `
 
-    console.log('input props', inputProps)
-
     return (
       <div className="chata-checkbox-container" data-test="chata-checkbox">
         <div
