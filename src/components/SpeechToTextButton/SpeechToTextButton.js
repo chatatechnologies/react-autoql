@@ -81,14 +81,12 @@ class Dictaphone extends React.Component {
             draggable="false"
           />
         </button>
-        {
-          //   <ReactTooltip
-          //   className="chata-tooltip"
-          //   id="chata-speech-to-text-tooltip"
-          //   effect="solid"
-          //   delayShow={800}
-          // />
-        }
+        <ReactTooltip
+          className="chata-tooltip"
+          id="chata-speech-to-text-tooltip"
+          effect="solid"
+          delayShow={800}
+        />
       </Fragment>
     )
   }

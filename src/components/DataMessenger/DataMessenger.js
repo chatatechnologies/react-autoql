@@ -846,22 +846,20 @@ export default class DataMessenger extends React.Component {
           delayShow={500}
           place="top"
         />
-        {
-          //   <ReactTooltip
-          //   className="chata-drawer-tooltip"
-          //   id="chata-toolbar-btn-tooltip"
-          //   effect="solid"
-          //   delayShow={500}
-          //   place="top"
-          //   html
-          // />
-          // <ReactTooltip
-          //   className="chata-chart-tooltip"
-          //   id="chart-element-tooltip"
-          //   effect="solid"
-          //   html
-          // />
-        }
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-toolbar-btn-tooltip"
+          effect="solid"
+          delayShow={500}
+          place="top"
+          html
+        />
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
 
         {
           // These are not currently being used

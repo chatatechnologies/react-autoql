@@ -476,15 +476,13 @@ class Dashboard extends React.Component {
             </ReactGridLayout>
           </div>
           {this.renderDrilldownModal()}
-          {
-            //   <ReactTooltip
-            //   className="chata-dashboard-tooltip"
-            //   id="chata-dashboard-toolbar-btn-tooltip"
-            //   effect="solid"
-            //   delayShow={500}
-            //   html
-            // />
-          }
+          <ReactTooltip
+            className="chata-dashboard-tooltip"
+            id="chata-dashboard-toolbar-btn-tooltip"
+            effect="solid"
+            delayShow={500}
+            html
+          />
         </Fragment>
       </ErrorBoundary>
     )
