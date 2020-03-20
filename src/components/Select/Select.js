@@ -49,13 +49,16 @@ export default class Select extends React.Component {
         }) => {
           return (
             <div className="chata-select-popup-container">
-              <ReactTooltip
-                id={`select-tooltip-${this.ID}`}
-                className="chata-drawer-tooltip"
-                effect="solid"
-                // place="right"
-                delayShow={500}
-              />
+              {
+                // <ReactTooltip
+                //   id={`select-tooltip-${this.ID}`}
+                //   className="chata-drawer-tooltip"
+                //   effect="solid"
+                //   // place="right"
+                //   delayShow={500}
+                // />
+              }
+
               <ul className="chata-select-popup">
                 {this.props.options.map(option => {
                   return (

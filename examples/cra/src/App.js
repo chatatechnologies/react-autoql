@@ -703,7 +703,7 @@ export default class App extends Component {
                 this.setState({ customerId: e.target.value })
               }}
               onBlur={e => setStoredProp('customer-id', e.target.value)}
-              initialValue={this.state.customerId}
+              // initialValue={this.state.customerId}
               value={this.state.customerId}
             />
           </Form.Item>

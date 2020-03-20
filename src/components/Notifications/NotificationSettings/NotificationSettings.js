@@ -666,13 +666,15 @@ export default class NotificationSettings extends React.Component {
 
     return (
       <div data-test="notification-settings">
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-notification-settings-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
+        {
+          // <ReactTooltip
+          //   className="chata-drawer-tooltip"
+          //   id="chata-notification-settings-tooltip"
+          //   effect="solid"
+          //   delayShow={500}
+          //   html
+          // />
+        }
 
         {_get(this.state.ruleList, 'length')
           ? this.renderNotificationlist()

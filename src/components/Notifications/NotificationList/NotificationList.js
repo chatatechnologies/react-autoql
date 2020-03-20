@@ -227,13 +227,16 @@ export default class NotificationList extends React.Component {
         className="chata-notification-list-container"
         data-test="notification-list"
       >
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-notification-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
+        {
+          // <ReactTooltip
+          //   className="chata-drawer-tooltip"
+          //   id="chata-notification-tooltip"
+          //   effect="solid"
+          //   delayShow={500}
+          //   html
+          // />
+        }
+
         {this.renderDismissAllButton()}
         <InfiniteScroll
           initialLoad={false}
