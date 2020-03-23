@@ -209,7 +209,7 @@ export default class App extends Component {
     response: null,
     showMask: true,
     shiftScreen: false,
-    customerName: 'Nikki',
+    userDisplayName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
     enableQueryValidation: true,
@@ -907,14 +907,14 @@ export default class App extends Component {
           }}
           value={this.state.quantityDecimals}
         />
-        <h4>Customer Name</h4>
+        <h4>User Display Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="text"
           onChange={e => {
-            this.setState({ customerName: e.target.value })
+            this.setState({ userDisplayName: e.target.value })
           }}
-          value={this.state.customerName}
+          value={this.state.userDisplayName}
         />
         <h4>Intro Message</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
@@ -1120,7 +1120,7 @@ export default class App extends Component {
             ? this.state.placement
             : 'bottom'
         }
-        customerName={this.state.customerName}
+        userDisplayName={this.state.userDisplayName}
         introMessage={this.state.introMessage}
         showMask={this.state.showMask}
         shiftScreen={this.state.shiftScreen}

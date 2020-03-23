@@ -61,7 +61,7 @@ export default class DataMessenger extends React.Component {
     handleImage: string,
     handleStyles: shape({}),
     shiftScreen: bool,
-    customerName: string,
+    userDisplayName: string,
     clearOnClose: bool,
     enableVoiceRecord: bool,
     title: string,
@@ -96,7 +96,7 @@ export default class DataMessenger extends React.Component {
     handleImage: undefined,
     handleStyles: undefined,
     shiftScreen: false,
-    customerName: 'there',
+    userDisplayName: 'there',
     clearOnClose: false,
     enableVoiceRecord: true,
     title: 'Data Messenger',
@@ -236,7 +236,7 @@ export default class DataMessenger extends React.Component {
       this.createIntroMessage({
         content: this.props.introMessage
           ? `${this.props.introMessage}`
-          : `Hi ${this.props.customerName ||
+          : `Hi ${this.props.userDisplayName ||
               'there'}! Let’s dive into your data. What can I help you discover today?`
       })
     ]
