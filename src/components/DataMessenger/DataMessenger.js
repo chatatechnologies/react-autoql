@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
+// import Cascader from 'rc-cascader'
 // import { throttle, debounce } from 'throttle-debounce'
 
 import {
@@ -31,6 +32,7 @@ import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
+import { Cascader } from '../Cascader'
 import {
   runDrilldown,
   cancelQuery,
@@ -42,13 +44,6 @@ import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
 export default class DataMessenger extends React.Component {
-  introMessageObject = {
-    id: 'intro',
-    isResponse: true,
-    type: 'text',
-    content: ''
-  }
-
   static propTypes = {
     // Global
     authentication: authenticationType,
@@ -75,6 +70,7 @@ export default class DataMessenger extends React.Component {
     enableQueryInspirationTab: bool,
     resizable: bool,
     inputPlaceholder: string,
+    introMessageTopics: shape({}),
 
     // Callbacks
     onVisibleChange: func,
@@ -109,6 +105,7 @@ export default class DataMessenger extends React.Component {
     enableQueryInspirationTab: true,
     resizable: true,
     inputPlaceholder: undefined,
+    introMessageTopics: undefined,
 
     // Callbacks
     onHandleClick: () => {},
@@ -123,9 +120,9 @@ export default class DataMessenger extends React.Component {
     height: this.props.height,
     isResizing: false,
 
-    lastMessageId: 'intro',
+    lastMessageId: undefined,
     isClearMessageConfirmVisible: false,
-    messages: [this.introMessageObject],
+    messages: [],
 
     queryTipsList: undefined,
     queryTipsLoading: false,
@@ -136,7 +133,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     this.setStyles()
-    this.setIntroMessageObject()
+    this.setintroMessages()
 
     // Listen for esc press to cancel queries while they are running
     document.addEventListener('keydown', this.escFunction, false)
@@ -181,13 +178,84 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  setIntroMessageObject = () => {
-    this.introMessageObject.content = this.props.introMessage
-      ? `${this.props.introMessage}`
-      : `Hi ${this.props.customerName ||
-          'there'}! Let’s dive into your data. What can I help you discover today?`
+  createIntroMessage = ({ type, content }) => {
+    return {
+      id: uuid.v4(),
+      isResponse: true,
+      type: type || 'text',
+      content: content || ''
+    }
+  }
 
-    this.setState({ messages: [this.introMessageObject] })
+  createTopicsMessage = () => {
+    try {
+      const content = (
+        <div>
+          Some things you can ask me:
+          <br />
+          <div className="topics-container">
+            {
+              <Cascader
+                options={this.props.introMessageTopics}
+                onFinalOptionClick={option => {
+                  console.log('FINAL OPTION CLICK', option)
+                  this.onSuggestionClick(
+                    option.label,
+                    undefined,
+                    undefined,
+                    'topics'
+                  )
+                }}
+                onSeeMoreClick={label =>
+                  this.runTopicInQueryInspirations(label)
+                }
+              />
+            }
+          </div>
+          Use{' '}
+          <span
+            className="intro-qi-link"
+            onClick={() => this.setState({ activePage: 'tips' })}
+          >
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Query
+            Inspirations
+          </span>{' '}
+          to further explore the possibilities.
+        </div>
+      )
+
+      return content
+    } catch (error) {
+      console.error(error)
+      return undefined
+    }
+  }
+
+  setintroMessages = () => {
+    const introMessages = [
+      this.createIntroMessage({
+        content: this.props.introMessage
+          ? `${this.props.introMessage}`
+          : `Hi ${this.props.customerName ||
+              'there'}! Let’s dive into your data. What can I help you discover today?`
+      })
+    ]
+
+    if (!this.props.introMessage && this.props.introMessageTopics) {
+      const topicsMessageContent = this.createTopicsMessage()
+
+      if (topicsMessageContent) {
+        introMessages.push(
+          this.createIntroMessage({ content: topicsMessageContent })
+        )
+      }
+    }
+
+    this.setState({
+      messages: introMessages,
+      lastMessageId: introMessages[introMessages.length - 1].id,
+      isClearMessageConfirmVisible: false
+    })
   }
 
   setStyles = () => {
@@ -357,11 +425,13 @@ export default class DataMessenger extends React.Component {
       this.queryInputRef.focus()
     }
 
-    this.setState({
-      messages: [this.introMessageObject],
-      lastMessageId: 'intro',
-      isClearMessageConfirmVisible: false
-    })
+    this.setintroMessages()
+
+    // this.setState({
+    //   messages: [this.introMessages],
+    //   lastMessageId: 'intro',
+    //   isClearMessageConfirmVisible: false
+    // })
   }
 
   deleteMessage = id => {
@@ -738,6 +808,28 @@ export default class DataMessenger extends React.Component {
   onQueryTipsSafetyNetSuggestionClick = keywords => {
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
+  }
+
+  animateQITextAndSubmit = text => {
+    if (typeof text === 'string' && _get(text, 'length')) {
+      for (let i = 1; i <= text.length; i++) {
+        setTimeout(() => {
+          this.setState({
+            queryTipsInputValue: text.slice(0, i)
+          })
+          if (i === text.length) {
+            this.fetchQueryTipsList(text, 1)
+          }
+        }, i * 50)
+      }
+    }
+  }
+
+  runTopicInQueryInspirations = topic => {
+    this.setState({ activePage: 'tips' })
+    setTimeout(() => {
+      this.animateQITextAndSubmit(topic)
+    }, 500)
   }
 
   renderQueryTipsContent = () => (

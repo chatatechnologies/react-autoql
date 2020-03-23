@@ -540,7 +540,7 @@ export default class ChatMessage extends React.Component {
         _get(this.props, 'response.data.data.display_type') === 'data',
       showDeleteButton: true,
       showMoreOptionsButton: true,
-      showReportProblemButton: false
+      showReportProblemButton: true
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -596,7 +596,6 @@ export default class ChatMessage extends React.Component {
               isOpen={this.state.activeMenu === 'report-problem'}
               padding={8}
               onClickOutside={() => {
-                console.log('on click outside report problem')
                 this.setState({ activeMenu: undefined })
               }}
               position="bottom" // preferred position
@@ -633,7 +632,6 @@ export default class ChatMessage extends React.Component {
               position="bottom"
               padding={8}
               onClickOutside={() => {
-                console.log('on click outside more options')
                 this.setState({ activeMenu: undefined })
               }}
               // contentLocation={{}}
@@ -731,7 +729,7 @@ export default class ChatMessage extends React.Component {
           <div
             className={`chat-message-bubble
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
-            ${this.props.type === 'text' ? ' text' : ''}
+          ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent(chartWidth, chartHeight)}
