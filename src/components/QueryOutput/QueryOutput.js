@@ -427,6 +427,21 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  // processRowClick = row => {
+  //   if (this.state.isContextMenuOpen) {
+  //     this.setState({ isContextMenuOpen: false })
+  //   } else {
+  //     groupByObject = getGroupBysFromTable(
+  //       row,
+  //       this.tableColumns,
+  //       this.props.authentication.demo
+  //     )
+  //     console.log('groupbyobject', groupByObject)
+
+  //     this.props.onDataClick(groupByObject, this.queryID)
+  //   }
+  // }
+
   onChartClick = ({ row, column, activeKey }) => {
     let groupByObject = {}
     if (

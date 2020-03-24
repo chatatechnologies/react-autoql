@@ -37,7 +37,8 @@ export default class ChataTable extends React.Component {
     hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
-    onRowClick: () => {}
+    onRowClick: () => {},
+    onCellClick: () => {}
   }
 
   state = {
@@ -78,12 +79,6 @@ export default class ChataTable extends React.Component {
       '--chata-table-hover-color',
       this.props.hoverColor
     )
-  }
-
-  rowClick = (e, row) => {
-    e.preventDefault()
-    e.stopPropagation()
-    this.props.onRowClick(row.getData(), this.props.columns)
   }
 
   cellClick = (e, cell) => {

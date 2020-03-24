@@ -111,10 +111,7 @@ class Dashboard extends React.Component {
 
     // If tile structure changed, set previous tile state for undo feature
     if (
-      !_isEqual(
-        this.getChangeDetectionTileStructure(this.props.tiles),
-        this.getChangeDetectionTileStructure(prevProps.tiles)
-      ) &&
+      this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
       _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !== Infinity
     ) {
       // Do not scroll to the bottom if new tile is added because of undo
@@ -145,6 +142,7 @@ class Dashboard extends React.Component {
   }
 
   setPreviousTileState = tiles => {
+    console.log('setting previous tile state')
     this.setState({
       previousTileState: tiles
     })
@@ -162,12 +160,19 @@ class Dashboard extends React.Component {
     }
   }
 
-  getChangeDetectionTileStructure = tiles => {
+  getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
+    return !_isEqual(
+      this.getChangeDetectionTileStructure(oldTiles, ignoreInputs),
+      this.getChangeDetectionTileStructure(newTiles, ignoreInputs)
+    )
+  }
+
+  getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
       const newTiles = tiles.map(tile => {
         return {
-          query: tile.query,
-          title: tile.title,
+          query: !ignoreInputs && tile.query,
+          title: !ignoreInputs && tile.title,
           i: tile.i,
           w: tile.w,
           h: tile.h,
@@ -196,10 +201,29 @@ class Dashboard extends React.Component {
     })
   }
 
-  onMoveEnd = ({ layout }) => {
+  onMoveEnd = layout => {
     try {
       // Update previousTileState here instead of in updateTileLayout
-      this.setPreviousTileState(this.props.tiles)
+      // Only update if layout actually changed
+      console.log(
+        'is equal?',
+        _isEqual(
+          this.getChangeDetectionTileStructure(this.props.tiles, true),
+          this.getChangeDetectionTileStructure(layout, true)
+        )
+      )
+      console.log(
+        'is equal?',
+        !this.getChangeDetection(this.props.tiles, layout, true)
+      )
+      if (
+        !_isEqual(
+          this.getChangeDetectionTileStructure(this.props.tiles, true),
+          this.getChangeDetectionTileStructure(layout, true)
+        )
+      ) {
+        this.setPreviousTileState(this.props.tiles)
+      }
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile

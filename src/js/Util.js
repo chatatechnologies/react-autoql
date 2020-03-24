@@ -391,16 +391,27 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
 }
 
 export const getNumberOfGroupables = columns => {
+  let numberOfGroupables = 0
   if (columns) {
-    let numberOfGroupables = 0
     columns.forEach(col => {
       if (col.groupable) {
         numberOfGroupables += 1
       }
     })
-    return numberOfGroupables
   }
-  return null
+  return numberOfGroupables
+}
+
+export const getGroupableColumns = columns => {
+  const groupableColumns = []
+  if (columns) {
+    columns.forEach((col, index) => {
+      if (col.groupable) {
+        groupableColumns.push(index)
+      }
+    })
+  }
+  return groupableColumns
 }
 
 export const isChartType = type => CHART_TYPES.includes(type)
@@ -583,51 +594,34 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const getGroupBysFromTable = (cell, tableColumns, demo) => {
-  const numGroupables = getNumberOfGroupables(tableColumns)
+export const getGroupBysFromTable = (row, tableColumns, demo) => {
+  const groupableColumns = getGroupableColumns(tableColumns)
+  const numGroupables = groupableColumns.length
   if (!numGroupables) {
     return {}
   }
 
-  // const groupByIndices = []
-  // tableColumns.forEach((col, i) => {
-  //   if (col.groupable) {
-  //     groupByIndices.push(i)
-  //   }
-  // })
-
-  const groupByName = tableColumns[0].name
-  let groupByValue = cell.getData()[0]
-  if (tableColumns[0].type === 'DATE') {
-    groupByValue = `${groupByValue}`
-  }
-
-  if (numGroupables === 1) {
-    if (demo) {
-      return { [groupByName]: groupByValue }
-    }
-    // Not demo. Need to format groupbys differently
-    return [nameValueObject(groupByName, groupByValue)]
-  }
-
-  const groupByName2 = tableColumns[1].name
-  let groupByValue2 = cell.getData()[1]
-  if (tableColumns[1].type === 'DATE') {
-    groupByValue2 = `${groupByValue2}`
-  }
+  const rowData = row.getData()
 
   if (demo) {
-    return {
-      [groupByName]: groupByValue,
-      [groupByName2]: groupByValue2
-    }
-  }
+    const groupByObject = {}
+    groupableColumns.forEach(colIndex => {
+      const groupByName = tableColumns[colIndex].name
+      const groupByValue = rowData[colIndex]
+      groupByObject[groupByName] = groupByValue
+    })
 
-  // Not demo. Need to format groupbys differently
-  return [
-    nameValueObject(groupByName, groupByValue),
-    nameValueObject(groupByName2, groupByValue2)
-  ]
+    return groupByObject
+  } else {
+    const groupByArray = []
+    groupableColumns.forEach(colIndex => {
+      const groupByName = tableColumns[colIndex].name
+      const groupByValue = rowData[colIndex]
+      groupByArray.push(nameValueObject(groupByName, groupByValue))
+    })
+
+    return groupByArray
+  }
 }
 
 export const getgroupByObjectFromTable = (

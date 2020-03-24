@@ -540,7 +540,7 @@ export default class ChatMessage extends React.Component {
         _get(this.props, 'response.data.data.display_type') === 'data',
       showDeleteButton: true,
       showMoreOptionsButton: true,
-      showReportProblemButton: true
+      showReportProblemButton: false
     }
 
     // If there is nothing to put in the toolbar, don't render it

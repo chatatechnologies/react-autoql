@@ -401,10 +401,16 @@ export default class DashboardTile extends React.Component {
                   onChange: this.onQueryInputChange,
                   onKeyDown: this.onQueryTextKeyDown,
                   onBlur: e => {
+                    console.log('ON BLUR')
                     if (_get(this.props, 'tile.query') !== e.target.value) {
                       this.props.setParamsForTile(
                         { query: e.target.value, displayType: undefined },
                         this.props.tile.i
+                      )
+                      console.log('query changed! Updating tile layout')
+                    } else {
+                      console.log(
+                        'query did not change, not updating tile layout'
                       )
                     }
                     this.setState({ isQueryInputFocused: false })
