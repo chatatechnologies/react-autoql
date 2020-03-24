@@ -142,7 +142,6 @@ class Dashboard extends React.Component {
   }
 
   setPreviousTileState = tiles => {
-    console.log('setting previous tile state')
     this.setState({
       previousTileState: tiles
     })
@@ -205,23 +204,7 @@ class Dashboard extends React.Component {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
-      console.log(
-        'is equal?',
-        _isEqual(
-          this.getChangeDetectionTileStructure(this.props.tiles, true),
-          this.getChangeDetectionTileStructure(layout, true)
-        )
-      )
-      console.log(
-        'is equal?',
-        !this.getChangeDetection(this.props.tiles, layout, true)
-      )
-      if (
-        !_isEqual(
-          this.getChangeDetectionTileStructure(this.props.tiles, true),
-          this.getChangeDetectionTileStructure(layout, true)
-        )
-      ) {
+      if (this.getChangeDetection(this.props.tiles, layout, true)) {
         this.setPreviousTileState(this.props.tiles)
       }
 
