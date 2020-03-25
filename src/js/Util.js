@@ -431,8 +431,9 @@ export const getSupportedDisplayTypes = response => {
   }
 
   const columns = _get(response, 'data.data.columns')
+  const rows = _get(response, 'data.data.rows', [])
 
-  if (!columns) {
+  if (!columns || rows.length <= 1) {
     return []
   }
 
