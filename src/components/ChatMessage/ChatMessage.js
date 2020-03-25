@@ -534,7 +534,8 @@ export default class ChatMessage extends React.Component {
         // ) === 0 &&
         this.state.displayType === 'table' &&
         !this.props.authentication.demo &&
-        _get(this.props, 'response.data.data.columns.length') > 1,
+        _get(this.props, 'response.data.data.columns.length') > 1 &&
+        _get(this.responseRef, 'tableRef.ref.table'),
       showSQLButton:
         this.props.autoQLConfig.debug &&
         _get(this.props, 'response.data.data.display_type') === 'data',
