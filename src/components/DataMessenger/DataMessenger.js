@@ -36,7 +36,8 @@ import { Cascader } from '../Cascader'
 import {
   runDrilldown,
   cancelQuery,
-  fetchQueryTips
+  fetchQueryTips,
+  fetchSuggestions
 } from '../../js/queryService'
 
 // Styles
@@ -198,7 +199,6 @@ export default class DataMessenger extends React.Component {
               <Cascader
                 options={this.props.introMessageTopics}
                 onFinalOptionClick={option => {
-                  console.log('FINAL OPTION CLICK', option)
                   this.onSuggestionClick(
                     option.label,
                     undefined,
@@ -374,9 +374,32 @@ export default class DataMessenger extends React.Component {
 
   onResponse = response => {
     this.addResponseMessage({ response })
-    this.setState({ isChataThinking: false })
-    if (this.queryInputRef) {
-      this.queryInputRef.focus()
+
+    if (_get(response, 'reference_id') === '1.1.430') {
+      // Fetch suggestion list now
+      fetchSuggestions({
+        query: response.originalQuery,
+        ...this.props.authentication
+      })
+        .then(response => {
+          this.addResponseMessage({ response })
+          this.setState({ isChataThinking: false })
+          if (this.queryInputRef) {
+            this.queryInputRef.focus()
+          }
+        })
+        .catch(error => {
+          this.createErrorMessage(_get(error, 'response.data.message'))
+          this.setState({ isChataThinking: false })
+          if (this.queryInputRef) {
+            this.queryInputRef.focus()
+          }
+        })
+    } else {
+      this.setState({ isChataThinking: false })
+      if (this.queryInputRef) {
+        this.queryInputRef.focus()
+      }
     }
   }
 

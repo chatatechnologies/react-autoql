@@ -135,7 +135,7 @@ export default class ChatMessage extends React.Component {
   }
 
   renderContent = (chartWidth, chartHeight) => {
-    const { response, content } = this.props
+    const { response, content, type } = this.props
     if (content) {
       return content
     } else if (response) {

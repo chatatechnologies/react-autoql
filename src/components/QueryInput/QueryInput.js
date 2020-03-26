@@ -20,7 +20,11 @@ import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 import { setStyleVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
-import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
+import {
+  runQuery,
+  runQueryOnly,
+  fetchAutocomplete
+} from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
@@ -207,7 +211,7 @@ export default class QueryInput extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions({
+      fetchAutocomplete({
         suggestion: value,
         ...this.props.authentication
       })

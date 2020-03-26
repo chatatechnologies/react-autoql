@@ -16,6 +16,7 @@ import { Icon } from '../../Icon'
 import {
   runQuery,
   runQueryOnly,
+  fetchAutocomplete,
   fetchSuggestions
 } from '../../../js/queryService'
 
@@ -126,7 +127,12 @@ export default class DashboardTile extends React.Component {
   }
 
   endQuery = responseArray => {
-    const response = responseArray[0]
+    let response = responseArray[0]
+    if (responseArray && !response) {
+      // An error was caught
+      response = responseArray
+    }
+
     const newDisplayType = isDisplayTypeValid(response, this.props.displayType)
       ? this.props.displayType
       : getDefaultDisplayType(response)
@@ -181,9 +187,18 @@ export default class DashboardTile extends React.Component {
           ...this.props.autoQLConfig,
           source: 'dashboard'
         })
-          .then(response => Promise.resolve(response))
+          .then(response => {
+            return Promise.resolve(response)
+          })
           .catch(error => {
             console.error(error)
+            if (error.data.suggestionResponse) {
+              return fetchSuggestions(
+                error.data.originalQuery,
+                ...this.props.authentication
+              )
+            }
+            return Promise.reject(error)
           })
       } else {
         return runQuery({
@@ -195,9 +210,18 @@ export default class DashboardTile extends React.Component {
             : this.props.autoQLConfig.enableQueryValidation,
           source: 'dashboard'
         })
-          .then(response => Promise.resolve(response))
+          .then(response => {
+            return Promise.resolve(response)
+          })
           .catch(error => {
             console.error(error)
+            if (error.suggestionResponse) {
+              return fetchSuggestions({
+                query: error.data.originalQuery,
+                ...this.props.authentication
+              })
+            }
+            return Promise.reject(error)
           })
       }
     }
@@ -224,8 +248,8 @@ export default class DashboardTile extends React.Component {
       .then(responses => {
         this.endQuery(responses)
       })
-      .catch(errors => {
-        this.endQuery(errors)
+      .catch(error => {
+        this.endQuery(error)
       })
   }
 
@@ -279,7 +303,7 @@ export default class DashboardTile extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions({
+      fetchAutocomplete({
         suggestion: value,
         ...this.props.authentication
       })
@@ -542,6 +566,14 @@ export default class DashboardTile extends React.Component {
     )
   }
 
+  getIsSuggestionResponse = response => {
+    return !!_get(response, 'data.data.items')
+  }
+
+  renderSuggestionPrefix = () => {
+    return <div>I want to make sure I understood your query. Did you mean:</div>
+  }
+
   renderSingleResponse = ({
     displayType,
     onDisplayTypeChange,
@@ -551,14 +583,17 @@ export default class DashboardTile extends React.Component {
     onSuggestionClick,
     onQueryValidationSelectOption
   }) => {
+    const queryResponse = response || this.props.queryResponse
     return (
       <Fragment>
+        {this.getIsSuggestionResponse(queryResponse) &&
+          this.renderSuggestionPrefix()}
         <QueryOutput
           ref={ref => (this.responseRef = ref)}
           themeConfig={this.props.themeConfig}
           autoQLConfig={this.props.autoQLConfig}
           displayType={displayType || this.props.displayType}
-          queryResponse={response || this.props.queryResponse}
+          queryResponse={queryResponse}
           renderTooltips={false}
           autoSelectQueryValidationSuggestion={false}
           queryValidationSelections={
@@ -592,8 +627,7 @@ export default class DashboardTile extends React.Component {
             displayType={displayType}
             onDisplayTypeChange={onDisplayTypeChange}
             supportedDisplayTypes={
-              getSupportedDisplayTypes(response || this.props.queryResponse) ||
-              []
+              getSupportedDisplayTypes(queryResponse) || []
             }
           />
         )}

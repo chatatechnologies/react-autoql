@@ -1,6 +1,7 @@
 .chata-cascader {
   position: relative;
   white-space: nowrap;
+  overflow: hidden;
   // overflow-x: auto;
 
   .options-container {
@@ -9,6 +10,7 @@
     vertical-align: top;
     padding: 0 10px;
     margin: 10px 0;
+    width: 100%;
     max-width: calc(100% - 20px);
     white-space: pre-wrap;
 

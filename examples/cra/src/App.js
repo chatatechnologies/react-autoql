@@ -703,7 +703,6 @@ export default class App extends Component {
                 this.setState({ customerId: e.target.value })
               }}
               onBlur={e => setStoredProp('customer-id', e.target.value)}
-              // initialValue={this.state.customerId}
               value={this.state.customerId}
             />
           </Form.Item>
@@ -1135,8 +1134,56 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
-        // inputStyles
-        // handleStyles={{ right: '25px' }}
+        // introMessageTopics={[
+        //   {
+        //     label: 'Invoices',
+        //     value: 'inv',
+        //     children: [
+        //       {
+        //         label: 'All invoices with amount over $100 due date last year',
+        //         value: 'all-inv'
+        //       },
+        //       { label: 'Invoices over 2000', value: 'inv-over-2000' }
+        //     ]
+        //   },
+        //   {
+        //     label: 'Sales',
+        //     value: 'sal',
+        //     children: [
+        //       { label: 'All sales', value: 'all-inv' },
+        //       { label: 'Sales over 2000', value: 'inv-over-2000' }
+        //     ]
+        //   },
+        //   {
+        //     label: 'Expenses',
+        //     value: 'exp',
+        //     children: [
+        //       {
+        //         label: 'All invoices with amount over $100 due date last year',
+        //         value: 'all-inv'
+        //       },
+        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
+        //     ]
+        //   },
+        //   {
+        //     label: 'Order',
+        //     value: 'ord',
+        //     children: [
+        //       { label: 'all invoices', value: 'all-inv' },
+        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
+        //     ]
+        //   },
+        //   {
+        //     label: 'Customers',
+        //     value: 'cus',
+        //     children: [
+        //       { label: 'all invoices', value: 'all-inv' },
+        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
+        //     ]
+        //   }
+        // ]}
+        inputStyles
+        handleStyles={{ right: '25px' }}
       />
     )
   }

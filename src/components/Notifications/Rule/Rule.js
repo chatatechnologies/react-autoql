@@ -8,7 +8,7 @@ import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
-import { fetchSuggestions } from '../../../js/queryService'
+import { fetchAutocomplete } from '../../../js/queryService'
 
 import './Rule.scss'
 
@@ -139,7 +139,7 @@ export default class Rule extends React.Component {
     }
 
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions({
+      fetchAutocomplete({
         ...this.props.authentication,
         ...this.props.autoQLConfig,
         suggestion: value

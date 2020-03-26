@@ -29,7 +29,7 @@ import {
   authenticationDefault
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setStyleVars, getQueryParams } from '../../js/Util'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -268,10 +268,6 @@ export default class QueryOutput extends React.Component {
   createSuggestionMessage = (userInput, suggestions) => {
     return (
       <div className="chata-suggestion-message">
-        <div className="chata-suggestion-message-description">
-          I want to make sure I understood <strong>"{userInput}"</strong>. Did
-          you mean:
-        </div>
         <div className="chata-suggestions-container">
           {this.props.renderSuggestionsAsDropdown ? (
             <select
@@ -306,7 +302,7 @@ export default class QueryOutput extends React.Component {
                   <button
                     onClick={() =>
                       this.onSuggestionClick(
-                        suggestion[0],
+                        suggestion,
                         true,
                         undefined,
                         'suggestion'
@@ -326,32 +322,34 @@ export default class QueryOutput extends React.Component {
     )
   }
 
-  renderSuggestionMessage = () => {
-    if (!this.props.autoQLConfig.enableQuerySuggestions) {
-      return this.renderErrorMessage("Oops! We didn't understand that query.")
-    }
+  renderSuggestionMessage = suggestions => {
+    // if (!this.props.autoQLConfig.enableQuerySuggestions) {
+    //   return this.renderErrorMessage("Oops! We didn't understand that query.")
+    // }
     // There is actually a suggestion for this case
     const { queryResponse } = this.props
-    const responseBody = { ...queryResponse.data }
-    if (
-      this.state.displayType === 'suggestion' &&
-      queryResponse.config &&
-      responseBody.data.rows.length !== 0
-    ) {
-      const suggestions = responseBody.data.rows
-      const theUserInput = JSON.parse(queryResponse.config.data).text
-      return this.createSuggestionMessage(theUserInput, suggestions)
+    // const responseBody = { ...queryResponse.data }
+    // if (
+    //   queryResponse.config &&
+    //   responseBody.data.rows.length !== 0
+    // ) {
+    // const suggestions = responseBody.data.rows
+
+    const queryParams = getQueryParams(_get(queryResponse, 'config.url'))
+    if (suggestions.length && queryParams) {
+      const originalQuery = queryParams.search
+      // const theUserInput = JSON.parse(queryResponse.config.data).search
+      return this.createSuggestionMessage(originalQuery, suggestions)
     }
 
+    // }
+
     // No suggestions
-    else if (
-      this.state.displayType === 'suggestion' &&
-      responseBody.data.length === 0
-    ) {
+    else {
       return this.createSuggestionMessage()
     }
 
-    return this.renderErrorMessage()
+    // return this.renderErrorMessage()
   }
 
   renderSingleValueResponse = () => {
@@ -436,8 +434,6 @@ export default class QueryOutput extends React.Component {
   //       this.tableColumns,
   //       this.props.authentication.demo
   //     )
-  //     console.log('groupbyobject', groupByObject)
-
   //     this.props.onDataClick(groupByObject, this.queryID)
   //   }
   // }
@@ -1129,15 +1125,18 @@ export default class QueryOutput extends React.Component {
       return this.renderErrorMessage(_get(queryResponse, 'message'))
     }
 
+    const isSuggestionList = !!responseData.items
+    if (isSuggestionList) {
+      return this.renderSuggestionMessage(responseData.items)
+    }
+
     if (!_get(responseData, 'rows.length')) {
       // This is not an error. There is just no data in the DB
       return _get(responseBody, 'message')
     }
 
     if (displayType && this.data) {
-      if (displayType === 'suggestion') {
-        return this.renderSuggestionMessage()
-      } else if (displayType === 'help') {
+      if (displayType === 'help') {
         return this.renderHelpResponse()
       } else if (isForecastType(displayType)) {
         return this.renderForecastVis()

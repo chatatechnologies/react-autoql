@@ -72,7 +72,6 @@ export default class Cascader extends React.Component {
           <div
             className="option"
             onClick={() => {
-              console.log('most recent option label', mostRecentOptionLabel)
               this.props.onSeeMoreClick(mostRecentOptionLabel)
             }}
           >

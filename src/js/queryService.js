@@ -60,7 +60,7 @@ export const runQueryOnly = ({
   apiKey,
   token,
   source
-}) => {
+} = {}) => {
   const axiosInstance = axios.create({})
 
   // if (!queryCall) {
@@ -124,6 +124,15 @@ export const runQueryOnly = ({
       }
       if (axios.isCancel(error)) {
         error.data = { message: 'Query Cancelled' }
+      } else if (
+        _get(error, 'response.data.reference_id') === '1.1.430' ||
+        _get(error, 'response.data.reference_id') === '1.1.431'
+      ) {
+        return Promise.reject({
+          ..._get(error, 'response.data'),
+          originalQuery: query,
+          suggestionResponse: true
+        })
       }
       return Promise.reject(_get(error, 'response.data'))
     })
@@ -143,7 +152,7 @@ export const runQuery = ({
   apiKey,
   token,
   source
-}) => {
+} = {}) => {
   if (enableQueryValidation) {
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
@@ -233,7 +242,7 @@ export const runDrilldown = ({
   domain,
   apiKey,
   token
-}) => {
+} = {}) => {
   const axiosInstance = axios.create({})
 
   // drilldownCall = axios.CancelToken.source()
@@ -270,13 +279,13 @@ export const runDrilldown = ({
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchSuggestions = ({
+export const fetchAutocomplete = ({
   suggestion,
   demo,
   domain,
   apiKey,
   token
-}) => {
+} = {}) => {
   // Do not run if text is blank
   if (!suggestion || !suggestion.trim()) {
     return
@@ -313,7 +322,12 @@ export const fetchSuggestions = ({
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
+export const setColumnVisibility = ({
+  apiKey,
+  token,
+  domain,
+  columns
+} = {}) => {
   const url = `${domain}/autoql/api/v1/query/column-visibility?key=${apiKey}`
   const data = { columns }
   const config = {}
@@ -380,6 +394,22 @@ export const fetchQueryTips = ({
 
   return axiosInstance
     .get(queryTipsUrl)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
+  const commaSeparatedKeywords = query ? query.split(' ') : []
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=5&page=1&scope=narrow`
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  return axiosInstance
+    .get(relatedQueriesUrl)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
