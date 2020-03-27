@@ -82,6 +82,13 @@ so we dont have to redraw the whole table */
 .chat-message-bubble .chat-message-toolbar.active {
   display: block;
 }
+.report-problem-text-area {
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-top: 10px;
+  padding: 5px 10px;
+  outline: none !important;
+}
 
 .more-options-menu,
 .report-problem-menu {

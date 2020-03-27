@@ -652,8 +652,11 @@ export default class App extends Component {
               label: 'List all jobs',
               value: 'all-jobs'
             },
-            { label: 'Total jobs', value: 'total-jobs' },
-            { label: 'Total jobs by status', value: 'total-jobs-by-status' }
+            { label: 'All jobs in bid state', value: 'total-jobs' },
+            {
+              label: 'All open jobs for Northern Alberta',
+              value: 'total-jobs-by-status'
+            }
           ]
         },
         {

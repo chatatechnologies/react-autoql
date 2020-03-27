@@ -24,10 +24,11 @@ import { QueryOutput } from '../QueryOutput'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
+import { Modal } from '../Modal'
 
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 import { getDefaultDisplayType, isTableType, isChartType } from '../../js/Util'
-import { setColumnVisibility } from '../../js/queryService'
+import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
@@ -436,13 +437,63 @@ export default class ChatMessage extends React.Component {
     )
   }
 
-  renderReportProblemMenu = props => {
+  renderReportProblemModal = () => {
+    return (
+      <Modal
+        isVisible={this.state.activeMenu === 'other-problem'}
+        onClose={() => {
+          this.setState({ activeMenu: undefined })
+        }}
+        onConfirm={() => this.reportQueryProblem()}
+        confirmLoading={this.state.isReportingProblem}
+        title="Report a Problem"
+        enableBodyScroll={true}
+        width={600}
+        confirmText="Report"
+      >
+        Please tell us more about the problem you are experiencing:
+        <textarea className="report-problem-text-area" />
+      </Modal>
+    )
+  }
+
+  reportQueryProblem = reason => {
+    const queryId = _get(this.props, 'response.data.data.query_id')
+    this.setState({ isReportingProblem: true })
+    reportProblem({ queryId, ...this.props.authentication })
+      .then(() => {
+        this.props.onSuccessAlert('Thank you for your feedback.')
+        this.setState({ activeMenu: undefined, isReportingProblem: false })
+      })
+      .catch(error => {
+        this.props.onErrorCallback(error)
+        this.setState({ isReportingProblem: false })
+      })
+  }
+
+  renderReportProblemMenu = () => {
     return (
       <div className="report-problem-menu">
         <ul className="context-menu-list">
-          <li>The data is incorrect</li>
-          <li>The data is incomplete</li>
-          <li>Other...</li>
+          <li
+            onClick={() => {
+              this.setState({ activeMenu: undefined })
+              this.reportQueryProblem('The data is incorrect')
+            }}
+          >
+            The data is incorrect
+          </li>
+          <li
+            onClick={() => {
+              this.setState({ activeMenu: undefined })
+              this.reportQueryProblem('The data is incomplete')
+            }}
+          >
+            The data is incomplete
+          </li>
+          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
+            Other...
+          </li>
         </ul>
       </div>
     )
@@ -541,7 +592,8 @@ export default class ChatMessage extends React.Component {
         _get(this.props, 'response.data.data.display_type') === 'data',
       showDeleteButton: true,
       showMoreOptionsButton: true,
-      showReportProblemButton: false
+      showReportProblemButton:
+        _get(this.props, 'response.data.data.display_type') === 'data'
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -737,6 +789,7 @@ export default class ChatMessage extends React.Component {
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
             {this.renderHideColumnsModal()}
+            {this.renderReportProblemModal()}
           </div>
         </div>
       </Fragment>

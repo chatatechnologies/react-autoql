@@ -400,7 +400,7 @@ export const fetchQueryTips = ({
 
 export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
   const commaSeparatedKeywords = query ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=5&page=1&scope=narrow`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
 
   const axiosInstance = axios.create({
     headers: {
@@ -410,6 +410,25 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 
   return axiosInstance
     .get(relatedQueriesUrl)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
+}
+
+export const reportProblem = ({ queryId, domain, apiKey, token } = {}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}&key=${apiKey}`
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  const data = {
+    is_correct: false
+  }
+
+  return axiosInstance
+    .put(url, data)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
