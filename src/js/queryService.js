@@ -415,7 +415,7 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 }
 
 export const reportProblem = ({ queryId, domain, apiKey, token } = {}) => {
-  const url = `${domain}/autoql/api/v1/query/${queryId}&key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/${queryId}?key=${apiKey}`
 
   const axiosInstance = axios.create({
     headers: {
