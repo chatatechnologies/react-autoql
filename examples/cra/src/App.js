@@ -43,6 +43,7 @@ import {
 
 import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
+import spiraLogo from './spira-logo.png'
 
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/autoql.esm.css'
@@ -301,19 +302,26 @@ export default class App extends Component {
   }
 
   getThemeConfigProp = () => {
-    const lightAccentColor =
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-        ? '#253340'
-        : this.state.lightAccentColor
+    let lightAccentColor = this.state.lightAccentColor
+    let darkAccentColor = this.state.darkAccentColor
 
-    const darkAccentColor =
+    if (
       this.state.isAuthenticated &&
       this.state.activeIntegrator === 'purefacts' &&
       !this.state.demo
-        ? '#253340'
-        : this.state.darkAccentColor
+    ) {
+      lightAccentColor = '#253340'
+      darkAccentColor = '#253340'
+    }
+
+    if (
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'spira' &&
+      !this.state.demo
+    ) {
+      lightAccentColor = '#508bb8'
+      darkAccentColor = '#508bb8'
+    }
 
     return {
       theme: this.state.theme,
@@ -591,7 +599,8 @@ export default class App extends Component {
         data: this.state.dashboardTiles.map(tile => {
           return {
             ...tile,
-            queryResponse: undefined
+            queryResponse: undefined,
+            secondQueryResponse: undefined
           }
         })
       }
@@ -618,6 +627,96 @@ export default class App extends Component {
         dashboardError: true
       })
     }
+  }
+
+  resetDashboard = () => {
+    const newDashboardTiles = this.state.dashboardTiles.map(tile => {
+      return {
+        ...tile,
+        queryResponse: undefined,
+        secondQueryResponse: undefined
+      }
+    })
+
+    this.setState({ dashboardTiles: newDashboardTiles })
+  }
+
+  getIntroMessageTopics = () => {
+    if (this.state.activeIntegrator === 'spira') {
+      return [
+        {
+          label: 'Jobs',
+          value: 'jobs',
+          children: [
+            {
+              label: 'List all jobs',
+              value: 'all-jobs'
+            },
+            { label: 'Total jobs', value: 'total-jobs' },
+            { label: 'Total jobs by status', value: 'total-jobs-by-status' }
+          ]
+        },
+        {
+          label: 'Tickets',
+          value: 'tickets',
+          children: [
+            {
+              label: 'Total tickets',
+              value: 'total-tickets'
+            },
+            { label: 'Total tickets in 2019 by month', value: 'tickets-2019' },
+            { label: 'List tickets in void status', value: 'tickets-void' }
+          ]
+        },
+        {
+          label: 'Estimates',
+          value: 'estimates',
+          children: [
+            {
+              label: 'Total estimates',
+              value: 'total-estimates'
+            },
+            { label: 'Total estimates by year', value: 'estimates-by-year' },
+            {
+              label: 'List estimates over 10000',
+              value: 'estimates-over-10000'
+            }
+          ]
+        },
+        {
+          label: 'Revenue',
+          value: 'revenue',
+          children: [
+            {
+              label: 'Total revenue this year',
+              value: 'revenue-this-year'
+            },
+            { label: 'Total revenue this month', value: 'revenue-this-month' },
+            {
+              label: 'Total revenue by area in 2019',
+              value: 'revenue-2019'
+            }
+          ]
+        },
+        {
+          label: 'Utilization',
+          value: 'Utilization',
+          children: [
+            {
+              label: 'Total utilization by personnel',
+              value: 'personnel'
+            },
+            { label: 'Total hour utilization by resource', value: 'resource' },
+            {
+              label: 'Total utilization days by project customer',
+              value: 'customer'
+            }
+          ]
+        }
+      ]
+    }
+
+    return undefined
   }
 
   renderChartColorsList = () => {
@@ -1098,6 +1197,12 @@ export default class App extends Component {
       !this.state.demo
     ) {
       handleImage = locateLogo
+    } else if (
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'spira' &&
+      !this.state.demo
+    ) {
+      handleImage = spiraLogo
     }
 
     return (
@@ -1134,54 +1239,7 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
-        // introMessageTopics={[
-        //   {
-        //     label: 'Invoices',
-        //     value: 'inv',
-        //     children: [
-        //       {
-        //         label: 'All invoices with amount over $100 due date last year',
-        //         value: 'all-inv'
-        //       },
-        //       { label: 'Invoices over 2000', value: 'inv-over-2000' }
-        //     ]
-        //   },
-        //   {
-        //     label: 'Sales',
-        //     value: 'sal',
-        //     children: [
-        //       { label: 'All sales', value: 'all-inv' },
-        //       { label: 'Sales over 2000', value: 'inv-over-2000' }
-        //     ]
-        //   },
-        //   {
-        //     label: 'Expenses',
-        //     value: 'exp',
-        //     children: [
-        //       {
-        //         label: 'All invoices with amount over $100 due date last year',
-        //         value: 'all-inv'
-        //       },
-        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
-        //     ]
-        //   },
-        //   {
-        //     label: 'Order',
-        //     value: 'ord',
-        //     children: [
-        //       { label: 'all invoices', value: 'all-inv' },
-        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
-        //     ]
-        //   },
-        //   {
-        //     label: 'Customers',
-        //     value: 'cus',
-        //     children: [
-        //       { label: 'all invoices', value: 'all-inv' },
-        //       { label: 'invoices over 2000', value: 'inv-over-2000' }
-        //     ]
-        //   }
-        // ]}
+        introMessageTopics={this.getIntroMessageTopics()}
         inputStyles
         handleStyles={{ right: '25px' }}
       />
@@ -1351,6 +1409,7 @@ export default class App extends Component {
       <Menu
         onClick={({ key }) => {
           this.setState({ currentPage: key })
+          this.resetDashboard()
           if (key === 'notifications' && this.notificationBadgeRef) {
             this.notificationBadgeRef.resetCount()
           }
@@ -1536,6 +1595,11 @@ export default class App extends Component {
     // Purefacts
     if (this.state.activeIntegrator === 'purefacts') {
       return <div className="ui-overlay purefacts" />
+    }
+
+    // Spira
+    if (this.state.activeIntegrator === 'spira') {
+      return <div className="ui-overlay spira" />
     }
   }
 

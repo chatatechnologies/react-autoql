@@ -217,8 +217,8 @@ export default class DataMessenger extends React.Component {
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'tips' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Query
-            Inspirations
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
+            Queries
           </span>{' '}
           to further explore the possibilities.
         </div>

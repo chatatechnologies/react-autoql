@@ -41,6 +41,10 @@ body {
   background-image: url("./qbo_demo_ui.png");
 }
 
+.ui-overlay.spira {
+  background-image: url("./spira_ui2.png");
+}
+
 /* .ui-overlay.sage-demo {
   background-image: url("./sage_ui.png");
 } */
