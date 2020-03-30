@@ -1088,7 +1088,7 @@ export default class QueryOutput extends React.Component {
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={query =>
-            this.onSuggestionClick(query, true, true, 'safety_net')
+            this.onSuggestionClick(query, true, true, 'validation')
           }
           onQueryValidationSelectOption={
             this.props.onQueryValidationSelectOption

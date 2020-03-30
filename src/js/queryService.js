@@ -10,6 +10,15 @@ var autoCompleteCall = null
 // var safetyNetCall = null
 // var drilldownCall = null
 
+const formatSourceString = sourceArray => {
+  try {
+    const sourceString = sourceArray.join('.')
+    return sourceString
+  } catch (error) {
+    return undefined
+  }
+}
+
 const transformSafetyNetResponse = response => {
   let newResponse = response
   if (_get(response, 'data.data.replacements')) {
@@ -72,7 +81,7 @@ export const runQueryOnly = ({
 
   const data = {
     text: query,
-    source,
+    source: formatSourceString(source),
     debug,
     test,
     user_id: demo ? 'demo' : undefined,

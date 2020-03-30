@@ -64,6 +64,7 @@ export default class QueryInput extends React.Component {
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
+    source: [],
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -114,9 +115,12 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  submitQuery = ({ queryText, skipSafetyNet, source }) => {
+  submitQuery = ({ queryText, skipSafetyNet, source } = {}) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
+    const newSource = [...this.props.source, source || 'user']
+    console.log('appended source', source)
+    console.log('final source', newSource)
 
     if (query.trim()) {
       this.props.onSubmit(query)
@@ -126,7 +130,7 @@ export default class QueryInput extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: source || 'data_messenger'
+          source: newSource
         })
           .then(response => {
             this.props.onResponseCallback(response)
@@ -142,7 +146,7 @@ export default class QueryInput extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: source || 'data_messenger'
+          source: newSource
         })
           .then(response => {
             this.props.onResponseCallback(response)
@@ -164,7 +168,7 @@ export default class QueryInput extends React.Component {
 
   onKeyPress = e => {
     if (e.key == 'Enter') {
-      this.submitQuery({ source: 'data_messenger' })
+      this.submitQuery()
     }
   }
 

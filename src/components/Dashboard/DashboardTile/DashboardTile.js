@@ -83,7 +83,8 @@ export default class DashboardTile extends React.Component {
     isSql: !!this.props.tile.sql,
     isExecuting: false,
     suggestions: [],
-    isSecondQueryInputOpen: false
+    isSecondQueryInputOpen: false,
+    currentSource: 'user'
   }
 
   componentDidUpdate = prevProps => {
@@ -175,8 +176,15 @@ export default class DashboardTile extends React.Component {
     })
   }
 
-  processQuery = (query, skipSafetyNet) => {
+  processQuery = ({ query, skipSafetyNet, source }) => {
     if (this.isQueryValid(query)) {
+      const finalSource = ['dashboards']
+      if (source) {
+        finalSource.push(source)
+      } else {
+        finalSource.push('user')
+      }
+
       if (
         skipSafetyNet ||
         _get(this.props.queryResponse, 'data.full_suggestion')
@@ -185,7 +193,7 @@ export default class DashboardTile extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: 'dashboard'
+          source: finalSource
         })
           .then(response => {
             return Promise.resolve(response)
@@ -208,7 +216,7 @@ export default class DashboardTile extends React.Component {
           enableQueryValidation: !this.props.isEditing
             ? false
             : this.props.autoQLConfig.enableQueryValidation,
-          source: 'dashboard'
+          source: finalSource
         })
           .then(response => {
             return Promise.resolve(response)
@@ -227,7 +235,7 @@ export default class DashboardTile extends React.Component {
     }
   }
 
-  processTile = ({ query, secondQuery, skipSafetyNet } = {}) => {
+  processTile = ({ query, secondQuery, skipSafetyNet, source } = {}) => {
     this.startQuery()
 
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
@@ -236,11 +244,19 @@ export default class DashboardTile extends React.Component {
       this.props.tile.secondSelectedSuggestion ||
       this.state.secondQuery
 
-    const firstQueryPromise = this.processQuery(q1, skipSafetyNet)
+    const firstQueryPromise = this.processQuery({
+      query: q1,
+      skipSafetyNet,
+      source
+    })
     const queryPromises = [firstQueryPromise]
 
     if (_get(this.props.tile, 'splitView') && q1 !== q2) {
-      const secondQueryPromise = this.processQuery(q2, skipSafetyNet)
+      const secondQueryPromise = this.processQuery({
+        query: q2,
+        skipSafetyNet,
+        source
+      })
       queryPromises.push(secondQueryPromise)
     }
 
@@ -267,12 +283,13 @@ export default class DashboardTile extends React.Component {
     }
   }
 
-  onSuggestionClick = (suggestion, isButtonClick) => {
+  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
+    console.log('source on suggestion click', source)
     this.setState({ query: suggestion })
 
     if (isButtonClick) {
       this.props.setParamsForTile({ query: suggestion }, this.props.tile.i)
-      this.processTile({ query: suggestion, skipSafetyNet: true })
+      this.processTile({ query: suggestion, skipSafetyNet: true, source })
     } else {
       this.props.setParamsForTile(
         { selectedSuggestion: suggestion },
@@ -365,6 +382,8 @@ export default class DashboardTile extends React.Component {
       // keyup or keydown
       return // return to let the component handle it...
     }
+
+    console.log('QUERY INPUT CHANGED', e)
 
     if (_get(e, 'target.value') || _get(e, 'target.value') === '') {
       this.setState({ query: e.target.value })

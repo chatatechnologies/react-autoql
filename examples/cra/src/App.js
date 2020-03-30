@@ -216,7 +216,7 @@ export default class App extends Component {
     enableQueryValidation: true,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
-    enableQueryInspirationTab: true,
+    enableExploreQueriesTab: true,
     enableColumnEditor: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
@@ -338,7 +338,7 @@ export default class App extends Component {
 
     const data = {
       text: query,
-      source: 'notification'
+      source: ['notification']
     }
 
     const token = getStoredProp('jwtToken')
@@ -1159,7 +1159,7 @@ export default class App extends Component {
         ])}
         {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
-          'enableQueryInspirationTab',
+          'enableExploreQueriesTab',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
@@ -1238,7 +1238,7 @@ export default class App extends Component {
         title={this.state.title}
         maxMessages={this.state.maxMessages}
         handleImage={handleImage}
-        enableQueryInspirationTab={this.state.enableQueryInspirationTab}
+        enableExploreQueriesTab={this.state.enableExploreQueriesTab}
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}

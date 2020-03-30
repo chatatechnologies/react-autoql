@@ -68,7 +68,7 @@ export default class DataMessenger extends React.Component {
     title: string,
     maxMessages: number,
     introMessage: string,
-    enableQueryInspirationTab: bool,
+    enableExploreQueriesTab: bool,
     resizable: bool,
     inputPlaceholder: string,
     introMessageTopics: shape({}),
@@ -103,7 +103,7 @@ export default class DataMessenger extends React.Component {
     title: 'Data Messenger',
     maxMessages: undefined,
     introMessage: undefined,
-    enableQueryInspirationTab: true,
+    enableExploreQueriesTab: true,
     resizable: true,
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
@@ -203,12 +203,10 @@ export default class DataMessenger extends React.Component {
                     option.label,
                     undefined,
                     undefined,
-                    'topics'
+                    'welcome_prompt'
                   )
                 }}
-                onSeeMoreClick={label =>
-                  this.runTopicInQueryInspirations(label)
-                }
+                onSeeMoreClick={label => this.runTopicInExporeQueries(label)}
               />
             }
           </div>
@@ -754,6 +752,7 @@ export default class DataMessenger extends React.Component {
             showLoadingDots={false}
             placeholder={this.props.inputPlaceholder}
             onErrorCallback={this.props.onErrorCallback}
+            source={['data_messenger']}
           />
         </div>
       </Fragment>
@@ -848,7 +847,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  runTopicInQueryInspirations = topic => {
+  runTopicInExporeQueries = topic => {
     this.setState({ activePage: 'tips' })
     setTimeout(() => {
       this.animateQITextAndSubmit(topic)
@@ -870,7 +869,7 @@ export default class DataMessenger extends React.Component {
       executeQuery={query => {
         this.setState({ activePage: 'messenger' })
         setTimeout(() => {
-          this.onSuggestionClick(query, undefined, undefined, 'inspirations')
+          this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
         }, 500)
       }}
     />
@@ -1030,7 +1029,7 @@ export default class DataMessenger extends React.Component {
           // onKeyDown={this.escFunction}
         >
           {this.props.resizable && this.renderResizeHandle()}
-          {this.props.enableQueryInspirationTab && this.renderPageSwitcher()}
+          {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}
