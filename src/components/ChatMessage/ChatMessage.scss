@@ -89,6 +89,13 @@ so we dont have to redraw the whole table */
   padding: 5px 10px;
   outline: none !important;
 }
+.data-limit-warning-icon {
+  color: #ffcc00;
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 20px;
+}
 
 .more-options-menu,
 .report-problem-menu {

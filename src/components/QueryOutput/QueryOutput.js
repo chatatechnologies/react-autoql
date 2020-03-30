@@ -323,33 +323,15 @@ export default class QueryOutput extends React.Component {
   }
 
   renderSuggestionMessage = suggestions => {
-    // if (!this.props.autoQLConfig.enableQuerySuggestions) {
-    //   return this.renderErrorMessage("Oops! We didn't understand that query.")
-    // }
-    // There is actually a suggestion for this case
     const { queryResponse } = this.props
-    // const responseBody = { ...queryResponse.data }
-    // if (
-    //   queryResponse.config &&
-    //   responseBody.data.rows.length !== 0
-    // ) {
-    // const suggestions = responseBody.data.rows
 
     const queryParams = getQueryParams(_get(queryResponse, 'config.url'))
     if (suggestions.length && queryParams) {
       const originalQuery = queryParams.search
-      // const theUserInput = JSON.parse(queryResponse.config.data).search
       return this.createSuggestionMessage(originalQuery, suggestions)
-    }
-
-    // }
-
-    // No suggestions
-    else {
+    } else {
       return this.createSuggestionMessage()
     }
-
-    // return this.renderErrorMessage()
   }
 
   renderSingleValueResponse = () => {

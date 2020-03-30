@@ -26,7 +26,7 @@ import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 
-import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
 import { getDefaultDisplayType, isTableType, isChartType } from '../../js/Util'
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
@@ -763,6 +763,19 @@ export default class ChatMessage extends React.Component {
     return messageHeight
   }
 
+  renderDataLimitWarning = () => {
+    if (_get(this.props, 'response.data.data.rows.length') === MAX_ROW_LIMIT) {
+      return (
+        <Icon
+          type="warning"
+          className="data-limit-warning-icon"
+          data-tip="Warning: The data limit has been reached. <br />You may have data that is not displayed here."
+          data-for="chart-element-tooltip"
+        />
+      )
+    }
+  }
+
   render = () => {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
@@ -790,6 +803,7 @@ export default class ChatMessage extends React.Component {
             {this.renderLeftToolbar()}
             {this.renderHideColumnsModal()}
             {this.renderReportProblemModal()}
+            {this.renderDataLimitWarning()}
           </div>
         </div>
       </Fragment>
