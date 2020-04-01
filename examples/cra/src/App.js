@@ -217,7 +217,7 @@ export default class App extends Component {
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
-    enableColumnEditor: true,
+    enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
     clearOnClose: false,
@@ -282,7 +282,7 @@ export default class App extends Component {
       enableQueryValidation: this.state.enableQueryValidation,
       enableAutocomplete: this.state.enableAutocomplete,
       enableDrilldowns: this.state.enableDrilldowns,
-      enableColumnEditor: this.state.enableColumnEditor,
+      enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
       debug: this.state.debug,
       test: this.state.test
@@ -1164,7 +1164,7 @@ export default class App extends Component {
         )}
         {this.createBooleanRadioGroup(
           'Enable Column Visibility Editor',
-          'enableColumnEditor',
+          'enableColumnVisibilityManager',
           [true, false]
         )}
         {this.createBooleanRadioGroup(

@@ -55,7 +55,7 @@ export default class ChatMessage extends React.Component {
     response: PropTypes.shape({}),
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
-    enableColumnEditor: PropTypes.bool,
+    enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func
@@ -77,7 +77,7 @@ export default class ChatMessage extends React.Component {
     type: 'text',
     text: null,
     tableOptions: undefined,
-    enableColumnEditor: true
+    enableColumnVisibilityManager: true
   }
 
   state = {
@@ -298,6 +298,14 @@ export default class ChatMessage extends React.Component {
     )
   }
 
+  isTableResponse = () => {
+    return (
+      !this.isSingleValueResponse() &&
+      TABLE_TYPES.includes(this.state.displayType) &&
+      this.props.isResponse
+    )
+  }
+
   renderInterpretationTip = () => {
     const interpretation = `<span>
         <strong>Interpretation: </strong>
@@ -345,8 +353,9 @@ export default class ChatMessage extends React.Component {
       })
   }
 
-  showHideColumnsModal = () =>
+  showHideColumnsModal = () => {
     this.setState({ isHideColumnsModalVisible: true })
+  }
 
   onColumnVisibilitySave = columns => {
     const { authentication } = this.props
@@ -363,13 +372,17 @@ export default class ChatMessage extends React.Component {
         const tableRef = _get(this.responseRef, 'tableRef.ref.table')
         if (tableRef) {
           const columnComponents = tableRef.getColumns()
-          columnComponents.forEach(component => {
+          columnComponents.forEach((component, index) => {
             const id = component.getDefinition().id
             const isVisible = columns.find(col => col.id === id).visible
             if (isVisible) {
               component.show()
             } else {
               component.hide()
+            }
+
+            if (_get(this.responseRef, `tableColumns[${index}]`)) {
+              this.responseRef.tableColumns[index].visible = isVisible
             }
           })
         }
@@ -550,7 +563,7 @@ export default class ChatMessage extends React.Component {
               // data-tip="Copy generated query to clipboard"
               // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
             >
-              <Icon type="database" /> Copy generated query to clipboard
+              <Icon type="copy" /> Copy generated query to clipboard
             </li>
           )}
         </ul>
@@ -561,16 +574,13 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     const shouldShowButton = {
       showFilterButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         _get(this.props, 'response.data.data.rows.length') > 1,
       showCopyButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsCSVButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
       showInterpretationButton: false,
@@ -579,14 +589,13 @@ export default class ChatMessage extends React.Component {
       //   'response.data.data.interpretation'
       // ),
       showHideColumnsButton:
-        this.props.autoQLConfig.enableColumnEditor &&
+        this.props.autoQLConfig.enableColumnVisibilityManager &&
         // getNumberOfGroupables(
         //   _get(this.props, 'response.data.data.columns')
         // ) === 0 &&
         this.state.displayType === 'table' &&
         !this.props.authentication.demo &&
-        _get(this.props, 'response.data.data.columns.length') > 1 &&
-        _get(this.responseRef, 'tableRef.ref.table'),
+        _get(this.props, 'response.data.data.columns.length') > 0,
       showSQLButton:
         this.props.autoQLConfig.debug &&
         _get(this.props, 'response.data.data.display_type') === 'data',
@@ -797,6 +806,9 @@ export default class ChatMessage extends React.Component {
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
+            style={{
+              minWidth: this.isTableResponse() ? '300px' : 'unset'
+            }}
           >
             {this.renderContent(chartWidth, chartHeight)}
             {this.renderRightToolbar()}

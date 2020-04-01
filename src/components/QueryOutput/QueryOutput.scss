@@ -77,6 +77,27 @@
   cursor: pointer;
   font-size: inherit;
 }
+.no-columns-error-message {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+
+  .warning-icon {
+    font-size: 22px;
+    display: block;
+    margin-bottom: -13px;
+  }
+  .eye-icon {
+    vertical-align: bottom;
+    line-height: 18px;
+  }
+}
 
 /* safetynet */
 .chata-safety-net-selector-container {

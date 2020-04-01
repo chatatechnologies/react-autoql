@@ -24,7 +24,7 @@ export const autoQLConfigType = shape({
   enableQueryValidation: bool,
   enableDrilldowns: bool,
   enableQuerySuggestions: bool,
-  enableColumnEditor: bool
+  enableColumnVisibilityManager: bool
 })
 
 export const themeConfigType = shape({

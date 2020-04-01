@@ -176,6 +176,7 @@ export default class QueryOutput extends React.Component {
     if (!prevState.displayType && this.state.displayType) {
       this.setResponseData(this.state.displayType)
       this.forceUpdate()
+      ReactTooltip.hide()
     }
 
     // Detected a display type change from props. We must make sure
@@ -517,6 +518,36 @@ export default class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
+  areAllColumnsHidden = () => {
+    try {
+      const allColumnsHidden = this.tableColumns.every(col => !col.visible)
+
+      return allColumnsHidden
+    } catch (error) {
+      return false
+    }
+  }
+
+  renderAllColumnsHiddenMessage = () => {
+    if (this.areAllColumnsHidden()) {
+      return (
+        <div className="no-columns-error-message">
+          {this.renderErrorMessage(
+            <div>
+              <Icon className="warning-icon" type="warning-triangle" />
+              <br /> All columns in this table are currently hidden. You can
+              adjust your column visibility preferences using the Column
+              Visibility Manager (
+              <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return null
+  }
+
   renderTable = () => {
     if (
       !this.tableData ||
@@ -561,18 +592,27 @@ export default class QueryOutput extends React.Component {
     }
 
     return (
-      <ChataTable
-        key={this.tableID}
-        ref={ref => (this.tableRef = ref)}
-        columns={this.tableColumns}
-        data={this.tableData}
-        borderColor={tableBorderColor}
-        hoverColor={tableHoverColor}
-        onCellClick={this.processCellClick}
-        headerFilters={this.headerFilters}
-        onFilterCallback={this.onTableFilter}
-        setFilterTagsCallback={this.props.setFilterTagsCallback}
-      />
+      <Fragment>
+        {this.renderAllColumnsHiddenMessage()}
+        <ChataTable
+          key={this.tableID}
+          ref={ref => (this.tableRef = ref)}
+          columns={this.tableColumns}
+          data={this.tableData}
+          borderColor={tableBorderColor}
+          hoverColor={tableHoverColor}
+          onCellClick={this.processCellClick}
+          headerFilters={this.headerFilters}
+          onFilterCallback={this.onTableFilter}
+          setFilterTagsCallback={this.props.setFilterTagsCallback}
+          // We don't want to skip rendering it because we need to
+          // access the table ref for showing the columns if the
+          // col visibility is changed
+          style={{
+            visibility: this.areAllColumnsHidden() ? 'hidden' : 'visible'
+          }}
+        />
+      </Fragment>
     )
   }
 

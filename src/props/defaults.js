@@ -21,7 +21,7 @@ export const autoQLConfigDefault = {
   enableAutocomplete: true,
   enableQueryValidation: true,
   enableQuerySuggestions: true,
-  enableColumnEditor: true,
+  enableColumnVisibilityManager: true,
   enableDrilldowns: true
 }
 
