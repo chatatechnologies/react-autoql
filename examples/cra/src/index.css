@@ -54,7 +54,7 @@ body {
 }
 
 .ant-message {
-  z-index: 99999;
+  z-index: 999999999999999 !important;
 }
 
 .ant-form-item {

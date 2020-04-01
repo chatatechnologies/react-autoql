@@ -48,6 +48,13 @@ const transformSafetyNetResponse = response => {
   return newResponse
 }
 
+const failedValidation = response => {
+  return (
+    _get(response, 'data.full_suggestion.length') > 0 ||
+    _get(response, 'data.data.replacements.length') > 0
+  )
+}
+
 export const cancelQuery = () => {
   // if (queryCall) {
   //   queryCall.cancel('Query operation cancelled by the user.')
@@ -172,11 +179,7 @@ export const runQuery = ({
       token
     })
       .then(response => {
-        if (
-          _get(response, 'data.full_suggestion.length') > 0 ||
-          _get(response, 'data.data.replacements.length') > 0
-          // && !this.state.skipSafetyNet
-        ) {
+        if (failedValidation(response)) {
           const newResponse = transformSafetyNetResponse(response)
           return Promise.resolve(newResponse)
         }
@@ -191,17 +194,9 @@ export const runQuery = ({
           source
         })
       })
-      .catch(() => {
-        return runQueryOnly({
-          query,
-          demo,
-          debug,
-          test,
-          domain,
-          apiKey,
-          token,
-          source
-        })
+      .catch(error => {
+        console.error(error)
+        return Promise.reject(error)
       })
   }
 

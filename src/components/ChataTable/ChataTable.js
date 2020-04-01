@@ -33,7 +33,6 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     borderColor: '#ddd',
-    // hoverColor: '#5a5a5a',
     hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},

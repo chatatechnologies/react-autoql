@@ -266,60 +266,71 @@ export default class QueryOutput extends React.Component {
   }
 
   createSuggestionMessage = (userInput, suggestions) => {
-    return (
-      <div className="chata-suggestion-message">
-        <div className="chata-suggestions-container">
-          {this.props.renderSuggestionsAsDropdown ? (
-            <select
-              key={uuid.v4()}
-              onChange={e => {
-                this.setState({ suggestionSelection: e.target.value })
-                this.onSuggestionClick(
-                  e.target.value,
-                  undefined,
-                  undefined,
-                  'suggestion'
-                )
-              }}
-              value={this.state.suggestionSelection}
-              className="chata-suggestions-select"
-            >
-              <option key={uuid.v4()} value={userInput}>
-                {userInput}
-              </option>
-              {suggestions.map((suggestion, i) => {
+    let suggestionListMessage
+    try {
+      suggestionListMessage = (
+        <div className="chata-suggestion-message">
+          <div className="chata-suggestions-container">
+            {this.props.renderSuggestionsAsDropdown ? (
+              <select
+                key={uuid.v4()}
+                onChange={e => {
+                  this.setState({ suggestionSelection: e.target.value })
+                  this.onSuggestionClick(
+                    e.target.value,
+                    undefined,
+                    undefined,
+                    'suggestion'
+                  )
+                }}
+                value={this.state.suggestionSelection}
+                className="chata-suggestions-select"
+              >
+                <option key={uuid.v4()} value={userInput}>
+                  {userInput}
+                </option>
+                {suggestions.map((suggestion, i) => {
+                  return (
+                    <option key={uuid.v4()} value={suggestion}>
+                      {suggestion}
+                    </option>
+                  )
+                })}
+              </select>
+            ) : (
+              suggestions.map(suggestion => {
                 return (
-                  <option key={uuid.v4()} value={suggestion}>
-                    {suggestion}
-                  </option>
+                  <div key={uuid.v4()}>
+                    <button
+                      onClick={() =>
+                        this.onSuggestionClick(
+                          suggestion,
+                          true,
+                          undefined,
+                          'suggestion'
+                        )
+                      }
+                      className="chata-suggestion-btn"
+                    >
+                      {suggestion}
+                    </button>
+                    <br />
+                  </div>
                 )
-              })}
-            </select>
-          ) : (
-            suggestions.map(suggestion => {
-              return (
-                <div key={uuid.v4()}>
-                  <button
-                    onClick={() =>
-                      this.onSuggestionClick(
-                        suggestion,
-                        true,
-                        undefined,
-                        'suggestion'
-                      )
-                    }
-                    className="chata-suggestion-btn"
-                  >
-                    {suggestion}
-                  </button>
-                  <br />
-                </div>
-              )
-            })
-          )}
+              })
+            )}
+          </div>
         </div>
-      </div>
-    )
+      )
+    } catch (error) {
+      suggestionListMessage = (
+        <div className="chata-suggestion-message">
+          Sorry something went wrong, I have no suggestions for you.
+        </div>
+      )
+    }
+
+    return suggestionListMessage
   }
 
   renderSuggestionMessage = suggestions => {

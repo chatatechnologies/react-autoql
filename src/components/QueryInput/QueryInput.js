@@ -119,8 +119,6 @@ export default class QueryInput extends React.Component {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
-    console.log('appended source', source)
-    console.log('final source', newSource)
 
     if (query.trim()) {
       this.props.onSubmit(query)

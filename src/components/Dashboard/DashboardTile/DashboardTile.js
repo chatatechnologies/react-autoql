@@ -284,7 +284,6 @@ export default class DashboardTile extends React.Component {
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    console.log('source on suggestion click', source)
     this.setState({ query: suggestion })
 
     if (isButtonClick) {
@@ -382,8 +381,6 @@ export default class DashboardTile extends React.Component {
       // keyup or keydown
       return // return to let the component handle it...
     }
-
-    console.log('QUERY INPUT CHANGED', e)
 
     if (_get(e, 'target.value') || _get(e, 'target.value') === '') {
       this.setState({ query: e.target.value })
