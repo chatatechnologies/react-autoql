@@ -987,6 +987,20 @@ export default class QueryOutput extends React.Component {
     return formattedColumns
   }
 
+  formatDatePivotYear = (data, dateColumnIndex) => {
+    if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+      return dayjs.unix(data[dateColumnIndex]).format('YYYY')
+    }
+    return dayjs(data[dateColumnIndex]).format('YYYY')
+  }
+
+  formatDatePivotMonth = (data, dateColumnIndex) => {
+    if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+      return dayjs.unix(data[dateColumnIndex]).format('MMMM')
+    }
+    return dayjs(data[dateColumnIndex]).format('MMMM')
+  }
+
   generateDatePivotData = newData => {
     const uniqueMonths = {
       January: 0,
@@ -1003,10 +1017,20 @@ export default class QueryOutput extends React.Component {
       December: 11
     }
 
+    const dateColumnIndex = this.tableColumns.findIndex(
+      col => col.type === 'DATE' || col.type === 'DATE_STRING'
+    )
+    const numberColumnIndex = dateColumnIndex === 0 ? 1 : 0
     const tableData = newData || this.tableData
 
-    const uniqueYears = tableData
-      .map(d => Number(dayjs.unix(d[0]).format('YYYY')))
+    const allYears = tableData.map(d => {
+      if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+        return Number(dayjs.unix(d[dateColumnIndex]).format('YYYY'))
+      }
+      return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
+    })
+
+    const uniqueYears = allYears
       .filter(onlyUnique)
       .sort()
       .reduce((map, title, i) => {
@@ -1024,9 +1048,10 @@ export default class QueryOutput extends React.Component {
         frozen: true
       }
     ]
+
     Object.keys(uniqueYears).forEach((year, i) => {
       pivotTableColumns.push({
-        ...this.tableColumns[1], // value column
+        ...this.tableColumns[numberColumnIndex],
         name: year,
         title: year,
         field: `${i + 1}`,
@@ -1043,13 +1068,16 @@ export default class QueryOutput extends React.Component {
     })
     // Populate remaining columns
     tableData.forEach(row => {
-      const year = dayjs.unix(row[0]).format('YYYY')
-      const month = dayjs.unix(row[0]).format('MMMM')
-      pivotTableData[uniqueMonths[month]][uniqueYears[year]] = row[1]
-      // pivotOriginalColumnData[uniqueYears[year]][uniqueMonths[month]] = row[0]
+      const year = this.formatDatePivotYear(row, dateColumnIndex)
+      const month = this.formatDatePivotMonth(row, dateColumnIndex)
+
+      const yearNumber = uniqueYears[year]
+      const monthNumber = uniqueMonths[month]
+
+      pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
       pivotOriginalColumnData[year] = {
         ...pivotOriginalColumnData[year],
-        [month]: row[0]
+        [month]: row[dateColumnIndex]
       }
     })
 

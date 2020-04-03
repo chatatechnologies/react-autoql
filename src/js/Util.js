@@ -462,74 +462,70 @@ export const supports2DCharts = columns => {
 }
 
 export const getSupportedDisplayTypes = response => {
-  if (!_get(response, 'data.data.display_type')) {
-    return []
-  }
-
-  // For CaaS there should be 3 types: data, suggestion, help
-  const displayType = response.data.data.display_type
-
-  if (displayType === 'suggestion' || displayType === 'help') {
-    return [displayType]
-  }
-
-  const columns = _get(response, 'data.data.columns')
-  const rows = _get(response, 'data.data.rows', [])
-
-  if (!columns || rows.length <= 1) {
-    return []
-  }
-
-  if (supportsRegularPivotTable(columns)) {
-    // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
-    let supportedDisplayTypes = ['table']
-    if (rows.length < 1000) {
-      supportedDisplayTypes = [
-        'pivot_table',
-        'stacked_bar',
-        'stacked_column',
-        'bubble',
-        'heatmap',
-        'table'
-      ]
-    }
-    return supportedDisplayTypes
-  } else if (supports2DCharts(columns)) {
-    // If there is at least one string column and one number
-    // column, we should be able to chart anything
-    const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
-
-    // if (columns.length === 2) {
-    //   supportedDisplayTypes.push('pie')
-    // }
-    // if (rows.length < 11) {
-    supportedDisplayTypes.push('pie')
-    // }
-
-    // create pivot based on month and year
-    const dateColumn = columns.find(
-      col => col.type === 'DATE' || col.type === 'DATE_STRING'
-    )
-    if (
-      dateColumn &&
-      dateColumn.name.includes('month') &&
-      columns.length === 2
-    ) {
-      supportedDisplayTypes.push('pivot_table')
+  try {
+    if (!_get(response, 'data.data.display_type')) {
+      return []
     }
 
-    // if (
-    //   columns[0].type === 'DATE' &&
-    //   columns[0].name.includes('month') &&
-    //   columns.length === 2
-    // ) {
-    //   supportedDisplayTypes.push('pivot_table')
-    // }
-    return supportedDisplayTypes
-  }
+    // For CaaS there should be 3 types: data, suggestion, help
+    const displayType = response.data.data.display_type
 
-  // We should always be able to display the table type by default
-  return ['table']
+    if (displayType === 'suggestion' || displayType === 'help') {
+      return [displayType]
+    }
+
+    const columns = _get(response, 'data.data.columns')
+    const rows = _get(response, 'data.data.rows', [])
+
+    if (!columns || rows.length <= 1) {
+      return []
+    }
+
+    if (supportsRegularPivotTable(columns)) {
+      // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
+      let supportedDisplayTypes = ['table']
+      if (rows.length < 1000) {
+        supportedDisplayTypes = [
+          'pivot_table',
+          'stacked_bar',
+          'stacked_column',
+          'bubble',
+          'heatmap',
+          'table'
+        ]
+      }
+      return supportedDisplayTypes
+    } else if (supports2DCharts(columns)) {
+      // If there is at least one string column and one number
+      // column, we should be able to chart anything
+      const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
+
+      // if (rows.length < 11) {
+      supportedDisplayTypes.push('pie')
+      // }
+
+      // create pivot based on month and year
+      const dateColumn = columns.find(
+        col => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+
+      if (
+        dateColumn &&
+        dateColumn.display_name.toLowerCase().includes('month') &&
+        columns.length === 2
+      ) {
+        supportedDisplayTypes.push('pivot_table')
+      }
+
+      return supportedDisplayTypes
+    }
+
+    // We should always be able to display the table type by default
+    return ['table']
+  } catch (error) {
+    console.error(error)
+    return ['table']
+  }
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
