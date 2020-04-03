@@ -120,7 +120,7 @@ export default class ChataBarChart extends Component {
       .paddingOuter(outerPadding)
 
     const labelArray = data.map(element => element[labelValue])
-    const tickWidth = (width - leftMargin - rightMargin) / 6
+    const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
     const yTickValues = this.getTickValues(barHeight, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)

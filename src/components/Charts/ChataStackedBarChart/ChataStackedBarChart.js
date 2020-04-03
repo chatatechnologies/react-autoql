@@ -147,7 +147,7 @@ export default class ChataStackedBarChart extends Component {
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const tickWidth = (width - leftMargin - rightMargin) / 6
+    const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / this.uniqueYLabels.length
     const yTickValues = this.getTickValues(barHeight)
     this.handleLabelRotation(tickWidth, this.uniqueYLabels)

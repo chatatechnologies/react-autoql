@@ -843,7 +843,7 @@ export const getChartLabelTextWidthInPx = text => {
     tempDiv.style.display = 'inline-block'
     tempDiv.style.position = 'absolute'
     tempDiv.style.visibility = 'hidden'
-    tempDiv.style.fontSize = '14px'
+    tempDiv.style.fontSize = '11px'
     document.body.appendChild(tempDiv)
     const textWidth = tempDiv.clientWidth
     document.body.removeChild(tempDiv)
