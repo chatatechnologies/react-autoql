@@ -111,6 +111,21 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
+export const isColumnNumberType = col => {
+  const { type } = col
+  return (
+    type === 'DOLLAR_AMT' ||
+    type === 'QUANTITY' ||
+    type === 'PERCENT' ||
+    type === 'RATIO'
+  )
+}
+
+export const isColumnStringType = col => {
+  const { type } = col
+  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
+}
+
 export const formatChartLabel = ({ d, col, config = {} }) => {
   if (d == null) {
     return {
@@ -390,6 +405,21 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
   })
 }
 
+export const getColumnTypeAmounts = columns => {
+  let amountOfStringColumns = 0
+  let amountOfNumberColumns = 0
+
+  columns.forEach(col => {
+    if (isColumnNumberType(col)) {
+      amountOfNumberColumns += 1
+    } else if (isColumnStringType(col)) {
+      amountOfStringColumns += 1
+    }
+  })
+
+  return { amountOfNumberColumns, amountOfStringColumns }
+}
+
 export const getNumberOfGroupables = columns => {
   let numberOfGroupables = 0
   if (columns) {
@@ -418,6 +448,19 @@ export const isChartType = type => CHART_TYPES.includes(type)
 export const isTableType = type => TABLE_TYPES.includes(type)
 export const isForecastType = type => FORECAST_TYPES.includes(type)
 
+export const supportsRegularPivotTable = columns => {
+  const hasTwoGroupables = getNumberOfGroupables(columns) === 2
+  return hasTwoGroupables && columns.length === 3
+}
+
+export const supports2DCharts = columns => {
+  const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(
+    columns
+  )
+
+  return amountOfNumberColumns > 0 && amountOfStringColumns > 0
+}
+
 export const getSupportedDisplayTypes = response => {
   if (!_get(response, 'data.data.display_type')) {
     return []
@@ -437,45 +480,51 @@ export const getSupportedDisplayTypes = response => {
     return []
   }
 
-  if (getNumberOfGroupables(columns) === 1) {
-    // Is direct key-value query (ie. Avg days to pay per customer)
-    const supportedDisplayTypes = [
-      'bar',
-      'column',
-      'line',
-      'table'
-      // 'split'
-    ]
-
-    if (columns.length === 2) {
-      supportedDisplayTypes.push('pie')
-    }
-
-    // create pivot based on month and year
-    if (
-      columns[0].type === 'DATE' &&
-      columns[0].name.includes('month') &&
-      columns.length === 2
-    ) {
-      supportedDisplayTypes.push('pivot_table')
-    }
-    return supportedDisplayTypes
-  } else if (getNumberOfGroupables(columns) === 2 && columns.length === 3) {
-    // Is pivot query (ie. Sale per customer per month)
-
+  if (supportsRegularPivotTable(columns)) {
+    // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
     let supportedDisplayTypes = ['table']
-    if (_get(response, 'data.data.rows.length') < 1000) {
+    if (rows.length < 1000) {
       supportedDisplayTypes = [
-        'multi_line',
+        'pivot_table',
         'stacked_bar',
         'stacked_column',
         'bubble',
         'heatmap',
-        'table',
-        'pivot_table'
-        // 'split'
+        'table'
       ]
     }
+    return supportedDisplayTypes
+  } else if (supports2DCharts(columns)) {
+    // If there is at least one string column and one number
+    // column, we should be able to chart anything
+    const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
+
+    // if (columns.length === 2) {
+    //   supportedDisplayTypes.push('pie')
+    // }
+    // if (rows.length < 11) {
+    supportedDisplayTypes.push('pie')
+    // }
+
+    // create pivot based on month and year
+    const dateColumn = columns.find(
+      col => col.type === 'DATE' || col.type === 'DATE_STRING'
+    )
+    if (
+      dateColumn &&
+      dateColumn.name.includes('month') &&
+      columns.length === 2
+    ) {
+      supportedDisplayTypes.push('pivot_table')
+    }
+
+    // if (
+    //   columns[0].type === 'DATE' &&
+    //   columns[0].name.includes('month') &&
+    //   columns.length === 2
+    // ) {
+    //   supportedDisplayTypes.push('pivot_table')
+    // }
     return supportedDisplayTypes
   }
 

@@ -27,7 +27,12 @@ import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 
 import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
-import { getDefaultDisplayType, isTableType, isChartType } from '../../js/Util'
+import {
+  getDefaultDisplayType,
+  isTableType,
+  isChartType,
+  getSupportedDisplayTypes
+} from '../../js/Util'
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
 
@@ -721,8 +726,8 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    const supportedDisplayTypes =
-      this.responseRef && this.responseRef.supportedDisplayTypes
+    const supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+    // this.responseRef && this.responseRef.supportedDisplayTypes
 
     let displayType = this.state.displayType
     if (

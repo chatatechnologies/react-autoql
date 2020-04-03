@@ -1,14 +1,23 @@
 import { max, min } from 'd3-array'
 
-export const getLegendLabelsForMultiSeries = (columns, colorScale) => {
+export const getLegendLabelsForMultiSeries = (
+  columns,
+  colorScale,
+  seriesIndices = []
+) => {
   try {
-    const legendLabels = columns.slice(1).map((column, i) => {
+    if (seriesIndices.length <= 1) {
+      return []
+    }
+
+    const legendLabels = seriesIndices.map((columnIndex, i) => {
       return {
-        label: column.title,
+        label: columns[columnIndex].title,
         color: colorScale(i),
-        hidden: column.isSeriesHidden
+        hidden: columns[columnIndex].isSeriesHidden
       }
     })
+
     return legendLabels
   } catch (error) {
     console.error(error)

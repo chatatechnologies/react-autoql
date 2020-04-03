@@ -29,7 +29,14 @@ import {
   authenticationDefault
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars, getQueryParams } from '../../js/Util'
+import {
+  setStyleVars,
+  getQueryParams,
+  supportsRegularPivotTable,
+  supports2DCharts,
+  isColumnNumberType,
+  isColumnStringType
+} from '../../js/Util'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -45,7 +52,6 @@ import {
   onlyUnique,
   formatElement,
   makeEmptyArray,
-  getNumberOfGroupables,
   getSupportedDisplayTypes,
   getDefaultDisplayType,
   isDisplayTypeValid,
@@ -232,7 +238,13 @@ export default class QueryOutput extends React.Component {
   }
 
   shouldGenerateChartData = () => {
-    return !!getNumberOfGroupables(this.tableColumns) && this.tableData
+    // const {
+    //   amountOfNumberColumns,
+    //   amountOfStringColumns
+    // } = getColumnTypeAmounts(this.tableColumns)
+    // return amountOfNumberColumns > 0 && amountOfStringColumns > 0
+    return this.supportedDisplayTypes.length > 1
+    // return !!getNumberOfGroupables(this.tableColumns) && this.tableData
   }
 
   generateForecastData = () => {
@@ -645,6 +657,8 @@ export default class QueryOutput extends React.Component {
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
+          stringColumnIndices={this.stringColumnIndices}
+          numberColumnIndices={this.numberColumnIndices}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
@@ -693,53 +707,7 @@ export default class QueryOutput extends React.Component {
       const columns = this.tableColumns
       const tableData = data || this.tableData
 
-      if (getNumberOfGroupables(this.tableColumns) === 1) {
-        this.chartData = Object.values(
-          tableData.reduce((chartDataObject, row) => {
-            // Loop through columns and create a series for each
-            const cells = []
-            row.forEach((value, i) => {
-              if (i > 0) {
-                cells.push({
-                  value: Number(value) || value,
-                  label: columns[i].title,
-                  color: this.colorScale(i),
-                  hidden: false
-                })
-              }
-            })
-
-            // Make sure the row label doesn't exist already
-            if (!chartDataObject[row[0]]) {
-              chartDataObject[row[0]] = {
-                origColumns: columns,
-                origRow: row,
-                label: row[0],
-                cells,
-                formatter: (value, column) => {
-                  return formatElement({
-                    element: value,
-                    column,
-                    config: this.props.dataFormatting
-                  })
-                }
-              }
-            } else {
-              // If this label already exists, just add the values together
-              // The BE should prevent this from happening though
-              chartDataObject[row[0]].cells = chartDataObject[row[0]].cells.map(
-                (cell, index) => {
-                  return {
-                    ...cell,
-                    value: cell.value + Number(cells[index].value)
-                  }
-                }
-              )
-            }
-            return chartDataObject
-          }, {})
-        )
-      } else if (getNumberOfGroupables(this.tableColumns) === 2) {
+      if (supportsRegularPivotTable(columns)) {
         this.chartData = tableData.map(row => {
           return {
             origColumns: columns,
@@ -756,10 +724,81 @@ export default class QueryOutput extends React.Component {
             }
           }
         })
+      } else if (supports2DCharts(this.tableColumns)) {
+        const allStringColumnIndices = []
+        this.tableColumns.forEach((col, index) => {
+          if (isColumnStringType(col)) {
+            allStringColumnIndices.push(index)
+          }
+        })
+
+        const allNumberColumnIndices = []
+        this.tableColumns.forEach((col, index) => {
+          if (isColumnNumberType(col)) {
+            allNumberColumnIndices.push(index)
+          }
+        })
+
+        // We will usually want to take the second column because the first one
+        // will most likely have all of the same value. Grab the first column only
+        // if it's the only string column
+        const stringColumnIndex =
+          allStringColumnIndices[1] || allStringColumnIndices[0]
+
+        // todo: allow for more than one here to make multi-series charts
+        const numberColumnIndex = allNumberColumnIndices[0]
+
+        this.stringColumnIndices = [stringColumnIndex]
+        this.numberColumnIndices = [numberColumnIndex]
+
+        this.chartData = Object.values(
+          tableData.reduce((chartDataObject, row) => {
+            // Loop through columns and create a series for each
+            const cells = []
+
+            this.numberColumnIndices.forEach((columnIndex, i) => {
+              const value = row[columnIndex]
+              cells.push({
+                value: Number(value) || value, // this should always be able to convert to a number
+                label: columns[columnIndex].title,
+                color: this.colorScale(i),
+                hidden: false
+              })
+            })
+
+            // Make sure the row label doesn't exist already
+            if (!chartDataObject[row[stringColumnIndex]]) {
+              chartDataObject[row[stringColumnIndex]] = {
+                origColumns: columns,
+                origRow: row,
+                label: row[stringColumnIndex],
+                cells,
+                formatter: (value, column) => {
+                  return formatElement({
+                    element: value,
+                    column,
+                    config: this.props.dataFormatting
+                  })
+                }
+              }
+            } else {
+              // If this label already exists, just add the values together
+              // The BE should prevent this from happening though
+              chartDataObject[row[stringColumnIndex]].cells = chartDataObject[
+                row[stringColumnIndex]
+              ].cells.map((cell, index) => {
+                return {
+                  ...cell,
+                  value: cell.value + Number(cells[index].value)
+                }
+              })
+            }
+            return chartDataObject
+          }, {})
+        )
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback(error)
       // Something went wrong. Do not show chart options
       this.supportedDisplayTypes = ['table']
       this.chartData = undefined
