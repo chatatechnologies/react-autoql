@@ -5,6 +5,7 @@ import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
 
 import { getMinAndMaxValues } from '../helpers.js'
+import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
 
 export default class ChataLineChart extends Component {
   xScale = scaleBand()
@@ -23,6 +24,7 @@ export default class ChataLineChart extends Component {
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     onLegendClick: PropTypes.func,
+    onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
@@ -39,7 +41,22 @@ export default class ChataLineChart extends Component {
     labelValue: 'label',
     dataFormatting: {},
     numberColumnIndices: [],
+    onLabelChange: () => {},
     tooltipFormatter: () => {}
+  }
+
+  handleLabelRotation = (tickWidth, labelArray) => {
+    const prevRotateLabels = this.rotateLabels
+    this.rotateLabels = shouldRotateLabels(
+      tickWidth,
+      labelArray,
+      this.props.columns[this.props.stringColumnIndex],
+      this.props.dataFormatting
+    )
+
+    if (prevRotateLabels !== this.rotateLabels) {
+      this.props.onLabelChange()
+    }
   }
 
   render = () => {
@@ -93,6 +110,10 @@ export default class ChataLineChart extends Component {
       })
     }
 
+    const labelArray = data.map(element => element[labelValue])
+    const tickWidth = getTickWidth(xScale, innerPadding)
+    this.handleLabelRotation(tickWidth, labelArray)
+
     return (
       <g data-test="chata-line-chart">
         <Axes
@@ -109,7 +130,7 @@ export default class ChataLineChart extends Component {
           width={width}
           height={height}
           xTicks={xTickValues}
-          rotateLabels={barWidth < 135}
+          rotateLabels={this.rotateLabels}
           dataFormatting={dataFormatting}
           bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}

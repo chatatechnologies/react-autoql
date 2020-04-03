@@ -50,7 +50,7 @@ export default class ChataBarChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[0],
+      this.props.columns[this.props.stringColumnIndex],
       this.props.dataFormatting
     )
 

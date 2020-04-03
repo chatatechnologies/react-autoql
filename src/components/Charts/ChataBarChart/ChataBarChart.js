@@ -50,7 +50,7 @@ export default class ChataBarChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[1],
+      this.props.columns[this.props.numberColumnIndices[0]],
       this.props.dataFormatting
     )
 
@@ -119,11 +119,12 @@ export default class ChataBarChart extends Component {
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const labelArray = data.map(element => element[labelValue])
+    const yLabelArray = data.map(element => element[labelValue])
+    const xLabelArray = data.map(element => element.cells[0])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
-    const yTickValues = this.getTickValues(barHeight, labelArray)
-    this.handleLabelRotation(tickWidth, labelArray)
+    const yTickValues = this.getTickValues(barHeight, yLabelArray)
+    this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (
       <g data-test="chata-bar-chart">
