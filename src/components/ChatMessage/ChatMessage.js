@@ -304,11 +304,12 @@ export default class ChatMessage extends React.Component {
   }
 
   isTableResponse = () => {
-    return (
-      !this.isSingleValueResponse() &&
-      TABLE_TYPES.includes(this.state.displayType) &&
-      this.props.isResponse
-    )
+    // return (
+    //   !this.isSingleValueResponse() &&
+    //   TABLE_TYPES.includes(this.state.displayType) &&
+    //   this.props.isResponse
+    // )
+    return !!_get(this.responseRef, 'tableRef')
   }
 
   renderInterpretationTip = () => {
@@ -588,17 +589,9 @@ export default class ChatMessage extends React.Component {
         this.isTableResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
-      showInterpretationButton: false,
-      // !!_get(
-      //   this.props,
-      //   'response.data.data.interpretation'
-      // ),
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnVisibilityManager &&
-        // getNumberOfGroupables(
-        //   _get(this.props, 'response.data.data.columns')
-        // ) === 0 &&
-        this.state.displayType === 'table' &&
+        this.isTableResponse() &&
         !this.props.authentication.demo &&
         _get(this.props, 'response.data.data.columns.length') > 0,
       showSQLButton:
@@ -649,14 +642,6 @@ export default class ChatMessage extends React.Component {
               <Icon type="eye" />
             </button>
           )}
-          {shouldShowButton.showInterpretationButton && (
-            <Icon
-              type="info"
-              className="interpretation-icon"
-              data-tip={this.renderInterpretationTip()}
-              data-for="interpretation-tooltip"
-            />
-          )}
           {shouldShowButton.showReportProblemButton && (
             <Popover
               key={uuid.v4()}
@@ -669,10 +654,8 @@ export default class ChatMessage extends React.Component {
               content={props => this.renderReportProblemMenu(props)}
             >
               <button
-                onClick={e => {
-                  // e.preventDefault()
+                onClick={() => {
                   this.setState({ activeMenu: 'report-problem' })
-                  // this.showReportProblemModal()
                 }}
                 className="chata-toolbar-btn"
                 data-tip="Report a problem"
@@ -701,7 +684,6 @@ export default class ChatMessage extends React.Component {
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              // contentLocation={{}}
               content={props =>
                 this.renderMoreOptionsMenu(props, shouldShowButton)
               }
@@ -727,7 +709,6 @@ export default class ChatMessage extends React.Component {
 
   renderLeftToolbar = () => {
     const supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
-    // this.responseRef && this.responseRef.supportedDisplayTypes
 
     let displayType = this.state.displayType
     if (

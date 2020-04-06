@@ -156,12 +156,12 @@ export default class ChataChart extends Component {
       }
 
       // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
-      const chartElement = select(this.chartRef).node()
-      const chartBBox = chartElement.getBBox()
-      if (chartBBox.width > this.props.width) {
-        rightMargin =
-          chartBBox.width - this.props.width + this.state.rightMargin
-      }
+      // const chartElement = select(this.chartRef).node()
+      // const chartBBox = chartElement.getBBox()
+      // if (chartBBox.width > this.props.width) {
+      //   rightMargin =
+      //     chartBBox.width - this.props.width + this.state.rightMargin
+      // }
 
       this.setState({
         leftMargin: leftMargin || this.state.leftMargin,
@@ -179,7 +179,6 @@ export default class ChataChart extends Component {
   tooltipFormatter2D = (data, colIndex) => {
     const { columns, stringColumnIndices, numberColumnIndices } = this.props
     const labelCol = columns[stringColumnIndices[0]]
-    // const valueCols = columns.slice(1)
     const valueCols = columns.filter((col, i) =>
       numberColumnIndices.includes(i)
     ) // Supports multi-series

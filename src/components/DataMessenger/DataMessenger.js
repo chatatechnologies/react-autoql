@@ -6,7 +6,6 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
-// import Cascader from 'rc-cascader'
 // import { throttle, debounce } from 'throttle-debounce'
 
 import {
@@ -387,7 +386,10 @@ export default class DataMessenger extends React.Component {
           }
         })
         .catch(error => {
-          this.createErrorMessage(_get(error, 'response.data.message'))
+          // this.createErrorMessage(_get(error, 'response.data.message'))
+          this.addResponseMessage({
+            content: _get(error, 'response.data.message')
+          })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
             this.queryInputRef.focus()
@@ -435,7 +437,11 @@ export default class DataMessenger extends React.Component {
         })
         .catch(error => {
           console.error(error)
-          this.props.onErrorCallback(error)
+          console.log(_get(error, 'message'))
+          console.log(_get(error, 'data'))
+          this.addResponseMessage({
+            content: _get(error, 'message')
+          })
           this.setState({ isChataThinking: false })
         })
     }
@@ -447,12 +453,6 @@ export default class DataMessenger extends React.Component {
     }
 
     this.setintroMessages()
-
-    // this.setState({
-    //   messages: [this.introMessages],
-    //   lastMessageId: 'intro',
-    //   isClearMessageConfirmVisible: false
-    // })
   }
 
   deleteMessage = id => {
@@ -974,34 +974,6 @@ export default class DataMessenger extends React.Component {
           effect="solid"
           html
         />
-
-        {
-          // These are not currently being used
-          // ---------------------------------------------
-          //   <ReactTooltip
-          //   className="chata-drawer-tooltip"
-          //   id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-          //   effect="solid"
-          //   delayShow={500}
-          //   html
-          // />
-          // <ReactTooltip
-          //   className="interpretation-tooltip"
-          //   id="interpretation-tooltip"
-          //   effect="solid"
-          //   delayShow={500}
-          //   delayHide={200}
-          //   clickable
-          //   html
-          // />
-          // <ReactTooltip
-          //   className="chata-drawer-tooltip"
-          //   id={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
-          //   effect="solid"
-          //   delayShow={500}
-          //   html
-          // />
-        }
       </Fragment>
     )
   }

@@ -176,6 +176,17 @@ export default class DashboardTile extends React.Component {
     })
   }
 
+  fetchSuggestionsFromErrorResponse = error => {
+    console.error(error)
+    if (_get(error, 'data.suggestionResponse')) {
+      return fetchSuggestions(
+        error.data.originalQuery,
+        ...this.props.authentication
+      )
+    }
+    return Promise.reject(error)
+  }
+
   processQuery = ({ query, skipSafetyNet, source }) => {
     if (this.isQueryValid(query)) {
       const finalSource = ['dashboards']
@@ -198,16 +209,7 @@ export default class DashboardTile extends React.Component {
           .then(response => {
             return Promise.resolve(response)
           })
-          .catch(error => {
-            console.error(error)
-            if (error.data.suggestionResponse) {
-              return fetchSuggestions(
-                error.data.originalQuery,
-                ...this.props.authentication
-              )
-            }
-            return Promise.reject(error)
-          })
+          .catch(this.fetchSuggestionsFromErrorResponse)
       } else {
         return runQuery({
           query,
@@ -221,16 +223,7 @@ export default class DashboardTile extends React.Component {
           .then(response => {
             return Promise.resolve(response)
           })
-          .catch(error => {
-            console.error(error)
-            if (error.suggestionResponse) {
-              return fetchSuggestions({
-                query: error.data.originalQuery,
-                ...this.props.authentication
-              })
-            }
-            return Promise.reject(error)
-          })
+          .catch(this.fetchSuggestionsFromErrorResponse)
       }
     }
   }

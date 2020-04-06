@@ -702,6 +702,37 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  getNumberColumnIndices = () => {
+    const dollarAmtIndices = []
+    const quantityIndices = []
+    const ratioIndices = []
+
+    this.tableColumns.forEach((col, index) => {
+      const { type } = col
+      if (type === 'DOLLAR_AMT') {
+        dollarAmtIndices.push(index)
+      } else if (type === 'QUANTITY') {
+        quantityIndices.push(index)
+      } else if (type === 'PERCENT' || type === 'RATIO') {
+        ratioIndices.push(index)
+      }
+    })
+
+    // Returning highest priority of non-empty arrays
+    if (dollarAmtIndices.length) {
+      return dollarAmtIndices
+    }
+
+    if (quantityIndices.length) {
+      return quantityIndices
+    }
+
+    if (ratioIndices.length) {
+      return ratioIndices
+    }
+
+    return []
+  }
   generateChartData = data => {
     try {
       const columns = this.tableColumns
@@ -732,24 +763,14 @@ export default class QueryOutput extends React.Component {
           }
         })
 
-        const allNumberColumnIndices = []
-        this.tableColumns.forEach((col, index) => {
-          if (isColumnNumberType(col)) {
-            allNumberColumnIndices.push(index)
-          }
-        })
-
         // We will usually want to take the second column because the first one
         // will most likely have all of the same value. Grab the first column only
         // if it's the only string column
         const stringColumnIndex =
           allStringColumnIndices[1] || allStringColumnIndices[0]
 
-        // todo: allow for more than one here to make multi-series charts
-        const numberColumnIndex = allNumberColumnIndices[0]
-
         this.stringColumnIndices = [stringColumnIndex]
-        this.numberColumnIndices = [numberColumnIndex]
+        this.numberColumnIndices = this.getNumberColumnIndices()
 
         this.chartData = Object.values(
           tableData.reduce((chartDataObject, row) => {
