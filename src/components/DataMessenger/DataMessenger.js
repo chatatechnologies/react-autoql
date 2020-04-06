@@ -386,7 +386,6 @@ export default class DataMessenger extends React.Component {
           }
         })
         .catch(error => {
-          // this.createErrorMessage(_get(error, 'response.data.message'))
           this.addResponseMessage({
             content: _get(error, 'response.data.message')
           })
@@ -437,8 +436,6 @@ export default class DataMessenger extends React.Component {
         })
         .catch(error => {
           console.error(error)
-          console.log(_get(error, 'message'))
-          console.log(_get(error, 'data'))
           this.addResponseMessage({
             content: _get(error, 'message')
           })

@@ -304,11 +304,6 @@ export default class ChatMessage extends React.Component {
   }
 
   isTableResponse = () => {
-    // return (
-    //   !this.isSingleValueResponse() &&
-    //   TABLE_TYPES.includes(this.state.displayType) &&
-    //   this.props.isResponse
-    // )
     return !!_get(this.responseRef, 'tableRef')
   }
 
@@ -318,19 +313,8 @@ export default class ChatMessage extends React.Component {
         ${_get(this.props.response, 'data.data.interpretation')}
       </span>`
 
-    let sql = ''
-    // if (this.props.debug) {
-    //   sql = `
-    //     <br />
-    //     <br />
-    //     <span>
-    //       <strong>SQL: </strong>
-    //       ${_get(this.props.response, 'data.data.sql')}
-    //     </span>`
-    // }
     return `<div>
         ${interpretation}
-        ${sql}
       </div>`
   }
 
