@@ -3,7 +3,7 @@ import { shallow, mount } from 'enzyme'
 import renderer from 'react-test-renderer'
 
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
-import { ResponseRenderer } from '../..'
+import { QueryOutput } from '../..'
 import testCases from './responseTestCases'
 
 const defaultProps = {
@@ -12,7 +12,7 @@ const defaultProps = {
   isQueryRunning: false,
   tableBorderColor: undefined,
   displayType: undefined,
-  chatBarRef: undefined,
+  queryInputRef: undefined,
   onSuggestionClick: undefined,
   processDrilldown: () => {}
 }
@@ -25,7 +25,7 @@ const createMockResponse = responseBody => {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<ResponseRenderer {...setupProps} />)
+  const wrapper = shallow(<QueryOutput {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -37,7 +37,7 @@ describe('test each response case', () => {
     describe(`renders correctly: response index ${i}`, () => {
       test('renders correctly with only token prop', () => {
         const wrapper = shallow(
-          <ResponseRenderer response={createMockResponse(testCases[i])} />
+          <QueryOutput response={createMockResponse(testCases[i])} />
         )
         const responseComponent = findByTestAttr(
           wrapper,
@@ -55,7 +55,7 @@ describe('test each response case', () => {
 
     // describe('props', () => {
     //   test('does not throw warning with expected props', () => {
-    //     checkProps(ResponseRenderer, defaultProps)
+    //     checkProps(QueryOutput, defaultProps)
     //   })
     //   describe('showMask', () => {
     //     test('showMask false does not show mask on drawer open', () => {})

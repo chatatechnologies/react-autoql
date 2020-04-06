@@ -1,14 +1,23 @@
 import { max, min } from 'd3-array'
 
-export const getLegendLabelsForMultiSeries = (columns, colorScale) => {
+export const getLegendLabelsForMultiSeries = (
+  columns,
+  colorScale,
+  seriesIndices = []
+) => {
   try {
-    const legendLabels = columns.slice(1).map((column, i) => {
+    if (seriesIndices.length <= 1) {
+      return []
+    }
+
+    const legendLabels = seriesIndices.map((columnIndex, i) => {
       return {
-        label: column.title,
+        label: columns[columnIndex].title,
         color: colorScale(i),
-        hidden: column.isSeriesHidden
+        hidden: columns[columnIndex].isSeriesHidden
       }
     })
+
     return legendLabels
   } catch (error) {
     console.error(error)
@@ -37,8 +46,18 @@ export const getMinAndMaxValues = data => {
       minValuesFromArrays.push(min(data, d => d.cells[i].value))
     }
 
-    const maxValue = max(maxValuesFromArrays)
+    let maxValue = max(maxValuesFromArrays)
     let minValue = min(minValuesFromArrays)
+
+    // In order to see the chart elements we need to make sure
+    // that the max and min values are different.
+    if (maxValue === minValue) {
+      if (minValue > 0) {
+        minValue = 0
+      } else if (minValue < 0) {
+        maxValue = 0
+      }
+    }
 
     return {
       minValue,

@@ -19,7 +19,7 @@
   background: transparent;
   font-family: inherit;
 
-  /* Default styles outside of chat drawer */
+  /* Default styles outside of data messenger */
   border: 1px solid rgba(0, 0, 0, 0.1);
   color: #5d5d5d;
 }
@@ -33,12 +33,12 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 .chata-chatbar-input::placeholder {
-  /* Default color outside of chat drawer */
+  /* Default color outside of data messenger */
   color: #999 !important;
 }
 
 /* autosuggest */
-.react-autosuggest__container,
+.chata-bar-container .react-autosuggest__container,
 .chata-chatbar-input-container {
   position: relative;
   flex: 1;
@@ -70,7 +70,7 @@
   overflow: hidden;
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 
-  /* Default styles outside of chat drawer */
+  /* Default styles outside of data messenger */
   background-color: white;
   color: #5d5d5d;
 }
@@ -93,13 +93,29 @@
   list-style-type: none;
 }
 
+/* Autocomplete styles */
+.chata-bar-container .react-autosuggest__suggestions-container--open {
+  background-color: var(--chata-input-background-color);
+  border: 1px solid var(--chata-input-border-color);
+  color: var(--chata-input-text-color-primary);
+}
+.chata-bar-container .react-autosuggest__suggestion {
+  color: var(--chata-input-text-color-primary);
+}
+.chata-chatbar-input {
+  border: 1px solid var(--chata-input-border-color);
+  color: var(--chata-input-text-color-primary);
+}
+.chata-chatbar-input::placeholder {
+  color: var(--chata-input-text-color-placeholder);
+}
 .chata-bar-container .react-autosuggest__suggestion {
   cursor: pointer;
   padding: 2px;
   padding-left: 18px;
   letter-spacing: 0.05em;
   line-height: 22.5px;
-  /* color: var(--chata-drawer-text-color-primary); */
+  /* color: var(--chata-messenger-text-color-primary); */
 }
 
 .chata-bar-container .react-autosuggest__suggestion--highlighted {

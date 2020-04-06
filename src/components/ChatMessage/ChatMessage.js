@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import ReactTooltip from 'react-tooltip'
+import Popover from 'react-tiny-popover'
+import uuid from 'uuid'
 
 import {
   authenticationType,
@@ -18,14 +20,21 @@ import {
   themeConfigDefault
 } from '../../props/defaults'
 
-import { ResponseRenderer } from '../ResponseRenderer'
+import { QueryOutput } from '../QueryOutput'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
+import { Modal } from '../Modal'
 
-import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
-import { getInitialDisplayType, isTableType, isChartType } from '../../js/Util'
-import { setColumnVisibility } from '../../js/queryService'
+import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
+import {
+  getDefaultDisplayType,
+  isTableType,
+  isChartType,
+  getSupportedDisplayTypes
+} from '../../js/Util'
+import { setColumnVisibility, reportProblem } from '../../js/queryService'
+import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
 
@@ -51,9 +60,10 @@ export default class ChatMessage extends React.Component {
     response: PropTypes.shape({}),
     content: PropTypes.string,
     tableOptions: PropTypes.shape({}),
-    enableColumnEditor: PropTypes.bool,
+    enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
-    onErrorCallback: PropTypes.func
+    onErrorCallback: PropTypes.func,
+    onSuccessAlert: PropTypes.func
   }
 
   static defaultProps = {
@@ -64,6 +74,7 @@ export default class ChatMessage extends React.Component {
 
     setActiveMessage: () => {},
     onErrorCallback: () => {},
+    onSuccessAlert: () => {},
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -71,12 +82,13 @@ export default class ChatMessage extends React.Component {
     type: 'text',
     text: null,
     tableOptions: undefined,
-    enableColumnEditor: true
+    enableColumnVisibilityManager: true
   }
 
   state = {
-    displayType: getInitialDisplayType(this.props.response),
-    isSettingColumnVisibility: false
+    displayType: getDefaultDisplayType(this.props.response),
+    isSettingColumnVisibility: false,
+    activeMenu: undefined
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -129,18 +141,17 @@ export default class ChatMessage extends React.Component {
   }
 
   renderContent = (chartWidth, chartHeight) => {
-    const { response, content } = this.props
+    const { response, content, type } = this.props
     if (content) {
       return content
     } else if (response) {
       return (
-        <ResponseRenderer
+        <QueryOutput
           ref={ref => (this.responseRef = ref)}
           autoQLConfig={this.props.autoQLConfig}
           onDataClick={this.props.processDrilldown}
-          response={response}
+          queryResponse={response}
           displayType={this.state.displayType}
-          // enableDrilldowns={response.enableDrilldowns}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
           themeConfig={this.props.themeConfig}
@@ -153,17 +164,18 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={this.props.authentication.demo}
-          // enableQuerySuggestions={this.props.autoQLConfig.enableQuerySuggestions}
           backgroundColor={document.documentElement.style.getPropertyValue(
-            '--chata-drawer-background-color'
+            '--chata-messenger-background-color'
           )}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer
           renderTooltips={false}
+          onErrorCallback={this.props.onErrorCallback}
+          enableColumnHeaderContextMenu={true}
         />
       )
     }
-    return 'Oops... Something went wrong with this query. If the problem persists, please contact the customer success team'
+    return errorMessages.GENERAL_ERROR_MESSAGE
   }
 
   setFilterTags = ({ isFilteringTable } = {}) => {
@@ -199,6 +211,7 @@ export default class ChatMessage extends React.Component {
           }
         } catch (error) {
           console.error(error)
+          this.props.onErrorCallback(error)
         }
       })
     }
@@ -241,6 +254,7 @@ export default class ChatMessage extends React.Component {
       }
     } catch (error) {
       console.error(error)
+      this.props.onErrorCallback(error)
     }
   }
 
@@ -255,6 +269,7 @@ export default class ChatMessage extends React.Component {
   copyTableToClipboard = () => {
     if (this.responseRef) {
       this.responseRef.copyTableToClipboard()
+      this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
       ReactTooltip.hide()
       // changeTooltipText(
@@ -288,25 +303,18 @@ export default class ChatMessage extends React.Component {
     )
   }
 
+  isTableResponse = () => {
+    return !!_get(this.responseRef, 'tableRef')
+  }
+
   renderInterpretationTip = () => {
     const interpretation = `<span>
         <strong>Interpretation: </strong>
         ${_get(this.props.response, 'data.data.interpretation')}
       </span>`
 
-    let sql = ''
-    // if (this.props.debug) {
-    //   sql = `
-    //     <br />
-    //     <br />
-    //     <span>
-    //       <strong>SQL: </strong>
-    //       ${_get(this.props.response, 'data.data.sql')}
-    //     </span>`
-    // }
     return `<div>
         ${interpretation}
-        ${sql}
       </div>`
   }
 
@@ -335,15 +343,16 @@ export default class ChatMessage extends React.Component {
       })
   }
 
-  showHideColumnsModal = () =>
+  showHideColumnsModal = () => {
     this.setState({ isHideColumnsModalVisible: true })
+  }
 
   onColumnVisibilitySave = columns => {
     const { authentication } = this.props
     const formattedColumns = columns.map(col => {
       return {
         name: col.name,
-        is_visible: col.is_visible
+        is_visible: col.visible
       }
     })
 
@@ -353,13 +362,17 @@ export default class ChatMessage extends React.Component {
         const tableRef = _get(this.responseRef, 'tableRef.ref.table')
         if (tableRef) {
           const columnComponents = tableRef.getColumns()
-          columnComponents.forEach(component => {
+          columnComponents.forEach((component, index) => {
             const id = component.getDefinition().id
-            const isVisible = columns.find(col => col.id === id).is_visible
+            const isVisible = columns.find(col => col.id === id).visible
             if (isVisible) {
               component.show()
             } else {
               component.hide()
+            }
+
+            if (_get(this.responseRef, `tableColumns[${index}]`)) {
+              this.responseRef.tableColumns[index].visible = isVisible
             }
           })
         }
@@ -377,6 +390,7 @@ export default class ChatMessage extends React.Component {
   }
 
   deleteMessage = () => {
+    ReactTooltip.hide()
     this.props.deleteMessageCallback(this.props.id)
   }
 
@@ -389,6 +403,9 @@ export default class ChatMessage extends React.Component {
     document.execCommand('copy')
     document.body.removeChild(el)
     this.setTemporaryState('copiedSQL', true, 1000)
+    this.props.onSuccessAlert(
+      'Successfully copied generated query to clipboard!'
+    )
     ReactTooltip.hide()
     // changeTooltipText(
     //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,
@@ -399,9 +416,22 @@ export default class ChatMessage extends React.Component {
   }
 
   renderHideColumnsModal = () => {
+    const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+
+    if (!tableRef) {
+      return
+    }
+
+    const columns = tableRef.getColumns().map(col => {
+      return {
+        ...col.getDefinition(),
+        visible: col.getVisibility() // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+      }
+    })
+
     return (
       <ColumnVisibilityModal
-        columns={_get(this.props, 'response.data.data.columns')}
+        columns={columns}
         isVisible={this.state.isHideColumnsModalVisible}
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
         isSettingColumns={this.state.isSettingColumnVisibility}
@@ -410,35 +440,151 @@ export default class ChatMessage extends React.Component {
     )
   }
 
+  renderReportProblemModal = () => {
+    return (
+      <Modal
+        isVisible={this.state.activeMenu === 'other-problem'}
+        onClose={() => {
+          this.setState({ activeMenu: undefined })
+        }}
+        onConfirm={() => this.reportQueryProblem()}
+        confirmLoading={this.state.isReportingProblem}
+        title="Report a Problem"
+        enableBodyScroll={true}
+        width={600}
+        confirmText="Report"
+      >
+        Please tell us more about the problem you are experiencing:
+        <textarea className="report-problem-text-area" />
+      </Modal>
+    )
+  }
+
+  reportQueryProblem = reason => {
+    const queryId = _get(this.props, 'response.data.data.query_id')
+    this.setState({ isReportingProblem: true })
+    reportProblem({ queryId, ...this.props.authentication })
+      .then(() => {
+        this.props.onSuccessAlert('Thank you for your feedback.')
+        this.setState({ activeMenu: undefined, isReportingProblem: false })
+      })
+      .catch(error => {
+        this.props.onErrorCallback(error)
+        this.setState({ isReportingProblem: false })
+      })
+  }
+
+  renderReportProblemMenu = () => {
+    return (
+      <div className="report-problem-menu">
+        <ul className="context-menu-list">
+          <li
+            onClick={() => {
+              this.setState({ activeMenu: undefined })
+              this.reportQueryProblem('The data is incorrect')
+            }}
+          >
+            The data is incorrect
+          </li>
+          <li
+            onClick={() => {
+              this.setState({ activeMenu: undefined })
+              this.reportQueryProblem('The data is incomplete')
+            }}
+          >
+            The data is incomplete
+          </li>
+          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
+            Other...
+          </li>
+        </ul>
+      </div>
+    )
+  }
+
+  renderMoreOptionsMenu = (props, shouldShowButton) => {
+    return (
+      <div className="more-options-menu">
+        <ul className="context-menu-list">
+          {shouldShowButton.showSaveAsCSVButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.saveTableAsCSV()
+              }}
+            >
+              <Icon type="download" /> Download as CSV
+            </li>
+          )}
+          {shouldShowButton.showSaveAsPNGButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.saveChartAsPNG()
+              }}
+            >
+              <Icon type="download" /> Download as PNG
+            </li>
+          )}
+          {shouldShowButton.showCopyButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.copyTableToClipboard()
+              }}
+              // className={`chata-toolbar-btn${
+              //   this.state.copiedTable === true ? ' green' : ''
+              // }${this.state.copiedTable === false ? ' red' : ''}`}
+              // data-tip="Copy table to clipboard"
+              // data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+            >
+              <Icon type="copy" /> Copy table to clipboard
+            </li>
+          )}
+          {shouldShowButton.showSQLButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.copySQL()
+              }}
+              // className={`chata-toolbar-btn${
+              //   this.state.copiedSQL === true ? ' green' : ''
+              // }${this.state.copiedSQL === false ? ' red' : ''}`}
+              // data-tip="Copy generated query to clipboard"
+              // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+            >
+              <Icon type="copy" /> Copy generated query to clipboard
+            </li>
+          )}
+        </ul>
+      </div>
+    )
+  }
+
   renderRightToolbar = () => {
     const shouldShowButton = {
       showFilterButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         _get(this.props, 'response.data.data.rows.length') > 1,
       showCopyButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsCSVButton:
-        TABLE_TYPES.includes(this.state.displayType) &&
-        !this.isSingleValueResponse() &&
+        this.isTableResponse() &&
         !!_get(this.props, 'response.data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
-      showInterpretationButton: !!_get(
-        this.props,
-        'response.data.data.interpretation'
-      ),
       showHideColumnsButton:
-        this.props.autoQLConfig.enableColumnEditor &&
-        // getNumberOfGroupables(
-        //   _get(this.props, 'response.data.data.columns')
-        // ) === 0 &&
-        this.state.displayType === 'table' &&
+        this.props.autoQLConfig.enableColumnVisibilityManager &&
+        this.isTableResponse() &&
         !this.props.authentication.demo &&
-        _get(this.props, 'response.data.data.columns.length') > 1,
-      showSQLButton: this.props.autoQLConfig.debug,
-      showDeleteButton: true
+        _get(this.props, 'response.data.data.columns.length') > 0,
+      showSQLButton:
+        this.props.autoQLConfig.debug &&
+        _get(this.props, 'response.data.data.display_type') === 'data',
+      showDeleteButton: true,
+      showMoreOptionsButton: true,
+      showReportProblemButton:
+        _get(this.props, 'response.data.data.display_type') === 'data'
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -455,12 +601,16 @@ export default class ChatMessage extends React.Component {
       this.state.displayType !== 'suggestion'
     ) {
       return (
-        <div className="chat-message-toolbar right">
+        <div
+          className={`chat-message-toolbar right ${
+            this.state.activeMenu ? 'active' : ''
+          }`}
+        >
           {shouldShowButton.showFilterButton && (
             <button
               onClick={this.toggleTableFilter}
               className="chata-toolbar-btn"
-              data-tip="Filter Table"
+              data-tip="Filter table"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="filter" />
@@ -470,73 +620,70 @@ export default class ChatMessage extends React.Component {
             <button
               onClick={this.showHideColumnsModal}
               className="chata-toolbar-btn"
-              data-tip="Show/Hide Columns"
+              data-tip="Show/hide columns"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="eye" />
             </button>
           )}
-          {shouldShowButton.showCopyButton && (
-            <button
-              onClick={this.copyTableToClipboard}
-              className={`chata-toolbar-btn${
-                this.state.copiedTable === true ? ' green' : ''
-              }${this.state.copiedTable === false ? ' red' : ''}`}
-              data-tip="Copy Table to Clipboard"
-              data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+          {shouldShowButton.showReportProblemButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'report-problem'}
+              padding={8}
+              onClickOutside={() => {
+                this.setState({ activeMenu: undefined })
+              }}
+              position="bottom" // preferred position
+              content={props => this.renderReportProblemMenu(props)}
             >
-              <Icon type="copy" />
-            </button>
-          )}
-          {shouldShowButton.showSaveAsCSVButton && (
-            <button
-              onClick={this.saveTableAsCSV}
-              className="chata-toolbar-btn"
-              data-tip="Download as CSV"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="download" />
-            </button>
-          )}
-          {shouldShowButton.showSaveAsPNGButton && (
-            <button
-              onClick={this.saveChartAsPNG}
-              className="chata-toolbar-btn"
-              data-tip="Download as PNG"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="download" />
-            </button>
-          )}
-          {shouldShowButton.showInterpretationButton && (
-            <Icon
-              type="info"
-              className="interpretation-icon"
-              data-tip={this.renderInterpretationTip()}
-              data-for="interpretation-tooltip"
-            />
-          )}
-          {shouldShowButton.showSQLButton && (
-            <button
-              onClick={this.copySQL}
-              className={`chata-toolbar-btn${
-                this.state.copiedSQL === true ? ' green' : ''
-              }${this.state.copiedSQL === false ? ' red' : ''}`}
-              data-tip="Copy SQL to Clipboard"
-              data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
-            >
-              <Icon type="database" />
-            </button>
+              <button
+                onClick={() => {
+                  this.setState({ activeMenu: 'report-problem' })
+                }}
+                className="chata-toolbar-btn"
+                data-tip="Report a problem"
+                data-for="chata-toolbar-btn-tooltip"
+              >
+                <Icon type="warning-triangle" />
+              </button>
+            </Popover>
           )}
           {shouldShowButton.showDeleteButton && (
             <button
               onClick={this.deleteMessage}
               className="chata-toolbar-btn"
-              data-tip="Delete Message"
+              data-tip="Delete data response"
               data-for="chata-toolbar-btn-tooltip"
             >
               <Icon type="trash" />
             </button>
+          )}
+          {shouldShowButton.showMoreOptionsButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'more-options'}
+              position="bottom"
+              padding={8}
+              onClickOutside={() => {
+                this.setState({ activeMenu: undefined })
+              }}
+              content={props =>
+                this.renderMoreOptionsMenu(props, shouldShowButton)
+              }
+            >
+              <button
+                onClick={() => {
+                  ReactTooltip.hide()
+                  this.setState({ activeMenu: 'more-options' })
+                }}
+                className="chata-toolbar-btn"
+                data-tip="More options"
+                data-for="chata-toolbar-btn-tooltip"
+              >
+                <Icon type="more" />
+              </button>
+            </Popover>
           )}
         </div>
       )
@@ -545,8 +692,7 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    const supportedDisplayTypes =
-      this.responseRef && this.responseRef.supportedDisplayTypes
+    const supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
 
     let displayType = this.state.displayType
     if (
@@ -576,7 +722,7 @@ export default class ChatMessage extends React.Component {
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 80 // 100% of chat width minus message margins minus chat container margins
+      chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
     }
 
@@ -594,6 +740,19 @@ export default class ChatMessage extends React.Component {
     }
 
     return messageHeight
+  }
+
+  renderDataLimitWarning = () => {
+    if (_get(this.props, 'response.data.data.rows.length') === MAX_ROW_LIMIT) {
+      return (
+        <Icon
+          type="warning"
+          className="data-limit-warning-icon"
+          data-tip="Warning: The data limit has been reached. <br />You may have data that is not displayed here."
+          data-for="chart-element-tooltip"
+        />
+      )
+    }
   }
 
   render = () => {
@@ -615,27 +774,18 @@ export default class ChatMessage extends React.Component {
           <div
             className={`chat-message-bubble
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
-            ${this.props.type === 'text' ? ' text' : ''}
+          ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
+            style={{
+              minWidth: this.isTableResponse() ? '300px' : undefined
+            }}
           >
             {this.renderContent(chartWidth, chartHeight)}
             {this.renderRightToolbar()}
             {this.renderLeftToolbar()}
             {this.renderHideColumnsModal()}
-            <ReactTooltip
-              className="chata-drawer-tooltip"
-              id={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-              effect="solid"
-              delayShow={500}
-              html
-            />
-            <ReactTooltip
-              className="chata-drawer-tooltip"
-              id={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
-              effect="solid"
-              delayShow={500}
-              html
-            />
+            {this.renderReportProblemModal()}
+            {this.renderDataLimitWarning()}
           </div>
         </div>
       </Fragment>

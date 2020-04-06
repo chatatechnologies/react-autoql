@@ -95,6 +95,7 @@ export default class YearSelect extends React.Component {
       }
       return 0
     } catch (error) {
+      console.error(error)
       return 0
     }
   }

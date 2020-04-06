@@ -1,9 +1,6 @@
 export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
-  customerId: undefined,
-  userId: undefined,
-  username: undefined,
   domain: undefined,
   demo: false
 }
@@ -24,14 +21,14 @@ export const autoQLConfigDefault = {
   enableAutocomplete: true,
   enableQueryValidation: true,
   enableQuerySuggestions: true,
-  enableColumnEditor: true,
+  enableColumnVisibilityManager: true,
   enableDrilldowns: true
 }
 
 export const themeConfigDefault = {
   theme: 'light',
   chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
-  accentColor: undefined,
+  accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
   titleColor: '#356f90' // DASHBOARD TILES ONLY
 }

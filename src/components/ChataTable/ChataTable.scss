@@ -43,13 +43,19 @@
   /* background-color: rgba(0, 0, 0, 0.1) !important; */
   background-color: var(--chata-table-hover-color) !important;
 }
-
+.chata-table.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+  padding: 8px 5px;
+}
 .chata-table.tabulator
   .tabulator-header
   .tabulator-col
   .tabulator-col-content
   .tabulator-arrow {
   opacity: 0;
+  border-left: 4px solid transparent !important;
+  border-right: 4px solid transparent !important;
+  right: 4px;
+  top: calc(50% - 3px);
 }
 .chata-table.tabulator
   .tabulator-header
@@ -58,22 +64,25 @@
   .tabulator-arrow {
   opacity: 1 !important;
 }
-
 .chata-table.tabulator
   .tabulator-header
   .tabulator-col.tabulator-sortable[aria-sort="desc"]
   .tabulator-col-content
   .tabulator-arrow {
-  border-top: 6px solid rgba(0, 0, 0, 0.2);
+  border-top: 4px solid rgba(0, 0, 0, 0.2) !important;
 }
 .chata-table.tabulator
   .tabulator-header
   .tabulator-col.tabulator-sortable[aria-sort="asc"]
   .tabulator-col-content
+  .tabulator-arrow,
+.chata-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable[aria-sort="none"]
+  .tabulator-col-content
   .tabulator-arrow {
-  border-bottom: 6px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 4px solid rgba(0, 0, 0, 0.2) !important;
 }
-
 .chata-table .tabulator-tableHolder::-webkit-scrollbar {
   display: unset;
   opacity: 0;
@@ -117,7 +126,8 @@ the whole table when the filter button is clicked */
   text-align: center;
 }
 .chata-table .tabulator-header .tabulator-col-title {
-  padding-left: 25px;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
 }
 
 .filter-tag {

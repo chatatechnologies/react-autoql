@@ -4,7 +4,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import ColumnVisibilityModal from './ColumnVisibilityModal'
 
-const defaultProps = {}
+const defaultProps = {
+  columns: []
+}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }

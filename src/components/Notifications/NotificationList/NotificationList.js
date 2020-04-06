@@ -234,6 +234,7 @@ export default class NotificationList extends React.Component {
           delayShow={500}
           html
         />
+
         {this.renderDismissAllButton()}
         <InfiniteScroll
           initialLoad={false}

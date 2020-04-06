@@ -25,6 +25,7 @@ export default class ChataBarChart extends Component {
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -39,6 +40,7 @@ export default class ChataBarChart extends Component {
   static defaultProps = {
     labelValue: 'label',
     dataFormatting: {},
+    numberColumnIndices: [],
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -48,7 +50,7 @@ export default class ChataBarChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[1],
+      this.props.columns[this.props.numberColumnIndices[0]],
       this.props.dataFormatting
     )
 
@@ -117,18 +119,19 @@ export default class ChataBarChart extends Component {
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const labelArray = data.map(element => element[labelValue])
-    const tickWidth = (width - leftMargin - rightMargin) / 6
+    const yLabelArray = data.map(element => element[labelValue])
+    const xLabelArray = data.map(element => element.cells[0])
+    const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
-    const yTickValues = this.getTickValues(barHeight, labelArray)
-    this.handleLabelRotation(tickWidth, labelArray)
+    const yTickValues = this.getTickValues(barHeight, yLabelArray)
+    this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (
       <g data-test="chata-bar-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[1]}
-          yCol={columns[0]}
+          xCol={columns[this.props.numberColumnIndices[0]]}
+          yCol={columns[this.props.stringColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,

@@ -25,6 +25,7 @@ export default class ChataBarChart extends Component {
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -39,6 +40,7 @@ export default class ChataBarChart extends Component {
   static defaultProps = {
     labelValue: 'label',
     dataFormatting: {},
+    numberColumnIndices: [],
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -48,7 +50,7 @@ export default class ChataBarChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[0],
+      this.props.columns[this.props.stringColumnIndex],
       this.props.dataFormatting
     )
 
@@ -125,8 +127,8 @@ export default class ChataBarChart extends Component {
       <g data-test="chata-column-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[0]}
-          yCol={columns[1]}
+          xCol={columns[this.props.stringColumnIndex]}
+          yCol={columns[this.props.numberColumnIndices[0]]}
           margins={{
             left: leftMargin,
             right: rightMargin,

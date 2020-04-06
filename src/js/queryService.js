@@ -10,6 +10,15 @@ var autoCompleteCall = null
 // var safetyNetCall = null
 // var drilldownCall = null
 
+const formatSourceString = sourceArray => {
+  try {
+    const sourceString = sourceArray.join('.')
+    return sourceString
+  } catch (error) {
+    return undefined
+  }
+}
+
 const transformSafetyNetResponse = response => {
   let newResponse = response
   if (_get(response, 'data.data.replacements')) {
@@ -39,6 +48,13 @@ const transformSafetyNetResponse = response => {
   return newResponse
 }
 
+const failedValidation = response => {
+  return (
+    _get(response, 'data.full_suggestion.length') > 0 ||
+    _get(response, 'data.data.replacements.length') > 0
+  )
+}
+
 export const cancelQuery = () => {
   // if (queryCall) {
   //   queryCall.cancel('Query operation cancelled by the user.')
@@ -58,12 +74,9 @@ export const runQueryOnly = ({
   test,
   domain,
   apiKey,
-  customerId,
-  userId,
   token,
-  username,
   source
-}) => {
+} = {}) => {
   const axiosInstance = axios.create({})
 
   // if (!queryCall) {
@@ -75,12 +88,11 @@ export const runQueryOnly = ({
 
   const data = {
     text: query,
-    username: demo ? 'widget-demo' : username || 'widget-user',
-    customer_id: customerId,
-    user_id: userId,
-    source,
+    source: formatSourceString(source),
     debug,
-    test
+    test,
+    user_id: demo ? 'demo' : undefined,
+    customer_id: demo ? 'demo' : undefined
   }
 
   const config = {}
@@ -121,11 +133,22 @@ export const runQueryOnly = ({
       return Promise.resolve(queryResponse)
     })
     .catch(error => {
-      if (error.code === 'ECONNABORTED') {
+      if (error.response === 401 || !_get(error, 'response.data')) {
+        return Promise.reject({ error: 'unauthenticated' })
+      } else if (error.code === 'ECONNABORTED') {
         error.data = { message: 'Request Timed Out' }
       }
       if (axios.isCancel(error)) {
         error.data = { message: 'Query Cancelled' }
+      } else if (
+        _get(error, 'response.data.reference_id') === '1.1.430' ||
+        _get(error, 'response.data.reference_id') === '1.1.431'
+      ) {
+        return Promise.reject({
+          ..._get(error, 'response.data'),
+          originalQuery: query,
+          suggestionResponse: true
+        })
       }
       return Promise.reject(_get(error, 'response.data'))
     })
@@ -143,12 +166,9 @@ export const runQuery = ({
   enableQueryValidation,
   domain,
   apiKey,
-  customerId,
-  userId,
   token,
-  username,
   source
-}) => {
+} = {}) => {
   if (enableQueryValidation) {
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
@@ -156,16 +176,10 @@ export const runQuery = ({
       demo,
       domain,
       apiKey,
-      customerId,
-      userId,
       token
     })
       .then(response => {
-        if (
-          _get(response, 'data.full_suggestion.length') > 0 ||
-          _get(response, 'data.data.replacements.length') > 0
-          // && !this.state.skipSafetyNet
-        ) {
+        if (failedValidation(response)) {
           const newResponse = transformSafetyNetResponse(response)
           return Promise.resolve(newResponse)
         }
@@ -176,27 +190,13 @@ export const runQuery = ({
           test,
           domain,
           apiKey,
-          customerId,
-          userId,
           token,
-          username,
           source
         })
       })
-      .catch(() => {
-        return runQueryOnly({
-          query,
-          demo,
-          debug,
-          test,
-          domain,
-          apiKey,
-          customerId,
-          userId,
-          token,
-          username,
-          source
-        })
+      .catch(error => {
+        console.error(error)
+        return Promise.reject(error)
       })
   }
 
@@ -208,31 +208,20 @@ export const runQuery = ({
     token,
     domain,
     apiKey,
-    customerId,
-    userId,
-    username,
     source
   })
 }
 
-export const runSafetyNet = ({
-  text,
-  demo,
-  domain,
-  apiKey,
-  customerId,
-  userId,
-  token
-}) => {
+export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
   const axiosInstance = axios.create({})
 
   const url = demo
     ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
       text
-    )}&projectId=1`
+    )}&projectId=1&user_id=demo&customer_id=demo`
     : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
       text
-    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
+    )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
@@ -256,26 +245,22 @@ export const runDrilldown = ({
   test,
   domain,
   apiKey,
-  customerId,
-  userId,
-  token,
-  username
-}) => {
+  token
+} = {}) => {
   const axiosInstance = axios.create({})
 
   // drilldownCall = axios.CancelToken.source()
 
   const data = {
-    customer_id: customerId,
-    user_id: userId,
-    debug,
-    test,
-    username
+    debug: debug || false,
+    test
   }
 
   if (demo) {
     data.query_id = queryID
     data.group_bys = groupByObject
+    data.user_id = 'demo'
+    data.customer_id = 'demo'
   } else {
     data.columns = groupByObject
   }
@@ -298,15 +283,18 @@ export const runDrilldown = ({
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchSuggestions = ({
+export const fetchAutocomplete = ({
   suggestion,
   demo,
   domain,
   apiKey,
-  customerId,
-  userId,
   token
-}) => {
+} = {}) => {
+  // Do not run if text is blank
+  if (!suggestion || !suggestion.trim()) {
+    return
+  }
+
   const axiosInstance = axios.create({})
 
   // Cancel current autocomplete call if there is one
@@ -319,10 +307,10 @@ export const fetchSuggestions = ({
   const url = demo
     ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
       suggestion
-    )}&projectid=1`
+    )}&projectid=1&user_id=demo&customer_id=demo`
     : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
       suggestion
-    )}&key=${apiKey}&customer_id=${customerId}&user_id=${userId}`
+    )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = autoCompleteCall.token
@@ -338,21 +326,12 @@ export const fetchSuggestions = ({
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchApiId = (apiKey, token) => {
-  const url = `https://backend-staging.chata.io/api/v1/integrator?key=${apiKey}`
-  const axiosInstance = axios.create({})
-
-  return axiosInstance
-    .get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
-}
-
-export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
+export const setColumnVisibility = ({
+  apiKey,
+  token,
+  domain,
+  columns
+} = {}) => {
   const url = `${domain}/autoql/api/v1/query/column-visibility?key=${apiKey}`
   const data = { columns }
   const config = {}
@@ -371,17 +350,15 @@ export const setColumnVisibility = ({ apiKey, token, domain, columns }) => {
 
 export const fetchQueryTips = ({
   keywords,
-  customerId,
-  userId,
-  limit,
-  offset,
+  pageSize,
+  pageNumber,
   domain,
   apiKey,
   token,
   skipSafetyNet
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&customer_id=${customerId}&user_id=${userId}&limit=${limit}&offset=${offset}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
 
   const axiosInstance = axios.create({
     headers: {
@@ -395,8 +372,6 @@ export const fetchQueryTips = ({
       demo: false,
       domain,
       apiKey,
-      customerId,
-      userId,
       token
     })
       .then(safetyNetResponse => {
@@ -423,6 +398,41 @@ export const fetchQueryTips = ({
 
   return axiosInstance
     .get(queryTipsUrl)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
+  const commaSeparatedKeywords = query ? query.split(' ') : []
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  return axiosInstance
+    .get(relatedQueriesUrl)
+    .then(response => Promise.resolve(response))
+    .catch(error => Promise.reject(_get(error, 'response.data')))
+}
+
+export const reportProblem = ({ queryId, domain, apiKey, token } = {}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}?key=${apiKey}`
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+  const data = {
+    is_correct: false
+  }
+
+  return axiosInstance
+    .put(url, data)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }

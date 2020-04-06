@@ -23,17 +23,20 @@ import {
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 import { setStyleVars } from '../../js/Util'
+import errorMessages from '../../js/errorMessages'
 
 // Components
 import { Icon } from '../Icon'
-import { ChatBar } from '../ChatBar'
+import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
+import { Cascader } from '../Cascader'
 import {
   runDrilldown,
   cancelQuery,
-  fetchQueryTips
+  fetchQueryTips,
+  fetchSuggestions
 } from '../../js/queryService'
 
 // Styles
@@ -41,13 +44,6 @@ import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
 export default class DataMessenger extends React.Component {
-  introMessageObject = {
-    id: 'intro',
-    isResponse: true,
-    type: 'text',
-    content: ''
-  }
-
   static propTypes = {
     // Global
     authentication: authenticationType,
@@ -65,19 +61,22 @@ export default class DataMessenger extends React.Component {
     handleImage: string,
     handleStyles: shape({}),
     shiftScreen: bool,
-    customerName: string,
+    userDisplayName: string,
     clearOnClose: bool,
     enableVoiceRecord: bool,
     title: string,
     maxMessages: number,
     introMessage: string,
-    enableQueryInspirationTab: bool,
+    enableExploreQueriesTab: bool,
     resizable: bool,
+    inputPlaceholder: string,
+    introMessageTopics: shape({}),
 
     // Callbacks
     onVisibleChange: func,
     onHandleClick: func,
-    onErrorCallback: func
+    onErrorCallback: func,
+    onSuccessAlert: func
   }
 
   static defaultProps = {
@@ -97,19 +96,22 @@ export default class DataMessenger extends React.Component {
     handleImage: undefined,
     handleStyles: undefined,
     shiftScreen: false,
-    customerName: 'there',
+    userDisplayName: 'there',
     clearOnClose: false,
     enableVoiceRecord: true,
     title: 'Data Messenger',
     maxMessages: undefined,
     introMessage: undefined,
-    enableQueryInspirationTab: true,
+    enableExploreQueriesTab: true,
     resizable: true,
+    inputPlaceholder: undefined,
+    introMessageTopics: undefined,
 
     // Callbacks
     onHandleClick: () => {},
     onVisibleChange: () => {},
-    onErrorCallback: () => {}
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {}
   }
 
   state = {
@@ -118,22 +120,20 @@ export default class DataMessenger extends React.Component {
     height: this.props.height,
     isResizing: false,
 
-    stateScrollTop: 0,
-    lastMessageId: 'intro',
+    lastMessageId: undefined,
     isClearMessageConfirmVisible: false,
-    messages: [this.introMessageObject],
+    messages: [],
 
     queryTipsList: undefined,
     queryTipsLoading: false,
     queryTipsError: false,
-    queryTipsPage: 0,
     queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 0
+    queryTipsCurrentPage: 1
   }
 
   componentDidMount = () => {
     this.setStyles()
-    this.setIntroMessageObject()
+    this.setintroMessages()
 
     // Listen for esc press to cancel queries while they are running
     document.addEventListener('keydown', this.escFunction, false)
@@ -145,10 +145,12 @@ export default class DataMessenger extends React.Component {
   }
 
   componentDidUpdate = prevProps => {
-    ReactTooltip.rebuild()
+    setTimeout(() => {
+      ReactTooltip.rebuild()
+    }, 1000)
     if (this.props.isVisible && !prevProps.isVisible) {
-      if (this.chatBarRef) {
-        this.chatBarRef.focus()
+      if (this.queryInputRef) {
+        this.queryInputRef.focus()
       }
     }
     if (
@@ -176,13 +178,81 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  setIntroMessageObject = () => {
-    this.introMessageObject.content = this.props.introMessage
-      ? `${this.props.introMessage}`
-      : `Hi ${this.props.customerName ||
-          'there'}! I'm here to help you access, search and analyze your data.`
+  createIntroMessage = ({ type, content }) => {
+    return {
+      id: uuid.v4(),
+      isResponse: true,
+      type: type || 'text',
+      content: content || ''
+    }
+  }
 
-    this.setState({ messages: [this.introMessageObject] })
+  createTopicsMessage = () => {
+    try {
+      const content = (
+        <div>
+          Some things you can ask me:
+          <br />
+          <div className="topics-container">
+            {
+              <Cascader
+                options={this.props.introMessageTopics}
+                onFinalOptionClick={option => {
+                  this.onSuggestionClick(
+                    option.label,
+                    undefined,
+                    undefined,
+                    'welcome_prompt'
+                  )
+                }}
+                onSeeMoreClick={label => this.runTopicInExporeQueries(label)}
+              />
+            }
+          </div>
+          Use{' '}
+          <span
+            className="intro-qi-link"
+            onClick={() => this.setState({ activePage: 'tips' })}
+          >
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
+            Queries
+          </span>{' '}
+          to further explore the possibilities.
+        </div>
+      )
+
+      return content
+    } catch (error) {
+      console.error(error)
+      return undefined
+    }
+  }
+
+  setintroMessages = () => {
+    const introMessages = [
+      this.createIntroMessage({
+        content: this.props.introMessage
+          ? `${this.props.introMessage}`
+          : `Hi ${this.props.userDisplayName ||
+              'there'}! Let’s dive into your data. What can I help you discover today?`
+      })
+    ]
+
+    if (!this.props.introMessage && this.props.introMessageTopics) {
+      const topicsMessageContent = this.createTopicsMessage()
+
+      if (topicsMessageContent) {
+        introMessages.push(
+          this.createIntroMessage({ content: topicsMessageContent })
+        )
+      }
+    }
+
+    this.setState({
+      messages: introMessages,
+      lastMessageId: introMessages[introMessages.length - 1].id,
+      isClearMessageConfirmVisible: false
+    })
   }
 
   setStyles = () => {
@@ -195,7 +265,7 @@ export default class DataMessenger extends React.Component {
       themeStyles['font-family'] = fontFamily
     }
 
-    setStyleVars({ themeStyles, prefix: '--chata-drawer-' })
+    setStyleVars({ themeStyles, prefix: '--chata-messenger-' })
   }
 
   getHandlerProp = () => {
@@ -290,8 +360,8 @@ export default class DataMessenger extends React.Component {
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    if (this.chatBarRef) {
-      this.chatBarRef.animateInputTextAndSubmit(
+    if (this.queryInputRef) {
+      this.queryInputRef.animateInputTextAndSubmit(
         suggestion,
         skipSafetyNet,
         source
@@ -301,9 +371,34 @@ export default class DataMessenger extends React.Component {
 
   onResponse = response => {
     this.addResponseMessage({ response })
-    this.setState({ isChataThinking: false })
-    if (this.chatBarRef) {
-      this.chatBarRef.focus()
+
+    if (_get(response, 'reference_id') === '1.1.430') {
+      // Fetch suggestion list now
+      fetchSuggestions({
+        query: response.originalQuery,
+        ...this.props.authentication
+      })
+        .then(response => {
+          this.addResponseMessage({ response })
+          this.setState({ isChataThinking: false })
+          if (this.queryInputRef) {
+            this.queryInputRef.focus()
+          }
+        })
+        .catch(error => {
+          this.addResponseMessage({
+            content: _get(error, 'response.data.message')
+          })
+          this.setState({ isChataThinking: false })
+          if (this.queryInputRef) {
+            this.queryInputRef.focus()
+          }
+        })
+    } else {
+      this.setState({ isChataThinking: false })
+      if (this.queryInputRef) {
+        this.queryInputRef.focus()
+      }
     }
   }
 
@@ -339,22 +434,22 @@ export default class DataMessenger extends React.Component {
           })
           this.setState({ isChataThinking: false })
         })
-        .catch(() => {
+        .catch(error => {
+          console.error(error)
+          this.addResponseMessage({
+            content: _get(error, 'message')
+          })
           this.setState({ isChataThinking: false })
         })
     }
   }
 
   clearMessages = () => {
-    if (this.chatBarRef) {
-      this.chatBarRef.focus()
+    if (this.queryInputRef) {
+      this.queryInputRef.focus()
     }
 
-    this.setState({
-      messages: [this.introMessageObject],
-      lastMessageId: 'intro',
-      isClearMessageConfirmVisible: false
-    })
+    this.setintroMessages()
   }
 
   deleteMessage = id => {
@@ -366,16 +461,14 @@ export default class DataMessenger extends React.Component {
 
   createErrorMessage = content => {
     return {
-      content:
-        content ||
-        'Oops... Something went wrong with this query. Please try again. If the problem persists, please contact the customer success team.',
+      content: content || errorMessages.GENERAL_ERROR_MESSAGE,
       id: uuid.v4(),
       type: 'error',
       isResponse: true
     }
   }
 
-  createMessage = (response, content) => {
+  createMessage = ({ response, content }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
@@ -423,9 +516,12 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage('Query Cancelled.')
     } else if (_get(response, 'error') === 'unauthenticated') {
       message = this.createErrorMessage(
-        `Uh oh.. It looks like you don't have access to this resource. 
-
-        Please double check that all the required authentication fields are provided.`
+        <div>
+          Uh oh.. It looks like you don't have access to this resource. <br />
+          <br />
+          Please double check that all required authentication fields are
+          correct.
+        </div>
       )
     } else if (_get(response, 'error') === 'parse error') {
       // Invalid response JSON
@@ -433,7 +529,7 @@ export default class DataMessenger extends React.Component {
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage(response, content)
+      message = this.createMessage({ response, content })
     }
     this.setState({
       messages: [...currentMessages, message]
@@ -445,8 +541,8 @@ export default class DataMessenger extends React.Component {
     this.setState({ activeMessageId: id })
   }
 
-  setChatBarRef = ref => {
-    this.chatBarRef = ref
+  setQueryInputRef = ref => {
+    this.queryInputRef = ref
   }
 
   renderPageSwitcher = () => {
@@ -472,7 +568,7 @@ export default class DataMessenger extends React.Component {
             <div
               className={`tab${page === 'tips' ? ' active' : ''} tips`}
               onClick={() => this.setState({ activePage: 'tips' })}
-              data-tip="Query Inspiration"
+              data-tip="Explore Queries"
               data-for="chata-header-tooltip"
               data-delay-show={1000}
               // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
@@ -493,12 +589,12 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() =>
             this.setState({ isClearMessageConfirmVisible: false })
           }
-          position={'bottom'} // preferred position
+          position="bottom" // preferred position
           content={
             <div className="clear-messages-confirm-popover">
               <div className="chata-confirm-text">
                 <Icon className="chata-confirm-icon" type="warning" />
-                Clear all messages?
+                Clear all queries & responses?
               </div>
               <Button
                 type="default"
@@ -507,14 +603,14 @@ export default class DataMessenger extends React.Component {
                   this.setState({ isClearMessageConfirmVisible: false })
                 }
               >
-                No
+                Cancel
               </Button>
               <Button
                 type="primary"
                 size="small"
                 onClick={() => this.clearMessages()}
               >
-                Yes
+                Clear
               </Button>
             </div>
           }
@@ -524,7 +620,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="chata-button clear-all"
-            data-tip="Clear Messages"
+            data-tip="Clear data responses"
             data-for="chata-header-tooltip"
           >
             <Icon type="trash" />
@@ -540,7 +636,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'tips') {
-      title = 'What Can I Ask?'
+      title = 'Explore Queries'
     }
     return <div className="header-title">{title}</div>
   }
@@ -552,7 +648,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="chata-button close"
-            data-tip="Close Drawer"
+            data-tip="Close Data Messenger"
             data-for="chata-header-tooltip"
           >
             <Icon type="close" />
@@ -616,6 +712,7 @@ export default class DataMessenger extends React.Component {
                     response={message.response}
                     type={message.type}
                     onErrorCallback={this.props.onErrorCallback}
+                    onSuccessAlert={this.props.onSuccessAlert}
                     deleteMessageCallback={this.deleteMessage}
                   />
                 )
@@ -637,38 +734,41 @@ export default class DataMessenger extends React.Component {
             <Icon type="chata-bubbles-outlined" />
             We run on AutoQL by Chata
           </div>
-          <ChatBar
+          <QueryInput
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
-            ref={this.setChatBarRef}
-            test={this.props.autoQLConfig.test}
+            themeConfig={this.props.themeConfig}
+            ref={this.setQueryInputRef}
             className="chat-drawer-chat-bar"
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
             enableVoiceRecord={this.props.enableVoiceRecord}
-            autoCompletePlacement="top"
+            autoCompletePlacement="above"
             showChataIcon={false}
             showLoadingDots={false}
+            placeholder={this.props.inputPlaceholder}
+            onErrorCallback={this.props.onErrorCallback}
+            source={['data_messenger']}
           />
         </div>
       </Fragment>
     )
   }
 
-  fetchQueryTipsList = (keywords, offset, skipSafetyNet) => {
+  fetchQueryTipsList = (keywords, pageNumber, skipSafetyNet) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
     const containerElement = document.querySelector(
       '.query-tips-page-container'
     )
-    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
+    const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
       ...this.props.authentication,
       keywords,
-      limit,
-      offset,
+      pageSize,
+      pageNumber,
       skipSafetyNet
     })
       .then(response => {
@@ -679,50 +779,76 @@ export default class DataMessenger extends React.Component {
             queryTipsSafetyNetResponse: response
           })
         } else {
-          const totalQueries = Number(_get(response, 'data.data.total'))
-          const offset = Number(_get(response, 'data.data.offset'))
+          const totalQueries = Number(
+            _get(response, 'data.data.pagination.total_items')
+          )
+          const totalPages = Number(
+            _get(response, 'data.data.pagination.total_pages')
+          )
+          const pageNumber = Number(
+            _get(response, 'data.data.pagination.current_page')
+          )
 
           this.setState({
-            queryTipsList: _get(response, 'data.data.queries'),
+            queryTipsList: _get(response, 'data.data.items'),
             queryTipsLoading: false,
             queryTipsError: false,
-            queryTipsTotalPages: totalQueries
-              ? Math.ceil(totalQueries / limit)
-              : 0,
-            queryTipsCurrentPage: offset ? offset / limit : 0,
+            queryTipsTotalPages: totalPages,
+            queryTipsCurrentPage: pageNumber,
+            queryTipsTotalQueries: totalQueries,
             queryTipsSafetyNetResponse: undefined
           })
         }
       })
-      .catch(() =>
+      .catch(error => {
+        console.error(error)
+        this.props.onErrorCallback(error)
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
           queryTipsSafetyNetResponse: undefined
         })
-      )
+      })
   }
 
   onQueryTipsInputKeyPress = e => {
     if (e.key == 'Enter') {
-      this.fetchQueryTipsList(e.target.value, 0)
+      this.fetchQueryTipsList(e.target.value, 1)
     } else {
       this.setState({ queryTipsInputValue: e.target.value })
     }
   }
 
   onQueryTipsPageChange = ({ selected }) => {
-    const containerElement = document.querySelector(
-      '.query-tips-page-container'
-    )
-    const limit = Math.floor((containerElement.clientHeight - 150) / 50)
-    const nextOffset = limit * selected
-    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextOffset, true)
+    const nextPage = selected + 1 // Because ReactPaginate is 0 indexed
+    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
   onQueryTipsSafetyNetSuggestionClick = keywords => {
     this.setState({ queryTipsInputValue: keywords })
-    this.fetchQueryTipsList(keywords, 0, true)
+    this.fetchQueryTipsList(keywords, 1, true)
+  }
+
+  animateQITextAndSubmit = text => {
+    if (typeof text === 'string' && _get(text, 'length')) {
+      for (let i = 1; i <= text.length; i++) {
+        setTimeout(() => {
+          this.setState({
+            queryTipsInputValue: text.slice(0, i)
+          })
+          if (i === text.length) {
+            this.fetchQueryTipsList(text, 1)
+          }
+        }, i * 50)
+      }
+    }
+  }
+
+  runTopicInExporeQueries = topic => {
+    this.setState({ activePage: 'tips' })
+    setTimeout(() => {
+      this.animateQITextAndSubmit(topic)
+    }, 500)
   }
 
   renderQueryTipsContent = () => (
@@ -740,7 +866,7 @@ export default class DataMessenger extends React.Component {
       executeQuery={query => {
         this.setState({ activePage: 'messenger' })
         setTimeout(() => {
-          this.onSuggestionClick(query, undefined, undefined, 'inspirations')
+          this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
         }, 500)
       }}
     />
@@ -821,9 +947,38 @@ export default class DataMessenger extends React.Component {
     return null
   }
 
+  renderTooltips = () => {
+    return (
+      <Fragment>
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-header-tooltip"
+          effect="solid"
+          delayShow={500}
+          place="top"
+        />
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="chata-toolbar-btn-tooltip"
+          effect="solid"
+          delayShow={500}
+          place="top"
+          html
+        />
+        <ReactTooltip
+          className="chata-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
+          html
+        />
+      </Fragment>
+    )
+  }
+
   render = () => {
     return (
       <Fragment>
+        {this.renderTooltips()}
         <Drawer
           data-test="chata-drawer-test"
           className={`chata-drawer${
@@ -843,7 +998,7 @@ export default class DataMessenger extends React.Component {
           // onKeyDown={this.escFunction}
         >
           {this.props.resizable && this.renderResizeHandle()}
-          {this.props.enableQueryInspirationTab && this.renderPageSwitcher()}
+          {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
           <div className="chata-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}
@@ -851,43 +1006,6 @@ export default class DataMessenger extends React.Component {
             {this.renderBodyContent()}
           </div>
         </Drawer>
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-header-tooltip"
-          effect="solid"
-          delayShow={500}
-          // place="right"
-          countTransform={false}
-          html
-        />
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-toolbar-btn-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
-        <ReactTooltip
-          className="interpretation-tooltip"
-          id="interpretation-tooltip"
-          effect="solid"
-          delayShow={500}
-          delayHide={200}
-          clickable
-          html
-        />
-        <ReactTooltip
-          className="chata-chart-tooltip"
-          id="chart-element-tooltip"
-          effect="solid"
-          html
-        />
-        <ReactTooltip
-          id="select-tooltip"
-          className="chata-drawer-tooltip"
-          effect="solid"
-          delayShow={500}
-        />
       </Fragment>
     )
   }

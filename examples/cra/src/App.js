@@ -2,14 +2,15 @@ import React, { Component, Fragment } from 'react'
 import axios from 'axios'
 import {
   DataMessenger,
-  ResponseRenderer,
-  ChatBar,
+  QueryOutput,
+  QueryInput,
   Dashboard,
   executeDashboard,
   NotificationButton,
   NotificationList,
   NotificationSettings,
-  Icon as ChataIcon
+  Icon as ChataIcon,
+  getSupportedDisplayTypes
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -23,13 +24,26 @@ import {
   Menu,
   Form,
   message,
-  Icon,
   Modal,
   Spin
 } from 'antd'
 
+import {
+  ToolOutlined,
+  CloseOutlined,
+  MenuFoldOutlined,
+  ReloadOutlined,
+  StopOutlined,
+  EditOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+  RollbackOutlined,
+  SaveOutlined
+} from '@ant-design/icons'
+
 import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
+import spiraLogo from './spira-logo.png'
 
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/autoql.esm.css'
@@ -196,13 +210,14 @@ export default class App extends Component {
     response: null,
     showMask: true,
     shiftScreen: false,
-    customerName: 'Nikki',
+    userDisplayName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
     enableQueryValidation: true,
+    enableQuerySuggestions: true,
     enableDrilldowns: true,
-    enableQueryInspirationTab: true,
-    enableColumnEditor: true,
+    enableExploreQueriesTab: true,
+    enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
     dashboardTitleColor: '#2466AE',
     clearOnClose: false,
@@ -218,10 +233,9 @@ export default class App extends Component {
     test: true,
     demo: getStoredProp('demo') == 'true',
     apiKey: getStoredProp('api-key') || '',
-    customerId: getStoredProp('customer-id') || '',
     domain: getStoredProp('domain-url') || '',
-    username: getStoredProp('user-id') || '',
-    userId: getStoredProp('userid') || '',
+    customerId: getStoredProp('customer-id') || '',
+    userId: getStoredProp('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
@@ -258,10 +272,7 @@ export default class App extends Component {
     return {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
-      customerId: this.state.customerId, // required if demo is false
-      userId: this.state.userId, // required if demo is false
       domain: this.state.domain,
-      username: this.state.username,
       demo: this.state.demo
     }
   }
@@ -271,7 +282,8 @@ export default class App extends Component {
       enableQueryValidation: this.state.enableQueryValidation,
       enableAutocomplete: this.state.enableAutocomplete,
       enableDrilldowns: this.state.enableDrilldowns,
-      enableColumnEditor: this.state.enableColumnEditor,
+      enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
+      enableQuerySuggestions: this.state.enableQuerySuggestions,
       debug: this.state.debug,
       test: this.state.test
     }
@@ -290,19 +302,26 @@ export default class App extends Component {
   }
 
   getThemeConfigProp = () => {
-    const lightAccentColor =
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-        ? '#253340'
-        : this.state.lightAccentColor
+    let lightAccentColor = this.state.lightAccentColor
+    let darkAccentColor = this.state.darkAccentColor
 
-    const darkAccentColor =
+    if (
       this.state.isAuthenticated &&
       this.state.activeIntegrator === 'purefacts' &&
       !this.state.demo
-        ? '#253340'
-        : this.state.darkAccentColor
+    ) {
+      lightAccentColor = '#253340'
+      darkAccentColor = '#253340'
+    }
+
+    if (
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'spira' &&
+      !this.state.demo
+    ) {
+      lightAccentColor = '#508bb8'
+      darkAccentColor = '#508bb8'
+    }
 
     return {
       theme: this.state.theme,
@@ -319,10 +338,7 @@ export default class App extends Component {
 
     const data = {
       text: query,
-      username: 'notification-data',
-      customer_id: this.state.customerId,
-      user_id: this.state.userId,
-      source: 'notification'
+      source: ['notification']
     }
 
     const token = getStoredProp('jwtToken')
@@ -334,12 +350,7 @@ export default class App extends Component {
       }
     }
 
-    if (
-      !this.state.userId ||
-      !this.state.customerId ||
-      !this.state.apiKey ||
-      !this.state.domain
-    ) {
+    if (!this.state.apiKey || !this.state.domain) {
       return Promise.reject({ error: 'unauthenticated' })
     }
 
@@ -425,7 +436,7 @@ export default class App extends Component {
     }
 
     const baseUrl = getBaseUrl()
-    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&customer_id=${this.state.customerId}`
+    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&project_id=${this.state.customerId}`
 
     // Use login token to get JWT token
     const jwtResponse = await axios.get(url, {
@@ -452,13 +463,11 @@ export default class App extends Component {
       componentKey: uuid.v4(),
       activeIntegrator: this.getActiveIntegrator()
     })
+
+    return Promise.resolve()
   }
 
-  onLogin = async e => {
-    if (e) {
-      e.preventDefault()
-    }
-
+  onLogin = async () => {
     try {
       const baseUrl = getBaseUrl()
 
@@ -480,7 +489,7 @@ export default class App extends Component {
       const loginToken = loginResponse.data
       setStoredProp('loginToken', loginToken)
 
-      this.getJWT(loginToken)
+      await this.getJWT(loginToken)
 
       message.success('Login Sucessful!', 0.8)
       this.fetchDashboard()
@@ -568,6 +577,12 @@ export default class App extends Component {
     }
   }
 
+  onSuccess = alertText => {
+    if (alertText) {
+      message.success(alertText)
+    }
+  }
+
   saveDashboard = async () => {
     this.setState({
       isSavingDashboard: true
@@ -577,13 +592,15 @@ export default class App extends Component {
       // const { tiles, domain, apiKey } = this.state
 
       const data = {
-        name: this.state.activeDashboardName,
-        customer_id: this.state.customerId,
         user_id: this.state.userId,
+        customer_id: this.state.customerId,
+        username: this.state.username,
+        name: this.state.activeDashboardName,
         data: this.state.dashboardTiles.map(tile => {
           return {
             ...tile,
-            queryResponse: undefined
+            queryResponse: undefined,
+            secondQueryResponse: undefined
           }
         })
       }
@@ -612,6 +629,99 @@ export default class App extends Component {
     }
   }
 
+  resetDashboard = () => {
+    const newDashboardTiles = this.state.dashboardTiles.map(tile => {
+      return {
+        ...tile,
+        queryResponse: undefined,
+        secondQueryResponse: undefined
+      }
+    })
+
+    this.setState({ dashboardTiles: newDashboardTiles })
+  }
+
+  getIntroMessageTopics = () => {
+    if (this.state.activeIntegrator === 'spira') {
+      return [
+        {
+          label: 'Jobs',
+          value: 'jobs',
+          children: [
+            {
+              label: 'List all jobs',
+              value: 'all-jobs'
+            },
+            { label: 'All jobs in bid state', value: 'total-jobs' },
+            {
+              label: 'All jobs open from last year',
+              value: 'total-jobs-by-status'
+            }
+          ]
+        },
+        {
+          label: 'Tickets',
+          value: 'tickets',
+          children: [
+            {
+              label: 'Total tickets',
+              value: 'total-tickets'
+            },
+            { label: 'Total tickets in 2019 by month', value: 'tickets-2019' },
+            { label: 'List tickets in void status', value: 'tickets-void' }
+          ]
+        },
+        {
+          label: 'Estimates',
+          value: 'estimates',
+          children: [
+            {
+              label: 'Total estimates',
+              value: 'total-estimates'
+            },
+            { label: 'Total estimates by year', value: 'estimates-by-year' },
+            {
+              label: 'List estimates over 10000',
+              value: 'estimates-over-10000'
+            }
+          ]
+        },
+        {
+          label: 'Revenue',
+          value: 'revenue',
+          children: [
+            {
+              label: 'Total revenue this year',
+              value: 'revenue-this-year'
+            },
+            { label: 'Total revenue this month', value: 'revenue-this-month' },
+            {
+              label: 'Total revenue by area in 2019',
+              value: 'revenue-2019'
+            }
+          ]
+        },
+        {
+          label: 'Utilization',
+          value: 'Utilization',
+          children: [
+            {
+              label: 'Total utilization by personnel',
+              value: 'personnel'
+            },
+            { label: 'Total hour utilization by resource', value: 'resource' },
+            {
+              label: 'Total utilization days by project customer',
+              value: 'customer'
+            }
+          ]
+        }
+      ]
+    }
+
+    return undefined
+  }
+
   renderChartColorsList = () => {
     const { chartColors } = this.state
     var listItems = chartColors.map((item, i) => {
@@ -623,9 +733,8 @@ export default class App extends Component {
           sortId={i}
         >
           {item}
-          <Icon
+          <CloseOutlined
             style={{ float: 'right', cursor: 'pointer', marginTop: '3px' }}
-            type="close"
             onClick={() => {
               const newChartColors = this.state.chartColors.filter(
                 color => color !== item
@@ -660,147 +769,162 @@ export default class App extends Component {
     )
   }
 
-  renderChatBarAndResponse = () => {
+  renderAuthenticationForm = () => {
+    const layout = {
+      labelCol: { span: 8 },
+      wrapperCol: { span: 16 }
+    }
+    const tailLayout = {
+      wrapperCol: { offset: 8, span: 16 }
+    }
+
     return (
-      <div>
-        <ChatBar
-          ref={r => (this.chatBarRef = r)}
-          autoCompletePlacement="bottom"
-          onSubmit={() => this.setState({ response: null })}
-          onResponseCallback={response => {
-            this.setState({ response })
+      <Fragment>
+        <Form
+          {...layout}
+          initialValues={{
+            customerId: this.state.customerId,
+            userId: this.state.userId,
+            apiKey: this.state.apiKey,
+            domain: this.state.domain
           }}
-          showChataIcon
-          showLoadingDots
-        />
-        {this.state.response ? (
-          <div
-            style={{
-              height: '300px',
-              padding: '30px',
-              fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
-              color: '#565656' // Text, tables, and charts will inherit text color
-            }}
+          style={{ marginTop: '20px' }}
+          onFinish={this.onLogin}
+          onFinishFailed={errorInfo => console.log('Failed:', errorInfo)}
+        >
+          <Form.Item
+            label="Project ID"
+            name="customerId"
+            rules={[
+              { required: true, message: 'Please enter your project ID' }
+            ]}
           >
-            <ResponseRenderer
-              chatBarRef={this.chatBarRef}
-              response={this.state.response}
-              demo={this.state.demo}
+            <Input
+              name="customer-id"
+              onChange={e => {
+                this.setState({ customerId: e.target.value })
+              }}
+              onBlur={e => setStoredProp('customer-id', e.target.value)}
+              value={this.state.customerId}
             />
-          </div>
-        ) : (
-          <div
-            style={{
-              height: '75px',
-              width: 'calc(100% - 60px)',
-              padding: '30px',
-              fontFamily: 'Helvetica, Arial, Sans-Serif',
-              color: '#999',
-              textAlign: 'center',
-              fontSize: '14px'
-            }}
+          </Form.Item>
+          <Form.Item
+            label="User ID"
+            name="userId"
+            rules={[{ required: true, message: 'Please enter your user ID' }]}
           >
-            <em>The response will go here</em>
-          </div>
-        )}
-      </div>
+            <Input
+              name="user-id"
+              onChange={e => {
+                this.setState({ userId: e.target.value })
+              }}
+              onBlur={e => setStoredProp('userid', e.target.value)}
+              value={this.state.userId}
+            />
+          </Form.Item>
+          <Form.Item
+            label="API key"
+            name="apiKey"
+            rules={[{ required: true, message: 'Please enter your API key' }]}
+          >
+            <Input
+              name="api-key"
+              onChange={e => {
+                this.setState({ apiKey: e.target.value })
+              }}
+              onBlur={e => setStoredProp('api-key', e.target.value)}
+              value={this.state.apiKey}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Domain URL"
+            name="domain"
+            rules={[
+              { required: true, message: 'Please enter your domain URL' }
+            ]}
+          >
+            <Input
+              name="domain-url"
+              onChange={e => {
+                this.setState({ domain: e.target.value })
+              }}
+              onBlur={e => setStoredProp('domain-url', e.target.value)}
+              value={this.state.domain}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: 'Please enter your username' }]}
+          >
+            <Input
+              onChange={e => {
+                this.setState({ email: e.target.value })
+              }}
+              value={this.state.email}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[{ required: true, message: 'Please enter your password' }]}
+          >
+            <Input
+              type="password"
+              onChange={e => {
+                this.setState({ password: e.target.value })
+              }}
+              value={this.state.password}
+            />
+          </Form.Item>
+          <Form.Item {...tailLayout}>
+            <Button type="primary" htmlType="submit">
+              Authenticate
+            </Button>
+          </Form.Item>
+          <Form.Item {...tailLayout}>
+            <Button
+              type="default"
+              onClick={() => {
+                this.setState({
+                  isAuthenticated: false,
+                  dashboardTiles: undefined
+                })
+                setStoredProp('loginToken', undefined)
+                setStoredProp('jwtToken', undefined)
+                message.success('Successfully logged out')
+              }}
+            >
+              Log Out
+            </Button>
+          </Form.Item>
+        </Form>
+      </Fragment>
     )
   }
 
   renderPropOptions = () => {
     return (
       <div>
-        <h1>Data Source</h1>
+        <h1>Authentication</h1>
         {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
+        {!this.state.demo && this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
           false
         ])}
-        {!this.state.demo && (
-          <Fragment>
-            <h3>You must login to access data</h3>
-            <Form onSubmit={this.onLogin}>
-              <h4>Email (optional)</h4>
-              <Input
-                name="username"
-                onChange={e => {
-                  this.setState({ username: e.target.value })
-                }}
-                onBlur={e => setStoredProp('user-id', e.target.value)}
-                value={this.state.username}
-              />
-              <h4>Customer ID *</h4>
-              <Input
-                name="customer-id"
-                onChange={e => {
-                  this.setState({ customerId: e.target.value })
-                }}
-                onBlur={e => setStoredProp('customer-id', e.target.value)}
-                value={this.state.customerId}
-              />
-              <h4>User ID *</h4>
-              <Input
-                name="user-id"
-                onChange={e => {
-                  this.setState({ userId: e.target.value })
-                }}
-                onBlur={e => setStoredProp('userid', e.target.value)}
-                value={this.state.userId}
-              />
-              <h4>API key *</h4>
-              <Input
-                name="api-key"
-                onChange={e => {
-                  this.setState({ apiKey: e.target.value })
-                }}
-                onBlur={e => setStoredProp('api-key', e.target.value)}
-                value={this.state.apiKey}
-              />
-
-              <h4>Domain URL *</h4>
-              <Input
-                name="domain-url"
-                onChange={e => {
-                  this.setState({ domain: e.target.value })
-                }}
-                onBlur={e => setStoredProp('domain-url', e.target.value)}
-                value={this.state.domain}
-              />
-              <h4>Username *</h4>
-              <Input
-                onChange={e => {
-                  this.setState({ email: e.target.value })
-                }}
-                value={this.state.email}
-              />
-              <h4>Password *</h4>
-              <Input
-                type="password"
-                onChange={e => {
-                  this.setState({ password: e.target.value })
-                }}
-                value={this.state.password}
-              />
-              <br />
-              <Button type="primary" htmlType="submit">
-                Authenticate
-              </Button>
-            </Form>
-            <Form onSubmit={e => e.preventDefault()}></Form>
-          </Fragment>
-        )}
         <h1>Drawer Props</h1>
         <Button
           onClick={() => this.setState({ componentKey: uuid.v4() })}
           style={{ marginRight: '10px' }}
-          icon="reload"
+          icon={<ReloadOutlined />}
         >
           Reload Drawer
         </Button>
         <Button
           onClick={() => this.setState({ isVisible: true })}
           type="primary"
-          icon="menu-unfold"
+          icon={<MenuFoldOutlined />}
         >
           Open Drawer
         </Button>
@@ -884,14 +1008,14 @@ export default class App extends Component {
           }}
           value={this.state.quantityDecimals}
         />
-        <h4>Customer Name</h4>
+        <h4>User Display Name</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="text"
           onChange={e => {
-            this.setState({ customerName: e.target.value })
+            this.setState({ userDisplayName: e.target.value })
           }}
-          value={this.state.customerName}
+          value={this.state.userDisplayName}
         />
         <h4>Intro Message</h4>
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
@@ -901,6 +1025,14 @@ export default class App extends Component {
             this.setState({ introMessage: e.target.value })
           }}
           value={this.state.introMessage}
+        />
+        <h4>Query Input Placeholder</h4>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ inputPlaceholder: e.target.value })
+          }}
+          value={this.state.inputPlaceholder}
         />
         {this.createBooleanRadioGroup(
           'Clear All Messages on Close',
@@ -1012,8 +1144,13 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Enable Safety Net',
+          'Enable Query Validation',
           'enableQueryValidation',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Query Suggestions',
+          'enableQuerySuggestions',
           [true, false]
         )}
         {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
@@ -1021,13 +1158,13 @@ export default class App extends Component {
           false
         ])}
         {this.createBooleanRadioGroup(
-          'Enable Query Inspiration Tab',
-          'enableQueryInspirationTab',
+          'Enable Explore Queries Tab',
+          'enableExploreQueriesTab',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
           'Enable Column Visibility Editor',
-          'enableColumnEditor',
+          'enableColumnVisibilityManager',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
@@ -1063,6 +1200,12 @@ export default class App extends Component {
       !this.state.demo
     ) {
       handleImage = locateLogo
+    } else if (
+      this.state.isAuthenticated &&
+      this.state.activeIntegrator === 'spira' &&
+      !this.state.demo
+    ) {
+      handleImage = spiraLogo
     }
 
     return (
@@ -1084,7 +1227,7 @@ export default class App extends Component {
             ? this.state.placement
             : 'bottom'
         }
-        customerName={this.state.customerName}
+        userDisplayName={this.state.userDisplayName}
         introMessage={this.state.introMessage}
         showMask={this.state.showMask}
         shiftScreen={this.state.shiftScreen}
@@ -1095,36 +1238,31 @@ export default class App extends Component {
         title={this.state.title}
         maxMessages={this.state.maxMessages}
         handleImage={handleImage}
-        enableQueryInspirationTab={this.state.enableQueryInspirationTab}
+        enableExploreQueriesTab={this.state.enableExploreQueriesTab}
         onErrorCallback={this.onError}
-        // inputStyles
-        // autocompleteStyles
-        // handleStyles={{ right: '25px' }}
+        onSuccessAlert={this.onSuccess}
+        inputPlaceholder={this.state.inputPlaceholder}
+        introMessageTopics={this.getIntroMessageTopics()}
+        inputStyles
+        handleStyles={{ right: '25px' }}
       />
     )
   }
 
   renderDataMessengerPage = () => {
-    return (
-      <div className="test-page-container">
-        {
-          // this.renderChatBarAndResponse()
-        }
-        {this.renderPropOptions()}
-      </div>
-    )
+    return <div className="test-page-container">{this.renderPropOptions()}</div>
   }
 
-  renderChatBarPage = () => {
+  renderQueryInputPage = () => {
     return (
       <div>
-        <ChatBar
+        <QueryInput
           authentication={this.getAuthProp()}
           autoQLConfig={this.getAutoQLConfigProp()}
           dataFormatting={this.getDataFormattingProp()}
           themeConfig={this.getThemeConfigProp()}
-          ref={r => (this.chatBarRef = r)}
-          autoCompletePlacement="bottom"
+          ref={r => (this.queryInputRef = r)}
+          autoCompletePlacement="below"
           onSubmit={() => this.setState({ response: null })}
           onResponseCallback={response => {
             this.setState({ response })
@@ -1132,8 +1270,7 @@ export default class App extends Component {
           showChataIcon
           showLoadingDots
         />
-        {
-          // this.state.response ? (
+        {this.state.response && (
           <div
             style={{
               // height: 'auto',
@@ -1146,26 +1283,13 @@ export default class App extends Component {
               color: '#565656' // Text, tables, and charts will inherit text color
             }}
           >
-            <ResponseRenderer
-              chatBarRef={this.chatBarRef}
-              response={this.state.response}
+            <QueryOutput
+              queryInputRef={this.queryInputRef}
+              queryResponse={this.state.response}
               demo={this.state.demo}
             />
           </div>
-          // ) : (
-          //   <div
-          //     style={{
-          //       height: '75px',
-          //       width: 'calc(100% - 60px)',
-          //       padding: '30px',
-          //       fontFamily: 'Helvetica, Arial, Sans-Serif',
-          //       color: '#999',
-          //       textAlign: 'center',
-          //       fontSize: '14px'
-          //     }}
-          //   ></div>
-          // )
-        }
+        )}
       </div>
     )
   }
@@ -1213,13 +1337,13 @@ export default class App extends Component {
           }
           <Button
             onClick={() => this.setState({ isEditing: !this.state.isEditing })}
-            icon={this.state.isEditing ? 'stop' : 'edit'}
+            icon={this.state.isEditing ? <StopOutlined /> : <EditOutlined />}
           >
             {this.state.isEditing ? 'Stop Editing' : 'Edit'}
           </Button>
           <Button
             onClick={() => executeDashboard(this.dashboardRef)}
-            icon="play-circle"
+            icon={<PlayCircleOutlined />}
             style={{ marginLeft: '10px' }}
           >
             Execute Dashboard
@@ -1236,7 +1360,7 @@ export default class App extends Component {
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
               type="primary"
-              icon="plus"
+              icon={<PlusOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Add Tile
@@ -1246,7 +1370,7 @@ export default class App extends Component {
             <Button
               onClick={() => this.dashboardRef && this.dashboardRef.undo()}
               type="primary"
-              icon="rollback"
+              icon={<RollbackOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Undo
@@ -1257,7 +1381,7 @@ export default class App extends Component {
               onClick={this.saveDashboard}
               loading={this.state.isSavingDashboard}
               type="primary"
-              icon="save"
+              icon={<SaveOutlined />}
               style={{ marginLeft: '10px' }}
             >
               Save Dashboard
@@ -1288,6 +1412,7 @@ export default class App extends Component {
       <Menu
         onClick={({ key }) => {
           this.setState({ currentPage: key })
+          this.resetDashboard()
           if (key === 'notifications' && this.notificationBadgeRef) {
             this.notificationBadgeRef.resetCount()
           }
@@ -1297,14 +1422,14 @@ export default class App extends Component {
       >
         <Menu.Item key="drawer">
           <ChataIcon type="chata-bubbles-outlined" />
-          Chat Drawer
+          Data Messenger
         </Menu.Item>
-        <Menu.Item key="dashboard">
-          <ChataIcon type="dashboard" /> Dashboard
-        </Menu.Item>
-        {
-          // <Menu.Item key="chatbar">Chat Bar</Menu.Item>
-        }
+        {this.state.dashboardTiles && (
+          <Menu.Item key="dashboard">
+            <ChataIcon type="dashboard" /> Dashboard
+          </Menu.Item>
+        )}
+        {<Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
         {!this.state.demo &&
           this.state.isAuthenticated &&
           this.getActiveIntegrator() === 'nb-comp' && (
@@ -1402,8 +1527,8 @@ export default class App extends Component {
     }
 
     return (
-      <ResponseRenderer
-        response={this.state.activeNotificationContent}
+      <QueryOutput
+        queryResponse={this.state.activeNotificationContent}
         displayType="column"
       />
     )
@@ -1474,6 +1599,11 @@ export default class App extends Component {
     if (this.state.activeIntegrator === 'purefacts') {
       return <div className="ui-overlay purefacts" />
     }
+
+    // Spira
+    if (this.state.activeIntegrator === 'spira') {
+      return <div className="ui-overlay spira" />
+    }
   }
 
   renderMaintenancePage = () => (
@@ -1485,7 +1615,7 @@ export default class App extends Component {
         paddingTop: '111px'
       }}
     >
-      <Icon type="tool" style={{ fontSize: '75px', marginBottom: '20px' }} />
+      <ToolOutlined style={{ fontSize: '75px', marginBottom: '20px' }} />
       <br />
       <div style={{ fontSize: '25px' }}>
         We're undergoing a bit of scheduled maintenance.
@@ -1512,7 +1642,7 @@ export default class App extends Component {
         break
       }
       case 'chatbar': {
-        pageToRender = this.renderChatBarPage()
+        pageToRender = this.renderQueryInputPage()
         break
       }
       case 'dashboard': {

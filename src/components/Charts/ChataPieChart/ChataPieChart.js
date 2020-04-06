@@ -194,15 +194,22 @@ export default class Axis extends Component {
 
   renderLegend = () => {
     const self = this
-    const { height, margin, labelValue, chartColors } = this.props
+    const {
+      height,
+      margin,
+      labelValue,
+      chartColors,
+      stringColumnIndex,
+      numberColumnIndex
+    } = this.props
 
     const legendLabels = this.sortedData.map(d => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
-        column: _get(d, 'origColumns[0]')
+        column: _get(d, `origColumns[${stringColumnIndex}]`)
       })}: ${formatElement({
         element: d.cells[0].value || 0,
-        column: _get(d, 'origColumns[1]'),
+        column: _get(d, `origColumns[${numberColumnIndex}]`),
         config: this.props.dataFormatting
       })}`
       return legendString.trim()

@@ -1,5 +1,7 @@
 .chata-chart-container {
   position: relative;
+  height: 100%;
+  width: 100%;
 }
 
 /* These are not inline styles since they do not apply to saved PNG charts */
@@ -36,4 +38,8 @@
 .pie-chart .labels {
   font-size: 12px;
   font-weight: 600;
+}
+
+.chata-chart-container g.tick {
+  transition: all 0.3s ease;
 }

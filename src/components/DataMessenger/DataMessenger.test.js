@@ -124,6 +124,6 @@ describe('props', () => {
     })
   })
 
-  // If empty string is passed as customerName, we should render 'there'
-  // If customerName is not provided, we should render 'there'
+  // If empty string is passed as userDisplayName, we should render 'there'
+  // If userDisplayName is not provided, we should render 'there'
 })

@@ -673,6 +673,7 @@ export default class NotificationSettings extends React.Component {
           delayShow={500}
           html
         />
+
         {_get(this.state.ruleList, 'length')
           ? this.renderNotificationlist()
           : this.renderEmptyListMessage()}

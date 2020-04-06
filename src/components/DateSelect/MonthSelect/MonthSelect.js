@@ -42,6 +42,7 @@ export default class MonthSelect extends React.Component {
       }
       return 0
     } catch (error) {
+      console.error(error)
       return 0
     }
   }

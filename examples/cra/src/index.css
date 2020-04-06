@@ -3,7 +3,7 @@ body {
   width: 100vw;
   margin: 0;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .test-page-container {
@@ -41,6 +41,10 @@ body {
   background-image: url("./qbo_demo_ui.png");
 }
 
+.ui-overlay.spira {
+  background-image: url("./spira_ui2.png");
+}
+
 /* .ui-overlay.sage-demo {
   background-image: url("./sage_ui.png");
 } */
@@ -50,5 +54,13 @@ body {
 }
 
 .ant-message {
-  z-index: 99999;
+  z-index: 999999999999999 !important;
+}
+
+.ant-form-item {
+  margin-bottom: 10px;
+}
+
+.ant-form-item input {
+  max-width: unset;
 }

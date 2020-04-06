@@ -33,11 +33,11 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     borderColor: '#ddd',
-    // hoverColor: '#5a5a5a',
     hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
-    onRowClick: () => {}
+    onRowClick: () => {},
+    onCellClick: () => {}
   }
 
   state = {
@@ -80,15 +80,9 @@ export default class ChataTable extends React.Component {
     )
   }
 
-  rowClick = (e, row) => {
-    e.preventDefault()
-    e.stopPropagation()
-    this.props.onRowClick(row.getData(), this.props.columns)
-  }
-
   cellClick = (e, cell) => {
-    e.preventDefault()
-    e.stopPropagation()
+    // e.preventDefault()
+    // e.stopPropagation()
     this.props.onCellClick(cell)
   }
 
@@ -135,6 +129,7 @@ export default class ChataTable extends React.Component {
         id={`chata-table-container-${this.TABLE_CONTAINER_ID}`}
         data-test="chata-table"
         className="chata-table-container"
+        style={this.props.style}
       >
         <ReactTabulator
           ref={ref => (this.ref = ref)}

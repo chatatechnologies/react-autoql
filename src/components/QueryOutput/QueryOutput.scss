@@ -1,4 +1,5 @@
 .chata-response-content-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -11,16 +12,16 @@
   overflow: hidden;
 }
 
-.chata-suggestions-container {
-  margin-top: 5px;
-}
+// .chata-suggestions-container {
+//   margin-top: 5px;
+// }
 .chata-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
-  border-radius: 8px;
+  border-radius: 4px;
   font-family: inherit;
   font-size: 12px;
-  margin-top: 5px;
+  margin-bottom: 5px;
   outline: none !important;
   cursor: pointer;
   letter-spacing: 0.05em;
@@ -32,7 +33,7 @@
 .chata-suggestion-btn:hover {
   border-color: transparent;
   color: white;
-  background: var(--chata-drawer-accent-color);
+  background: var(--chata-output-accent-color);
 }
 .chata-help-link-btn {
   padding: 6px 14px;
@@ -76,6 +77,27 @@
   cursor: pointer;
   font-size: inherit;
 }
+.no-columns-error-message {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+
+  .warning-icon {
+    font-size: 22px;
+    display: block;
+    margin-bottom: -13px;
+  }
+  .eye-icon {
+    vertical-align: bottom;
+    line-height: 18px;
+  }
+}
 
 /* safetynet */
 .chata-safety-net-selector-container {
@@ -98,12 +120,13 @@
 .chata-safety-net-execute-btn:hover {
   border-color: #28a8e0;
 }
-.chata-execute-query-icon {
+.chata-execute-query-icon svg {
   height: 15px;
-  width: 24px;
-  margin-top: 3px;
+  width: 15px;
+  margin-top: 4px;
+  margin-right: 4px;
   vertical-align: top;
-  fill: #28a8e0;
+  fill: var(--chata-output-accent-color);
 }
 .chata-safetynet-select {
   position: relative;
@@ -125,7 +148,7 @@
   margin-bottom: -2px;
 }
 .chata-chart-tooltip {
-  font-family: var(--chata-drawer-font-family), sans-serif;
+  font-family: var(--chata-output-font-family), sans-serif;
   letter-spacing: 0.04em;
   line-height: 22px;
   font-size: 13px;
@@ -151,7 +174,7 @@
 }
 
 .context-menu {
-  background: var(--chata-drawer-background-color);
+  background: var(--chata-output-background-color);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -163,7 +186,7 @@
   padding: 0;
 }
 .context-menu-list li {
-  color: var(--chata-drawer-text-color-primary);
+  color: var(--chata-output-text-color-primary);
   width: 100%;
   height: 35px;
   line-height: 35px;

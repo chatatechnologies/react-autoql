@@ -18,14 +18,14 @@
   border: 1px solid #00000026;
   background: inherit;
   &:hover {
-    border-color: var(--chata-drawer-accent-color);
-    color: var(--chata-drawer-accent-color);
+    border-color: var(--chata-messenger-accent-color);
+    color: var(--chata-messenger-accent-color);
   }
 }
 
 .chata-btn.primary {
-  background: var(--chata-drawer-accent-color);
-  border: 1px solid var(--chata-drawer-accent-color);
+  background: var(--chata-messenger-accent-color);
+  border: 1px solid var(--chata-messenger-accent-color);
   color: white;
   &:hover {
     opacity: 0.8;

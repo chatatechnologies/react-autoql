@@ -149,7 +149,7 @@ export default class ChataChart extends Component {
       }
 
       let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
-      // If the rotated labels in the x axis exceed the width of the chart, use that instead
+      // If the rotated labels (on the left side) in the x axis exceed the width of the chart, use that instead
       if (xAxisBBox.width > this.props.width) {
         leftMargin =
           xAxisBBox.width - this.props.width + this.state.leftMargin + 45
@@ -169,9 +169,11 @@ export default class ChataChart extends Component {
   }
 
   tooltipFormatter2D = (data, colIndex) => {
-    const { columns } = this.props
-    const labelCol = columns[0]
-    const valueCols = columns.slice(1) // Supports multi-series
+    const { columns, stringColumnIndices, numberColumnIndices } = this.props
+    const labelCol = columns[stringColumnIndices[0]]
+    const valueCols = columns.filter((col, i) =>
+      numberColumnIndices.includes(i)
+    ) // Supports multi-series
 
     if (!labelCol || !valueCols || !(colIndex >= 0)) {
       return null
@@ -260,7 +262,9 @@ export default class ChataChart extends Component {
         link.click()
         document.body.removeChild(link)
       })
-      .catch(err => {})
+      .catch(error => {
+        console.error(error)
+      })
   }
 
   getCommonChartProps = () => {
@@ -341,75 +345,98 @@ export default class ChataChart extends Component {
       {...this.getCommonChartProps()}
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
+      stringColumnIndex={this.props.stringColumnIndices[0]}
+      numberColumnIndices={this.props.numberColumnIndices}
       legendLabels={getLegendLabelsForMultiSeries(
         this.props.columns,
-        this.colorScale
+        this.colorScale,
+        this.props.numberColumnIndices
       )}
     />
   )
 
-  renderBarChart = () => (
-    <ChataBarChart
-      {...this.getCommonChartProps()}
-      labelValue="label"
-      tooltipFormatter={this.tooltipFormatter2D}
-      legendLabels={getLegendLabelsForMultiSeries(
-        this.props.columns,
-        this.colorScale
-      )}
-    />
-  )
+  renderBarChart = () => {
+    return (
+      <ChataBarChart
+        {...this.getCommonChartProps()}
+        labelValue="label"
+        tooltipFormatter={this.tooltipFormatter2D}
+        stringColumnIndex={this.props.stringColumnIndices[0]}
+        numberColumnIndices={this.props.numberColumnIndices}
+        legendLabels={getLegendLabelsForMultiSeries(
+          this.props.columns,
+          this.colorScale,
+          this.props.numberColumnIndices
+        )}
+      />
+    )
+  }
 
   renderLineChart = () => (
     <ChataLineChart
       {...this.getCommonChartProps()}
       labelValue="label"
       tooltipFormatter={this.tooltipFormatter2D}
+      stringColumnIndex={this.props.stringColumnIndices[0]}
+      numberColumnIndices={this.props.numberColumnIndices}
       legendLabels={getLegendLabelsForMultiSeries(
         this.props.columns,
-        this.colorScale
+        this.colorScale,
+        this.props.numberColumnIndices
       )}
     />
   )
 
-  renderPieChart = () => (
-    <ChataPieChart
-      {...this.getCommonChartProps()}
-      labelValue="label"
-      backgroundColor={this.props.backgroundColor}
-      tooltipFormatter={d => {
-        const { columns } = this.props
-        const label = _get(d, `data.value.label`)
-        const value = _get(d, 'value')
+  renderPieChart = () => {
+    const { stringColumnIndices, numberColumnIndices } = this.props
+    const stringColumnIndex = stringColumnIndices[0]
+    const numberColumnIndex = numberColumnIndices[0]
 
-        if (!label || !value) {
-          return null
-        }
+    return (
+      <ChataPieChart
+        {...this.getCommonChartProps()}
+        labelValue="label"
+        backgroundColor={this.props.backgroundColor}
+        stringColumnIndex={stringColumnIndex}
+        numberColumnIndex={numberColumnIndex}
+        tooltipFormatter={d => {
+          const { columns } = this.props
+          const label = _get(d, `data.value.label`)
+          const value = _get(d, 'value')
 
-        try {
-          const tooltipElement = `<div>
+          if (!label || !value) {
+            return null
+          }
+
+          try {
+            const tooltipElement = `<div>
           <div>
-            <strong>${columns[0].title}:</strong> ${formatElement({
-            element: label,
-            column: columns[0],
-            config: this.props.dataFormatting
-          })}
+            <strong>${
+              columns[stringColumnIndex].title
+            }:</strong> ${formatElement({
+              element: label,
+              column: columns[stringColumnIndex],
+              config: this.props.dataFormatting
+            })}
           </div>
-          <div><strong>${columns[1].title}:</strong> ${formatElement({
-            element: value,
-            column: columns[1],
-            config: this.props.dataFormatting
-          })}
+          <div><strong>${
+            columns[numberColumnIndex].title
+          }:</strong> ${formatElement({
+              element: value,
+              column: columns[numberColumnIndex],
+              config: this.props.dataFormatting
+            })}
           </div>
         </div>`
-          return tooltipElement
-        } catch (error) {
-          console.error(error)
-          return null
-        }
-      }}
-    />
-  )
+            return tooltipElement
+          } catch (error) {
+            console.error(error)
+            return null
+          }
+        }}
+      />
+    )
+  }
 
   renderHeatmapChart = () => (
     <ChataHeatmapChart

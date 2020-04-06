@@ -32,6 +32,7 @@ export default class Button extends React.Component {
         return type
       }
     } catch (error) {
+      console.error('The type provided was invalid')
       return 'default'
     }
   }
@@ -44,7 +45,7 @@ export default class Button extends React.Component {
         size = trimmedSize
       }
     } catch (error) {
-      console.error(error)
+      console.error('The size provided was invalid')
       size = 'large'
     }
 

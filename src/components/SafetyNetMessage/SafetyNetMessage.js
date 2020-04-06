@@ -14,7 +14,7 @@ export default class SafetyNetMessage extends React.Component {
     autoSelectSuggestion: PropTypes.bool.isRequired,
     isQueryRunning: PropTypes.bool,
     initialSelections: PropTypes.arrayOf(PropTypes.shape({})),
-    onSafetyNetSelectOption: PropTypes.func,
+    onQueryValidationSelectOption: PropTypes.func,
     message: PropTypes.string
   }
 
@@ -22,7 +22,7 @@ export default class SafetyNetMessage extends React.Component {
     initialSelections: undefined,
     isQueryRunning: false,
     message: undefined,
-    onSafetyNetSelectOption: () => {}
+    onQueryValidationSelectOption: () => {}
   }
 
   state = {
@@ -159,7 +159,7 @@ export default class SafetyNetMessage extends React.Component {
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for safetynet selection
-    this.props.onSafetyNetSelectOption(
+    this.props.onQueryValidationSelectOption(
       this.getSafetyNetQueryText(newSelectedSuggestions),
       newSelectedSuggestions
     )
@@ -181,7 +181,7 @@ export default class SafetyNetMessage extends React.Component {
     )
 
     // Update list in callback
-    this.props.onSafetyNetSelectOption(
+    this.props.onQueryValidationSelectOption(
       this.getSafetyNetQueryText(newSelectedSuggestions),
       newSelectedSuggestions
     )
@@ -295,9 +295,7 @@ export default class SafetyNetMessage extends React.Component {
       <div className="chata-safety-net-container">
         <div className="chata-safety-net-description">
           {this.props.message ||
-            `Before I can try to find your answer, I need your help understanding a
-            term you used that I don't see in your data. Click the dropdown to
-            view suggestions so I can ensure you get the right data!`}
+            `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
         </div>
         <span>
           {this.renderSafetyNetQuery()}

@@ -56,6 +56,7 @@ export default class Select extends React.Component {
                 // place="right"
                 delayShow={500}
               />
+
               <ul className="chata-select-popup">
                 {this.props.options.map(option => {
                   return (

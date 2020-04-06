@@ -12,18 +12,6 @@
 //   /* transition: all 0.2s ease-in; */
 // }
 
-.chata-dashboard-tile .viz-toolbar {
-  transition: all 0.3s ease;
-  visibility: hidden;
-  opacity: 0;
-  bottom: 7px;
-  left: 7px;
-}
-.chata-dashboard-tile:hover .viz-toolbar {
-  visibility: visible;
-  opacity: 1;
-}
-
 .chata-dashboard-tile-inner-div {
   height: 100%;
   width: 100%;
@@ -34,6 +22,38 @@
   justify-content: flex-start;
   flex-direction: column;
   align-items: center;
+}
+
+// Toolbar
+.chata-dashboard-tile-inner-div.split .viz-toolbar:not(.split-view-btn) {
+  bottom: 7px;
+  left: 7px;
+}
+// .chata-dashboard-tile-inner-div
+//   .layout-pane-primary
+//   .viz-toolbar:not(.split-view-btn) {
+//   bottom: 5px;
+// }
+.chata-dashboard-tile-inner-div .viz-toolbar {
+  transition: opacity 0.3s ease, color 0.3s ease;
+  visibility: hidden;
+  opacity: 0;
+}
+.chata-dashboard-tile-inner-div:not(.split) .split-view-btn {
+  bottom: -23px;
+  left: calc(50% - 20px);
+}
+.chata-dashboard-tile-inner-div.split .split-view-btn {
+  bottom: 7px;
+  left: calc(50% - 20px);
+}
+.chata-dashboard-tile-inner-div .viz-toolbar:not(.split-view-btn) {
+  bottom: -24px;
+  left: -23px;
+}
+.chata-dashboard-tile:hover .viz-toolbar {
+  visibility: visible;
+  opacity: 1;
 }
 
 .chata-dashboard-tile-inner-div .single-value-response {
@@ -47,9 +67,44 @@
   padding: 30px;
   padding-top: 0;
   background: inherit;
+
+  .layout-splitter {
+    height: 1px !important;
+    color: var(--chata-dashboard-text-color-primary);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .chata-table {
+    opacity: 0.9;
+    color: var(--chata-dashboard-text-color-primary);
+    font-size: 11px;
+  }
+  .layout-pane {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+  .layout-pane:not(.layout-pane-primary) {
+    padding-top: 10px;
+    padding-bottom: 30px;
+  }
+  .layout-pane-primary {
+    padding-bottom: 10px;
+  }
+}
+.chata-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
+  padding: 0;
 }
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
   cursor: move;
+
+  .layout-splitter {
+    display: block;
+    pointer-events: unset;
+    height: 4px !important;
+    color: var(--chata-dashboard-text-color-primary);
+    opacity: 0.8;
+  }
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -64,16 +119,18 @@
 }
 .dashboard-tile-response-wrapper.small .chata-safety-net-description,
 .dashboard-tile-response-wrapper.small .chata-suggestion-message-description,
-.dashboard-tile-response-wrapper .chata-safety-net-execute-btn {
+.dashboard-tile-response-wrapper.small .chata-safety-net-execute-btn {
   display: none;
 }
 
 .dashboard-tile-response-wrapper .dashboard-tile-response-container {
+  position: relative;
   height: 100%;
   width: 100%;
   padding-top: 21px;
-  cursor: default;
   background: inherit;
+
+  cursor: default;
 }
 
 .dashboard-tile-title-container {
@@ -159,7 +216,8 @@
   width: 100%;
   height: 100%;
 }
-.dashboard-tile-input-container .dashboard-tile-input {
+.dashboard-tile-input-container .dashboard-tile-input,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
   width: 0;
   padding: 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -173,14 +231,41 @@
     padding-left: 40px;
   }
 }
-.dashboard-tile-input-container .dashboard-tile-input:focus {
+.dashboard-tile-input.second.query {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  outline: none !important;
+  color: #356f90;
+  margin: 0px;
+  padding: 0px;
+  width: 0px;
+  height: 28px;
+  pointer-events: none;
+
+  &.open {
+    width: 200px;
+    padding: 12px;
+    margin-left: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    pointer-events: unset;
+  }
+}
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
+  width: 100%;
+  height: 100%;
+}
+.dashboard-tile-input-container .dashboard-tile-input:focus,
+.dashboard-tile-input-container.query-focused .react-autosuggest__container {
   width: 80%;
 }
-.dashboard-tile-input-container .dashboard-tile-input:hover,
-.dashboard-tile-input-container .dashboard-tile-input:focus {
+.dashboard-tile-input:hover,
+.dashboard-tile-input:focus,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
   border: 1px solid rgb(38, 167, 233) !important;
 }
-.dashboard-tile-input-container .dashboard-tile-input.query {
+.dashboard-tile-input-container .dashboard-tile-input.query,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
@@ -188,11 +273,75 @@
   border-left: none;
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
+  z-index: 2;
 }
 .dashboard-tile-input-container .dashboard-tile-input.title:hover,
 .dashboard-tile-input-container .dashboard-tile-input.title:focus {
   /* This is done to balance it because we add a 1px left border when the input is focused or hovered */
   margin-left: -1px;
+}
+
+/* Autocomplete styles */
+.dashboard-tile-input-container .react-autosuggest__container {
+  position: relative;
+  width: 0;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+  transition: width 0.3s ease;
+}
+.dashboard-tile-input-container
+  .react-autosuggest__suggestions-container--open {
+  background-color: var(--chata-dashboard-background-color);
+  border: 1px solid var(--chata-dashboard-border-color);
+  color: var(--chata-dashboard-text-color-primary);
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion {
+  color: var(--chata-dashboard-text-color-primary);
+}
+.dashboard-tile-input-container input::placeholder {
+  opacity: 0.5;
+}
+.dashboard-tile-input-container
+  .react-autosuggest__suggestions-container--open {
+  position: absolute;
+  bottom: unset;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  display: block;
+  height: unset;
+  border-radius: 24px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: normal;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  text-align: left;
+  width: 100%;
+  top: 35px;
+  border-radius: 4px;
+  margin: 0;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestions-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion {
+  cursor: pointer;
+  padding: 2px;
+  padding-left: 18px;
+  letter-spacing: 0.05em;
+  line-height: 22.5px;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion--highlighted {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+.dashboard-tile-input-container .react-autosuggest__section-title {
+  padding: 10px 0 0 10px;
+  font-size: 12px;
+  color: #777;
 }
 
 /* Dragging placeholder styles */
@@ -231,17 +380,22 @@
   z-index: 1;
 }
 .react-grid-item > .react-resizable-handle::after {
-  width: 8px;
-  height: 8px;
+  width: 8px !important;
+  height: 8px !important;
   opacity: 0;
-  border-right: 1px solid rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  border-right: 1px solid rgba(0, 0, 0, 0.4) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;
   transition: opacity 0.3s ease;
 }
 
 .react-grid-item:hover > .react-resizable-handle::after {
   opacity: 1;
 }
+
+.react-grid-placeholder {
+  background: rgba(0, 0, 0, 0.13) !important;
+}
+
 /* This fixes the flickering bug in RGL when resizing elements */
 .react-draggable-transparent-selection span::selection,
 .react-draggable-transparent-selection div::selection,
@@ -260,4 +414,19 @@
   &:hover {
     opacity: 0.7;
   }
+}
+// Splitter styles
+.dashboard-tile-response-container .layout-pane-primary {
+  overflow: hidden;
+}
+.dashboard-tile-response-container .splitter-layout {
+  height: calc(100% - 20px);
+}
+.dashboard-tile-response-container .splitter-layout,
+.dashboard-tile-response-container .layout-pane,
+.dashboard-tile-response-container .dashboard-tile-split-pane-container {
+  background: inherit;
+}
+.dashboard-tile-split-pane-container {
+  height: 100%;
 }

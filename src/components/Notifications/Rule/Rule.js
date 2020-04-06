@@ -8,7 +8,7 @@ import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
-import { fetchSuggestions } from '../../../js/queryService'
+import { fetchAutocomplete } from '../../../js/queryService'
 
 import './Rule.scss'
 
@@ -139,16 +139,12 @@ export default class Rule extends React.Component {
     }
 
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions({
-        suggestion: value,
-        // ...this.props.authentication,
-        // ...this.props.autoQLConfig,
-        demo: true
+      fetchAutocomplete({
+        ...this.props.authentication,
+        ...this.props.autoQLConfig,
+        suggestion: value
       })
         .then(response => {
-          // const body = this.props.demo
-          //   ? response.data
-          //   : _get(response, 'data.data')
           const body = response.data
 
           const sortingArray = []
@@ -175,8 +171,8 @@ export default class Rule extends React.Component {
             suggestions: autoCompleteArray
           })
         })
-        .catch(() => {
-          console.warn('Autocomplete operation cancelled by the user.')
+        .catch(error => {
+          console.error(error)
         })
     }, 500)
   }

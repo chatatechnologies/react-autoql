@@ -111,6 +111,21 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
+export const isColumnNumberType = col => {
+  const { type } = col
+  return (
+    type === 'DOLLAR_AMT' ||
+    type === 'QUANTITY' ||
+    type === 'PERCENT' ||
+    type === 'RATIO'
+  )
+}
+
+export const isColumnStringType = col => {
+  const { type } = col
+  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
+}
+
 export const formatChartLabel = ({ d, col, config = {} }) => {
   if (d == null) {
     return {
@@ -143,8 +158,8 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             maximumFractionDigits: 0
             // maximumSignificantDigits: sigDigs
           }).format(d)
-        } catch (err) {
-          console.error(err)
+        } catch (error) {
+          console.error(error)
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: 'USD',
@@ -238,8 +253,8 @@ export const formatElement = ({
                 minimumFractionDigits: validatedCurrencyDecimals,
                 maximumFractionDigits: validatedCurrencyDecimals
               }).format(element)
-            } catch (err) {
-              console.error(err)
+            } catch (error) {
+              console.error(error)
               formattedElement = new Intl.NumberFormat(languageCode, {
                 style: 'currency',
                 currency: 'USD',
@@ -310,6 +325,7 @@ export const formatElement = ({
     }
     return formattedElement
   } catch (error) {
+    console.error(error)
     // If something goes wrong, just display original value
     return element
   }
@@ -382,84 +398,134 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
 
       // load image
       img.src = image64
-    } catch (err) {
-      reject('failed to convert svg to png ' + err)
+    } catch (error) {
+      console.error(error)
+      reject('failed to convert svg to png ' + error)
     }
   })
 }
 
+export const getColumnTypeAmounts = columns => {
+  let amountOfStringColumns = 0
+  let amountOfNumberColumns = 0
+
+  columns.forEach(col => {
+    if (isColumnNumberType(col)) {
+      amountOfNumberColumns += 1
+    } else if (isColumnStringType(col)) {
+      amountOfStringColumns += 1
+    }
+  })
+
+  return { amountOfNumberColumns, amountOfStringColumns }
+}
+
 export const getNumberOfGroupables = columns => {
+  let numberOfGroupables = 0
   if (columns) {
-    let numberOfGroupables = 0
     columns.forEach(col => {
       if (col.groupable) {
         numberOfGroupables += 1
       }
     })
-    return numberOfGroupables
   }
-  return null
+  return numberOfGroupables
+}
+
+export const getGroupableColumns = columns => {
+  const groupableColumns = []
+  if (columns) {
+    columns.forEach((col, index) => {
+      if (col.groupable) {
+        groupableColumns.push(index)
+      }
+    })
+  }
+  return groupableColumns
 }
 
 export const isChartType = type => CHART_TYPES.includes(type)
 export const isTableType = type => TABLE_TYPES.includes(type)
 export const isForecastType = type => FORECAST_TYPES.includes(type)
 
+export const supportsRegularPivotTable = columns => {
+  const hasTwoGroupables = getNumberOfGroupables(columns) === 2
+  return hasTwoGroupables && columns.length === 3
+}
+
+export const supports2DCharts = columns => {
+  const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(
+    columns
+  )
+
+  return amountOfNumberColumns > 0 && amountOfStringColumns > 0
+}
+
 export const getSupportedDisplayTypes = response => {
-  if (!_get(response, 'data.data.display_type')) {
-    return []
-  }
+  try {
+    if (!_get(response, 'data.data.display_type')) {
+      return []
+    }
 
-  // For CaaS there should be 3 types: data, suggestion, help
-  const displayType = response.data.data.display_type
+    // For CaaS there should be 3 types: data, suggestion, help
+    const displayType = response.data.data.display_type
 
-  if (displayType === 'suggestion' || displayType === 'help') {
-    return [displayType]
-  }
+    if (displayType === 'suggestion' || displayType === 'help') {
+      return [displayType]
+    }
 
-  const columns = _get(response, 'data.data.columns')
+    const columns = _get(response, 'data.data.columns')
+    const rows = _get(response, 'data.data.rows', [])
 
-  if (!columns) {
-    return []
-  }
+    if (!columns || rows.length <= 1) {
+      return []
+    }
 
-  if (getNumberOfGroupables(columns) === 1) {
-    // Is direct key-value query (ie. Avg days to pay per customer)
-    const supportedDisplayTypes = ['bar', 'column', 'line', 'table']
+    if (supportsRegularPivotTable(columns)) {
+      // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
+      let supportedDisplayTypes = ['table']
+      if (rows.length < 1000) {
+        supportedDisplayTypes = [
+          'pivot_table',
+          'stacked_bar',
+          'stacked_column',
+          'bubble',
+          'heatmap',
+          'table'
+        ]
+      }
+      return supportedDisplayTypes
+    } else if (supports2DCharts(columns)) {
+      // If there is at least one string column and one number
+      // column, we should be able to chart anything
+      const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
 
-    if (columns.length === 2) {
+      // if (rows.length < 11) {
       supportedDisplayTypes.push('pie')
+      // }
+
+      // create pivot based on month and year
+      const dateColumn = columns.find(
+        col => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+
+      if (
+        dateColumn &&
+        dateColumn.display_name.toLowerCase().includes('month') &&
+        columns.length === 2
+      ) {
+        supportedDisplayTypes.push('pivot_table')
+      }
+
+      return supportedDisplayTypes
     }
 
-    // create pivot based on month and year
-    if (
-      columns[0].type === 'DATE' &&
-      columns[0].name.includes('month') &&
-      columns.length === 2
-    ) {
-      supportedDisplayTypes.push('pivot_table')
-    }
-    return supportedDisplayTypes
-  } else if (getNumberOfGroupables(columns) === 2 && columns.length === 3) {
-    // Is pivot query (ie. Sale per customer per month)
-
-    let supportedDisplayTypes = ['table']
-    if (_get(response, 'data.data.rows.length') < 1000) {
-      supportedDisplayTypes = [
-        'multi_line',
-        'stacked_bar',
-        'stacked_column',
-        'bubble',
-        'heatmap',
-        'table',
-        'pivot_table'
-      ]
-    }
-    return supportedDisplayTypes
+    // We should always be able to display the table type by default
+    return ['table']
+  } catch (error) {
+    console.error(error)
+    return ['table']
   }
-
-  // We should always be able to display the table type by default
-  return ['table']
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
@@ -471,7 +537,7 @@ export const isDisplayTypeValid = (response, displayType) => {
   return isValid
 }
 
-export const getInitialDisplayType = response => {
+export const getDefaultDisplayType = response => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
 
@@ -574,51 +640,34 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const getGroupBysFromTable = (cell, tableColumns, demo) => {
-  const numGroupables = getNumberOfGroupables(tableColumns)
+export const getGroupBysFromTable = (row, tableColumns, demo) => {
+  const groupableColumns = getGroupableColumns(tableColumns)
+  const numGroupables = groupableColumns.length
   if (!numGroupables) {
     return {}
   }
 
-  // const groupByIndices = []
-  // tableColumns.forEach((col, i) => {
-  //   if (col.groupable) {
-  //     groupByIndices.push(i)
-  //   }
-  // })
-
-  const groupByName = tableColumns[0].name
-  let groupByValue = cell.getData()[0]
-  if (tableColumns[0].type === 'DATE') {
-    groupByValue = `${groupByValue}`
-  }
-
-  if (numGroupables === 1) {
-    if (demo) {
-      return { [groupByName]: groupByValue }
-    }
-    // Not demo. Need to format groupbys differently
-    return [nameValueObject(groupByName, groupByValue)]
-  }
-
-  const groupByName2 = tableColumns[1].name
-  let groupByValue2 = cell.getData()[1]
-  if (tableColumns[1].type === 'DATE') {
-    groupByValue2 = `${groupByValue2}`
-  }
+  const rowData = row.getData()
 
   if (demo) {
-    return {
-      [groupByName]: groupByValue,
-      [groupByName2]: groupByValue2
-    }
-  }
+    const groupByObject = {}
+    groupableColumns.forEach(colIndex => {
+      const groupByName = tableColumns[colIndex].name
+      const groupByValue = rowData[colIndex]
+      groupByObject[groupByName] = groupByValue
+    })
 
-  // Not demo. Need to format groupbys differently
-  return [
-    nameValueObject(groupByName, groupByValue),
-    nameValueObject(groupByName2, groupByValue2)
-  ]
+    return groupByObject
+  } else {
+    const groupByArray = []
+    groupableColumns.forEach(colIndex => {
+      const groupByName = tableColumns[colIndex].name
+      const groupByValue = rowData[colIndex]
+      groupByArray.push(nameValueObject(groupByName, groupByValue))
+    })
+
+    return groupByArray
+  }
 }
 
 export const getgroupByObjectFromTable = (
@@ -794,7 +843,7 @@ export const getChartLabelTextWidthInPx = text => {
     tempDiv.style.display = 'inline-block'
     tempDiv.style.position = 'absolute'
     tempDiv.style.visibility = 'hidden'
-    tempDiv.style.fontSize = '14px'
+    tempDiv.style.fontSize = '11px'
     document.body.appendChild(tempDiv)
     const textWidth = tempDiv.clientWidth
     document.body.removeChild(tempDiv)
@@ -831,6 +880,7 @@ export const getTickWidth = (scale, innerPadding) => {
     const width = scale.bandwidth() + innerPadding * scale.bandwidth() * 2
     return width
   } catch (error) {
+    console.error(error)
     return 0
   }
 }
@@ -841,5 +891,26 @@ export const setStyleVars = ({ themeStyles, prefix }) => {
       `${prefix}${property}`,
       themeStyles[property]
     )
+  }
+}
+
+export const getQueryParams = url => {
+  try {
+    let queryParams = {}
+    // create an anchor tag to use the property called search
+    let anchor = document.createElement('a')
+    // assigning url to href of anchor tag
+    anchor.href = url
+    // search property returns the query string of url
+    let queryStrings = anchor.search.substring(1)
+    let params = queryStrings.split('&')
+
+    for (var i = 0; i < params.length; i++) {
+      var pair = params[i].split('=')
+      queryParams[pair[0]] = decodeURIComponent(pair[1])
+    }
+    return queryParams
+  } catch (error) {
+    return undefined
   }
 }

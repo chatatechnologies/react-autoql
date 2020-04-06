@@ -9,7 +9,7 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import { Modal } from '../Modal'
 import { DashboardTile } from './DashboardTile'
-import { ResponseRenderer } from '../ResponseRenderer'
+import { QueryOutput } from '../QueryOutput'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -111,10 +111,7 @@ class Dashboard extends React.Component {
 
     // If tile structure changed, set previous tile state for undo feature
     if (
-      !_isEqual(
-        this.getChangeDetectionTileStructure(this.props.tiles),
-        this.getChangeDetectionTileStructure(prevProps.tiles)
-      ) &&
+      this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
       _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !== Infinity
     ) {
       // Do not scroll to the bottom if new tile is added because of undo
@@ -162,12 +159,19 @@ class Dashboard extends React.Component {
     }
   }
 
-  getChangeDetectionTileStructure = tiles => {
+  getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
+    return !_isEqual(
+      this.getChangeDetectionTileStructure(oldTiles, ignoreInputs),
+      this.getChangeDetectionTileStructure(newTiles, ignoreInputs)
+    )
+  }
+
+  getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
       const newTiles = tiles.map(tile => {
         return {
-          query: tile.query,
-          title: tile.title,
+          query: !ignoreInputs && tile.query,
+          title: !ignoreInputs && tile.title,
           i: tile.i,
           w: tile.w,
           h: tile.h,
@@ -196,10 +200,13 @@ class Dashboard extends React.Component {
     })
   }
 
-  onMoveEnd = ({ layout }) => {
+  onMoveEnd = layout => {
     try {
       // Update previousTileState here instead of in updateTileLayout
-      this.setPreviousTileState(this.props.tiles)
+      // Only update if layout actually changed
+      if (this.getChangeDetection(this.props.tiles, layout, true)) {
+        this.setPreviousTileState(this.props.tiles)
+      }
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
@@ -368,10 +375,10 @@ class Dashboard extends React.Component {
         <Fragment>
           {tile && this.shouldShowOriginalQuery(tile) && (
             <div className="chata-dashboard-drilldown-original">
-              <ResponseRenderer
+              <QueryOutput
                 autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
-                response={tile.queryResponse}
+                queryResponse={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
                 onDataClick={this.startDrilldown}
@@ -391,11 +398,11 @@ class Dashboard extends React.Component {
                 <LoadingDots />
               </div>
             ) : (
-              <ResponseRenderer
+              <QueryOutput
                 authentication={this.props.authentication}
                 autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
-                response={this.state.activeDrilldownResponse}
+                queryResponse={this.state.activeDrilldownResponse}
                 renderTooltips={false}
                 dataFormatting={this.props.dataFormatting}
                 demo={this.props.authentication.demo}
@@ -461,6 +468,8 @@ class Dashboard extends React.Component {
                   themeConfig={this.props.themeConfig}
                   tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
                   displayType={tile.displayType}
+                  secondDisplayType={tile.secondDisplayType}
+                  secondDisplayPercentage={tile.secondDisplayPercentage}
                   queryResponse={tile.queryResponse}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}
@@ -476,7 +485,7 @@ class Dashboard extends React.Component {
           {this.renderDrilldownModal()}
           <ReactTooltip
             className="chata-dashboard-tooltip"
-            id="chata-toolbar-btn-tooltip"
+            id="chata-dashboard-toolbar-btn-tooltip"
             effect="solid"
             delayShow={500}
             html

@@ -6,26 +6,35 @@ import _get from 'lodash.get'
 import {
   authenticationType,
   autoQLConfigType,
-  dataFormattingType
+  dataFormattingType,
+  themeConfigType
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
-  dataFormattingDefault
+  dataFormattingDefault,
+  themeConfigDefault
 } from '../../props/defaults'
 
+import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+import { setStyleVars } from '../../js/Util'
+
 import { Icon } from '../Icon'
-import { runQuery, runQueryOnly, fetchSuggestions } from '../../js/queryService'
+import {
+  runQuery,
+  runQueryOnly,
+  fetchAutocomplete
+} from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
-import LoadingDots from '../../components/LoadingDots/LoadingDots.js'
+import LoadingDots from '../LoadingDots/LoadingDots.js'
 
-import './ChatBar.scss'
+import './QueryInput.scss'
 
 let autoCompleteArray = []
 
-export default class ChatBar extends React.Component {
+export default class QueryInput extends React.Component {
   UNIQUE_ID = uuid.v4()
   autoCompleteTimer = undefined
 
@@ -33,6 +42,7 @@ export default class ChatBar extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
     enableVoiceRecord: bool,
     isDisabled: bool,
     onSubmit: func,
@@ -47,12 +57,14 @@ export default class ChatBar extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
+    themeConfig: themeConfigDefault,
     enableVoiceRecord: false,
     isDisabled: false,
-    autoCompletePlacement: 'top',
+    autoCompletePlacement: 'above',
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
+    source: [],
     onSubmit: () => {},
     onResponseCallback: () => {}
   }
@@ -61,6 +73,23 @@ export default class ChatBar extends React.Component {
     inputValue: '',
     suggestions: [],
     isQueryRunning: false
+  }
+
+  componentDidMount = () => {
+    const { theme } = this.props.themeConfig
+    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+    setStyleVars({ themeStyles, prefix: '--chata-input-' })
+  }
+
+  componentDidUpdate = prevProps => {
+    if (
+      _get(prevProps, 'themeConfig.theme') !==
+      _get(this.props, 'themeConfig.theme')
+    ) {
+      const { theme } = this.props.themeConfig
+      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles, prefix: '--chata-input-' })
+    }
   }
 
   componentWillUnmount = () => {
@@ -86,9 +115,10 @@ export default class ChatBar extends React.Component {
     }
   }
 
-  submitQuery = ({ queryText, skipSafetyNet, source }) => {
+  submitQuery = ({ queryText, skipSafetyNet, source } = {}) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
+    const newSource = [...this.props.source, source || 'user']
 
     if (query.trim()) {
       this.props.onSubmit(query)
@@ -98,13 +128,14 @@ export default class ChatBar extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: source || 'data_messenger'
+          source: newSource
         })
           .then(response => {
             this.props.onResponseCallback(response)
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
+            console.error(error)
             this.props.onResponseCallback(error)
             this.setState({ isQueryRunning: false })
           })
@@ -113,14 +144,19 @@ export default class ChatBar extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: source || 'data_messenger'
+          source: newSource
         })
           .then(response => {
             this.props.onResponseCallback(response)
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
-            this.props.onResponseCallback(error)
+            // If there is no error it did not make it past options
+            // and this is usually due to an authentication error
+            const finalError = error || {
+              error: 'unauthenticated'
+            }
+            this.props.onResponseCallback(finalError)
             this.setState({ isQueryRunning: false })
           })
       }
@@ -130,7 +166,7 @@ export default class ChatBar extends React.Component {
 
   onKeyPress = e => {
     if (e.key == 'Enter') {
-      this.submitQuery({ source: 'data_messenger' })
+      this.submitQuery()
     }
   }
 
@@ -177,12 +213,12 @@ export default class ChatBar extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
     this.autoCompleteTimer = setTimeout(() => {
-      fetchSuggestions({
+      fetchAutocomplete({
         suggestion: value,
         ...this.props.authentication
       })
         .then(response => {
-          const body = this.props.demo
+          const body = this.props.authentication.demo
             ? response.data
             : _get(response, 'data.data')
 
@@ -210,10 +246,10 @@ export default class ChatBar extends React.Component {
             suggestions: autoCompleteArray
           })
         })
-        .catch(() => {
-          console.warn('Autocomplete operation cancelled by the user.')
+        .catch(error => {
+          console.error(error)
         })
-    }, 500)
+    }, 300)
   }
 
   onSuggestionsClearRequested = () => {
@@ -246,7 +282,7 @@ export default class ChatBar extends React.Component {
     return (
       <div
         className={`chata-bar-container ${this.props.className} ${
-          this.props.autoCompletePlacement === 'bottom'
+          this.props.autoCompletePlacement === 'below'
             ? 'autosuggest-bottom'
             : 'autosuggest-top'
         }`}
@@ -269,7 +305,7 @@ export default class ChatBar extends React.Component {
               className: `${this.UNIQUE_ID} chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`,
-              placeholder: this.props.placeholder || 'Ask me anything...',
+              placeholder: this.props.placeholder || 'Type your queries here',
               disabled: this.props.isDisabled,
               onChange: this.onInputChange,
               onKeyPress: this.onKeyPress,
@@ -284,7 +320,7 @@ export default class ChatBar extends React.Component {
               className={`chata-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`}
-              placeholder={this.props.placeholder || 'Ask me anything...'}
+              placeholder={this.props.placeholder || 'Type your queries here'}
               value={this.state.inputValue}
               onChange={e => this.setState({ inputValue: e.target.value })}
               onKeyPress={this.onKeyPress}
