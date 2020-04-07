@@ -139,15 +139,16 @@ export default class Axis extends Component {
         select(this).style('fill-opacity', 0.85)
       })
       .on('click', function(d) {
-        if (d.data.value[self.props.labelValue] === self.state.activeKey) {
+        const newActiveKey = _get(d, `data.value[${self.props.labelValue}]`)
+        if (newActiveKey === self.state.activeKey) {
           // Put it back if it is expanded
           self.setState({ activeKey: null })
         } else {
           self.props.onChartClick({
-            row: _get(d, 'data.value.origRow', []),
-            activeKey: d.data.value[self.props.labelValue]
+            drilldownData: _get(d, 'data.value.cells[0].drilldownData'),
+            activeKey: newActiveKey
           })
-          self.setState({ activeKey: d.data.value[self.props.labelValue] })
+          self.setState({ activeKey: newActiveKey })
         }
       })
 

@@ -1,6 +1,7 @@
-import React, { Component, Fragment } from 'react'
-
+import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
+
+import { getDrilldownDataFrom3dChart } from '../helpers'
 
 export default class Circles extends Component {
   static propTypes = {}
@@ -29,21 +30,13 @@ export default class Circles extends Component {
           }`}
           cx={xScale(d[labelValueX]) + xScale.bandwidth() / 2}
           cy={yScale(d[labelValueY]) + yScale.bandwidth() / 2}
-          // width={xScale.bandwidth()}
-          // height={yScale.bandwidth()}
           r={d[dataValue] < 0 ? 0 : radiusScale(d[dataValue])}
-          onClick={() =>
-            this.setState({
-              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
-            })
-          }
           onClick={() => {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
             this.props.onChartClick({
-              row: d[labelValueX],
-              column: d[labelValueY],
+              drilldownData: getDrilldownDataFrom3dChart({ d }),
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
           }}

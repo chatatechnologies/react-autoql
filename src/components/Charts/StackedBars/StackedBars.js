@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { getDrilldownDataFrom3dChart } from '../helpers'
 
 export default class StackedBars extends Component {
   static propTypes = {}
@@ -58,18 +59,12 @@ export default class StackedBars extends Component {
           y={yScale(d[labelValueX])}
           width={width}
           height={yScale.bandwidth()}
-          onClick={() =>
-            this.setState({
-              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
-            })
-          }
           onClick={() => {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
             this.props.onChartClick({
-              row: d[labelValueX],
-              column: d[labelValueY],
+              drilldownData: getDrilldownDataFrom3dChart({ d }),
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
           }}

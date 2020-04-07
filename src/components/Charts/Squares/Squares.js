@@ -1,8 +1,7 @@
-import React, { Component, Fragment } from 'react'
-
+import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
 
-import ReactTooltip from 'react-tooltip'
+import { getDrilldownDataFrom3dChart } from '../helpers'
 
 export default class Squares extends Component {
   constructor(props) {
@@ -54,11 +53,6 @@ export default class Squares extends Component {
           y={yScale(d[labelValueY])}
           width={xScale.bandwidth()}
           height={yScale.bandwidth()}
-          onClick={() =>
-            this.setState({
-              activeKey: `${d[labelValueX]}-${d[labelValueY]}`
-            })
-          }
           onClick={() => {
             this.setState({
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
@@ -66,6 +60,9 @@ export default class Squares extends Component {
             this.props.onChartClick({
               row: d[labelValueX],
               column: d[labelValueY],
+              drilldownData: getDrilldownDataFrom3dChart({
+                d
+              }),
               activeKey: `${d[labelValueX]}-${d[labelValueY]}`
             })
           }}

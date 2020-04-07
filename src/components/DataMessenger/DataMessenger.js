@@ -22,7 +22,7 @@ import {
 } from '../../props/defaults'
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 // Components
@@ -402,45 +402,60 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  processDrilldown = (groupByObject, queryID, singleValueResponse) => {
+  runDrilldownFromAPI = (data, queryID) => {
+    runDrilldown({
+      ...this.props.authentication,
+      queryID,
+      data
+    })
+      .then(response => {
+        this.addResponseMessage({
+          response: { ...response, enableDrilldowns: true }
+        })
+        this.setState({ isChataThinking: false })
+      })
+      .catch(error => {
+        console.error(error)
+        this.addResponseMessage({
+          content: _get(error, 'message')
+        })
+        this.setState({ isChataThinking: false })
+      })
+  }
+
+  runFilterDrilldown = (drilldownData, messageId) => {
+    const response = this.state.messages.find(
+      message => message.id === messageId
+    ).response
+
+    if (!response) {
+      return
+    }
+
+    const drilldownResponse = filterDataForDrilldown(response, drilldownData)
+
+    setTimeout(() => {
+      this.addResponseMessage({
+        response: drilldownResponse
+      })
+      this.setState({ isChataThinking: false })
+    }, 1500)
+  }
+
+  processDrilldown = (drilldownData, queryID, messageId) => {
     if (this.props.autoQLConfig.enableDrilldowns) {
-      // We only want to allow empty groupByObjects for single value responses
-      if (
-        !singleValueResponse &&
-        (!groupByObject || JSON.stringify(groupByObject) === JSON.stringify({}))
-      ) {
+      if (!drilldownData || !drilldownData.data) {
         return
       }
 
-      // // This is a hack.
-      // // How do we get the right text?? Can we make an api call to get the text first?
-      // const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
-      //   rowData[0],
-      //   columns[0],
-      //   config: this.props.dataFormatting
-      // )}"`
-      // this.addRequestMessage('drilldown')
-
+      const { data } = drilldownData
       this.setState({ isChataThinking: true })
 
-      runDrilldown({
-        ...this.props.authentication,
-        queryID,
-        groupByObject
-      })
-        .then(response => {
-          this.addResponseMessage({
-            response: { ...response, enableDrilldowns: true }
-          })
-          this.setState({ isChataThinking: false })
-        })
-        .catch(error => {
-          console.error(error)
-          this.addResponseMessage({
-            content: _get(error, 'message')
-          })
-          this.setState({ isChataThinking: false })
-        })
+      if (!drilldownData.supportedByAPI) {
+        this.runFilterDrilldown(data, messageId)
+      } else {
+        this.runDrilldownFromAPI(data, queryID)
+      }
     }
   }
 
@@ -697,7 +712,9 @@ export default class DataMessenger extends React.Component {
                     scrollRef={this.messengerScrollComponent}
                     setActiveMessage={this.setActiveMessage}
                     isActive={this.state.activeMessageId === message.id}
-                    processDrilldown={this.processDrilldown}
+                    processDrilldown={(drilldownData, queryID) =>
+                      this.processDrilldown(drilldownData, queryID, message.id)
+                    }
                     isResponse={message.isResponse}
                     isChataThinking={this.state.isChataThinking}
                     onSuggestionClick={this.onSuggestionClick}

@@ -155,6 +155,14 @@ export default class ChataChart extends Component {
           xAxisBBox.width - this.props.width + this.state.leftMargin + 45
       }
 
+      // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
+      // const chartElement = select(this.chartRef).node()
+      // const chartBBox = chartElement.getBBox()
+      // if (chartBBox.width > this.props.width) {
+      //   rightMargin =
+      //     chartBBox.width - this.props.width + this.state.rightMargin
+      // }
+
       this.setState({
         leftMargin: leftMargin || this.state.leftMargin,
         bottomMargin: bottomMargin || this.state.bottomMargin,

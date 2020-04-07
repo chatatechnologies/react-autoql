@@ -1,4 +1,33 @@
 import { max, min } from 'd3-array'
+import { nameValueObject } from '../../js/Util'
+
+export const getDrilldownDataFrom3dChart = ({ d = {} }) => {
+  const { origColumns } = d
+
+  const [groupBy1Name, groupBy2Name] = [
+    origColumns[0].name,
+    origColumns[1].name
+  ]
+
+  let groupBy1Value = d.labelY
+  let groupBy2Value = d.labelX
+  if (typeof groupBy1Value !== 'string') {
+    groupBy1Value = `${groupBy1Value}`
+  }
+  if (typeof groupBy2Value !== 'string') {
+    groupBy2Value = `${groupBy2Value}`
+  }
+
+  const drilldownData = [
+    nameValueObject(groupBy1Name, groupBy1Value),
+    nameValueObject(groupBy2Name, groupBy2Value)
+  ]
+
+  return {
+    supportedByAPI: true,
+    data: drilldownData
+  }
+}
 
 export const getLegendLabelsForMultiSeries = (
   columns,

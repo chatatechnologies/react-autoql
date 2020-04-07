@@ -40,8 +40,7 @@ import {
   AiOutlineBook,
   AiOutlineBorderVerticle,
   AiFillCaretRight,
-  AiFillCaretLeft,
-  AiOutlineWarning
+  AiFillCaretLeft
 } from 'react-icons/ai'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'

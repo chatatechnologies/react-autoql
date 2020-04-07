@@ -644,7 +644,7 @@ export const getGroupBysFromTable = (row, tableColumns, demo) => {
   const groupableColumns = getGroupableColumns(tableColumns)
   const numGroupables = groupableColumns.length
   if (!numGroupables) {
-    return {}
+    return undefined
   }
 
   const rowData = row.getData()
@@ -704,51 +704,6 @@ export const getgroupByObjectFromTable = (
     }
   })
   return jsonData
-}
-
-export const getGroupBysFrom3dChart = (row, column, tableColumns, demo) => {
-  const groupBy1Name = tableColumns[0].name
-  const groupBy2Name = tableColumns[1].name
-
-  let groupBy1Value = column
-  let groupBy2Value = row
-
-  if (typeof groupBy1Value !== 'string') {
-    groupBy1Value = `${groupBy1Value}`
-  }
-  if (typeof groupBy2Value !== 'string') {
-    groupBy2Value = `${groupBy2Value}`
-  }
-
-  if (demo) {
-    return {
-      [groupBy1Name]: groupBy1Value,
-      [groupBy2Name]: groupBy2Value
-    }
-  }
-
-  // Not demo. Need to format groupbys differently
-  return [
-    nameValueObject(groupBy1Name, groupBy1Value),
-    nameValueObject(groupBy2Name, groupBy2Value)
-  ]
-}
-
-export const getGroupBysFrom2dChart = (row, tableColumns, demo) => {
-  const groupByName = tableColumns[0].name
-
-  let groupByValue = row[0]
-  if (typeof groupByValue !== 'string') {
-    groupByValue = `${groupByValue}`
-  }
-
-  if (demo) {
-    return {
-      [groupByName]: groupByValue
-    }
-  }
-
-  return [nameValueObject(groupByName, groupByValue)]
 }
 
 export const getObjSize = obj => Object.keys(obj).length
@@ -913,4 +868,60 @@ export const getQueryParams = url => {
   } catch (error) {
     return undefined
   }
+}
+
+export const getNumberColumnIndices = columns => {
+  const dollarAmtIndices = []
+  const quantityIndices = []
+  const ratioIndices = []
+
+  columns.forEach((col, index) => {
+    const { type } = col
+    if (type === 'DOLLAR_AMT') {
+      dollarAmtIndices.push(index)
+    } else if (type === 'QUANTITY') {
+      quantityIndices.push(index)
+    } else if (type === 'PERCENT' || type === 'RATIO') {
+      ratioIndices.push(index)
+    }
+  })
+
+  // Returning highest priority of non-empty arrays
+  if (dollarAmtIndices.length) {
+    return dollarAmtIndices
+  }
+
+  if (quantityIndices.length) {
+    return quantityIndices
+  }
+
+  if (ratioIndices.length) {
+    return ratioIndices
+  }
+
+  return []
+}
+
+export const filterDataForDrilldown = (response, drilldownData) => {
+  const drilldownDataObject = drilldownData[0]
+  const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
+    col => col.name === drilldownDataObject.name
+  )
+
+  const filteredRows = _get(response, 'data.data.rows', []).filter(
+    row => row[clickedColumnIndex] === drilldownDataObject.value
+  )
+
+  const newResponseData = {
+    ...response,
+    data: {
+      ...response.data,
+      data: {
+        ...response.data.data,
+        rows: filteredRows
+      }
+    }
+  }
+
+  return newResponseData
 }

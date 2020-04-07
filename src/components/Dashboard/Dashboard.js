@@ -16,7 +16,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { CHART_TYPES } from '../../js/Constants'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
 
 import {
   authenticationType,
@@ -305,12 +305,10 @@ class Dashboard extends React.Component {
       console.error(error)
     }
   }
-
-  startDrilldown = (groupByObject, queryID) => {
-    this.setState({ isDrilldownRunning: true })
+  runDrilldownFromAPI = (data, queryID) => {
     runDrilldown({
       queryID,
-      groupByObject,
+      data,
       ...this.props.authentication,
       ...this.props.autoQLConfig
     })
@@ -329,7 +327,33 @@ class Dashboard extends React.Component {
       })
   }
 
-  processDrilldown = (tileId, groupByObject, queryID, activeKey) => {
+  runFilterDrilldown = (data, tileId) => {
+    const tile = this.props.tiles.find(tile => tile.i === tileId)
+    if (!tile) {
+      return
+    }
+
+    const drilldownResponse = filterDataForDrilldown(tile.queryResponse, data)
+
+    setTimeout(() => {
+      this.setState({
+        isDrilldownRunning: false,
+        activeDrilldownResponse: drilldownResponse
+      })
+    }, 1500)
+  }
+
+  startDrilldown = (drilldownData, queryID, tileId) => {
+    this.setState({ isDrilldownRunning: true })
+
+    if (drilldownData.supportedByAPI) {
+      this.runDrilldownFromAPI(drilldownData.data, queryID)
+    } else {
+      this.runFilterDrilldown(drilldownData.data, tileId)
+    }
+  }
+
+  processDrilldown = (tileId, drilldownData, queryID, activeKey) => {
     this.setState({
       isDrilldownModalVisible: true,
       activeDrilldownTile: tileId,
@@ -337,7 +361,7 @@ class Dashboard extends React.Component {
       activeDrilldownChartElementKey: activeKey
     })
 
-    this.startDrilldown(groupByObject, queryID)
+    this.startDrilldown(drilldownData, queryID, tileId)
   }
 
   shouldShowOriginalQuery = tile => {
@@ -364,12 +388,6 @@ class Dashboard extends React.Component {
             isDrilldownModalVisible: false,
             activeDrilldownTile: null
           })
-          // This gets glitchy if you do it at the same time as the state update
-          // setTimeout(
-          //   () =>
-          //     document.documentElement.style.setProperty('overflow', 'auto'),
-          //   300
-          // )
         }}
       >
         <Fragment>
@@ -381,7 +399,9 @@ class Dashboard extends React.Component {
                 queryResponse={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
-                onDataClick={this.startDrilldown}
+                onDataClick={(drilldownData, queryID) => {
+                  this.startDrilldown(drilldownData, queryID, tile.i)
+                }}
                 demo={this.props.authentication.demo}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey

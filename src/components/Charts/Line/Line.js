@@ -7,6 +7,21 @@ export default class Line extends Component {
     activeKey: this.props.activeKey
   }
 
+  getKey = (d, i) => {
+    const { labelValue } = this.props
+    return `${d[labelValue]}-${d.cells[i].label}`
+  }
+
+  onDotClick = (d, i) => {
+    const newActiveKey = this.getKey(d, i)
+    this.props.onChartClick({
+      activeKey: newActiveKey,
+      drilldownData: d.cells[i].drilldownData
+    })
+
+    this.setState({ activeKey: newActiveKey })
+  }
+
   makeLines = () => {
     const { scales, data, labelValue } = this.props
     const { xScale, yScale } = scales
@@ -56,24 +71,14 @@ export default class Line extends Component {
         const xShift = xScale.bandwidth() / 2
         allDots.push(
           <circle
-            key={`line-dot-${d[labelValue]}-${series}`}
+            key={this.getKey(d, series)}
             className={`line-dot${
-              this.state.activeKey === `line-dot-${d[labelValue]}-${series}`
-                ? ' active'
-                : ''
+              this.state.activeKey === this.getKey(d, series) ? ' active' : ''
             }`}
             cy={yScale(d.cells[series].value)}
             cx={xScale(d[labelValue]) + xShift}
             r={3}
-            onClick={() => {
-              this.setState({
-                activeKey: `line-dot-${d[labelValue]}-${series}`
-              })
-              this.props.onChartClick({
-                row: d.origRow,
-                activeKey: `line-dot-${d[labelValue]}-${series}`
-              })
-            }}
+            onClick={() => this.onDotClick(d, series)}
             data-tip={this.props.tooltipFormatter(d, series)}
             data-for="chart-element-tooltip"
             style={{
@@ -83,7 +88,7 @@ export default class Line extends Component {
               strokeOpacity: 0.7,
               fillOpacity: 1,
               fill:
-                this.state.activeKey === `line-dot-${d[labelValue]}-${series}`
+                this.state.activeKey === this.getKey(d, series)
                   ? d.cells[series].color
                   : this.props.backgroundColor || '#fff'
             }}

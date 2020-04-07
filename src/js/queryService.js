@@ -239,7 +239,7 @@ export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
 
 export const runDrilldown = ({
   queryID,
-  groupByObject,
+  data,
   demo,
   debug,
   test,
@@ -251,18 +251,18 @@ export const runDrilldown = ({
 
   // drilldownCall = axios.CancelToken.source()
 
-  const data = {
+  const requestData = {
     debug: debug || false,
     test
   }
 
   if (demo) {
-    data.query_id = queryID
-    data.group_bys = groupByObject
-    data.user_id = 'demo'
-    data.customer_id = 'demo'
+    requestData.query_id = queryID
+    requestData.group_bys = data
+    requestData.user_id = 'demo'
+    requestData.customer_id = 'demo'
   } else {
-    data.columns = groupByObject
+    requestData.columns = data
   }
 
   const config = {}
@@ -278,7 +278,7 @@ export const runDrilldown = ({
     : `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
   return axiosInstance
-    .post(url, data, config)
+    .post(url, requestData, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }

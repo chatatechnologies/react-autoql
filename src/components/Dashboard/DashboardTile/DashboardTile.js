@@ -615,10 +615,10 @@ export default class DashboardTile extends React.Component {
             selectedSuggestion || this.props.tile.selectedSuggestion
           }
           dataFormatting={this.props.dataFormatting}
-          onDataClick={(groupByObject, queryID, activeKey) =>
+          onDataClick={(drilldownData, queryID, activeKey) =>
             this.props.processDrilldown(
               this.props.tile.i,
-              groupByObject,
+              drilldownData,
               queryID,
               activeKey
             )

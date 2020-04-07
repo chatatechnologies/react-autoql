@@ -35,7 +35,9 @@ import {
   supportsRegularPivotTable,
   supports2DCharts,
   isColumnNumberType,
-  isColumnStringType
+  isColumnStringType,
+  getNumberColumnIndices,
+  getNumberOfGroupables
 } from '../../js/Util'
 
 import { ChataTable } from '../ChataTable'
@@ -57,8 +59,6 @@ import {
   isDisplayTypeValid,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
-  getGroupBysFrom3dChart,
-  getGroupBysFrom2dChart,
   isTableType,
   isChartType,
   isForecastType
@@ -364,7 +364,7 @@ export default class QueryOutput extends React.Component {
         className="single-value-response"
         onClick={() => {
           this.props.onDataClick(
-            this.props.authentication.demo ? {} : [],
+            { supportedByAPI: true, data: [] },
             this.queryID,
             true
           )
@@ -410,9 +410,9 @@ export default class QueryOutput extends React.Component {
     if (this.state.isContextMenuOpen) {
       this.setState({ isContextMenuOpen: false })
     } else {
-      let groupByObject = {}
+      const drilldownData = { supportedByAPI: true, data: undefined }
       if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
-        groupByObject = getGroupBysFromPivotTable(
+        drilldownData.data = getGroupBysFromPivotTable(
           cell,
           this.tableColumns,
           this.pivotTableColumns,
@@ -420,51 +420,19 @@ export default class QueryOutput extends React.Component {
           this.props.authentication.demo
         )
       } else {
-        groupByObject = getGroupBysFromTable(
+        drilldownData.data = getGroupBysFromTable(
           cell,
           this.tableColumns,
           this.props.authentication.demo
         )
       }
 
-      this.props.onDataClick(groupByObject, this.queryID)
+      this.props.onDataClick(drilldownData, this.queryID)
     }
   }
 
-  // processRowClick = row => {
-  //   if (this.state.isContextMenuOpen) {
-  //     this.setState({ isContextMenuOpen: false })
-  //   } else {
-  //     groupByObject = getGroupBysFromTable(
-  //       row,
-  //       this.tableColumns,
-  //       this.props.authentication.demo
-  //     )
-  //     this.props.onDataClick(groupByObject, this.queryID)
-  //   }
-  // }
-
-  onChartClick = ({ row, column, activeKey }) => {
-    let groupByObject = {}
-    if (
-      this.pivotTableColumns &&
-      !this.tableColumns[0].name.includes('month')
-    ) {
-      groupByObject = getGroupBysFrom3dChart(
-        row,
-        column,
-        this.tableColumns,
-        this.props.authentication.demo
-      )
-    } else {
-      groupByObject = getGroupBysFrom2dChart(
-        row,
-        this.tableColumns,
-        this.props.authentication.demo
-      )
-    }
-
-    this.props.onDataClick(groupByObject, this.queryID, activeKey)
+  onChartClick = ({ activeKey, drilldownData, row, column, cellIndex }) => {
+    this.props.onDataClick(drilldownData, this.queryID, activeKey)
   }
 
   onTableFilter = async filters => {
@@ -702,37 +670,6 @@ export default class QueryOutput extends React.Component {
     )
   }
 
-  getNumberColumnIndices = () => {
-    const dollarAmtIndices = []
-    const quantityIndices = []
-    const ratioIndices = []
-
-    this.tableColumns.forEach((col, index) => {
-      const { type } = col
-      if (type === 'DOLLAR_AMT') {
-        dollarAmtIndices.push(index)
-      } else if (type === 'QUANTITY') {
-        quantityIndices.push(index)
-      } else if (type === 'PERCENT' || type === 'RATIO') {
-        ratioIndices.push(index)
-      }
-    })
-
-    // Returning highest priority of non-empty arrays
-    if (dollarAmtIndices.length) {
-      return dollarAmtIndices
-    }
-
-    if (quantityIndices.length) {
-      return quantityIndices
-    }
-
-    if (ratioIndices.length) {
-      return ratioIndices
-    }
-
-    return []
-  }
   generateChartData = data => {
     try {
       const columns = this.tableColumns
@@ -770,7 +707,9 @@ export default class QueryOutput extends React.Component {
           allStringColumnIndices[1] || allStringColumnIndices[0]
 
         this.stringColumnIndices = [stringColumnIndex]
-        this.numberColumnIndices = this.getNumberColumnIndices()
+        this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
+        const drilldownSupportedByAPI =
+          getNumberOfGroupables(this.tableColumns) > 0
 
         this.chartData = Object.values(
           tableData.reduce((chartDataObject, row) => {
@@ -783,7 +722,16 @@ export default class QueryOutput extends React.Component {
                 value: Number(value) || value, // this should always be able to convert to a number
                 label: columns[columnIndex].title,
                 color: this.colorScale(i),
-                hidden: false
+                hidden: false,
+                drilldownData: {
+                  supportedByAPI: drilldownSupportedByAPI,
+                  data: [
+                    {
+                      name: columns[stringColumnIndex].name,
+                      value: row[stringColumnIndex]
+                    }
+                  ]
+                }
               })
             })
 
