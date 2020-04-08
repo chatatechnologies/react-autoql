@@ -1,8 +1,7 @@
 export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
-  domain: undefined,
-  demo: false
+  domain: undefined
 }
 
 export const dataFormattingDefault = {

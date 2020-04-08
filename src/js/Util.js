@@ -300,12 +300,12 @@ export const formatElement = ({
           break
         }
         // This is for QBO demo ratios. Not sure why it isn't RATIO
-        case 'NUMBER': {
-          if (Number(element)) {
-            formattedElement = Numbro(element).format('0.0000')
-          }
-          break
-        }
+        // case 'NUMBER': {
+        //   if (Number(element)) {
+        //     formattedElement = Numbro(element).format('0.0000')
+        //   }
+        //   break
+        // }
         case 'PERCENT': {
           if (Number(element)) {
             formattedElement = Numbro(element).format('0.00%')
@@ -532,7 +532,9 @@ export const isDisplayTypeValid = (response, displayType) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = supportedDisplayTypes.includes(displayType)
   if (!isValid) {
-    console.error('provided display type is not valid for this response data')
+    console.warn(
+      'Warning: provided display type is not valid for this response data'
+    )
   }
   return isValid
 }
@@ -578,8 +580,7 @@ export const getGroupBysFromPivotTable = (
   cell,
   tableColumns,
   pivotTableColumns,
-  originalColumnData,
-  demo
+  originalColumnData
 ) => {
   let groupByName1
   let groupByValue1
@@ -599,17 +600,7 @@ export const getGroupBysFromPivotTable = (
       groupByValue2 = pivotTableColumns[cell.getField()].name
     }
 
-    if (demo) {
-      if (groupByName2) {
-        return {
-          [groupByName1]: groupByValue1
-        }
-      }
-      return {
-        [groupByName1]: groupByValue1,
-        [groupByName2]: groupByValue2
-      }
-    } else if (groupByName2) {
+    if (groupByName2) {
       return [
         {
           name: groupByName1,
@@ -617,6 +608,7 @@ export const getGroupBysFromPivotTable = (
         }
       ]
     }
+
     return [
       {
         name: groupByName1,
@@ -640,7 +632,7 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const getGroupBysFromTable = (row, tableColumns, demo) => {
+export const getGroupBysFromTable = (row, tableColumns) => {
   const groupableColumns = getGroupableColumns(tableColumns)
   const numGroupables = groupableColumns.length
   if (!numGroupables) {
@@ -649,25 +641,14 @@ export const getGroupBysFromTable = (row, tableColumns, demo) => {
 
   const rowData = row.getData()
 
-  if (demo) {
-    const groupByObject = {}
-    groupableColumns.forEach(colIndex => {
-      const groupByName = tableColumns[colIndex].name
-      const groupByValue = rowData[colIndex]
-      groupByObject[groupByName] = groupByValue
-    })
+  const groupByArray = []
+  groupableColumns.forEach(colIndex => {
+    const groupByName = tableColumns[colIndex].name
+    const groupByValue = rowData[colIndex]
+    groupByArray.push(nameValueObject(groupByName, groupByValue))
+  })
 
-    return groupByObject
-  } else {
-    const groupByArray = []
-    groupableColumns.forEach(colIndex => {
-      const groupByName = tableColumns[colIndex].name
-      const groupByValue = rowData[colIndex]
-      groupByArray.push(nameValueObject(groupByName, groupByValue))
-    })
-
-    return groupByArray
-  }
+  return groupByArray
 }
 
 export const getgroupByObjectFromTable = (

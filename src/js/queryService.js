@@ -69,7 +69,6 @@ export const cancelQuery = () => {
 
 export const runQueryOnly = ({
   query,
-  demo,
   debug,
   test,
   domain,
@@ -82,29 +81,25 @@ export const runQueryOnly = ({
   // if (!queryCall) {
   // queryCall = axios.CancelToken.source()
 
-  const url = demo
-    ? `https://backend-staging.chata.ai/api/v1/chata/query`
-    : `${domain}/autoql/api/v1/query?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
 
   const data = {
     text: query,
     source: formatSourceString(source),
     debug,
-    test,
-    user_id: demo ? 'demo' : undefined,
-    customer_id: demo ? 'demo' : undefined
+    test
   }
 
   const config = {}
   // config.cancelToken = queryCall.token
-  if (token && !demo) {
+  if (token) {
     config.headers = {
       // 'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     }
   }
 
-  if (!demo && (!apiKey || !domain)) {
+  if (!apiKey || !domain) {
     return Promise.reject({ error: 'unauthenticated' })
   }
 
@@ -160,7 +155,6 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
-  demo,
   debug,
   test,
   enableQueryValidation,
@@ -173,7 +167,6 @@ export const runQuery = ({
     // safetyNetCall = axios.CancelToken.source()
     return runSafetyNet({
       text: query,
-      demo,
       domain,
       apiKey,
       token
@@ -185,7 +178,6 @@ export const runQuery = ({
         }
         return runQueryOnly({
           query,
-          demo,
           debug,
           test,
           domain,
@@ -202,7 +194,6 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
-    demo,
     debug,
     test,
     token,
@@ -212,20 +203,16 @@ export const runQuery = ({
   })
 }
 
-export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
+export const runSafetyNet = ({ text, domain, apiKey, token }) => {
   const axiosInstance = axios.create({})
 
-  const url = demo
-    ? `https://backend.chata.ai/api/v1/safetynet?q=${encodeURIComponent(
-      text
-    )}&projectId=1&user_id=demo&customer_id=demo`
-    : `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
-      text
-    )}&key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
+    text
+  )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
-  if (token && !demo) {
+  if (token) {
     config.headers = {
       Authorization: `Bearer ${token}`
     }
@@ -240,7 +227,6 @@ export const runSafetyNet = ({ text, demo, domain, apiKey, token }) => {
 export const runDrilldown = ({
   queryID,
   data,
-  demo,
   debug,
   test,
   domain,
@@ -248,34 +234,23 @@ export const runDrilldown = ({
   token
 } = {}) => {
   const axiosInstance = axios.create({})
-
   // drilldownCall = axios.CancelToken.source()
 
   const requestData = {
     debug: debug || false,
+    columns: data,
     test
-  }
-
-  if (demo) {
-    requestData.query_id = queryID
-    requestData.group_bys = data
-    requestData.user_id = 'demo'
-    requestData.customer_id = 'demo'
-  } else {
-    requestData.columns = data
   }
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
-  if (token && !demo) {
+  if (token) {
     config.headers = {
       Authorization: `Bearer ${token}`
     }
   }
 
-  const url = demo
-    ? `https://backend-staging.chata.ai/api/v1/chata/query/drilldown`
-    : `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
   return axiosInstance
     .post(url, requestData, config)
@@ -285,7 +260,6 @@ export const runDrilldown = ({
 
 export const fetchAutocomplete = ({
   suggestion,
-  demo,
   domain,
   apiKey,
   token
@@ -304,17 +278,13 @@ export const fetchAutocomplete = ({
 
   autoCompleteCall = axios.CancelToken.source()
 
-  const url = demo
-    ? `https://backend.chata.ai/api/v1/autocomplete?q=${encodeURIComponent(
-      suggestion
-    )}&projectid=1&user_id=demo&customer_id=demo`
-    : `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
-      suggestion
-    )}&key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
+    suggestion
+  )}&key=${apiKey}`
 
   const config = {}
   // config.cancelToken = autoCompleteCall.token
-  if (token && !demo) {
+  if (token) {
     config.headers = {
       Authorization: `Bearer ${token}`
     }
@@ -369,7 +339,6 @@ export const fetchQueryTips = ({
   if (!skipSafetyNet) {
     return runSafetyNet({
       text: keywords,
-      demo: false,
       domain,
       apiKey,
       token

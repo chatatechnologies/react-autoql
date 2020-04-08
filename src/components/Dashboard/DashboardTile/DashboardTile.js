@@ -317,9 +317,7 @@ export default class DashboardTile extends React.Component {
         ...this.props.authentication
       })
         .then(response => {
-          const body = this.props.authentication.demo
-            ? response.data
-            : _get(response, 'data.data')
+          const body = _get(response, 'data.data')
 
           const sortingArray = []
           let suggestionsMatchArray = []
@@ -626,7 +624,6 @@ export default class DashboardTile extends React.Component {
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--chata-dashboard-background-color'
           )}
-          demo={this.props.authentication.demo}
           onQueryValidationSelectOption={
             onQueryValidationSelectOption || this.onQueryValidationSelectOption
           }

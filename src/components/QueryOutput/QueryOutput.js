@@ -238,13 +238,7 @@ export default class QueryOutput extends React.Component {
   }
 
   shouldGenerateChartData = () => {
-    // const {
-    //   amountOfNumberColumns,
-    //   amountOfStringColumns
-    // } = getColumnTypeAmounts(this.tableColumns)
-    // return amountOfNumberColumns > 0 && amountOfStringColumns > 0
     return this.supportedDisplayTypes.length > 1
-    // return !!getNumberOfGroupables(this.tableColumns) && this.tableData
   }
 
   generateForecastData = () => {
@@ -416,15 +410,10 @@ export default class QueryOutput extends React.Component {
           cell,
           this.tableColumns,
           this.pivotTableColumns,
-          this.pivotOriginalColumnData,
-          this.props.authentication.demo
+          this.pivotOriginalColumnData
         )
       } else {
-        drilldownData.data = getGroupBysFromTable(
-          cell,
-          this.tableColumns,
-          this.props.authentication.demo
-        )
+        drilldownData.data = getGroupBysFromTable(cell, this.tableColumns)
       }
 
       this.props.onDataClick(drilldownData, this.queryID)

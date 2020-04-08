@@ -6,7 +6,6 @@ import DashboardTile from './DashboardTile'
 
 const defaultProps = {
   tile: {},
-  demo: true,
   debug: false,
   test: false,
   enableQueryValidation: true,

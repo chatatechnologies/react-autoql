@@ -218,9 +218,7 @@ export default class QueryInput extends React.Component {
         ...this.props.authentication
       })
         .then(response => {
-          const body = this.props.authentication.demo
-            ? response.data
-            : _get(response, 'data.data')
+          const body = _get(response, 'data.data')
 
           const sortingArray = []
           let suggestionsMatchArray = []

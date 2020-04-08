@@ -351,7 +351,7 @@ export default class DataMessenger extends React.Component {
       if (this.messengerScrollComponent) {
         this.messengerScrollComponent.scrollToBottom()
       }
-    }, 50)
+    }, 0)
   }
 
   onInputSubmit = text => {

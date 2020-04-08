@@ -92,7 +92,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
+    ReactTooltip.hide()
 
     // We must explicitly set the message height in order to avoid scroll jumping
     // when message bubbles resize due to their content

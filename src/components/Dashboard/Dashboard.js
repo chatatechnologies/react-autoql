@@ -402,7 +402,6 @@ class Dashboard extends React.Component {
                 onDataClick={(drilldownData, queryID) => {
                   this.startDrilldown(drilldownData, queryID, tile.i)
                 }}
-                demo={this.props.authentication.demo}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey
                 }
@@ -425,7 +424,6 @@ class Dashboard extends React.Component {
                 queryResponse={this.state.activeDrilldownResponse}
                 renderTooltips={false}
                 dataFormatting={this.props.dataFormatting}
-                demo={this.props.authentication.demo}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
                 )}

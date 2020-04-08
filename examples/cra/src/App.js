@@ -96,105 +96,6 @@ class Item extends React.Component {
 
 const SortableItem = sortable(Item)
 
-const demoDashboard = [
-  {
-    key: '0',
-    w: 3,
-    h: 2,
-    x: 0,
-    y: 0,
-    query: 'total profit this month',
-    title: 'Profit - Current Month'
-  },
-  {
-    key: '1',
-    w: 3,
-    h: 2,
-    x: 3,
-    y: 0,
-    query: 'total profit last month',
-    title: 'Profit - Previous Month'
-  },
-  {
-    key: '2',
-    w: 3,
-    h: 2,
-    x: 6,
-    y: 0,
-    query: 'total profit ytd',
-    title: 'Profit - YTD'
-  },
-  {
-    key: '3',
-    w: 3,
-    h: 2,
-    x: 9,
-    y: 0,
-    query: 'last years profit',
-    title: 'Profit - Previous Year'
-  },
-  {
-    key: '4',
-    w: 6,
-    h: 5,
-    x: 0,
-    y: 2,
-    query: 'profit by month last 6 months',
-    displayType: 'line',
-    title: 'Monthly Profit'
-  },
-  {
-    key: '5',
-    w: 6,
-    h: 5,
-    x: 6,
-    y: 2,
-    query: 'profit by month last year',
-    displayType: 'line',
-    title: '2019 Monthly Profit'
-  },
-  {
-    key: '6',
-    w: 6,
-    h: 5,
-    x: 0,
-    y: 7,
-    query: 'profit by class last year',
-    displayType: 'column',
-    title: 'Total Profit by Class (2019)'
-  },
-  {
-    key: '7',
-    w: 6,
-    h: 5,
-    x: 6,
-    y: 7,
-    query: 'profit by customer last year',
-    displayType: 'column',
-    title: 'Total Profit by Customer (2019)'
-  },
-  {
-    key: '8',
-    w: 6,
-    h: 5,
-    x: 0,
-    y: 10,
-    query: 'total profit by class by month last 6 months',
-    displayType: 'heatmap',
-    title: 'Product Profitability'
-  },
-  {
-    key: '9',
-    w: 6,
-    h: 5,
-    x: 6,
-    y: 12,
-    query: 'total profit by customer by month last 6 months',
-    displayType: 'heatmap',
-    title: 'Customer Profitability'
-  }
-]
-
 export default class App extends Component {
   authTimer = undefined
 
@@ -410,13 +311,6 @@ export default class App extends Component {
           isFetchingDashboard: false,
           activeDashboardId: dashboardResponse.data[0].id,
           activeDashboardName: dashboardResponse.data[0].name
-        })
-      } else {
-        // use demo endpoint if there is one
-        this.setState({
-          dashboardTiles: demoDashboard,
-          dashboardError: false,
-          isFetchingDashboard: false
         })
       }
     } catch (error) {
@@ -907,7 +801,9 @@ export default class App extends Component {
     return (
       <div>
         <h1>Authentication</h1>
-        {this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])}
+        {
+          // this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])
+        }
         {!this.state.demo && this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
