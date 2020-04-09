@@ -699,42 +699,41 @@ export default class DataMessenger extends React.Component {
           }}
           className="chat-message-container"
         >
-          <div style={{ height: 'calc(100% - 20px)' }}>
-            {this.state.messages.length > 0 &&
-              this.state.messages.map(message => {
-                return (
-                  <ChatMessage
-                    key={message.id}
-                    id={message.id}
-                    authentication={this.props.authentication}
-                    autoQLConfig={this.props.autoQLConfig}
-                    themeConfig={this.props.themeConfig}
-                    scrollRef={this.messengerScrollComponent}
-                    setActiveMessage={this.setActiveMessage}
-                    isActive={this.state.activeMessageId === message.id}
-                    processDrilldown={(drilldownData, queryID) =>
-                      this.processDrilldown(drilldownData, queryID, message.id)
-                    }
-                    isResponse={message.isResponse}
-                    isChataThinking={this.state.isChataThinking}
-                    onSuggestionClick={this.onSuggestionClick}
-                    content={message.content}
-                    scrollToBottom={this.scrollToBottom}
-                    lastMessageId={this.state.lastMessageId}
-                    dataFormatting={this.props.dataFormatting}
-                    displayType={
-                      message.displayType ||
-                      _get(message, 'response.data.data.display_type')
-                    }
-                    response={message.response}
-                    type={message.type}
-                    onErrorCallback={this.props.onErrorCallback}
-                    onSuccessAlert={this.props.onSuccessAlert}
-                    deleteMessageCallback={this.deleteMessage}
-                  />
-                )
-              })}
-          </div>
+          {this.state.messages.length > 0 &&
+            this.state.messages.map(message => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  scrollRef={this.messengerScrollComponent}
+                  setActiveMessage={this.setActiveMessage}
+                  isActive={this.state.activeMessageId === message.id}
+                  processDrilldown={(drilldownData, queryID) =>
+                    this.processDrilldown(drilldownData, queryID, message.id)
+                  }
+                  isResponse={message.isResponse}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.onSuggestionClick}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  lastMessageId={this.state.lastMessageId}
+                  dataFormatting={this.props.dataFormatting}
+                  displayType={
+                    message.displayType ||
+                    _get(message, 'response.data.data.display_type')
+                  }
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent}
+                />
+              )
+            })}
         </Scrollbars>
         {this.state.isChataThinking && (
           <div className="response-loading-container">

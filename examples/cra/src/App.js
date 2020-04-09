@@ -801,10 +801,7 @@ export default class App extends Component {
     return (
       <div>
         <h1>Authentication</h1>
-        {
-          // this.createBooleanRadioGroup('Demo Data', 'demo', [true, false])
-        }
-        {!this.state.demo && this.renderAuthenticationForm()}
+        {this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
           false

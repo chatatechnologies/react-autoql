@@ -126,9 +126,46 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  isScrolledIntoView = elem => {
+    if (this.props.scrollContainerRef) {
+      const scrollTop = this.props.scrollContainerRef.getScrollTop()
+      const scrollBottom =
+        scrollTop + this.props.scrollContainerRef.getClientHeight()
+
+      const elemTop = elem.offsetTop
+      const elemBottom = elemTop + elem.offsetHeight
+
+      return elemBottom <= scrollBottom && elemTop >= scrollTop
+    }
+
+    return false
+  }
+
+  scrollIntoView = () => {
+    setTimeout(() => {
+      const element = document.getElementById(`message-${this.props.id}`)
+
+      if (!this.isScrolledIntoView(element)) {
+        element.scrollIntoView({
+          block: 'end',
+          inline: 'nearest',
+          behavior: 'smooth'
+        })
+        // If it didnt work the first time, it probably needs slightly more time
+        setTimeout(() => {
+          element.scrollIntoView({
+            block: 'end',
+            inline: 'nearest',
+            behavior: 'smooth'
+          })
+        }, 300)
+      }
+    }, 0)
+  }
+
   switchView = displayType => {
     this.filtering = false
-    this.setState({ displayType })
+    this.setState({ displayType }, this.scrollIntoView)
   }
 
   onTableFilter = newTableData => {
