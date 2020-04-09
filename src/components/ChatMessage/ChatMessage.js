@@ -91,39 +91,29 @@ export default class ChatMessage extends React.Component {
     activeMenu: undefined
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.hide()
-
-    // We must explicitly set the message height in order to avoid scroll jumping
-    // when message bubbles resize due to their content
-    this.setMessageHeightCss(prevState)
+  componentDidMount = () => {
+    setTimeout(() => {
+      this.setTableMessageHeights()
+      this.forceUpdate()
+    }, 0)
   }
 
-  setMessageHeightCss = prevState => {
-    if (
-      isTableType(this.state.displayType) &&
-      isTableType(prevState.displayType) &&
-      this.props.type !== 'text' &&
-      !this.TABLE_CONTAINER_HEIGHT
-    ) {
-      const messageContainer = document.getElementById(
-        `message-${this.props.id}`
-      )
-      this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
-      messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
-    } else if (
-      this.state.displayType !== prevState.displayType &&
-      isChartType(this.state.displayType)
-    ) {
-      const messageContainer = document.getElementById(
-        `message-${this.props.id}`
-      )
-      if (messageContainer) {
-        messageContainer.style.height = 'unset'
-        this.TABLE_CONTAINER_HEIGHT = undefined
-      }
-      this.forceUpdate()
-    }
+  componentDidUpdate = (prevProps, prevState) => {
+    ReactTooltip.hide()
+  }
+
+  setTableMessageHeights = () => {
+    // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
+    this.TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
+      _get(this.responseRef, 'numberOfTableRows')
+    )
+    this.PIVOT_TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
+      _get(this.responseRef, 'numberOfPivotTableRows')
+    )
+  }
+
+  getHeightOfTableFromRows = rows => {
+    return rows * 39 + 81
   }
 
   isScrolledIntoView = elem => {
@@ -272,18 +262,23 @@ export default class ChatMessage extends React.Component {
 
       if (this.filtering) {
         messageElement.style.maxHeight = 'calc(85% + 35px)'
+        messageElement.style.height = `${messageElement.offsetHeight + 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'inline-block'
         })
+
         colHeaderElements.forEach(element => {
           element.style.height = '72px !important'
         })
         this.setFilterTags({ isFilteringTable: true })
+        this.scrollIntoView()
       } else {
         messageElement.style.maxHeight = '85%'
+        messageElement.style.height = `${messageElement.offsetHeight - 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'none'
         })
+
         colHeaderElements.forEach(element => {
           element.style.height = '37px !important'
         })
@@ -341,7 +336,11 @@ export default class ChatMessage extends React.Component {
   }
 
   isTableResponse = () => {
-    return !!_get(this.responseRef, 'tableRef')
+    return (
+      this.props.isResponse &&
+      !this.isSingleValueResponse() &&
+      isTableType(this.state.displayType)
+    )
   }
 
   renderInterpretationTip = () => {
@@ -455,16 +454,15 @@ export default class ChatMessage extends React.Component {
   renderHideColumnsModal = () => {
     const tableRef = _get(this.responseRef, 'tableRef.ref.table')
 
-    if (!tableRef) {
-      return
+    let columns = []
+    if (tableRef) {
+      columns = tableRef.getColumns().map(col => {
+        return {
+          ...col.getDefinition(),
+          visible: col.getVisibility() // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+        }
+      })
     }
-
-    const columns = tableRef.getColumns().map(col => {
-      return {
-        ...col.getDefinition(),
-        visible: col.getVisibility() // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
-      }
-    })
 
     return (
       <ColumnVisibilityModal
@@ -613,6 +611,7 @@ export default class ChatMessage extends React.Component {
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnVisibilityManager &&
         this.isTableResponse() &&
+        this.state.displayType !== 'pivot_table' &&
         !this.props.authentication.demo &&
         _get(this.props, 'response.data.data.columns.length') > 0,
       showSQLButton:
@@ -772,8 +771,19 @@ export default class ChatMessage extends React.Component {
 
   getMessageHeight = () => {
     let messageHeight = 'unset'
-    if (isTableType(this.state.displayType) && this.props.type !== 'text') {
-      messageHeight = this.TABLE_CONTAINER_HEIGHT || 'unset'
+
+    if (
+      this.state.displayType === 'table' &&
+      this.props.type !== 'text' &&
+      this.TABLE_CONTAINER_HEIGHT
+    ) {
+      messageHeight = this.TABLE_CONTAINER_HEIGHT
+    } else if (
+      this.state.displayType === 'pivot_table' &&
+      this.props.type !== 'text' &&
+      this.PIVOT_TABLE_CONTAINER_HEIGHT
+    ) {
+      messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
     }
 
     return messageHeight

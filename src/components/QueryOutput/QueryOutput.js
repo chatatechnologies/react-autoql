@@ -256,6 +256,8 @@ export default class QueryOutput extends React.Component {
       typeof this.data === 'string' // This will change once the query response is refactored
         ? undefined
         : this.data
+
+    this.numberOfTableRows = _get(this.data, 'length', 0)
   }
 
   generatePivotData = newData => {
@@ -1100,6 +1102,7 @@ export default class QueryOutput extends React.Component {
 
     this.pivotTableColumns = pivotTableColumns
     this.pivotTableData = pivotTableData
+    this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
