@@ -1,6 +1,6 @@
 import Numbro from 'numbro'
-import dayjs from 'dayjs'
 import _get from 'lodash.get'
+import dayjs from './dayjsWithPlugins'
 
 import {
   MONTH_NAMES,
@@ -50,7 +50,7 @@ export const formatEpochDate = (value, col, config) => {
     const { monthYearFormat, dayMonthYearFormat } = config
     const year = 'YYYY'
     const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'll'
 
     // Use title to determine significant digits of date format
     const title = col.title
@@ -90,7 +90,7 @@ export const formatStringDate = (value, config) => {
 
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'll'
 
     if (day) {
       const date = dayjs(value).format(dayMonthYear)

@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
@@ -11,6 +10,7 @@ import {
   dismissNotification,
   deleteNotification
 } from '../../../js/notificationService'
+import dayjs from '../../../js/dayjsWithPlugins'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'

@@ -1,6 +1,5 @@
 import React, { Fragment } from 'react'
 import uuid from 'uuid'
-import dayjs from 'dayjs'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
@@ -39,6 +38,7 @@ import {
   getNumberColumnIndices,
   getNumberOfGroupables
 } from '../../js/Util'
+import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -65,6 +65,7 @@ import {
 } from '../../js/Util.js'
 
 import './QueryOutput.scss'
+import { MONTH_NAMES } from '../../js/Constants'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -962,88 +963,96 @@ export default class QueryOutput extends React.Component {
   }
 
   generateDatePivotData = newData => {
-    const uniqueMonths = {
-      January: 0,
-      February: 1,
-      March: 2,
-      April: 3,
-      May: 4,
-      June: 5,
-      July: 6,
-      August: 7,
-      September: 8,
-      October: 9,
-      November: 10,
-      December: 11
-    }
-
-    const dateColumnIndex = this.tableColumns.findIndex(
-      col => col.type === 'DATE' || col.type === 'DATE_STRING'
-    )
-    const numberColumnIndex = dateColumnIndex === 0 ? 1 : 0
-    const tableData = newData || this.tableData
-
-    const allYears = tableData.map(d => {
-      if (this.tableColumns[dateColumnIndex].type === 'DATE') {
-        return Number(dayjs.unix(d[dateColumnIndex]).format('YYYY'))
+    try {
+      // todo: just make this from a simple array
+      const uniqueMonths = {
+        [MONTH_NAMES[1]]: 0,
+        [MONTH_NAMES[2]]: 1,
+        [MONTH_NAMES[3]]: 2,
+        [MONTH_NAMES[4]]: 3,
+        [MONTH_NAMES[5]]: 4,
+        [MONTH_NAMES[6]]: 5,
+        [MONTH_NAMES[7]]: 6,
+        [MONTH_NAMES[8]]: 7,
+        [MONTH_NAMES[9]]: 8,
+        [MONTH_NAMES[10]]: 9,
+        [MONTH_NAMES[11]]: 10,
+        [MONTH_NAMES[12]]: 11
       }
-      return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
-    })
 
-    const uniqueYears = allYears
-      .filter(onlyUnique)
-      .sort()
-      .reduce((map, title, i) => {
-        map[title] = i + 1
-        return map
-      }, {})
+      const dateColumnIndex = this.tableColumns.findIndex(
+        col => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+      const numberColumnIndex = dateColumnIndex === 0 ? 1 : 0
+      const tableData = newData || this.tableData
 
-    // Generate new column array
-    const pivotTableColumns = [
-      {
-        title: 'Month',
-        name: 'Month',
-        field: '0',
-        // sorter: 'date',
-        frozen: true
-      }
-    ]
-
-    Object.keys(uniqueYears).forEach((year, i) => {
-      pivotTableColumns.push({
-        ...this.tableColumns[numberColumnIndex],
-        name: year,
-        title: year,
-        field: `${i + 1}`,
-        headerContext: undefined
+      const allYears = tableData.map(d => {
+        if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+          return Number(dayjs.unix(d[dateColumnIndex]).format('YYYY'))
+        }
+        return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
-    })
 
-    const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
-    const pivotOriginalColumnData = {}
+      const uniqueYears = allYears
+        .filter(onlyUnique)
+        .sort()
+        .reduce((map, title, i) => {
+          map[title] = i + 1
+          return map
+        }, {})
 
-    // Populate first column
-    Object.keys(uniqueMonths).forEach((month, i) => {
-      pivotTableData[i][0] = month
-    })
-    // Populate remaining columns
-    tableData.forEach(row => {
-      const year = this.formatDatePivotYear(row, dateColumnIndex)
-      const month = this.formatDatePivotMonth(row, dateColumnIndex)
+      // Generate new column array
+      const pivotTableColumns = [
+        {
+          title: 'Month',
+          name: 'Month',
+          field: '0',
+          // sorter: 'date',
+          frozen: true
+        }
+      ]
 
-      const yearNumber = uniqueYears[year]
-      const monthNumber = uniqueMonths[month]
+      Object.keys(uniqueYears).forEach((year, i) => {
+        pivotTableColumns.push({
+          ...this.tableColumns[numberColumnIndex],
+          name: year,
+          title: year,
+          field: `${i + 1}`,
+          headerContext: undefined
+        })
+      })
 
-      pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
-      pivotOriginalColumnData[year] = {
-        ...pivotOriginalColumnData[year],
-        [month]: row[dateColumnIndex]
-      }
-    })
+      const pivotTableData = makeEmptyArray(Object.keys(uniqueYears).length, 12)
+      const pivotOriginalColumnData = {}
 
-    this.pivotOriginalColumnData = pivotOriginalColumnData
-    this.pivotTableColumns = pivotTableColumns
-    this.pivotTableData = pivotTableData
+      // Populate first column
+      Object.keys(uniqueMonths).forEach((month, i) => {
+        pivotTableData[i][0] = month
+      })
+      // Populate remaining columns
+      tableData.forEach(row => {
+        const year = this.formatDatePivotYear(row, dateColumnIndex)
+        const month = this.formatDatePivotMonth(row, dateColumnIndex)
+
+        const yearNumber = uniqueYears[year]
+        const monthNumber = uniqueMonths[month]
+
+        pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
+        pivotOriginalColumnData[year] = {
+          ...pivotOriginalColumnData[year],
+          [month]: row[dateColumnIndex]
+        }
+      })
+
+      this.pivotOriginalColumnData = pivotOriginalColumnData
+      this.pivotTableColumns = pivotTableColumns
+      this.pivotTableData = pivotTableData
+    } catch (error) {
+      this.supportedDisplayTypes.filter(
+        displayType => displayType !== 'pivot_table'
+      )
+      this.setState({ displayType: 'table' })
+    }
   }
 
   generatePivotTableData = newData => {

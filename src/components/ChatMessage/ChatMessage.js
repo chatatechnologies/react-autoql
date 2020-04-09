@@ -113,6 +113,8 @@ export default class ChatMessage extends React.Component {
   }
 
   getHeightOfTableFromRows = rows => {
+    // This is hacky but it eliminates the jumpy bug
+    // 39px per row, 81px leftover for padding and headers
     return rows * 39 + 81
   }
 
@@ -728,7 +730,12 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    const supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+    // Use QueryOutputs supported display types if possible,
+    // they may have been updated because of certain errors
+    let supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+    if (_get(this.responseRef, 'supportedDisplayTypes.length')) {
+      supportedDisplayTypes = _get(this.responseRef, 'supportedDisplayTypes')
+    }
 
     let displayType = this.state.displayType
     if (

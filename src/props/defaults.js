@@ -11,7 +11,7 @@ export const dataFormattingDefault = {
   quantityDecimals: 1,
   comparisonDisplay: 'PERCENT',
   monthYearFormat: 'MMM YYYY',
-  dayMonthYearFormat: 'MMM D, YYYY'
+  dayMonthYearFormat: 'll'
 }
 
 export const autoQLConfigDefault = {

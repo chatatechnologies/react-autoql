@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Numbro from 'numbro'
-import dayjs from 'dayjs'
 import uuid from 'uuid'
 
 import { select } from 'd3-selection'
@@ -10,6 +9,7 @@ import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
+import dayjs from '../../../js/dayjsWithPlugins'
 import { formatChartLabel } from '../../../js/Util.js'
 
 import './Axis.scss'
