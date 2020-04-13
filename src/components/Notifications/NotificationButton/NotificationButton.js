@@ -74,7 +74,6 @@ export default class NotificationButton extends React.Component {
       })
       .catch(error => {
         console.error(error)
-        this.props.onErrorCallback(error)
       })
   }
 
@@ -82,7 +81,6 @@ export default class NotificationButton extends React.Component {
     resetNotificationCount({ ...this.props.authentication })
       .catch(error => {
         console.error(error)
-        this.props.onErrorCallback(error)
       })
       .finally(() => {
         this.setState({ count: 0 })

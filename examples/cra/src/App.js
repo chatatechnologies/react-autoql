@@ -1324,31 +1324,27 @@ export default class App extends Component {
           </Menu.Item>
         )}
         {<Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
-        {!this.state.demo &&
-          this.state.isAuthenticated &&
-          this.getActiveIntegrator() === 'nb-comp' && (
-            <Menu.Item key="settings">Notification Settings</Menu.Item>
-          )}
-        {!this.state.demo &&
-          this.state.isAuthenticated &&
-          this.getActiveIntegrator() === 'nb-comp' && (
-            <Menu.Item key="notifications">
-              <NotificationButton
-                ref={r => (this.notificationBadgeRef = r)}
-                authentication={this.getAuthProp()}
-                onNewNotification={() => {
-                  // If a new notification is detected, refresh the list
-                  if (
-                    this.notificationListRef &&
-                    this.state.currentPage === 'notifications'
-                  ) {
-                    this.notificationListRef.refreshNotifications()
-                  }
-                }}
-                onErrorCallback={this.onError}
-              />
-            </Menu.Item>
-          )}
+        {this.state.isAuthenticated && (
+          <Menu.Item key="settings">Notification Settings</Menu.Item>
+        )}
+        {this.state.isAuthenticated && (
+          <Menu.Item key="notifications">
+            <NotificationButton
+              ref={r => (this.notificationBadgeRef = r)}
+              authentication={this.getAuthProp()}
+              onNewNotification={() => {
+                // If a new notification is detected, refresh the list
+                if (
+                  this.notificationListRef &&
+                  this.state.currentPage === 'notifications'
+                ) {
+                  this.notificationListRef.refreshNotifications()
+                }
+              }}
+              onErrorCallback={this.onError}
+            />
+          </Menu.Item>
+        )}
       </Menu>
     )
   }
