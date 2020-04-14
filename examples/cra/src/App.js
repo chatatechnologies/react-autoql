@@ -155,6 +155,11 @@ export default class App extends Component {
   componentDidMount = () => {
     this.checkAuthentication().then(() => {
       this.fetchDashboard()
+      // if (window.DataMessenger) {
+      //   window.DataMessenger.init('data-messenger-container', {
+      //     authentication: this.getAuthProp
+      //   })
+      // }
     })
   }
 
@@ -174,8 +179,7 @@ export default class App extends Component {
     return {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
-      domain: this.state.domain,
-      demo: this.state.demo
+      domain: this.state.domain
     }
   }
 

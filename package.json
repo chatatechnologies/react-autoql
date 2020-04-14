@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.2.44",
+  "version": "0.2.46",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -113,6 +113,7 @@
     "jest-css-modules": "^2.0.0",
     "lint-staged": "^8.2.1",
     "node-sass": "^4.13.0",
+    "postcss-prefixer": "^2.1.2",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1",
     "react-test-renderer": "^16.11.0",

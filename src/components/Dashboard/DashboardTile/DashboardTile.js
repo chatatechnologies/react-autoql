@@ -407,31 +407,55 @@ export default class DashboardTile extends React.Component {
       return (
         <div className="dashboard-tile-edit-wrapper">
           <div
-            className={`dashboard-tile-input-container ${
-              this.state.isQueryInputFocused ? 'query-focused' : ''
-            }`}
+            className={`dashboard-tile-input-container
+            ${this.state.isQueryInputFocused ? 'query-focused' : ''}
+            ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
             onMouseDown={e => e.stopPropagation()}
           >
-            {this.props.autoQLConfig.enableAutocomplete ? (
-              <Autosuggest
-                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-                getSuggestionValue={this.userSelectedSuggestionHandler}
-                suggestions={this.state.suggestions}
-                ref={ref => {
-                  this.autoSuggest = ref
-                }}
-                renderSuggestion={suggestion => {
-                  return <Fragment>{suggestion.name}</Fragment>
-                }}
-                inputProps={{
-                  className: `dashboard-tile-autocomplete-input`,
-                  placeholder: 'Query',
-                  value: this.state.query,
-                  onFocus: () => this.setState({ isQueryInputFocused: true }),
-                  onChange: this.onQueryInputChange,
-                  onKeyDown: this.onQueryTextKeyDown,
-                  onBlur: e => {
+            <div className="dashboard-tile-left-input-container">
+              <Icon
+                className="query-input-icon"
+                type="chata-bubbles-outlined"
+              />
+              {this.props.autoQLConfig.enableAutocomplete ? (
+                <Autosuggest
+                  onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                  onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                  getSuggestionValue={this.userSelectedSuggestionHandler}
+                  suggestions={this.state.suggestions}
+                  ref={ref => {
+                    this.autoSuggest = ref
+                  }}
+                  renderSuggestion={suggestion => {
+                    return <Fragment>{suggestion.name}</Fragment>
+                  }}
+                  inputProps={{
+                    className: `dashboard-tile-autocomplete-input`,
+                    placeholder: 'Query',
+                    value: this.state.query,
+                    onFocus: () => this.setState({ isQueryInputFocused: true }),
+                    onChange: this.onQueryInputChange,
+                    onKeyDown: this.onQueryTextKeyDown,
+                    onBlur: e => {
+                      if (_get(this.props, 'tile.query') !== e.target.value) {
+                        this.props.setParamsForTile(
+                          { query: e.target.value, displayType: undefined },
+                          this.props.tile.i
+                        )
+                      }
+                      this.setState({ isQueryInputFocused: false })
+                    }
+                  }}
+                />
+              ) : (
+                <input
+                  className="dashboard-tile-input query"
+                  placeholder="Query"
+                  value={this.state.query}
+                  onChange={e => this.setState({ query: e.target.value })}
+                  onKeyDown={this.onQueryTextKeyDown}
+                  onFocus={() => this.setState({ isQueryInputFocused: true })}
+                  onBlur={e => {
                     if (_get(this.props, 'tile.query') !== e.target.value) {
                       this.props.setParamsForTile(
                         { query: e.target.value, displayType: undefined },
@@ -439,38 +463,28 @@ export default class DashboardTile extends React.Component {
                       )
                     }
                     this.setState({ isQueryInputFocused: false })
-                  }
-                }}
-              />
-            ) : (
+                  }}
+                />
+              )}
+            </div>
+
+            <div className="dashboard-tile-right-input-container">
+              <Icon className="title-input-icon" type="title" />
               <input
-                className="dashboard-tile-input query"
-                placeholder="Query"
-                value={this.state.query}
-                onChange={e => this.setState({ query: e.target.value })}
-                onKeyDown={this.onQueryTextKeyDown}
+                className="dashboard-tile-input title"
+                placeholder="Add descriptive title (optional)"
+                value={this.state.title}
+                onChange={e => this.setState({ title: e.target.value })}
+                onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={e => {
-                  if (_get(this.props, 'tile.query') !== e.target.value) {
-                    this.props.setParamsForTile(
-                      { query: e.target.value, displayType: undefined },
-                      this.props.tile.i
-                    )
-                  }
+                  this.props.setParamsForTile(
+                    { title: e.target.value },
+                    this.props.tile.i
+                  )
+                  this.setState({ isTitleInputFocused: false })
                 }}
               />
-            )}
-            <input
-              className="dashboard-tile-input title"
-              placeholder="Add descriptive title (optional)"
-              value={this.state.title}
-              onChange={e => this.setState({ title: e.target.value })}
-              onBlur={e =>
-                this.props.setParamsForTile(
-                  { title: e.target.value },
-                  this.props.tile.i
-                )
-              }
-            />
+            </div>
           </div>
           <div
             onMouseDown={e => e.stopPropagation()}

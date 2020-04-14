@@ -11,7 +11,6 @@ import {
   MdInfoOutline,
   MdPlayCircleOutline,
   MdEdit
-  // MdTitle,
   // MdDescription
 } from 'react-icons/md'
 import {
