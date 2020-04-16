@@ -1051,6 +1051,7 @@ export default class QueryOutput extends React.Component {
       this.pivotOriginalColumnData = pivotOriginalColumnData
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
+      this.numberOfPivotTableRows = 12
     } catch (error) {
       this.supportedDisplayTypes.filter(
         displayType => displayType !== 'pivot_table'
