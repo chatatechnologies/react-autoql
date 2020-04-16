@@ -782,12 +782,14 @@ export default class ChatMessage extends React.Component {
     if (
       this.state.displayType === 'table' &&
       this.props.type !== 'text' &&
+      !this.isSingleValueResponse() &&
       this.TABLE_CONTAINER_HEIGHT
     ) {
       messageHeight = this.TABLE_CONTAINER_HEIGHT
     } else if (
       this.state.displayType === 'pivot_table' &&
       this.props.type !== 'text' &&
+      !this.isSingleValueResponse() &&
       this.PIVOT_TABLE_CONTAINER_HEIGHT
     ) {
       messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
@@ -802,7 +804,7 @@ export default class ChatMessage extends React.Component {
         <Icon
           type="warning"
           className="data-limit-warning-icon"
-          data-tip="Warning: The data limit has been reached. <br />You may have data that is not displayed here."
+          data-tip="The display limit for your data has been reached. Try querying a smaller time-frame to ensure all your data is displayed."
           data-for="chart-element-tooltip"
         />
       )

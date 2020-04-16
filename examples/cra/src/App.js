@@ -65,6 +65,10 @@ const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
 }
 
+const isProd = () => {
+  return window.location.href.includes('prod')
+}
+
 const getBaseUrl = () => {
   return window.location.href.includes('prod')
     ? 'https://backend.chata.io'
@@ -155,11 +159,6 @@ export default class App extends Component {
   componentDidMount = () => {
     this.checkAuthentication().then(() => {
       this.fetchDashboard()
-      // if (window.DataMessenger) {
-      //   window.DataMessenger.init('data-messenger-container', {
-      //     authentication: this.getAuthProp
-      //   })
-      // }
     })
   }
 
@@ -179,7 +178,8 @@ export default class App extends Component {
     return {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
-      domain: this.state.domain
+      domain: this.state.domain,
+      demo: this.state.demo
     }
   }
 
@@ -1328,10 +1328,10 @@ export default class App extends Component {
           </Menu.Item>
         )}
         {<Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
-        {this.state.isAuthenticated && (
+        {this.state.isAuthenticated && !isProd() && (
           <Menu.Item key="settings">Notification Settings</Menu.Item>
         )}
-        {this.state.isAuthenticated && (
+        {this.state.isAuthenticated && !isProd() && (
           <Menu.Item key="notifications">
             <NotificationButton
               ref={r => (this.notificationBadgeRef = r)}

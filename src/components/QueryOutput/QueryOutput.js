@@ -28,16 +28,6 @@ import {
   authenticationDefault
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import {
-  setStyleVars,
-  getQueryParams,
-  supportsRegularPivotTable,
-  supports2DCharts,
-  isColumnNumberType,
-  isColumnStringType,
-  getNumberColumnIndices,
-  getNumberOfGroupables
-} from '../../js/Util'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
@@ -61,7 +51,15 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  isForecastType
+  isForecastType,
+  setStyleVars,
+  getQueryParams,
+  supportsRegularPivotTable,
+  supports2DCharts,
+  isColumnNumberType,
+  isColumnStringType,
+  getNumberColumnIndices,
+  getNumberOfGroupables
 } from '../../js/Util.js'
 
 import './QueryOutput.scss'
@@ -544,6 +542,7 @@ export default class QueryOutput extends React.Component {
         : DARK_THEME['--chata-messenger-hover-color']
 
     if (this.state.displayType === 'pivot_table') {
+      console.log('rendering pivot table')
       return (
         <ChataTable
           key={this.pivotTableID}
@@ -983,8 +982,11 @@ export default class QueryOutput extends React.Component {
       const dateColumnIndex = this.tableColumns.findIndex(
         col => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      const numberColumnIndex = dateColumnIndex === 0 ? 1 : 0
-      const tableData = newData || this.tableData
+      const numberColumnIndex = this.tableColumns.findIndex(
+        (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
+      )
+
+      const tableData = newData || this.data
 
       const allYears = tableData.map(d => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
@@ -1008,7 +1010,8 @@ export default class QueryOutput extends React.Component {
           name: 'Month',
           field: '0',
           // sorter: 'date',
-          frozen: true
+          frozen: true,
+          visible: true
         }
       ]
 
@@ -1018,7 +1021,8 @@ export default class QueryOutput extends React.Component {
           name: year,
           title: year,
           field: `${i + 1}`,
-          headerContext: undefined
+          headerContext: undefined,
+          visible: true
         })
       })
 
@@ -1056,7 +1060,8 @@ export default class QueryOutput extends React.Component {
   }
 
   generatePivotTableData = newData => {
-    const tableData = newData || this.tableData
+    const tableData = newData || this.data
+
     const uniqueValues0 = tableData
       .map(d => d[0])
       .filter(onlyUnique)
@@ -1080,9 +1085,11 @@ export default class QueryOutput extends React.Component {
       {
         ...this.tableColumns[0],
         frozen: true,
-        headerContext: undefined
+        headerContext: undefined,
+        visible: true
       }
     ]
+
     Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement({
         element: columnName,
@@ -1094,7 +1101,8 @@ export default class QueryOutput extends React.Component {
         name: columnName,
         title: formattedColumnName,
         field: `${i + 1}`,
-        headerContext: undefined
+        headerContext: undefined,
+        visible: true
       })
     })
 
@@ -1111,6 +1119,7 @@ export default class QueryOutput extends React.Component {
 
     this.pivotTableColumns = pivotTableColumns
     this.pivotTableData = pivotTableData
+
     this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
   }
 

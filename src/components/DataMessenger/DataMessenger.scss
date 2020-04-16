@@ -161,16 +161,16 @@
   font-size: 22px;
 }
 .chata-drawer.drawer-right .drawer-handle {
-  left: -70px;
+  left: -70px !important;
 }
 .chata-drawer.drawer-left .drawer-handle {
-  right: -60px;
+  right: -60px !important;
 }
 .chata-drawer.drawer-top .drawer-handle {
-  bottom: -60px;
+  bottom: -60px !important;
 }
 .chata-drawer.drawer-bottom .drawer-handle {
-  top: -60px;
+  top: -60px !important;
 }
 .chata-drawer .drawer-handle.hide {
   opacity: 0;
