@@ -542,7 +542,6 @@ export default class QueryOutput extends React.Component {
         : DARK_THEME['--chata-messenger-hover-color']
 
     if (this.state.displayType === 'pivot_table') {
-      console.log('rendering pivot table')
       return (
         <ChataTable
           key={this.pivotTableID}
@@ -1063,8 +1062,16 @@ export default class QueryOutput extends React.Component {
   generatePivotTableData = newData => {
     const tableData = newData || this.data
 
+    const gColIndex1 = this.tableColumns.findIndex(col => col.groupable)
+    const gColIndex2 = this.tableColumns.findIndex(
+      (col, i) => i !== gColIndex1 && col.groupable
+    )
+    const numberColIndex = this.tableColumns.findIndex(
+      (col, index) => isColumnNumberType(col) && !col.groupable
+    )
+
     const uniqueValues0 = tableData
-      .map(d => d[0])
+      .map(d => d[gColIndex1])
       .filter(onlyUnique)
       .sort()
       .reduce((map, title, i) => {
@@ -1073,7 +1080,7 @@ export default class QueryOutput extends React.Component {
       }, {})
 
     const uniqueValues1 = tableData
-      .map(d => d[1])
+      .map(d => d[gColIndex2])
       .filter(onlyUnique)
       .sort()
       .reduce((map, title, i) => {
@@ -1084,7 +1091,7 @@ export default class QueryOutput extends React.Component {
     // Generate new column array
     const pivotTableColumns = [
       {
-        ...this.tableColumns[0],
+        ...this.tableColumns[gColIndex1],
         frozen: true,
         headerContext: undefined,
         visible: true
@@ -1094,11 +1101,11 @@ export default class QueryOutput extends React.Component {
     Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement({
         element: columnName,
-        column: this.tableColumns[1],
+        column: this.tableColumns[gColIndex2],
         config: this.props.dataFormatting
       })
       pivotTableColumns.push({
-        ...this.tableColumns[2], // value column
+        ...this.tableColumns[numberColIndex], // value column
         name: columnName,
         title: formattedColumnName,
         field: `${i + 1}`,
@@ -1113,14 +1120,15 @@ export default class QueryOutput extends React.Component {
     )
     tableData.forEach(row => {
       // Populate first column
-      pivotTableData[uniqueValues0[row[0]]][0] = row[0]
+      pivotTableData[uniqueValues0[row[gColIndex1]]][0] = row[gColIndex1]
       // Populate data for remaining columns
-      pivotTableData[uniqueValues0[row[0]]][uniqueValues1[row[1]]] = row[2]
+      pivotTableData[uniqueValues0[row[gColIndex1]]][
+        uniqueValues1[row[gColIndex2]]
+      ] = row[numberColIndex]
     })
 
     this.pivotTableColumns = pivotTableColumns
     this.pivotTableData = pivotTableData
-
     this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
   }
 
