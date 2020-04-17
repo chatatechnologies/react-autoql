@@ -718,7 +718,7 @@ export default class QueryOutput extends React.Component {
                   data: [
                     {
                       name: columns[stringColumnIndex].name,
-                      value: row[stringColumnIndex]
+                      value: `${row[stringColumnIndex]}`
                     }
                   ]
                 }
@@ -1017,6 +1017,12 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
+          drilldownData: [
+            {
+              name: this.tableColumns[dateColumnIndex].name,
+              value: null
+            }
+          ],
           name: year,
           title: year,
           field: `${i + 1}`,
@@ -1062,15 +1068,24 @@ export default class QueryOutput extends React.Component {
   generatePivotTableData = newData => {
     const tableData = newData || this.data
 
-    const gColIndex1 = this.tableColumns.findIndex(col => col.groupable)
-    const gColIndex2 = this.tableColumns.findIndex(
-      (col, i) => i !== gColIndex1 && col.groupable
+    let gColIndex0 = this.tableColumns.findIndex(col => col.groupable)
+    let gColIndex1 = this.tableColumns.findIndex(
+      (col, i) => i !== gColIndex0 && col.groupable
     )
     const numberColIndex = this.tableColumns.findIndex(
       (col, index) => isColumnNumberType(col) && !col.groupable
     )
 
-    const uniqueValues0 = tableData
+    let uniqueValues0 = tableData
+      .map(d => d[gColIndex0])
+      .filter(onlyUnique)
+      .sort()
+      .reduce((map, title, i) => {
+        map[title] = i
+        return map
+      }, {})
+
+    let uniqueValues1 = tableData
       .map(d => d[gColIndex1])
       .filter(onlyUnique)
       .sort()
@@ -1079,33 +1094,54 @@ export default class QueryOutput extends React.Component {
         return map
       }, {})
 
-    const uniqueValues1 = tableData
-      .map(d => d[gColIndex2])
-      .filter(onlyUnique)
-      .sort()
-      .reduce((map, title, i) => {
-        map[title] = i + 1
-        return map
-      }, {})
+    // Make sure the longer list is on the side, not the top
+    if (Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length) {
+      const tempCol = gColIndex0
+      gColIndex0 = gColIndex1
+      gColIndex1 = tempCol
+
+      const tempValues = { ...uniqueValues0 }
+      uniqueValues0 = { ...uniqueValues1 }
+      uniqueValues1 = { ...tempValues }
+    }
+
+    if (Object.keys(uniqueValues1).length > 50) {
+      this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
+        displayType => displayType !== 'pivot_table'
+      )
+      this.setState({ displayType: 'table' })
+      return null
+    }
 
     // Generate new column array
     const pivotTableColumns = [
       {
-        ...this.tableColumns[gColIndex1],
+        ...this.tableColumns[gColIndex0],
         frozen: true,
         headerContext: undefined,
-        visible: true
+        visible: true,
+        field: '0'
       }
     ]
 
     Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement({
         element: columnName,
-        column: this.tableColumns[gColIndex2],
+        column: this.tableColumns[gColIndex1],
         config: this.props.dataFormatting
       })
       pivotTableColumns.push({
         ...this.tableColumns[numberColIndex], // value column
+        drilldownData: [
+          {
+            name: this.tableColumns[gColIndex0].name, // project column name
+            value: null // project column value
+          },
+          {
+            name: this.tableColumns[gColIndex1].name, // month column name
+            value: columnName // month column value
+          }
+        ],
         name: columnName,
         title: formattedColumnName,
         field: `${i + 1}`,
@@ -1115,15 +1151,16 @@ export default class QueryOutput extends React.Component {
     })
 
     const pivotTableData = makeEmptyArray(
-      Object.keys(uniqueValues1).length,
+      Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
       Object.keys(uniqueValues0).length
     )
     tableData.forEach(row => {
       // Populate first column
-      pivotTableData[uniqueValues0[row[gColIndex1]]][0] = row[gColIndex1]
-      // Populate data for remaining columns
-      pivotTableData[uniqueValues0[row[gColIndex1]]][
-        uniqueValues1[row[gColIndex2]]
+      pivotTableData[uniqueValues0[row[gColIndex0]]][0] = row[gColIndex0]
+
+      // Populate remaining columns
+      pivotTableData[uniqueValues0[row[gColIndex0]]][
+        uniqueValues1[row[gColIndex1]] + 1
       ] = row[numberColIndex]
     })
 

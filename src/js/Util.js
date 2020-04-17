@@ -582,43 +582,31 @@ export const getGroupBysFromPivotTable = (
   pivotTableColumns,
   originalColumnData
 ) => {
-  let groupByName1
-  let groupByValue1
-  let groupByName2
-  let groupByValue2
   try {
-    if (tableColumns[0].type === 'DATE') {
+    let drilldownData = []
+    if (
+      cell &&
+      cell.getColumn() &&
+      cell.getColumn().getDefinition() &&
+      cell.getColumn().getDefinition().drilldownData
+    ) {
+      drilldownData = cell.getColumn().getDefinition().drilldownData
+    }
+
+    if (!drilldownData.length) {
+      return undefined
+    }
+
+    if (tableColumns.length === 2) {
+      // This is a date pivot
       const year = Number(pivotTableColumns[cell.getField()].name)
       const month = cell.getData()[0]
-      groupByName1 = tableColumns[0].name
-      groupByValue1 = `${originalColumnData[year][month]}`
+      drilldownData[0].value = `${originalColumnData[year][month]}`
     } else {
-      groupByName1 = tableColumns[0].name
-      groupByValue1 = cell.getData()[0]
-
-      groupByName2 = tableColumns[1].name
-      groupByValue2 = pivotTableColumns[cell.getField()].name
+      drilldownData[0].value = `${cell.getData()[0]}`
     }
 
-    if (groupByName2) {
-      return [
-        {
-          name: groupByName1,
-          value: groupByValue1
-        }
-      ]
-    }
-
-    return [
-      {
-        name: groupByName1,
-        value: groupByValue1
-      },
-      {
-        name: groupByName2,
-        value: groupByValue2
-      }
-    ]
+    return drilldownData
   } catch (error) {
     console.error(error)
     return undefined
@@ -644,7 +632,7 @@ export const getGroupBysFromTable = (row, tableColumns) => {
   const groupByArray = []
   groupableColumns.forEach(colIndex => {
     const groupByName = tableColumns[colIndex].name
-    const groupByValue = rowData[colIndex]
+    const groupByValue = `${rowData[colIndex]}`
     groupByArray.push(nameValueObject(groupByName, groupByValue))
   })
 
