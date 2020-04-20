@@ -209,3 +209,53 @@ export const bubbleChartIcon = (
     <circle className="chart-icon-svg-0" cx="1.8" cy="14.8" r="1.2" />
   </svg>
 )
+
+export const splitViewIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <g>
+      <rect
+        className="chart-icon-svg-0"
+        x="0"
+        y="7.1"
+        width="1.8"
+        height="1.8"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="3.5"
+        y="7.1"
+        width="1.8"
+        height="1.8"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="7.1"
+        y="7.1"
+        width="1.8"
+        height="1.8"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="10.7"
+        y="7.1"
+        width="1.8"
+        height="1.8"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="14.2"
+        y="7.1"
+        width="1.8"
+        height="1.8"
+      />
+      <path
+        className="chart-icon-svg-0"
+        d="M14.2,14.2H1.8v-3.6H0v3.6c0,1,0.8,1.7,1.7,1.7h12.5c1,0,1.7-0.8,1.7-1.7v-3.6h-1.8V14.2z"
+      />
+      <path
+        className="chart-icon-svg-0"
+        d="M0,1.7v3.6h1.8V1.8h12.4v3.6H16V1.7c0-1-0.8-1.7-1.7-1.7H1.7C0.8,0,0,0.8,0,1.7z"
+      />
+    </g>
+  </svg>
+)

@@ -54,7 +54,8 @@ import {
   lineChartIcon,
   pieChartIcon,
   heatmapIcon,
-  bubbleChartIcon
+  bubbleChartIcon,
+  splitViewIcon
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -227,7 +228,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'split-view': {
-        icon = <AiOutlineBorderVerticle />
+        icon = splitViewIcon
         break
       }
       case 'table': {
@@ -256,7 +257,6 @@ export default class Icon extends React.Component {
     }
     return (
       <span
-        // style={{ verticalAlign: 'middle', lineHeight: '100%' }}
         {...nativeProps}
         data-test="chata-icon"
         className={`chata-icon ${this.props.className}`}

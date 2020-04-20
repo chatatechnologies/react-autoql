@@ -39,6 +39,9 @@
   visibility: hidden;
   opacity: 0;
 }
+.chata-dashboard-tile-inner-div .split-view-btn {
+  font-size: 14px;
+}
 .chata-dashboard-tile-inner-div:not(.split) .split-view-btn {
   bottom: -23px;
   left: calc(50% - 20px);
