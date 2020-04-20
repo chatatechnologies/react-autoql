@@ -1257,7 +1257,7 @@ export default class QueryOutput extends React.Component {
 
     if (!_get(responseData, 'rows.length')) {
       // This is not an error. There is just no data in the DB
-      return _get(responseBody, 'message')
+      return _get(responseBody, 'message', 'No Data Found')
     }
 
     if (displayType && this.data) {

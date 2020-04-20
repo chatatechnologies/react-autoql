@@ -341,6 +341,8 @@ export default class ChatMessage extends React.Component {
     return (
       this.props.isResponse &&
       !this.isSingleValueResponse() &&
+      this.props.type !== 'text' &&
+      _get(this.props.response, 'data.data.rows.length', 0) > 0 &&
       isTableType(this.state.displayType)
     )
   }
@@ -781,15 +783,13 @@ export default class ChatMessage extends React.Component {
 
     if (
       this.state.displayType === 'table' &&
-      this.props.type !== 'text' &&
-      !this.isSingleValueResponse() &&
+      this.isTableResponse() &&
       this.TABLE_CONTAINER_HEIGHT
     ) {
       messageHeight = this.TABLE_CONTAINER_HEIGHT
     } else if (
       this.state.displayType === 'pivot_table' &&
-      this.props.type !== 'text' &&
-      !this.isSingleValueResponse() &&
+      this.isTableResponse() &&
       this.PIVOT_TABLE_CONTAINER_HEIGHT
     ) {
       messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
