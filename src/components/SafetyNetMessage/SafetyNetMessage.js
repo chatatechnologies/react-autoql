@@ -213,7 +213,7 @@ export default class SafetyNetMessage extends React.Component {
 
       // The last word is the original suggestion, append "original word" to the list label
       if (i === wordList.length - 1) {
-        option.listLabel = `${option.label} (Original Word)`
+        option.listLabel = `${option.label} (Original term)`
       } else {
         option.listLabel = `${suggestionItem.text}${
           suggestionItem.value_label ? ` (${suggestionItem.value_label})` : ''
@@ -227,7 +227,7 @@ export default class SafetyNetMessage extends React.Component {
       value: 'remove-word',
       label: (
         <span>
-          <Icon type="trash" /> Remove Word
+          <Icon type="trash" /> Remove term
         </span>
       )
     })
