@@ -476,7 +476,7 @@ export default class DataMessenger extends React.Component {
 
   createErrorMessage = content => {
     return {
-      content: content || errorMessages.GENERAL_ERROR_MESSAGE,
+      content: content || errorMessages.GENERAL,
       id: uuid.v4(),
       type: 'error',
       isResponse: true
@@ -530,14 +530,7 @@ export default class DataMessenger extends React.Component {
     if (_get(response, 'error') === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
     } else if (_get(response, 'error') === 'unauthenticated') {
-      message = this.createErrorMessage(
-        <div>
-          Uh oh.. It looks like you don't have access to this resource. <br />
-          <br />
-          Please double check that all required authentication fields are
-          correct.
-        </div>
-      )
+      message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
     } else if (_get(response, 'error') === 'parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()

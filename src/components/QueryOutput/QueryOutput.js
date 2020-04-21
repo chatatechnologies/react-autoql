@@ -1196,7 +1196,7 @@ export default class QueryOutput extends React.Component {
       return message
     }
 
-    return errorMessages.GENERAL_ERROR_MESSAGE
+    return errorMessages.GENERAL
   }
 
   renderResponse = (width, height) => {
@@ -1237,7 +1237,7 @@ export default class QueryOutput extends React.Component {
             this.props.onQueryValidationSelectOption
           }
           initialSelections={this.props.queryValidationSelections}
-          autoSelectSuggestion={this.props.autoSelectSafetyNetSuggestion}
+          autoSelectSuggestion={this.props.autoSelectQueryValidationSuggestion}
         />
       )
     }
@@ -1255,9 +1255,11 @@ export default class QueryOutput extends React.Component {
       return this.renderSuggestionMessage(responseData.items)
     }
 
+    // This is not an error. There is just no data in the DB
     if (!_get(responseData, 'rows.length')) {
-      // This is not an error. There is just no data in the DB
-      return _get(responseBody, 'message', 'No Data Found')
+      return this.renderErrorMessage(
+        _get(responseBody, 'message', 'No Data Found')
+      )
     }
 
     if (displayType && this.data) {

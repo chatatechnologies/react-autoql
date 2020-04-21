@@ -204,7 +204,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return errorMessages.GENERAL_ERROR_MESSAGE
+    return errorMessages.GENERAL
   }
 
   setFilterTags = ({ isFilteringTable } = {}) => {

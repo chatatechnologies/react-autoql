@@ -105,6 +105,21 @@
   position: relative;
   margin-left: -5px;
 }
+.chata-select-popup-container.safetynet-select {
+  padding: 5px 0;
+  .chata-select-option {
+    height: unset;
+    font-size: 14px;
+    line-height: 24px;
+    padding: 0 15px;
+  }
+  .chata-select-option:last-of-type {
+    color: #d84830;
+  }
+}
+.chata-safety-net-query {
+  text-align: center;
+}
 .chata-safety-net-execute-btn {
   height: 30px;
   background: none;
@@ -131,16 +146,20 @@
 .chata-safetynet-select {
   position: relative;
   display: inline-block;
-  height: 30px;
+  height: 2em;
   background: none;
   outline: none !important;
   border: none;
   letter-spacing: 0.05em;
   font-family: inherit;
+  font-size: inherit;
+  margin: 0 0.4em;
+  padding: 0;
+  border-radius: 0;
+  border-bottom: 1px dashed;
 
   /* Default style outside of drawer */
   color: #28a8e0;
-  font-size: inherit;
 }
 .chata-safety-net-delete-button {
   position: relative;
