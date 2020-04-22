@@ -548,12 +548,15 @@ export default class App extends Component {
           value: 'jobs',
           children: [
             {
-              label: 'List all jobs',
+              label: 'All jobs scheduled start date next year',
               value: 'all-jobs'
             },
-            { label: 'All jobs in bid state', value: 'total-jobs' },
             {
-              label: 'All jobs open from last year',
+              label: 'All open jobs with scheduled end date for this year',
+              value: 'total-jobs'
+            },
+            {
+              label: 'All jobs in bid status',
               value: 'total-jobs-by-status'
             }
           ]
@@ -563,11 +566,17 @@ export default class App extends Component {
           value: 'tickets',
           children: [
             {
-              label: 'Total tickets',
+              label: 'Total tickets in 2019 by month',
               value: 'total-tickets'
             },
-            { label: 'Total tickets in 2019 by month', value: 'tickets-2019' },
-            { label: 'List tickets in void status', value: 'tickets-void' }
+            {
+              label: 'Total tickets by customer this month',
+              value: 'tickets-2019'
+            },
+            {
+              label: 'List void tickets scheduled for last year',
+              value: 'tickets-void'
+            }
           ]
         },
         {
@@ -575,12 +584,15 @@ export default class App extends Component {
           value: 'estimates',
           children: [
             {
-              label: 'Total estimates',
+              label: 'Estimates by area last year',
               value: 'total-estimates'
             },
-            { label: 'Total estimates by year', value: 'estimates-by-year' },
             {
-              label: 'List estimates over 10000',
+              label: 'Total estimated cost by year last 3 years',
+              value: 'estimates-by-year'
+            },
+            {
+              label: 'Show void estimates over 10000',
               value: 'estimates-over-10000'
             }
           ]
@@ -593,9 +605,12 @@ export default class App extends Component {
               label: 'Total revenue this year',
               value: 'revenue-this-year'
             },
-            { label: 'Total revenue this month', value: 'revenue-this-month' },
             {
-              label: 'Total revenue by area in 2019',
+              label: 'Total revenue by item this month',
+              value: 'revenue-this-month'
+            },
+            {
+              label: 'Total revenue by area last year',
               value: 'revenue-2019'
             }
           ]
@@ -605,12 +620,15 @@ export default class App extends Component {
           value: 'Utilization',
           children: [
             {
-              label: 'Total utilization by personnel',
+              label: 'Total hours utilization by personnel last month',
               value: 'personnel'
             },
-            { label: 'Total hour utilization by resource', value: 'resource' },
             {
-              label: 'Total utilization days by project customer',
+              label: 'Total utilization by resource this month',
+              value: 'resource'
+            },
+            {
+              label: 'Total personnel hours by area this year',
               value: 'customer'
             }
           ]

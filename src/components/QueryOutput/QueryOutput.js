@@ -102,7 +102,8 @@ export default class QueryOutput extends React.Component {
     hideColumnCallback: func,
     activeChartElementKey: string,
     onTableFilterCallback: func,
-    enableColumnHeaderContextMenu: bool
+    enableColumnHeaderContextMenu: bool,
+    isResizing: bool
   }
 
   static defaultProps = {
@@ -122,6 +123,7 @@ export default class QueryOutput extends React.Component {
     width: undefined,
     activeChartElementKey: undefined,
     enableColumnHeaderContextMenu: false,
+    isResizing: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     hideColumnCallback: () => {},
@@ -139,8 +141,8 @@ export default class QueryOutput extends React.Component {
       const { theme, chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
-      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--chata-output-' })
+      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles: this.themeStyles, prefix: '--chata-output-' })
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(
@@ -168,8 +170,8 @@ export default class QueryOutput extends React.Component {
       _get(this.props, 'themeConfig.theme')
     ) {
       const { theme } = this.props.themeConfig
-      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--chata-output-' })
+      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+      setStyleVars({ themeStyles: this.themeStyles, prefix: '--chata-output-' })
     }
 
     if (this.props.queryResponse && !prevProps.queryResponse) {
@@ -455,37 +457,55 @@ export default class QueryOutput extends React.Component {
   }
 
   onLegendClick = d => {
-    const newChartData = this.chartData.map(data => {
-      const newCells = data.cells.map(cell => {
-        if (cell.label === d) {
-          return {
-            ...cell,
-            hidden: !cell.hidden
+    if (this.state.displayType === 'pie') {
+      this.onPieChartLegendClick(d)
+    } else {
+      const newChartData = this.chartData.map(data => {
+        const newCells = data.cells.map(cell => {
+          if (cell.label === d) {
+            return {
+              ...cell,
+              hidden: !cell.hidden
+            }
           }
+          return cell
+        })
+
+        return {
+          ...data,
+          cells: newCells
         }
-        return cell
       })
 
-      return {
-        ...data,
-        cells: newCells
-      }
-    })
-
-    const newColumns = this.tableColumns.map(col => {
-      if (col.title === d) {
-        return {
-          ...col,
-          isSeriesHidden: !col.isSeriesHidden
+      const newColumns = this.tableColumns.map(col => {
+        if (col.title === d) {
+          return {
+            ...col,
+            isSeriesHidden: !col.isSeriesHidden
+          }
         }
-      }
-      return col
-    })
+        return col
+      })
 
-    this.tableColumns = newColumns
-    this.chartData = newChartData
+      this.tableColumns = newColumns
+      this.chartData = newChartData
+    }
 
     this.forceUpdate()
+  }
+
+  onPieChartLegendClick = d => {
+    const newChartData = this.chartData.map(data => {
+      if (data.label === d.label) {
+        return {
+          ...data,
+          hidden: !_get(data, 'hidden', false)
+        }
+      }
+      return data
+    })
+
+    this.chartData = newChartData
   }
 
   areAllColumnsHidden = () => {
@@ -601,6 +621,11 @@ export default class QueryOutput extends React.Component {
     //   columns = this.pivotTableColumns
     // }
 
+    const chartThemeConfig = {
+      ...this.props.themeConfig,
+      ...this.themeStyles
+    }
+
     return (
       <ErrorBoundary>
         <ChataChart
@@ -617,6 +642,7 @@ export default class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           stringColumnIndices={this.stringColumnIndices}
           numberColumnIndices={this.numberColumnIndices}
+          themeConfig={chartThemeConfig}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
           //   if (!this.props.isDrilldownDisabled) {
@@ -624,6 +650,7 @@ export default class QueryOutput extends React.Component {
           //   }
           // }}
           onChartClick={this.onChartClick}
+          isResizing={this.props.isResizing}
         />
       </ErrorBoundary>
     )

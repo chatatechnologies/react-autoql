@@ -67,8 +67,15 @@ export default class Axes extends React.Component {
       onLegendClick
     }
 
+    const labelInlineStyles = {
+      fontSize: 12,
+      fontFamily: 'inherit',
+      fill: 'currentColor',
+      fillOpacity: 0.7
+    }
+
     return (
-      <g data-test="chata-axes">
+      <g className="chata-axes" data-test="chata-axes">
         <text
           className="y-axis-label"
           textAnchor="middle"
@@ -76,7 +83,7 @@ export default class Axes extends React.Component {
           fontWeight="bold"
           y={10}
           x={-((yProps.height - yProps.margins.bottom) / 2)}
-          style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
+          style={labelInlineStyles}
         >
           {yProps.col.title}
         </text>
@@ -86,9 +93,9 @@ export default class Axes extends React.Component {
           className="x-axis-label"
           textAnchor="middle"
           fontWeight="bold"
-          y={xProps.height - (xProps.margins.bottomLegend || 0) - 5}
+          y={xProps.height - (xProps.margins.bottomLegend || 0) - 10}
           x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
-          style={{ fontSize: 12, fill: 'currentColor', fillOpacity: 0.7 }}
+          style={labelInlineStyles}
         >
           {xProps.col.title}
         </text>

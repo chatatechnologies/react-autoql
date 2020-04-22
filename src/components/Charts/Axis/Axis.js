@@ -75,10 +75,7 @@ export default class Axis extends Component {
 
     svg
       .append('g')
-      .attr(
-        'class',
-        `legendOrdinal${this.props.hasBottomLegend ? ' interactive' : ''}`
-      )
+      .attr('class', 'legendOrdinal')
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
@@ -96,9 +93,9 @@ export default class Axis extends Component {
         .shapePadding(5)
         .labelWrap(100)
         .scale(legendScale)
-      // .on('cellclick', function(d) {
-      //   alert('clicked ' + d)
-      // })
+        .on('cellclick', function(d) {
+          self.props.onLegendClick(d)
+        })
     } else if (this.props.hasBottomLegend) {
       var legendOrdinal = legendColor()
         .shape(
@@ -130,7 +127,10 @@ export default class Axis extends Component {
       // })
     }
 
-    svg.select('.legendOrdinal').call(legendOrdinal)
+    svg
+      .select('.legendOrdinal')
+      .call(legendOrdinal)
+      .style('font-family', 'inherit')
 
     this.applyStylesForHiddenSeries()
   }
@@ -271,12 +271,15 @@ export default class Axis extends Component {
           }}
           transform={this.props.translate}
         />
+
         <g
           ref={el => {
             this.legendElement = el
           }}
           id={this.LEGEND_ID}
           className="legendOrdinal-container"
+          width={100}
+          height={50}
           transform={
             this.props.hasRightLegend
               ? `translate(${this.props.width + 15},15)`

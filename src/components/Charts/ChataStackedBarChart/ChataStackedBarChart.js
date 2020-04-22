@@ -86,7 +86,7 @@ export default class ChataStackedBarChart extends Component {
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
@@ -140,6 +140,7 @@ export default class ChataStackedBarChart extends Component {
     const xScale = this.xScale
       .domain([min, max])
       .range([leftMargin, width - rightMargin])
+      .nice()
 
     const yScale = this.yScale
       .domain(this.uniqueYLabels)

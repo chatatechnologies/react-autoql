@@ -18,7 +18,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 
 import { svgToPng, formatElement } from '../../../js/Util.js'
-import { getLegendLabelsForMultiSeries } from '../helpers.js'
+import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
 
@@ -76,100 +76,130 @@ export default class ChataChart extends Component {
   componentDidMount = () => {
     this.CHART_ID = uuid.v4()
     if (this.props.type !== 'pie') {
-      this.iterativelyUpdateMargins()
+      this.updateMargins()
     }
   }
 
   componentDidUpdate = prevProps => {
+    if (!this.props.isResizing && prevProps.isResizing) {
+      this.updateMargins(350)
+    }
+
     if (
       this.props.type &&
       this.props.type !== prevProps.type &&
       this.props.type !== 'pie'
     ) {
-      this.iterativelyUpdateMargins()
+      this.updateMargins()
       ReactTooltip.rebuild()
     }
   }
 
-  iterativelyUpdateMargins = () => {
-    setTimeout(this.updateMargins, 100)
-    this.updateMargins()
+  getNewLeftMargin = () => {
+    const xAxis = select(this.chartRef)
+      .select('.axis-Bottom')
+      .node()
+    const xAxisBBox = xAxis ? xAxis.getBBox() : {}
+    const yAxisLabels = select(this.chartRef)
+      .select('.axis-Left')
+      .selectAll('text')
+    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+      n.getComputedTextLength()
+    )
+    let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
+    if (xAxisBBox.width > this.props.width) {
+      leftMargin += xAxisBBox.width - this.props.width
+    }
+
+    return { leftMargin }
   }
 
-  updateMargins = () => {
+  // Keep this in case we need it later
+  getNewTopMargin = () => {
+    return {}
+  }
+
+  getNewRightMargin = () => {
+    let rightMargin = this.state.rightMargin
+
+    // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
+    const chartElement = select(this.chartRef)
+      .select('.chata-axes')
+      .node()
+
+    const chartBBox = chartElement ? chartElement.getBBox() : undefined
+    if (chartBBox) {
+      rightMargin += chartBBox.width - this.props.width
+    }
+
+    // * This should be taken care of by the above code
+    // * but I want to keep it around for a bit longer
+    // const legend = select(this.chartRef)
+    //   .select('.legendOrdinal-container')
+    //   .node()
+    // const legendBBox = legend ? legend.getBBox() : undefined
+    // const legendLocation = getLegendLocation(this.props.data, this.props.type)
+    // if (legendLocation === 'right' && _get(legendBBox, 'width')) {
+    //   rightMargin += legendBBox.width
+    // }
+
+    return { rightMargin }
+  }
+
+  getNewBottomMargin = () => {
+    let legendBBox
+    const legend = select(this.chartRef)
+      .select('.legendOrdinal-container')
+      .node()
+    legendBBox = legend ? legend.getBBox() : undefined
+
+    let bottomLegendMargin = this.state.bottomLegendMargin
+    let bottomLegendWidth = this.state.bottomLegendWidth
+    const legendLocation = getLegendLocation(this.props.data, this.props.type)
+    if (legendLocation === 'bottom' && _get(legendBBox, 'height')) {
+      bottomLegendMargin = legendBBox.height + 20
+      bottomLegendWidth = legendBBox.width
+    }
+
+    const xAxis = select(this.chartRef)
+      .select('.axis-Bottom')
+      .node()
+    const xAxisBBox = xAxis ? xAxis.getBBox() : {}
+    let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 35 // margin to include axis label
+
+    // only for bar charts (vertical grid lines mess with the axis size)
+    if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
+      const innerTickSize =
+        this.props.height - this.state.topMargin - this.state.bottomMargin
+      bottomMargin = bottomMargin - innerTickSize + 10
+    }
+
+    return {
+      bottomMargin: bottomMargin || this.state.bottomMargin,
+      bottomLegendMargin,
+      bottomLegendWidth
+    }
+  }
+
+  updateMargins = (delay = 0) => {
     try {
-      const xAxis = select(this.chartRef)
-        .select('.axis-Bottom')
-        .node()
-      const xAxisBBox = xAxis ? xAxis.getBBox() : {}
+      setTimeout(() => {
+        const newLeftMargin = this.getNewLeftMargin()
+        const newTopMargin = this.getNewTopMargin()
+        this.setState({
+          ...newLeftMargin,
+          ...newTopMargin
+        })
+      }, delay)
 
-      const yAxisLabels = select(this.chartRef)
-        .select('.axis-Left')
-        .selectAll('text')
-
-      const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
-        n.getComputedTextLength()
-      )
-
-      // Space for legend
-      const legend = select(this.chartRef)
-        .select('.legendOrdinal-container')
-        .node()
-
-      const legendBBox = legend ? legend.getBBox() : undefined
-
-      let bottomLegendMargin = this.state.bottomLegendMargin
-      let bottomLegendWidth = this.state.bottomLegendWidth
-      let rightMargin = this.DEFAULT_MARGINS.right
-      if (
-        // Legend goes on the side for these types
-        (this.props.type === 'stacked_bar' ||
-          this.props.type === 'stacked_column') &&
-        _get(legendBBox, 'width')
-      ) {
-        rightMargin = legendBBox.width + this.DEFAULT_MARGINS.right
-      } else if (
-        (this.props.type === 'bar' ||
-          this.props.type === 'column' ||
-          this.props.type === 'line') &&
-        _get(legendBBox, 'height')
-      ) {
-        // Legend goes on the bottom
-        bottomLegendMargin = legendBBox.height + 20
-        bottomLegendWidth = legendBBox.width
-      }
-
-      let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 30 // margin to include axis label
-
-      if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
-        // only for bar charts (vertical grid lines mess with the axis size)
-        const innerTickSize =
-          this.props.height - this.state.topMargin - this.state.bottomMargin
-        bottomMargin = bottomMargin - innerTickSize + 10
-      }
-
-      let leftMargin = Math.ceil(maxYLabelWidth) + 45 // margin to include axis label
-      // If the rotated labels (on the left side) in the x axis exceed the width of the chart, use that instead
-      if (xAxisBBox.width > this.props.width) {
-        leftMargin =
-          xAxisBBox.width - this.props.width + this.state.leftMargin + 45
-      }
-
-      // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
-      // const chartElement = select(this.chartRef).node()
-      // const chartBBox = chartElement.getBBox()
-      // if (chartBBox.width > this.props.width) {
-      //   rightMargin =
-      //     chartBBox.width - this.props.width + this.state.rightMargin
-      // }
-
-      this.setState({
-        leftMargin: leftMargin || this.state.leftMargin,
-        bottomMargin: bottomMargin || this.state.bottomMargin,
-        rightMargin,
-        bottomLegendMargin,
-        bottomLegendWidth
-      })
+      setTimeout(() => {
+        const newRightMargin = this.getNewRightMargin()
+        const newBottomMargin = this.getNewBottomMargin()
+        this.setState({
+          ...newRightMargin,
+          ...newBottomMargin
+        })
+      }, delay)
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
@@ -304,10 +334,7 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       innerPadding: this.INNER_PADDING,
       outerPadding: this.OUTER_PADDING,
-      onLabelChange: () =>
-        setTimeout(() => {
-          this.updateMargins()
-        }, 100),
+      onLabelChange: () => {},
       height,
       width,
       columns,
@@ -538,19 +565,37 @@ export default class ChataChart extends Component {
         break
       }
     }
+
     return (
-      <div className="chata-chart-container" data-test="chata-chart">
+      <div
+        id={`chata-chart-${this.CHART_ID}`}
+        className="chata-chart-container"
+        data-test="chata-chart"
+      >
         <svg
           ref={r => (this.chartRef = r)}
           xmlns="http://www.w3.org/2000/svg"
           width={this.props.width}
           height={this.props.height}
           style={{
-            fontFamily: 'inherit',
-            background: 'inherit'
+            fontFamily: _get(
+              this.props.themeConfig,
+              'font-family',
+              'sans-serif'
+            ),
+            color: _get(
+              this.props.themeConfig,
+              'text-color-primary',
+              'inherit'
+            ),
+            background: _get(
+              this.props.themeConfig,
+              'background-color',
+              'inherit'
+            )
           }}
         >
-          {chart}
+          <g className="chata-chart-content-container">{chart}</g>
         </svg>
       </div>
     )

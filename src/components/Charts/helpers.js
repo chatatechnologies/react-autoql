@@ -1,4 +1,5 @@
 import { max, min } from 'd3-array'
+import _get from 'lodash.get'
 import { nameValueObject } from '../../js/Util'
 
 export const getDrilldownDataFrom3dChart = ({ d = {} }) => {
@@ -96,4 +97,24 @@ export const getMinAndMaxValues = data => {
     console.error(error)
     return { minValue: 0, maxValue: 0 }
   }
+}
+
+export const getLegendLocation = (data, displayType) => {
+  if (
+    displayType === 'pie' ||
+    displayType === 'heatmap' ||
+    displayType === 'bubble'
+  ) {
+    return undefined
+  } else if (
+    displayType === 'stacked_column' ||
+    displayType === 'stacked_bar'
+  ) {
+    return 'right'
+  } else if (_get(data, '[0].origRow.length') > 3) {
+    return 'right'
+  } else if (_get(data, '[0].origRow.length') > 1) {
+    return 'bottom'
+  }
+  return undefined
 }

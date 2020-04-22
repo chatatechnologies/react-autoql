@@ -54,7 +54,7 @@ export default class ChataLineChart extends Component {
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
@@ -134,7 +134,10 @@ export default class ChataLineChart extends Component {
           dataFormatting={dataFormatting}
           bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
-          hasBottomLegend={data[0].origRow.length > 2}
+          hasRightLegend={data[0].origRow.length > 3}
+          hasBottomLegend={
+            data[0].origRow.length === 2 || data[0].origRow.length === 3
+          }
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines

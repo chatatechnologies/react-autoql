@@ -724,6 +724,7 @@ export default class DataMessenger extends React.Component {
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
                   scrollContainerRef={this.messengerScrollComponent}
+                  isResizing={this.state.isResizing}
                 />
               )
             })}
@@ -884,10 +885,17 @@ export default class DataMessenger extends React.Component {
   resizeDrawer = e => {
     const self = this
     const placement = this.getPlacementProp()
+    const maxWidth =
+      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
+      45
+    const maxHeight =
+      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
+      45
 
     if (placement === 'right') {
       const offset = _get(self.state.startingResizePosition, 'x') - e.pageX
-      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
           width: newWidth
@@ -895,7 +903,8 @@ export default class DataMessenger extends React.Component {
       }
     } else if (placement === 'left') {
       const offset = e.pageX - _get(self.state.startingResizePosition, 'x')
-      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
           width: newWidth
@@ -903,8 +912,8 @@ export default class DataMessenger extends React.Component {
       }
     } else if (placement === 'bottom') {
       const offset = _get(self.state.startingResizePosition, 'y') - e.pageY
-      const newHeight =
-        _get(self.state.startingResizePosition, 'height') + offset
+      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
+      if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
           height: newHeight
@@ -912,8 +921,8 @@ export default class DataMessenger extends React.Component {
       }
     } else if (placement === 'top') {
       const offset = e.pageY - _get(self.state.startingResizePosition, 'y')
-      const newHeight =
-        _get(self.state.startingResizePosition, 'height') + offset
+      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
+      if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
           height: newHeight

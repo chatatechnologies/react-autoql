@@ -107,6 +107,9 @@
 }
 .chata-select-popup-container.safetynet-select {
   padding: 5px 0;
+  letter-spacing: 0.03em;
+  font-family: var(--chata-output-font-family), sans-serif;
+
   .chata-select-option {
     height: unset;
     font-size: 14px;
@@ -121,7 +124,7 @@
   text-align: center;
 }
 .chata-safety-net-execute-btn {
-  height: 30px;
+  height: 38px;
   background: none;
   border-radius: 4px;
   margin-top: 24px;
@@ -135,13 +138,17 @@
 .chata-safety-net-execute-btn:hover {
   border-color: #28a8e0;
 }
-.chata-execute-query-icon svg {
-  height: 15px;
-  width: 15px;
-  margin-top: 4px;
-  margin-right: 4px;
-  vertical-align: top;
-  fill: var(--chata-output-accent-color);
+.chata-execute-query-icon {
+  font-size: 23px;
+
+  svg {
+    height: 19px;
+    width: 19px;
+    margin-top: 4px;
+    margin-right: 4px;
+    vertical-align: top;
+    fill: var(--chata-output-accent-color);
+  }
 }
 .chata-safetynet-select {
   position: relative;
@@ -157,9 +164,7 @@
   padding: 0;
   border-radius: 0;
   border-bottom: 1px dashed;
-
-  /* Default style outside of drawer */
-  color: #28a8e0;
+  color: var(--chata-output-accent-color);
 }
 .chata-safety-net-delete-button {
   position: relative;

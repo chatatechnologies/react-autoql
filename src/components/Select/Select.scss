@@ -20,6 +20,8 @@
 .chata-select-popup-container {
   background: var(--chata-messenger-background-color);
   padding: 10px 0;
+  max-height: 300px;
+  overflow-y: auto;
 
   .chata-select-option.active {
     background: rgba(0, 0, 0, 0.04);

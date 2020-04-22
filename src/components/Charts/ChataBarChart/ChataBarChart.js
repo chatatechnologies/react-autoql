@@ -54,7 +54,7 @@ export default class ChataBarChart extends Component {
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
@@ -144,7 +144,10 @@ export default class ChataBarChart extends Component {
           yTicks={yTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
-          hasBottomLegend={data[0].origRow.length > 2}
+          hasRightLegend={data[0].origRow.length > 3}
+          hasBottomLegend={
+            data[0].origRow.length === 2 || data[0].origRow.length === 3
+          }
           bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}

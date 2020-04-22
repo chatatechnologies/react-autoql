@@ -87,7 +87,7 @@ export default class ChataStackedColumnChart extends Component {
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
@@ -147,6 +147,7 @@ export default class ChataStackedColumnChart extends Component {
     const yScale = this.yScale
       .domain([min, max])
       .range([height - bottomMargin, topMargin])
+      .nice()
 
     const tickWidth = getTickWidth(xScale, innerPadding)
     const xTickValues = this.getXTickValues(tickWidth)
