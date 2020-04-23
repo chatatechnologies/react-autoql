@@ -574,7 +574,7 @@ export default class App extends Component {
               value: 'tickets-2019'
             },
             {
-              label: 'List void tickets scheduled for last year',
+              label: 'List void tickets scheduled for end of this year',
               value: 'tickets-void'
             }
           ]

@@ -6,6 +6,18 @@ export default class Axes extends React.Component {
 
   static defaultProps = {}
 
+  applyMaxTextLength = (title = '') => {
+    if (title.length > 35) {
+      return (
+        <tspan
+          data-tip={title}
+          data-for="chart-element-tooltip"
+        >{`${title.substring(0, 35)}...`}</tspan>
+      )
+    }
+    return title
+  }
+
   render = () => {
     const {
       scales,
@@ -85,7 +97,7 @@ export default class Axes extends React.Component {
           x={-((yProps.height - yProps.margins.bottom) / 2)}
           style={labelInlineStyles}
         >
-          {yProps.col.title}
+          {this.applyMaxTextLength(yProps.col.title)}
         </text>
         <Axis {...xProps} />
         <Axis {...yProps} />
@@ -97,7 +109,7 @@ export default class Axes extends React.Component {
           x={(xProps.width - xProps.margins.left) / 2 + xProps.margins.left}
           style={labelInlineStyles}
         >
-          {xProps.col.title}
+          {this.applyMaxTextLength(xProps.col.title)}
         </text>
       </g>
     )
