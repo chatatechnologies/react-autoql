@@ -71,6 +71,7 @@ export default class DataMessenger extends React.Component {
     resizable: bool,
     inputPlaceholder: string,
     introMessageTopics: shape({}),
+    enableAxisSelection: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -106,6 +107,7 @@ export default class DataMessenger extends React.Component {
     resizable: true,
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
+    enableAxisSelection: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -725,6 +727,7 @@ export default class DataMessenger extends React.Component {
                   deleteMessageCallback={this.deleteMessage}
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
+                  enableAxisSelection={this.props.enableAxisSelection}
                 />
               )
             })}

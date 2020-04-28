@@ -88,16 +88,26 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     const {
+      hasMultipleNumberColumns,
+      hasMultipleStringColumns,
       activeChartElementKey,
+      enableAxisSelection,
       bottomLegendMargin,
+      numberColumnIndex,
+      stringColumnIndex,
       tooltipFormatter,
+      numberAxisTitle,
+      dataFormatting,
+      legendLocation,
       onLegendClick,
+      onXAxisClick,
+      onYAxisClick,
       legendLabels,
       innerPadding,
       outerPadding,
-      chartColors,
       bottomMargin,
       onChartClick,
+      chartColors,
       rightMargin,
       leftMargin,
       labelValue,
@@ -123,9 +133,7 @@ export default class ChataBarChart extends Component {
       .paddingOuter(outerPadding)
 
     const yLabelArray = data.map(element => element[labelValue])
-    const xLabelArray = data.map(
-      element => element.cells[this.props.numberColumnIndex]
-    )
+    const xLabelArray = data.map(element => element.cells[numberColumnIndex])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
     const yTickValues = this.getTickValues(barHeight, yLabelArray)
@@ -135,8 +143,8 @@ export default class ChataBarChart extends Component {
       <g data-test="chata-bar-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[this.props.numberColumnIndex]}
-          yCol={columns[this.props.stringColumnIndex]}
+          xCol={columns[numberColumnIndex]}
+          yCol={columns[stringColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -148,17 +156,17 @@ export default class ChataBarChart extends Component {
           height={height}
           yTicks={yTickValues}
           rotateLabels={this.rotateLabels}
-          dataFormatting={this.props.dataFormatting}
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          dataFormatting={dataFormatting}
+          hasRightLegend={legendLocation === 'right'}
+          hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
-          onXAxisClick={this.props.onXAxisClick}
-          onYAxisClick={this.props.onYAxisClick}
-          hasXDropdown={this.props.hasMultipleNumberColumns}
-          hasYDropdown={this.props.hasMultipleStringColumns}
-          xAxisTitle={this.props.numberAxisTitle}
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
+          hasXDropdown={enableAxisSelection && hasMultipleNumberColumns}
+          hasYDropdown={enableAxisSelection && hasMultipleStringColumns}
+          xAxisTitle={numberAxisTitle}
           xGridLines
         />
         {

@@ -103,7 +103,8 @@ export default class QueryOutput extends React.Component {
     activeChartElementKey: string,
     onTableFilterCallback: func,
     enableColumnHeaderContextMenu: bool,
-    isResizing: bool
+    isResizing: bool,
+    enableAxisSelection: bool
   }
 
   static defaultProps = {
@@ -124,6 +125,7 @@ export default class QueryOutput extends React.Component {
     activeChartElementKey: undefined,
     enableColumnHeaderContextMenu: false,
     isResizing: false,
+    enableAxisSelection: true,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     hideColumnCallback: () => {},
@@ -665,6 +667,7 @@ export default class QueryOutput extends React.Component {
           }}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          enableAxisSelection={this.props.enableAxisSelection}
         />
       </ErrorBoundary>
     )

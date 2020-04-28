@@ -68,13 +68,21 @@ export default class ChataLineChart extends Component {
 
   render = () => {
     const {
+      hasMultipleStringColumns,
+      hasMultipleNumberColumns,
       activeChartElementKey,
+      enableAxisSelection,
       bottomLegendMargin,
-      legendLocation,
+      stringColumnIndex,
+      numberColumnIndex,
       tooltipFormatter,
+      numberAxisTitle,
       backgroundColor,
+      legendLocation,
       dataFormatting,
       onLegendClick,
+      onXAxisClick,
+      onYAxisClick,
       innerPadding,
       outerPadding,
       bottomMargin,
@@ -125,8 +133,8 @@ export default class ChataLineChart extends Component {
       <g data-test="chata-line-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[this.props.stringColumnIndex]}
-          yCol={columns[this.props.numberColumnIndex]}
+          xCol={columns[stringColumnIndex]}
+          yCol={columns[numberColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -140,16 +148,16 @@ export default class ChataLineChart extends Component {
           rotateLabels={this.rotateLabels}
           dataFormatting={dataFormatting}
           legendLabels={legendLabels}
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          hasRightLegend={legendLocation === 'right'}
+          hasBottomLegend={legendLocation === 'bottom'}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
-          onXAxisClick={this.props.onXAxisClick}
-          onYAxisClick={this.props.onYAxisClick}
-          hasXDropdown={this.props.hasMultipleStringColumns}
-          hasYDropdown={this.props.hasMultipleNumberColumns}
-          yAxisTitle={this.props.numberAxisTitle}
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
+          hasXDropdown={enableAxisSelection && hasMultipleStringColumns}
+          hasYDropdown={enableAxisSelection && hasMultipleNumberColumns}
+          yAxisTitle={numberAxisTitle}
         />
         <Line
           scales={{ xScale, yScale }}

@@ -90,17 +90,28 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     const {
+      hasMultipleNumberColumns,
+      hasMultipleStringColumns,
       activeChartElementKey,
-      bottomLegendMargin,
+      enableAxisSelection,
       numberColumnIndices,
+      stringColumnIndices,
+      bottomLegendMargin,
+      stringColumnIndex,
+      numberColumnIndex,
       tooltipFormatter,
+      numberAxisTitle,
+      dataFormatting,
+      legendLocation,
       onLegendClick,
       innerPadding,
       outerPadding,
-      chartColors,
       bottomMargin,
       onChartClick,
       legendLabels,
+      onXAxisClick,
+      onYAxisClick,
+      chartColors,
       rightMargin,
       leftMargin,
       labelValue,
@@ -134,8 +145,8 @@ export default class ChataBarChart extends Component {
       <g data-test="chata-column-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[this.props.stringColumnIndex]}
-          yCol={columns[this.props.numberColumnIndex]}
+          xCol={columns[stringColumnIndex]}
+          yCol={columns[numberColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -147,20 +158,20 @@ export default class ChataBarChart extends Component {
           height={height}
           xTicks={xTickValues}
           rotateLabels={this.rotateLabels}
-          dataFormatting={this.props.dataFormatting}
-          hasRightLegend={this.props.legendLocation === 'right'}
-          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          dataFormatting={dataFormatting}
+          hasRightLegend={legendLocation === 'right'}
+          hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
-          onXAxisClick={this.props.onXAxisClick}
-          onYAxisClick={this.props.onYAxisClick}
-          stringColumnIndices={this.props.stringColumnIndices}
-          numberColumnIndices={this.props.numberColumnIndices}
-          hasXDropdown={this.props.hasMultipleStringColumns}
-          hasYDropdown={this.props.hasMultipleNumberColumns}
-          yAxisTitle={this.props.numberAxisTitle}
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
+          stringColumnIndices={stringColumnIndices}
+          numberColumnIndices={numberColumnIndices}
+          hasXDropdown={enableAxisSelection && hasMultipleStringColumns}
+          hasYDropdown={enableAxisSelection && hasMultipleNumberColumns}
+          yAxisTitle={numberAxisTitle}
         />
         <Columns
           scales={{ xScale, yScale }}

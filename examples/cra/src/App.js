@@ -153,7 +153,8 @@ export default class App extends Component {
     // dayFormat: 'MMM DD, YYYY',
     dayFormat: 'll',
     dashboardTiles: undefined,
-    activeDashboardId: undefined
+    activeDashboardId: undefined,
+    enableAxisSelection: true
   }
 
   componentDidMount = () => {
@@ -1008,6 +1009,11 @@ export default class App extends Component {
           //   value={this.state.chartColors}
           // />
         }
+        {this.createBooleanRadioGroup(
+          'Enable Axis Selection',
+          'enableAxisSelection',
+          [true, false]
+        )}
         <h4>Dashboard Title Color</h4>
         <Input
           type="text"
@@ -1161,6 +1167,7 @@ export default class App extends Component {
         introMessageTopics={this.getIntroMessageTopics()}
         inputStyles
         handleStyles={{ right: '25px' }}
+        enableAxisSelection={this.state.enableAxisSelection}
       />
     )
   }
@@ -1313,6 +1320,7 @@ export default class App extends Component {
           isEditing={this.state.isEditing}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}
+          enableAxisSelection={this.state.enableAxisSelection}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
           onChange={newTiles => {

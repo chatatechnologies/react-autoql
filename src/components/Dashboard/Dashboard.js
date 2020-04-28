@@ -61,7 +61,8 @@ class Dashboard extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     notExecutedText: PropTypes.string,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    enableAxisSelection: PropTypes.bool
   }
 
   static defaultProps = {
@@ -75,7 +76,8 @@ class Dashboard extends React.Component {
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
-    notExecutedText: undefined
+    notExecutedText: undefined,
+    enableAxisSelection: true
     // onChange: () => {}
   }
 
@@ -496,6 +498,7 @@ class Dashboard extends React.Component {
                   dataFormatting={this.props.dataFormatting}
                   notExecutedText={this.props.notExecutedText}
                   processDrilldown={this.processDrilldown}
+                  enableAxisSelection={this.props.enableAxisSelection}
                 />
               ))}
             </ReactGridLayout>

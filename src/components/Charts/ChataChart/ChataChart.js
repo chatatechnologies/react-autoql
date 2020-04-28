@@ -51,6 +51,7 @@ export default class ChataChart extends Component {
     height: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     onLegendClick: PropTypes.func,
+    enableAxisSelection: PropTypes.bool.isRequired,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -415,7 +416,8 @@ export default class ChataChart extends Component {
       stringColumnIndex,
       stringColumnIndices,
       numberColumnIndex,
-      numberColumnIndices
+      numberColumnIndices,
+      enableAxisSelection
     } = this.props
 
     const filteredSeriesData = this.getFilteredSeriesData(data)
@@ -456,6 +458,7 @@ export default class ChataChart extends Component {
       numberColumnIndex,
       numberColumnIndices,
       numberAxisTitle: this.getNumberAxisTitle(),
+      enableAxisSelection,
       hasMultipleNumberColumns:
         [
           ...this.state.currencySelectorState,
