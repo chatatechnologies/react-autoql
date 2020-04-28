@@ -436,9 +436,9 @@ export default class QueryOutput extends React.Component {
       setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
-          const newTableData = tableRef.getData(true)
-          this.shouldGenerateChartData() && this.generateChartData(newTableData)
-          this.props.onTableFilterCallback(newTableData)
+          this.tableData = tableRef.getData(true)
+          this.shouldGenerateChartData() && this.generateChartData()
+          this.props.onTableFilterCallback(this.tableData)
         }
       }, 500)
     } else if (

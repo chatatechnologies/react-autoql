@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import Numbro from 'numbro'
 import uuid from 'uuid'
 
-import { select } from 'd3-selection'
+import { select, selectAll } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
 import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
@@ -265,6 +265,13 @@ export default class Axis extends Component {
       .style('stroke', 'currentColor')
       .style('opacity', '0.15')
       .style('shape-rendering', 'crispedges')
+
+    // Make tick line at 0 darker
+    select(this.axisElement)
+      .selectAll('g.tick')
+      .filter(d => d == 0)
+      .select('line')
+      .style('opacity', 0.4)
   }
 
   render = () => {
