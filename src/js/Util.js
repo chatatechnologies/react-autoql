@@ -351,7 +351,8 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       // get svg data
       var xml = new XMLSerializer().serializeToString(svgElement)
       // make it base64
-      var svg64 = btoa(xml)
+      var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
+      // var svg64 = btoa(xml)
       var b64Start = 'data:image/svg+xml;base64,'
       // prepend a "header"
       var image64 = b64Start + svg64

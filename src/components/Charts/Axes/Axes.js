@@ -19,7 +19,16 @@ export default class Axes extends React.Component {
 
     return (
       <tspan>
-        {title} {hasDropdown && <tspan fontSize="8px">&#9660;</tspan>}
+        {title}{' '}
+        {hasDropdown && (
+          <tspan
+            className="chata-axis-selector-arrow"
+            opacity="0" // use css to style so it isnt exported in the png
+            fontSize="8px"
+          >
+            &#9660;
+          </tspan>
+        )}
       </tspan>
     )
   }
