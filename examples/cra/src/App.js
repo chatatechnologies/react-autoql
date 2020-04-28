@@ -135,7 +135,7 @@ export default class App extends Component {
     maxMessages: 10,
     isEditing: false,
     debug: true,
-    test: true,
+    test: !isProd(),
     demo: getStoredProp('demo') == 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
@@ -154,7 +154,7 @@ export default class App extends Component {
     dayFormat: 'll',
     dashboardTiles: undefined,
     activeDashboardId: undefined,
-    enableAxisSelection: true
+    enableDynamicCharting: true
   }
 
   componentDidMount = () => {
@@ -1010,8 +1010,8 @@ export default class App extends Component {
           // />
         }
         {this.createBooleanRadioGroup(
-          'Enable Axis Selection',
-          'enableAxisSelection',
+          'Enable Dynamic Charting',
+          'enableDynamicCharting',
           [true, false]
         )}
         <h4>Dashboard Title Color</h4>
@@ -1099,11 +1099,12 @@ export default class App extends Component {
           'debug',
           [true, false]
         )}
-        {this.createBooleanRadioGroup(
-          'Test Mode (Provides extra logging on the server side)',
-          'test',
-          [true, false]
-        )}
+        {!isProd() &&
+          this.createBooleanRadioGroup(
+            'Test Mode (Provides extra logging on the server side)',
+            'test',
+            [true, false]
+          )}
       </div>
     )
   }
@@ -1167,7 +1168,7 @@ export default class App extends Component {
         introMessageTopics={this.getIntroMessageTopics()}
         inputStyles
         handleStyles={{ right: '25px' }}
-        enableAxisSelection={this.state.enableAxisSelection}
+        enableDynamicCharting={this.state.enableDynamicCharting}
       />
     )
   }
@@ -1320,7 +1321,7 @@ export default class App extends Component {
           isEditing={this.state.isEditing}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}
-          enableAxisSelection={this.state.enableAxisSelection}
+          enableDynamicCharting={this.state.enableDynamicCharting}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
           onChange={newTiles => {

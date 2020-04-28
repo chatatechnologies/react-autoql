@@ -65,7 +65,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
-    enableAxisSelection: PropTypes.bool
+    enableDynamicCharting: PropTypes.bool
   }
 
   static defaultProps = {
@@ -86,7 +86,7 @@ export default class ChatMessage extends React.Component {
     tableOptions: undefined,
     enableColumnVisibilityManager: true,
     isResizing: false,
-    enableAxisSelection: true
+    enableDynamicCharting: true
   }
 
   state = {
@@ -206,7 +206,7 @@ export default class ChatMessage extends React.Component {
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
           isResizing={this.props.isResizing}
-          enableAxisSelection={this.props.enableAxisSelection}
+          enableDynamicCharting={this.props.enableDynamicCharting}
         />
       )
     }

@@ -91,7 +91,7 @@ export default class ChataBarChart extends Component {
       hasMultipleNumberColumns,
       hasMultipleStringColumns,
       activeChartElementKey,
-      enableAxisSelection,
+      enableDynamicCharting,
       bottomLegendMargin,
       numberColumnIndex,
       stringColumnIndex,
@@ -164,8 +164,8 @@ export default class ChataBarChart extends Component {
           chartColors={chartColors}
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
-          hasXDropdown={enableAxisSelection && hasMultipleNumberColumns}
-          hasYDropdown={enableAxisSelection && hasMultipleStringColumns}
+          hasXDropdown={enableDynamicCharting && hasMultipleNumberColumns}
+          hasYDropdown={enableDynamicCharting && hasMultipleStringColumns}
           xAxisTitle={numberAxisTitle}
           xGridLines
         />

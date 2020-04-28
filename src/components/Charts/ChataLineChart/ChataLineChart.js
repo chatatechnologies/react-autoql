@@ -71,7 +71,7 @@ export default class ChataLineChart extends Component {
       hasMultipleStringColumns,
       hasMultipleNumberColumns,
       activeChartElementKey,
-      enableAxisSelection,
+      enableDynamicCharting,
       bottomLegendMargin,
       stringColumnIndex,
       numberColumnIndex,
@@ -155,8 +155,8 @@ export default class ChataLineChart extends Component {
           yGridLines
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
-          hasXDropdown={enableAxisSelection && hasMultipleStringColumns}
-          hasYDropdown={enableAxisSelection && hasMultipleNumberColumns}
+          hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
+          hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
           yAxisTitle={numberAxisTitle}
         />
         <Line

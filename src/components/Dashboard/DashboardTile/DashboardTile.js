@@ -627,7 +627,7 @@ export default class DashboardTile extends React.Component {
             selectedSuggestion || this.props.tile.selectedSuggestion
           }
           dataFormatting={this.props.dataFormatting}
-          enableAxisSelection={this.props.enableAxisSelection}
+          enableDynamicCharting={this.props.enableDynamicCharting}
           onDataClick={(drilldownData, queryID, activeKey) =>
             this.props.processDrilldown(
               this.props.tile.i,
