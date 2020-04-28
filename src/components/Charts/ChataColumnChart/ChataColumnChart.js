@@ -26,6 +26,9 @@ export default class ChataBarChart extends Component {
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
+    legendLocation: PropTypes.string,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -41,6 +44,9 @@ export default class ChataBarChart extends Component {
     labelValue: 'label',
     dataFormatting: {},
     numberColumnIndices: [],
+    legendLocation: undefined,
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -86,6 +92,7 @@ export default class ChataBarChart extends Component {
     const {
       activeChartElementKey,
       bottomLegendMargin,
+      numberColumnIndices,
       tooltipFormatter,
       onLegendClick,
       innerPadding,
@@ -128,7 +135,7 @@ export default class ChataBarChart extends Component {
         <Axes
           scales={{ xScale, yScale }}
           xCol={columns[this.props.stringColumnIndex]}
-          yCol={columns[this.props.numberColumnIndices[0]]}
+          yCol={columns[this.props.numberColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -141,15 +148,19 @@ export default class ChataBarChart extends Component {
           xTicks={xTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
-          hasRightLegend={data[0].origRow.length > 3}
-          hasBottomLegend={
-            data[0].origRow.length === 2 || data[0].origRow.length === 3
-          }
-          bottomLegendWidth={this.props.bottomLegendWidth}
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          stringColumnIndices={this.props.stringColumnIndices}
+          numberColumnIndices={this.props.numberColumnIndices}
+          hasXDropdown={this.props.hasMultipleStringColumns}
+          hasYDropdown={this.props.hasMultipleNumberColumns}
+          yAxisTitle={this.props.numberAxisTitle}
         />
         <Columns
           scales={{ xScale, yScale }}

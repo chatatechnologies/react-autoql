@@ -71,17 +71,16 @@ export default class Axis extends Component {
 
     const legendScale = this.getLegendScale()
 
-    const svg = select(this.legendElement)
-
-    svg
-      .append('g')
-      .attr('class', 'legendOrdinal')
-      .style('fill', 'currentColor')
-      .style('fill-opacity', '0.7')
-      .style('font-family', 'inherit')
-      .style('font-size', '10px')
-
     if (this.props.hasRightLegend) {
+      const svg = select(this.rightLegendElement)
+      svg
+        .append('g')
+        .attr('class', 'legendOrdinal')
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '0.7')
+        .style('font-family', 'inherit')
+        .style('font-size', '10px')
+
       var legendOrdinal = legendColor()
         .shape(
           'path',
@@ -96,7 +95,21 @@ export default class Axis extends Component {
         .on('cellclick', function(d) {
           self.props.onLegendClick(d)
         })
+
+      svg
+        .select('.legendOrdinal')
+        .call(legendOrdinal)
+        .style('font-family', 'inherit')
     } else if (this.props.hasBottomLegend) {
+      const svg = select(this.bottomLegendElement)
+      svg
+        .append('g')
+        .attr('class', 'legendOrdinal')
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '0.7')
+        .style('font-family', 'inherit')
+        .style('font-size', '10px')
+
       var legendOrdinal = legendColor()
         .shape(
           'path',
@@ -125,12 +138,11 @@ export default class Axis extends Component {
       // .on('cellout', function(d) {
       //   alert('cell out ' + d)
       // })
+      svg
+        .select('.legendOrdinal')
+        .call(legendOrdinal)
+        .style('font-family', 'inherit')
     }
-
-    svg
-      .select('.legendOrdinal')
-      .call(legendOrdinal)
-      .style('font-family', 'inherit')
 
     this.applyStylesForHiddenSeries()
   }
@@ -271,23 +283,46 @@ export default class Axis extends Component {
           }}
           transform={this.props.translate}
         />
-
-        <g
-          ref={el => {
-            this.legendElement = el
-          }}
-          id={this.LEGEND_ID}
-          className="legendOrdinal-container"
-          width={100}
-          height={50}
-          transform={
-            this.props.hasRightLegend
-              ? `translate(${this.props.width + 15},15)`
-              : `translate(${(this.props.width - marginLeft) / 2 +
-                  marginLeft -
-                  legendDx},${this.props.height - 30})`
-          }
-        />
+        {this.props.hasRightLegend && (
+          <g
+            ref={el => {
+              this.rightLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className="legendOrdinal-container"
+            transform={`translate(${this.props.width + 15},15)`}
+          />
+        )}
+        {this.props.hasBottomLegend && (
+          <g
+            ref={el => {
+              this.bottomLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className="legendOrdinal-container"
+            transform={`translate(${(this.props.width - marginLeft) / 2 +
+              marginLeft -
+              legendDx},${this.props.height - 30})`}
+          />
+        )}
+        {
+          //   <g
+          //   ref={el => {
+          //     this.legendElement = el
+          //   }}
+          //   id={this.LEGEND_ID}
+          //   className="legendOrdinal-container"
+          //   // width={100}
+          //   // height={50}
+          //   transform={
+          //     this.props.hasRightLegend
+          //       ? `translate(${this.props.width + 15},15)`
+          //       : `translate(${(this.props.width - marginLeft) / 2 +
+          //           marginLeft -
+          //           legendDx},${this.props.height - 30})`
+          //   }
+          // />
+        }
       </g>
     )
   }

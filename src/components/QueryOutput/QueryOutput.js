@@ -642,6 +642,8 @@ export default class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           stringColumnIndices={this.stringColumnIndices}
           numberColumnIndices={this.numberColumnIndices}
+          stringColumnIndex={this.stringColumnIndex}
+          numberColumnIndex={this.numberColumnIndex}
           themeConfig={chartThemeConfig}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
@@ -649,6 +651,18 @@ export default class QueryOutput extends React.Component {
           //     this.props.processDrilldown(row, columns, this.queryID)
           //   }
           // }}
+          changeStringColumnIndex={index => {
+            this.stringColumnIndex = index
+            this.generateChartData()
+            this.forceUpdate()
+          }}
+          changeNumberColumnIndices={indices => {
+            if (indices) {
+              this.numberColumnIndices = indices
+              this.generateChartData()
+              this.forceUpdate()
+            }
+          }}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
         />
@@ -720,11 +734,20 @@ export default class QueryOutput extends React.Component {
         // We will usually want to take the second column because the first one
         // will most likely have all of the same value. Grab the first column only
         // if it's the only string column
-        const stringColumnIndex =
-          allStringColumnIndices[1] || allStringColumnIndices[0]
+        if (!(this.stringColumnIndex >= 0)) {
+          this.stringColumnIndex =
+            allStringColumnIndices[1] || allStringColumnIndices[0]
+        }
 
-        this.stringColumnIndices = [stringColumnIndex]
-        this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
+        // this.stringColumnIndices = [stringColumnIndex]
+        if (!this.stringColumnIndices) {
+          this.stringColumnIndices = allStringColumnIndices
+        }
+        if (!this.numberColumnIndices) {
+          this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
+        }
+        this.numberColumnIndex = this.numberColumnIndices[0]
+
         const drilldownSupportedByAPI =
           getNumberOfGroupables(this.tableColumns) > 0
 
@@ -744,8 +767,8 @@ export default class QueryOutput extends React.Component {
                   supportedByAPI: drilldownSupportedByAPI,
                   data: [
                     {
-                      name: columns[stringColumnIndex].name,
-                      value: `${row[stringColumnIndex]}`
+                      name: columns[this.stringColumnIndex].name,
+                      value: `${row[this.stringColumnIndex]}`
                     }
                   ]
                 }
@@ -753,11 +776,11 @@ export default class QueryOutput extends React.Component {
             })
 
             // Make sure the row label doesn't exist already
-            if (!chartDataObject[row[stringColumnIndex]]) {
-              chartDataObject[row[stringColumnIndex]] = {
+            if (!chartDataObject[row[this.stringColumnIndex]]) {
+              chartDataObject[row[this.stringColumnIndex]] = {
                 origColumns: columns,
                 origRow: row,
-                label: row[stringColumnIndex],
+                label: row[this.stringColumnIndex],
                 cells,
                 formatter: (value, column) => {
                   return formatElement({
@@ -770,14 +793,16 @@ export default class QueryOutput extends React.Component {
             } else {
               // If this label already exists, just add the values together
               // The BE should prevent this from happening though
-              chartDataObject[row[stringColumnIndex]].cells = chartDataObject[
-                row[stringColumnIndex]
-              ].cells.map((cell, index) => {
-                return {
-                  ...cell,
-                  value: cell.value + Number(cells[index].value)
+              chartDataObject[
+                row[this.stringColumnIndex]
+              ].cells = chartDataObject[row[this.stringColumnIndex]].cells.map(
+                (cell, index) => {
+                  return {
+                    ...cell,
+                    value: cell.value + Number(cells[index].value)
+                  }
                 }
-              })
+              )
             }
             return chartDataObject
           }, {})
@@ -1008,9 +1033,11 @@ export default class QueryOutput extends React.Component {
       const dateColumnIndex = this.tableColumns.findIndex(
         col => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      const numberColumnIndex = this.tableColumns.findIndex(
-        (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
-      )
+      if (!(this.numberColumnIndex >= 0)) {
+        this.numberColumnIndex = this.tableColumns.findIndex(
+          (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
+        )
+      }
 
       const tableData = newData || this.data
 
@@ -1043,7 +1070,7 @@ export default class QueryOutput extends React.Component {
 
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
-          ...this.tableColumns[numberColumnIndex],
+          ...this.tableColumns[this.numberColumnIndex],
           drilldownData: [
             {
               name: this.tableColumns[dateColumnIndex].name,
@@ -1073,7 +1100,7 @@ export default class QueryOutput extends React.Component {
         const yearNumber = uniqueYears[year]
         const monthNumber = uniqueMonths[month]
 
-        pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
+        pivotTableData[monthNumber][yearNumber] = row[this.numberColumnIndex]
         pivotOriginalColumnData[year] = {
           ...pivotOriginalColumnData[year],
           [month]: row[dateColumnIndex]
@@ -1099,9 +1126,12 @@ export default class QueryOutput extends React.Component {
     let gColIndex1 = this.tableColumns.findIndex(
       (col, i) => i !== gColIndex0 && col.groupable
     )
-    const numberColIndex = this.tableColumns.findIndex(
-      (col, index) => isColumnNumberType(col) && !col.groupable
-    )
+
+    if (!(this.numberColumnIndex >= 0)) {
+      this.numberColumnIndex = this.tableColumns.findIndex(
+        (col, index) => isColumnNumberType(col) && !col.groupable
+      )
+    }
 
     let uniqueValues0 = tableData
       .map(d => d[gColIndex0])
@@ -1158,7 +1188,7 @@ export default class QueryOutput extends React.Component {
         config: this.props.dataFormatting
       })
       pivotTableColumns.push({
-        ...this.tableColumns[numberColIndex], // value column
+        ...this.tableColumns[this.numberColumnIndex], // value column
         drilldownData: [
           {
             name: this.tableColumns[gColIndex0].name, // project column name
@@ -1188,7 +1218,7 @@ export default class QueryOutput extends React.Component {
       // Populate remaining columns
       pivotTableData[uniqueValues0[row[gColIndex0]]][
         uniqueValues1[row[gColIndex1]] + 1
-      ] = row[numberColIndex]
+      ] = row[this.numberColumnIndex]
     })
 
     this.pivotTableColumns = pivotTableColumns

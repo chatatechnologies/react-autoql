@@ -43,3 +43,67 @@
 .chata-chart-container g.tick {
   transition: all 0.3s ease;
 }
+
+.axis-selector-container {
+  z-index: 9999;
+  background: var(--chata-output-background-color);
+  padding: 5px 0;
+  max-height: 300px;
+  min-width: 150px;
+  overflow-y: auto;
+
+  .axis-select-option.active {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .chata-checkbox {
+    margin-left: 20px;
+
+    .chata-checkbox__input {
+      width: 18px;
+      height: 18px;
+    }
+  }
+  .chata-list-item {
+    padding-left: 25px;
+    padding-right: 15px;
+    font-size: 12px;
+    line-height: 28px;
+  }
+
+  .string-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
+
+    &.active {
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  .number-selector-header {
+    margin-top: 10px;
+    padding: 0px 18px;
+    font-size: 12px;
+    padding-bottom: 7px;
+    font-weight: 500;
+    opacity: 0.6;
+  }
+
+  .axis-selector-content {
+    list-style-type: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    li {
+      color: var(--chata-output-text-color-primary);
+      width: 100%;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 15px;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+}

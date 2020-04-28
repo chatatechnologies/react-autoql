@@ -71,7 +71,7 @@ export default class Button extends React.Component {
     const isDisabled = this.props.loading || this.props.disabled
 
     return (
-      <div
+      <button
         className={`chata-btn ${type} ${this.props.className || ''}${
           isDisabled ? ' disabled' : ''
         }`}
@@ -81,7 +81,7 @@ export default class Button extends React.Component {
       >
         {this.props.loading && <Spinner />}
         {this.props.children}
-      </div>
+      </button>
     )
   }
 }

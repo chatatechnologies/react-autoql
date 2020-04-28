@@ -1,7 +1,19 @@
 g.legendOrdinal,
 g.legendOrdinal tspan {
-  stroke-width: 20px;
+  stroke-width: 10px;
   stroke: transparent;
-  letter-spacing: 0;
+  letter-spacing: 0; // not clickable if larger than 0
   cursor: pointer;
+}
+
+.x-axis-label-border,
+.y-axis-label-border {
+  cursor: pointer;
+  stroke: transparent;
+  opacity: 0.5;
+  transition: stroke 0.3s ease;
+
+  &:hover {
+    stroke: var(--chata-output-accent-color) !important;
+  }
 }

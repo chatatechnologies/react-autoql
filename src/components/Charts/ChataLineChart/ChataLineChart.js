@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { Axes } from '../Axes'
 import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import _get from 'lodash.get'
 
 import { getMinAndMaxValues } from '../helpers.js'
 import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
@@ -26,6 +27,9 @@ export default class ChataLineChart extends Component {
     onLegendClick: PropTypes.func,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
+    legendLocation: PropTypes.string,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -41,6 +45,9 @@ export default class ChataLineChart extends Component {
     labelValue: 'label',
     dataFormatting: {},
     numberColumnIndices: [],
+    legendLocation: undefined,
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -63,7 +70,7 @@ export default class ChataLineChart extends Component {
     const {
       activeChartElementKey,
       bottomLegendMargin,
-      bottomLegendWidth,
+      legendLocation,
       tooltipFormatter,
       backgroundColor,
       dataFormatting,
@@ -119,7 +126,7 @@ export default class ChataLineChart extends Component {
         <Axes
           scales={{ xScale, yScale }}
           xCol={columns[this.props.stringColumnIndex]}
-          yCol={columns[this.props.numberColumnIndices[0]]}
+          yCol={columns[this.props.numberColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -132,15 +139,17 @@ export default class ChataLineChart extends Component {
           xTicks={xTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={dataFormatting}
-          bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
-          hasRightLegend={data[0].origRow.length > 3}
-          hasBottomLegend={
-            data[0].origRow.length === 2 || data[0].origRow.length === 3
-          }
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          hasXDropdown={this.props.hasMultipleStringColumns}
+          hasYDropdown={this.props.hasMultipleNumberColumns}
+          yAxisTitle={this.props.numberAxisTitle}
         />
         <Line
           scales={{ xScale, yScale }}

@@ -26,6 +26,8 @@ export default class ChataBubbleChart extends Component {
     labelValueY: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -42,6 +44,8 @@ export default class ChataBubbleChart extends Component {
     labelValueX: 'labelX',
     labelValueY: 'labelY',
     dataFormatting: {},
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -170,6 +174,8 @@ export default class ChataBubbleChart extends Component {
           dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
           chartColors={chartColors}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
         />
         {
           <Circles

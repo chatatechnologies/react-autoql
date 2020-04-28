@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
+import _get from 'lodash.get'
 
 import { Axes } from '../Axes'
 import { StackedColumns } from '../StackedColumns'
@@ -57,6 +58,8 @@ export default class ChataStackedColumnChart extends Component {
     labelValue: PropTypes.string,
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -72,6 +75,8 @@ export default class ChataStackedColumnChart extends Component {
     dataValues: 'values',
     labelValue: 'label',
     dataFormatting: {},
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -180,6 +185,10 @@ export default class ChataStackedColumnChart extends Component {
             hasRightLegend
             yGridLines
             hasLegend
+            onXAxisClick={this.props.onXAxisClick}
+            onYAxisClick={this.props.onYAxisClick}
+            // hasXDropdown={_get(this.props.stringColumnIndices, 'length') > 1}
+            // hasYDropdown={_get(this.props.numberColumnIndices, 'length') > 1}
           />
           <StackedColumns
             scales={{ xScale, yScale }}

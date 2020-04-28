@@ -26,6 +26,8 @@ export default class ChataBarChart extends Component {
     tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -41,6 +43,8 @@ export default class ChataBarChart extends Component {
     labelValue: 'label',
     dataFormatting: {},
     numberColumnIndices: [],
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
     onLabelChange: () => {},
     tooltipFormatter: () => {}
   }
@@ -50,7 +54,7 @@ export default class ChataBarChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[this.props.numberColumnIndices[0]],
+      this.props.columns[this.props.numberColumnIndex],
       this.props.dataFormatting
     )
 
@@ -86,7 +90,6 @@ export default class ChataBarChart extends Component {
     const {
       activeChartElementKey,
       bottomLegendMargin,
-      bottomLegendWidth,
       tooltipFormatter,
       onLegendClick,
       legendLabels,
@@ -120,7 +123,9 @@ export default class ChataBarChart extends Component {
       .paddingOuter(outerPadding)
 
     const yLabelArray = data.map(element => element[labelValue])
-    const xLabelArray = data.map(element => element.cells[0])
+    const xLabelArray = data.map(
+      element => element.cells[this.props.numberColumnIndex]
+    )
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
     const yTickValues = this.getTickValues(barHeight, yLabelArray)
@@ -130,7 +135,7 @@ export default class ChataBarChart extends Component {
       <g data-test="chata-bar-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[this.props.numberColumnIndices[0]]}
+          xCol={columns[this.props.numberColumnIndex]}
           yCol={columns[this.props.stringColumnIndex]}
           margins={{
             left: leftMargin,
@@ -144,14 +149,16 @@ export default class ChataBarChart extends Component {
           yTicks={yTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
-          hasRightLegend={data[0].origRow.length > 3}
-          hasBottomLegend={
-            data[0].origRow.length === 2 || data[0].origRow.length === 3
-          }
-          bottomLegendWidth={bottomLegendWidth}
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          hasXDropdown={this.props.hasMultipleNumberColumns}
+          hasYDropdown={this.props.hasMultipleStringColumns}
+          xAxisTitle={this.props.numberAxisTitle}
           xGridLines
         />
         {

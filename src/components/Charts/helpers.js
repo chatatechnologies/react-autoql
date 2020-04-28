@@ -99,7 +99,7 @@ export const getMinAndMaxValues = data => {
   }
 }
 
-export const getLegendLocation = (data, displayType) => {
+export const getLegendLocation = (seriesArray, displayType) => {
   if (
     displayType === 'pie' ||
     displayType === 'heatmap' ||
@@ -111,9 +111,9 @@ export const getLegendLocation = (data, displayType) => {
     displayType === 'stacked_bar'
   ) {
     return 'right'
-  } else if (_get(data, '[0].origRow.length') > 3) {
+  } else if (_get(seriesArray, 'length') > 3) {
     return 'right'
-  } else if (_get(data, '[0].origRow.length') > 1) {
+  } else if (_get(seriesArray, 'length') > 1) {
     return 'bottom'
   }
   return undefined

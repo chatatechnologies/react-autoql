@@ -18,9 +18,10 @@
   // height: 100%;
   cursor: pointer;
 
-  .chata-checkbox--switch__input:checked {
-    border-color: var(--chata-messenger-accent-color);
-    background: var(--chata-messenger-accent-color);
+  .chata-checkbox--switch__input:checked,
+  .chata-checkbox__input:checked {
+    border-color: var(--chata-output-accent-color);
+    background: var(--chata-output-accent-color);
   }
 }
 .chata-checkbox__label {
@@ -39,7 +40,7 @@
   -moz-appearance: none;
   outline: none;
   background: transparent;
-  border: 1px solid;
+  border: 1px solid var(--chata-output-accent-color);
   border-radius: 2px;
 
   cursor: pointer;
@@ -52,7 +53,7 @@
   bottom: 50%;
   left: 50%;
   transition: all 0.2s;
-  background: var(--chata-messenger-accent-color);
+  background: var(--chata-output-accent-color);
 }
 
 .chata-checkbox-tick {
