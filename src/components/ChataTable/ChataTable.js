@@ -102,6 +102,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const options = {
+      // layout: 'fitDataStretch',
       layout: 'fitDataFill',
       textSize: '9px',
       movableColumns: true,

@@ -184,6 +184,7 @@ export default class ChataStackedBarChart extends Component {
             hasRightLegend
             onXAxisClick={this.props.onXAxisClick}
             onYAxisClick={this.props.onYAxisClick}
+            onLegendTitleClick={this.props.onLegendTitleClick}
             // hasXDropdown={_get(this.props.numberColumnIndices, 'length') > 1}
             // hasYDropdown={_get(this.props.stringColumnIndices, 'length') > 1}
           />

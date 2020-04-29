@@ -7,7 +7,8 @@ g.legendOrdinal tspan {
 }
 
 .x-axis-label-border,
-.y-axis-label-border {
+.y-axis-label-border,
+.legend-title-border {
   cursor: pointer;
   stroke: transparent;
   opacity: 0.5;
@@ -19,5 +20,11 @@ g.legendOrdinal tspan {
 }
 
 .chata-axis-selector-arrow {
-  opacity: 1;
+  opacity: 1 !important;
+}
+
+.legendTitle tspan {
+  letter-spacing: 0.04em !important;
+  font-size: 12px;
+  cursor: default;
 }

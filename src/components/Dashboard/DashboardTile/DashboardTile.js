@@ -2,6 +2,8 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
+import _reduce from 'lodash.reduce'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
@@ -80,11 +82,35 @@ export default class DashboardTile extends React.Component {
     secondQuery: this.props.tile.secondQuery || this.props.tile.query,
     sql: this.props.tile.sql,
     title: this.props.tile.title,
-    isSql: !!this.props.tile.sql,
     isExecuting: false,
     suggestions: [],
     isSecondQueryInputOpen: false,
     currentSource: 'user'
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    const thisPropsFiltered = { ...this.props, children: undefined }
+    const nextPropsFiltered = { ...nextProps, children: undefined }
+
+    if (!_isEqual(thisPropsFiltered, nextPropsFiltered)) {
+      // Keep this for a deep compare to debug
+      // console.log(
+      //   'PROPS were not equal!! Re-rendering',
+      //   _reduce(
+      //     nextProps,
+      //     function(result, value, key) {
+      //       return _isEqual(value, thisPropsFiltered[key])
+      //         ? result
+      //         : result.concat(key)
+      //     },
+      //     []
+      //   )
+      // )
+      return true
+    } else if (!_isEqual(this.state, nextState)) {
+      return true
+    }
+    return false
   }
 
   componentDidUpdate = prevProps => {
@@ -602,7 +628,8 @@ export default class DashboardTile extends React.Component {
     queryValidationSelections,
     selectedSuggestion,
     onSuggestionClick,
-    onQueryValidationSelectOption
+    onQueryValidationSelectOption,
+    showSplitViewBtn
   }) => {
     const queryResponse = response || this.props.queryResponse
     return (
@@ -644,13 +671,51 @@ export default class DashboardTile extends React.Component {
           }
         />
         {this.props.isEditing && (
-          <VizToolbar
-            displayType={displayType}
-            onDisplayTypeChange={onDisplayTypeChange}
-            supportedDisplayTypes={
-              getSupportedDisplayTypes(queryResponse) || []
-            }
-          />
+          <div className="dashboard-tile-viz-toolbar-container">
+            <VizToolbar
+              displayType={displayType}
+              onDisplayTypeChange={onDisplayTypeChange}
+              supportedDisplayTypes={
+                getSupportedDisplayTypes(queryResponse) || []
+              }
+            />
+            {this.props.isEditing &&
+              showSplitViewBtn &&
+              _get(this.props, 'queryResponse.data.data.display_type') ===
+                'data' && (
+                <div
+                  className="viz-toolbar split-view-btn"
+                  data-test="split-view-btn"
+                >
+                  <button
+                    onClick={() => {
+                      this.props.setParamsForTile(
+                        { splitView: !this.props.tile.splitView },
+                        this.props.tile.i
+                      )
+                      ReactTooltip.hide()
+                    }}
+                    className="chata-toolbar-btn"
+                    data-tip={
+                      this.props.tile.splitView
+                        ? 'Turn Off Split View'
+                        : 'Turn On Split View'
+                    }
+                    data-for="chata-dashboard-toolbar-btn-tooltip"
+                    data-test="viz-toolbar-button"
+                  >
+                    <Icon
+                      type="split-view"
+                      style={{
+                        color: this.props.tile.splitView
+                          ? this.props.themeConfig.accentColor
+                          : 'inherit'
+                      }}
+                    />
+                  </button>
+                </div>
+              )}
+          </div>
         )}
       </Fragment>
     )
@@ -715,7 +780,8 @@ export default class DashboardTile extends React.Component {
               .secondqueryValidationSelections,
             selectedSuggestion: this.props.tile.secondSelectedSuggestion,
             onSuggestionClick: this.onSecondSuggestionClick,
-            onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption
+            onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption,
+            showSplitViewBtn: true
           })}
           {this.props.isEditing && (
             <div
@@ -805,49 +871,26 @@ export default class DashboardTile extends React.Component {
                 ? this.renderSplitResponse()
                 : this.renderSingleResponse({
                     displayType,
-                    onDisplayTypeChange: this.onDisplayTypeChange
+                    onDisplayTypeChange: this.onDisplayTypeChange,
+                    showSplitViewBtn: true
                   })}
-              {this.props.isEditing &&
-                _get(this.props, 'queryResponse.data.data.display_type') ===
-                  'data' && (
-                  <div
-                    className="viz-toolbar split-view-btn"
-                    data-test="split-view-btn"
-                  >
-                    <button
-                      onClick={() => {
-                        this.props.setParamsForTile(
-                          { splitView: !this.props.tile.splitView },
-                          this.props.tile.i
-                        )
-                        ReactTooltip.hide()
-                      }}
-                      className="chata-toolbar-btn"
-                      data-tip={
-                        this.props.tile.splitView
-                          ? 'Turn Off Split View'
-                          : 'Turn On Split View'
-                      }
-                      data-for="chata-dashboard-toolbar-btn-tooltip"
-                      data-test="viz-toolbar-button"
-                    >
-                      <Icon
-                        type="split-view"
-                        style={{
-                          color: this.props.tile.splitView
-                            ? this.props.themeConfig.accentColor
-                            : 'inherit'
-                        }}
-                      />
-                    </button>
-                  </div>
-                )}
             </Fragment>
           ) : (
             this.renderContentPlaceholder()
           )}
         </div>
       </div>
+    )
+  }
+
+  renderDragHandles = () => {
+    return (
+      <Fragment>
+        <div className="chata-dashboard-tile-drag-handle top" />
+        <div className="chata-dashboard-tile-drag-handle bottom" />
+        <div className="chata-dashboard-tile-drag-handle left" />
+        <div className="chata-dashboard-tile-drag-handle right" />
+      </Fragment>
     )
   }
 
@@ -885,6 +928,9 @@ export default class DashboardTile extends React.Component {
               </Fragment>
             )}
           </div>
+          {!this.props.isDragging &&
+            this.props.isEditing &&
+            this.renderDragHandles()}
         </div>
       </ErrorBoundary>
     )

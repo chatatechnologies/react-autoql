@@ -36,7 +36,7 @@ export default class Axis extends Component {
   }
 
   static defaultProps = {
-    margin: 20,
+    margin: 40,
     backgroundColor: 'transparent',
     dataFormatting: {},
     onChartClick: () => {}
@@ -327,7 +327,7 @@ export default class Axis extends Component {
     }
 
     this.outerRadius = pieWidth / 2
-    this.innerRadius = this.outerRadius - 40 > 15 ? this.outerRadius - 40 : 0
+    this.innerRadius = this.outerRadius - 50 > 15 ? this.outerRadius - 50 : 0
   }
 
   renderPie = () => {
@@ -374,7 +374,7 @@ export default class Axis extends Component {
             this.legendElement = el
           }}
           id={this.LEGEND_ID}
-          className="legendOrdinal-container"
+          className="legendOrdinal"
         />
       </g>
     )

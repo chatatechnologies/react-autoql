@@ -32,6 +32,11 @@
   /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--chata-table-border-color);
 }
+.tabulator-cell:not(:first-child) {
+  // .tabulator-col:not(:first-child) {
+  border-left: 1px solid !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
 .chata-table .tabulator-tableHolder {
   max-height: calc(100% - 38px) !important;
   background-color: inherit;

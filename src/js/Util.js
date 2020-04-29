@@ -208,8 +208,8 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
 
   const fullWidthLabel = formattedLabel
   let isTruncated = false
-  if (typeof formattedLabel === 'string' && formattedLabel.length > 50) {
-    formattedLabel = `${formattedLabel.substring(0, 43)}...`
+  if (typeof formattedLabel === 'string' && formattedLabel.length > 20) {
+    formattedLabel = `${formattedLabel.substring(0, 20)}...`
     isTruncated = true
   }
 
@@ -894,4 +894,26 @@ export const filterDataForDrilldown = (response, drilldownData) => {
   }
 
   return newResponseData
+}
+
+export const getPadding = element => {
+  const padding = { left: 0, right: 0, top: 0, bottom: 0 }
+  try {
+    let left = parseInt(window.getComputedStyle(element)['padding-left'], 10)
+    let right = parseInt(window.getComputedStyle(element)['padding-right'], 10)
+    let top = parseInt(window.getComputedStyle(element)['padding-top'], 10)
+    let bottom = parseInt(
+      window.getComputedStyle(element)['padding-bottom'],
+      10
+    )
+
+    padding.left = left
+    padding.right = right
+    padding.top = top
+    padding.bottom = bottom
+  } catch (error) {
+    return padding
+  }
+
+  return padding
 }

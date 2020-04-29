@@ -65,6 +65,7 @@
     "lodash.clonedeep": "^4.5.0",
     "lodash.get": "^4.4.2",
     "lodash.isequal": "^4.5.0",
+    "lodash.reduce": "^4.6.0",
     "numbro": "^2.1.2",
     "prop-types": "^15.6.2",
     "rc-drawer": "^1.10.1",

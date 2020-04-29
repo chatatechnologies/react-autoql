@@ -1,12 +1,42 @@
 import React from 'react'
-import { Axis } from '../Axis'
 import { select } from 'd3-selection'
+import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 
-export default class Axes extends React.Component {
-  static propTypes = {}
+import { Axis } from '../Axis'
 
-  static defaultProps = {}
+export default class Axes extends React.Component {
+  static propTypes = {
+    scales: PropTypes.shape({}).isRequired,
+    margins: PropTypes.shape({}),
+    height: PropTypes.number,
+    width: PropTypes.number,
+    xTicks: PropTypes.array,
+    yTicks: PropTypes.array,
+    rotateLabels: PropTypes.bool,
+    xCol: PropTypes.shape({}),
+    yCol: PropTypes.shape({}),
+    xGridLines: PropTypes.bool,
+    yGridLines: PropTypes.bool,
+    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
+    legendColumn: PropTypes.shape({}),
+    dataFormatting: PropTypes.shape({}),
+    hasRightLegend: PropTypes.bool,
+    hasBottomLegend: PropTypes.bool,
+    chartColors: PropTypes.arrayOf(PropTypes.string),
+    onLegendClick: PropTypes.func,
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
+    hasXDropdown: PropTypes.bool,
+    hasYDropdown: PropTypes.bool,
+    xAxisTitle: PropTypes.string,
+    yAxisTitle: PropTypes.string,
+    legendTitle: PropTypes.string
+  }
+
+  static defaultProps = {
+    legendTitle: undefined
+  }
 
   renderAxisLabel = (title = '', hasDropdown) => {
     if (title.length > 35) {
@@ -69,7 +99,9 @@ export default class Axes extends React.Component {
       hasXDropdown,
       hasYDropdown,
       xAxisTitle,
-      yAxisTitle
+      yAxisTitle,
+      legendTitle,
+      onLegendTitleClick
     } = this.props
 
     const xProps = {
@@ -91,7 +123,9 @@ export default class Axes extends React.Component {
       legendColumn,
       dataFormatting,
       chartColors,
-      onLegendClick
+      onLegendClick,
+      onLegendTitleClick,
+      legendTitle
     }
 
     const yProps = {
@@ -115,7 +149,8 @@ export default class Axes extends React.Component {
       fontSize: 12,
       fontFamily: 'inherit',
       fill: 'currentColor',
-      fillOpacity: 0.7
+      fillOpacity: 0.7,
+      cursor: 'default'
     }
 
     // x-axis positions

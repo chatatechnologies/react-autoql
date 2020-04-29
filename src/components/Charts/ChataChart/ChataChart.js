@@ -26,8 +26,8 @@ import './ChataChart.scss'
 import Popover from 'react-tiny-popover'
 
 export default class ChataChart extends Component {
-  INNER_PADDING = 0.5
-  OUTER_PADDING = 2
+  INNER_PADDING = 0.25
+  OUTER_PADDING = 0.5
 
   constructor(props) {
     super(props)
@@ -208,7 +208,7 @@ export default class ChataChart extends Component {
   getNewBottomMargin = () => {
     let legendBBox
     const legend = select(this.chartRef)
-      .select('.legendOrdinal-container')
+      .select('.legendOrdinal')
       .node()
     legendBBox = legend ? legend.getBBox() : undefined
 
@@ -219,7 +219,7 @@ export default class ChataChart extends Component {
     )
 
     if (legendLocation === 'bottom' && _get(legendBBox, 'height')) {
-      bottomLegendMargin = legendBBox.height + 20
+      bottomLegendMargin = legendBBox.height + 10
     }
 
     const xAxis = select(this.chartRef)
@@ -422,10 +422,15 @@ export default class ChataChart extends Component {
 
     const filteredSeriesData = this.getFilteredSeriesData(data)
 
+    let innerPadding = this.INNER_PADDING
+    if (numberColumnIndices.length > 1) {
+      innerPadding = 0.1
+    }
+
     return {
       data: filteredSeriesData,
       colorScale: this.colorScale,
-      innerPadding: this.INNER_PADDING,
+      innerPadding,
       outerPadding: this.OUTER_PADDING,
       onXAxisClick: e => {
         this.setState({
@@ -436,6 +441,12 @@ export default class ChataChart extends Component {
       onYAxisClick: e => {
         this.setState({
           activeAxisSelector: 'y',
+          axisSelectorLocation: { left: e.pageX, top: e.pageY }
+        })
+      },
+      onLegendTitleClick: e => {
+        this.setState({
+          activeAxisSelector: 'legend',
           axisSelectorLocation: { left: e.pageX, top: e.pageY }
         })
       },
@@ -505,7 +516,7 @@ export default class ChataChart extends Component {
     return newArray
   }
 
-  renderStringColumnSelector = () => {
+  renderStringColumnSelectorContent = () => {
     return (
       <div className="axis-selector-container">
         <ul className="axis-selector-content">
@@ -530,7 +541,7 @@ export default class ChataChart extends Component {
     )
   }
 
-  renderNumberColumnSelector = () => {
+  renderNumberColumnSelectorContent = () => {
     const {
       currencySelectorState,
       quantitySelectorState,
@@ -632,25 +643,6 @@ export default class ChataChart extends Component {
               />
             </Fragment>
           )}
-
-          {
-            //   <ul className="axis-selector-content">
-            //   {this.props.numberColumnIndices.map((colIndex, i) => {
-            //     return (
-            //       <li
-            //         key={uuid.v4()}
-            //         onClick={() => {
-            //           this.props.changeNumberColumnIndex(colIndex)
-            //           this.setState({ activeAxisSelector: undefined })
-            //         }}
-            //       >
-            //         {_get(this.props.columns, `[${colIndex}].display_name`)}
-            //       </li>
-            //     )
-            //   })
-            // }
-            // </ul>
-          }
         </div>
         <div style={{ background: '#fff', padding: '5px' }}>
           <Button
@@ -683,26 +675,58 @@ export default class ChataChart extends Component {
     )
   }
 
+  renderLegendSelectorContent = () => {
+    if (_get(this.props.stringColumnIndices, 'length', 0) < 2) {
+      return null
+    }
+
+    return (
+      <div className="axis-selector-container">
+        <ul className="axis-selector-content">
+          {this.props.stringColumnIndices.map((colIndex, i) => {
+            return (
+              <li
+                className={`string-select-list-item ${
+                  colIndex === this.props.stringColumnIndex ? 'active' : ''
+                }`}
+                key={uuid.v4()}
+                onClick={() => {
+                  // this.props.changeStringColumnIndex(colIndex)
+                  this.setState({ activeAxisSelector: undefined })
+                }}
+              >
+                {_get(this.props.columns, `[${colIndex}].display_name`)}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    )
+  }
+
   renderAxisSelectorContent = axis => {
     try {
       const { type } = this.props
       let content = null
 
       const hasNumberXAxis = type === 'bar'
-      const hasStringYAxis = type === 'bar'
-      const hasStringXAxis = type === 'column' || type === 'line'
+      const hasStringYAxis = type === 'bar' || 'stacked_bar'
+      const hasStringXAxis =
+        type === 'column' || type === 'line' || 'stacked_column'
       const hasNumberYAxis = type === 'column' || type === 'line'
 
       if (
         (axis === 'x' && hasStringXAxis) ||
         (axis === 'y' && hasStringYAxis)
       ) {
-        content = this.renderStringColumnSelector()
+        content = this.renderStringColumnSelectorContent()
       } else if (
         (axis === 'x' && hasNumberXAxis) ||
         (axis === 'y' && hasNumberYAxis)
       ) {
-        content = this.renderNumberColumnSelector()
+        content = this.renderNumberColumnSelectorContent()
+      } else if (axis === 'legend') {
+        content = this.renderLegendSelectorContent()
       }
 
       return content
@@ -768,6 +792,7 @@ export default class ChataChart extends Component {
       <Fragment>
         {this.renderAxisSelector('x')}
         {this.renderAxisSelector('y')}
+        {this.renderAxisSelector('legend')}
       </Fragment>
     )
   }

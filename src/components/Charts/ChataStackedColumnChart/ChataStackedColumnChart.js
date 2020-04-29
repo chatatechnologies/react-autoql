@@ -183,10 +183,12 @@ export default class ChataStackedColumnChart extends Component {
             legendLabels={this.legendLabels}
             legendScale={this.legendScale}
             hasRightLegend
+            legendTitle={_get(columns, '[0].display_name')}
             yGridLines
             hasLegend
             onXAxisClick={this.props.onXAxisClick}
             onYAxisClick={this.props.onYAxisClick}
+            onLegendTitleClick={this.props.onLegendTitleClick}
             // hasXDropdown={_get(this.props.stringColumnIndices, 'length') > 1}
             // hasYDropdown={_get(this.props.numberColumnIndices, 'length') > 1}
           />

@@ -59,7 +59,8 @@ import {
   isColumnNumberType,
   isColumnStringType,
   getNumberColumnIndices,
-  getNumberOfGroupables
+  getNumberOfGroupables,
+  getPadding
 } from '../../js/Util.js'
 
 import './QueryOutput.scss'
@@ -225,7 +226,6 @@ export default class QueryOutput extends React.Component {
       const responseBody = queryResponse.data.data
       this.queryID = responseBody.query_id // We need queryID for drilldowns (for now)
       this.interpretation = responseBody.interpretation
-      this.data = responseBody.rows ? [...responseBody.rows] : null
       if (isTableType(displayType) || isChartType(displayType)) {
         this.generateTableData()
         this.shouldGeneratePivotData() && this.generatePivotData()
@@ -255,12 +255,13 @@ export default class QueryOutput extends React.Component {
       this.props.queryResponse.data.data.columns
     )
 
+    const data = _get(this.props.queryResponse, 'data.data.rows')
     this.tableData =
-      typeof this.data === 'string' // This will change once the query response is refactored
-        ? undefined
-        : this.data
+      data && typeof data !== 'string' // This will change once the query response is refactored
+        ? [...data]
+        : undefined
 
-    this.numberOfTableRows = _get(this.data, 'length', 0)
+    this.numberOfTableRows = _get(data, 'length', 0)
   }
 
   generatePivotData = newData => {
@@ -613,16 +614,6 @@ export default class QueryOutput extends React.Component {
       return 'Error: There was no data supplied for this chart'
     }
 
-    // let data = this.chartData
-    // let columns = this.tableColumns
-    // if (
-    //   this.state.displayType === 'stacked_bar' ||
-    //   this.state.displayType === 'stacked_column'
-    // ) {
-    //   data = this.pivotTableData
-    //   columns = this.pivotTableColumns
-    // }
-
     const chartThemeConfig = {
       ...this.props.themeConfig,
       ...this.themeStyles
@@ -674,7 +665,7 @@ export default class QueryOutput extends React.Component {
   }
 
   renderHelpResponse = () => {
-    const url = this.data
+    const url = _get(this.props.queryResponse, 'data.data.rows[0]')
     if (!url) {
       return null
     }
@@ -704,10 +695,40 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  setColumnIndices = () => {
+    if (!this.tableColumns) {
+      return
+    }
+
+    const allStringColumnIndices = []
+    this.tableColumns.forEach((col, index) => {
+      if (isColumnStringType(col)) {
+        allStringColumnIndices.push(index)
+      }
+    })
+
+    // We will usually want to take the second column because the first one
+    // will most likely have all of the same value. Grab the first column only
+    // if it's the only string column
+    if (!(this.stringColumnIndex >= 0)) {
+      this.stringColumnIndex =
+        allStringColumnIndices[1] || allStringColumnIndices[0]
+    }
+    if (!this.stringColumnIndices) {
+      this.stringColumnIndices = allStringColumnIndices
+    }
+    if (!this.numberColumnIndices) {
+      this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
+    }
+    this.numberColumnIndex = this.numberColumnIndices[0]
+  }
+
   generateChartData = data => {
     try {
       const columns = this.tableColumns
       const tableData = data || this.tableData
+
+      this.setColumnIndices()
 
       if (supportsRegularPivotTable(columns)) {
         this.chartData = tableData.map(row => {
@@ -727,30 +748,6 @@ export default class QueryOutput extends React.Component {
           }
         })
       } else if (supports2DCharts(this.tableColumns)) {
-        const allStringColumnIndices = []
-        this.tableColumns.forEach((col, index) => {
-          if (isColumnStringType(col)) {
-            allStringColumnIndices.push(index)
-          }
-        })
-
-        // We will usually want to take the second column because the first one
-        // will most likely have all of the same value. Grab the first column only
-        // if it's the only string column
-        if (!(this.stringColumnIndex >= 0)) {
-          this.stringColumnIndex =
-            allStringColumnIndices[1] || allStringColumnIndices[0]
-        }
-
-        // this.stringColumnIndices = [stringColumnIndex]
-        if (!this.stringColumnIndices) {
-          this.stringColumnIndices = allStringColumnIndices
-        }
-        if (!this.numberColumnIndices) {
-          this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
-        }
-        this.numberColumnIndex = this.numberColumnIndices[0]
-
         const drilldownSupportedByAPI =
           getNumberOfGroupables(this.tableColumns) > 0
 
@@ -938,6 +935,8 @@ export default class QueryOutput extends React.Component {
       col.field = `${i}`
       col.title = this.getColTitle(col)
       col.id = uuid.v4()
+      col.widthGrow = 1
+      col.widthShrink = 1
 
       // Visibility flag: this can be changed through the column visibility editor modal
       col.visible = col.is_visible
@@ -1042,7 +1041,8 @@ export default class QueryOutput extends React.Component {
         )
       }
 
-      const tableData = newData || this.data
+      const tableData =
+        newData || _get(this.props.queryResponse, 'data.data.rows')
 
       const allYears = tableData.map(d => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
@@ -1123,7 +1123,8 @@ export default class QueryOutput extends React.Component {
   }
 
   generatePivotTableData = newData => {
-    const tableData = newData || this.data
+    const tableData =
+      newData || _get(this.props.queryResponse, 'data.data.rows')
 
     let gColIndex0 = this.tableColumns.findIndex(col => col.groupable)
     let gColIndex1 = this.tableColumns.findIndex(
@@ -1262,6 +1263,7 @@ export default class QueryOutput extends React.Component {
   renderResponse = (width, height) => {
     const { displayType } = this.state
     const { queryResponse } = this.props
+    const data = _get(queryResponse, 'data.data.rows')
 
     // This is used for "Thank you for your feedback" response
     // when user clicks on "None of these" in the suggestion list
@@ -1316,13 +1318,13 @@ export default class QueryOutput extends React.Component {
     }
 
     // This is not an error. There is just no data in the DB
-    if (!_get(responseData, 'rows.length')) {
+    if (!_get(data, 'length')) {
       return this.renderErrorMessage(
         _get(responseBody, 'message', 'No Data Found')
       )
     }
 
-    if (displayType && this.data) {
+    if (displayType && data) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
       } else if (isForecastType(displayType)) {
@@ -1383,12 +1385,32 @@ export default class QueryOutput extends React.Component {
       `chata-response-content-container-${this.COMPONENT_KEY}`
     )
 
+    // const chartContainer = document.querySelector(
+    //   `#chata-response-content-container-${this.COMPONENT_KEY} .chata-chart-container`
+    // )
+
     let height = 0
     let width = 0
 
+    // if (chartContainer) {
+    //   height =
+    //     chartContainer.clientHeight -
+    //     getPadding(chartContainer).top -
+    //     getPadding(chartContainer).bottom
+    //   width =
+    //     chartContainer.clientWidth -
+    //     getPadding(chartContainer).left -
+    //     getPadding(chartContainer).right
+    // } else
     if (responseContainer) {
-      height = responseContainer.offsetHeight
-      width = responseContainer.offsetWidth
+      height =
+        responseContainer.clientHeight -
+        getPadding(responseContainer).top -
+        getPadding(responseContainer).bottom
+      width =
+        responseContainer.clientWidth -
+        getPadding(responseContainer).left -
+        getPadding(responseContainer).right
     }
 
     if (this.props.height) {

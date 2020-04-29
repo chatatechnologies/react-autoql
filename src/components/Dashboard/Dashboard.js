@@ -92,6 +92,8 @@ class Dashboard extends React.Component {
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
+
+    window.addEventListener('resize', this.onWindowResize)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -128,6 +130,21 @@ class Dashboard extends React.Component {
         justPerformedUndo: false
       })
     }
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('resize', this.onWindowResize)
+  }
+
+  onWindowResize = e => {
+    if (!this.state.isWindowResizing) {
+      this.setState({ isWindowResizing: true })
+    }
+
+    clearTimeout(this.windowResizeTimer)
+    this.windowResizeTimer = setTimeout(() => {
+      this.setState({ isWindowResizing: false })
+    }, 300)
   }
 
   setStyles = () => {
@@ -472,7 +489,8 @@ class Dashboard extends React.Component {
               cols={12}
               isDraggable={this.props.isEditing}
               isResizable={this.props.isEditing}
-              draggableHandle=".chata-dashboard-tile-inner-div"
+              // draggableHandle=".chata-dashboard-tile-inner-div"
+              draggableHandle=".chata-dashboard-tile-drag-handle"
               layout={tileLayout}
               margin={[20, 20]}
             >
@@ -493,6 +511,7 @@ class Dashboard extends React.Component {
                   queryResponse={tile.queryResponse}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}
+                  isWindowResizing={this.state.isWindowResizing}
                   setParamsForTile={this.setParamsForTile}
                   deleteTile={this.deleteTile}
                   dataFormatting={this.props.dataFormatting}
