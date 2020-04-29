@@ -710,9 +710,8 @@ export default class ChataChart extends Component {
       let content = null
 
       const hasNumberXAxis = type === 'bar'
-      const hasStringYAxis = type === 'bar' || 'stacked_bar'
-      const hasStringXAxis =
-        type === 'column' || type === 'line' || 'stacked_column'
+      const hasStringYAxis = type === 'bar'
+      const hasStringXAxis = type === 'column' || type === 'line'
       const hasNumberYAxis = type === 'column' || type === 'line'
 
       if (

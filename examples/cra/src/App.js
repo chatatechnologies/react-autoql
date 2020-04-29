@@ -240,14 +240,8 @@ export default class App extends Component {
     }
   }
 
-  executeQuery = query => {
-    const url = `${this.state.domain}/autoql/api/v1/query?key=${this.state.apiKey}`
-
-    const data = {
-      text: query,
-      source: ['notification']
-    }
-
+  fetchNotificationData = notificationId => {
+    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}`
     const token = getStoredProp('jwtToken')
 
     const config = {}
@@ -262,7 +256,7 @@ export default class App extends Component {
     }
 
     return axios
-      .post(url, data, config)
+      .get(url, config)
       .then(response => {
         if (response.data && typeof response.data === 'string') {
           return Promise.reject({ error: 'parse error' })
@@ -270,8 +264,9 @@ export default class App extends Component {
         if (
           !response ||
           !response.data ||
-          !response.data.data ||
-          response.data.data.display_type !== 'data'
+          !response.data.queryResult ||
+          !response.data.queryResultdata ||
+          response.data.queryResult.data.display_type !== 'data'
         ) {
           return Promise.reject()
         }
@@ -281,6 +276,48 @@ export default class App extends Component {
         return Promise.reject(error)
       })
   }
+
+  // executeQuery = query => {
+  //   const url = `${this.state.domain}/autoql/api/v1/query?key=${this.state.apiKey}`
+
+  //   const data = {
+  //     text: query,
+  //     source: ['notification']
+  //   }
+
+  //   const token = getStoredProp('jwtToken')
+
+  //   const config = {}
+  //   if (token) {
+  //     config.headers = {
+  //       Authorization: `Bearer ${token}`
+  //     }
+  //   }
+
+  //   if (!this.state.apiKey || !this.state.domain) {
+  //     return Promise.reject({ error: 'unauthenticated' })
+  //   }
+
+  //   return axios
+  //     .post(url, data, config)
+  //     .then(response => {
+  //       if (response.data && typeof response.data === 'string') {
+  //         return Promise.reject({ error: 'parse error' })
+  //       }
+  //       if (
+  //         !response ||
+  //         !response.data ||
+  //         !response.data.data ||
+  //         response.data.data.display_type !== 'data'
+  //       ) {
+  //         return Promise.reject()
+  //       }
+  //       return Promise.resolve(response)
+  //     })
+  //     .catch(error => {
+  //       return Promise.reject(error)
+  //     })
+  // }
 
   checkAuthentication = () => {
     const loginToken = getStoredProp('loginToken')
@@ -1484,7 +1521,10 @@ export default class App extends Component {
       isFetchingNotificationContent: true
     })
 
-    this.executeQuery(notification.query)
+    console.log(notification)
+
+    // this.executeQuery(notification.query)
+    this.fetchNotificationData(notification.id)
       .then(response => {
         this.setState({
           activeNotificationContent: response,
