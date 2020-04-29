@@ -635,6 +635,81 @@ export default class App extends Component {
           ]
         }
       ]
+    } else if (this.state.activeIntegrator === 'locate') {
+      return [
+        {
+          label: 'Sales',
+          value: 'jobs',
+          children: [
+            {
+              label: 'Total sales by state last year',
+              value: 'all-jobs'
+            },
+            {
+              label: 'Average sales by month last year',
+              value: 'total-jobs'
+            },
+            {
+              label: 'Total sales by customer this year',
+              value: 'total-jobs-by-status'
+            }
+          ]
+        },
+        {
+          label: 'Purchase Orders',
+          value: 'tickets',
+          children: [
+            {
+              label: 'Last purchase order over 10000',
+              value: 'total-tickets'
+            },
+            {
+              label: 'Total purchase orders by vendor this year',
+              value: 'tickets-2019'
+            },
+            {
+              label: 'All unissued purchase orders from last year',
+              value: 'tickets-void'
+            }
+          ]
+        },
+        {
+          label: 'Parts',
+          value: 'estimates',
+          children: [
+            {
+              label: 'Top 5 parts by sales order',
+              value: 'total-estimates'
+            },
+            {
+              label: 'Show me all parts expiring this year',
+              value: 'estimates-by-year'
+            },
+            {
+              label: 'All parts priced below last cost',
+              value: 'estimates-over-10000'
+            }
+          ]
+        },
+        {
+          label: 'Margins',
+          value: 'revenue',
+          children: [
+            {
+              label: 'Gross margin by part this year',
+              value: 'revenue-this-year'
+            },
+            {
+              label: 'Gross margin by customer last year',
+              value: 'revenue-this-month'
+            },
+            {
+              label: 'Gross margin by invoice this year',
+              value: 'revenue-2019'
+            }
+          ]
+        }
+      ]
     }
 
     return undefined
@@ -724,6 +799,7 @@ export default class App extends Component {
               }}
               onBlur={e => setStoredProp('customer-id', e.target.value)}
               value={this.state.customerId}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -738,6 +814,7 @@ export default class App extends Component {
               }}
               onBlur={e => setStoredProp('userid', e.target.value)}
               value={this.state.userId}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -752,6 +829,7 @@ export default class App extends Component {
               }}
               onBlur={e => setStoredProp('api-key', e.target.value)}
               value={this.state.apiKey}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -768,6 +846,7 @@ export default class App extends Component {
               }}
               onBlur={e => setStoredProp('domain-url', e.target.value)}
               value={this.state.domain}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -780,6 +859,7 @@ export default class App extends Component {
                 this.setState({ email: e.target.value })
               }}
               value={this.state.email}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -793,6 +873,7 @@ export default class App extends Component {
                 this.setState({ password: e.target.value })
               }}
               value={this.state.password}
+              autoComplete="on"
             />
           </Form.Item>
           <Form.Item {...tailLayout}>

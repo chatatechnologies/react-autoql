@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { number, bool, string, func, shape } from 'prop-types'
+import { number, bool, string, func, shape, array } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
@@ -70,7 +70,7 @@ export default class DataMessenger extends React.Component {
     enableExploreQueriesTab: bool,
     resizable: bool,
     inputPlaceholder: string,
-    introMessageTopics: shape({}),
+    introMessageTopics: array,
     enableDynamicCharting: bool,
 
     // Callbacks

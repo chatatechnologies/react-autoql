@@ -35,6 +35,7 @@ export default class Cascader extends React.Component {
 
     return (
       <div
+        key={uuid.v4()}
         className={`options-container
           ${isLastGroup ? 'visible' : 'hidden'}`}
       >
@@ -54,6 +55,7 @@ export default class Cascader extends React.Component {
         {options.map(option => {
           return (
             <div
+              key={uuid.v4()}
               className={`option
                 ${option.value === active ? 'active' : ''}`}
               onClick={() => this.onOptionClick(option, index)}

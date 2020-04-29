@@ -4,7 +4,7 @@ import _get from 'lodash.get'
 
 export default class Bars extends Component {
   static propTypes = {
-    data: PropTypes.shape([]).isRequired,
+    data: PropTypes.array.isRequired,
     scales: PropTypes.shape({}).isRequired,
     tooltipFormatter: PropTypes.func.isRequired,
     labelValue: PropTypes.string.isRequired

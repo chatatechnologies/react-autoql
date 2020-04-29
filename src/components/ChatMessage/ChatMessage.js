@@ -58,7 +58,7 @@ export default class ChatMessage extends React.Component {
     displayType: PropTypes.string,
     onSuggestionClick: PropTypes.func.isRequired,
     response: PropTypes.shape({}),
-    content: PropTypes.string,
+    content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     tableOptions: PropTypes.shape({}),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
