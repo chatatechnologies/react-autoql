@@ -93,7 +93,9 @@
 }
 
 .chata-dashboard-tile-inner-div .single-value-response {
-  font-size: 23px;
+  font-size: 32px;
+  margin-top: -6px;
+  opacity: 0.9;
 }
 
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
@@ -168,8 +170,8 @@
 .dashboard-tile-title-container {
   width: 100%;
   text-align: left;
-  padding: 20px 30px 0 30px;
-  height: 55px;
+  padding: 19px 25px 0 25px;
+  height: 47px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -179,7 +181,7 @@
 
 .dashboard-tile-title-container .dashboard-tile-title {
   font-weight: bold;
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .dashboard-tile-edit-wrapper {
@@ -238,7 +240,7 @@
   height: 2px;
   background: currentColor;
   width: 75px;
-  margin-top: 8px;
+  margin-top: 4px;
   opacity: 0.07;
 }
 

@@ -124,7 +124,7 @@ export default class App extends Component {
     enableExploreQueriesTab: true,
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
-    dashboardTitleColor: '#2466AE',
+    dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
     width: 2000,
