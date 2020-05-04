@@ -55,7 +55,7 @@ export const getMinAndMaxValues = data => {
     if (maxValue === minValue) {
       if (minValue > 0) {
         minValue = 0
-      } else if (minValue < 0) {
+      } else if (maxValue < 0) {
         maxValue = 0
       }
     }

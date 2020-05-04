@@ -51,7 +51,7 @@ export const formatEpochDate = (value, col, config) => {
     const title = col.title
     let date = dayjs.unix(value).format(dayMonthYear)
 
-    if (!Number(value)) {
+    if (Number.isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
         date = dayjs(value).format(year)

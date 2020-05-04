@@ -870,7 +870,7 @@ export default class QueryOutput extends React.Component {
             const tooltipData = this.getTooltipDataForCell(row, columnIndex)
 
             cells.push({
-              value: Number(value) || value, // this should always be able to convert to a number
+              value: !Number.isNaN(Number(value)) ? Number(value) : value, // this should always be able to convert to a number
               label: columns[columnIndex].title,
               color: this.colorScale(colorScaleValue),
               hidden: false,

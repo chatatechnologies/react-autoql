@@ -210,25 +210,25 @@ export default class App extends Component {
   }
 
   getThemeConfigProp = () => {
+    const { activeIntegrator } = this.state
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
 
-    if (
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-    ) {
-      lightAccentColor = '#253340'
-      darkAccentColor = '#253340'
-    }
+    if (this.state.isAuthenticated) {
+      if (activeIntegrator === 'purefacts') {
+        lightAccentColor = '#253340'
+        darkAccentColor = '#253340'
+      }
 
-    if (
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'spira' &&
-      !this.state.demo
-    ) {
-      lightAccentColor = '#508bb8'
-      darkAccentColor = '#508bb8'
+      if (activeIntegrator === 'spira') {
+        lightAccentColor = '#508bb8'
+        darkAccentColor = '#508bb8'
+      }
+
+      if (activeIntegrator === 'vitruvi') {
+        lightAccentColor = 'rgb(109, 163, 186)'
+        darkAccentColor = 'rgb(109, 163, 186)'
+      }
     }
 
     return {
