@@ -2,12 +2,7 @@ import Numbro from 'numbro'
 import _get from 'lodash.get'
 import dayjs from './dayjsWithPlugins'
 
-import {
-  MONTH_NAMES,
-  CHART_TYPES,
-  TABLE_TYPES,
-  FORECAST_TYPES
-} from './Constants'
+import { CHART_TYPES, TABLE_TYPES, FORECAST_TYPES } from './Constants'
 
 export const getParameterByName = (
   parameterName,
@@ -559,20 +554,6 @@ export const getDefaultDisplayType = response => {
     return 'table'
   }
 
-  // ----------------- This probably won't happen anymore with CaaS ---------------
-  // If the display type is a recognized table type
-  if (isTableType(responseDisplayType)) {
-    return 'table'
-  }
-
-  // If the display type is a recognized chart type
-  // This probably won't happen with chata.io, it is
-  // usually returned as a table type initially
-  if (isChartType(responseDisplayType)) {
-    return responseDisplayType
-  }
-  // ------------------------------------------------------------------------------
-
   // Default to table type
   return 'table'
 }
@@ -640,42 +621,6 @@ export const getGroupBysFromTable = (row, tableColumns) => {
   return groupByArray
 }
 
-export const getgroupByObjectFromTable = (
-  rowData,
-  origColumns,
-  forceDateAxis
-) => {
-  const jsonData = {}
-  let columns = [...origColumns]
-
-  if (!columns[0]) {
-    return
-  }
-
-  if (forceDateAxis) {
-    // Swap first two columns if second one is DATE and first is not
-    // rowData is already swapped here if necessary so don't swap again.
-    if (
-      columns[1] &&
-      (columns[0].type !== 'DATE' && columns[1].type === 'DATE')
-    ) {
-      columns = [columns[1], columns[0], ...columns.slice(2)]
-    }
-  }
-
-  columns.forEach((column, index) => {
-    if (column.groupable) {
-      const columnName = column.name
-      if (column.type === 'DATE') {
-        jsonData[columnName] = `${rowData[index]}`
-      } else {
-        jsonData[columnName.toLowerCase()] = `${rowData[index]}`
-      }
-    }
-  })
-  return jsonData
-}
-
 export const getObjSize = obj => Object.keys(obj).length
 
 export const getMaxValueFromKeyValueObj = obj => {
@@ -702,31 +647,36 @@ export const getMinValueFromKeyValueObj = obj => {
   return minValue
 }
 
-export const calculateMinAndMaxSums = (data, labelValue, dataValue) => {
+export const calculateMinAndMaxSums = data => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
   // Loop through data array to get maximum and minimum sums of postive and negative values
   // These will be used to get the max and min values for the x Scale (data values)
-  for (let i = 0; i < data.length; i++) {
-    const value = data[i][dataValue]
-
-    if (value >= 0) {
-      // Calculate positive sum
-      if (positiveSumsObject[data[i][labelValue]]) {
-        positiveSumsObject[data[i][labelValue]] += value
-      } else {
-        positiveSumsObject[data[i][labelValue]] = value
+  data.forEach(d => {
+    const label = d.label
+    d.cells.forEach(cell => {
+      const cellConvertedToNumber = Number(cell.value)
+      const value = !Number.isNaN(cellConvertedToNumber)
+        ? cellConvertedToNumber
+        : 0
+      if (value >= 0) {
+        // Calculate positive sum
+        if (positiveSumsObject[label]) {
+          positiveSumsObject[label] += value
+        } else {
+          positiveSumsObject[label] = value
+        }
+      } else if (value < 0) {
+        // Calculate negative sum
+        if (negativeSumsObject[label]) {
+          negativeSumsObject[label] -= value
+        } else {
+          negativeSumsObject[label] = value
+        }
       }
-    } else if (value < 0) {
-      // Calculate negative sum
-      if (negativeSumsObject[data[i][labelValue]]) {
-        negativeSumsObject[data[i][labelValue]] -= value
-      } else {
-        negativeSumsObject[data[i][labelValue]] = value
-      }
-    }
-  }
+    })
+  })
 
   // Get max and min sums from those sum objects
   const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)

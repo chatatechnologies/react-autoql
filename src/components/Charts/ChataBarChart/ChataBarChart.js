@@ -23,7 +23,6 @@ export default class ChataBarChart extends Component {
     bottomMargin: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     labelValue: PropTypes.string,
-    tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     onXAxisClick: PropTypes.func,
@@ -45,8 +44,7 @@ export default class ChataBarChart extends Component {
     numberColumnIndices: [],
     onXAxisClick: () => {},
     onYAxisClick: () => {},
-    onLabelChange: () => {},
-    tooltipFormatter: () => {}
+    onLabelChange: () => {}
   }
 
   handleLabelRotation = (tickWidth, labelArray) => {
@@ -95,7 +93,6 @@ export default class ChataBarChart extends Component {
       bottomLegendMargin,
       numberColumnIndex,
       stringColumnIndex,
-      tooltipFormatter,
       numberAxisTitle,
       dataFormatting,
       legendLocation,
@@ -184,7 +181,6 @@ export default class ChataBarChart extends Component {
             height={height}
             labelValue={labelValue}
             onChartClick={onChartClick}
-            tooltipFormatter={tooltipFormatter}
             chartColors={chartColors}
             activeKey={activeChartElementKey}
           />

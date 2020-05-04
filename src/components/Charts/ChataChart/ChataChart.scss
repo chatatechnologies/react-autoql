@@ -2,6 +2,11 @@
   position: relative;
   height: 100%;
   width: 100%;
+
+  svg {
+    // set transparent in css but keep background in inline style for exporting to png
+    background: transparent !important;
+  }
 }
 
 /* These are not inline styles since they do not apply to saved PNG charts */

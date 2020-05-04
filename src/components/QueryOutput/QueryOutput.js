@@ -228,7 +228,7 @@ export default class QueryOutput extends React.Component {
       this.interpretation = responseBody.interpretation
       if (isTableType(displayType) || isChartType(displayType)) {
         this.generateTableData()
-        this.shouldGeneratePivotData() && this.generatePivotData()
+        this.shouldGeneratePivotData() && this.generatePivotData(true)
         this.shouldGenerateChartData() && this.generateChartData()
       } else if (isForecastType(displayType)) {
         this.generateForecastData()
@@ -262,14 +262,15 @@ export default class QueryOutput extends React.Component {
         : undefined
 
     this.numberOfTableRows = _get(data, 'length', 0)
+    this.setColumnIndices()
   }
 
-  generatePivotData = newData => {
+  generatePivotData = isFirstGeneration => {
     try {
       if (this.tableColumns.length === 2) {
-        this.generateDatePivotData(newData)
+        this.generateDatePivotData()
       } else {
-        this.generatePivotTableData(newData)
+        this.generatePivotTableData(isFirstGeneration)
       }
     } catch (error) {
       console.error(error)
@@ -625,7 +626,10 @@ export default class QueryOutput extends React.Component {
           ref={ref => (this.chartRef = ref)}
           type={displayType || this.state.displayType}
           data={this.chartData}
-          columns={this.tableColumns}
+          tableColumns={this.tableColumns}
+          columns={
+            this.supportsPivot ? this.pivotTableColumns : this.tableColumns
+          }
           height={height}
           width={width}
           dataFormatting={this.props.dataFormatting}
@@ -635,7 +639,9 @@ export default class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           stringColumnIndices={this.stringColumnIndices}
           numberColumnIndices={this.numberColumnIndices}
+          seriesIndices={this.seriesIndices}
           stringColumnIndex={this.stringColumnIndex}
+          legendColumnIndex={this.legendColumnIndex}
           numberColumnIndex={this.numberColumnIndex}
           themeConfig={chartThemeConfig}
           // valueFormatter={formatElement}
@@ -645,7 +651,26 @@ export default class QueryOutput extends React.Component {
           //   }
           // }}
           changeStringColumnIndex={index => {
+            if (this.legendColumnIndex === index) {
+              this.legendColumnIndex = undefined
+            }
             this.stringColumnIndex = index
+
+            if (this.supportsPivot) {
+              this.generatePivotTableData()
+            }
+            this.generateChartData()
+            this.forceUpdate()
+          }}
+          changeLegendColumnIndex={index => {
+            if (this.stringColumnIndex === index) {
+              this.stringColumnIndex = undefined
+            }
+            this.legendColumnIndex = index
+
+            if (this.supportsPivot) {
+              this.generatePivotTableData()
+            }
             this.generateChartData()
             this.forceUpdate()
           }}
@@ -710,104 +735,179 @@ export default class QueryOutput extends React.Component {
     // We will usually want to take the second column because the first one
     // will most likely have all of the same value. Grab the first column only
     // if it's the only string column
-    if (!(this.stringColumnIndex >= 0)) {
-      this.stringColumnIndex =
-        allStringColumnIndices[1] || allStringColumnIndices[0]
-    }
     if (!this.stringColumnIndices) {
       this.stringColumnIndices = allStringColumnIndices
     }
+
+    if (!(this.stringColumnIndex >= 0)) {
+      this.stringColumnIndex = this.supportsPivot
+        ? this.tableColumns.findIndex(col => col.groupable)
+        : this.stringColumnIndices[1] || this.stringColumnIndices[0]
+    }
+
     if (!this.numberColumnIndices) {
-      this.numberColumnIndices = getNumberColumnIndices(this.tableColumns)
+      const columns = this.supportsPivot
+        ? this.pivotTableColumns
+        : this.tableColumns
+      this.numberColumnIndices = getNumberColumnIndices(columns)
     }
     this.numberColumnIndex = this.numberColumnIndices[0]
   }
 
-  generateChartData = data => {
+  getTooltipDataForCell = (row, columnIndex) => {
+    let tooltipElement = null
     try {
-      const columns = this.tableColumns
-      const tableData = data || this.tableData
+      const numberColumn = this.tableColumns[this.numberColumnIndex]
+      const stringColumn = this.tableColumns[this.stringColumnIndex]
 
-      this.setColumnIndices()
-
-      if (supportsRegularPivotTable(columns)) {
-        this.chartData = tableData.map(row => {
-          return {
-            origColumns: columns,
-            origRow: row,
-            labelX: row[1],
-            labelY: row[0],
-            value: Number(row[2]) || row[2],
-            formatter: (value, column) => {
-              return formatElement({
-                element: value,
-                column,
-                config: this.props.dataFormatting
-              })
-            }
+      if (this.supportsPivot) {
+        tooltipElement = `<div>
+            <div>
+              <strong>${this.pivotTableColumns[0].display_name}:</strong> ${
+          row[0]
+        }
+            </div>
+            <div><strong>${
+              this.tableColumns[this.legendColumnIndex].display_name
+            }:</strong> ${this.pivotTableColumns[columnIndex].title}
+            </div>
+            <div>
+            <div><strong>${numberColumn.display_name}:</strong> ${formatElement(
+          {
+            element: row[columnIndex] || 0,
+            column: numberColumn,
+            config: this.props.dataFormatting
           }
-        })
-      } else if (supports2DCharts(this.tableColumns)) {
-        const drilldownSupportedByAPI =
-          getNumberOfGroupables(this.tableColumns) > 0
-
-        this.chartData = Object.values(
-          tableData.reduce((chartDataObject, row) => {
-            // Loop through columns and create a series for each
-            const cells = []
-
-            this.numberColumnIndices.forEach((columnIndex, i) => {
-              const value = row[columnIndex]
-              cells.push({
-                value: Number(value) || value, // this should always be able to convert to a number
-                label: columns[columnIndex].title,
-                color: this.colorScale(i),
-                hidden: false,
-                drilldownData: {
-                  supportedByAPI: drilldownSupportedByAPI,
-                  data: [
-                    {
-                      name: columns[this.stringColumnIndex].name,
-                      value: `${row[this.stringColumnIndex]}`
-                    }
-                  ]
-                }
-              })
-            })
-
-            // Make sure the row label doesn't exist already
-            if (!chartDataObject[row[this.stringColumnIndex]]) {
-              chartDataObject[row[this.stringColumnIndex]] = {
-                origColumns: columns,
-                origRow: row,
-                label: row[this.stringColumnIndex],
-                cells,
-                formatter: (value, column) => {
-                  return formatElement({
-                    element: value,
-                    column,
-                    config: this.props.dataFormatting
-                  })
-                }
-              }
-            } else {
-              // If this label already exists, just add the values together
-              // The BE should prevent this from happening though
-              chartDataObject[
-                row[this.stringColumnIndex]
-              ].cells = chartDataObject[row[this.stringColumnIndex]].cells.map(
-                (cell, index) => {
-                  return {
-                    ...cell,
-                    value: cell.value + Number(cells[index].value)
-                  }
-                }
-              )
-            }
-            return chartDataObject
-          }, {})
-        )
+        )}
+            </div>
+          </div>`
+      } else {
+        tooltipElement = `<div>
+            <div>
+              <strong>${stringColumn.display_name}:</strong> ${formatElement({
+          element: row[this.stringColumnIndex],
+          column: stringColumn,
+          config: this.props.dataFormatting
+        })}
+            </div>
+            <div>
+            <div><strong>${numberColumn.display_name}:</strong> ${formatElement(
+          {
+            element: row[columnIndex] || 0,
+            column: numberColumn,
+            config: this.props.dataFormatting
+          }
+        )}
+            </div>
+          </div>`
       }
+      return tooltipElement
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+
+  getDrilldownDataForCell = (row, columnIndex) => {
+    const supportedByAPI = getNumberOfGroupables(this.tableColumns) > 0
+
+    if (this.supportsPivot) {
+      return {
+        supportedByAPI,
+        data: [
+          {
+            name: this.pivotTableColumns[0].name,
+            value: `${row[0]}`
+          },
+          {
+            name: this.tableColumns[this.legendColumnIndex].name,
+            value: `${this.pivotTableColumns[columnIndex].name}`
+          }
+        ]
+      }
+    } else {
+      return {
+        supportedByAPI,
+        data: [
+          {
+            name: this.tableColumns[this.stringColumnIndex].name,
+            value: `${row[this.stringColumnIndex]}`
+          }
+        ]
+      }
+    }
+  }
+
+  generateChartData = () => {
+    try {
+      this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
+      let columns = this.tableColumns
+      let tableData = this.tableData
+
+      if (this.supportsPivot) {
+        columns = this.pivotTableColumns
+        tableData = this.pivotTableData
+      }
+
+      let stringIndex = this.stringColumnIndex
+      this.seriesIndices = this.numberColumnIndices
+
+      if (this.supportsPivot) {
+        stringIndex = 0
+        this.seriesIndices = this.pivotTableColumns.map((col, i) => i)
+        this.seriesIndices.shift()
+      }
+
+      this.chartData = Object.values(
+        tableData.reduce((chartDataObject, row, rowIndex) => {
+          // Loop through columns and create a series for each
+          const cells = []
+
+          this.seriesIndices.forEach((columnIndex, i) => {
+            const value = row[columnIndex]
+            const colorScaleValue = this.supportsPivot ? columnIndex : i
+            const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
+            const tooltipData = this.getTooltipDataForCell(row, columnIndex)
+
+            cells.push({
+              value: Number(value) || value, // this should always be able to convert to a number
+              label: columns[columnIndex].title,
+              color: this.colorScale(colorScaleValue),
+              hidden: false,
+              drilldownData,
+              tooltipData
+            })
+          })
+
+          // Make sure the row label doesn't exist already
+          if (!chartDataObject[row[stringIndex]]) {
+            chartDataObject[row[stringIndex]] = {
+              origRow: row,
+              label: row[stringIndex],
+              cells,
+              formatter: (value, column) => {
+                return formatElement({
+                  element: value,
+                  column,
+                  config: this.props.dataFormatting
+                })
+              }
+            }
+          } else {
+            // If this label already exists, just add the values together
+            // The BE should prevent this from happening though
+            chartDataObject[row[stringIndex]].cells = chartDataObject[
+              row[stringIndex]
+            ].cells.map((cell, index) => {
+              return {
+                ...cell,
+                value: cell.value + Number(cells[index].value)
+              }
+            })
+          }
+          return chartDataObject
+        }, {})
+      )
     } catch (error) {
       console.error(error)
       // Something went wrong. Do not show chart options
@@ -1014,7 +1114,7 @@ export default class QueryOutput extends React.Component {
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
 
-  generateDatePivotData = newData => {
+  generateDatePivotData = () => {
     try {
       // todo: just make this from a simple array
       const uniqueMonths = {
@@ -1041,8 +1141,7 @@ export default class QueryOutput extends React.Component {
         )
       }
 
-      const tableData =
-        newData || _get(this.props.queryResponse, 'data.data.rows')
+      const tableData = _get(this.props.queryResponse, 'data.data.rows')
 
       const allYears = tableData.map(d => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
@@ -1074,6 +1173,7 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...this.tableColumns[this.numberColumnIndex],
+          origColumn: this.tableColumns[this.numberColumnIndex],
           drilldownData: [
             {
               name: this.tableColumns[dateColumnIndex].name,
@@ -1122,15 +1222,27 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = newData => {
-    const tableData =
-      newData || _get(this.props.queryResponse, 'data.data.rows')
+  generatePivotTableData = isFirstGeneration => {
+    const tableData = _get(this.props.queryResponse, 'data.data.rows')
 
-    let gColIndex0 = this.tableColumns.findIndex(col => col.groupable)
-    let gColIndex1 = this.tableColumns.findIndex(
-      (col, i) => i !== gColIndex0 && col.groupable
-    )
+    // Set the columns used for the 2 headers (ordinal and legend for charts)
+    // If one of the indices is already specified, use it
+    if (this.stringColumnIndex >= 0) {
+      this.legendColumnIndex = this.tableColumns.findIndex(
+        (col, i) => col.groupable && i !== this.stringColumnIndex
+      )
+    } else if (this.legendColumnIndex >= 0) {
+      this.stringColumnIndex = this.tableColumns.findIndex(
+        (col, i) => col.groupable && i !== this.legendColumnIndex
+      )
+    } else {
+      this.stringColumnIndex = this.tableColumns.findIndex(col => col.groupable)
+      this.legendColumnIndex = this.tableColumns.findIndex(
+        (col, i) => col.groupable && i !== this.stringColumnIndex
+      )
+    }
 
+    // Set the number type column
     if (!(this.numberColumnIndex >= 0)) {
       this.numberColumnIndex = this.tableColumns.findIndex(
         (col, index) => isColumnNumberType(col) && !col.groupable
@@ -1138,7 +1250,7 @@ export default class QueryOutput extends React.Component {
     }
 
     let uniqueValues0 = tableData
-      .map(d => d[gColIndex0])
+      .map(d => d[this.stringColumnIndex])
       .filter(onlyUnique)
       .sort()
       .reduce((map, title, i) => {
@@ -1147,7 +1259,7 @@ export default class QueryOutput extends React.Component {
       }, {})
 
     let uniqueValues1 = tableData
-      .map(d => d[gColIndex1])
+      .map(d => d[this.legendColumnIndex])
       .filter(onlyUnique)
       .sort()
       .reduce((map, title, i) => {
@@ -1156,10 +1268,13 @@ export default class QueryOutput extends React.Component {
       }, {})
 
     // Make sure the longer list is on the side, not the top
-    if (Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length) {
-      const tempCol = gColIndex0
-      gColIndex0 = gColIndex1
-      gColIndex1 = tempCol
+    if (
+      isFirstGeneration &&
+      Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length
+    ) {
+      const tempCol = this.legendColumnIndex
+      this.legendColumnIndex = this.stringColumnIndex
+      this.stringColumnIndex = tempCol
 
       const tempValues = { ...uniqueValues0 }
       uniqueValues0 = { ...uniqueValues1 }
@@ -1177,7 +1292,7 @@ export default class QueryOutput extends React.Component {
     // Generate new column array
     const pivotTableColumns = [
       {
-        ...this.tableColumns[gColIndex0],
+        ...this.tableColumns[this.stringColumnIndex],
         frozen: true,
         headerContext: undefined,
         visible: true,
@@ -1188,23 +1303,25 @@ export default class QueryOutput extends React.Component {
     Object.keys(uniqueValues1).forEach((columnName, i) => {
       const formattedColumnName = formatElement({
         element: columnName,
-        column: this.tableColumns[gColIndex1],
+        column: this.tableColumns[this.legendColumnIndex],
         config: this.props.dataFormatting
       })
       pivotTableColumns.push({
-        ...this.tableColumns[this.numberColumnIndex], // value column
+        ...this.tableColumns[this.numberColumnIndex],
+        origColumn: this.tableColumns[this.numberColumnIndex],
         drilldownData: [
           {
-            name: this.tableColumns[gColIndex0].name, // project column name
-            value: null // project column value
+            name: this.tableColumns[this.stringColumnIndex].name,
+            value: null
           },
           {
-            name: this.tableColumns[gColIndex1].name, // month column name
-            value: columnName // month column value
+            name: this.tableColumns[this.legendColumnIndex].name,
+            value: columnName
           }
         ],
         name: columnName,
         title: formattedColumnName,
+        display_name: formattedColumnName,
         field: `${i + 1}`,
         headerContext: undefined,
         visible: true
@@ -1217,11 +1334,12 @@ export default class QueryOutput extends React.Component {
     )
     tableData.forEach(row => {
       // Populate first column
-      pivotTableData[uniqueValues0[row[gColIndex0]]][0] = row[gColIndex0]
+      pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][0] =
+        row[this.stringColumnIndex]
 
       // Populate remaining columns
-      pivotTableData[uniqueValues0[row[gColIndex0]]][
-        uniqueValues1[row[gColIndex1]] + 1
+      pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][
+        uniqueValues1[row[this.legendColumnIndex]] + 1
       ] = row[this.numberColumnIndex]
     })
 

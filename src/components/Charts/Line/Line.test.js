@@ -19,8 +19,7 @@ const defaultProps = {
     yScale: scaleLinear()
       .domain([0, 100])
       .range([0, 300])
-  },
-  tooltipFormatter: () => {}
+  }
 }
 
 const setup = (props = {}, state = null) => {

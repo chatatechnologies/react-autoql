@@ -37,12 +37,12 @@
 
   &.triggered {
     .chata-notification-display-name {
-      color: var(--accent-color) !important;
+      color: var(--chata-messenger-accent-color, #26a7df) !important;
     }
 
     .chata-notification-dismiss-btn {
       margin-top: 3px;
-      color: var(--accent-color);
+      color: var(--chata-messenger-accent-color, #26a7df);
     }
 
     .chata-notification-alert-strip {
@@ -65,7 +65,7 @@
 
   .chata-notification-data-container {
     width: 100%;
-    height: 230px;
+    height: 248px;
     padding: 7px 20px;
   }
 
@@ -128,7 +128,7 @@
     position: absolute;
     top: -7px;
     left: -7px;
-    color: var(--accent-color);
+    color: var(--chata-messenger-accent-color, #26a7df);
     line-height: 10px;
     background: #fff;
     border-radius: 10px;
@@ -143,7 +143,7 @@
     top: 0;
     width: 4px;
 
-    background: var(--accent-color);
+    background: var(--chata-messenger-accent-color, #26a7df);
 
     transition-property: opacity, height;
     transition-duration: 0.2s, 0.3s;
@@ -160,7 +160,7 @@
       line-height: 45px;
       font-size: 22px;
       color: white;
-      background-color: var(--chata-messenger-accent-color);
+      background-color: var(--chata-messenger-accent-color, #26a7df);
       text-align: center;
       margin-top: 13px;
       margin-right: 17px;

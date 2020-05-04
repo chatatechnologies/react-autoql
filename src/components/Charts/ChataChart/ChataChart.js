@@ -96,6 +96,7 @@ export default class ChataChart extends Component {
     }
 
     if (
+      this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
       this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
       this.props.numberColumnIndices != prevProps.numberColumnIndices
     ) {
@@ -113,9 +114,9 @@ export default class ChataChart extends Component {
   }
 
   setNumberColumnSelectorState = () => {
-    const { columns, numberColumnIndices } = this.props
+    const { tableColumns, numberColumnIndices } = this.props
 
-    if (!columns || !numberColumnIndices) {
+    if (!tableColumns || !numberColumnIndices) {
       return
     }
 
@@ -123,7 +124,7 @@ export default class ChataChart extends Component {
     const quantityItems = []
     const ratioItems = []
 
-    columns.forEach((col, i) => {
+    tableColumns.forEach((col, i) => {
       const item = {
         content: col.display_name,
         checked: numberColumnIndices.includes(i),
@@ -140,7 +141,7 @@ export default class ChataChart extends Component {
     })
 
     this.setState({
-      activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
+      activeNumberType: _get(tableColumns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
       ratioSelectorState: ratioItems
@@ -266,76 +267,6 @@ export default class ChataChart extends Component {
       console.error(error)
     }
   }
-
-  tooltipFormatter2D = (data, colIndex) => {
-    const { columns, stringColumnIndex, numberColumnIndices } = this.props
-    const labelCol = columns[stringColumnIndex]
-    const valueCols = columns.filter((col, i) =>
-      numberColumnIndices.includes(i)
-    ) // Supports multi-series
-
-    if (!labelCol || !valueCols || !(colIndex >= 0)) {
-      return null
-    }
-
-    try {
-      const tooltipElement = `<div>
-      <div>
-        <strong>${labelCol.title}:</strong> ${formatElement({
-        element: data.label,
-        column: labelCol,
-        config: this.props.dataFormatting
-      })}
-      </div>
-      <div><strong>${valueCols[colIndex].title}:</strong> ${formatElement({
-        element: data.cells[colIndex].value,
-        column: valueCols[colIndex],
-        config: this.props.dataFormatting
-      })}
-      </div>
-    </div>`
-      return tooltipElement
-    } catch (error) {
-      console.error(error)
-      return null
-    }
-  }
-
-  tooltipFormatter3D = data => {
-    const { columns } = this.props
-    const labelColX = columns[1]
-    const labelColY = columns[0]
-    const valueCol = columns[2] // Only one value - does not support multi-series
-
-    if (!labelColX || !labelColY || !valueCol) {
-      return null
-    }
-
-    return `<div>
-    <div>
-      <strong>${labelColY.title}:</strong> ${formatElement({
-      element: data.labelY,
-      column: labelColY,
-      config: this.props.dataFormatting
-    })}
-    </div>
-    <div>
-      <strong>${labelColX.title}:</strong> ${formatElement({
-      element: data.labelX,
-      column: labelColX,
-      config: this.props.dataFormatting
-    })}
-    </div>
-    <div>
-      <strong>${valueCol.title}:</strong> ${formatElement({
-      element: data.value,
-      column: valueCol,
-      config: this.props.dataFormatting
-    })}
-    </div>
-  </div>`
-  }
-
   saveAsPNG = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
@@ -367,6 +298,16 @@ export default class ChataChart extends Component {
   }
 
   getNumberAxisTitle = () => {
+    if (
+      this.props.type === 'stacked_bar' ||
+      this.props.type === 'stacked_column'
+    ) {
+      return _get(
+        this.props.tableColumns,
+        `[${this.props.numberColumnIndex}].display_name`
+      )
+    }
+
     if (_get(this.props.numberColumnIndices, 'length', 0) <= 1) {
       return undefined
     }
@@ -417,7 +358,8 @@ export default class ChataChart extends Component {
       stringColumnIndices,
       numberColumnIndex,
       numberColumnIndices,
-      enableDynamicCharting
+      enableDynamicCharting,
+      legendColumnIndex
     } = this.props
 
     const filteredSeriesData = this.getFilteredSeriesData(data)
@@ -481,6 +423,12 @@ export default class ChataChart extends Component {
       legendLocation: getLegendLocation(
         this.props.numberColumnIndices,
         this.props.type
+      ),
+      legendColumn: this.props.tableColumns[legendColumnIndex],
+      legendLabels: getLegendLabelsForMultiSeries(
+        this.props.columns,
+        this.colorScale,
+        this.props.seriesIndices
       )
     }
   }
@@ -532,7 +480,7 @@ export default class ChataChart extends Component {
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.columns, `[${colIndex}].display_name`)}
+                {_get(this.props.tableColumns, `[${colIndex}].display_name`)}
               </li>
             )
           })}
@@ -687,15 +635,15 @@ export default class ChataChart extends Component {
             return (
               <li
                 className={`string-select-list-item ${
-                  colIndex === this.props.stringColumnIndex ? 'active' : ''
+                  colIndex === this.props.legendColumnIndex ? 'active' : ''
                 }`}
                 key={uuid.v4()}
                 onClick={() => {
-                  // this.props.changeStringColumnIndex(colIndex)
+                  this.props.changeLegendColumnIndex(colIndex)
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.columns, `[${colIndex}].display_name`)}
+                {_get(this.props.tableColumns, `[${colIndex}].display_name`)}
               </li>
             )
           })}
@@ -709,10 +657,12 @@ export default class ChataChart extends Component {
       const { type } = this.props
       let content = null
 
-      const hasNumberXAxis = type === 'bar'
-      const hasStringYAxis = type === 'bar'
-      const hasStringXAxis = type === 'column' || type === 'line'
-      const hasNumberYAxis = type === 'column' || type === 'line'
+      const hasNumberXAxis = type === 'bar' || type === 'stacked_bar'
+      const hasStringYAxis = type === 'bar' || type === 'stacked_bar'
+      const hasStringXAxis =
+        type === 'column' || type === 'line' || type === 'stacked_column'
+      const hasNumberYAxis =
+        type === 'column' || type === 'line' || type === 'stacked_column'
 
       if (
         (axis === 'x' && hasStringXAxis) ||
@@ -797,44 +747,15 @@ export default class ChataChart extends Component {
   }
 
   renderColumnChart = () => (
-    <ChataColumnChart
-      {...this.getCommonChartProps()}
-      labelValue="label"
-      tooltipFormatter={this.tooltipFormatter2D}
-      legendLabels={getLegendLabelsForMultiSeries(
-        this.props.columns,
-        this.colorScale,
-        this.props.numberColumnIndices
-      )}
-    />
+    <ChataColumnChart {...this.getCommonChartProps()} labelValue="label" />
   )
 
   renderBarChart = () => {
-    return (
-      <ChataBarChart
-        {...this.getCommonChartProps()}
-        labelValue="label"
-        tooltipFormatter={this.tooltipFormatter2D}
-        legendLabels={getLegendLabelsForMultiSeries(
-          this.props.columns,
-          this.colorScale,
-          this.props.numberColumnIndices
-        )}
-      />
-    )
+    return <ChataBarChart {...this.getCommonChartProps()} labelValue="label" />
   }
 
   renderLineChart = () => (
-    <ChataLineChart
-      {...this.getCommonChartProps()}
-      labelValue="label"
-      tooltipFormatter={this.tooltipFormatter2D}
-      legendLabels={getLegendLabelsForMultiSeries(
-        this.props.columns,
-        this.colorScale,
-        this.props.numberColumnIndices
-      )}
-    />
+    <ChataLineChart {...this.getCommonChartProps()} labelValue="label" />
   )
 
   renderPieChart = () => {
@@ -845,41 +766,6 @@ export default class ChataChart extends Component {
         {...this.getCommonChartProps()}
         labelValue="label"
         backgroundColor={this.props.backgroundColor}
-        tooltipFormatter={d => {
-          const { columns } = this.props
-          const label = _get(d, `data.value.label`)
-          const value = _get(d, 'value')
-
-          if (!label || !value) {
-            return null
-          }
-
-          try {
-            const tooltipElement = `<div>
-          <div>
-            <strong>${
-              columns[stringColumnIndex].title
-            }:</strong> ${formatElement({
-              element: label,
-              column: columns[stringColumnIndex],
-              config: this.props.dataFormatting
-            })}
-          </div>
-          <div><strong>${
-            columns[numberColumnIndex].title
-          }:</strong> ${formatElement({
-              element: value,
-              column: columns[numberColumnIndex],
-              config: this.props.dataFormatting
-            })}
-          </div>
-        </div>`
-            return tooltipElement
-          } catch (error) {
-            console.error(error)
-            return null
-          }
-        }}
       />
     )
   }
@@ -890,7 +776,6 @@ export default class ChataChart extends Component {
       dataValue="value"
       labelValueX="labelX"
       labelValueY="labelY"
-      tooltipFormatter={this.tooltipFormatter3D}
     />
   )
 
@@ -900,28 +785,15 @@ export default class ChataChart extends Component {
       dataValue="value"
       labelValueX="labelX"
       labelValueY="labelY"
-      tooltipFormatter={this.tooltipFormatter3D}
     />
   )
 
   renderStackedColumnChart = () => (
-    <ChataStackedColumnChart
-      {...this.getCommonChartProps()}
-      dataValue="value"
-      labelValueX="labelX"
-      labelValueY="labelY"
-      tooltipFormatter={this.tooltipFormatter3D}
-    />
+    <ChataStackedColumnChart {...this.getCommonChartProps()} />
   )
 
   renderStackedBarChart = () => (
-    <ChataStackedBarChart
-      {...this.getCommonChartProps()}
-      dataValue="value"
-      labelValueX="labelY"
-      labelValueY="labelX"
-      tooltipFormatter={this.tooltipFormatter3D}
-    />
+    <ChataStackedBarChart {...this.getCommonChartProps()} />
   )
 
   render = () => {

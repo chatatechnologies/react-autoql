@@ -6,7 +6,6 @@ export default class Bars extends Component {
   static propTypes = {
     data: PropTypes.array.isRequired,
     scales: PropTypes.shape({}).isRequired,
-    tooltipFormatter: PropTypes.func.isRequired,
     labelValue: PropTypes.string.isRequired
   }
 
@@ -67,7 +66,7 @@ export default class Bars extends Component {
               width={Math.abs(this.X(d, i) - this.X0())}
               height={barHeight}
               onClick={() => this.onBarClick(d, i)}
-              data-tip={this.props.tooltipFormatter(d, i)}
+              data-tip={_get(d, `cells[${i}].tooltipData`)}
               data-for="chart-element-tooltip"
               style={{ fill: d.cells[i].color, fillOpacity: 0.7 }}
             />

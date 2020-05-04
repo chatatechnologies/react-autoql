@@ -21,6 +21,7 @@ export default class Axis extends Component {
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
+    columns: PropTypes.arrayOf(PropTypes.shape()).isRequired,
     onChartClick: PropTypes.func,
     margin: PropTypes.number,
     backgroundColor: PropTypes.string,
@@ -133,7 +134,7 @@ export default class Axis extends Component {
       })
       .attr('data-for', 'chart-element-tooltip')
       .attr('data-tip', function(d) {
-        return self.props.tooltipFormatter(d)
+        return _get(d, 'data.value.cells[0].tooltipData')
       })
       .style('fill-opacity', 0.85)
       .attr('stroke-width', '0.5px')
@@ -213,10 +214,10 @@ export default class Axis extends Component {
     this.legendLabels = this.sortedData.map(d => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
-        column: _get(d, `origColumns[${stringColumnIndex}]`)
+        column: _get(this.props, `columns[${stringColumnIndex}]`)
       })}: ${formatElement({
         element: d.cells[0].value || 0,
-        column: _get(d, `origColumns[${numberColumnIndex}]`),
+        column: _get(this.props, `columns[${numberColumnIndex}]`),
         config: this.props.dataFormatting
       })}`
       return {

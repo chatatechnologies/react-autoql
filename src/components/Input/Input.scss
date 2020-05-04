@@ -42,11 +42,11 @@
 
   &:hover .chata-input,
   .chata-input:focus {
-    border-color: var(--chata-messenger-accent-color);
+    border-color: var(--chata-messenger-accent-color, #26a7df);
   }
   &:hover .chata-input-icon,
   .chata-input-icon.focus {
     opacity: 1;
-    color: var(--chata-messenger-accent-color);
+    color: var(--chata-messenger-accent-color, #26a7df);
   }
 }

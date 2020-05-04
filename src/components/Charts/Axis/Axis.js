@@ -133,15 +133,15 @@ export default class Axis extends Component {
           self.props.onLegendClick(d)
         })
 
-      // if (this.props.legendTitle) {
-      //   legendOrdinal.title(this.props.legendTitle).titleWidth(100)
-      // }
+      if (this.props.legendTitle) {
+        legendOrdinal.title(this.props.legendTitle).titleWidth(100)
+      }
 
       svg.call(legendOrdinal).style('font-family', 'inherit')
 
-      // if (this.props.legendTitle) {
-      //   this.styleLegendTitle(svg)
-      // }
+      if (this.props.legendTitle) {
+        this.styleLegendTitle(svg)
+      }
     } else if (this.props.hasBottomLegend) {
       const svg = select(this.bottomLegendElement)
       svg

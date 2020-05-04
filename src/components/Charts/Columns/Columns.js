@@ -64,7 +64,7 @@ export default class Columns extends Component {
               height={Math.abs(this.Y(d, i) - this.Y0())}
               width={barWidth}
               onClick={() => this.onColumnClick(d, i)}
-              data-tip={this.props.tooltipFormatter(d, i)}
+              data-tip={_get(d, `cells[${i}].tooltipData`)}
               data-for="chart-element-tooltip"
               style={{ fill: d.cells[i].color, fillOpacity: 0.7 }}
             />

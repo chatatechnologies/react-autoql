@@ -22,8 +22,7 @@ const defaultProps = {
       .range([0, 200])
       .paddingInner(0.1)
   },
-  chartColors: ['#fff'],
-  tooltipFormatter: () => {}
+  chartColors: ['#fff']
 }
 
 const setup = (props = {}, state = null) => {

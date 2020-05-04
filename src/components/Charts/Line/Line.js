@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import _get from 'lodash.get'
 
 export default class Line extends Component {
   static propTypes = {}
@@ -79,7 +80,7 @@ export default class Line extends Component {
             cx={xScale(d[labelValue]) + xShift}
             r={3}
             onClick={() => this.onDotClick(d, series)}
-            data-tip={this.props.tooltipFormatter(d, series)}
+            data-tip={_get(d, `cells[${series}].tooltipData`)}
             data-for="chart-element-tooltip"
             style={{
               cursor: 'pointer',

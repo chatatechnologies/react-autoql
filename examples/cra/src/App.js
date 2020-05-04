@@ -241,13 +241,16 @@ export default class App extends Component {
   }
 
   fetchNotificationData = notificationId => {
-    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}`
+    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${
+      this.state.apiKey
+    }`
     const token = getStoredProp('jwtToken')
 
     const config = {}
     if (token) {
       config.headers = {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        'Integrator-Domain': this.state.domain
       }
     }
 
@@ -264,13 +267,17 @@ export default class App extends Component {
         if (
           !response ||
           !response.data ||
-          !response.data.queryResult ||
-          !response.data.queryResultdata ||
-          response.data.queryResult.data.display_type !== 'data'
+          !response.data.query_result ||
+          !response.data.query_result.data ||
+          response.data.query_result.data.display_type !== 'data'
         ) {
           return Promise.reject()
         }
-        return Promise.resolve(response)
+        const newResponse = {
+          ...response,
+          data: response.data.query_result
+        }
+        return Promise.resolve(newResponse)
       })
       .catch(error => {
         return Promise.reject(error)
@@ -373,7 +380,7 @@ export default class App extends Component {
     }
 
     const baseUrl = getBaseUrl()
-    let url = `${baseUrl}/api/v1/jwt?user_id=${this.state.userId}&project_id=${this.state.customerId}`
+    let url = `${baseUrl}/api/v1/jwt?display_name=${this.state.userId}&project_id=${this.state.customerId}`
 
     // Use login token to get JWT token
     const jwtResponse = await axios.get(url, {
@@ -567,15 +574,21 @@ export default class App extends Component {
   }
 
   resetDashboard = () => {
-    const newDashboardTiles = this.state.dashboardTiles.map(tile => {
-      return {
-        ...tile,
-        queryResponse: undefined,
-        secondQueryResponse: undefined
-      }
-    })
+    try {
+      if (this.state.dashboardTiles) {
+        const newDashboardTiles = this.state.dashboardTiles.map(tile => {
+          return {
+            ...tile,
+            queryResponse: undefined,
+            secondQueryResponse: undefined
+          }
+        })
 
-    this.setState({ dashboardTiles: newDashboardTiles })
+        this.setState({ dashboardTiles: newDashboardTiles })
+      }
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   getIntroMessageTopics = () => {
@@ -840,9 +853,9 @@ export default class App extends Component {
             />
           </Form.Item>
           <Form.Item
-            label="User ID"
+            label="User Email"
             name="userId"
-            rules={[{ required: true, message: 'Please enter your user ID' }]}
+            rules={[{ required: true, message: 'Please enter your email' }]}
           >
             <Input
               name="user-id"
@@ -1520,8 +1533,6 @@ export default class App extends Component {
       activeNotificationContent: null,
       isFetchingNotificationContent: true
     })
-
-    console.log(notification)
 
     // this.executeQuery(notification.query)
     this.fetchNotificationData(notification.id)

@@ -121,8 +121,6 @@
   padding: 0;
 }
 .chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
-  cursor: move;
-
   .layout-splitter {
     display: block;
     pointer-events: unset;
@@ -191,7 +189,6 @@
   padding: 20px 23px 0 30px;
   flex-shrink: 0;
   flex-grow: 0;
-  cursor: move;
 }
 
 .dashboard-tile-play-button {
