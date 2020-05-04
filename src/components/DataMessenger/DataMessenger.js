@@ -190,6 +190,17 @@ export default class DataMessenger extends React.Component {
   }
 
   createTopicsMessage = () => {
+    const topics = this.props.introMessageTopics.map(topic => {
+      return {
+        label: topic.topic,
+        value: uuid.v4(),
+        children: topic.queries.map(query => ({
+          label: query,
+          value: uuid.v4()
+        }))
+      }
+    })
+
     try {
       const content = (
         <div>
@@ -198,7 +209,7 @@ export default class DataMessenger extends React.Component {
           <div className="topics-container">
             {
               <Cascader
-                options={this.props.introMessageTopics}
+                options={topics}
                 onFinalOptionClick={option => {
                   this.onSuggestionClick(
                     option.label,
@@ -240,7 +251,10 @@ export default class DataMessenger extends React.Component {
       })
     ]
 
-    if (!this.props.introMessage && this.props.introMessageTopics) {
+    if (
+      !this.props.introMessage &&
+      _get(this.props.introMessageTopics, 'length')
+    ) {
       const topicsMessageContent = this.createTopicsMessage()
 
       if (topicsMessageContent) {

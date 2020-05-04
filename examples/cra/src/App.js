@@ -9,8 +9,7 @@ import {
   NotificationButton,
   NotificationList,
   NotificationSettings,
-  Icon as ChataIcon,
-  getSupportedDisplayTypes
+  Icon as ChataIcon
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -40,6 +39,8 @@ import {
   RollbackOutlined,
   SaveOutlined
 } from '@ant-design/icons'
+
+import topics from './topics.js'
 
 import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
@@ -468,7 +469,9 @@ export default class App extends Component {
     } else if (domain.includes('lefort')) {
       return 'lefort'
     } else if (domain.includes('nbccontest')) {
-      return 'nb-comp'
+      return 'nbcomp'
+    } else if (domain.includes('vitruvi')) {
+      return 'vitruvi'
     }
   }
 
@@ -592,177 +595,7 @@ export default class App extends Component {
   }
 
   getIntroMessageTopics = () => {
-    if (this.state.activeIntegrator === 'spira') {
-      return [
-        {
-          label: 'Jobs',
-          value: 'jobs',
-          children: [
-            {
-              label: 'All jobs scheduled start date next year',
-              value: 'all-jobs'
-            },
-            {
-              label: 'All open jobs with scheduled end date for this year',
-              value: 'total-jobs'
-            },
-            {
-              label: 'All jobs in bid status',
-              value: 'total-jobs-by-status'
-            }
-          ]
-        },
-        {
-          label: 'Tickets',
-          value: 'tickets',
-          children: [
-            {
-              label: 'Total tickets in 2019 by month',
-              value: 'total-tickets'
-            },
-            {
-              label: 'Total tickets by customer this month',
-              value: 'tickets-2019'
-            },
-            {
-              label: 'List void tickets scheduled for end of this year',
-              value: 'tickets-void'
-            }
-          ]
-        },
-        {
-          label: 'Estimates',
-          value: 'estimates',
-          children: [
-            {
-              label: 'Estimates by area last year',
-              value: 'total-estimates'
-            },
-            {
-              label: 'Total estimated cost by year last 3 years',
-              value: 'estimates-by-year'
-            },
-            {
-              label: 'Show void estimates over 10000',
-              value: 'estimates-over-10000'
-            }
-          ]
-        },
-        {
-          label: 'Revenue',
-          value: 'revenue',
-          children: [
-            {
-              label: 'Total revenue this year',
-              value: 'revenue-this-year'
-            },
-            {
-              label: 'Total revenue by item this month',
-              value: 'revenue-this-month'
-            },
-            {
-              label: 'Total revenue by area last year',
-              value: 'revenue-2019'
-            }
-          ]
-        },
-        {
-          label: 'Utilization',
-          value: 'Utilization',
-          children: [
-            {
-              label: 'Total hours utilization by personnel last month',
-              value: 'personnel'
-            },
-            {
-              label: 'Total utilization by resource this month',
-              value: 'resource'
-            },
-            {
-              label: 'Total personnel hours by area this year',
-              value: 'customer'
-            }
-          ]
-        }
-      ]
-    } else if (this.state.activeIntegrator === 'locate') {
-      return [
-        {
-          label: 'Sales',
-          value: 'jobs',
-          children: [
-            {
-              label: 'Total sales by state last year',
-              value: 'all-jobs'
-            },
-            {
-              label: 'Average sales by month last year',
-              value: 'total-jobs'
-            },
-            {
-              label: 'Total sales by customer this year',
-              value: 'total-jobs-by-status'
-            }
-          ]
-        },
-        {
-          label: 'Purchase Orders',
-          value: 'tickets',
-          children: [
-            {
-              label: 'Last purchase order over 10000',
-              value: 'total-tickets'
-            },
-            {
-              label: 'Total purchase orders by vendor this year',
-              value: 'tickets-2019'
-            },
-            {
-              label: 'All unissued purchase orders from last year',
-              value: 'tickets-void'
-            }
-          ]
-        },
-        {
-          label: 'Parts',
-          value: 'estimates',
-          children: [
-            {
-              label: 'Top 5 parts by sales order',
-              value: 'total-estimates'
-            },
-            {
-              label: 'Show me all parts expiring this year',
-              value: 'estimates-by-year'
-            },
-            {
-              label: 'All parts priced below last cost',
-              value: 'estimates-over-10000'
-            }
-          ]
-        },
-        {
-          label: 'Margins',
-          value: 'revenue',
-          children: [
-            {
-              label: 'Gross margin by part this year',
-              value: 'revenue-this-year'
-            },
-            {
-              label: 'Gross margin by customer last year',
-              value: 'revenue-this-month'
-            },
-            {
-              label: 'Gross margin by invoice this year',
-              value: 'revenue-2019'
-            }
-          ]
-        }
-      ]
-    }
-
-    return undefined
+    return topics[this.state.activeIntegrator]
   }
 
   renderChartColorsList = () => {
