@@ -481,17 +481,31 @@ export default class QueryOutput extends React.Component {
         }
       })
 
-      const newColumns = this.tableColumns.map(col => {
-        if (col.title === d) {
-          return {
-            ...col,
-            isSeriesHidden: !col.isSeriesHidden
+      let newColumns = []
+      if (this.supportsPivot) {
+        newColumns = this.pivotTableColumns.map(col => {
+          if (col.title === d) {
+            return {
+              ...col,
+              isSeriesHidden: !col.isSeriesHidden
+            }
           }
-        }
-        return col
-      })
+          return col
+        })
+        this.pivotTableColumns = newColumns
+      } else {
+        newColumns = this.tableColumns.map(col => {
+          if (col.title === d) {
+            return {
+              ...col,
+              isSeriesHidden: !col.isSeriesHidden
+            }
+          }
+          return col
+        })
+        this.tableColumns = newColumns
+      }
 
-      this.tableColumns = newColumns
       this.chartData = newChartData
     }
 
@@ -1545,7 +1559,9 @@ export default class QueryOutput extends React.Component {
           key={this.COMPONENT_KEY}
           id={`chata-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
-          className="chata-response-content-container"
+          className={`chata-response-content-container ${
+            isTableType(this.state.displayType) ? 'table' : ''
+          }`}
           // style={{ ...style }}
         >
           {this.renderResponse(width, height)}

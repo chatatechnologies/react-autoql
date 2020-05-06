@@ -246,23 +246,27 @@ export default class ChataChart extends Component {
 
   updateMargins = (delay = 0) => {
     try {
-      setTimeout(() => {
-        const newLeftMargin = this.getNewLeftMargin()
-        const newTopMargin = this.getNewTopMargin()
-        this.setState({
+      // keep these comments we might have to change it back
+      // setTimeout(() => {
+      const newLeftMargin = this.getNewLeftMargin()
+      const newTopMargin = this.getNewTopMargin()
+      this.setState(
+        {
           ...newLeftMargin,
           ...newTopMargin
-        })
-      }, delay)
-
-      setTimeout(() => {
-        const newRightMargin = this.getNewRightMargin()
-        const newBottomMargin = this.getNewBottomMargin()
-        this.setState({
-          ...newRightMargin,
-          ...newBottomMargin
-        })
-      }, delay)
+        },
+        () => {
+          const newRightMargin = this.getNewRightMargin()
+          const newBottomMargin = this.getNewBottomMargin()
+          this.setState({
+            ...newRightMargin,
+            ...newBottomMargin
+          })
+        }
+      )
+      // }, delay)
+      // setTimeout(() => {
+      // }, delay)
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)

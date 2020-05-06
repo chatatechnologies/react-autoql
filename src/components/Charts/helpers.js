@@ -90,3 +90,36 @@ export const getLegendLocation = (seriesArray, displayType) => {
   }
   return undefined
 }
+
+export const doesElementOverflowContainer = (element, container) => {
+  const elementBBox = element.getBBox()
+  const containerBBox = container.getBBox()
+
+  // intersects top
+  if (elementBBox.y < containerBBox.y) {
+    return true
+  }
+
+  // intersects bottom
+  if (
+    elementBBox.y + elementBBox.height <
+    containerBBox.y + containerBBox.height
+  ) {
+    return true
+  }
+
+  // intersects left
+  if (elementBBox.x < containerBBox.x) {
+    return true
+  }
+
+  // intersects right
+  if (
+    elementBBox.x + elementBBox.width <
+    containerBBox.x + containerBBox.width
+  ) {
+    return true
+  }
+
+  return false
+}

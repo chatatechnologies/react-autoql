@@ -8,13 +8,13 @@
   font-size: 14px;
   height: 100%;
   width: 100%;
-  max-height: 100vh !important; // this safetynet forces progressive rendering
   overflow: hidden;
 }
 
-// .chata-suggestions-container {
-//   margin-top: 5px;
-// }
+.chata-response-content-container.table {
+  max-height: 100vh !important; // this safetynet forces progressive rendering
+}
+
 .chata-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
