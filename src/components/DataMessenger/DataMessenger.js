@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 // import { throttle, debounce } from 'throttle-debounce'
 
 import {
@@ -117,6 +118,8 @@ export default class DataMessenger extends React.Component {
   }
 
   state = {
+    hasError: false,
+
     activePage: 'messenger',
     width: this.props.width,
     height: this.props.height,
@@ -134,44 +137,59 @@ export default class DataMessenger extends React.Component {
   }
 
   componentDidMount = () => {
-    this.setStyles()
-    this.setintroMessages()
+    try {
+      this.setStyles()
+      this.setintroMessages()
 
-    // Listen for esc press to cancel queries while they are running
-    document.addEventListener('keydown', this.escFunction, false)
+      // Listen for esc press to cancel queries while they are running
+      document.addEventListener('keydown', this.escFunction, false)
 
-    // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-    setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 100)
+      // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
+      setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, 100)
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
+    }
   }
 
   componentDidUpdate = prevProps => {
-    setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 1000)
-    if (this.props.isVisible && !prevProps.isVisible) {
-      if (this.queryInputRef) {
-        this.queryInputRef.focus()
+    try {
+      setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, 1000)
+      if (this.props.isVisible && !prevProps.isVisible) {
+        if (this.queryInputRef) {
+          this.queryInputRef.focus()
+        }
       }
-    }
-    if (
-      !this.props.isVisible &&
-      prevProps.isVisible &&
-      this.props.clearOnClose
-    ) {
-      this.clearMessages()
-    }
+      if (
+        !this.props.isVisible &&
+        prevProps.isVisible &&
+        this.props.clearOnClose
+      ) {
+        this.clearMessages()
+      }
 
-    const thisTheme = this.props.themeConfig.theme
-    const prevTheme = prevProps.themeConfig.theme
-    if (thisTheme && thisTheme !== prevTheme) {
-      this.setStyles()
+      const thisTheme = this.props.themeConfig.theme
+      const prevTheme = prevProps.themeConfig.theme
+      if (thisTheme && thisTheme !== prevTheme) {
+        this.setStyles()
+      }
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
     }
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.escFunction, false)
+    try {
+      document.removeEventListener('keydown', this.escFunction, false)
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
+    }
   }
 
   escFunction = event => {
@@ -1011,37 +1029,43 @@ export default class DataMessenger extends React.Component {
   }
 
   render = () => {
+    if (this.state.hasError) {
+      return null
+    }
+
     return (
-      <Fragment>
-        {this.renderTooltips()}
-        <Drawer
-          data-test="chata-drawer-test"
-          className={`chata-drawer${
-            this.state.isResizing ? ' disable-selection' : ''
-          }`}
-          open={this.props.isVisible}
-          showMask={this.props.showMask}
-          placement={this.getPlacementProp()}
-          width={this.getDrawerWidth()}
-          height={this.getDrawerHeight()}
-          onMaskClick={this.handleMaskClick}
-          onHandleClick={this.props.onHandleClick}
-          afterVisibleChange={this.props.onVisibleChange}
-          handler={this.getHandlerProp()}
-          level={this.props.shiftScreen ? 'all' : null}
-          keyboard={false}
-          // onKeyDown={this.escFunction}
-        >
-          {this.props.resizable && this.renderResizeHandle()}
-          {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
-          <div className="chata-drawer-content-container">
-            <div className="chat-header-container">
-              {this.renderHeaderContent()}
+      <ErrorBoundary>
+        <Fragment>
+          {this.renderTooltips()}
+          <Drawer
+            data-test="chata-drawer-test"
+            className={`chata-drawer${
+              this.state.isResizing ? ' disable-selection' : ''
+            }`}
+            open={this.props.isVisible}
+            showMask={this.props.showMask}
+            placement={this.getPlacementProp()}
+            width={this.getDrawerWidth()}
+            height={this.getDrawerHeight()}
+            onMaskClick={this.handleMaskClick}
+            onHandleClick={this.props.onHandleClick}
+            afterVisibleChange={this.props.onVisibleChange}
+            handler={this.getHandlerProp()}
+            level={this.props.shiftScreen ? 'all' : null}
+            keyboard={false}
+            // onKeyDown={this.escFunction}
+          >
+            {this.props.resizable && this.renderResizeHandle()}
+            {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
+            <div className="chata-drawer-content-container">
+              <div className="chat-header-container">
+                {this.renderHeaderContent()}
+              </div>
+              {this.renderBodyContent()}
             </div>
-            {this.renderBodyContent()}
-          </div>
-        </Drawer>
-      </Fragment>
+          </Drawer>
+        </Fragment>
+      </ErrorBoundary>
     )
   }
 }

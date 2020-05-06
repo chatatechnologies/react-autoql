@@ -30,6 +30,10 @@
   fill-opacity: 1 !important;
 }
 
+.chata-chart-container .vertex-dot:hover {
+  opacity: 1 !important;
+}
+
 .chata-chart-container .bar.active,
 /* .chata-chart-container .line-dot.active, */
 .chata-chart-container .stacked-bar.active {

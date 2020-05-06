@@ -73,6 +73,7 @@ so we dont have to redraw the whole table */
   border-radius: 6px;
   line-height: 28px;
   border: 1px solid var(--chata-messenger-border-color);
+  color: var(--chata-messenger-accent-color);
 }
 .chat-message-toolbar.right {
   right: -9px;
@@ -110,7 +111,6 @@ so we dont have to redraw the whole table */
 }
 
 .interpretation-icon {
-  color: var(--chata-messenger-text-color-primary);
   vertical-align: top;
   height: 26px;
   margin: 0 3px;

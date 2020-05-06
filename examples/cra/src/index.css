@@ -37,12 +37,16 @@ body {
   background-image: url("./purefacts_ui.png");
 }
 
-.ui-overlay.qbo-demo {
+.ui-overlay.qbo {
   background-image: url("./qbo_demo_ui.png");
 }
 
 .ui-overlay.spira {
   background-image: url("./spira_ui2.png");
+}
+
+.ui-overlay.vitruvi {
+  background-image: url("./vitruvi_ui.png");
 }
 
 /* .ui-overlay.sage-demo {

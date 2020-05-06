@@ -19,10 +19,7 @@ export const CHART_TYPES = [
   'pie',
   'stacked_bar',
   'stacked_column',
-  'word_cloud',
-  'contrast_bar',
-  'contrast_column',
-  'contrast_line'
+  'stacked_line'
 ]
 
 export const CONTRAST_TYPES = ['compare_table', 'compare_table_budget']

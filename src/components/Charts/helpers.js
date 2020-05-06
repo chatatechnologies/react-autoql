@@ -79,7 +79,8 @@ export const getLegendLocation = (seriesArray, displayType) => {
     return undefined
   } else if (
     displayType === 'stacked_column' ||
-    displayType === 'stacked_bar'
+    displayType === 'stacked_bar' ||
+    displayType === 'stacked_line'
   ) {
     return 'right'
   } else if (_get(seriesArray, 'length') > 3) {

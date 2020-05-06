@@ -45,6 +45,7 @@ import topics from './topics.js'
 import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
 import spiraLogo from './spira-logo.png'
+import vitruviLogo from './vitruvi_logo.png'
 
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/autoql.esm.css'
@@ -128,7 +129,7 @@ export default class App extends Component {
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
-    width: 2000,
+    width: 550,
     title: 'Data Messenger',
     lightAccentColor: '#26a7df',
     // lightAccentColor: '#2466AE',
@@ -1075,24 +1076,17 @@ export default class App extends Component {
 
   renderDataMessenger = () => {
     let handleImage
-    if (
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'purefacts' &&
-      !this.state.demo
-    ) {
-      handleImage = purefactsLogo
-    } else if (
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'locate' &&
-      !this.state.demo
-    ) {
-      handleImage = locateLogo
-    } else if (
-      this.state.isAuthenticated &&
-      this.state.activeIntegrator === 'spira' &&
-      !this.state.demo
-    ) {
-      handleImage = spiraLogo
+    if (this.state.isAuthenticated) {
+      const { activeIntegrator } = this.state
+      if (activeIntegrator === 'purefacts') {
+        handleImage = purefactsLogo
+      } else if (activeIntegrator === 'locate') {
+        handleImage = locateLogo
+      } else if (activeIntegrator === 'spira') {
+        handleImage = spiraLogo
+      } else if (activeIntegrator === 'vitruvi') {
+        handleImage = vitruviLogo
+      }
     }
 
     return (
@@ -1489,6 +1483,11 @@ export default class App extends Component {
     // Spira
     if (this.state.activeIntegrator === 'spira') {
       return <div className="ui-overlay spira" />
+    }
+
+    // Vitruvi
+    if (this.state.activeIntegrator === 'vitruvi') {
+      return <div className="ui-overlay vitruvi" />
     }
   }
 

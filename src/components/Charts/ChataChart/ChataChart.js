@@ -24,6 +24,7 @@ import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
 import Popover from 'react-tiny-popover'
+import { ChataStackedLineChart } from '../ChataStackedLineChart'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -300,7 +301,8 @@ export default class ChataChart extends Component {
   getNumberAxisTitle = () => {
     if (
       this.props.type === 'stacked_bar' ||
-      this.props.type === 'stacked_column'
+      this.props.type === 'stacked_column' ||
+      this.props.type === 'stacked_line'
     ) {
       return _get(
         this.props.tableColumns,
@@ -660,9 +662,15 @@ export default class ChataChart extends Component {
       const hasNumberXAxis = type === 'bar' || type === 'stacked_bar'
       const hasStringYAxis = type === 'bar' || type === 'stacked_bar'
       const hasStringXAxis =
-        type === 'column' || type === 'line' || type === 'stacked_column'
+        type === 'column' ||
+        type === 'line' ||
+        type === 'stacked_column' ||
+        type === 'stacked_line'
       const hasNumberYAxis =
-        type === 'column' || type === 'line' || type === 'stacked_column'
+        type === 'column' ||
+        type === 'line' ||
+        type === 'stacked_column' ||
+        type === 'stacked_line'
 
       if (
         (axis === 'x' && hasStringXAxis) ||
@@ -796,6 +804,10 @@ export default class ChataChart extends Component {
     <ChataStackedBarChart {...this.getCommonChartProps()} />
   )
 
+  renderStackedLineChart = () => (
+    <ChataStackedLineChart {...this.getCommonChartProps()} />
+  )
+
   render = () => {
     let chart
     switch (this.props.type) {
@@ -831,16 +843,8 @@ export default class ChataChart extends Component {
         chart = this.renderStackedBarChart()
         break
       }
-      case 'contrast_column': {
-        chart = this.renderContrastColumnChart()
-        break
-      }
-      case 'contrast_bar': {
-        chart = this.renderContrastBarChart()
-        break
-      }
-      case 'contrast_line': {
-        chart = this.renderContrastLineChart()
+      case 'stacked_line': {
+        chart = this.renderStackedLineChart()
         break
       }
       default: {

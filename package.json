@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.2.66",
+  "version": "0.2.67",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -32,9 +32,7 @@
   },
   "lint-staged": {
     "*.js": [
-      "npm run lint:fix",
-      "npm run test:staged",
-      "git-add"
+      "npm run test:staged"
     ]
   },
   "repository": {

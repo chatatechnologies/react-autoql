@@ -51,6 +51,9 @@ import {
   pivotTableIcon,
   columnChartIcon,
   barChartIcon,
+  stackedBarIcon,
+  stackedColumnIcon,
+  stackedLineIcon,
   lineChartIcon,
   pieChartIcon,
   heatmapIcon,
@@ -77,6 +80,10 @@ export default class Icon extends React.Component {
     switch (this.props.type) {
       case 'bar-chart': {
         icon = barChartIcon
+        break
+      }
+      case 'stacked-bar-chart': {
+        icon = stackedBarIcon
         break
       }
       case 'bubble-chart': {
@@ -135,6 +142,10 @@ export default class Icon extends React.Component {
         icon = columnChartIcon
         break
       }
+      case 'stacked-column-chart': {
+        icon = stackedColumnIcon
+        break
+      }
       case 'copy': {
         icon = <MdContentCopy />
         break
@@ -185,6 +196,10 @@ export default class Icon extends React.Component {
       }
       case 'line-chart': {
         icon = lineChartIcon
+        break
+      }
+      case 'stacked-line-chart': {
+        icon = stackedLineIcon
         break
       }
       case 'more': {
