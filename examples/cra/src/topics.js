@@ -25,7 +25,7 @@ export default {
       ]
     },
     {
-      topic: 'Estimates',
+      topic: 'Revenue',
       queries: [
         'Total revenue this year',
         'Total revenue by item this month',

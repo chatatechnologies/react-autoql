@@ -286,47 +286,28 @@ export default class App extends Component {
       })
   }
 
-  // executeQuery = query => {
-  //   const url = `${this.state.domain}/autoql/api/v1/query?key=${this.state.apiKey}`
+  testAuthentication = () => {
+    const url = `${this.state.domain}/autoql/api/v1/query/related-queries?key=${this.state.apiKey}&search=test`
+    const token = getStoredProp('jwtToken')
 
-  //   const data = {
-  //     text: query,
-  //     source: ['notification']
-  //   }
+    const config = {}
+    if (token) {
+      config.headers = {
+        Authorization: `Bearer ${token}`
+      }
+    }
 
-  //   const token = getStoredProp('jwtToken')
+    if (!this.state.apiKey || !this.state.domain) {
+      return Promise.reject()
+    }
 
-  //   const config = {}
-  //   if (token) {
-  //     config.headers = {
-  //       Authorization: `Bearer ${token}`
-  //     }
-  //   }
-
-  //   if (!this.state.apiKey || !this.state.domain) {
-  //     return Promise.reject({ error: 'unauthenticated' })
-  //   }
-
-  //   return axios
-  //     .post(url, data, config)
-  //     .then(response => {
-  //       if (response.data && typeof response.data === 'string') {
-  //         return Promise.reject({ error: 'parse error' })
-  //       }
-  //       if (
-  //         !response ||
-  //         !response.data ||
-  //         !response.data.data ||
-  //         response.data.data.display_type !== 'data'
-  //       ) {
-  //         return Promise.reject()
-  //       }
-  //       return Promise.resolve(response)
-  //     })
-  //     .catch(error => {
-  //       return Promise.reject(error)
-  //     })
-  // }
+    return axios
+      .get(url, config)
+      .then(() => Promise.resolve())
+      .catch(error => {
+        return Promise.reject(error)
+      })
+  }
 
   checkAuthentication = () => {
     const loginToken = getStoredProp('loginToken')
@@ -405,12 +386,27 @@ export default class App extends Component {
     }, 2.16e7)
 
     this.setState({
-      isAuthenticated: true,
-      componentKey: uuid.v4(),
-      activeIntegrator: this.getActiveIntegrator()
+      isAuthenticating: true
     })
 
-    return Promise.resolve()
+    return this.testAuthentication().then(() => {
+      this.setState({
+        isAuthenticated: true,
+        isAuthenticating: false,
+        componentKey: uuid.v4(),
+        activeIntegrator: this.getActiveIntegrator()
+      })
+
+      return Promise.resolve()
+    }).catch(() => {
+      this.setState({
+        isAuthenticated: false,
+        isAuthenticating: false,
+        activeIntegrator: undefined
+      })
+
+      return Promise.reject()
+    })
   }
 
   onLogin = async () => {
@@ -452,7 +448,7 @@ export default class App extends Component {
 
       // Dont fetch dashboard if authentication failed...
       // this.fetchDashboard()
-      message.error('Login Unsuccessful. Check logs for details.')
+      message.error('Invalid Credentials')
     }
   }
 
@@ -520,7 +516,7 @@ export default class App extends Component {
   }
 
   onError = error => {
-    if (error && error.message) {
+    if (error && error.message && this.state.isAuthenticated) {
       message.error(`${error.message}`)
     }
   }
@@ -761,7 +757,7 @@ export default class App extends Component {
             />
           </Form.Item>
           <Form.Item {...tailLayout}>
-            <Button type="primary" htmlType="submit">
+            <Button type="primary" htmlType="submit" loading={this.state.isAuthenticating}>
               Authenticate
             </Button>
           </Form.Item>
@@ -1307,12 +1303,12 @@ export default class App extends Component {
           <ChataIcon type="chata-bubbles-outlined" />
           Data Messenger
         </Menu.Item>
-        {this.state.dashboardTiles && (
+        {this.state.isAuthenticated && this.state.dashboardTiles && (
           <Menu.Item key="dashboard">
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
         )}
-        {<Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
+        {this.state.isAuthenticated && <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
         {this.state.isAuthenticated && !isProd() && (
           <Menu.Item key="settings">Notification Settings</Menu.Item>
         )}
