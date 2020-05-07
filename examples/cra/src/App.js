@@ -9,7 +9,7 @@ import {
   NotificationButton,
   NotificationList,
   NotificationSettings,
-  Icon as ChataIcon
+  Icon as ChataIcon,
 } from '@chata-ai/core'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
@@ -24,7 +24,7 @@ import {
   Form,
   message,
   Modal,
-  Spin
+  Spin,
 } from 'antd'
 
 import {
@@ -37,7 +37,7 @@ import {
   PlayCircleOutlined,
   PlusOutlined,
   RollbackOutlined,
-  SaveOutlined
+  SaveOutlined,
 } from '@ant-design/icons'
 
 import topics from './topics.js'
@@ -51,7 +51,7 @@ import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/autoql.esm.css'
 import './index.css'
 
-const getStoredProp = name => {
+const getStoredProp = (name) => {
   if (getBaseUrl() === 'https://backend-staging.chata.io') {
     return localStorage.getItem(`staging-${name}`)
   }
@@ -90,7 +90,7 @@ class Item extends React.Component {
           border: '1px solid lightgray',
           borderRadius: '3px',
           paddingRight: '5px',
-          marginBottom: '3px'
+          marginBottom: '3px',
         }}
         {...this.props}
       >
@@ -156,7 +156,7 @@ export default class App extends Component {
     dayFormat: 'll',
     dashboardTiles: undefined,
     activeDashboardId: undefined,
-    enableDynamicCharting: true
+    enableDynamicCharting: true,
   }
 
   componentDidMount = () => {
@@ -182,7 +182,7 @@ export default class App extends Component {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
       domain: this.state.domain,
-      demo: this.state.demo
+      demo: this.state.demo,
     }
   }
 
@@ -194,7 +194,7 @@ export default class App extends Component {
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
       debug: this.state.debug,
-      test: this.state.test
+      test: this.state.test,
     }
   }
 
@@ -206,7 +206,7 @@ export default class App extends Component {
       quantityDecimals: this.state.quantityDecimals,
       comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
       monthYearFormat: this.state.monthFormat,
-      dayMonthYearFormat: this.state.dayFormat
+      dayMonthYearFormat: this.state.dayFormat,
     }
   }
 
@@ -238,11 +238,11 @@ export default class App extends Component {
         this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
       fontFamily: this.state.fontFamily,
       chartColors: this.state.chartColors,
-      titleColor: this.state.dashboardTitleColor
+      titleColor: this.state.dashboardTitleColor,
     }
   }
 
-  fetchNotificationData = notificationId => {
+  fetchNotificationData = (notificationId) => {
     const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${
       this.state.apiKey
     }`
@@ -252,7 +252,7 @@ export default class App extends Component {
     if (token) {
       config.headers = {
         Authorization: `Bearer ${token}`,
-        'Integrator-Domain': this.state.domain
+        'Integrator-Domain': this.state.domain,
       }
     }
 
@@ -262,7 +262,7 @@ export default class App extends Component {
 
     return axios
       .get(url, config)
-      .then(response => {
+      .then((response) => {
         if (response.data && typeof response.data === 'string') {
           return Promise.reject({ error: 'parse error' })
         }
@@ -277,11 +277,11 @@ export default class App extends Component {
         }
         const newResponse = {
           ...response,
-          data: response.data.query_result
+          data: response.data.query_result,
         }
         return Promise.resolve(newResponse)
       })
-      .catch(error => {
+      .catch((error) => {
         return Promise.reject(error)
       })
   }
@@ -293,7 +293,7 @@ export default class App extends Component {
     const config = {}
     if (token) {
       config.headers = {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       }
     }
 
@@ -304,7 +304,7 @@ export default class App extends Component {
     return axios
       .get(url, config)
       .then(() => Promise.resolve())
-      .catch(error => {
+      .catch((error) => {
         return Promise.reject(error)
       })
   }
@@ -315,14 +315,14 @@ export default class App extends Component {
       return this.getJWT(loginToken)
     }
     this.setState({
-      isAuthenticated: false
+      isAuthenticated: false,
     })
     return Promise.reject()
   }
 
   fetchDashboard = async () => {
     this.setState({
-      isFetchingDashboard: true
+      isFetchingDashboard: true,
     })
 
     try {
@@ -334,8 +334,8 @@ export default class App extends Component {
         const dashboardResponse = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
-            'Integrator-Domain': this.state.domain
-          }
+            'Integrator-Domain': this.state.domain,
+          },
         })
 
         this.setState({
@@ -343,7 +343,7 @@ export default class App extends Component {
           dashboardError: false,
           isFetchingDashboard: false,
           activeDashboardId: dashboardResponse.data[0].id,
-          activeDashboardName: dashboardResponse.data[0].name
+          activeDashboardName: dashboardResponse.data[0].name,
         })
       }
     } catch (error) {
@@ -352,12 +352,12 @@ export default class App extends Component {
         dashboardTiles: undefined,
         dashboardError: true,
         isFetchingDashboard: false,
-        activeDashboardId: null
+        activeDashboardId: null,
       })
     }
   }
 
-  getJWT = async loginToken => {
+  getJWT = async (loginToken) => {
     if (!loginToken) {
       throw new Error('Invalid Login Token')
     }
@@ -368,8 +368,8 @@ export default class App extends Component {
     // Use login token to get JWT token
     const jwtResponse = await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${loginToken}`
-      }
+        Authorization: `Bearer ${loginToken}`,
+      },
     })
 
     // Put jwt token into storage
@@ -381,32 +381,34 @@ export default class App extends Component {
     }
     this.authTimer = setTimeout(() => {
       this.setState({
-        isAuthenticated: false
+        isAuthenticated: false,
       })
     }, 2.16e7)
 
     this.setState({
-      isAuthenticating: true
+      isAuthenticating: true,
     })
 
-    return this.testAuthentication().then(() => {
-      this.setState({
-        isAuthenticated: true,
-        isAuthenticating: false,
-        componentKey: uuid.v4(),
-        activeIntegrator: this.getActiveIntegrator()
-      })
+    return this.testAuthentication()
+      .then(() => {
+        this.setState({
+          isAuthenticated: true,
+          isAuthenticating: false,
+          componentKey: uuid.v4(),
+          activeIntegrator: this.getActiveIntegrator(),
+        })
 
-      return Promise.resolve()
-    }).catch(() => {
-      this.setState({
-        isAuthenticated: false,
-        isAuthenticating: false,
-        activeIntegrator: undefined
+        return Promise.resolve()
       })
+      .catch(() => {
+        this.setState({
+          isAuthenticated: false,
+          isAuthenticating: false,
+          activeIntegrator: undefined,
+        })
 
-      return Promise.reject()
-    })
+        return Promise.reject()
+      })
   }
 
   onLogin = async () => {
@@ -423,7 +425,7 @@ export default class App extends Component {
         {
           headers: {
             // 'Access-Control-Allow-Origin': '*'
-          }
+          },
         }
       )
 
@@ -443,7 +445,7 @@ export default class App extends Component {
       this.setState({
         isAuthenticated: false,
         activeIntegrator: null,
-        componentKey: uuid.v4()
+        componentKey: uuid.v4(),
       })
 
       // Dont fetch dashboard if authentication failed...
@@ -478,10 +480,10 @@ export default class App extends Component {
         <h4>{title}</h4>
         <Radio.Group
           defaultValue={this.state[propName]}
-          onChange={e => this.setState({ [propName]: e.target.value })}
+          onChange={(e) => this.setState({ [propName]: e.target.value })}
           buttonStyle="solid"
         >
-          {propValues.map(propValue => {
+          {propValues.map((propValue) => {
             return (
               <Radio.Button value={propValue} key={`${propName}-${propValue}`}>
                 {propValue.toString()}
@@ -500,7 +502,7 @@ export default class App extends Component {
         <Switch
           defaultChecked={this.state[propName]}
           checked={this.state[propName] === true}
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ [propName]: e })
             setStoredProp(propName, e)
           }}
@@ -509,19 +511,19 @@ export default class App extends Component {
     )
   }
 
-  onSortChartColors = items => {
+  onSortChartColors = (items) => {
     this.setState({
-      items: items
+      items: items,
     })
   }
 
-  onError = error => {
+  onError = (error) => {
     if (error && error.message && this.state.isAuthenticated) {
       message.error(`${error.message}`)
     }
   }
 
-  onSuccess = alertText => {
+  onSuccess = (alertText) => {
     if (alertText) {
       message.success(alertText)
     }
@@ -529,7 +531,7 @@ export default class App extends Component {
 
   saveDashboard = async () => {
     this.setState({
-      isSavingDashboard: true
+      isSavingDashboard: true,
     })
 
     try {
@@ -540,13 +542,13 @@ export default class App extends Component {
         customer_id: this.state.customerId,
         username: this.state.username,
         name: this.state.activeDashboardName,
-        data: this.state.dashboardTiles.map(tile => {
+        data: this.state.dashboardTiles.map((tile) => {
           return {
             ...tile,
             queryResponse: undefined,
-            secondQueryResponse: undefined
+            secondQueryResponse: undefined,
           }
-        })
+        }),
       }
 
       const baseUrl = getBaseUrl()
@@ -556,19 +558,19 @@ export default class App extends Component {
       await axios.put(url, data, {
         headers: {
           Authorization: `Bearer ${getStoredProp('jwtToken')}`,
-          'Integrator-Domain': this.state.domain
-        }
+          'Integrator-Domain': this.state.domain,
+        },
       })
 
       this.setState({
         isSavingDashboard: false,
-        isEditing: false
+        isEditing: false,
       })
     } catch (error) {
       console.error(error)
       this.setState({
         isSavingDashboard: false,
-        dashboardError: true
+        dashboardError: true,
       })
     }
   }
@@ -576,11 +578,11 @@ export default class App extends Component {
   resetDashboard = () => {
     try {
       if (this.state.dashboardTiles) {
-        const newDashboardTiles = this.state.dashboardTiles.map(tile => {
+        const newDashboardTiles = this.state.dashboardTiles.map((tile) => {
           return {
             ...tile,
             queryResponse: undefined,
-            secondQueryResponse: undefined
+            secondQueryResponse: undefined,
           }
         })
 
@@ -610,7 +612,7 @@ export default class App extends Component {
             style={{ float: 'right', cursor: 'pointer', marginTop: '3px' }}
             onClick={() => {
               const newChartColors = this.state.chartColors.filter(
-                color => color !== item
+                (color) => color !== item
               )
               this.setState({ chartColors: newChartColors })
             }}
@@ -630,8 +632,8 @@ export default class App extends Component {
         <Input
           placeholder="New Color"
           value={this.state.newColorInput}
-          onChange={e => this.setState({ newColorInput: e.target.value })}
-          onKeyDown={e => {
+          onChange={(e) => this.setState({ newColorInput: e.target.value })}
+          onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const newChartColors = [...this.state.chartColors, e.target.value]
               this.setState({ chartColors: newChartColors, newColorInput: '' })
@@ -645,10 +647,10 @@ export default class App extends Component {
   renderAuthenticationForm = () => {
     const layout = {
       labelCol: { span: 8 },
-      wrapperCol: { span: 16 }
+      wrapperCol: { span: 16 },
     }
     const tailLayout = {
-      wrapperCol: { offset: 8, span: 16 }
+      wrapperCol: { offset: 8, span: 16 },
     }
 
     return (
@@ -659,27 +661,27 @@ export default class App extends Component {
             customerId: this.state.customerId,
             userId: this.state.userId,
             apiKey: this.state.apiKey,
-            domain: this.state.domain
+            domain: this.state.domain,
           }}
           style={{ marginTop: '20px' }}
           onFinish={this.onLogin}
-          onFinishFailed={errorInfo => console.log('Failed:', errorInfo)}
+          onFinishFailed={(errorInfo) => console.log('Failed:', errorInfo)}
         >
           <Form.Item
             label="Project ID"
             name="customerId"
             rules={[
-              { required: true, message: 'Please enter your project ID' }
+              { required: true, message: 'Please enter your project ID' },
             ]}
           >
             <Input
               name="customer-id"
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ customerId: e.target.value })
               }}
-              onBlur={e => setStoredProp('customer-id', e.target.value)}
+              onBlur={(e) => setStoredProp('customer-id', e.target.value)}
               value={this.state.customerId}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -689,12 +691,12 @@ export default class App extends Component {
           >
             <Input
               name="user-id"
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ userId: e.target.value })
               }}
-              onBlur={e => setStoredProp('userid', e.target.value)}
+              onBlur={(e) => setStoredProp('userid', e.target.value)}
               value={this.state.userId}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -704,29 +706,29 @@ export default class App extends Component {
           >
             <Input
               name="api-key"
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ apiKey: e.target.value })
               }}
-              onBlur={e => setStoredProp('api-key', e.target.value)}
+              onBlur={(e) => setStoredProp('api-key', e.target.value)}
               value={this.state.apiKey}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
             label="Domain URL"
             name="domain"
             rules={[
-              { required: true, message: 'Please enter your domain URL' }
+              { required: true, message: 'Please enter your domain URL' },
             ]}
           >
             <Input
               name="domain-url"
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ domain: e.target.value })
               }}
-              onBlur={e => setStoredProp('domain-url', e.target.value)}
+              onBlur={(e) => setStoredProp('domain-url', e.target.value)}
               value={this.state.domain}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -735,11 +737,11 @@ export default class App extends Component {
             rules={[{ required: true, message: 'Please enter your username' }]}
           >
             <Input
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ email: e.target.value })
               }}
               value={this.state.email}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
@@ -749,15 +751,19 @@ export default class App extends Component {
           >
             <Input
               type="password"
-              onChange={e => {
+              onChange={(e) => {
                 this.setState({ password: e.target.value })
               }}
               value={this.state.password}
-              autoComplete="on"
+              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item {...tailLayout}>
-            <Button type="primary" htmlType="submit" loading={this.state.isAuthenticating}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={this.state.isAuthenticating}
+            >
               Authenticate
             </Button>
           </Form.Item>
@@ -767,7 +773,7 @@ export default class App extends Component {
               onClick={() => {
                 this.setState({
                   isAuthenticated: false,
-                  dashboardTiles: undefined
+                  dashboardTiles: undefined,
                 })
                 setStoredProp('loginToken', undefined)
                 setStoredProp('jwtToken', undefined)
@@ -789,7 +795,7 @@ export default class App extends Component {
         {this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
-          false
+          false,
         ])}
         <h1>Drawer Props</h1>
         <Button
@@ -808,7 +814,7 @@ export default class App extends Component {
         </Button>
         {this.createBooleanRadioGroup('Show Drawer Handle', 'showHandle', [
           true,
-          false
+          false,
         ])}
         {this.createBooleanRadioGroup('Show Mask', 'showMask', [true, false])}
         {this.createBooleanRadioGroup(
@@ -821,12 +827,12 @@ export default class App extends Component {
           'top',
           'bottom',
           'left',
-          'right'
+          'right',
         ])}
         <h4>Currency Code</h4>
         <Input
           type="text"
-          onBlur={e => {
+          onBlur={(e) => {
             this.setState({ currencyCode: e.target.value })
           }}
           style={{ width: '55px' }}
@@ -835,7 +841,7 @@ export default class App extends Component {
         <h4>Language Code</h4>
         <Input
           type="text"
-          onBlur={e => {
+          onBlur={(e) => {
             this.setState({ languageCode: e.target.value })
           }}
           style={{ width: '55px' }}
@@ -850,7 +856,7 @@ export default class App extends Component {
         </h6>
         <Input
           type="text"
-          onBlur={e => {
+          onBlur={(e) => {
             this.setState({ monthFormat: e.target.value })
           }}
           defaultValue={this.state.monthFormat}
@@ -865,7 +871,7 @@ export default class App extends Component {
 
         <Input
           type="text"
-          onBlur={e => {
+          onBlur={(e) => {
             this.setState({ dayFormat: e.target.value })
           }}
           defaultValue={this.state.dayFormat}
@@ -873,7 +879,7 @@ export default class App extends Component {
         <h4>Number of Decimals for Currency Values</h4>
         <InputNumber
           type="number"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ currencyDecimals: e })
           }}
           value={this.state.currencyDecimals}
@@ -881,7 +887,7 @@ export default class App extends Component {
         <h4>Number of Decimals for Quantity Values</h4>
         <InputNumber
           type="number"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ quantityDecimals: e })
           }}
           value={this.state.quantityDecimals}
@@ -890,7 +896,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ userDisplayName: e.target.value })
           }}
           value={this.state.userDisplayName}
@@ -899,7 +905,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ introMessage: e.target.value })
           }}
           value={this.state.introMessage}
@@ -907,7 +913,7 @@ export default class App extends Component {
         <h4>Query Input Placeholder</h4>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ inputPlaceholder: e.target.value })
           }}
           value={this.state.inputPlaceholder}
@@ -922,7 +928,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <InputNumber
           // type="number"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ height: e })
           }}
           value={this.state.height}
@@ -932,7 +938,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <InputNumber
           type="number"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ width: e })
           }}
           value={this.state.width}
@@ -940,7 +946,7 @@ export default class App extends Component {
         <h4>Title</h4>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ title: e.target.value })
           }}
           value={this.state.title}
@@ -949,7 +955,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ fontFamily: e.target.value })
           }}
           value={this.state.fontFamily}
@@ -978,7 +984,7 @@ export default class App extends Component {
         <h4>Dashboard Title Color</h4>
         <Input
           type="text"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ dashboardTitleColor: e.target.value })
           }}
           value={this.state.dashboardTitleColor}
@@ -994,7 +1000,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="color"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ lightAccentColor: e.target.value })
           }}
           value={this.state.lightAccentColor}
@@ -1003,7 +1009,7 @@ export default class App extends Component {
         <h6>(Must click 'Reload Drawer' to apply this)</h6>
         <Input
           type="color"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ darkAccentColor: e.target.value })
           }}
           value={this.state.darkAccentColor}
@@ -1011,7 +1017,7 @@ export default class App extends Component {
         <h4>Maximum Number of Messages</h4>
         <InputNumber
           type="number"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ maxMessages: e })
           }}
           value={this.state.maxMessages}
@@ -1038,7 +1044,7 @@ export default class App extends Component {
         )}
         {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
           true,
-          false
+          false,
         ])}
         {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
@@ -1139,10 +1145,10 @@ export default class App extends Component {
           autoQLConfig={this.getAutoQLConfigProp()}
           dataFormatting={this.getDataFormattingProp()}
           themeConfig={this.getThemeConfigProp()}
-          ref={r => (this.queryInputRef = r)}
+          ref={(r) => (this.queryInputRef = r)}
           autoCompletePlacement="below"
           onSubmit={() => this.setState({ response: null })}
-          onResponseCallback={response => {
+          onResponseCallback={(response) => {
             this.setState({ response })
           }}
           showChataIcon
@@ -1158,7 +1164,7 @@ export default class App extends Component {
               padding: '20px',
               paddingTop: '0',
               fontFamily: 'Helvetica, Arial, Sans-Serif', // Text, tables, and charts will inherit font
-              color: '#565656' // Text, tables, and charts will inherit text color
+              color: '#565656', // Text, tables, and charts will inherit text color
             }}
           >
             <QueryOutput
@@ -1187,7 +1193,7 @@ export default class App extends Component {
           style={{
             textAlign: 'center',
             background: '#fafafa',
-            padding: '10px'
+            padding: '10px',
           }}
         >
           <div style={{ paddingTop: '6px', marginLeft: '10px' }}>
@@ -1195,7 +1201,7 @@ export default class App extends Component {
             <Switch
               defaultChecked={this.state.runDashboardAutomatically}
               checked={this.state.runDashboardAutomatically === true}
-              onChange={e => {
+              onChange={(e) => {
                 if (e) {
                   executeDashboard(this.dashboardRef)
                 }
@@ -1267,7 +1273,7 @@ export default class App extends Component {
           )}
         </div>
         <Dashboard
-          ref={ref => (this.dashboardRef = ref)}
+          ref={(ref) => (this.dashboardRef = ref)}
           authentication={this.getAuthProp()}
           autoQLConfig={this.getAutoQLConfigProp()}
           dataFormatting={this.getDataFormattingProp()}
@@ -1278,7 +1284,7 @@ export default class App extends Component {
           enableDynamicCharting={this.state.enableDynamicCharting}
           tiles={this.state.dashboardTiles}
           notExecutedText='Hit "Execute" to run this dashboard'
-          onChange={newTiles => {
+          onChange={(newTiles) => {
             this.setState({ dashboardTiles: newTiles })
           }}
         />
@@ -1308,14 +1314,16 @@ export default class App extends Component {
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
         )}
-        {this.state.isAuthenticated && <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>}
+        {this.state.isAuthenticated && (
+          <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
+        )}
         {this.state.isAuthenticated && !isProd() && (
           <Menu.Item key="settings">Notification Settings</Menu.Item>
         )}
         {this.state.isAuthenticated && !isProd() && (
           <Menu.Item key="notifications">
             <NotificationButton
-              ref={r => (this.notificationBadgeRef = r)}
+              ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
@@ -1345,32 +1353,34 @@ export default class App extends Component {
         <Input
           placeholder="Dashboard Name"
           value={this.state.dashboardNameInput}
-          onChange={e => this.setState({ dashboardNameInput: e.target.value })}
+          onChange={(e) =>
+            this.setState({ dashboardNameInput: e.target.value })
+          }
         />
       </Modal>
     )
   }
 
-  fetchNotificationContent = notification => {
+  fetchNotificationContent = (notification) => {
     this.setState({
       activeNotificationContent: null,
-      isFetchingNotificationContent: true
+      isFetchingNotificationContent: true,
     })
 
     // this.executeQuery(notification.query)
     this.fetchNotificationData(notification.id)
-      .then(response => {
+      .then((response) => {
         this.setState({
           activeNotificationContent: response,
-          isFetchingNotificationContent: false
+          isFetchingNotificationContent: false,
         })
       })
-      .catch(error => {
+      .catch((error) => {
         this.setState({
           activeNotificationContent: {
-            error: 'Something went wrong with this query.'
+            error: 'Something went wrong with this query.',
           },
-          isFetchingNotificationContent: false
+          isFetchingNotificationContent: false,
         })
       })
     // .finally(response => {
@@ -1381,7 +1391,7 @@ export default class App extends Component {
     // })
   }
 
-  renderNotificationContent = notification => {
+  renderNotificationContent = (notification) => {
     if (this.state.isFetchingNotificationContent) {
       return (
         <div
@@ -1390,7 +1400,7 @@ export default class App extends Component {
             flexDirection: 'column',
             width: '100%',
             height: '100%',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}
         >
           <Spin />
@@ -1416,11 +1426,11 @@ export default class App extends Component {
         style={{
           height: 'calc(100vh - 50px)',
           background: 'rgb(250,250,250)',
-          overflow: 'auto'
+          overflow: 'auto',
         }}
       >
         <NotificationList
-          ref={ref => (this.notificationListRef = ref)}
+          ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
@@ -1438,7 +1448,7 @@ export default class App extends Component {
         style={{
           height: 'calc(100vh - 50px)',
           background: 'rgb(250,250,250)',
-          overflow: 'auto'
+          overflow: 'auto',
         }}
       >
         <NotificationSettings
@@ -1493,7 +1503,7 @@ export default class App extends Component {
         margin: '0 auto',
         width: '300px',
         textAlign: 'center',
-        paddingTop: '111px'
+        paddingTop: '111px',
       }}
     >
       <ToolOutlined style={{ fontSize: '75px', marginBottom: '20px' }} />

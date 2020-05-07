@@ -145,7 +145,10 @@ export default class QueryOutput extends React.Component {
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles: this.themeStyles, prefix: '--chata-output-' })
+      setStyleVars({
+        themeStyles: this.themeStyles,
+        prefix: '--chata-output-'
+      })
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(
@@ -174,7 +177,10 @@ export default class QueryOutput extends React.Component {
     ) {
       const { theme } = this.props.themeConfig
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles: this.themeStyles, prefix: '--chata-output-' })
+      setStyleVars({
+        themeStyles: this.themeStyles,
+        prefix: '--chata-output-'
+      })
     }
 
     if (this.props.queryResponse && !prevProps.queryResponse) {
@@ -946,9 +952,9 @@ export default class QueryOutput extends React.Component {
             config: self.props.dataFormatting
           })
 
-          const shouldFilter = formattedElement
+          const shouldFilter = `${formattedElement}`
             .toLowerCase()
-            .includes(headerValue.toLowerCase())
+            .includes(`${headerValue}`.toLowerCase())
 
           return shouldFilter
         } catch (error) {
@@ -1237,129 +1243,136 @@ export default class QueryOutput extends React.Component {
   }
 
   generatePivotTableData = isFirstGeneration => {
-    const tableData = _get(this.props.queryResponse, 'data.data.rows')
+    try {
+      const tableData = _get(this.props.queryResponse, 'data.data.rows')
 
-    // Set the columns used for the 2 headers (ordinal and legend for charts)
-    // If one of the indices is already specified, use it
-    if (this.stringColumnIndex >= 0) {
-      this.legendColumnIndex = this.tableColumns.findIndex(
-        (col, i) => col.groupable && i !== this.stringColumnIndex
-      )
-    } else if (this.legendColumnIndex >= 0) {
-      this.stringColumnIndex = this.tableColumns.findIndex(
-        (col, i) => col.groupable && i !== this.legendColumnIndex
-      )
-    } else {
-      this.stringColumnIndex = this.tableColumns.findIndex(col => col.groupable)
-      this.legendColumnIndex = this.tableColumns.findIndex(
-        (col, i) => col.groupable && i !== this.stringColumnIndex
-      )
-    }
-
-    // Set the number type column
-    if (!(this.numberColumnIndex >= 0)) {
-      this.numberColumnIndex = this.tableColumns.findIndex(
-        (col, index) => isColumnNumberType(col) && !col.groupable
-      )
-    }
-
-    let uniqueValues0 = tableData
-      .map(d => d[this.stringColumnIndex])
-      .filter(onlyUnique)
-      .sort()
-      .reduce((map, title, i) => {
-        map[title] = i
-        return map
-      }, {})
-
-    let uniqueValues1 = tableData
-      .map(d => d[this.legendColumnIndex])
-      .filter(onlyUnique)
-      .sort()
-      .reduce((map, title, i) => {
-        map[title] = i
-        return map
-      }, {})
-
-    // Make sure the longer list is on the side, not the top
-    if (
-      isFirstGeneration &&
-      Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length
-    ) {
-      const tempCol = this.legendColumnIndex
-      this.legendColumnIndex = this.stringColumnIndex
-      this.stringColumnIndex = tempCol
-
-      const tempValues = { ...uniqueValues0 }
-      uniqueValues0 = { ...uniqueValues1 }
-      uniqueValues1 = { ...tempValues }
-    }
-
-    if (Object.keys(uniqueValues1).length > 50) {
-      this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
-        displayType => displayType !== 'pivot_table'
-      )
-      this.setState({ displayType: 'table' })
-      return null
-    }
-
-    // Generate new column array
-    const pivotTableColumns = [
-      {
-        ...this.tableColumns[this.stringColumnIndex],
-        frozen: true,
-        headerContext: undefined,
-        visible: true,
-        field: '0'
+      // Set the columns used for the 2 headers (ordinal and legend for charts)
+      // If one of the indices is already specified, use it
+      if (this.stringColumnIndex >= 0) {
+        this.legendColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.stringColumnIndex
+        )
+      } else if (this.legendColumnIndex >= 0) {
+        this.stringColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.legendColumnIndex
+        )
+      } else {
+        this.stringColumnIndex = this.tableColumns.findIndex(
+          col => col.groupable
+        )
+        this.legendColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.stringColumnIndex
+        )
       }
-    ]
 
-    Object.keys(uniqueValues1).forEach((columnName, i) => {
-      const formattedColumnName = formatElement({
-        element: columnName,
-        column: this.tableColumns[this.legendColumnIndex],
-        config: this.props.dataFormatting
+      // Set the number type column
+      if (!(this.numberColumnIndex >= 0)) {
+        this.numberColumnIndex = this.tableColumns.findIndex(
+          (col, index) => isColumnNumberType(col) && !col.groupable
+        )
+      }
+
+      let uniqueValues0 = tableData
+        .map(d => d[this.stringColumnIndex])
+        .filter(onlyUnique)
+        .sort()
+        .reduce((map, title, i) => {
+          map[title] = i
+          return map
+        }, {})
+
+      let uniqueValues1 = tableData
+        .map(d => d[this.legendColumnIndex])
+        .filter(onlyUnique)
+        .sort()
+        .reduce((map, title, i) => {
+          map[title] = i
+          return map
+        }, {})
+
+      // Make sure the longer list is on the side, not the top
+      if (
+        isFirstGeneration &&
+        Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length
+      ) {
+        const tempCol = this.legendColumnIndex
+        this.legendColumnIndex = this.stringColumnIndex
+        this.stringColumnIndex = tempCol
+
+        const tempValues = { ...uniqueValues0 }
+        uniqueValues0 = { ...uniqueValues1 }
+        uniqueValues1 = { ...tempValues }
+      }
+
+      // if (Object.keys(uniqueValues1).length > 50) {
+      //   this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
+      //     displayType => displayType !== "pivot_table"
+      //   );
+      //   this.setState({ displayType: "table" });
+      //   return null;
+      // }
+
+      // Generate new column array
+      const pivotTableColumns = [
+        {
+          ...this.tableColumns[this.stringColumnIndex],
+          frozen: true,
+          headerContext: undefined,
+          visible: true,
+          field: '0'
+        }
+      ]
+
+      Object.keys(uniqueValues1).forEach((columnName, i) => {
+        const formattedColumnName = formatElement({
+          element: columnName,
+          column: this.tableColumns[this.legendColumnIndex],
+          config: this.props.dataFormatting
+        })
+        pivotTableColumns.push({
+          ...this.tableColumns[this.numberColumnIndex],
+          origColumn: this.tableColumns[this.numberColumnIndex],
+          drilldownData: [
+            {
+              name: this.tableColumns[this.stringColumnIndex].name,
+              value: null
+            },
+            {
+              name: this.tableColumns[this.legendColumnIndex].name,
+              value: columnName
+            }
+          ],
+          name: columnName,
+          title: formattedColumnName,
+          display_name: formattedColumnName,
+          field: `${i + 1}`,
+          headerContext: undefined,
+          visible: true
+        })
       })
-      pivotTableColumns.push({
-        ...this.tableColumns[this.numberColumnIndex],
-        origColumn: this.tableColumns[this.numberColumnIndex],
-        drilldownData: [
-          {
-            name: this.tableColumns[this.stringColumnIndex].name,
-            value: null
-          },
-          {
-            name: this.tableColumns[this.legendColumnIndex].name,
-            value: columnName
-          }
-        ],
-        name: columnName,
-        title: formattedColumnName,
-        display_name: formattedColumnName,
-        field: `${i + 1}`,
-        headerContext: undefined,
-        visible: true
+
+      const pivotTableData = makeEmptyArray(
+        Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
+        Object.keys(uniqueValues0).length
+      )
+      tableData.forEach(row => {
+        // Populate first column
+        pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][0] =
+          row[this.stringColumnIndex]
+
+        // Populate remaining columns
+        pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][
+          uniqueValues1[row[this.legendColumnIndex]] + 1
+        ] = row[this.numberColumnIndex]
       })
-    })
 
-    const pivotTableData = makeEmptyArray(
-      Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
-      Object.keys(uniqueValues0).length
-    )
-    tableData.forEach(row => {
-      // Populate first column
-      pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][0] =
-        row[this.stringColumnIndex]
-
-      // Populate remaining columns
-      pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][
-        uniqueValues1[row[this.legendColumnIndex]] + 1
-      ] = row[this.numberColumnIndex]
-    })
-
-    this.pivotTableColumns = pivotTableColumns
-    this.pivotTableData = pivotTableData
-    this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
+      this.pivotTableColumns = pivotTableColumns
+      this.pivotTableData = pivotTableData
+      this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
+    } catch (error) {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    }
   }
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {

@@ -141,7 +141,6 @@ export default class Axis extends Component {
         .style('fill-opacity', '0.7')
         .style('font-family', 'inherit')
         .style('font-size', '10px')
-        .attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
 
       var legendOrdinal = legendColor()
         .shape(
@@ -167,6 +166,14 @@ export default class Axis extends Component {
       if (this.props.legendTitle) {
         this.styleLegendTitle(svg)
       }
+
+      // adjust container width to exact width of legend
+      // this is so the updateMargins function works properly
+      const legendWidth = select(this.rightLegendElement)
+        .node()
+        .getBBox().width
+      select(this.legendClippingContainer).attr('width', legendWidth + 30)
+      svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
     } else if (this.props.hasBottomLegend) {
       const svg = select(this.bottomLegendElement)
       svg
@@ -356,45 +363,44 @@ export default class Axis extends Component {
           transform={this.props.translate}
         />
         {this.props.hasRightLegend && (
-          <g>
-            <g
-              ref={el => {
-                this.rightLegendElement = el
-              }}
-              id={this.LEGEND_ID}
-              className="legendOrdinal"
-              transform={`translate(${this.props.width + 15}, ${
-                this.props.legendTitle ? '30' : '25'
-              })`}
-            >
-              <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
-                <rect
-                  id={`legend-bounding-box-${this.LEGEND_ID}`}
-                  height={
-                    this.props.height -
-                    this.props.margins.top -
-                    // make legend smaller if labels are not rotated
-                    // because they might overlap the legend
-                    (!this.props.rotateLabels
-                      ? this.props.margins.bottom
-                      : 44) + // distance to bottom of axis labels
-                    20 // account for translation
-                  }
-                  width={this.props.margins.right + 30}
-                  style={{ transform: 'translate(-30px, -30px)' }}
-                />
-              </clipPath>
+          <g
+            ref={el => {
+              this.rightLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className="legendOrdinal"
+            transform={`translate(${this.props.width + 15}, ${
+              this.props.legendTitle ? '30' : '25'
+            })`}
+          >
+            <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
               <rect
                 ref={el => {
-                  this.legendBorder = el
+                  this.legendClippingContainer = el
                 }}
-                onClick={this.props.onLegendTitleClick}
+                id={`legend-bounding-box-${this.LEGEND_ID}`}
+                height={
+                  this.props.height -
+                  this.props.margins.top -
+                  // make legend smaller if labels are not rotated
+                  // because they might overlap the legend
+                  (!this.props.rotateLabels ? this.props.margins.bottom : 44) + // distance to bottom of axis labels
+                  20 // account for translation
+                }
+                width={this.props.margins.right + 30}
+                style={{ transform: 'translate(-30px, -30px)' }}
               />
-            </g>
+            </clipPath>
+            <rect
+              ref={el => {
+                this.legendBorder = el
+              }}
+              onClick={this.props.onLegendTitleClick}
+            />
           </g>
         )}
         {this.props.hasBottomLegend && (
-          <svg
+          <g
             ref={el => {
               this.bottomLegendElement = el
             }}

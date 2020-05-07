@@ -76,6 +76,44 @@ export default {
     }
   ],
   qbo: [],
+  lefort: [
+    {
+      topic: 'Ingresos',
+      queries: [
+        'ingresos el año pasado',
+        'ingresos totales por mes 2017',
+        'promedio de las facturas de ingresos por mes 2017',
+        'cuántos facturas de ingresos hay por mes 2017'
+      ]
+    },
+    {
+      topic: 'Egresos',
+      queries: [
+        'egresos para MXN',
+        'egresos totales para MXN',
+        'promedio de las facturas de egresos por mes 2017',
+        'cuántos facturas de egresos hay por mes 2017'
+      ]
+    },
+    {
+      topic: 'Pagos',
+      queries: [
+        'pagos el año pasado',
+        'promedio de pagos por año',
+        'pagos totales 2017',
+        'pagos totales por autorizado por tipo'
+      ]
+    },
+    {
+      topic: 'Nómina',
+      queries: [
+        'nóminas',
+        'nómina total por año',
+        'promedio de nómina por año',
+        'cuántas nóminas hay por mes'
+      ]
+    }
+  ],
   vitruvi: [
     {
       topic: 'Tickets',

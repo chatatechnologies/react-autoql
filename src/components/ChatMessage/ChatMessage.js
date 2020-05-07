@@ -775,6 +775,7 @@ export default class ChatMessage extends React.Component {
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
+      console.log('set chart width to ', chatContainer.clientWidth - 70)
     }
 
     if (this.state.displayType === 'pie' && chartHeight > 330) {
