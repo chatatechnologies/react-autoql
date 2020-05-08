@@ -492,7 +492,10 @@ export default class ChatMessage extends React.Component {
         onClose={() => {
           this.setState({ activeMenu: undefined })
         }}
-        onConfirm={() => this.reportQueryProblem()}
+        onConfirm={() => {
+          this.reportQueryProblem(this.reportProblemMessage)
+          this.reportProblemMessage = undefined
+        }}
         confirmLoading={this.state.isReportingProblem}
         title="Report a Problem"
         enableBodyScroll={true}
@@ -500,7 +503,10 @@ export default class ChatMessage extends React.Component {
         confirmText="Report"
       >
         Please tell us more about the problem you are experiencing:
-        <textarea className="report-problem-text-area" />
+        <textarea
+          className="report-problem-text-area"
+          onChange={e => (this.reportProblemMessage = e.target.value)}
+        />
       </Modal>
     )
   }
@@ -508,7 +514,11 @@ export default class ChatMessage extends React.Component {
   reportQueryProblem = reason => {
     const queryId = _get(this.props, 'response.data.data.query_id')
     this.setState({ isReportingProblem: true })
-    reportProblem({ queryId, ...this.props.authentication })
+    reportProblem({
+      message: reason,
+      queryId,
+      ...this.props.authentication
+    })
       .then(() => {
         this.props.onSuccessAlert('Thank you for your feedback.')
         this.setState({ activeMenu: undefined, isReportingProblem: false })

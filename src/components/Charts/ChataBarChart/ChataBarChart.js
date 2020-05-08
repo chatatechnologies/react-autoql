@@ -5,7 +5,7 @@ import { Bars } from '../Bars'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { getMinAndMaxValues } from '../helpers.js'
+import { getMinAndMaxValues, getTickValues } from '../helpers.js'
 import { shouldRotateLabels } from '../../../js/Util'
 
 export default class ChataBarChart extends Component {
@@ -61,29 +61,6 @@ export default class ChataBarChart extends Component {
     }
   }
 
-  getTickValues = (barHeight, labelArray) => {
-    try {
-      const interval = Math.ceil(
-        (this.props.data.length * 16) / this.props.height
-      )
-      let yTickValues
-
-      if (barHeight < 16) {
-        yTickValues = []
-        labelArray.forEach((label, index) => {
-          if (index % interval === 0) {
-            yTickValues.push(label)
-          }
-        })
-      }
-
-      return yTickValues
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }
-
   render = () => {
     const {
       hasMultipleNumberColumns,
@@ -133,7 +110,7 @@ export default class ChataBarChart extends Component {
     const xLabelArray = data.map(element => element.cells[numberColumnIndex])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
-    const yTickValues = this.getTickValues(barHeight, yLabelArray)
+    const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
     this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (

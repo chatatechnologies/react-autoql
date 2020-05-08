@@ -5,7 +5,7 @@ import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { getMinAndMaxValues } from '../helpers.js'
+import { getMinAndMaxValues, getTickValues } from '../helpers.js'
 import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
 
 export default class ChataLineChart extends Component {
@@ -110,20 +110,9 @@ export default class ChataLineChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 16) / width)
-    let xTickValues
-    if (barWidth < 16) {
-      xTickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          xTickValues.push(element[labelValue])
-        }
-      })
-    }
-
     const labelArray = data.map(element => element[labelValue])
     const tickWidth = getTickWidth(xScale, innerPadding)
+    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (

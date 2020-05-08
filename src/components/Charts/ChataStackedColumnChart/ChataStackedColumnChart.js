@@ -11,6 +11,8 @@ import {
   getTickWidth
 } from '../../../js/Util'
 
+import { getTickValues } from '../helpers'
+
 export default class ChataStackedColumnChart extends Component {
   xScale = scaleBand()
   yScale = scaleLinear()
@@ -63,29 +65,6 @@ export default class ChataStackedColumnChart extends Component {
     }
   }
 
-  getTickValues = (tickWidth, labelArray) => {
-    try {
-      const interval = Math.ceil(
-        (this.props.data.length * 16) / this.props.width
-      ) // we should take into account the outer padding here
-      let xTickValues
-
-      if (tickWidth < 16) {
-        xTickValues = []
-        labelArray.forEach((label, index) => {
-          if (index % interval === 0) {
-            xTickValues.push(label)
-          }
-        })
-      }
-
-      return xTickValues
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }
-
   render = () => {
     const {
       hasMultipleNumberColumns,
@@ -133,7 +112,7 @@ export default class ChataStackedColumnChart extends Component {
 
     const labelArray = data.map(element => element.label)
     const tickWidth = getTickWidth(xScale, innerPadding)
-    const xTickValues = this.getTickValues(tickWidth, labelArray)
+    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (

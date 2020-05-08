@@ -6,6 +6,7 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { calculateMinAndMaxSums, shouldRotateLabels } from '../../../js/Util'
+import { getTickValues } from '../helpers'
 
 export default class ChataStackedLineChart extends Component {
   xScale = scaleBand()
@@ -59,29 +60,6 @@ export default class ChataStackedLineChart extends Component {
     }
   }
 
-  getTickValues = (tickWidth, labelArray) => {
-    try {
-      const interval = Math.ceil(
-        (this.props.data.length * 16) / this.props.width
-      ) // we should take into account the outer padding here
-      let xTickValues
-
-      if (tickWidth < 16) {
-        xTickValues = []
-        labelArray.forEach((label, index) => {
-          if (index % interval === 0) {
-            xTickValues.push(label)
-          }
-        })
-      }
-
-      return xTickValues
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }
-
   render = () => {
     const {
       onLegendTitleClick,
@@ -128,7 +106,7 @@ export default class ChataStackedLineChart extends Component {
 
     const labelArray = data.map(element => element.label)
     const tickWidth = Math.abs(xScale(data[0].label) - xScale(data[1].label))
-    const xTickValues = this.getTickValues(tickWidth, labelArray)
+    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (

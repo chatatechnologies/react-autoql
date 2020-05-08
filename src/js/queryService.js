@@ -387,7 +387,13 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
 
-export const reportProblem = ({ queryId, domain, apiKey, token } = {}) => {
+export const reportProblem = ({
+  message,
+  queryId,
+  domain,
+  apiKey,
+  token
+} = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}?key=${apiKey}`
 
   const axiosInstance = axios.create({
@@ -398,6 +404,10 @@ export const reportProblem = ({ queryId, domain, apiKey, token } = {}) => {
 
   const data = {
     is_correct: false
+  }
+
+  if (message) {
+    data.message = message
   }
 
   return axiosInstance

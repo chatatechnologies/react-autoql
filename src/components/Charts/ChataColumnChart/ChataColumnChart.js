@@ -5,7 +5,7 @@ import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { getMinAndMaxValues } from '../helpers.js'
+import { getMinAndMaxValues, getTickValues } from '../helpers.js'
 import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
 
 export default class ChataBarChart extends Component {
@@ -63,29 +63,6 @@ export default class ChataBarChart extends Component {
     }
   }
 
-  getTickValues = (tickWidth, labelArray) => {
-    try {
-      const interval = Math.ceil(
-        (this.props.data.length * 16) / this.props.width
-      ) // we should take into account the outer padding here
-      let xTickValues
-
-      if (tickWidth < 16) {
-        xTickValues = []
-        labelArray.forEach((label, index) => {
-          if (index % interval === 0) {
-            xTickValues.push(label)
-          }
-        })
-      }
-
-      return xTickValues
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }
-
   render = () => {
     const {
       hasMultipleNumberColumns,
@@ -135,7 +112,7 @@ export default class ChataBarChart extends Component {
 
     const labelArray = data.map(element => element[labelValue])
     const tickWidth = getTickWidth(xScale, innerPadding)
-    const xTickValues = this.getTickValues(tickWidth, labelArray)
+    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
