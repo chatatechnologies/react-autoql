@@ -12,20 +12,20 @@ import {
   func,
   shape,
   arrayOf,
-  instanceOf
+  instanceOf,
 } from 'prop-types'
 
 import {
   dataFormattingType,
   themeConfigType,
   autoQLConfigType,
-  authenticationType
+  authenticationType,
 } from '../../props/types'
 import {
   dataFormattingDefault,
   themeConfigDefault,
   autoQLConfigDefault,
-  authenticationDefault
+  authenticationDefault,
 } from '../../props/defaults'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 import dayjs from '../../js/dayjsWithPlugins'
@@ -60,7 +60,7 @@ import {
   isColumnStringType,
   getNumberColumnIndices,
   getNumberOfGroupables,
-  getPadding
+  getPadding,
 } from '../../js/Util.js'
 
 import './QueryOutput.scss'
@@ -105,7 +105,7 @@ export default class QueryOutput extends React.Component {
     onTableFilterCallback: func,
     enableColumnHeaderContextMenu: bool,
     isResizing: bool,
-    enableDynamicCharting: bool
+    enableDynamicCharting: bool,
   }
 
   static defaultProps = {
@@ -130,13 +130,13 @@ export default class QueryOutput extends React.Component {
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     hideColumnCallback: () => {},
-    onTableFilterCallback: () => {}
+    onTableFilterCallback: () => {},
   }
 
   state = {
     displayType: null,
     tableFilters: [],
-    suggestionSelection: this.props.selectedSuggestion
+    suggestionSelection: this.props.selectedSuggestion,
   }
 
   componentDidMount = () => {
@@ -147,7 +147,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--chata-output-'
+        prefix: '--chata-output-',
       })
 
       // Determine the supported visualization types based on the response data
@@ -162,7 +162,7 @@ export default class QueryOutput extends React.Component {
           this.props.displayType
         )
           ? this.props.displayType
-          : getDefaultDisplayType(this.props.queryResponse)
+          : getDefaultDisplayType(this.props.queryResponse),
       })
     } catch (error) {
       console.error(error)
@@ -179,7 +179,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--chata-output-'
+        prefix: '--chata-output-',
       })
     }
 
@@ -380,7 +380,7 @@ export default class QueryOutput extends React.Component {
         {formatElement({
           element: this.tableData[0],
           column: this.tableColumns[0],
-          config: this.props.dataFormatting
+          config: this.props.dataFormatting,
         })}
       </a>
     )
@@ -475,7 +475,7 @@ export default class QueryOutput extends React.Component {
           if (cell.label === d) {
             return {
               ...cell,
-              hidden: !cell.hidden
+              hidden: !cell.hidden,
             }
           }
           return cell
@@ -483,7 +483,7 @@ export default class QueryOutput extends React.Component {
 
         return {
           ...data,
-          cells: newCells
+          cells: newCells,
         }
       })
 
@@ -493,7 +493,7 @@ export default class QueryOutput extends React.Component {
           if (col.title === d) {
             return {
               ...col,
-              isSeriesHidden: !col.isSeriesHidden
+              isSeriesHidden: !col.isSeriesHidden,
             }
           }
           return col
@@ -504,7 +504,7 @@ export default class QueryOutput extends React.Component {
           if (col.title === d) {
             return {
               ...col,
-              isSeriesHidden: !col.isSeriesHidden
+              isSeriesHidden: !col.isSeriesHidden,
             }
           }
           return col
@@ -523,7 +523,7 @@ export default class QueryOutput extends React.Component {
       if (data.label === d.label) {
         return {
           ...data,
-          hidden: !_get(data, 'hidden', false)
+          hidden: !_get(data, 'hidden', false),
         }
       }
       return data
@@ -623,7 +623,7 @@ export default class QueryOutput extends React.Component {
           // access the table ref for showing the columns if the
           // col visibility is changed
           style={{
-            visibility: this.areAllColumnsHidden() ? 'hidden' : 'visible'
+            visibility: this.areAllColumnsHidden() ? 'hidden' : 'visible',
           }}
         />
       </Fragment>
@@ -637,7 +637,7 @@ export default class QueryOutput extends React.Component {
 
     const chartThemeConfig = {
       ...this.props.themeConfig,
-      ...this.themeStyles
+      ...this.themeStyles,
     }
 
     return (
@@ -796,7 +796,7 @@ export default class QueryOutput extends React.Component {
           {
             element: row[columnIndex] || 0,
             column: numberColumn,
-            config: this.props.dataFormatting
+            config: this.props.dataFormatting,
           }
         )}
             </div>
@@ -807,7 +807,7 @@ export default class QueryOutput extends React.Component {
               <strong>${stringColumn.display_name}:</strong> ${formatElement({
           element: row[this.stringColumnIndex],
           column: stringColumn,
-          config: this.props.dataFormatting
+          config: this.props.dataFormatting,
         })}
             </div>
             <div>
@@ -815,7 +815,7 @@ export default class QueryOutput extends React.Component {
           {
             element: row[columnIndex] || 0,
             column: numberColumn,
-            config: this.props.dataFormatting
+            config: this.props.dataFormatting,
           }
         )}
             </div>
@@ -837,13 +837,13 @@ export default class QueryOutput extends React.Component {
         data: [
           {
             name: this.pivotTableColumns[0].name,
-            value: `${row[0]}`
+            value: `${row[0]}`,
           },
           {
             name: this.tableColumns[this.legendColumnIndex].name,
-            value: `${this.pivotTableColumns[columnIndex].name}`
-          }
-        ]
+            value: `${this.pivotTableColumns[columnIndex].name}`,
+          },
+        ],
       }
     } else {
       return {
@@ -851,9 +851,9 @@ export default class QueryOutput extends React.Component {
         data: [
           {
             name: this.tableColumns[this.stringColumnIndex].name,
-            value: `${row[this.stringColumnIndex]}`
-          }
-        ]
+            value: `${row[this.stringColumnIndex]}`,
+          },
+        ],
       }
     }
   }
@@ -895,7 +895,7 @@ export default class QueryOutput extends React.Component {
               color: this.colorScale(colorScaleValue),
               hidden: false,
               drilldownData,
-              tooltipData
+              tooltipData,
             })
           })
 
@@ -909,9 +909,9 @@ export default class QueryOutput extends React.Component {
                 return formatElement({
                   element: value,
                   column,
-                  config: this.props.dataFormatting
+                  config: this.props.dataFormatting,
                 })
-              }
+              },
             }
           } else {
             // If this label already exists, just add the values together
@@ -921,7 +921,7 @@ export default class QueryOutput extends React.Component {
             ].cells.map((cell, index) => {
               return {
                 ...cell,
-                value: cell.value + Number(cells[index].value)
+                value: cell.value + Number(cells[index].value),
               }
             })
           }
@@ -949,7 +949,7 @@ export default class QueryOutput extends React.Component {
           const formattedElement = formatElement({
             element: rowValue,
             column: col,
-            config: self.props.dataFormatting
+            config: self.props.dataFormatting,
           })
 
           const shouldFilter = `${formattedElement}`
@@ -1078,7 +1078,7 @@ export default class QueryOutput extends React.Component {
           element: cell.getValue(),
           column: col,
           config: this.props.dataFormatting,
-          htmlElement: cell.getElement()
+          htmlElement: cell.getElement(),
         })
       }
 
@@ -1097,7 +1097,7 @@ export default class QueryOutput extends React.Component {
         this.setState({
           isContextMenuOpen: true,
           activeColumn: column,
-          contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 }
+          contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
         })
       }
 
@@ -1149,7 +1149,7 @@ export default class QueryOutput extends React.Component {
         [MONTH_NAMES[9]]: 8,
         [MONTH_NAMES[10]]: 9,
         [MONTH_NAMES[11]]: 10,
-        [MONTH_NAMES[12]]: 11
+        [MONTH_NAMES[12]]: 11,
       }
 
       const dateColumnIndex = this.tableColumns.findIndex(
@@ -1186,8 +1186,8 @@ export default class QueryOutput extends React.Component {
           field: '0',
           // sorter: 'date',
           frozen: true,
-          visible: true
-        }
+          visible: true,
+        },
       ]
 
       Object.keys(uniqueYears).forEach((year, i) => {
@@ -1197,14 +1197,14 @@ export default class QueryOutput extends React.Component {
           drilldownData: [
             {
               name: this.tableColumns[dateColumnIndex].name,
-              value: null
-            }
+              value: null,
+            },
           ],
           name: year,
           title: year,
           field: `${i + 1}`,
           headerContext: undefined,
-          visible: true
+          visible: true,
         })
       })
 
@@ -1226,7 +1226,7 @@ export default class QueryOutput extends React.Component {
         pivotTableData[monthNumber][yearNumber] = row[this.numberColumnIndex]
         pivotOriginalColumnData[year] = {
           ...pivotOriginalColumnData[year],
-          [month]: row[dateColumnIndex]
+          [month]: row[dateColumnIndex],
         }
       })
 
@@ -1319,15 +1319,15 @@ export default class QueryOutput extends React.Component {
           frozen: true,
           headerContext: undefined,
           visible: true,
-          field: '0'
-        }
+          field: '0',
+        },
       ]
 
       Object.keys(uniqueValues1).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
           column: this.tableColumns[this.legendColumnIndex],
-          config: this.props.dataFormatting
+          config: this.props.dataFormatting,
         })
         pivotTableColumns.push({
           ...this.tableColumns[this.numberColumnIndex],
@@ -1335,19 +1335,19 @@ export default class QueryOutput extends React.Component {
           drilldownData: [
             {
               name: this.tableColumns[this.stringColumnIndex].name,
-              value: null
+              value: null,
             },
             {
               name: this.tableColumns[this.legendColumnIndex].name,
-              value: columnName
-            }
+              value: columnName,
+            },
           ],
           name: columnName,
           title: formattedColumnName,
           display_name: formattedColumnName,
           field: `${i + 1}`,
           headerContext: undefined,
-          visible: true
+          visible: true,
         })
       })
 
@@ -1391,7 +1391,7 @@ export default class QueryOutput extends React.Component {
         this.props.queryInputRef.submitQuery({
           queryText: suggestion,
           skipSafetyNet: true,
-          source
+          source,
         })
       }
     }
@@ -1492,7 +1492,7 @@ export default class QueryOutput extends React.Component {
     nudgedLeft,
     nudgedTop,
     targetRect,
-    popoverRect
+    popoverRect,
   }) => {
     return (
       <div className="context-menu">

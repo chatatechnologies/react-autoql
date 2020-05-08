@@ -22,13 +22,13 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import './Dashboard.scss'
@@ -62,7 +62,7 @@ class Dashboard extends React.Component {
     isEditing: PropTypes.bool,
     notExecutedText: PropTypes.string,
     onChange: PropTypes.func,
-    enableDynamicCharting: PropTypes.bool
+    enableDynamicCharting: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -77,13 +77,13 @@ class Dashboard extends React.Component {
     executeOnStopEditing: true,
     isEditing: false,
     notExecutedText: undefined,
-    enableDynamicCharting: true
+    enableDynamicCharting: true,
     // onChange: () => {}
   }
 
   state = {
     isDragging: false,
-    previousTileState: this.props.tiles
+    previousTileState: this.props.tiles,
   }
 
   componentDidMount = () => {
@@ -127,7 +127,7 @@ class Dashboard extends React.Component {
       }
 
       this.setState({
-        justPerformedUndo: false
+        justPerformedUndo: false,
       })
     }
   }
@@ -162,7 +162,7 @@ class Dashboard extends React.Component {
 
   setPreviousTileState = tiles => {
     this.setState({
-      previousTileState: tiles
+      previousTileState: tiles,
     })
   }
 
@@ -195,7 +195,7 @@ class Dashboard extends React.Component {
           w: tile.w,
           h: tile.h,
           x: tile.x,
-          y: tile.y
+          y: tile.y,
         }
       })
 
@@ -215,7 +215,7 @@ class Dashboard extends React.Component {
 
   onMoveStart = () => {
     this.setState({
-      isDragging: true
+      isDragging: true,
     })
   }
 
@@ -231,7 +231,7 @@ class Dashboard extends React.Component {
       // after moving a tile
       setTimeout(() => {
         this.setState({
-          isDragging: false
+          isDragging: false,
         })
       }, 100)
     } catch (error) {
@@ -244,7 +244,7 @@ class Dashboard extends React.Component {
       const tiles = this.props.tiles.map((tile, index) => {
         return {
           ...tile,
-          ...layout[index]
+          ...layout[index],
         }
       })
 
@@ -273,7 +273,7 @@ class Dashboard extends React.Component {
         y: Infinity,
         query: '',
         title: '',
-        isNewTile: true
+        isNewTile: true,
       })
 
       this.props.onChange(tiles)
@@ -287,7 +287,7 @@ class Dashboard extends React.Component {
       this.props.onChange(this.state.previousTileState)
       this.setState({
         previousTileState: this.props.tiles,
-        justPerformedUndo: true
+        justPerformedUndo: true,
       })
     } catch (error) {
       console.error(error)
@@ -316,7 +316,7 @@ class Dashboard extends React.Component {
       const tileIndex = tiles.map(item => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],
-        ...params
+        ...params,
       }
 
       this.props.onChange(tiles)
@@ -329,19 +329,19 @@ class Dashboard extends React.Component {
       queryID,
       data,
       ...this.props.authentication,
-      ...this.props.autoQLConfig
+      ...this.props.autoQLConfig,
     })
       .then(drilldownResponse => {
         this.setState({
           activeDrilldownResponse: drilldownResponse,
-          isDrilldownRunning: false
+          isDrilldownRunning: false,
         })
       })
       .catch(error => {
         console.error(error)
         this.setState({
           isDrilldownRunning: false,
-          activeDrilldownResponse: undefined
+          activeDrilldownResponse: undefined,
         })
       })
   }
@@ -357,7 +357,7 @@ class Dashboard extends React.Component {
     setTimeout(() => {
       this.setState({
         isDrilldownRunning: false,
-        activeDrilldownResponse: drilldownResponse
+        activeDrilldownResponse: drilldownResponse,
       })
     }, 1500)
   }
@@ -373,14 +373,20 @@ class Dashboard extends React.Component {
   }
 
   processDrilldown = (tileId, drilldownData, queryID, activeKey) => {
-    this.setState({
-      isDrilldownModalVisible: true,
-      activeDrilldownTile: tileId,
-      activeDrilldownResponse: null,
-      activeDrilldownChartElementKey: activeKey
-    })
+    if (this.props.autoQLConfig.enableDrilldowns) {
+      if (!drilldownData || !drilldownData.data) {
+        return
+      }
 
-    this.startDrilldown(drilldownData, queryID, tileId)
+      this.setState({
+        isDrilldownModalVisible: true,
+        activeDrilldownTile: tileId,
+        activeDrilldownResponse: null,
+        activeDrilldownChartElementKey: activeKey,
+      })
+
+      this.startDrilldown(drilldownData, queryID, tileId)
+    }
   }
 
   shouldShowOriginalQuery = tile => {
@@ -405,7 +411,7 @@ class Dashboard extends React.Component {
         onClose={() => {
           this.setState({
             isDrilldownModalVisible: false,
-            activeDrilldownTile: null
+            activeDrilldownTile: null,
           })
         }}
       >
@@ -461,7 +467,7 @@ class Dashboard extends React.Component {
         i: tile.key,
         maxH: 12,
         minH: 2,
-        minW: 3
+        minW: 3,
       }
     })
 

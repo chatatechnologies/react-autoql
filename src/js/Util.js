@@ -830,11 +830,7 @@ export const filterDataForDrilldown = (response, drilldownData) => {
   )
 
   const filteredRows = _get(response, 'data.data.rows', []).filter(row => {
-    let value = drilldownDataObject.value
-    if (value === 'null') {
-      value = null
-    }
-    return row[clickedColumnIndex] === value
+    return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
   })
 
   const newResponseData = {
