@@ -747,7 +747,7 @@ export default class QueryOutput extends React.Component {
 
     const allStringColumnIndices = []
     this.tableColumns.forEach((col, index) => {
-      if (isColumnStringType(col)) {
+      if (isColumnStringType(col) || col.groupable) {
         allStringColumnIndices.push(index)
       }
     })
