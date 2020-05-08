@@ -60,6 +60,7 @@
 // Toolbar
 .dashboard-tile-viz-toolbar-container {
   transition: opacity 0.3s ease, color 0.3s ease;
+  color: var(--chata-dashboard-accent-color);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -87,7 +88,20 @@
   z-index: 1;
 }
 
-.chata-dashboard-tile:hover .dashboard-tile-viz-toolbar-container {
+.split-view-query-btn {
+  transition: opacity 0.3s ease, color 0.3s ease;
+  color: var(--chata-dashboard-accent-color);
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  bottom: unset;
+  z-index: 1;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.chata-dashboard-tile:hover .dashboard-tile-viz-toolbar-container,
+.chata-dashboard-tile:hover .split-view-query-btn {
   visibility: visible;
   opacity: 1;
 }

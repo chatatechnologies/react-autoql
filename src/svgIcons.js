@@ -338,3 +338,14 @@ export const splitViewIcon = (
     </g>
   </svg>
 )
+
+export const singleViewIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <path
+      className="chart-icon-svg-0"
+      d="M14.3,0H1.7C0.8,0,0,0.8,0,1.7v2.8v0.8v5.3v0.6v3.1c0,1,0.8,1.7,1.7,1.7h12.6c1,0,1.7-0.8,1.7-1.7v-3.4v-0.3V5.4V5V1.7
+    C16,0.7,15.2,0,14.3,0z M14.4,5.4v5.2v0.3v3.5H1.6v-3.2v-0.6V5.3V4.5V1.6h12.8V5V5.4z"
+    />
+    <rect className="chart-icon-svg-0" y="7.2" width="1.6" height="1.6" />
+  </svg>
+)

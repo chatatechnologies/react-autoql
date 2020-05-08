@@ -10,7 +10,7 @@ import {
   MdFileDownload,
   MdInfoOutline,
   MdPlayCircleOutline,
-  MdEdit
+  MdEdit,
   // MdDescription
 } from 'react-icons/md'
 import {
@@ -23,14 +23,14 @@ import {
   FiCheck,
   FiEye,
   FiTrash2,
-  FiAlertTriangle
+  FiAlertTriangle,
   // FiFileText
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline,
-  IoMdMore
+  IoMdMore,
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
@@ -39,7 +39,7 @@ import {
   AiOutlineBook,
   AiOutlineBorderVerticle,
   AiFillCaretRight,
-  AiFillCaretLeft
+  AiFillCaretLeft,
 } from 'react-icons/ai'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
@@ -58,7 +58,8 @@ import {
   pieChartIcon,
   heatmapIcon,
   bubbleChartIcon,
-  splitViewIcon
+  splitViewIcon,
+  singleViewIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -66,11 +67,11 @@ import './Icon.scss'
 export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
-    size: PropTypes.number // used for the image icons ie. chata-bubbles
+    size: PropTypes.number, // used for the image icons ie. chata-bubbles
   }
 
   static defaultProps = {
-    size: undefined
+    size: undefined,
   }
 
   render = () => {
@@ -244,6 +245,10 @@ export default class Icon extends React.Component {
       }
       case 'split-view': {
         icon = splitViewIcon
+        break
+      }
+      case 'single-view': {
+        icon = singleViewIcon
         break
       }
       case 'table': {

@@ -15,7 +15,7 @@ import {
   lineChartIcon,
   pieChartIcon,
   heatmapIcon,
-  bubbleChartIcon
+  bubbleChartIcon,
   // stackedBarChartIcon
 } from '../../svgIcons.js'
 
@@ -26,11 +26,11 @@ class VizToolbar extends React.Component {
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
     displayType: PropTypes.string.isRequired,
     onDisplayTypeChange: PropTypes.func.isRequired,
-    disableCharts: PropTypes.bool
+    disableCharts: PropTypes.bool,
   }
 
   static defaultProps = {
-    disableCharts: false
+    disableCharts: false,
   }
 
   componentDidUpdate = () => {
@@ -63,6 +63,7 @@ class VizToolbar extends React.Component {
         </button>
       )
     }
+
     return null
   }
 

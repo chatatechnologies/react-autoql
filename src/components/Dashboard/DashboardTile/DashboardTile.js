@@ -19,26 +19,26 @@ import {
   runQuery,
   runQueryOnly,
   fetchAutocomplete,
-  fetchSuggestions
+  fetchSuggestions,
 } from '../../../js/queryService'
 
 import {
   getSupportedDisplayTypes,
   getDefaultDisplayType,
-  isDisplayTypeValid
+  isDisplayTypeValid,
 } from '../../../js/Util'
 
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../../props/defaults'
 
 import './DashboardTile.scss'
@@ -59,7 +59,7 @@ export default class DashboardTile extends React.Component {
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
-    queryResponse: PropTypes.shape({})
+    queryResponse: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -74,7 +74,7 @@ export default class DashboardTile extends React.Component {
     displayType: 'table',
     isNewTile: false,
     queryValidationSelections: undefined,
-    selectedSuggestion: undefined
+    selectedSuggestion: undefined,
   }
 
   state = {
@@ -85,7 +85,7 @@ export default class DashboardTile extends React.Component {
     isExecuting: false,
     suggestions: [],
     isSecondQueryInputOpen: false,
-    currentSource: 'user'
+    currentSource: 'user',
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -137,7 +137,7 @@ export default class DashboardTile extends React.Component {
   startQuery = () => {
     this.setState({
       isExecuting: true,
-      isSecondQueryInputOpen: false
+      isSecondQueryInputOpen: false,
     })
     this.props.setParamsForTile(
       {
@@ -147,7 +147,7 @@ export default class DashboardTile extends React.Component {
         selectedSuggestion: undefined,
         safetyNetSelection: undefined,
         secondSelectedSuggestion: undefined,
-        secondSafetyNetSelection: undefined
+        secondSafetyNetSelection: undefined,
       },
       this.props.tile.i
     )
@@ -172,7 +172,7 @@ export default class DashboardTile extends React.Component {
         // If not, we need to reset to the new default display type for that query
         displayType: newDisplayType,
         selectedSuggestion: undefined,
-        safetyNetSelection: undefined
+        safetyNetSelection: undefined,
       },
       this.props.tile.i
     )
@@ -191,14 +191,14 @@ export default class DashboardTile extends React.Component {
           secondQueryResponse: secondResponse,
           secondDisplayType: newDisplayType,
           secondSelectedSuggestion: undefined,
-          secondSafetyNetSelection: undefined
+          secondSafetyNetSelection: undefined,
         },
         this.props.tile.i
       )
     }
 
     this.setState({
-      isExecuting: false
+      isExecuting: false,
     })
   }
 
@@ -230,7 +230,7 @@ export default class DashboardTile extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: finalSource
+          source: finalSource,
         })
           .then(response => {
             return Promise.resolve(response)
@@ -244,7 +244,7 @@ export default class DashboardTile extends React.Component {
           enableQueryValidation: !this.props.isEditing
             ? false
             : this.props.autoQLConfig.enableQueryValidation,
-          source: finalSource
+          source: finalSource,
         })
           .then(response => {
             return Promise.resolve(response)
@@ -266,7 +266,7 @@ export default class DashboardTile extends React.Component {
     const firstQueryPromise = this.processQuery({
       query: q1,
       skipSafetyNet,
-      source
+      source,
     })
     const queryPromises = [firstQueryPromise]
 
@@ -274,7 +274,7 @@ export default class DashboardTile extends React.Component {
       const secondQueryPromise = this.processQuery({
         query: q2,
         skipSafetyNet,
-        source
+        source,
       })
       queryPromises.push(secondQueryPromise)
     }
@@ -340,7 +340,7 @@ export default class DashboardTile extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...this.props.authentication
+        ...this.props.authentication,
       })
         .then(response => {
           const body = _get(response, 'data.data')
@@ -361,13 +361,13 @@ export default class DashboardTile extends React.Component {
           sortingArray.sort((a, b) => b.length - a.length)
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
-              name: sortingArray[idx]
+              name: sortingArray[idx],
             }
             autoCompleteArray.push(anObject)
           }
 
           this.setState({
-            suggestions: autoCompleteArray
+            suggestions: autoCompleteArray,
           })
         })
         .catch(error => {
@@ -378,7 +378,7 @@ export default class DashboardTile extends React.Component {
 
   onSuggestionsClearRequested = () => {
     this.setState({
-      suggestions: []
+      suggestions: [],
     })
   }
 
@@ -424,7 +424,7 @@ export default class DashboardTile extends React.Component {
 
   toggleSecondQueryInput = () => {
     this.setState({
-      isSecondQueryInputOpen: !this.state.isSecondQueryInputOpen
+      isSecondQueryInputOpen: !this.state.isSecondQueryInputOpen,
     })
   }
 
@@ -470,7 +470,7 @@ export default class DashboardTile extends React.Component {
                         )
                       }
                       this.setState({ isQueryInputFocused: false })
-                    }
+                    },
                   }}
                 />
               ) : (
@@ -568,7 +568,7 @@ export default class DashboardTile extends React.Component {
               style={{
                 display: 'inline-block',
                 marginRight: '3px',
-                marginBottom: '-2px'
+                marginBottom: '-2px',
               }}
             />
           </em>
@@ -596,7 +596,7 @@ export default class DashboardTile extends React.Component {
     this.props.setParamsForTile(
       {
         query: queryText,
-        queryValidationSelections: suggestionList
+        queryValidationSelections: suggestionList,
       },
       this.props.tile.i
     )
@@ -607,7 +607,7 @@ export default class DashboardTile extends React.Component {
     this.props.setParamsForTile(
       {
         secondQuery: queryText,
-        secondqueryValidationSelections: suggestionList
+        secondqueryValidationSelections: suggestionList,
       },
       this.props.tile.i
     )
@@ -629,7 +629,7 @@ export default class DashboardTile extends React.Component {
     selectedSuggestion,
     onSuggestionClick,
     onQueryValidationSelectOption,
-    showSplitViewBtn
+    showSplitViewBtn,
   }) => {
     const queryResponse = response || this.props.queryResponse
     return (
@@ -697,19 +697,19 @@ export default class DashboardTile extends React.Component {
                     }}
                     className="chata-toolbar-btn"
                     data-tip={
-                      this.props.tile.splitView
-                        ? 'Turn Off Split View'
-                        : 'Turn On Split View'
+                      this.props.tile.splitView ? 'Single View' : 'Split View'
                     }
                     data-for="chata-dashboard-toolbar-btn-tooltip"
                     data-test="viz-toolbar-button"
                   >
                     <Icon
-                      type="split-view"
+                      type={
+                        this.getIsSplitView() ? 'single-view' : 'split-view'
+                      }
                       style={{
                         color: this.props.tile.splitView
                           ? this.props.themeConfig.accentColor
-                          : 'inherit'
+                          : 'inherit',
                       }}
                     />
                   </button>
@@ -757,7 +757,7 @@ export default class DashboardTile extends React.Component {
             if (!Number.isNaN(percentNumber)) {
               this.props.setParamsForTile(
                 {
-                  secondDisplayPercentage: percentNumber
+                  secondDisplayPercentage: percentNumber,
                 },
                 this.props.tile.i
               )
@@ -768,7 +768,7 @@ export default class DashboardTile extends React.Component {
         <div className="dashboard-tile-split-pane-container">
           {this.renderSingleResponse({
             displayType: firstDisplayType,
-            onDisplayTypeChange: this.onDisplayTypeChange
+            onDisplayTypeChange: this.onDisplayTypeChange,
           })}
         </div>
         <div className="dashboard-tile-split-pane-container">
@@ -781,18 +781,12 @@ export default class DashboardTile extends React.Component {
             selectedSuggestion: this.props.tile.secondSelectedSuggestion,
             onSuggestionClick: this.onSecondSuggestionClick,
             onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption,
-            showSplitViewBtn: true
+            showSplitViewBtn: true,
           })}
           {this.props.isEditing && (
             <div
-              className="viz-toolbar split-view-btn"
-              data-test="split-view-btn"
-              style={{
-                position: 'absolute',
-                top: '7px',
-                left: '7px',
-                bottom: 'unset'
-              }}
+              className="viz-toolbar split-view-btn split-view-query-btn"
+              data-test="split-view-query-btn"
             >
               <button
                 onClick={() => {
@@ -815,7 +809,7 @@ export default class DashboardTile extends React.Component {
                     position: 'absolute',
                     top: '5px',
                     left: '31px',
-                    fontSize: '10px'
+                    fontSize: '10px',
                   }}
                 />
               </button>
@@ -831,7 +825,7 @@ export default class DashboardTile extends React.Component {
                     this.props.setParamsForTile(
                       {
                         secondQuery: e.target.value,
-                        secondDisplayType: undefined
+                        secondDisplayType: undefined,
                       },
                       this.props.tile.i
                     )
@@ -841,7 +835,7 @@ export default class DashboardTile extends React.Component {
                 style={{
                   width: this.state.isSecondQueryInputOpen
                     ? secondQueryInputWidth
-                    : '0px'
+                    : '0px',
                 }}
               />
             </div>
@@ -872,7 +866,7 @@ export default class DashboardTile extends React.Component {
                 : this.renderSingleResponse({
                     displayType,
                     onDisplayTypeChange: this.onDisplayTypeChange,
-                    showSplitViewBtn: true
+                    showSplitViewBtn: true,
                   })}
             </Fragment>
           ) : (
@@ -900,7 +894,7 @@ export default class DashboardTile extends React.Component {
       onMouseDown,
       onMouseUp,
       onTouchStart,
-      onTouchEnd
+      onTouchEnd,
     }
 
     return (
