@@ -602,6 +602,11 @@ export default class ChataChart extends Component {
           <Button
             style={{ width: 'calc(100% - 10px)' }}
             type="primary"
+            disabled={
+              this.state.ratioSelectorState.every(item => !item.checked) &&
+              this.state.currencySelectorState.every(item => !item.checked) &&
+              this.state.quantitySelectorState.every(item => !item.checked)
+            }
             onClick={() => {
               let activeNumberTypeColumns = []
               if (this.state.activeNumberType === 'DOLLAR_AMT') {
