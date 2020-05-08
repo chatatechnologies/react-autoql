@@ -2,9 +2,10 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import {
-  ReactTabulator
+  ReactTabulator,
   // reactFormatter
 } from 'react-tabulator'
 
@@ -26,7 +27,7 @@ export default class ChataTable extends React.Component {
     borderColor: PropTypes.string,
     hoverColor: PropTypes.string,
     onFilterCallback: PropTypes.func,
-    setFilterTagsCallback: PropTypes.func
+    setFilterTagsCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -35,11 +36,11 @@ export default class ChataTable extends React.Component {
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
     onRowClick: () => {},
-    onCellClick: () => {}
+    onCellClick: () => {},
   }
 
   state = {
-    columns: this.props.columns
+    columns: this.props.columns,
   }
 
   componentDidMount = () => {
@@ -50,7 +51,29 @@ export default class ChataTable extends React.Component {
     setTimeout(this.props.setFilterTagsCallback, 100)
   }
 
-  componentDidUpdate = prevProps => {
+  shouldComponentUpdate = (nextProps, nextState) => {
+    // Tabulator takes care of updates in these cases
+    // No need to re-render after filter changes
+    const thisPropsFiltered = {
+      ...this.props,
+      data: undefined,
+      headerFilters: undefined,
+    }
+    const nextPropsFiltered = {
+      ...nextProps,
+      data: undefined,
+      headerFilters: undefined,
+    }
+
+    if (!_isEqual(thisPropsFiltered, nextPropsFiltered)) {
+      return true
+    } else if (!_isEqual(this.state, nextState)) {
+      return true
+    }
+    return false
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
     if (
       this.props.borderColor &&
       this.props.borderColor !== prevProps.borderColor
@@ -93,12 +116,13 @@ export default class ChataTable extends React.Component {
   saveAsCSV = () => {
     if (this.ref && this.ref.table) {
       this.ref.table.download('csv', 'table.csv', {
-        delimeter: ','
+        delimeter: ',',
       })
     }
   }
 
   render = () => {
+    console.log('rendering table again')
     const options = {
       // layout: 'fitDataStretch',
       layout: 'fitDataFill',
@@ -110,7 +134,7 @@ export default class ChataTable extends React.Component {
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
-        columnCalcs: false
+        columnCalcs: false,
       },
       dataFiltering: filters => {
         // The filters provided to this function don't include header filters
@@ -120,7 +144,7 @@ export default class ChataTable extends React.Component {
         }
       },
       downloadDataFormatter: data => data,
-      downloadReady: (fileContents, blob) => blob
+      downloadReady: (fileContents, blob) => blob,
     }
 
     return (

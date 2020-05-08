@@ -966,7 +966,8 @@ export default class QueryOutput extends React.Component {
     } else if (
       col.type === 'DOLLAR_AMT' ||
       col.type === 'QUANTITY' ||
-      col.type === 'PERCENT'
+      col.type === 'PERCENT' ||
+      col.type === 'RATIO'
     ) {
       return (headerValue, rowValue, rowData, filterParams) => {
         // headerValue - the value of the header filter element
@@ -1005,6 +1006,7 @@ export default class QueryOutput extends React.Component {
         }
       }
     }
+
     return undefined
   }
 
