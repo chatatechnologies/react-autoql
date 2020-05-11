@@ -41,6 +41,11 @@ export const isDayJSDateValid = date => {
 }
 
 export const formatEpochDate = (value, col, config) => {
+  if (value == null) {
+    // catches null and undefined
+    return value
+  }
+
   try {
     const { monthYearFormat, dayMonthYearFormat } = config
     const year = 'YYYY'
@@ -49,7 +54,10 @@ export const formatEpochDate = (value, col, config) => {
 
     // Use title to determine significant digits of date format
     const title = col.title
-    let date = dayjs.unix(value).format(dayMonthYear)
+    let date = dayjs
+      .unix(value)
+      .utc()
+      .format(dayMonthYear)
 
     if (Number.isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
@@ -60,9 +68,15 @@ export const formatEpochDate = (value, col, config) => {
       }
       date = dayjs(value).format(dayMonthYear)
     } else if (title && title.toLowerCase().includes('year')) {
-      date = dayjs.unix(value).format(year)
+      date = dayjs
+        .unix(value)
+        .utc()
+        .format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs.unix(value).format(monthYear)
+      date = dayjs
+        .unix(value)
+        .utc()
+        .format(monthYear)
     }
 
     if (isDayJSDateValid(date)) {

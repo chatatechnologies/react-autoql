@@ -1124,7 +1124,10 @@ export default class QueryOutput extends React.Component {
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     if (this.tableColumns[dateColumnIndex].type === 'DATE') {
-      return dayjs.unix(data[dateColumnIndex]).format('YYYY')
+      return dayjs
+        .unix(data[dateColumnIndex])
+        .utc()
+        .format('YYYY')
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
@@ -1167,7 +1170,12 @@ export default class QueryOutput extends React.Component {
 
       const allYears = tableData.map(d => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
-          return Number(dayjs.unix(d[dateColumnIndex]).format('YYYY'))
+          return Number(
+            dayjs
+              .unix(d[dateColumnIndex])
+              .utc()
+              .format('YYYY')
+          )
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
