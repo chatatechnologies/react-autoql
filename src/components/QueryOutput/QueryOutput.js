@@ -203,6 +203,8 @@ export default class QueryOutput extends React.Component {
       this.supportedDisplayTypes &&
       this.supportedDisplayTypes.includes(this.props.displayType)
     ) {
+      this.tableID = uuid.v4()
+      this.pivotTableID = uuid.v4()
       this.setState({ displayType: this.props.displayType })
     }
 
@@ -234,7 +236,8 @@ export default class QueryOutput extends React.Component {
       this.interpretation = responseBody.interpretation
       if (isTableType(displayType) || isChartType(displayType)) {
         this.generateTableData()
-        this.shouldGeneratePivotData() && this.generatePivotData(true)
+        this.shouldGeneratePivotData() &&
+          this.generatePivotData({ isFirstGeneration: true })
         this.shouldGenerateChartData() && this.generateChartData()
       } else if (isForecastType(displayType)) {
         this.generateForecastData()
@@ -271,12 +274,13 @@ export default class QueryOutput extends React.Component {
     this.setColumnIndices()
   }
 
-  generatePivotData = isFirstGeneration => {
+  generatePivotData = ({ isFirstGeneration, newTableData }) => {
     try {
-      if (this.tableColumns.length === 2) {
-        this.generateDatePivotData()
+      const tableData = newTableData || this.tableData
+      if (tableData.length === 2) {
+        this.generateDatePivotData(tableData)
       } else {
-        this.generatePivotTableData(isFirstGeneration)
+        this.generatePivotTableData({ isFirstGeneration, newTableData })
       }
     } catch (error) {
       console.error(error)
@@ -446,8 +450,12 @@ export default class QueryOutput extends React.Component {
       setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
-          this.tableData = tableRef.getData(true)
-          this.shouldGenerateChartData() && this.generateChartData()
+          const newTableData = tableRef.getData(true)
+          // todo: Eventually we will want to update the pivot data too
+          // if (this.supportsPivot) {
+          //   this.generatePivotData({ newTableData })
+          // }
+          this.shouldGenerateChartData() && this.generateChartData(newTableData)
           this.props.onTableFilterCallback(this.tableData)
         }
       }, 500)
@@ -858,11 +866,11 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generateChartData = () => {
+  generateChartData = newTableData => {
     try {
       this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
       let columns = this.tableColumns
-      let tableData = this.tableData
+      let tableData = newTableData || this.tableData
 
       if (this.supportsPivot) {
         columns = this.pivotTableColumns
@@ -1139,7 +1147,7 @@ export default class QueryOutput extends React.Component {
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
 
-  generateDatePivotData = () => {
+  generateDatePivotData = newTableData => {
     try {
       // todo: just make this from a simple array
       const uniqueMonths = {
@@ -1166,7 +1174,8 @@ export default class QueryOutput extends React.Component {
         )
       }
 
-      const tableData = _get(this.props.queryResponse, 'data.data.rows')
+      const tableData =
+        newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
       const allYears = tableData.map(d => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
@@ -1252,9 +1261,10 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = isFirstGeneration => {
+  generatePivotTableData = ({ isFirstGeneration, newTableData }) => {
     try {
-      const tableData = _get(this.props.queryResponse, 'data.data.rows')
+      const tableData =
+        newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it

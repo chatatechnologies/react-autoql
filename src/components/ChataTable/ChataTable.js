@@ -122,7 +122,6 @@ export default class ChataTable extends React.Component {
   }
 
   render = () => {
-    console.log('rendering table again')
     const options = {
       // layout: 'fitDataStretch',
       layout: 'fitDataFill',
