@@ -4,6 +4,7 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _reduce from 'lodash.reduce'
+import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
@@ -134,11 +135,18 @@ export default class DashboardTile extends React.Component {
     return query && query.trim()
   }
 
-  startQuery = () => {
+  startQuery = query => {
     this.setState({
       isExecuting: true,
       isSecondQueryInputOpen: false,
     })
+
+    // If query changed, reset data config
+    let dataConfig = _cloneDeep(this.props.tile.dataConfig)
+    if (query && query !== this.props.tile.query) {
+      dataConfig = {}
+    }
+
     this.props.setParamsForTile(
       {
         isNewTile: false,
@@ -148,6 +156,7 @@ export default class DashboardTile extends React.Component {
         safetyNetSelection: undefined,
         secondSelectedSuggestion: undefined,
         secondSafetyNetSelection: undefined,
+        dataConfig: dataConfig,
       },
       this.props.tile.i
     )
@@ -160,17 +169,10 @@ export default class DashboardTile extends React.Component {
       response = responseArray
     }
 
-    const newDisplayType = isDisplayTypeValid(response, this.props.displayType)
-      ? this.props.displayType
-      : getDefaultDisplayType(response)
-
     this.props.setParamsForTile(
       {
         queryResponse: response,
         isNewTile: false,
-        // We want to keep the saved display type if possible
-        // If not, we need to reset to the new default display type for that query
-        displayType: newDisplayType,
         selectedSuggestion: undefined,
         safetyNetSelection: undefined,
       },
@@ -186,6 +188,7 @@ export default class DashboardTile extends React.Component {
         ? this.props.secondDisplayType
         : getDefaultDisplayType(secondResponse)
 
+      // end query second query
       this.props.setParamsForTile(
         {
           secondQueryResponse: secondResponse,
@@ -255,7 +258,7 @@ export default class DashboardTile extends React.Component {
   }
 
   processTile = ({ query, secondQuery, skipSafetyNet, source } = {}) => {
-    this.startQuery()
+    this.startQuery(query)
 
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
@@ -304,7 +307,6 @@ export default class DashboardTile extends React.Component {
 
   onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
     this.setState({ query: suggestion })
-
     if (isButtonClick) {
       this.props.setParamsForTile({ query: suggestion }, this.props.tile.i)
       this.processTile({ query: suggestion, skipSafetyNet: true, source })
@@ -465,7 +467,7 @@ export default class DashboardTile extends React.Component {
                     onBlur: e => {
                       if (_get(this.props, 'tile.query') !== e.target.value) {
                         this.props.setParamsForTile(
-                          { query: e.target.value, displayType: undefined },
+                          { query: e.target.value, dataConfig: {} },
                           this.props.tile.i
                         )
                       }
@@ -484,7 +486,7 @@ export default class DashboardTile extends React.Component {
                   onBlur={e => {
                     if (_get(this.props, 'tile.query') !== e.target.value) {
                       this.props.setParamsForTile(
-                        { query: e.target.value, displayType: undefined },
+                        { query: e.target.value },
                         this.props.tile.i
                       )
                     }
@@ -644,6 +646,13 @@ export default class DashboardTile extends React.Component {
           queryResponse={queryResponse}
           renderTooltips={false}
           autoSelectQueryValidationSuggestion={false}
+          dataConfig={this.props.tile.dataConfig}
+          onDataConfigChange={config => {
+            this.props.setParamsForTile(
+              { dataConfig: config },
+              this.props.tile.i
+            )
+          }}
           queryValidationSelections={
             queryValidationSelections ||
             this.props.tile.queryValidationSelections
@@ -722,12 +731,22 @@ export default class DashboardTile extends React.Component {
   }
 
   renderSplitResponse = () => {
-    const firstDisplayType =
-      this.props.displayType || getDefaultDisplayType(this.props.queryResponse)
+    const response = this.props.queryResponse
+    const secondResponse = this.props.tile.secondQueryResponse
 
-    const secondDisplayType =
-      this.props.secondDisplayType ||
-      getDefaultDisplayType(this.props.queryResponse)
+    const firstDisplayType = isDisplayTypeValid(
+      response,
+      this.props.displayType
+    )
+      ? this.props.displayType
+      : getDefaultDisplayType(response)
+
+    const secondDisplayType = isDisplayTypeValid(
+      secondResponse,
+      this.props.secondDisplayType
+    )
+      ? this.props.secondDisplayType
+      : getDefaultDisplayType(secondResponse)
 
     const innerTileDiv = document.querySelector(
       `#chata-dashboard-tile-inner-div-${this.TILE_ID}`
@@ -825,7 +844,6 @@ export default class DashboardTile extends React.Component {
                     this.props.setParamsForTile(
                       {
                         secondQuery: e.target.value,
-                        secondDisplayType: undefined,
                       },
                       this.props.tile.i
                     )

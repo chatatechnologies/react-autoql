@@ -4,6 +4,9 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
+
 import { scaleOrdinal } from 'd3-scale'
 import {
   number,
@@ -81,6 +84,7 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
+  dataConfig = {}
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
@@ -90,6 +94,7 @@ export default class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigType,
     authentication: authenticationType,
     dataFormatting: dataFormattingType,
+    dataConfig: shape({}),
     onSuggestionClick: func,
     displayType: string,
     renderTooltips: bool,
@@ -106,6 +111,7 @@ export default class QueryOutput extends React.Component {
     enableColumnHeaderContextMenu: bool,
     isResizing: bool,
     enableDynamicCharting: bool,
+    onDataConfigChange: func,
   }
 
   static defaultProps = {
@@ -113,6 +119,14 @@ export default class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
     dataFormatting: dataFormattingDefault,
+    dataConfig: {
+      numberColumnIndex: undefined,
+      numberColumnIndices: undefined,
+      stringColumnIndex: undefined,
+      stringColumnIndices: undefined,
+      legendColumnIndex: undefined,
+      seriesIndices: undefined,
+    },
     displayType: undefined,
     queryInputRef: undefined,
     onSuggestionClick: undefined,
@@ -131,6 +145,8 @@ export default class QueryOutput extends React.Component {
     onQueryValidationSelectOption: () => {},
     hideColumnCallback: () => {},
     onTableFilterCallback: () => {},
+    onDataConfigChange: () => {},
+    onErrorCallback: () => {},
   }
 
   state = {
@@ -141,6 +157,10 @@ export default class QueryOutput extends React.Component {
 
   componentDidMount = () => {
     try {
+      // Set initial config if needed
+      // If this config causes errors, it will be reset when the error occurs
+      this.dataConfig = _cloneDeep(this.props.dataConfig)
+
       const { theme, chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
@@ -171,6 +191,15 @@ export default class QueryOutput extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
+      this.props.onDataConfigChange(this.dataConfig)
+    }
+
+    // If columns changed, we need to reset the column data config
+    if (!_isEqual(this.props.columns, prevProps.columns)) {
+      this.props.onDataConfigChange({})
+    }
+
     if (
       _get(prevProps, 'themeConfig.theme') !==
       _get(this.props, 'themeConfig.theme')
@@ -265,10 +294,7 @@ export default class QueryOutput extends React.Component {
     )
 
     const data = _get(this.props.queryResponse, 'data.data.rows')
-    this.tableData =
-      data && typeof data !== 'string' // This will change once the query response is refactored
-        ? [...data]
-        : undefined
+    this.tableData = data ? [...data] : undefined
 
     this.numberOfTableRows = _get(data, 'length', 0)
     this.setColumnIndices()
@@ -277,7 +303,7 @@ export default class QueryOutput extends React.Component {
   generatePivotData = ({ isFirstGeneration, newTableData }) => {
     try {
       const tableData = newTableData || this.tableData
-      if (tableData.length === 2) {
+      if (this.tableColumns.length === 2) {
         this.generateDatePivotData(tableData)
       } else {
         this.generatePivotTableData({ isFirstGeneration, newTableData })
@@ -665,12 +691,12 @@ export default class QueryOutput extends React.Component {
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
-          stringColumnIndices={this.stringColumnIndices}
-          numberColumnIndices={this.numberColumnIndices}
-          seriesIndices={this.seriesIndices}
-          stringColumnIndex={this.stringColumnIndex}
-          legendColumnIndex={this.legendColumnIndex}
-          numberColumnIndex={this.numberColumnIndex}
+          stringColumnIndices={this.dataConfig.stringColumnIndices}
+          numberColumnIndices={this.dataConfig.numberColumnIndices}
+          seriesIndices={this.dataConfig.seriesIndices}
+          stringColumnIndex={this.dataConfig.stringColumnIndex}
+          legendColumnIndex={this.dataConfig.stringColumnIndex}
+          numberColumnIndex={this.dataConfig.numberColumnIndex}
           themeConfig={chartThemeConfig}
           // valueFormatter={formatElement}
           // onChartClick={(row, columns) => {
@@ -679,10 +705,10 @@ export default class QueryOutput extends React.Component {
           //   }
           // }}
           changeStringColumnIndex={index => {
-            if (this.legendColumnIndex === index) {
-              this.legendColumnIndex = undefined
+            if (this.dataConfig.stringColumnIndex === index) {
+              this.dataConfig.stringColumnIndex = undefined
             }
-            this.stringColumnIndex = index
+            this.dataConfig.stringColumnIndex = index
 
             if (this.supportsPivot) {
               this.generatePivotTableData()
@@ -691,10 +717,10 @@ export default class QueryOutput extends React.Component {
             this.forceUpdate()
           }}
           changeLegendColumnIndex={index => {
-            if (this.stringColumnIndex === index) {
-              this.stringColumnIndex = undefined
+            if (this.dataConfig.stringColumnIndex === index) {
+              this.dataConfig.stringColumnIndex = undefined
             }
-            this.legendColumnIndex = index
+            this.dataConfig.stringColumnIndex = index
 
             if (this.supportsPivot) {
               this.generatePivotTableData()
@@ -704,7 +730,7 @@ export default class QueryOutput extends React.Component {
           }}
           changeNumberColumnIndices={indices => {
             if (indices) {
-              this.numberColumnIndices = indices
+              this.dataConfig.numberColumnIndices = indices
               this.generateChartData()
               this.forceUpdate()
             }
@@ -763,30 +789,31 @@ export default class QueryOutput extends React.Component {
     // We will usually want to take the second column because the first one
     // will most likely have all of the same value. Grab the first column only
     // if it's the only string column
-    if (!this.stringColumnIndices) {
-      this.stringColumnIndices = allStringColumnIndices
+    if (!this.dataConfig.stringColumnIndices) {
+      this.dataConfig.stringColumnIndices = allStringColumnIndices
     }
 
-    if (!(this.stringColumnIndex >= 0)) {
-      this.stringColumnIndex = this.supportsPivot
+    if (!(this.dataConfig.stringColumnIndex >= 0)) {
+      this.dataConfig.stringColumnIndex = this.supportsPivot
         ? this.tableColumns.findIndex(col => col.groupable)
-        : this.stringColumnIndices[1] || this.stringColumnIndices[0]
+        : this.dataConfig.stringColumnIndices[1] ||
+          this.dataConfig.stringColumnIndices[0]
     }
 
-    if (!this.numberColumnIndices) {
+    if (!this.dataConfig.numberColumnIndices) {
       const columns = this.supportsPivot
         ? this.pivotTableColumns
         : this.tableColumns
-      this.numberColumnIndices = getNumberColumnIndices(columns)
+      this.dataConfig.numberColumnIndices = getNumberColumnIndices(columns)
     }
-    this.numberColumnIndex = this.numberColumnIndices[0]
+    this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
   }
 
-  getTooltipDataForCell = (row, columnIndex) => {
+  getTooltipDataForCell = (row, columnIndex, numberValue) => {
     let tooltipElement = null
     try {
-      const numberColumn = this.tableColumns[this.numberColumnIndex]
-      const stringColumn = this.tableColumns[this.stringColumnIndex]
+      const numberColumn = this.tableColumns[this.dataConfig.numberColumnIndex]
+      const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
 
       if (this.supportsPivot) {
         tooltipElement = `<div>
@@ -796,7 +823,7 @@ export default class QueryOutput extends React.Component {
         }
             </div>
             <div><strong>${
-              this.tableColumns[this.legendColumnIndex].display_name
+              this.tableColumns[this.dataConfig.stringColumnIndex].display_name
             }:</strong> ${this.pivotTableColumns[columnIndex].title}
             </div>
             <div>
@@ -813,7 +840,7 @@ export default class QueryOutput extends React.Component {
         tooltipElement = `<div>
             <div>
               <strong>${stringColumn.display_name}:</strong> ${formatElement({
-          element: row[this.stringColumnIndex],
+          element: row[this.dataConfig.stringColumnIndex],
           column: stringColumn,
           config: this.props.dataFormatting,
         })}
@@ -821,7 +848,7 @@ export default class QueryOutput extends React.Component {
             <div>
             <div><strong>${numberColumn.display_name}:</strong> ${formatElement(
           {
-            element: row[columnIndex] || 0,
+            element: numberValue || row[columnIndex] || 0,
             column: numberColumn,
             config: this.props.dataFormatting,
           }
@@ -848,7 +875,7 @@ export default class QueryOutput extends React.Component {
             value: `${row[0]}`,
           },
           {
-            name: this.tableColumns[this.legendColumnIndex].name,
+            name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
             value: `${this.pivotTableColumns[columnIndex].name}`,
           },
         ],
@@ -858,8 +885,8 @@ export default class QueryOutput extends React.Component {
         supportedByAPI,
         data: [
           {
-            name: this.tableColumns[this.stringColumnIndex].name,
-            value: `${row[this.stringColumnIndex]}`,
+            name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
+            value: `${row[this.dataConfig.stringColumnIndex]}`,
           },
         ],
       }
@@ -877,13 +904,15 @@ export default class QueryOutput extends React.Component {
         tableData = this.pivotTableData
       }
 
-      let stringIndex = this.stringColumnIndex
-      this.seriesIndices = this.numberColumnIndices
+      let stringIndex = this.dataConfig.stringColumnIndex
+      this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices
 
       if (this.supportsPivot) {
         stringIndex = 0
-        this.seriesIndices = this.pivotTableColumns.map((col, i) => i)
-        this.seriesIndices.shift()
+        this.dataConfig.seriesIndices = this.pivotTableColumns.map(
+          (col, i) => i
+        )
+        this.dataConfig.seriesIndices.shift()
       }
 
       this.chartData = Object.values(
@@ -891,11 +920,15 @@ export default class QueryOutput extends React.Component {
           // Loop through columns and create a series for each
           const cells = []
 
-          this.seriesIndices.forEach((columnIndex, i) => {
+          this.dataConfig.seriesIndices.forEach((columnIndex, i) => {
             const value = row[columnIndex]
             const colorScaleValue = this.supportsPivot ? columnIndex : i
             const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
-            const tooltipData = this.getTooltipDataForCell(row, columnIndex)
+            const tooltipData = this.getTooltipDataForCell(
+              row,
+              columnIndex,
+              value
+            )
 
             cells.push({
               value: !Number.isNaN(Number(value)) ? Number(value) : value, // this should always be able to convert to a number
@@ -927,20 +960,36 @@ export default class QueryOutput extends React.Component {
             chartDataObject[row[stringIndex]].cells = chartDataObject[
               row[stringIndex]
             ].cells.map((cell, index) => {
+              const newValue = cell.value + Number(cells[index].value)
               return {
                 ...cell,
-                value: cell.value + Number(cells[index].value),
+                value: newValue,
+                tooltipData: this.getTooltipDataForCell(
+                  row,
+                  undefined,
+                  newValue
+                ),
               }
             })
           }
           return chartDataObject
         }, {})
       )
+
+      this.chartDataError = false
     } catch (error) {
-      console.error(error)
-      // Something went wrong. Do not show chart options
-      this.supportedDisplayTypes = ['table']
-      this.chartData = undefined
+      if (!this.chartDataError) {
+        // Try one more time after resetting data config settings
+        this.chartDataError = true
+        this.dataConfig = {}
+        this.setColumnIndices()
+        this.generateChartData()
+      } else {
+        // Something went wrong a second time. Do not show chart options
+        this.supportedDisplayTypes = ['table']
+        this.chartData = undefined
+        console.error(error)
+      }
     }
   }
 
@@ -1168,8 +1217,8 @@ export default class QueryOutput extends React.Component {
       const dateColumnIndex = this.tableColumns.findIndex(
         col => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      if (!(this.numberColumnIndex >= 0)) {
-        this.numberColumnIndex = this.tableColumns.findIndex(
+      if (!(this.dataConfig.numberColumnIndex >= 0)) {
+        this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
         )
       }
@@ -1211,8 +1260,8 @@ export default class QueryOutput extends React.Component {
 
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
-          ...this.tableColumns[this.numberColumnIndex],
-          origColumn: this.tableColumns[this.numberColumnIndex],
+          ...this.tableColumns[this.dataConfig.numberColumnIndex],
+          origColumn: this.tableColumns[this.dataConfig.numberColumnIndex],
           drilldownData: [
             {
               name: this.tableColumns[dateColumnIndex].name,
@@ -1242,7 +1291,8 @@ export default class QueryOutput extends React.Component {
         const yearNumber = uniqueYears[year]
         const monthNumber = uniqueMonths[month]
 
-        pivotTableData[monthNumber][yearNumber] = row[this.numberColumnIndex]
+        pivotTableData[monthNumber][yearNumber] =
+          row[this.dataConfig.numberColumnIndex]
         pivotOriginalColumnData[year] = {
           ...pivotOriginalColumnData[year],
           [month]: row[dateColumnIndex],
@@ -1268,32 +1318,32 @@ export default class QueryOutput extends React.Component {
 
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it
-      if (this.stringColumnIndex >= 0) {
-        this.legendColumnIndex = this.tableColumns.findIndex(
-          (col, i) => col.groupable && i !== this.stringColumnIndex
+      if (this.dataConfig.stringColumnIndex >= 0) {
+        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
-      } else if (this.legendColumnIndex >= 0) {
-        this.stringColumnIndex = this.tableColumns.findIndex(
-          (col, i) => col.groupable && i !== this.legendColumnIndex
+      } else if (this.dataConfig.stringColumnIndex >= 0) {
+        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
       } else {
-        this.stringColumnIndex = this.tableColumns.findIndex(
+        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
           col => col.groupable
         )
-        this.legendColumnIndex = this.tableColumns.findIndex(
-          (col, i) => col.groupable && i !== this.stringColumnIndex
+        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
       }
 
       // Set the number type column
-      if (!(this.numberColumnIndex >= 0)) {
-        this.numberColumnIndex = this.tableColumns.findIndex(
+      if (!(this.dataConfig.numberColumnIndex >= 0)) {
+        this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => isColumnNumberType(col) && !col.groupable
         )
       }
 
       let uniqueValues0 = tableData
-        .map(d => d[this.stringColumnIndex])
+        .map(d => d[this.dataConfig.stringColumnIndex])
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1302,7 +1352,7 @@ export default class QueryOutput extends React.Component {
         }, {})
 
       let uniqueValues1 = tableData
-        .map(d => d[this.legendColumnIndex])
+        .map(d => d[this.dataConfig.stringColumnIndex])
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1315,9 +1365,9 @@ export default class QueryOutput extends React.Component {
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length
       ) {
-        const tempCol = this.legendColumnIndex
-        this.legendColumnIndex = this.stringColumnIndex
-        this.stringColumnIndex = tempCol
+        const tempCol = this.dataConfig.stringColumnIndex
+        this.dataConfig.stringColumnIndex = this.dataConfig.stringColumnIndex
+        this.dataConfig.stringColumnIndex = tempCol
 
         const tempValues = { ...uniqueValues0 }
         uniqueValues0 = { ...uniqueValues1 }
@@ -1335,7 +1385,7 @@ export default class QueryOutput extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...this.tableColumns[this.stringColumnIndex],
+          ...this.tableColumns[this.dataConfig.stringColumnIndex],
           frozen: true,
           headerContext: undefined,
           visible: true,
@@ -1346,19 +1396,19 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueValues1).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
-          column: this.tableColumns[this.legendColumnIndex],
+          column: this.tableColumns[this.dataConfig.stringColumnIndex],
           config: this.props.dataFormatting,
         })
         pivotTableColumns.push({
-          ...this.tableColumns[this.numberColumnIndex],
-          origColumn: this.tableColumns[this.numberColumnIndex],
+          ...this.tableColumns[this.dataConfig.numberColumnIndex],
+          origColumn: this.tableColumns[this.dataConfig.numberColumnIndex],
           drilldownData: [
             {
-              name: this.tableColumns[this.stringColumnIndex].name,
+              name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
               value: null,
             },
             {
-              name: this.tableColumns[this.legendColumnIndex].name,
+              name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
               value: columnName,
             },
           ],
@@ -1377,13 +1427,14 @@ export default class QueryOutput extends React.Component {
       )
       tableData.forEach(row => {
         // Populate first column
-        pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][0] =
-          row[this.stringColumnIndex]
+        pivotTableData[
+          uniqueValues0[row[this.dataConfig.stringColumnIndex]]
+        ][0] = row[this.dataConfig.stringColumnIndex]
 
         // Populate remaining columns
-        pivotTableData[uniqueValues0[row[this.stringColumnIndex]]][
-          uniqueValues1[row[this.legendColumnIndex]] + 1
-        ] = row[this.numberColumnIndex]
+        pivotTableData[uniqueValues0[row[this.dataConfig.stringColumnIndex]]][
+          uniqueValues1[row[this.dataConfig.stringColumnIndex]] + 1
+        ] = row[this.dataConfig.numberColumnIndex]
       })
 
       this.pivotTableColumns = pivotTableColumns

@@ -13,13 +13,13 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
@@ -37,7 +37,7 @@ import {
   runDrilldown,
   cancelQuery,
   fetchQueryTips,
-  fetchSuggestions
+  fetchSuggestions,
 } from '../../js/queryService'
 
 // Styles
@@ -78,7 +78,7 @@ export default class DataMessenger extends React.Component {
     onVisibleChange: func,
     onHandleClick: func,
     onErrorCallback: func,
-    onSuccessAlert: func
+    onSuccessAlert: func,
   }
 
   static defaultProps = {
@@ -114,7 +114,7 @@ export default class DataMessenger extends React.Component {
     onHandleClick: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
-    onSuccessAlert: () => {}
+    onSuccessAlert: () => {},
   }
 
   state = {
@@ -133,7 +133,7 @@ export default class DataMessenger extends React.Component {
     queryTipsLoading: false,
     queryTipsError: false,
     queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 1
+    queryTipsCurrentPage: 1,
   }
 
   componentDidMount = () => {
@@ -154,16 +154,25 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps, prevState) => {
     try {
       setTimeout(() => {
         ReactTooltip.rebuild()
       }, 1000)
+
+      if (
+        this.state.activePage === 'messenger' &&
+        prevState.activePage !== 'messenger'
+      ) {
+        this.scrollToBottom()
+      }
+
       if (this.props.isVisible && !prevProps.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
         }
       }
+
       if (
         !this.props.isVisible &&
         prevProps.isVisible &&
@@ -203,7 +212,7 @@ export default class DataMessenger extends React.Component {
       id: uuid.v4(),
       isResponse: true,
       type: type || 'text',
-      content: content || ''
+      content: content || '',
     }
   }
 
@@ -214,8 +223,8 @@ export default class DataMessenger extends React.Component {
         value: uuid.v4(),
         children: topic.queries.map(query => ({
           label: query,
-          value: uuid.v4()
-        }))
+          value: uuid.v4(),
+        })),
       }
     })
 
@@ -265,8 +274,8 @@ export default class DataMessenger extends React.Component {
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
-              'there'}! Let’s dive into your data. What can I help you discover today?`
-      })
+              'there'}! Let’s dive into your data. What can I help you discover today?`,
+      }),
     ]
 
     if (
@@ -285,7 +294,7 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
-      isClearMessageConfirmVisible: false
+      isClearMessageConfirmVisible: false,
     })
   }
 
@@ -410,7 +419,7 @@ export default class DataMessenger extends React.Component {
       // Fetch suggestion list now
       fetchSuggestions({
         query: response.originalQuery,
-        ...this.props.authentication
+        ...this.props.authentication,
       })
         .then(response => {
           this.addResponseMessage({ response })
@@ -421,7 +430,7 @@ export default class DataMessenger extends React.Component {
         })
         .catch(error => {
           this.addResponseMessage({
-            content: _get(error, 'response.data.message')
+            content: _get(error, 'response.data.message'),
           })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
@@ -440,18 +449,18 @@ export default class DataMessenger extends React.Component {
     runDrilldown({
       ...this.props.authentication,
       queryID,
-      data
+      data,
     })
       .then(response => {
         this.addResponseMessage({
-          response: { ...response, enableDrilldowns: true }
+          response: { ...response, enableDrilldowns: true },
         })
         this.setState({ isChataThinking: false })
       })
       .catch(error => {
         console.error(error)
         this.addResponseMessage({
-          content: _get(error, 'message')
+          content: _get(error, 'message'),
         })
         this.setState({ isChataThinking: false })
       })
@@ -470,7 +479,7 @@ export default class DataMessenger extends React.Component {
 
     setTimeout(() => {
       this.addResponseMessage({
-        response: drilldownResponse
+        response: drilldownResponse,
       })
       this.setState({ isChataThinking: false })
     }, 1500)
@@ -504,7 +513,7 @@ export default class DataMessenger extends React.Component {
   deleteMessage = id => {
     const newMessages = this.state.messages.filter(message => message.id !== id)
     this.setState({
-      messages: newMessages
+      messages: newMessages,
     })
   }
 
@@ -513,7 +522,7 @@ export default class DataMessenger extends React.Component {
       content: content || errorMessages.GENERAL,
       id: uuid.v4(),
       type: 'error',
-      isResponse: true
+      isResponse: true,
     }
   }
 
@@ -526,7 +535,7 @@ export default class DataMessenger extends React.Component {
       response,
       id,
       type: _get(response, 'data.data.display_type'),
-      isResponse: true
+      isResponse: true,
     }
   }
 
@@ -543,10 +552,10 @@ export default class DataMessenger extends React.Component {
     const message = {
       content: text,
       id: uuid.v4(),
-      isResponse: false
+      isResponse: false,
     }
     this.setState({
-      messages: [...currentMessages, message]
+      messages: [...currentMessages, message],
     })
     this.scrollToBottom()
   }
@@ -574,7 +583,7 @@ export default class DataMessenger extends React.Component {
       message = this.createMessage({ response, content })
     }
     this.setState({
-      messages: [...currentMessages, message]
+      messages: [...currentMessages, message],
     })
     this.scrollToBottom()
   }
@@ -814,14 +823,14 @@ export default class DataMessenger extends React.Component {
       keywords,
       pageSize,
       pageNumber,
-      skipSafetyNet
+      skipSafetyNet,
     })
       .then(response => {
         // if caught by safetynet...
         if (_get(response, 'data.full_suggestion')) {
           this.setState({
             queryTipsLoading: false,
-            queryTipsSafetyNetResponse: response
+            queryTipsSafetyNetResponse: response,
           })
         } else {
           const totalQueries = Number(
@@ -841,7 +850,7 @@ export default class DataMessenger extends React.Component {
             queryTipsTotalPages: totalPages,
             queryTipsCurrentPage: pageNumber,
             queryTipsTotalQueries: totalQueries,
-            queryTipsSafetyNetResponse: undefined
+            queryTipsSafetyNetResponse: undefined,
           })
         }
       })
@@ -851,7 +860,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
-          queryTipsSafetyNetResponse: undefined
+          queryTipsSafetyNetResponse: undefined,
         })
       })
   }
@@ -879,7 +888,7 @@ export default class DataMessenger extends React.Component {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
           this.setState({
-            queryTipsInputValue: text.slice(0, i)
+            queryTipsInputValue: text.slice(0, i),
           })
           if (i === text.length) {
             this.fetchQueryTipsList(text, 1)
@@ -933,7 +942,7 @@ export default class DataMessenger extends React.Component {
       if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
-          width: newWidth
+          width: newWidth,
         })
       }
     } else if (placement === 'left') {
@@ -942,7 +951,7 @@ export default class DataMessenger extends React.Component {
       if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
-          width: newWidth
+          width: newWidth,
         })
       }
     } else if (placement === 'bottom') {
@@ -951,7 +960,7 @@ export default class DataMessenger extends React.Component {
       if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
-          height: newHeight
+          height: newHeight,
         })
       }
     } else if (placement === 'top') {
@@ -960,7 +969,7 @@ export default class DataMessenger extends React.Component {
       if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
-          height: newHeight
+          height: newHeight,
         })
       }
     }
@@ -968,7 +977,7 @@ export default class DataMessenger extends React.Component {
 
   stopResizingDrawer = () => {
     this.setState({
-      isResizing: false
+      isResizing: false,
     })
     window.removeEventListener('mousemove', this.resizeDrawer)
     window.removeEventListener('mouseup', this.stopResizingDrawer)
@@ -988,8 +997,8 @@ export default class DataMessenger extends React.Component {
                 x: e.pageX,
                 y: e.pageY,
                 width: this.state.width,
-                height: this.state.height
-              }
+                height: this.state.height,
+              },
             })
             window.addEventListener('mousemove', self.resizeDrawer)
             window.addEventListener('mouseup', self.stopResizingDrawer)

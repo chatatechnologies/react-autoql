@@ -516,16 +516,34 @@ export const getSupportedDisplayTypes = response => {
       // }
 
       // create pivot based on month and year
-      const dateColumn = columns.find(
+      const dateColumnIndex = columns.findIndex(
         col => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
+      const dateColumn = columns[dateColumnIndex]
 
+      // Check if date pivot should be supported
       if (
         dateColumn &&
         dateColumn.display_name.toLowerCase().includes('month') &&
         columns.length === 2
       ) {
-        supportedDisplayTypes.push('pivot_table')
+        const data = _get(response, 'data.data.rows')
+        const uniqueYears = []
+        data.forEach(row => {
+          const year = formatElement({
+            element: row[dateColumnIndex],
+            column: dateColumn,
+            config: { monthYearFormat: 'YYYY', dayMonthYearFormat: 'YYYY' }
+          })
+
+          if (!uniqueYears.includes(year)) {
+            uniqueYears.push(year)
+          }
+        })
+
+        if (uniqueYears.length > 1) {
+          supportedDisplayTypes.push('pivot_table')
+        }
       }
 
       return supportedDisplayTypes

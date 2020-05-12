@@ -471,6 +471,8 @@ export default class App extends Component {
       return 'nbcomp'
     } else if (domain.includes('vitruvi')) {
       return 'vitruvi'
+    } else if (domain.includes('accounting-demo')) {
+      return 'demo'
     }
   }
 
