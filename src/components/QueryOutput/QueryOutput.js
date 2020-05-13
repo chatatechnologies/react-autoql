@@ -705,8 +705,8 @@ export default class QueryOutput extends React.Component {
           //   }
           // }}
           changeStringColumnIndex={index => {
-            if (this.dataConfig.stringColumnIndex === index) {
-              this.dataConfig.stringColumnIndex = undefined
+            if (this.dataConfig.legendColumnIndex === index) {
+              this.dataConfig.legendColumnIndex = undefined
             }
             this.dataConfig.stringColumnIndex = index
 
@@ -720,7 +720,7 @@ export default class QueryOutput extends React.Component {
             if (this.dataConfig.stringColumnIndex === index) {
               this.dataConfig.stringColumnIndex = undefined
             }
-            this.dataConfig.stringColumnIndex = index
+            this.dataConfig.legendColumnIndex = index
 
             if (this.supportsPivot) {
               this.generatePivotTableData()
@@ -731,6 +731,7 @@ export default class QueryOutput extends React.Component {
           changeNumberColumnIndices={indices => {
             if (indices) {
               this.dataConfig.numberColumnIndices = indices
+              this.dataConfig.numberColumnIndex = indices[0]
               this.generateChartData()
               this.forceUpdate()
             }

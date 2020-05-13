@@ -41,7 +41,7 @@ export default class ChataChart extends Component {
     left: 50,
     right: 10,
     bottom: 100,
-    top: 10
+    top: 10,
   }
 
   static propTypes = {
@@ -60,13 +60,13 @@ export default class ChataChart extends Component {
       quantityDecimals: PropTypes.number,
       comparisonDisplay: PropTypes.string,
       monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
+      dayMonthYearFormat: PropTypes.string,
+    }),
   }
 
   static defaultProps = {
     dataFormatting: {},
-    onLegendClick: () => {}
+    onLegendClick: () => {},
   }
 
   state = {
@@ -79,7 +79,7 @@ export default class ChataChart extends Component {
 
     currencySelectorState: [],
     quantitySelectorState: [],
-    ratioSelectorState: []
+    ratioSelectorState: [],
   }
 
   componentDidMount = () => {
@@ -129,7 +129,7 @@ export default class ChataChart extends Component {
       const item = {
         content: col.display_name,
         checked: numberColumnIndices.includes(i),
-        columnIndex: i
+        columnIndex: i,
       }
 
       if (col.type === 'DOLLAR_AMT') {
@@ -145,7 +145,7 @@ export default class ChataChart extends Component {
       activeNumberType: _get(tableColumns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
-      ratioSelectorState: ratioItems
+      ratioSelectorState: ratioItems,
     })
   }
 
@@ -239,34 +239,29 @@ export default class ChataChart extends Component {
 
     return {
       bottomMargin: bottomMargin || this.state.bottomMargin,
-      bottomLegendMargin
+      bottomLegendMargin,
       // bottomLegendWidth
     }
   }
 
   updateMargins = (delay = 0) => {
     try {
-      // keep these comments we might have to change it back
-      // setTimeout(() => {
-      const newLeftMargin = this.getNewLeftMargin()
-      const newTopMargin = this.getNewTopMargin()
-      this.setState(
-        {
+      setTimeout(() => {
+        const newLeftMargin = this.getNewLeftMargin()
+        const newTopMargin = this.getNewTopMargin()
+        this.setState({
           ...newLeftMargin,
-          ...newTopMargin
-        },
-        () => {
-          const newRightMargin = this.getNewRightMargin()
-          const newBottomMargin = this.getNewBottomMargin()
-          this.setState({
-            ...newRightMargin,
-            ...newBottomMargin
-          })
-        }
-      )
-      // }, delay)
-      // setTimeout(() => {
-      // }, delay)
+          ...newTopMargin,
+        })
+      }, delay)
+      setTimeout(() => {
+        const newRightMargin = this.getNewRightMargin()
+        const newBottomMargin = this.getNewBottomMargin()
+        this.setState({
+          ...newRightMargin,
+          ...newBottomMargin,
+        })
+      }, delay)
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
@@ -346,7 +341,7 @@ export default class ChataChart extends Component {
       bottomMargin,
       rightMargin,
       leftMargin,
-      bottomLegendMargin
+      bottomLegendMargin,
       // bottomLegendWidth
     } = this.state
 
@@ -365,7 +360,7 @@ export default class ChataChart extends Component {
       numberColumnIndex,
       numberColumnIndices,
       enableDynamicCharting,
-      legendColumnIndex
+      legendColumnIndex,
     } = this.props
 
     const filteredSeriesData = this.getFilteredSeriesData(data)
@@ -383,19 +378,19 @@ export default class ChataChart extends Component {
       onXAxisClick: e => {
         this.setState({
           activeAxisSelector: 'x',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY }
+          axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
       onYAxisClick: e => {
         this.setState({
           activeAxisSelector: 'y',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY }
+          axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
       onLegendTitleClick: e => {
         this.setState({
           activeAxisSelector: 'legend',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY }
+          axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
       onLabelChange: () => {},
@@ -422,7 +417,7 @@ export default class ChataChart extends Component {
         [
           ...this.state.currencySelectorState,
           ...this.state.quantitySelectorState,
-          ...this.state.ratioSelectorState
+          ...this.state.ratioSelectorState,
         ].length > 1,
       hasMultipleStringColumns:
         _get(this.props.stringColumnIndices, 'length', 0) > 1,
@@ -435,7 +430,7 @@ export default class ChataChart extends Component {
         this.props.columns,
         this.colorScale,
         this.props.seriesIndices
-      )
+      ),
     }
   }
 
@@ -449,7 +444,7 @@ export default class ChataChart extends Component {
 
           return {
             ...d,
-            cells: newCells
+            cells: newCells,
           }
         })
 
@@ -499,7 +494,7 @@ export default class ChataChart extends Component {
     const {
       currencySelectorState,
       quantitySelectorState,
-      ratioSelectorState
+      ratioSelectorState,
     } = this.state
 
     return (
@@ -529,7 +524,7 @@ export default class ChataChart extends Component {
                     activeNumberType: 'DOLLAR_AMT',
                     currencySelectorState,
                     quantitySelectorState: newQuantitySelectorState,
-                    ratioSelectorState: newRatioSelectorState
+                    ratioSelectorState: newRatioSelectorState,
                   })
                 }}
               />
@@ -559,7 +554,7 @@ export default class ChataChart extends Component {
                     activeNumberType: 'QUANTITY',
                     quantitySelectorState,
                     currencySelectorState: newCurrencySelectorState,
-                    ratioSelectorState: newRatioSelectorState
+                    ratioSelectorState: newRatioSelectorState,
                   })
                 }}
               />
@@ -591,7 +586,7 @@ export default class ChataChart extends Component {
                     activeNumberType: 'RATIO',
                     ratioSelectorState,
                     currencySelectorState: newCurrencySelectorState,
-                    quantitySelectorState: newQuantitySelectorState
+                    quantitySelectorState: newQuantitySelectorState,
                   })
                 }}
               />
@@ -727,7 +722,7 @@ export default class ChataChart extends Component {
           position,
           align,
           nudgedLeft,
-          nudgedTop
+          nudgedTop,
         }) => {
           let topPosition = _get(this.state.axisSelectorLocation, 'top', 0) - 50
           let leftPosition =
@@ -744,7 +739,7 @@ export default class ChataChart extends Component {
 
           return {
             top: topPosition,
-            left: leftPosition
+            left: leftPosition,
           }
         }}
       >
@@ -888,7 +883,7 @@ export default class ChataChart extends Component {
               this.props.themeConfig,
               'background-color',
               'inherit'
-            )
+            ),
           }}
         >
           <g className="chata-chart-content-container">{chart}</g>
