@@ -81,7 +81,6 @@ export default class DashboardTile extends React.Component {
   state = {
     query: this.props.tile.query,
     secondQuery: this.props.tile.secondQuery || this.props.tile.query,
-    sql: this.props.tile.sql,
     title: this.props.tile.title,
     isExecuting: false,
     suggestions: [],

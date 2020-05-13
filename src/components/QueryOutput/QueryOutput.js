@@ -300,7 +300,7 @@ export default class QueryOutput extends React.Component {
     this.setColumnIndices()
   }
 
-  generatePivotData = ({ isFirstGeneration, newTableData }) => {
+  generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
       const tableData = newTableData || this.tableData
       if (this.tableColumns.length === 2) {
@@ -695,7 +695,7 @@ export default class QueryOutput extends React.Component {
           numberColumnIndices={this.dataConfig.numberColumnIndices}
           seriesIndices={this.dataConfig.seriesIndices}
           stringColumnIndex={this.dataConfig.stringColumnIndex}
-          legendColumnIndex={this.dataConfig.stringColumnIndex}
+          legendColumnIndex={this.dataConfig.legendColumnIndex}
           numberColumnIndex={this.dataConfig.numberColumnIndex}
           themeConfig={chartThemeConfig}
           // valueFormatter={formatElement}
@@ -824,7 +824,7 @@ export default class QueryOutput extends React.Component {
         }
             </div>
             <div><strong>${
-              this.tableColumns[this.dataConfig.stringColumnIndex].display_name
+              this.tableColumns[this.dataConfig.legendColumnIndex].display_name
             }:</strong> ${this.pivotTableColumns[columnIndex].title}
             </div>
             <div>
@@ -876,7 +876,7 @@ export default class QueryOutput extends React.Component {
             value: `${row[0]}`,
           },
           {
-            name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
+            name: this.tableColumns[this.dataConfig.legendColumnIndex].name,
             value: `${this.pivotTableColumns[columnIndex].name}`,
           },
         ],
@@ -1312,26 +1312,29 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generatePivotTableData = ({ isFirstGeneration, newTableData }) => {
+  generatePivotTableData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
       const tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it
+      let dataConfigWasPersisted = false
       if (this.dataConfig.stringColumnIndex >= 0) {
-        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
+        dataConfigWasPersisted = true
+        this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
-      } else if (this.dataConfig.stringColumnIndex >= 0) {
+      } else if (this.dataConfig.legendColumnIndex >= 0) {
+        dataConfigWasPersisted = true
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
-          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
+          (col, i) => col.groupable && i !== this.dataConfig.legendColumnIndex
         )
       } else {
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
           col => col.groupable
         )
-        this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
+        this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
       }
@@ -1353,7 +1356,7 @@ export default class QueryOutput extends React.Component {
         }, {})
 
       let uniqueValues1 = tableData
-        .map(d => d[this.dataConfig.stringColumnIndex])
+        .map(d => d[this.dataConfig.legendColumnIndex])
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1364,10 +1367,11 @@ export default class QueryOutput extends React.Component {
       // Make sure the longer list is on the side, not the top
       if (
         isFirstGeneration &&
-        Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length
+        Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
+        !dataConfigWasPersisted
       ) {
-        const tempCol = this.dataConfig.stringColumnIndex
-        this.dataConfig.stringColumnIndex = this.dataConfig.stringColumnIndex
+        const tempCol = this.dataConfig.legendColumnIndex
+        this.dataConfig.legendColumnIndex = this.dataConfig.stringColumnIndex
         this.dataConfig.stringColumnIndex = tempCol
 
         const tempValues = { ...uniqueValues0 }
@@ -1397,7 +1401,7 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueValues1).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
-          column: this.tableColumns[this.dataConfig.stringColumnIndex],
+          column: this.tableColumns[this.dataConfig.legendColumnIndex],
           config: this.props.dataFormatting,
         })
         pivotTableColumns.push({
@@ -1409,7 +1413,7 @@ export default class QueryOutput extends React.Component {
               value: null,
             },
             {
-              name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
+              name: this.tableColumns[this.dataConfig.legendColumnIndex].name,
               value: columnName,
             },
           ],
@@ -1434,7 +1438,7 @@ export default class QueryOutput extends React.Component {
 
         // Populate remaining columns
         pivotTableData[uniqueValues0[row[this.dataConfig.stringColumnIndex]]][
-          uniqueValues1[row[this.dataConfig.stringColumnIndex]] + 1
+          uniqueValues1[row[this.dataConfig.legendColumnIndex]] + 1
         ] = row[this.dataConfig.numberColumnIndex]
       })
 

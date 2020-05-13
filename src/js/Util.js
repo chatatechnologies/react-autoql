@@ -210,7 +210,6 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
           output: 'percent',
           mantissa: 0
         })
-        console.log('label and formatted label:', d, formattedLabel)
       }
       break
     }
