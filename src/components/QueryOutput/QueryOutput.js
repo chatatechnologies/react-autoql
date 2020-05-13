@@ -1320,15 +1320,14 @@ export default class QueryOutput extends React.Component {
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it
       let dataConfigWasPersisted = false
-      if (this.dataConfig.stringColumnIndex >= 0) {
-        dataConfigWasPersisted = true
-        this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
-          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
-        )
-      } else if (this.dataConfig.legendColumnIndex >= 0) {
+      if (this.dataConfig.legendColumnIndex >= 0) {
         dataConfigWasPersisted = true
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.legendColumnIndex
+        )
+      } else if (this.dataConfig.stringColumnIndex >= 0) {
+        this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
+          (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
       } else {
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(

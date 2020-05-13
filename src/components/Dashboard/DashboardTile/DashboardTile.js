@@ -626,6 +626,10 @@ export default class DashboardTile extends React.Component {
     return !!_get(response, 'data.data.items')
   }
 
+  onDataConfigChange = config => {
+    this.props.setParamsForTile({ dataConfig: config }, this.props.tile.i)
+  }
+
   renderSuggestionPrefix = () => {
     return <div>I want to make sure I understood your query. Did you mean:</div>
   }
@@ -639,8 +643,7 @@ export default class DashboardTile extends React.Component {
     onSuggestionClick,
     onQueryValidationSelectOption,
     showSplitViewBtn,
-    dataConfig,
-    onDataConfigChange,
+    isSecondHalf,
   }) => {
     const queryResponse = response || this.props.queryResponse
     return (
@@ -655,8 +658,10 @@ export default class DashboardTile extends React.Component {
           queryResponse={queryResponse}
           renderTooltips={false}
           autoSelectQueryValidationSuggestion={false}
-          dataConfig={dataConfig}
-          onDataConfigChange={onDataConfigChange}
+          dataConfig={!isSecondHalf ? this.props.tile.dataConfig : undefined}
+          onDataConfigChange={
+            !isSecondHalf ? this.onDataConfigChange : undefined
+          }
           queryValidationSelections={
             queryValidationSelections ||
             this.props.tile.queryValidationSelections
@@ -793,12 +798,6 @@ export default class DashboardTile extends React.Component {
             displayType: firstDisplayType,
             onDisplayTypeChange: this.onDisplayTypeChange,
             dataConfig: this.props.tile.dataConfig,
-            onDataConfigChange: config => {
-              this.props.setParamsForTile(
-                { dataConfig: config },
-                this.props.tile.i
-              )
-            },
           })}
         </div>
         <div className="dashboard-tile-split-pane-container">
@@ -814,6 +813,7 @@ export default class DashboardTile extends React.Component {
             showSplitViewBtn: true,
             dataConfig: undefined,
             onDataConfigChange: undefined,
+            isSecondHalf: true,
           })}
           {this.props.isEditing && (
             <div
