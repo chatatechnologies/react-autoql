@@ -46,6 +46,7 @@ import locateLogo from './locate_logo.png'
 import purefactsLogo from './purefacts_logo.png'
 import spiraLogo from './spira-logo.png'
 import vitruviLogo from './vitruvi_logo.png'
+import xeroLogo from './xero_logo.png'
 
 import 'antd/dist/antd.css'
 import '@chata-ai/core/dist/autoql.esm.css'
@@ -169,6 +170,11 @@ export default class App extends Component {
     if (prevState.demo !== this.state.demo) {
       this.fetchDashboard()
     }
+
+    const handleImage = document.querySelector('.drawer-handle img')
+    if (handleImage) {
+      handleImage.classList.add(`${this.state.activeIntegrator}`)
+    }
   }
 
   componentWillUnmount = () => {
@@ -214,6 +220,8 @@ export default class App extends Component {
     const { activeIntegrator } = this.state
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
+    let chartColors = [...this.state.chartColors]
+    let dashboardTitleColor = this.state.dashboardTitleColor
 
     if (this.state.isAuthenticated) {
       if (activeIntegrator === 'purefacts') {
@@ -230,6 +238,13 @@ export default class App extends Component {
         lightAccentColor = 'rgb(109, 163, 186)'
         darkAccentColor = 'rgb(109, 163, 186)'
       }
+
+      if (activeIntegrator === 'demo') {
+        lightAccentColor = '#0078c8'
+        darkAccentColor = '#0078c8'
+        chartColors = ['#0382C5', '#21A2E6', '#4EBBF5', '#6ECCFE', '#9BDDFF']
+        dashboardTitleColor = '#35495c'
+      }
     }
 
     return {
@@ -237,8 +252,8 @@ export default class App extends Component {
       accentColor:
         this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
       fontFamily: this.state.fontFamily,
-      chartColors: this.state.chartColors,
-      titleColor: this.state.dashboardTitleColor,
+      chartColors: chartColors,
+      titleColor: dashboardTitleColor,
     }
   }
 
@@ -1090,11 +1105,14 @@ export default class App extends Component {
         handleImage = spiraLogo
       } else if (activeIntegrator === 'vitruvi') {
         handleImage = vitruviLogo
+      } else if (activeIntegrator === 'demo') {
+        handleImage = xeroLogo
       }
     }
 
     return (
       <DataMessenger
+        className={`${this.state.activeIntegrator}`}
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
         dataFormatting={this.getDataFormattingProp()}
@@ -1496,6 +1514,11 @@ export default class App extends Component {
     // Vitruvi
     if (this.state.activeIntegrator === 'vitruvi') {
       return <div className="ui-overlay vitruvi" />
+    }
+
+    // Xero demo
+    if (this.state.activeIntegrator === 'demo') {
+      return <div className="ui-overlay demo" />
     }
   }
 

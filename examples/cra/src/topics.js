@@ -100,16 +100,16 @@ export default {
       topic: 'Expenses',
       queries: [
         'All expenses last month',
-        'Monthly expenses by Vendor last year',
+        'Monthly expenses by vendor last year',
         'Total expenses by account last quarter',
         'Total expenses by quarter last year',
         'Show me expenses last year over 10000',
       ],
     },
     {
-      topic: 'Purchase orders',
+      topic: 'Purchase Orders',
       queries: [
-        'All purchase over 10000 this year',
+        'All purchases over 10000 this year',
         'All open purchase orders',
         'Total purchase orders by vendor this year',
         'Total purchase orders by quarter last year',
