@@ -88,9 +88,17 @@ export default class DashboardTile extends React.Component {
     currentSource: 'user',
   }
 
+  getFilteredProps = props => {
+    return {
+      ...props,
+      children: undefined,
+      tile: { ...props.tile, dataConfig: undefined },
+    }
+  }
+
   shouldComponentUpdate = (nextProps, nextState) => {
-    const thisPropsFiltered = { ...this.props, children: undefined }
-    const nextPropsFiltered = { ...nextProps, children: undefined }
+    const thisPropsFiltered = this.getFilteredProps(this.props)
+    const nextPropsFiltered = this.getFilteredProps(nextProps)
 
     if (!_isEqual(thisPropsFiltered, nextPropsFiltered)) {
       // Keep this for a deep compare to debug
@@ -631,6 +639,8 @@ export default class DashboardTile extends React.Component {
     onSuggestionClick,
     onQueryValidationSelectOption,
     showSplitViewBtn,
+    dataConfig,
+    onDataConfigChange,
   }) => {
     const queryResponse = response || this.props.queryResponse
     return (
@@ -645,13 +655,8 @@ export default class DashboardTile extends React.Component {
           queryResponse={queryResponse}
           renderTooltips={false}
           autoSelectQueryValidationSuggestion={false}
-          dataConfig={this.props.tile.dataConfig}
-          onDataConfigChange={config => {
-            this.props.setParamsForTile(
-              { dataConfig: config },
-              this.props.tile.i
-            )
-          }}
+          dataConfig={dataConfig}
+          onDataConfigChange={onDataConfigChange}
           queryValidationSelections={
             queryValidationSelections ||
             this.props.tile.queryValidationSelections
@@ -787,6 +792,13 @@ export default class DashboardTile extends React.Component {
           {this.renderSingleResponse({
             displayType: firstDisplayType,
             onDisplayTypeChange: this.onDisplayTypeChange,
+            dataConfig: this.props.tile.dataConfig,
+            onDataConfigChange: config => {
+              this.props.setParamsForTile(
+                { dataConfig: config },
+                this.props.tile.i
+              )
+            },
           })}
         </div>
         <div className="dashboard-tile-split-pane-container">
@@ -800,6 +812,8 @@ export default class DashboardTile extends React.Component {
             onSuggestionClick: this.onSecondSuggestionClick,
             onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption,
             showSplitViewBtn: true,
+            dataConfig: undefined,
+            onDataConfigChange: undefined,
           })}
           {this.props.isEditing && (
             <div
