@@ -7,6 +7,10 @@
     // set transparent in css but keep background in inline style for exporting to png
     background: transparent !important;
   }
+
+  &.loading {
+    opacity: 0;
+  }
 }
 
 /* These are not inline styles since they do not apply to saved PNG charts */

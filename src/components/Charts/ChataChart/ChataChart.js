@@ -245,6 +245,7 @@ export default class ChataChart extends Component {
   }
 
   updateMargins = (delay = 0) => {
+    this.setState({ isLoading: true })
     try {
       setTimeout(() => {
         const newLeftMargin = this.getNewLeftMargin()
@@ -253,18 +254,22 @@ export default class ChataChart extends Component {
           ...newLeftMargin,
           ...newTopMargin,
         })
-      }, delay)
-      setTimeout(() => {
-        const newRightMargin = this.getNewRightMargin()
-        const newBottomMargin = this.getNewBottomMargin()
-        this.setState({
-          ...newRightMargin,
-          ...newBottomMargin,
-        })
+        setTimeout(() => {
+          const newRightMargin = this.getNewRightMargin()
+          const newBottomMargin = this.getNewBottomMargin()
+          this.setState({
+            ...newRightMargin,
+            ...newBottomMargin,
+          })
+          setTimeout(() => {
+            this.setState({ isLoading: false })
+          })
+        }, delay)
       }, delay)
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
+      this.setState({ isLoading: false })
     }
   }
   saveAsPNG = () => {
@@ -860,7 +865,9 @@ export default class ChataChart extends Component {
     return (
       <div
         id={`chata-chart-${this.CHART_ID}`}
-        className="chata-chart-container"
+        className={`chata-chart-container ${
+          this.state.isLoading ? 'loading' : ''
+        }`}
         data-test="chata-chart"
       >
         <svg
