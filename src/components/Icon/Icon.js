@@ -24,20 +24,19 @@ import {
   FiEye,
   FiTrash2,
   FiAlertTriangle,
-  // FiFileText
+  FiMoreHorizontal,
+  FiMoreVertical,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline,
-  IoMdMore,
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
   AiOutlineDashboard,
   AiOutlineFileText,
   AiOutlineBook,
-  AiOutlineBorderVerticle,
   AiFillCaretRight,
   AiFillCaretLeft,
 } from 'react-icons/ai'
@@ -203,8 +202,12 @@ export default class Icon extends React.Component {
         icon = stackedLineIcon
         break
       }
-      case 'more': {
-        icon = <IoMdMore />
+      case 'more-vertical': {
+        icon = <FiMoreVertical />
+        break
+      }
+      case 'more-horizontal': {
+        icon = <FiMoreHorizontal />
         break
       }
       case 'notification': {

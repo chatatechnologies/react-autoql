@@ -1435,7 +1435,7 @@ export default class App extends Component {
     return (
       <QueryOutput
         queryResponse={this.state.activeNotificationContent}
-        displayType="column"
+        displayType="table"
       />
     )
   }

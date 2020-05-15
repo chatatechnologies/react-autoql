@@ -13,28 +13,22 @@ import './NotificationRules.scss'
 
 export default class NotificationRules extends React.Component {
   static propTypes = {
-    onUpdate: PropTypes.func
+    onUpdate: PropTypes.func,
   }
 
   static defaultProps = {
-    onUpdate: () => {}
+    onUpdate: () => {},
   }
 
   state = {
-    // outerId: _get(this.props.notificationData, '[0].id', uuid.v4()),
     groups: [],
-    andOrValue: 'ALL'
+    andOrValue: 'ALL',
   }
 
   componentDidMount = () => {
-    if (this.props.notificationData) {
-      this.props.notificationData.map(groupItem => {
-        this.addGroup({
-          initialData: groupItem.term_value,
-          isComplete: this.isComplete(groupItem),
-          id: groupItem.id
-        })
-      })
+    if (_get(this.props.notificationData, 'length')) {
+      console.log('notification data provided:', this.props.notificationData)
+      this.setNotificationData()
     } else {
       this.addGroup({})
     }
@@ -44,6 +38,16 @@ export default class NotificationRules extends React.Component {
     if (!isEqual(prevState, this.state)) {
       this.props.onUpdate(this.isComplete(), this.getJSON())
     }
+  }
+
+  setNotificationData = () => {
+    this.props.notificationData.map(groupItem => {
+      this.addGroup({
+        initialData: groupItem.term_value,
+        isComplete: this.isComplete(groupItem),
+        id: groupItem.id,
+      })
+    })
   }
 
   isComplete = () => {
@@ -61,37 +65,25 @@ export default class NotificationRules extends React.Component {
       }
 
       return {
-        // id: this.state.outerId,
-        // id: _get(this.props.notificationData, '[0].id', uuid.v4()),
         id: group.id || uuid.v4(),
         term_type: 'group',
         condition,
-        term_value: group.groupJSON
+        term_value: group.groupJSON,
       }
     })
   }
 
   validateLogic = () => {}
 
-  addGroup = ({ initialData, isComplete = false, id }) => {
+  addGroup = ({ initialData, isComplete, id }) => {
     const newId = id || uuid.v4()
     const newGroups = [
       ...this.state.groups,
       {
-        id: newId,
+        initialData,
         isComplete,
-        initialData
-        // element: (
-        //   <Group
-        //     groupId={newId}
-        //     disableAddGroupBtn={true}
-        //     onDelete={this.onDeleteGroup}
-        //     hideTopCondition={!!hideTopCondition}
-        //     getTopCondition={this.getAndOrValue}
-        //     // onAdd={this.addGroup}
-        //   />
-        // )
-      }
+        id: newId,
+      },
     ]
     this.setState({ groups: newGroups })
   }
@@ -111,7 +103,7 @@ export default class NotificationRules extends React.Component {
         return {
           ...group,
           isComplete,
-          groupJSON
+          groupJSON,
         }
       }
       return group
@@ -140,23 +132,9 @@ export default class NotificationRules extends React.Component {
           </div>
         )}
         <div
-          // className={`notification-rule-outer-container${
-          //   this.state.groups.length > 1 ? ' outlined' : ''
-          // }`}
           className="notification-rule-outer-container"
           data-test="notification-rules"
         >
-          {
-            //   this.state.groups.length > 1 && (
-            //   <div className="notification-outer-all-any">
-            //     ALL/ANY FOR OUTER GROUP
-            //   </div>
-            // )
-          }
-          {
-            // <div className="notification-rules-container">
-            // </div>
-          }
           {!!this.state.groups.length &&
             this.state.groups.map((group, i) => {
               return (
@@ -167,8 +145,6 @@ export default class NotificationRules extends React.Component {
                   onDelete={this.onDeleteGroup}
                   onUpdate={this.onGroupUpdate}
                   hideTopCondition={i === 0}
-                  // getTopCondition={this.getAndOrValue}
-                  // onAdd={this.addGroup}
                   topCondition={this.state.andOrValue}
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
@@ -182,14 +158,6 @@ export default class NotificationRules extends React.Component {
             >
               <Icon type="plus" /> Add Condition Group
             </Button>
-            {
-              //   <Button
-              //   className="notification-rule-validate-btn-outer"
-              //   onClick={this.validateLogic}
-              // >
-              //   <Icon type="plus" /> Validate
-              // </Button>
-            }
           </div>
         </div>
       </Fragment>

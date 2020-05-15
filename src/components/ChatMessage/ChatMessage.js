@@ -618,6 +618,21 @@ export default class ChatMessage extends React.Component {
               <Icon type="copy" /> Copy generated query to clipboard
             </li>
           )}
+          {shouldShowButton.showCreateNotificationButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                console.log(this.props)
+                this.props.onNewNotificationCallback(this.props.originalQuery)
+              }}
+            >
+              <Icon
+                style={{ verticalAlign: 'middle', marginRight: '3px' }}
+                type="notification"
+              />
+              Create a notification from this query
+            </li>
+          )}
         </ul>
       </div>
     )
@@ -648,6 +663,9 @@ export default class ChatMessage extends React.Component {
       showMoreOptionsButton: true,
       showReportProblemButton:
         _get(this.props, 'response.data.data.display_type') === 'data',
+      showCreateNotificationButton:
+        _get(this.props, 'response.data.data.display_type') === 'data' &&
+        this.props.originalQuery,
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -744,7 +762,7 @@ export default class ChatMessage extends React.Component {
                 data-tip="More options"
                 data-for="chata-toolbar-btn-tooltip"
               >
-                <Icon type="more" />
+                <Icon type="more-vertical" />
               </button>
             </Popover>
           )}
@@ -791,7 +809,7 @@ export default class ChatMessage extends React.Component {
 
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
+      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 85% of chat height minus message margins
     }
 
     if (this.state.displayType === 'pie' && chartHeight > 330) {
@@ -845,7 +863,7 @@ export default class ChatMessage extends React.Component {
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
           style={{
-            maxHeight: chartHeight ? chartHeight + 30 : '85%',
+            maxHeight: chartHeight ? chartHeight + 40 : '85%',
             height: messageHeight,
           }}
           data-test="chat-message"

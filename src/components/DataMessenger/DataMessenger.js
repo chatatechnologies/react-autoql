@@ -33,6 +33,7 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
+import { NewNotificationModal } from '../Notifications/NewNotificationModal'
 import {
   runDrilldown,
   cancelQuery,
@@ -412,8 +413,8 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  onResponse = response => {
-    this.addResponseMessage({ response })
+  onResponse = (response, query) => {
+    this.addResponseMessage({ response, query })
 
     if (_get(response, 'reference_id') === '1.1.430') {
       // Fetch suggestion list now
@@ -422,7 +423,7 @@ export default class DataMessenger extends React.Component {
         ...this.props.authentication,
       })
         .then(response => {
-          this.addResponseMessage({ response })
+          this.addResponseMessage({ response, query })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
             this.queryInputRef.focus()
@@ -431,6 +432,7 @@ export default class DataMessenger extends React.Component {
         .catch(error => {
           this.addResponseMessage({
             content: _get(error, 'response.data.message'),
+            query,
           })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
@@ -526,13 +528,14 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createMessage = ({ response, content }) => {
+  createMessage = ({ response, content, query }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
     return {
       content,
       response,
+      query,
       id,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
@@ -560,7 +563,7 @@ export default class DataMessenger extends React.Component {
     this.scrollToBottom()
   }
 
-  addResponseMessage = ({ response, content }) => {
+  addResponseMessage = ({ response, content, query }) => {
     let currentMessages = this.state.messages
     if (
       this.props.maxMessages > 1 &&
@@ -580,7 +583,7 @@ export default class DataMessenger extends React.Component {
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage({ response, content })
+      message = this.createMessage({ response, content, query })
     }
     this.setState({
       messages: [...currentMessages, message],
@@ -751,6 +754,7 @@ export default class DataMessenger extends React.Component {
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
                   isResponse={message.isResponse}
+                  originalQuery={message.query}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
                   content={message.content}
@@ -769,6 +773,16 @@ export default class DataMessenger extends React.Component {
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNewNotificationCallback={query => {
+                    console.log(
+                      'query provided to notification callback:',
+                      query
+                    )
+                    this.setState({
+                      isNewNotificationModalVisible: true,
+                      activeQuery: query,
+                    })
+                  }}
                 />
               )
             })}
@@ -1037,6 +1051,26 @@ export default class DataMessenger extends React.Component {
     )
   }
 
+  renderNewNotificationModal = () => {
+    return (
+      <NewNotificationModal
+        authentication={this.props.authentication}
+        isVisible={this.state.isNewNotificationModalVisible}
+        onClose={() => this.setState({ isNewNotificationModalVisible: false })}
+        onSave={() => {
+          this.props.onSuccessAlert('Notification created!')
+          this.setState({ isNewNotificationModalVisible: false })
+        }}
+        onError={() =>
+          this.props.onErrorCallback(
+            'Something went wrong when creating this notification. Please try again.'
+          )
+        }
+        initialQuery={this.state.activeQuery}
+      />
+    )
+  }
+
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1073,6 +1107,7 @@ export default class DataMessenger extends React.Component {
               {this.renderBodyContent()}
             </div>
           </Drawer>
+          {this.renderNewNotificationModal()}
         </Fragment>
       </ErrorBoundary>
     )

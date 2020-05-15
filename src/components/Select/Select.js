@@ -16,7 +16,7 @@ export default class Select extends React.Component {
     popupClassname: PropTypes.string,
     value: PropTypes.string,
     label: PropTypes.string,
-    size: PropTypes.string
+    size: PropTypes.string,
   }
 
   static defaultProps = {
@@ -25,11 +25,11 @@ export default class Select extends React.Component {
     popupClassname: undefined,
     value: undefined,
     label: undefined,
-    size: 'large'
+    size: 'large',
   }
 
   state = {
-    isOpen: false
+    isOpen: false,
   }
 
   render = () => {
@@ -49,7 +49,7 @@ export default class Select extends React.Component {
           nudgedLeft,
           nudgedTop,
           targetRect,
-          popoverRect
+          popoverRect,
         }) => {
           return (
             <div
@@ -104,7 +104,10 @@ export default class Select extends React.Component {
                 option => option.value === this.props.value
               ),
               'value',
-              null
+              <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+                {this.props.selectionPlaceholder || 'Select an item'}
+              </span>
+              // null
             )}
         </div>
       </Popover>
