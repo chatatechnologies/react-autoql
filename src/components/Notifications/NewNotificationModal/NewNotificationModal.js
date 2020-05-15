@@ -97,7 +97,6 @@ export default class NewNotificationModal extends React.Component {
         typeof this.props.initialQuery === 'string'
       ) {
         const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
-        console.log('initial query provided. creating rulesJSON', rulesJSON)
         this.setState({
           isRulesSectionComplete: true,
           rulesJSON,
@@ -200,7 +199,25 @@ export default class NewNotificationModal extends React.Component {
   }
 
   onRulesUpdate = (isRulesSectionComplete, rulesJSON) => {
-    this.setState({ isRulesSectionComplete, rulesJSON })
+    let { dataReturnQueryInput } = this.state
+    const firstQuery = this.getFirstQuery(rulesJSON[0])
+    if (!this.state.isDataReturnDirty && firstQuery) {
+      dataReturnQueryInput = firstQuery
+    }
+    this.setState({ isRulesSectionComplete, rulesJSON, dataReturnQueryInput })
+  }
+
+  getFirstQuery = term => {
+    if (!term) {
+      return undefined
+    }
+
+    if (term.term_type === 'group') {
+      return this.getFirstQuery(_get(term, 'term_value[0]'))
+    } else if (term.term_type === 'query') {
+      return term.term_value
+    }
+    return undefined
   }
 
   onRuleSave = () => {
@@ -456,6 +473,14 @@ export default class NewNotificationModal extends React.Component {
           icon="chata-bubbles-outlined"
           placeholder="Query"
           value={this.state.dataReturnQueryInput}
+          onKeyDown={e => {
+            if (!this.state.isDataReturnDirty) {
+              this.setState({ isDataReturnDirty: true })
+            }
+            if (e.key === 'Enter' && this.stepsRef) {
+              this.stepsRef.nextStep()
+            }
+          }}
           onChange={e =>
             this.setState({ dataReturnQueryInput: e.target.value })
           }
@@ -565,7 +590,7 @@ export default class NewNotificationModal extends React.Component {
           </div>
         }
       >
-        <Steps steps={steps} />
+        <Steps ref={r => (this.stepsRef = r)} steps={steps} />
       </Modal>
     )
   }

@@ -27,7 +27,6 @@ export default class NotificationRules extends React.Component {
 
   componentDidMount = () => {
     if (_get(this.props.notificationData, 'length')) {
-      console.log('notification data provided:', this.props.notificationData)
       this.setNotificationData()
     } else {
       this.addGroup({})

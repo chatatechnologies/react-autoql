@@ -622,7 +622,6 @@ export default class ChatMessage extends React.Component {
             <li
               onClick={() => {
                 this.setState({ activeMenu: undefined })
-                console.log(this.props)
                 this.props.onNewNotificationCallback(this.props.originalQuery)
               }}
             >

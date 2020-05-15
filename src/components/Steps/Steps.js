@@ -38,6 +38,13 @@ export default class Steps extends React.Component {
     }
   }
 
+  nextStep = () => {
+    const nextStep = Number.isNaN(this.state.activeStep)
+      ? 0
+      : this.state.activeStep + 1
+    this.onStepTitleClick(nextStep)
+  }
+
   getHeightOfStepContent = index => {
     if (this.props.collapsible) {
       const content = document.querySelector(
@@ -68,7 +75,7 @@ export default class Steps extends React.Component {
           this.state.activeStep
         )}px`
         setTimeout(() => {
-          activeContentContainer.style.height = '0px'
+          activeContentContainer.style.height = '10px'
         }, 0)
       }
 
@@ -132,17 +139,17 @@ export default class Steps extends React.Component {
                   onClick={() => this.onStepTitleClick(i)}
                 >
                   <div className="chata-step-title">{step.title}</div>
-                  {step.subtitle && (
-                    <div className="chata-step-subtitle">{step.subtitle}</div>
-                  )}
                 </div>
                 <div
                   id={`chata-step-content-${this.COMPONENT_KEY}-${i}`}
-                  className="chata-step-content"
+                  className="chata-step-content-container"
                 >
-                  {step.content}
+                  <div className="chata-step-subtitle">
+                    {step.subtitle || null}
+                  </div>
+                  <div className="chata-step-content">{step.content}</div>
                 </div>
-                <div className="chata-step-dot" />
+                <div className="chata-step-dot">{i + 1}</div>
               </div>
             </div>
           )

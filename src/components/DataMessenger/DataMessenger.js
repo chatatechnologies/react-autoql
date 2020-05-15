@@ -774,10 +774,6 @@ export default class DataMessenger extends React.Component {
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNewNotificationCallback={query => {
-                    console.log(
-                      'query provided to notification callback:',
-                      query
-                    )
                     this.setState({
                       isNewNotificationModalVisible: true,
                       activeQuery: query,
