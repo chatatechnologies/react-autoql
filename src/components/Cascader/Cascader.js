@@ -13,18 +13,18 @@ export default class Cascader extends React.Component {
   static propTypes = {
     options: PropTypes.arrayOf(PropTypes.shape({})),
     onFinalOptionClick: PropTypes.func,
-    onSeeMoreClick: PropTypes.func
+    onSeeMoreClick: PropTypes.func,
   }
 
   static defaultProps = {
     options: [],
     onFinalOptionClick: () => {},
-    onSeeMoreClick: () => {}
+    onSeeMoreClick: () => {},
   }
 
   state = {
     activeKeys: [],
-    optionsArray: [{ options: this.props.options }]
+    optionsArray: [{ options: this.props.options }],
   }
 
   renderOptionsList = ({ options, active, index }) => {
@@ -40,17 +40,20 @@ export default class Cascader extends React.Component {
           ${isLastGroup ? 'visible' : 'hidden'}`}
       >
         {!isFirstGroup && (
-          <Icon
-            className="cascader-back-arrow"
-            type="caret-left"
-            onClick={() => {
-              const newArray = [...this.state.optionsArray]
-              newArray.pop()
-              this.setState({
-                optionsArray: newArray
-              })
-            }}
-          />
+          <Fragment>
+            <Icon
+              className="cascader-back-arrow"
+              type="caret-left"
+              onClick={() => {
+                const newArray = [...this.state.optionsArray]
+                newArray.pop()
+                this.setState({
+                  optionsArray: newArray,
+                })
+              }}
+            />
+            <div className="options-title">{mostRecentOptionLabel}</div>
+          </Fragment>
         )}
         {options.map((option, i) => {
           return (
@@ -94,7 +97,7 @@ export default class Cascader extends React.Component {
       newOptionsArray.push({ options: option.children }) // add new option list container
       this.setState({
         optionsArray: newOptionsArray,
-        mostRecentOption: option
+        mostRecentOption: option,
       })
     } else {
       this.props.onFinalOptionClick(option)
@@ -113,7 +116,7 @@ export default class Cascader extends React.Component {
           return this.renderOptionsList({
             options: optionsObject.options,
             active: optionsObject.active,
-            index
+            index,
           })
         })}
       </div>

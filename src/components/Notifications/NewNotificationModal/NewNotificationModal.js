@@ -562,7 +562,7 @@ export default class NewNotificationModal extends React.Component {
         onClose={this.props.onClose}
         enableBodyScroll
         width="95vw"
-        style={{ marginTop: '21px', maxWidth: '1100px', maxHeight: '93vh' }}
+        style={{ marginTop: '21px', maxWidth: '900px', maxHeight: '93vh' }}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
