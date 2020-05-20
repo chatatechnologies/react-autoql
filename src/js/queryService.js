@@ -32,17 +32,17 @@ const transformSafetyNetResponse = response => {
             newSuggestionList = suggs.suggestions.map(sugg => {
               return {
                 ...sugg,
-                value_label: sugg.value_label
+                value_label: sugg.value_label,
               }
             })
           }
           return {
             ...suggs,
-            suggestion_list: newSuggestionList
+            suggestion_list: newSuggestionList,
           }
         }),
-        query: response.data.data.query || response.data.data.text
-      }
+        query: response.data.data.query || response.data.data.text,
+      },
     }
   }
   return newResponse
@@ -74,7 +74,7 @@ export const runQueryOnly = ({
   domain,
   apiKey,
   token,
-  source
+  source,
 } = {}) => {
   const axiosInstance = axios.create({})
 
@@ -86,8 +86,8 @@ export const runQueryOnly = ({
   const data = {
     text: query,
     source: formatSourceString(source),
-    debug,
-    test
+    translation: debug ? 'include' : 'exclude',
+    test,
   }
 
   const config = {}
@@ -95,7 +95,7 @@ export const runQueryOnly = ({
   if (token) {
     config.headers = {
       // 'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }
   }
 
@@ -142,7 +142,7 @@ export const runQueryOnly = ({
         return Promise.reject({
           ..._get(error, 'response.data'),
           originalQuery: query,
-          suggestionResponse: true
+          suggestionResponse: true,
         })
       }
       return Promise.reject(_get(error, 'response.data'))
@@ -161,7 +161,7 @@ export const runQuery = ({
   domain,
   apiKey,
   token,
-  source
+  source,
 } = {}) => {
   if (enableQueryValidation) {
     // safetyNetCall = axios.CancelToken.source()
@@ -169,7 +169,7 @@ export const runQuery = ({
       text: query,
       domain,
       apiKey,
-      token
+      token,
     })
       .then(response => {
         if (failedValidation(response)) {
@@ -183,7 +183,7 @@ export const runQuery = ({
           domain,
           apiKey,
           token,
-          source
+          source,
         })
       })
       .catch(error => {
@@ -199,7 +199,7 @@ export const runQuery = ({
     token,
     domain,
     apiKey,
-    source
+    source,
   })
 }
 
@@ -214,7 +214,7 @@ export const runSafetyNet = ({ text, domain, apiKey, token }) => {
   // config.cancelToken = safetyNetCall.token
   if (token) {
     config.headers = {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }
   }
 
@@ -231,22 +231,22 @@ export const runDrilldown = ({
   test,
   domain,
   apiKey,
-  token
+  token,
 } = {}) => {
   const axiosInstance = axios.create({})
   // drilldownCall = axios.CancelToken.source()
 
   const requestData = {
-    debug: debug || false,
+    translation: debug ? 'include' : 'exclude',
     columns: data,
-    test
+    test,
   }
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
   if (token) {
     config.headers = {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }
   }
 
@@ -262,7 +262,7 @@ export const fetchAutocomplete = ({
   suggestion,
   domain,
   apiKey,
-  token
+  token,
 } = {}) => {
   // Do not run if text is blank
   if (!suggestion || !suggestion.trim()) {
@@ -286,7 +286,7 @@ export const fetchAutocomplete = ({
   // config.cancelToken = autoCompleteCall.token
   if (token) {
     config.headers = {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }
   }
 
@@ -300,14 +300,14 @@ export const setColumnVisibility = ({
   apiKey,
   token,
   domain,
-  columns
+  columns,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/column-visibility?key=${apiKey}`
   const data = { columns }
   const config = {}
   if (token) {
     config.headers = {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     }
   }
 
@@ -325,15 +325,15 @@ export const fetchQueryTips = ({
   domain,
   apiKey,
   token,
-  skipSafetyNet
+  skipSafetyNet,
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
   const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   if (!skipSafetyNet) {
@@ -341,7 +341,7 @@ export const fetchQueryTips = ({
       text: keywords,
       domain,
       apiKey,
-      token
+      token,
     })
       .then(safetyNetResponse => {
         if (
@@ -377,8 +377,8 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   return axiosInstance
@@ -392,18 +392,18 @@ export const reportProblem = ({
   queryId,
   domain,
   apiKey,
-  token
+  token,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}?key=${apiKey}`
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    is_correct: false
+    is_correct: false,
   }
 
   if (message) {
