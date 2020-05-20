@@ -74,6 +74,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: string,
     introMessageTopics: array,
     enableDynamicCharting: bool,
+    landingPage: string,
 
     // Callbacks
     onVisibleChange: func,
@@ -110,6 +111,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
     enableDynamicCharting: true,
+    landingPage: 'data-messenger',
 
     // Callbacks
     onHandleClick: () => {},
@@ -121,7 +123,7 @@ export default class DataMessenger extends React.Component {
   state = {
     hasError: false,
 
-    activePage: 'messenger',
+    activePage: this.props.landingPage,
     width: this.props.width,
     height: this.props.height,
     isResizing: false,
@@ -162,8 +164,8 @@ export default class DataMessenger extends React.Component {
       }, 1000)
 
       if (
-        this.state.activePage === 'messenger' &&
-        prevState.activePage !== 'messenger'
+        this.state.activePage === 'data-messenger' &&
+        prevState.activePage !== 'data-messenger'
       ) {
         this.scrollToBottom()
       }
@@ -253,7 +255,7 @@ export default class DataMessenger extends React.Component {
           Use{' '}
           <span
             className="intro-qi-link"
-            onClick={() => this.setState({ activePage: 'tips' })}
+            onClick={() => this.setState({ activePage: 'expore-queries' })}
           >
             <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
             Queries
@@ -450,6 +452,7 @@ export default class DataMessenger extends React.Component {
   runDrilldownFromAPI = (data, queryID) => {
     runDrilldown({
       ...this.props.authentication,
+      ...this.props.autoQLConfig,
       queryID,
       data,
     })
@@ -610,8 +613,8 @@ export default class DataMessenger extends React.Component {
         >
           <div className={`page-switcher-container ${this.props.placement}`}>
             <div
-              className={`tab${page === 'messenger' ? ' active' : ''}`}
-              onClick={() => this.setState({ activePage: 'messenger' })}
+              className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+              onClick={() => this.setState({ activePage: 'data-messenger' })}
               data-tip="Data Messenger"
               data-for="chata-header-tooltip"
               data-delay-show={1000}
@@ -620,8 +623,10 @@ export default class DataMessenger extends React.Component {
               <Icon type="chata-bubbles-outlined" />
             </div>
             <div
-              className={`tab${page === 'tips' ? ' active' : ''} tips`}
-              onClick={() => this.setState({ activePage: 'tips' })}
+              className={`tab${
+                page === 'expore-queries' ? ' active' : ''
+              } tips`}
+              onClick={() => this.setState({ activePage: 'expore-queries' })}
               data-tip="Explore Queries"
               data-for="chata-header-tooltip"
               data-delay-show={1000}
@@ -636,7 +641,7 @@ export default class DataMessenger extends React.Component {
   }
 
   renderClearMessagesButton = () => {
-    if (this.state.activePage === 'messenger') {
+    if (this.state.activePage === 'data-messenger') {
       return (
         <Popover
           isOpen={this.state.isClearMessageConfirmVisible}
@@ -686,10 +691,10 @@ export default class DataMessenger extends React.Component {
 
   renderHeaderTitle = () => {
     let title = ''
-    if (this.state.activePage === 'messenger') {
+    if (this.state.activePage === 'data-messenger') {
       title = this.props.title
     }
-    if (this.state.activePage === 'tips') {
+    if (this.state.activePage === 'expore-queries') {
       title = 'Explore Queries'
     }
     return <div className="header-title">{title}</div>
@@ -720,10 +725,10 @@ export default class DataMessenger extends React.Component {
 
   renderBodyContent = () => {
     switch (this.state.activePage) {
-      case 'messenger': {
+      case 'data-messenger': {
         return this.renderDataMessengerContent()
       }
-      case 'tips': {
+      case 'expore-queries': {
         return this.renderQueryTipsContent()
       }
     }
@@ -813,6 +818,7 @@ export default class DataMessenger extends React.Component {
             showLoadingDots={false}
             placeholder={this.props.inputPlaceholder}
             onErrorCallback={this.props.onErrorCallback}
+            hideInput={this.props.hideInput}
             source={['data_messenger']}
           />
         </div>
@@ -909,7 +915,7 @@ export default class DataMessenger extends React.Component {
   }
 
   runTopicInExporeQueries = topic => {
-    this.setState({ activePage: 'tips' })
+    this.setState({ activePage: 'expore-queries' })
     setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
@@ -928,7 +934,7 @@ export default class DataMessenger extends React.Component {
       currentPage={this.state.queryTipsCurrentPage}
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={query => {
-        this.setState({ activePage: 'messenger' })
+        this.setState({ activePage: 'data-messenger' })
         setTimeout(() => {
           this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
         }, 500)
