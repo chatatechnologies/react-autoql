@@ -143,66 +143,90 @@ export default class NotificationSettings extends React.Component {
     )
   }
 
-  renderAddNotificationButton = () => (
-    <div className="chata-notification-add-btn-container">
-      <div className="chata-notification-add-btn" onClick={this.onAddClick}>
-        <Icon type="plus" className="chata-notification-add-icon" />
+  renderNotificationGroupTitle = (title, description, includeAddBtn) => (
+    <div className="chata-notification-title-container">
+      <div style={{ paddingLeft: '10px', opacity: 0.8 }}>
+        <div style={{ fontSize: '17px' }}>{title}</div>
+        <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
+      {includeAddBtn && (
+        <div className="chata-notification-add-btn" onClick={this.onAddClick}>
+          <Icon type="plus" className="chata-notification-add-icon" />
+        </div>
+      )}
     </div>
   )
 
-  renderNotificationlist = () => (
-    <Fragment>
-      {this.renderAddNotificationButton()}
-      <div className="chata-notification-settings-container">
-        {this.state.ruleList.map((notification, i) => {
-          return (
-            <div
-              key={`chata-notification-setting-item-${i}`}
-              className="chata-notification-setting-item"
-              onClick={e => this.onEditClick(e, notification)}
-            >
-              <div className="chata-notification-setting-item-header">
-                <div className="chata-notification-setting-display-name">
-                  <span className="chata-notification-setting-display-name-title">
-                    {notification.title}
-                  </span>
-                  <span className="chata-notification-setting-display-name-message">
-                    {notification.message && (
-                      <span> - {notification.message}</span>
-                    )}
-                  </span>
-                </div>
-                <div className="chata-notification-setting-actions">
-                  <Checkbox
-                    type="switch"
-                    checked={
-                      notification.status === 'ACTIVE' ||
-                      notification.status === 'WAITING'
-                    }
-                    className="chata-notification-enable-checkbox"
-                    onClick={e => e.stopPropagation()}
-                    data-tip={
-                      notification.status === 'ACTIVE' ||
-                      notification.status === 'WAITING'
-                        ? 'Disable'
-                        : 'Enable'
-                    }
-                    data-for="chata-notification-settings-tooltip"
-                    onChange={e => {
-                      this.onEnableSwitchChange(e, notification)
-                      ReactTooltip.hide()
-                      ReactTooltip.rebuild()
-                    }}
-                  />
+  renderNotificationlist = (type, list) => {
+    if (type === 'custom' && !_get(list, 'length')) {
+      return this.renderEmptyListMessage()
+    } else if (type === 'default' && !_get(list, 'length')) {
+      return null
+    }
+
+    return (
+      <div className="notification-rules-list-container">
+        {type === 'custom' &&
+          this.renderNotificationGroupTitle(
+            'Custom Notifications',
+            'Description for custom notifications will go here',
+            true
+          )}
+        {type === 'default' &&
+          this.renderNotificationGroupTitle(
+            'Default Notifications',
+            'Description for default notifications will go here'
+          )}
+        <div className="chata-notification-settings-container">
+          {list.map((notification, i) => {
+            return (
+              <div
+                key={`chata-notification-setting-item-${i}`}
+                className="chata-notification-setting-item"
+                onClick={e => this.onEditClick(e, notification)}
+              >
+                <div className="chata-notification-setting-item-header">
+                  <div className="chata-notification-setting-display-name">
+                    <span className="chata-notification-setting-display-name-title">
+                      {notification.title}
+                    </span>
+                    <span className="chata-notification-setting-display-name-message">
+                      {notification.message && (
+                        <span> - {notification.message}</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="chata-notification-setting-actions">
+                    <Checkbox
+                      type="switch"
+                      checked={
+                        notification.status === 'ACTIVE' ||
+                        notification.status === 'WAITING'
+                      }
+                      className="chata-notification-enable-checkbox"
+                      onClick={e => e.stopPropagation()}
+                      data-tip={
+                        notification.status === 'ACTIVE' ||
+                        notification.status === 'WAITING'
+                          ? 'Turn off notification'
+                          : 'Turn on notification'
+                      }
+                      data-for="chata-notification-settings-tooltip"
+                      onChange={e => {
+                        this.onEnableSwitchChange(e, notification)
+                        ReactTooltip.hide()
+                        ReactTooltip.rebuild()
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-    </Fragment>
-  )
+    )
+  }
 
   renderEmptyListMessage = () => (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
@@ -226,8 +250,21 @@ export default class NotificationSettings extends React.Component {
       )
     }
 
+    const customList = this.state.ruleList.filter(
+      rule => rule.type !== 'default'
+    )
+    const defaultList = this.state.ruleList.filter(
+      rule => rule.type === 'default'
+    )
+
     return (
-      <div data-test="notification-settings">
+      <div
+        className="chata-notification-settings"
+        data-test="notification-settings"
+      >
+        {this.renderNotificationlist('default', defaultList)}
+        {this.renderNotificationlist('custom', customList)}
+        {this.renderNotificationEditModal()}
         <ReactTooltip
           className="chata-drawer-tooltip"
           id="chata-notification-settings-tooltip"
@@ -235,11 +272,6 @@ export default class NotificationSettings extends React.Component {
           delayShow={500}
           html
         />
-
-        {_get(this.state.ruleList, 'length')
-          ? this.renderNotificationlist()
-          : this.renderEmptyListMessage()}
-        {this.renderNotificationEditModal()}
       </div>
     )
   }

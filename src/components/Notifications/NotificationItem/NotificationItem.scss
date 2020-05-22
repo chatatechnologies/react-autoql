@@ -1,4 +1,7 @@
 .chata-notification-list-item {
+  display: flex;
+  flex-direction: column;
+  flex-basis: auto;
   --accent-color: #26a7df;
 
   position: relative;
@@ -6,7 +9,6 @@
   background: #fff;
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-  height: 93px;
 
   margin-bottom: 8px;
 
@@ -21,18 +23,14 @@
   animation-delay: 0s;
   // opacity: 0;
 
-  cursor: pointer;
-
   &:hover {
-    background: rgba(0, 0, 0, 0.01);
+    &:not(.expanded) {
+      background-color: rgba(0, 0, 0, 0.01);
+    }
 
     .chata-notification-delete-icon {
       opacity: 1;
     }
-  }
-
-  &.expanded {
-    height: 320px;
   }
 
   &.triggered {
@@ -50,6 +48,24 @@
     }
   }
 
+  .chata-notification-expanded-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    transition: height 0.2s ease;
+    height: 0;
+    opacity: 0;
+    &.visible {
+      height: 300px;
+      opacity: 1;
+    }
+  }
+
+  .chata-notification-extra-content {
+    text-align: center;
+    height: 40px;
+  }
+
   .chata-notification-description {
     color: rgba(0, 0, 0, 0.6);
     font-size: 14px;
@@ -64,9 +80,12 @@
   }
 
   .chata-notification-data-container {
+    flex: 1;
+    height: 0;
     width: 100%;
-    height: 248px;
-    padding: 7px 20px;
+    padding: 0 20px;
+    // max-height: 100px;
+    // padding: 7px 20px;
   }
 
   .chata-notification-data-title {
@@ -84,8 +103,7 @@
 
   .chata-notification-dismiss-icon {
     font-size: 21px;
-    margin-top: 21px;
-    margin-right: 20px;
+    margin: 11px;
     width: 40px;
     height: 40px;
     padding: 10px;
@@ -145,9 +163,9 @@
 
     background: var(--chata-messenger-accent-color, #26a7df);
 
-    transition-property: opacity, height;
-    transition-duration: 0.2s, 0.3s;
-    transition-timing-function: ease, cubic-bezier(0.26, 0.26, 0, 1);
+    transition-property: opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
   }
 
   .chata-notification-img-container {
@@ -170,7 +188,7 @@
   .chata-notification-display-name-container {
     flex: 1;
     line-height: 23px;
-    padding-top: 13px;
+    padding: 13px 0px;
     transition: color 0.2s ease;
 
     .chata-notification-display-name {

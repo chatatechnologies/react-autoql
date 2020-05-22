@@ -161,9 +161,13 @@ export default class App extends Component {
   }
 
   componentDidMount = () => {
-    this.checkAuthentication().then(() => {
-      this.fetchDashboard()
-    })
+    this.testAuthentication()
+      .then(() => {
+        this.fetchDashboard()
+      })
+      .catch(() => {
+        this.logoutUser()
+      })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -290,11 +294,7 @@ export default class App extends Component {
         ) {
           return Promise.reject()
         }
-        const newResponse = {
-          ...response,
-          data: response.data.query_result,
-        }
-        return Promise.resolve(newResponse)
+        return Promise.resolve(response.data.query_result)
       })
       .catch((error) => {
         return Promise.reject(error)
@@ -313,26 +313,32 @@ export default class App extends Component {
     }
 
     if (!this.state.apiKey || !this.state.domain) {
+      this.setState({
+        isAuthenticated: false,
+        activeIntegrator: undefined,
+        componentKey: uuid.v4(),
+      })
       return Promise.reject()
     }
 
     return axios
       .get(url, config)
-      .then(() => Promise.resolve())
+      .then(() => {
+        this.setState({
+          isAuthenticated: true,
+          activeIntegrator: this.getActiveIntegrator(),
+          componentKey: uuid.v4(),
+        })
+        return Promise.resolve()
+      })
       .catch((error) => {
+        this.setState({
+          isAuthenticated: false,
+          activeIntegrator: undefined,
+          componentKey: uuid.v4(),
+        })
         return Promise.reject(error)
       })
-  }
-
-  checkAuthentication = () => {
-    const loginToken = getStoredProp('loginToken')
-    if (loginToken) {
-      return this.getJWT(loginToken)
-    }
-    this.setState({
-      isAuthenticated: false,
-    })
-    return Promise.reject()
   }
 
   fetchDashboard = async () => {
@@ -373,61 +379,64 @@ export default class App extends Component {
   }
 
   getJWT = async (loginToken) => {
-    if (!loginToken) {
-      throw new Error('Invalid Login Token')
-    }
+    try {
+      if (!loginToken) {
+        throw new Error('Invalid Login Token')
+      }
 
-    const baseUrl = getBaseUrl()
-    let url = `${baseUrl}/api/v1/jwt?display_name=${this.state.userId}&project_id=${this.state.customerId}`
+      const baseUrl = getBaseUrl()
+      let url = `${baseUrl}/api/v1/jwt?display_name=${this.state.userId}&project_id=${this.state.customerId}`
 
-    // Use login token to get JWT token
-    const jwtResponse = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${loginToken}`,
-      },
-    })
-
-    // Put jwt token into storage
-    const jwtToken = jwtResponse.data
-    setStoredProp('jwtToken', jwtToken)
-
-    if (this.authTimer) {
-      clearTimeout(this.authTimer)
-    }
-    this.authTimer = setTimeout(() => {
-      this.setState({
-        isAuthenticated: false,
+      // Use login token to get JWT token
+      const jwtResponse = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${loginToken}`,
+        },
       })
-    }, 2.16e7)
 
-    this.setState({
-      isAuthenticating: true,
-    })
+      // Put jwt token into storage
+      const jwtToken = jwtResponse.data
+      setStoredProp('jwtToken', jwtToken)
 
-    return this.testAuthentication()
-      .then(() => {
-        this.setState({
-          isAuthenticated: true,
-          isAuthenticating: false,
-          componentKey: uuid.v4(),
-          activeIntegrator: this.getActiveIntegrator(),
-        })
-
-        return Promise.resolve()
-      })
-      .catch(() => {
+      if (this.authTimer) {
+        clearTimeout(this.authTimer)
+      }
+      this.authTimer = setTimeout(() => {
         this.setState({
           isAuthenticated: false,
-          isAuthenticating: false,
-          activeIntegrator: undefined,
         })
+      }, 2.16e7)
 
-        return Promise.reject()
-      })
+      return this.testAuthentication()
+        .then(() => {
+          this.setState({
+            isAuthenticated: true,
+            isAuthenticating: false,
+            componentKey: uuid.v4(),
+            activeIntegrator: this.getActiveIntegrator(),
+          })
+
+          return Promise.resolve()
+        })
+        .catch(() => {
+          this.setState({
+            isAuthenticated: false,
+            isAuthenticating: false,
+            activeIntegrator: undefined,
+          })
+
+          return Promise.reject()
+        })
+    } catch (error) {
+      this.setState({ isAuthenticating: false })
+    }
   }
 
   onLogin = async () => {
     try {
+      this.setState({
+        isAuthenticating: true,
+      })
       const baseUrl = getBaseUrl()
 
       // Login to get login token
@@ -459,6 +468,7 @@ export default class App extends Component {
       setStoredProp('jwtToken', null)
       this.setState({
         isAuthenticated: false,
+        isAuthenticating: false,
         activeIntegrator: null,
         componentKey: uuid.v4(),
       })
@@ -661,6 +671,16 @@ export default class App extends Component {
     )
   }
 
+  logoutUser = () => {
+    this.setState({
+      isAuthenticated: false,
+      dashboardTiles: undefined,
+    })
+    setStoredProp('loginToken', undefined)
+    setStoredProp('jwtToken', undefined)
+    message.success('Successfully logged out')
+  }
+
   renderAuthenticationForm = () => {
     const layout = {
       labelCol: { span: 8 },
@@ -785,18 +805,7 @@ export default class App extends Component {
             </Button>
           </Form.Item>
           <Form.Item {...tailLayout}>
-            <Button
-              type="default"
-              onClick={() => {
-                this.setState({
-                  isAuthenticated: false,
-                  dashboardTiles: undefined,
-                })
-                setStoredProp('loginToken', undefined)
-                setStoredProp('jwtToken', undefined)
-                message.success('Successfully logged out')
-              }}
-            >
+            <Button type="default" onClick={this.logoutUser}>
               Log Out
             </Button>
           </Form.Item>
@@ -1456,7 +1465,7 @@ export default class App extends Component {
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
-          expandedContent={this.renderNotificationContent()}
+          activeNotificationData={this.state.activeNotificationContent}
         />
       </div>
     )

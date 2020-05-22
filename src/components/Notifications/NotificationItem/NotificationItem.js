@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
@@ -6,9 +6,11 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 
 import { Icon } from '../../Icon'
+import { LoadingDots } from '../../LoadingDots'
+import { QueryOutput } from '../../QueryOutput'
 import {
   dismissNotification,
-  deleteNotification
+  deleteNotification,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
 
@@ -28,21 +30,21 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
-    expandedContent: PropTypes.element,
-    onErrorCallback: PropTypes.func
+    activeNotificationData: PropTypes.shape({}),
+    onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    expandedContent: undefined,
+    activeNotificationData: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
-    onErrorCallback: () => {}
+    onErrorCallback: () => {},
   }
 
   state = {
-    notification: this.props.notification
+    notification: this.props.notification,
   }
 
   getIsTriggered = state => {
@@ -65,7 +67,7 @@ export default class NotificationItem extends React.Component {
 
     dismissNotification({
       ...this.props.authentication,
-      notificationId: notification.id
+      notificationId: notification.id,
     }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -78,7 +80,7 @@ export default class NotificationItem extends React.Component {
 
     deleteNotification({
       ...this.props.authentication,
-      notificationId: notification.id
+      notificationId: notification.id,
     }).catch(error => {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -116,9 +118,13 @@ export default class NotificationItem extends React.Component {
         className={`chata-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}`}
-        onClick={() => this.onClick(notification)}
       >
-        <div className="chata-notification-list-item-header">
+        <div
+          className="chata-notification-list-item-header"
+          onClick={() => {
+            this.onClick(notification)
+          }}
+        >
           {
             //   <div className="chata-notification-img-container">
             //   <div className="chata-notification-img">A</div>
@@ -164,18 +170,44 @@ export default class NotificationItem extends React.Component {
             </div>
           )}
         </div>
-        {notification.expanded && (
-          <div
-            className="chata-notification-data-container"
-            onClick={e => e.stopPropagation()}
-          >
-            {this.props.expandedContent || (
-              <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                No data available
+        <div
+          className={`chata-notification-expanded-content ${
+            notification.expanded ? ' visible' : ''
+          }`}
+        >
+          {
+            // notification.expanded && (
+            <Fragment>
+              <div
+                className="chata-notification-data-container"
+                onClick={e => e.stopPropagation()}
+              >
+                {this.props.activeNotificationData ? (
+                  <QueryOutput
+                    queryResponse={{
+                      data: this.props.activeNotificationData,
+                    }}
+                    displayType="table"
+                  />
+                ) : (
+                  <div
+                    style={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <LoadingDots />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
+              {<div className="chata-notification-extra-content"></div>}
+            </Fragment>
+            // )
+          }
+        </div>
         {this.renderAlertColorStrip()}
       </div>
     )
