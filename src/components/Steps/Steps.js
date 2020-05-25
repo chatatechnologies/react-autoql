@@ -57,8 +57,12 @@ export default class Steps extends React.Component {
     return undefined
   }
 
-  onStepTitleClick = i => {
+  onStepTitleClick = (i, step) => {
     try {
+      if (step.onClick) {
+        step.onClick()
+      }
+
       if (this.autoHideTimeout) {
         clearTimeout(this.autoHideTimeout)
       }
@@ -136,7 +140,7 @@ export default class Steps extends React.Component {
               >
                 <div
                   className="chata-step-title-container"
-                  onClick={() => this.onStepTitleClick(i)}
+                  onClick={() => this.onStepTitleClick(i, step)}
                 >
                   <div className="chata-step-title">{step.title}</div>
                 </div>

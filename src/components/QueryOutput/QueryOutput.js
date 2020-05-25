@@ -398,7 +398,9 @@ export default class QueryOutput extends React.Component {
   renderSingleValueResponse = () => {
     return (
       <a
-        className="single-value-response"
+        className={`single-value-response ${
+          this.props.autoQLConfig.enableDrilldowns ? ' with-drilldown' : ''
+        }`}
         onClick={() => {
           this.props.onDataClick(
             { supportedByAPI: true, data: [] },

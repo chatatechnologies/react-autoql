@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
+import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
@@ -19,6 +20,8 @@ import { authenticationDefault } from '../../../props/defaults'
 import './NotificationSettings.scss'
 
 export default class NotificationSettings extends React.Component {
+  COMPONENT_KEY = uuid.v4()
+
   static propTypes = {
     authentication: authenticationType,
     onErrorCallback: PropTypes.func,
@@ -132,6 +135,7 @@ export default class NotificationSettings extends React.Component {
   renderNotificationEditModal = () => {
     return (
       <NewNotificationModal
+        key={this.COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}

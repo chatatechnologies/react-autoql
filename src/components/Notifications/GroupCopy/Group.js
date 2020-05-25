@@ -10,6 +10,45 @@ import { Rule } from '../Rule'
 
 import './Group.scss'
 
+const isGroup = termValue => {
+  return (
+    termValue[0] &&
+    (termValue[0].condition === 'AND' ||
+      termValue[0].condition === 'OR' ||
+      termValue[0].condition === 'TERMINATOR')
+  )
+}
+
+const getInitialStateData = initialData => {
+  let state = {}
+  const rules = []
+  if (!initialData || !initialData.length) {
+    rules.push({
+      id: uuid.v4(),
+      type: 'rule',
+      isComplete: false,
+    })
+    state = { rules }
+  } else {
+    initialData.forEach(rule => {
+      const id = rule.id || uuid.v4()
+      rules.push({
+        id,
+        type: isGroup(rule.term_value) ? 'group' : 'rule',
+        isComplete: true,
+        termValue: rule.term_value || [],
+      })
+    })
+
+    state = {
+      rules,
+      andOrSelectValue: initialData[0].condition === 'OR' ? 'ANY' : 'ALL',
+    }
+  }
+
+  return state
+}
+
 export default class Group extends React.Component {
   ID = uuid.v4()
 
@@ -18,82 +57,89 @@ export default class Group extends React.Component {
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
     disableAddGroupBtn: PropTypes.bool,
-    hideTopCondition: PropTypes.bool
+    hideTopCondition: PropTypes.bool,
+    readOnly: PropTypes.bool,
   }
 
   static defaultProps = {
     disableAddGroupBtn: false,
     hideTopCondition: false,
+    readOnly: false,
     onDelete: () => {},
-    onUpdate: () => {}
+    onUpdate: () => {},
   }
 
   state = {
-    // rulesJSONArray: [],
     rules: [],
-    andOrSelectValue: 'ALL'
+    andOrSelectValue: 'ALL',
+    ...getInitialStateData(this.props.initialData),
   }
 
   componentDidMount = () => {
-    if (this.props.initialData) {
-      this.parseJSON(this.props.initialData)
-    } else {
-      // Populate first rule in the group
-      this.addRule()
-    }
+    this.props.onUpdate(
+      this.props.groupId,
+      this.isComplete(),
+      this.getJSON(this.state.rules)
+    )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(this.state, prevState)) {
-      this.props.onUpdate(this.props.groupId, this.isComplete(), this.getJSON())
+      this.props.onUpdate(
+        this.props.groupId,
+        this.isComplete(),
+        this.getJSON(this.state.rules)
+      )
     }
   }
 
-  parseJSON = rulesJSON => {
-    const rules = rulesJSON.map(rule => {
-      const id = rule.id || uuid.v4()
-      if (rule.term_type === 'group') {
-        return {
-          id,
-          type: 'rule',
-          isComplete: false,
-          termValue: [],
-          component: (
-            <Rule
-              ruleId={id}
-              key={id}
-              initialData={rule.term_value}
-              onDelete={() => this.deleteRuleOrGroup(id)}
-              onUpdate={this.onRuleUpdate}
-              onAdd={this.addRule}
-            />
-          )
-        }
-      } else {
-        return {
-          id,
-          type: 'group',
-          isComplete: false,
-          termValue: [],
-          component: (
-            <Group
-              groupId={id}
-              key={id}
-              initialData={rule.term_value}
-              onDelete={() => this.deleteRuleOrGroup(id)}
-            />
-          )
-        }
-      }
-    })
-    this.setState({
-      rules,
-      andOrSelectValue: rulesJSON[0].condition === 'OR' ? 'ANY' : 'ALL'
-    })
-  }
+  // parseJSON = rulesJSON => {
+  //   const rules = rulesJSON.map(rule => {
+  //     const id = rule.id || uuid.v4()
+  //     if (rule.term_type === 'group') {
+  //       return {
+  //         id,
+  //         type: 'rule',
+  //         isComplete: false,
+  //         termValue: [],
+  //         component: (
+  //           <Rule
+  //             ruleId={id}
+  //             key={id}
+  //             initialData={rule.term_value}
+  //             onDelete={() => this.deleteRuleOrGroup(id)}
+  //             onUpdate={this.onRuleUpdate}
+  //             onAdd={this.addRule}
+  //             readOnly={this.props.readOnly}
+  //           />
+  //         ),
+  //       }
+  //     } else {
+  //       return {
+  //         id,
+  //         type: 'group',
+  //         isComplete: false,
+  //         termValue: [],
+  //         component: (
+  //           <Group
+  //             groupId={id}
+  //             key={id}
+  //             initialData={rule.term_value}
+  //             onDelete={() => this.deleteRuleOrGroup(id)}
+  //             readOnly={this.props.readOnly}
+  //           />
+  //         ),
+  //       }
+  //     }
+  //   })
+  //   this.setState({
+  //     rules,
+  //     andOrSelectValue: rulesJSON[0].condition === 'OR' ? 'ANY' : 'ALL',
+  //   })
+  // }
 
-  getJSON = () => {
-    return this.state.rules.map((rule, i) => {
+  getJSON = rules => {
+    return rules.map((rule, i) => {
       let condition = this.state.andOrSelectValue === 'ALL' ? 'AND' : 'OR'
       if (i === this.state.rules.length - 1) {
         condition = 'TERMINATOR'
@@ -103,7 +149,7 @@ export default class Group extends React.Component {
         id: rule.id || uuid.v4(),
         term_type: 'group',
         condition,
-        term_value: rule.termValue
+        term_value: rule.termValue,
       }
     })
   }
@@ -127,7 +173,7 @@ export default class Group extends React.Component {
         return {
           ...rule,
           isComplete,
-          termValue
+          termValue,
         }
       }
       return rule
@@ -144,18 +190,9 @@ export default class Group extends React.Component {
         id: newId,
         type: 'rule',
         isComplete: false,
-        // initialData: undefined,
-        component: (
-          <Rule
-            ruleId={newId}
-            key={newId}
-            onDelete={() => this.deleteRuleOrGroup(newId)}
-            onUpdate={this.onRuleUpdate}
-            onAdd={this.addRule}
-          />
-        )
-      }
+      },
     ]
+
     this.setState({ rules: newRules })
   }
 
@@ -167,16 +204,9 @@ export default class Group extends React.Component {
         id: newId,
         type: 'group',
         isComplete: false,
-        initialData: undefined,
-        component: (
-          <Group
-            key={newId}
-            groupId={newId}
-            onDelete={() => this.deleteRuleOrGroup(newId)}
-          />
-        )
-      }
+      },
     ]
+
     this.setState({ rules: newRules })
   }
 
@@ -186,6 +216,10 @@ export default class Group extends React.Component {
   }
 
   renderAllAnySelect = () => {
+    // if (this.props.readOnly) {
+    //   return null
+    // }
+
     return (
       <div className="notification-rule-and-or-select">
         Match{' '}
@@ -201,6 +235,10 @@ export default class Group extends React.Component {
   }
 
   renderDeleteGroupBtn = () => {
+    if (this.props.readOnly) {
+      return null
+    }
+
     return (
       <div
         className="chata-notification-group-delete-btn"
@@ -220,6 +258,10 @@ export default class Group extends React.Component {
   // }
 
   renderAddBtn = () => {
+    if (this.props.readOnly) {
+      return null
+    }
+
     return (
       <div className="notification-rule-btn-container">
         <div className="chata-notification-rule-add-btn" onClick={this.addRule}>
@@ -243,7 +285,9 @@ export default class Group extends React.Component {
             className="notification-and-or-break"
             style={{
               top: this.props.hideTopCondition ? '0px' : '-19px',
-              height: this.props.hideTopCondition ? '100%' : 'calc(100% + 19px)'
+              height: this.props.hideTopCondition
+                ? '100%'
+                : 'calc(100% + 19px)',
             }}
           >
             {!this.props.hideTopCondition && (
@@ -255,7 +299,7 @@ export default class Group extends React.Component {
                   border:
                     this.props.topCondition === 'ALL'
                       ? '1px solid rgb(144, 221, 255)'
-                      : '1px solid #FFEB3B'
+                      : '1px solid #FFEB3B',
                 }}
               >
                 {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
@@ -270,7 +314,29 @@ export default class Group extends React.Component {
           data-test="rule-group"
         >
           {this.state.rules.map(rule => {
-            return rule.component
+            if (rule.type === 'rule') {
+              return (
+                <Rule
+                  ruleId={rule.id}
+                  key={rule.id}
+                  initialData={rule.termValue}
+                  onDelete={() => this.deleteRuleOrGroup(rule.id)}
+                  onUpdate={this.onRuleUpdate}
+                  onAdd={this.addRule}
+                  readOnly={this.props.readOnly}
+                />
+              )
+            } else if (rule.type === 'group') {
+              return (
+                <Group
+                  groupId={rule.id}
+                  key={rule.id}
+                  initialData={rule.termValue}
+                  onDelete={() => this.deleteRuleOrGroup(rule.id)}
+                  readOnly={this.props.readOnly}
+                />
+              )
+            }
           })}
           {this.renderAllAnySelect()}
           {this.renderDeleteGroupBtn()}

@@ -71,7 +71,7 @@ export default class NewNotificationModal extends React.Component {
       setTimeout(this.resetFields, 500)
     }
     if (this.props.isVisible && !prevProps.isVisible) {
-      this.NEW_NOTIFICATION_MODAL_ID = uuid.v4()
+      // this.NEW_NOTIFICATION_MODAL_ID = uuid.v4()
       // If we are editing an existing notification
       // Fill the fields with the current settings
       if (this.props.currentNotification) {
@@ -518,6 +518,10 @@ export default class NewNotificationModal extends React.Component {
   }
 
   getModalContent = () => {
+    if (!this.props.isVisible) {
+      return null
+    }
+
     const steps = [
       {
         title: 'Notification Conditions',
@@ -526,7 +530,11 @@ export default class NewNotificationModal extends React.Component {
           <NotificationRulesCopy
             key={this.NEW_NOTIFICATION_MODAL_ID}
             onUpdate={this.onRulesUpdate}
-            notificationData={this.state.rulesJSON}
+            notificationData={_get(
+              this.props.currentNotification,
+              'expression',
+              []
+            )}
           />
         ),
         complete: this.state.isRulesSectionComplete,
@@ -541,7 +549,9 @@ export default class NewNotificationModal extends React.Component {
         subtitle:
           'Return the data from this query when the notification is triggered',
         content: this.renderDataReturnStep(),
-        complete: !!this.state.dataReturnQueryInput,
+        onClick: () => this.setState({ isDataReturnDirty: true }),
+        complete:
+          !!this.state.dataReturnQueryInput && this.state.isDataReturnDirty,
       },
       {
         title: 'Appearance',
@@ -582,7 +592,7 @@ export default class NewNotificationModal extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
-                disabled={!!steps.find(step => !step.complete)}
+                disabled={steps && !!steps.find(step => !step.complete)}
               >
                 Save
               </Button>

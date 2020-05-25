@@ -184,8 +184,12 @@
 }
 .single-value-response {
   color: inherit;
+  cursor: unset;
+  &:hover {
+    color: inherit;
+  }
 }
-.single-value-response:hover {
+.single-value-response.with-drilldown:hover {
   color: inherit;
   text-decoration: underline;
   font-weight: 600;

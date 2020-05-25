@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { Input } from '../../Input'
 import { Select } from '../../Select'
@@ -12,39 +13,77 @@ import { fetchAutocomplete } from '../../../js/queryService'
 
 import './Rule.scss'
 
+const getInitialStateData = initialData => {
+  if (initialData && initialData.length === 1) {
+    return {
+      input1Value: initialData[0].term_value,
+      conditionSelectValue: 'EXISTS',
+      isComplete: !!_get(initialData[0].term_value, 'length'),
+    }
+  } else if (initialData && initialData.length > 1) {
+    const input1Value = `${_get(initialData, '[0].term_value', '')}`
+    const input2Value = `${_get(initialData, '[1].term_value', '')}`
+
+    return {
+      input1Value,
+      input2Value,
+      conditionSelectValue: initialData[0].condition,
+      secondTermType: initialData[1].term_type,
+      isComplete:
+        !!_get(input1Value, 'length') && !!_get(input2Value, 'length'),
+    }
+  }
+
+  return {}
+}
+
 export default class Rule extends React.Component {
   autoCompleteTimer = undefined
+
+  constructor(props) {
+    super(props)
+
+    this.initialData = {}
+    this.TERM_ID_1 = uuid.v4()
+    this.TERM_ID_2 = uuid.v4()
+
+    const { initialData } = props
+
+    if (initialData && initialData.length === 1) {
+      this.TERM_ID_1 = initialData[0].id
+      this.TERM_ID_2 = uuid.v4()
+    } else if (initialData && initialData.length > 1) {
+      this.TERM_ID_1 = initialData[0].id
+      this.TERM_ID_2 = initialData[1].id
+    }
+  }
 
   static propTypes = {
     ruleId: PropTypes.string.isRequired,
     onAdd: PropTypes.func.isRequired,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
-    initialData: PropTypes.arrayOf(PropTypes.shape({}))
+    initialData: PropTypes.arrayOf(PropTypes.shape({})),
+    readOnly: PropTypes.bool,
   }
 
   static defaultProps = {
     onDelete: () => {},
     onUpdate: () => {},
-    initialData: undefined
+    initialData: undefined,
+    readOnly: false,
   }
 
   state = {
     input1Value: '',
     input2Value: '',
     conditionSelectValue: 'GREATER_THAN',
-    secondTermType: 'query'
-    // suggestions: []
+    secondTermType: 'query',
+    ...getInitialStateData(this.props.initialData),
   }
 
   componentDidMount = () => {
-    if (this.props.initialData) {
-      this.parseJSON(this.props.initialData)
-    } else {
-      // Set new id's for term 1 and 2
-      this.TERM_ID_1 = uuid.v4()
-      this.TERM_ID_2 = uuid.v4()
-    }
+    this.props.onUpdate(this.props.ruleId, this.isComplete(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -65,7 +104,7 @@ export default class Rule extends React.Component {
       this.TERM_ID_2 = uuid.v4()
       this.setState({
         input1Value: initialData[0].term_value,
-        conditionSelectValue: 'EXISTS'
+        conditionSelectValue: 'EXISTS',
       })
     } else if (initialData.length > 1) {
       this.TERM_ID_1 = initialData[0].id
@@ -74,7 +113,7 @@ export default class Rule extends React.Component {
         input1Value: initialData[0].term_value,
         input2Value: `${initialData[1].term_value}`,
         conditionSelectValue: initialData[0].condition,
-        secondTermType: initialData[1].term_type
+        secondTermType: initialData[1].term_type,
       })
     }
   }
@@ -86,8 +125,8 @@ export default class Rule extends React.Component {
           id: this.TERM_ID_1,
           term_type: 'query',
           condition: this.state.conditionSelectValue,
-          term_value: this.state.input1Value
-        }
+          term_value: this.state.input1Value,
+        },
       ]
     }
 
@@ -97,7 +136,7 @@ export default class Rule extends React.Component {
         id: this.TERM_ID_1,
         term_type: 'query',
         condition: this.state.conditionSelectValue,
-        term_value: this.state.input1Value
+        term_value: this.state.input1Value,
       },
       {
         id: this.TERM_ID_2,
@@ -105,8 +144,8 @@ export default class Rule extends React.Component {
         condition: 'TERMINATOR',
         term_value: this.isNumerical(input2Value)
           ? Number(input2Value)
-          : input2Value
-      }
+          : input2Value,
+      },
     ]
   }
 
@@ -118,7 +157,10 @@ export default class Rule extends React.Component {
     if (this.state.conditionSelectValue === 'EXISTS') {
       return !!this.state.input1Value
     } else {
-      return !!this.state.input1Value && !!this.state.input2Value
+      return (
+        !!_get(this.state.input1Value, 'length') &&
+        !!_get(this.state.input2Value, 'length')
+      )
     }
   }
 
@@ -142,7 +184,7 @@ export default class Rule extends React.Component {
       fetchAutocomplete({
         ...this.props.authentication,
         ...this.props.autoQLConfig,
-        suggestion: value
+        suggestion: value,
       })
         .then(response => {
           const body = response.data
@@ -162,13 +204,13 @@ export default class Rule extends React.Component {
           sortingArray.sort((a, b) => b.length - a.length)
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
-              name: sortingArray[idx]
+              name: sortingArray[idx],
             }
             autoCompleteArray.push(anObject)
           }
 
           this.setState({
-            suggestions: autoCompleteArray
+            suggestions: autoCompleteArray,
           })
         })
         .catch(error => {
@@ -179,7 +221,7 @@ export default class Rule extends React.Component {
 
   onSuggestionsClearRequested = () => {
     this.setState({
-      suggestions: []
+      suggestions: [],
     })
   }
 
@@ -222,7 +264,7 @@ export default class Rule extends React.Component {
             { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
             { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
             { value: 'equals', label: '=', tooltip: 'Equals' },
-            { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'EXISTS' }
+            { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'EXISTS' },
           ]}
           value={this.state.conditionSelectValue}
           className="chata-rule-condition-select"
@@ -279,13 +321,15 @@ export default class Rule extends React.Component {
             // />
           }
         </div>
-        <Icon
-          className="chata-rule-delete-btn"
-          type="close"
-          onClick={() => {
-            this.props.onDelete(this.props.ruleId)
-          }}
-        />
+        {!this.props.readOnly && (
+          <Icon
+            className="chata-rule-delete-btn"
+            type="close"
+            onClick={() => {
+              this.props.onDelete(this.props.ruleId)
+            }}
+          />
+        )}
       </div>
     )
   }

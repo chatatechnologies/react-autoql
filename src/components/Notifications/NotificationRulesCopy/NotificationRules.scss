@@ -30,3 +30,11 @@
   display: flex;
   justify-content: space-between;
 }
+
+// Read only styles
+.notification-rules-container.read-only {
+  pointer-events: none;
+  .chata-notification-group-container-copy {
+    border: none;
+  }
+}
