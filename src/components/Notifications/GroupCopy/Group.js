@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
@@ -220,7 +220,7 @@ export default class Group extends React.Component {
     )
   }
 
-  render = () => {
+  renderGroup = () => {
     const hasOnlyOneRule =
       this.state.rules.filter(rule => rule.type === 'rule').length <= 1
 
@@ -294,5 +294,67 @@ export default class Group extends React.Component {
         </div>
       </div>
     )
+  }
+
+  renderReadOnlyGroup = () => {
+    const hasOnlyOneRule =
+      this.state.rules.filter(rule => rule.type === 'rule').length <= 1
+
+    let conditionText = null
+    if (this.state.andOrSelectValue === 'ALL') {
+      conditionText = 'AND'
+    } else if (this.state.andOrSelectValue === 'ANY') {
+      conditionText = 'OR'
+    }
+
+    return (
+      <div
+        className={`notification-read-only-group ${
+          hasOnlyOneRule ? ' no-border' : ''
+        }`}
+      >
+        {this.state.rules.map((rule, i) => {
+          if (rule.type === 'rule') {
+            return (
+              <Fragment>
+                <Rule
+                  ref={r => (this.ruleRefs[i] = r)}
+                  ruleId={rule.id}
+                  key={rule.id}
+                  initialData={rule.termValue}
+                  andOrValue={
+                    i !== this.state.rules.length - 1 ? conditionText : null
+                  }
+                  readOnly
+                />
+              </Fragment>
+            )
+          } else if (rule.type === 'group') {
+            return (
+              <Fragment>
+                <Group
+                  groupId={rule.id}
+                  key={rule.id}
+                  initialData={rule.termValue}
+                  readOnly
+                />
+                {i !== this.state.rules.length - 1 && (
+                  <div>
+                    <span className="read-only-rule-term">{conditionText}</span>
+                  </div>
+                )}
+              </Fragment>
+            )
+          }
+        })}
+      </div>
+    )
+  }
+
+  render = () => {
+    if (this.props.readOnly) {
+      return this.renderReadOnlyGroup()
+    }
+    return this.renderGroup()
   }
 }

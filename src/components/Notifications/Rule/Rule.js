@@ -10,6 +10,7 @@ import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
 import { fetchAutocomplete } from '../../../js/queryService'
+import { capitalizeFirstChar } from '../../../js/Util'
 
 import './Rule.scss'
 
@@ -225,7 +226,45 @@ export default class Rule extends React.Component {
     })
   }
 
-  render = () => {
+  renderConditionOperator = text => {
+    switch (text) {
+      case 'GREATER_THAN': {
+        return '>'
+      }
+      case 'LESS_THAN': {
+        return '<'
+      }
+      case 'EQUALS': {
+        return '='
+      }
+      case 'EXISTS': {
+        return 'Exists'
+      }
+    }
+  }
+
+  renderReadOnlyRule = () => {
+    return (
+      <div>
+        <span className="read-only-rule-term">{`${capitalizeFirstChar(
+          this.state.input1Value
+        )}`}</span>
+        <span className="read-only-rule-term">{`${this.renderConditionOperator(
+          this.state.conditionSelectValue
+        )}`}</span>
+        {this.state.conditionSelectValue !== 'EXISTS' && (
+          <span className="read-only-rule-term">
+            {capitalizeFirstChar(this.state.input2Value)}
+          </span>
+        )}
+        {this.props.andOrValue && (
+          <span className="read-only-rule-term">{this.props.andOrValue}</span>
+        )}
+      </div>
+    )
+  }
+
+  renderRule = () => {
     return (
       <div className="chata-notification-rule-container" data-test="rule">
         <Input
@@ -263,7 +302,7 @@ export default class Rule extends React.Component {
           options={[
             { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
             { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
-            { value: 'equals', label: '=', tooltip: 'Equals' },
+            { value: 'EQUALS', label: '=', tooltip: 'Equals' },
             { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'EXISTS' },
           ]}
           value={this.state.conditionSelectValue}
@@ -321,16 +360,21 @@ export default class Rule extends React.Component {
             // />
           }
         </div>
-        {!this.props.readOnly && (
-          <Icon
-            className="chata-rule-delete-btn"
-            type="close"
-            onClick={() => {
-              this.props.onDelete(this.props.ruleId)
-            }}
-          />
-        )}
+        <Icon
+          className="chata-rule-delete-btn"
+          type="close"
+          onClick={() => {
+            this.props.onDelete(this.props.ruleId)
+          }}
+        />
       </div>
     )
+  }
+
+  render = () => {
+    if (this.props.readOnly) {
+      return this.renderReadOnlyRule()
+    }
+    return this.renderRule()
   }
 }

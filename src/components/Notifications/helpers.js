@@ -158,5 +158,10 @@ export const getScheduleDescription = (
   } else if (category === 'SCHEDULE') {
     categoryDescription = 'Notify me every (description of schedule)'
   }
+
+  if (!categoryDescription || !frequencyDescription) {
+    return null
+  }
+
   return `${categoryDescription}${frequencyDescription}`
 }

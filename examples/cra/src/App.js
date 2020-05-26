@@ -1354,6 +1354,7 @@ export default class App extends Component {
             <NotificationButton
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
+              themeConfig={this.getThemeConfigProp()}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
                 if (
@@ -1461,11 +1462,14 @@ export default class App extends Component {
         <NotificationList
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
+          themeConfig={this.getThemeConfigProp()}
           onExpandCallback={this.fetchNotificationContent}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
           activeNotificationData={this.state.activeNotificationContent}
+          onErrorCallback={this.onError}
+          onSuccessCallback={this.onSuccess}
         />
       </div>
     )
@@ -1482,6 +1486,7 @@ export default class App extends Component {
       >
         <NotificationSettings
           authentication={this.getAuthProp()}
+          themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}
         />
       </div>

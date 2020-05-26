@@ -3,20 +3,26 @@ import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import InfiniteScroll from 'react-infinite-scroller'
+import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
+import { NewNotificationModal } from '../NewNotificationModal'
 import {
   fetchNotificationList,
   dismissAllNotifications,
 } from '../../../js/notificationService'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 import './NotificationList.scss'
 
 export default class NotificationList extends React.Component {
+  MODAL_COMPONENT_KEY = uuid.v4()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
@@ -25,18 +31,22 @@ export default class NotificationList extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    themeConfig: themeConfigType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
-    activeNotificationData: PropTypes.element,
+    activeNotificationData: PropTypes.shape({}),
     onErrorCallback: PropTypes.func,
+    onSuccessCallback: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
+    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
+    onSuccessCallback: () => {},
   }
 
   state = {
@@ -183,6 +193,62 @@ export default class NotificationList extends React.Component {
     })
   }
 
+  getActiveRuleData = () => {
+    // RULE
+    // created_at: 1588607160
+    // created_by: "nmoore@chata.ai"
+    // expression: (2) [{…}, {…}]
+    // id: 18
+    // message: ""
+    // notification_type: "SINGLE_EVENT"
+    // project_public_id: "spira-demo3"
+    // query: "all tickets over 0"
+    // status: "INACTIVE"
+    // title: "Total tickets greater than 0"
+    // updated_at: 1590534286
+    // user_id: "nmoore@chata.ai"
+
+    // NOTIFICATION
+    // created_at: 1590526327
+    // expanded: true
+    // expression: (2) [{…}, {…}]
+    // id: 175
+    // message: ""
+    // notification_id: 175
+    // notification_type: "SINGLE_EVENT"
+    // outcome: "TRUE"
+    // query: "all tickets over 0"
+    // rule_id: 18
+    // rule_status: "INACTIVE"
+    // state: "ACKNOWLEDGED"
+    // title: "Total tickets greater than 0"
+    const activeNotification = this.state.notificationList.find(n => n.expanded)
+    if (activeNotification) {
+      const ruleData = {
+        expression: activeNotification.expression,
+        id: activeNotification.rule_id,
+        message: activeNotification.message,
+        notification_type: activeNotification.notification_type,
+        query: activeNotification.query,
+        status: activeNotification.rule_status,
+        title: activeNotification.title,
+      }
+
+      return ruleData
+    }
+    return undefined
+  }
+
+  onRuleSave = () => {
+    // todo: show success alert
+    this.setState({ isEditModalVisible: false })
+    this.props.onSuccessCallback('Notification successfully updated.')
+  }
+
+  onRuleError = () => {
+    this.props.onErrorCallback()
+  }
+
   renderDismissAllButton = () => (
     <div className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllClick}>
@@ -191,6 +257,25 @@ export default class NotificationList extends React.Component {
       </span>
     </div>
   )
+
+  showEditRuleModal = () => {
+    this.setState({ isEditModalVisible: true })
+  }
+
+  renderEditRuleModal = () => {
+    return (
+      <NewNotificationModal
+        key={this.MODAL_COMPONENT_KEY}
+        authentication={this.props.authentication}
+        isVisible={this.state.isEditModalVisible}
+        onClose={() => this.setState({ isEditModalVisible: false })}
+        currentNotification={this.getActiveRuleData()}
+        onSave={this.onRuleSave}
+        onError={this.onRuleError}
+        hideDeleteBtn
+      />
+    )
+  }
 
   render = () => {
     if (this.state.isFetchingFirstNotifications) {
@@ -274,6 +359,7 @@ export default class NotificationList extends React.Component {
             return (
               <NotificationItem
                 authentication={this.props.authentication}
+                themeConfig={this.props.themeConfig}
                 notification={notification}
                 onClick={this.onItemClick}
                 onDismissCallback={this.onDismissClick}
@@ -282,10 +368,12 @@ export default class NotificationList extends React.Component {
                 onCollapseCallback={this.props.onCollapseCallback}
                 activeNotificationData={this.props.activeNotificationData}
                 onErrorCallback={this.props.onErrorCallback}
+                onEditClick={this.showEditRuleModal}
               />
             )
           })}
         </InfiniteScroll>
+        {this.renderEditRuleModal()}
       </div>
     )
   }

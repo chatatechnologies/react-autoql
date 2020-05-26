@@ -10,15 +10,25 @@ import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
 import { NotificationRulesCopy } from '../NotificationRulesCopy'
+import { VizToolbar } from '../../VizToolbar'
 import {
   dismissNotification,
   deleteNotification,
   updateNotificationRuleStatus,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
+import {
+  getSupportedDisplayTypes,
+  getDefaultDisplayType,
+  capitalizeFirstChar,
+} from '../../../js/Util'
+import { getScheduleDescription } from '../helpers'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 import './NotificationItem.scss'
 
@@ -26,9 +36,11 @@ dayjs.extend(advancedFormat)
 
 export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid.v4()
+  supportedDisplayTypes = []
 
   static propTypes = {
     authentication: authenticationType,
+    themeConfig: themeConfigType,
     notification: PropTypes.shape({}).isRequired,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
@@ -39,6 +51,7 @@ export default class NotificationItem extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
+    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     onExpandCallback: () => {},
     onDismissCallback: () => {},
@@ -48,6 +61,23 @@ export default class NotificationItem extends React.Component {
 
   state = {
     ruleStatus: _get(this.props.notification, 'rule_status'),
+    fullyExpanded: false,
+  }
+
+  componentDidUpdate = prevProps => {
+    if (
+      !prevProps.activeNotificationData &&
+      this.props.activeNotificationData
+    ) {
+      const queryResponse = {
+        data: this.props.activeNotificationData,
+      }
+      this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse)
+      const displayType = this.supportedDisplayTypes.includes('column')
+        ? 'column'
+        : getDefaultDisplayType(queryResponse)
+      this.setState({ displayType })
+    }
   }
 
   getIsTriggered = state => {
@@ -56,9 +86,14 @@ export default class NotificationItem extends React.Component {
 
   onClick = notification => {
     if (notification.expanded) {
+      this.setState({ fullyExpanded: false })
       this.props.onCollapseCallback(notification)
     } else {
       this.props.onExpandCallback(notification)
+      // wait for animation to complete before showing any scrollbars
+      setTimeout(() => {
+        this.setState({ fullyExpanded: true })
+      }, 500)
     }
 
     this.props.onClick(notification)
@@ -123,6 +158,30 @@ export default class NotificationItem extends React.Component {
     return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
   }
 
+  getFrequencyDescription = () => {
+    const { notification } = this.props
+    // category, "SINGLE_EVENT" or "REPEAT_EVENT"
+    // frequency, "DAY" "WEEK" "MONTH" or "YEAR"
+    // repeat, TRUE or FALSE
+    // selection, "LIST OF MONTH NUMBERS OR WEEK NUMBERS"
+
+    const category = notification.notification_type
+    const frequency = notification.reset_period
+    const repeat = !!notification.reset_period
+    const selection =
+      category === 'REPEAT_EVENT'
+        ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP, we will probably get rid of this
+        : null
+
+    const description = getScheduleDescription(
+      category,
+      frequency,
+      repeat,
+      selection
+    )
+    return description
+  }
+
   renderAlertColorStrip = () => (
     <div className="chata-notification-alert-strip" />
   )
@@ -182,7 +241,7 @@ export default class NotificationItem extends React.Component {
     return (
       <div
         className="chata-notification-extra-content"
-        style={{ display: 'flex', justifyContent: 'flex-end' }}
+        style={{ display: 'flex', justifyContent: 'space-between' }}
       >
         {this.state.ruleStatus === 'ACTIVE' ||
         this.state.ruleStatus === 'WAITING' ? (
@@ -190,24 +249,30 @@ export default class NotificationItem extends React.Component {
             onClick={() => this.changeRuleStatus(notification, 'INACTIVE')}
             type="default"
           >
-            Turn off these notifications
+            <Icon type="notification-off" /> Turn off these notifications
           </Button>
         ) : (
           <Button
             onClick={() => this.changeRuleStatus(notification, 'ACTIVE')}
             type="default"
           >
-            Turn these notifications back on
+            <Icon type="notification" /> Turn these notifications back on
           </Button>
         )}
+        <Button onClick={this.props.onEditClick} type="default">
+          <Icon type="edit" /> Edit notification
+        </Button>
       </div>
     )
   }
 
   renderNotificationContent = notification => {
     const queryTitle = notification.query
-    const queryTitleCapitalized =
-      queryTitle.charAt(0).toUpperCase() + queryTitle.slice(1)
+    const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
+
+    const queryResponse = {
+      data: this.props.activeNotificationData,
+    }
 
     return (
       <div
@@ -220,45 +285,53 @@ export default class NotificationItem extends React.Component {
             className="chata-notification-data-container"
             onClick={e => e.stopPropagation()}
           >
-            <div
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <div className="chata-notification-query-title">
-                {queryTitleCapitalized}
-              </div>
+            <div className="chata-notificaton-chart-container">
               {this.props.activeNotificationData ? (
-                <QueryOutput
-                  queryResponse={{
-                    data: this.props.activeNotificationData,
-                  }}
-                  autoQLConfig={{ enableDrilldowns: false }}
-                  displayType="column"
-                  style={{ flex: '1' }}
-                />
+                <Fragment>
+                  <div className="chata-notification-query-title">
+                    {queryTitleCapitalized}
+                  </div>
+                  <QueryOutput
+                    ref={r => (this.OUTPUT_REF = r)}
+                    queryResponse={{
+                      data: this.props.activeNotificationData,
+                    }}
+                    autoQLConfig={{ enableDrilldowns: false }}
+                    themeConfig={this.props.themeConfig}
+                    displayType={this.state.displayType}
+                    style={{ flex: '1' }}
+                  />
+                </Fragment>
               ) : (
                 <div className="loading-container-centered">
                   <LoadingDots />
                 </div>
               )}
             </div>
+            {_get(this.supportedDisplayTypes, 'length') > 1 && (
+              <div className="chata-notification-viz-switcher">
+                <VizToolbar
+                  themeConfig={this.props.themeConfig}
+                  supportedDisplayTypes={this.supportedDisplayTypes}
+                  displayType={this.state.displayType}
+                  onDisplayTypeChange={displayType =>
+                    this.setState({ displayType })
+                  }
+                  vertical
+                />
+              </div>
+            )}
           </div>
-          {
-            // <div className="chata-notification-details">
-            //   "Show notification conditions"
-            //   {
-            //     //   <NotificationRulesCopy
-            //     //   key={this.COMPONENT_KEY}
-            //     //   // onUpdate={this.onRulesUpdate}
-            //     //   notificationData={_get(notification, 'expression')}
-            //     //   readOnly
-            //     // />
-            //   }
-            // </div>
-          }
+          <div className="chata-notification-details">
+            <div className="chata-notificaiton-details-title">Conditions:</div>
+            <NotificationRulesCopy
+              key={this.COMPONENT_KEY}
+              notificationData={_get(notification, 'expression')}
+              readOnly
+            />
+            <div className="chata-notificaiton-details-title">Description:</div>
+            <div>{this.getFrequencyDescription()}</div>
+          </div>
         </div>
         {this.renderNotificationFooter(notification)}
       </div>
@@ -267,13 +340,13 @@ export default class NotificationItem extends React.Component {
 
   render = () => {
     const { notification } = this.props
-
     return (
       <div
         key={`chata-notification-item-${this.COMPONENT_KEY}`}
         className={`chata-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
-          ${notification.expanded ? ' expanded' : ''}`}
+          ${notification.expanded ? ' expanded' : ''}
+          ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
       >
         {this.renderNotificationHeader(notification)}
         {this.renderNotificationContent(notification)}

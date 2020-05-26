@@ -10,7 +10,6 @@ import {
   MdFileDownload,
   MdInfoOutline,
   MdPlayCircleOutline,
-  MdEdit,
   // MdDescription
 } from 'react-icons/md'
 import {
@@ -39,6 +38,7 @@ import {
   AiOutlineBook,
   AiFillCaretRight,
   AiFillCaretLeft,
+  AiOutlineEdit,
 } from 'react-icons/ai'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
@@ -167,7 +167,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'edit': {
-        icon = <MdEdit />
+        icon = <AiOutlineEdit />
         break
       }
       case 'eye': {

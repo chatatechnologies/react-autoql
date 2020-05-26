@@ -38,6 +38,7 @@ export default class NewNotificationModal extends React.Component {
     initialQuery: PropTypes.string,
     currentNotification: PropTypes.shape({}),
     isVisible: PropTypes.bool,
+    hideDeleteBtn: PropTypes.bool,
     onClose: PropTypes.func,
   }
 
@@ -48,6 +49,7 @@ export default class NewNotificationModal extends React.Component {
     initialQuery: undefined,
     currentNotification: undefined,
     isVisible: false,
+    hideDeleteBtn: false,
     onClose: () => {},
   }
 
@@ -169,8 +171,13 @@ export default class NewNotificationModal extends React.Component {
       frequencyCategorySelectValue,
       everyCheckboxValue,
       frequencySelectValue,
-      rulesJSON,
+      // rulesJSON,
     } = this.state
+
+    let rulesJSON = this.state.rulesJSON
+    if (this.rulesRef) {
+      rulesJSON = this.rulesRef.getJSON()
+    }
 
     const notificationRule = this.props.currentNotification
 
@@ -528,6 +535,7 @@ export default class NewNotificationModal extends React.Component {
         subtitle: 'Notify me when the following conditions are met',
         content: (
           <NotificationRulesCopy
+            ref={r => (this.rulesRef = r)}
             key={this.NEW_NOTIFICATION_MODAL_ID}
             onUpdate={this.onRulesUpdate}
             notificationData={_get(
@@ -576,7 +584,7 @@ export default class NewNotificationModal extends React.Component {
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
-              {this.props.currentNotification && (
+              {this.props.currentNotification && !this.props.hideDeleteBtn && (
                 <Button
                   type="danger"
                   onClick={this.onRuleDelete}

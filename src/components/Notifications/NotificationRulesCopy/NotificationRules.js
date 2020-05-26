@@ -142,7 +142,57 @@ export default class NotificationRules extends React.Component {
     this.setState({ groups: newGroups })
   }
 
-  render = () => {
+  renderReadOnlyRules = () => {
+    const hasOnlyOneGroup = this.state.groups.length <= 1
+
+    let conditionText = null
+    if (this.state.andOrValue === 'ALL') {
+      conditionText = 'AND'
+    } else if (this.state.andOrValue === 'ANY') {
+      conditionText = 'OR'
+    }
+
+    return (
+      <div
+        className={`notification-rules-container ${
+          this.props.readOnly ? 'read-only' : ''
+        }`}
+      >
+        {!!this.state.groups.length &&
+          this.state.groups.map((group, i) => {
+            return (
+              <Fragment>
+                <Group
+                  ref={r => (this.groupRefs[i] = r)}
+                  key={group.id}
+                  groupId={group.id}
+                  disableAddGroupBtn={true}
+                  onDelete={this.onDeleteGroup}
+                  onUpdate={this.onGroupUpdate}
+                  hideTopCondition={i === 0}
+                  topCondition={this.state.andOrValue}
+                  onlyGroup={hasOnlyOneGroup}
+                  initialData={group.initialData}
+                  readOnly={this.props.readOnly}
+                />
+                {i !== this.state.groups.length - 1 && (
+                  <div style={{ textAlign: 'center', margin: '2px' }}>
+                    <span
+                      className="read-only-rule-term"
+                      style={{ width: '100%' }}
+                    >
+                      {conditionText}
+                    </span>
+                  </div>
+                )}
+              </Fragment>
+            )
+          })}
+      </div>
+    )
+  }
+
+  renderRules = () => {
     const hasOnlyOneGroup = this.state.groups.length <= 1
 
     return (
@@ -200,5 +250,12 @@ export default class NotificationRules extends React.Component {
         </div>
       </div>
     )
+  }
+
+  render = () => {
+    if (this.props.readOnly) {
+      return this.renderReadOnlyRules()
+    }
+    return this.renderRules()
   }
 }

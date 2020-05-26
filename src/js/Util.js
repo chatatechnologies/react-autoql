@@ -3,6 +3,7 @@ import _get from 'lodash.get'
 import dayjs from './dayjsWithPlugins'
 
 import { CHART_TYPES, TABLE_TYPES, FORECAST_TYPES } from './Constants'
+import { LIGHT_THEME, DARK_THEME } from './Themes'
 
 export const getParameterByName = (
   parameterName,
@@ -140,7 +141,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
-      isTruncated: false
+      isTruncated: false,
     }
   }
 
@@ -164,7 +165,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             style: 'currency',
             currency: `${currency}`,
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            maximumFractionDigits: 0,
             // maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (error) {
@@ -173,7 +174,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            maximumFractionDigits: 0,
             // maximumSignificantDigits: sigDigs
           }).format(d)
         }
@@ -208,7 +209,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
       if (Number(d)) {
         formattedLabel = Numbro(d).format({
           output: 'percent',
-          mantissa: 0
+          mantissa: 0,
         })
       }
       break
@@ -232,7 +233,7 @@ export const formatElement = ({
   element,
   column,
   config = {},
-  htmlElement
+  htmlElement,
 }) => {
   try {
     let formattedElement = element
@@ -240,7 +241,7 @@ export const formatElement = ({
       currencyCode,
       languageCode,
       currencyDecimals,
-      quantityDecimals
+      quantityDecimals,
     } = config
 
     if (column) {
@@ -263,7 +264,7 @@ export const formatElement = ({
                 style: 'currency',
                 currency: `${currency}`,
                 minimumFractionDigits: validatedCurrencyDecimals,
-                maximumFractionDigits: validatedCurrencyDecimals
+                maximumFractionDigits: validatedCurrencyDecimals,
               }).format(element)
             } catch (error) {
               console.error(error)
@@ -271,7 +272,7 @@ export const formatElement = ({
                 style: 'currency',
                 currency: 'USD',
                 minimumFractionDigits: validatedCurrencyDecimals,
-                maximumFractionDigits: validatedCurrencyDecimals
+                maximumFractionDigits: validatedCurrencyDecimals,
               }).format(element)
             }
           }
@@ -284,7 +285,7 @@ export const formatElement = ({
           if (Number(element) && Number(element) % 1 !== 0) {
             formattedElement = Numbro(element).format({
               thousandSeparated: true,
-              mantissa: validatedQuantityDecimals
+              mantissa: validatedQuantityDecimals,
             })
           }
           break
@@ -351,7 +352,7 @@ export const formatElement = ({
  * @return {Promise} a promise to the bas64 png image
  */
 export const svgToPng = (svgElement, margin = 0, fill) => {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function(resolve, reject) {
     try {
       const domUrl = window.URL || window.webkitURL || window
       if (!domUrl) {
@@ -385,7 +386,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       var img = new Image()
 
       // when the image is loaded we can get it as base64 url
-      img.onload = function () {
+      img.onload = function() {
         // draw it to the canvas
         ctx.drawImage(this, margin, margin, width, height)
 
@@ -405,7 +406,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
         }
         resolve(canvas.toDataURL('image/png', 1))
       }
-      img.onerror = function (error) {
+      img.onerror = function(error) {
         reject('failed to load image with that url' + url)
       }
 
@@ -505,7 +506,7 @@ export const getSupportedDisplayTypes = response => {
           'stacked_line',
           'bubble',
           'heatmap',
-          'table'
+          'table',
         ]
       }
       return supportedDisplayTypes
@@ -536,7 +537,7 @@ export const getSupportedDisplayTypes = response => {
           const year = formatElement({
             element: row[dateColumnIndex],
             column: dateColumn,
-            config: { monthYearFormat: 'YYYY', dayMonthYearFormat: 'YYYY' }
+            config: { monthYearFormat: 'YYYY', dayMonthYearFormat: 'YYYY' },
           })
 
           if (!uniqueYears.includes(year)) {
@@ -634,7 +635,7 @@ export const getGroupBysFromPivotTable = (
 export const nameValueObject = (name, value) => {
   return {
     name,
-    value
+    value,
   }
 }
 
@@ -720,7 +721,7 @@ export const calculateMinAndMaxSums = data => {
 
   return {
     max: maxValue,
-    min: minValue
+    min: minValue,
   }
 }
 
@@ -793,6 +794,24 @@ export const getTickWidth = (scale, innerPadding) => {
   } catch (error) {
     console.error(error)
     return 0
+  }
+}
+
+export const setCSSVars = ({ themeConfig, prefix }) => {
+  const { theme, accentColor, fontFamily } = themeConfig
+  const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+  if (accentColor) {
+    themeStyles['accent-color'] = accentColor
+  }
+  if (fontFamily) {
+    themeStyles['font-family'] = fontFamily
+  }
+
+  for (let property in themeStyles) {
+    document.documentElement.style.setProperty(
+      `${prefix}${property}`,
+      themeStyles[property]
+    )
   }
 }
 
@@ -874,9 +893,9 @@ export const filterDataForDrilldown = (response, drilldownData) => {
       ...response.data,
       data: {
         ...response.data.data,
-        rows: filteredRows
-      }
-    }
+        rows: filteredRows,
+      },
+    },
   }
 
   return newResponseData
@@ -902,4 +921,15 @@ export const getPadding = element => {
   }
 
   return padding
+}
+
+export const capitalizeFirstChar = string => {
+  let capitalized = string
+  try {
+    capitalized = string.charAt(0).toUpperCase() + string.slice(1)
+  } catch (error) {
+    console.error(error)
+  }
+
+  return capitalized
 }
