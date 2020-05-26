@@ -83,12 +83,12 @@ export default class Rule extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.onUpdate(this.props.ruleId, this.isComplete(), this.getJSON())
+    this.props.onUpdate(this.props.ruleId, this.isComplete())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(this.state, prevState)) {
-      this.props.onUpdate(this.props.ruleId, this.isComplete(), this.getJSON())
+      this.props.onUpdate(this.props.ruleId, this.isComplete())
     }
   }
 

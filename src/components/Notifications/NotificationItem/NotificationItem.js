@@ -247,14 +247,17 @@ export default class NotificationItem extends React.Component {
             </div>
           </div>
           {
-            <div className="chata-notification-details">
-              <NotificationRulesCopy
-                key={this.COMPONENT_KEY}
-                // onUpdate={this.onRulesUpdate}
-                notificationData={_get(notification, 'expression')}
-                readOnly
-              />
-            </div>
+            // <div className="chata-notification-details">
+            //   "Show notification conditions"
+            //   {
+            //     //   <NotificationRulesCopy
+            //     //   key={this.COMPONENT_KEY}
+            //     //   // onUpdate={this.onRulesUpdate}
+            //     //   notificationData={_get(notification, 'expression')}
+            //     //   readOnly
+            //     // />
+            //   }
+            // </div>
           }
         </div>
         {this.renderNotificationFooter(notification)}

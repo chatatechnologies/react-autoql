@@ -42,6 +42,8 @@ const getInitialStateData = initialData => {
 }
 
 export default class NotificationRules extends React.Component {
+  groupRefs = []
+
   static propTypes = {
     onUpdate: PropTypes.func,
     readOnly: PropTypes.bool,
@@ -72,19 +74,6 @@ export default class NotificationRules extends React.Component {
     }
   }
 
-  // setNotificationData = () => {
-  //   const groups = []
-  //   this.props.notificationData.map(groupItem => {
-  //     groups.push({
-  //       initialData: groupItem.term_value,
-  //       isComplete: this.isComplete(groupItem),
-  //       id: groupItem.id,
-  //     })
-  //   })
-
-  //   this.setState({ groups })
-  // }
-
   isComplete = () => {
     return (
       this.state.groups.length &&
@@ -99,11 +88,17 @@ export default class NotificationRules extends React.Component {
         condition = 'TERMINATOR'
       }
 
+      const groupRef = this.groupRefs[i]
+      let termValue = []
+      if (groupRef) {
+        termValue = groupRef.getJSON()
+      }
+
       return {
         id: group.id || uuid.v4(),
         term_type: 'group',
         condition,
-        term_value: group.groupJSON,
+        term_value: termValue,
       }
     })
   }
@@ -133,13 +128,12 @@ export default class NotificationRules extends React.Component {
     return this.state.andOrValue
   }
 
-  onGroupUpdate = (id, isComplete, groupJSON) => {
+  onGroupUpdate = (id, isComplete) => {
     const newGroups = this.state.groups.map(group => {
       if (group.id === id) {
         return {
           ...group,
           isComplete,
-          groupJSON,
         }
       }
       return group
@@ -179,6 +173,7 @@ export default class NotificationRules extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
+                  ref={r => (this.groupRefs[i] = r)}
                   key={group.id}
                   groupId={group.id}
                   disableAddGroupBtn={true}
