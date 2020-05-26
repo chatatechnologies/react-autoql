@@ -1,43 +1,58 @@
 export default {
   spira: [
     {
-      topic: 'Jobs',
+      topic: 'Revenue',
       queries: [
-        'All jobs scheduled start date next year',
-        'All open jobs with scheduled end date for this year',
-        'All jobs in bid status',
-      ],
-    },
-    {
-      topic: 'Tickets',
-      queries: [
-        'Total tickets in 2019 by month',
-        'Total tickets by customer this month',
-        'List void tickets scheduled for end of this year',
+        'Total revenue this year',
+        'Total revenue by month for the last six months',
+        'Total revenue by area last year',
+        'Total revenue by customer for the last six months',
+        'Average revenue by area last year',
+        'Average revenue by ticket type for the last six months',
       ],
     },
     {
       topic: 'Estimates',
       queries: [
-        'Estimates by area last year',
-        'Total estimated cost by year last 3 years',
-        'Show void estimates over 10000',
-      ],
-    },
-    {
-      topic: 'Revenue',
-      queries: [
-        'Total revenue this year',
-        'Total revenue by item this month',
-        'Total revenue by area last year',
+        'Total estimates by area last year',
+        'Total estimates by ticket type last year',
+        'Number of estimates by customer this year',
+        'Number of estimates by job type last year',
+        'Average estimates by ticket type last year',
+        'Average estimates by month last year',
       ],
     },
     {
       topic: 'Utilization',
       queries: [
-        'Total hours utilization by personnel last month',
-        'Total utilization by resource this month',
-        'Total personnel hours by area this year',
+        'Total utilization on resources last month',
+        'Total resource hours by area last month ',
+        'Total hours utilized for personnel last month',
+        'Total hours utilization by job last month',
+        'Total hours utilization on equipment last year',
+        'Average hours utilization by job type last month',
+      ],
+    },
+    {
+      topic: 'Jobs',
+      queries: [
+        'All jobs scheduled to start this year',
+        'All active jobs scheduled to end last year',
+        'All jobs still open from last year',
+        'All jobs in bid state',
+        'Number of scheduled jobs by area',
+        'Number of open jobs by customer',
+      ],
+    },
+    {
+      topic: 'Tickets',
+      queries: [
+        'Total tickets by month last year',
+        'Total tickets by customer this year',
+        'Average ticket by area last year',
+        'All void tickets over 10000',
+        'Average ticket by ticket type last year',
+        'Total tickets by type by month for the last six months',
       ],
     },
   ],
