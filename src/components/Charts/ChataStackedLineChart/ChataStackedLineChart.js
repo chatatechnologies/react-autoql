@@ -33,8 +33,8 @@ export default class ChataStackedLineChart extends Component {
       quantityDecimals: PropTypes.number,
       comparisonDisplay: PropTypes.string,
       monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
+      dayMonthYearFormat: PropTypes.string,
+    }),
   }
 
   static defaultProps = {
@@ -43,7 +43,7 @@ export default class ChataStackedLineChart extends Component {
     legendLocation: undefined,
     onXAxisClick: () => {},
     onYAxisClick: () => {},
-    onLabelChange: () => {}
+    onLabelChange: () => {},
   }
 
   handleLabelRotation = (tickWidth, labelArray) => {
@@ -86,7 +86,7 @@ export default class ChataStackedLineChart extends Component {
       columns,
       height,
       width,
-      data
+      data,
     } = this.props
 
     // Get max and min values from all series
@@ -105,7 +105,9 @@ export default class ChataStackedLineChart extends Component {
       .nice()
 
     const labelArray = data.map(element => element.label)
-    const tickWidth = Math.abs(xScale(data[0].label) - xScale(data[1].label))
+    const tickWidth = Math.abs(
+      xScale(_get(data, '[0].label')) - xScale(_get(data, '[1].label'))
+    )
     const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
@@ -120,7 +122,7 @@ export default class ChataStackedLineChart extends Component {
             right: rightMargin,
             bottom: bottomMargin,
             top: topMargin,
-            bottomLegend: bottomLegendMargin
+            bottomLegend: bottomLegendMargin,
           }}
           width={width}
           height={height}
@@ -148,7 +150,7 @@ export default class ChataStackedLineChart extends Component {
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
-            top: topMargin
+            top: topMargin,
           }}
           data={data}
           width={width}
