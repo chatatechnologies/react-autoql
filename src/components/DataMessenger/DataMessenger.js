@@ -110,7 +110,7 @@ export default class DataMessenger extends React.Component {
     maxMessages: undefined,
     introMessage: undefined,
     enableExploreQueriesTab: true,
-    enableNotificationsTab: true,
+    enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
