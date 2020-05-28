@@ -67,6 +67,7 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
+    enableNotifications: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -88,6 +89,7 @@ export default class ChatMessage extends React.Component {
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
+    enableNotifications: false,
   }
 
   state = {
@@ -664,6 +666,7 @@ export default class ChatMessage extends React.Component {
         _get(this.props, 'response.data.data.display_type') === 'data',
       showCreateNotificationButton:
         _get(this.props, 'response.data.data.display_type') === 'data' &&
+        this.props.enableNotifications &&
         this.props.originalQuery,
     }
 

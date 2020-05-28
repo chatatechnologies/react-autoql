@@ -834,6 +834,7 @@ export default class DataMessenger extends React.Component {
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
+                  enableNotifications={this.props.enableNotificationsTab}
                   onNewNotificationCallback={query => {
                     this.setState({
                       isNewNotificationModalVisible: true,
