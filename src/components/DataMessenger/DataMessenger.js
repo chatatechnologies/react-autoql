@@ -657,6 +657,7 @@ export default class DataMessenger extends React.Component {
                   data-tip="Notifications"
                   data-for="chata-header-tooltip"
                   data-delay-show={1000}
+                  style={{ paddingBottom: '5px', paddingLeft: '2px' }}
                 >
                   <div className="data-messenger-notification-btn">
                     <NotificationButton
