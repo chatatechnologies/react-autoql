@@ -234,9 +234,15 @@ export default class NotificationSettings extends React.Component {
 
   renderEmptyListMessage = () => (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
-      You don't have any notifications yet.
+      <span style={{ opacity: 0.6 }}>
+        You don't have any notifications yet.
+      </span>
       <br />
-      <Button type="primary" onClick={this.onAddClick}>
+      <Button
+        type="primary"
+        onClick={this.onAddClick}
+        style={{ marginTop: '10px' }}
+      >
         Create a New Notification
       </Button>
     </div>

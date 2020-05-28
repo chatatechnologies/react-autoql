@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
@@ -20,6 +20,8 @@ import {
 } from '../../../props/defaults'
 
 import './NotificationList.scss'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { Button } from '../../Button'
 
 export default class NotificationList extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
@@ -35,6 +37,7 @@ export default class NotificationList extends React.Component {
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     activeNotificationData: PropTypes.shape({}),
+    showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
   }
@@ -43,6 +46,7 @@ export default class NotificationList extends React.Component {
     authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
+    showNotificationDetails: true,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -139,8 +143,12 @@ export default class NotificationList extends React.Component {
 
   onItemClick = notification => {
     // fetch data stored in integrators DB and display
+    let activeNotificationId = undefined
     const newList = this.state.notificationList.map(n => {
       if (notification.id === n.id) {
+        if (!n.expanded) {
+          activeNotificationId = notification.id
+        }
         return {
           ...n,
           expanded: !n.expanded,
@@ -151,7 +159,7 @@ export default class NotificationList extends React.Component {
         expanded: false,
       }
     })
-    this.setState({ notificationList: newList })
+    this.setState({ notificationList: newList, activeNotificationId })
   }
 
   onDismissAllClick = () => {
@@ -194,6 +202,9 @@ export default class NotificationList extends React.Component {
   }
 
   getActiveRuleData = () => {
+    if (!this.state.activeNotificationId) {
+      return undefined
+    }
     // RULE
     // created_at: 1588607160
     // created_by: "nmoore@chata.ai"
@@ -258,8 +269,8 @@ export default class NotificationList extends React.Component {
     </div>
   )
 
-  showEditRuleModal = () => {
-    this.setState({ isEditModalVisible: true })
+  showEditRuleModal = id => {
+    this.setState({ isEditModalVisible: true, activeNotificationId: id })
   }
 
   renderEditRuleModal = () => {
@@ -293,88 +304,108 @@ export default class NotificationList extends React.Component {
           data-test="notification-list"
           style={{ textAlign: 'center', marginTop: '100px' }}
         >
-          Something went wrong
-        </div>
-      )
-    } else if (!_get(this.state.notificationList, 'length')) {
-      return (
-        <div
-          data-test="notification-list"
-          style={{ textAlign: 'center', marginTop: '100px' }}
-        >
-          No notifications to display
+          Oh no! Something went wrong while accessing your notifications.
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
+            <Button onClick={this.getInitialNotifications}>Try Again</Button>
+          </div>
         </div>
       )
     }
 
     return (
-      <div
-        className="chata-notification-list-container"
-        data-test="notification-list"
-      >
-        <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-notification-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
-
-        {this.renderDismissAllButton()}
-        <InfiniteScroll
-          initialLoad={false}
-          pageStart={0}
-          loadMore={() => {
-            fetchNotificationList({
-              ...this.props.authentication,
-              offset: this.state.nextOffset,
-              limit: this.NOTIFICATION_FETCH_LIMIT,
-            }).then(response => {
-              if (response.notifications.length) {
-                this.setState({
-                  fetchNotificationsError: null,
-                  notificationList: [
-                    ...this.state.notificationList,
-                    ...response.notifications,
-                  ],
-                  pagination: response.pagination,
-                  nextOffset:
-                    this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT,
-                })
-              }
-            })
-          }}
-          hasMore={
-            this.state.pagination.page_number !==
-            this.state.pagination.total_pages - 1
-          }
-          // loader={
-          //   <div className="loader" key={0}>
-          //     Loading ...
-          //   </div>
-          // }
-          useWindow={false}
+      <ErrorBoundary>
+        <div
+          className="chata-notification-list-container"
+          data-test="notification-list"
         >
-          {this.state.notificationList.map((notification, i) => {
-            return (
-              <NotificationItem
-                authentication={this.props.authentication}
-                themeConfig={this.props.themeConfig}
-                notification={notification}
-                onClick={this.onItemClick}
-                onDismissCallback={this.onDismissClick}
-                onDeleteCallback={this.onDeleteClick}
-                onExpandCallback={this.props.onExpandCallback}
-                onCollapseCallback={this.props.onCollapseCallback}
-                activeNotificationData={this.props.activeNotificationData}
-                onErrorCallback={this.props.onErrorCallback}
-                onEditClick={this.showEditRuleModal}
-              />
-            )
-          })}
-        </InfiniteScroll>
-        {this.renderEditRuleModal()}
-      </div>
+          <ReactTooltip
+            className="chata-drawer-tooltip"
+            id="chata-notification-tooltip"
+            effect="solid"
+            delayShow={500}
+            html
+          />
+
+          {_get(this.state.notificationList, 'length') ? (
+            <Fragment>
+              {this.renderDismissAllButton()}
+              <InfiniteScroll
+                initialLoad={false}
+                pageStart={0}
+                loadMore={() => {
+                  fetchNotificationList({
+                    ...this.props.authentication,
+                    offset: this.state.nextOffset,
+                    limit: this.NOTIFICATION_FETCH_LIMIT,
+                  }).then(response => {
+                    if (response.notifications.length) {
+                      this.setState({
+                        fetchNotificationsError: null,
+                        notificationList: [
+                          ...this.state.notificationList,
+                          ...response.notifications,
+                        ],
+                        pagination: response.pagination,
+                        nextOffset:
+                          this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT,
+                      })
+                    }
+                  })
+                }}
+                hasMore={
+                  this.state.pagination.page_number !==
+                  this.state.pagination.total_pages - 1
+                }
+                // loader={
+                //   <div className="loader" key={0}>
+                //     Loading ...
+                //   </div>
+                // }
+                useWindow={false}
+              >
+                {this.state.notificationList.map((notification, i) => {
+                  return (
+                    <NotificationItem
+                      authentication={this.props.authentication}
+                      themeConfig={this.props.themeConfig}
+                      notification={notification}
+                      onClick={this.onItemClick}
+                      onDismissCallback={this.onDismissClick}
+                      onDeleteCallback={this.onDeleteClick}
+                      onExpandCallback={notification => {
+                        this.props.onExpandCallback(notification)
+                        this.setState({ activeNotificationId: notification.id })
+                      }}
+                      onCollapseCallback={this.props.onCollapseCallback}
+                      activeNotificationData={this.props.activeNotificationData}
+                      showNotificationDetails={
+                        this.props.showNotificationDetails
+                      }
+                      onErrorCallback={this.props.onErrorCallback}
+                      onEditClick={id => this.showEditRuleModal(id)}
+                    />
+                  )
+                })}
+              </InfiniteScroll>
+            </Fragment>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '100px' }}>
+              <span style={{ opacity: 0.6 }}>
+                You don't have any notifications yet.
+              </span>
+              <br />
+              <Button
+                style={{ marginTop: '10px' }}
+                type="primary"
+                onClick={this.showEditRuleModal}
+              >
+                Create a New Notification
+              </Button>
+            </div>
+          )}
+          {this.renderEditRuleModal()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

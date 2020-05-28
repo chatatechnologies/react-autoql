@@ -125,6 +125,7 @@ export default class App extends Component {
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
+    enableNotificationsTab: true,
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
@@ -823,33 +824,38 @@ export default class App extends Component {
           true,
           false,
         ])}
-        <h1>Drawer Props</h1>
+        <h1>Customize Widgets</h1>
         <Button
           onClick={() => this.setState({ componentKey: uuid.v4() })}
           style={{ marginRight: '10px' }}
           icon={<ReloadOutlined />}
         >
-          Reload Drawer
+          Reload Data Messenger
         </Button>
         <Button
           onClick={() => this.setState({ isVisible: true })}
           type="primary"
           icon={<MenuFoldOutlined />}
         >
-          Open Drawer
+          Open Data Messenger
         </Button>
-        {this.createBooleanRadioGroup('Show Drawer Handle', 'showHandle', [
-          true,
-          false,
-        ])}
-        {this.createBooleanRadioGroup('Show Mask', 'showMask', [true, false])}
+        {this.createBooleanRadioGroup(
+          'Show Data Messenger Button',
+          'showHandle',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Darken Background Behind Data Messenger',
+          'showMask',
+          [true, false]
+        )}
         {this.createBooleanRadioGroup(
           'Shift Screen on Open/Close',
           'shiftScreen',
           [true, false]
         )}
         {this.createRadioInputGroup('Theme', 'theme', ['light', 'dark'])}
-        {this.createRadioInputGroup('Drawer Placement', 'placement', [
+        {this.createRadioInputGroup('Data Messenger Placement', 'placement', [
           'top',
           'bottom',
           'left',
@@ -919,7 +925,7 @@ export default class App extends Component {
           value={this.state.quantityDecimals}
         />
         <h4>User Display Name</h4>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <Input
           type="text"
           onChange={(e) => {
@@ -928,7 +934,7 @@ export default class App extends Component {
           value={this.state.userDisplayName}
         />
         <h4>Intro Message</h4>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <Input
           type="text"
           onChange={(e) => {
@@ -951,7 +957,7 @@ export default class App extends Component {
         )}
         <h4>Height</h4>
         <h5>Only for top/bottom placement</h5>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <InputNumber
           // type="number"
           onChange={(e) => {
@@ -961,7 +967,7 @@ export default class App extends Component {
         />
         <h4>Width</h4>
         <h5>Only for left/right placement</h5>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <InputNumber
           type="number"
           onChange={(e) => {
@@ -978,7 +984,7 @@ export default class App extends Component {
           value={this.state.title}
         />
         <h4>Font Family</h4>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <Input
           type="text"
           onChange={(e) => {
@@ -1023,7 +1029,7 @@ export default class App extends Component {
           <br />
           will be used
         </h5>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <Input
           type="color"
           onChange={(e) => {
@@ -1032,7 +1038,7 @@ export default class App extends Component {
           value={this.state.lightAccentColor}
         />
         <h4>Dark Theme Accent Color</h4>
-        <h6>(Must click 'Reload Drawer' to apply this)</h6>
+        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
         <Input
           type="color"
           onChange={(e) => {
@@ -1075,6 +1081,11 @@ export default class App extends Component {
         {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
           'enableExploreQueriesTab',
+          [true, false]
+        )}
+        {!isProd() && this.createBooleanRadioGroup(
+          'Enable Notifications Tab',
+          'enableNotificationsTab',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
@@ -1151,6 +1162,7 @@ export default class App extends Component {
         maxMessages={this.state.maxMessages}
         handleImage={handleImage}
         enableExploreQueriesTab={this.state.enableExploreQueriesTab}
+        enableNotificationsTab={!isProd() && this.state.enableNotificationsTab}
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
@@ -1158,6 +1170,11 @@ export default class App extends Component {
         inputStyles
         handleStyles={{ right: '25px' }}
         enableDynamicCharting={this.state.enableDynamicCharting}
+        onNotificationExpandCallback={this.fetchNotificationContent}
+        onNotificationCollapseCallback={() => {
+          this.setState({ currentNotificationContent: null })
+        }}
+        activeNotificationData={this.state.activeNotificationContent}
       />
     )
   }
@@ -1355,6 +1372,8 @@ export default class App extends Component {
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
               themeConfig={this.getThemeConfigProp()}
+              clearCountOnClick={false}
+              style={{ fontSize: '18px' }}
               onNewNotification={() => {
                 // If a new notification is detected, refresh the list
                 if (

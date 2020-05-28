@@ -205,13 +205,23 @@ export default class NewNotificationModal extends React.Component {
     return newRule
   }
 
-  onRulesUpdate = (isRulesSectionComplete, rulesJSON) => {
+  onRulesUpdate = (isComplete, rulesJSON) => {
     let { dataReturnQueryInput } = this.state
     const firstQuery = this.getFirstQuery(rulesJSON[0])
     if (!this.state.isDataReturnDirty && firstQuery) {
       dataReturnQueryInput = firstQuery
     }
-    this.setState({ isRulesSectionComplete, rulesJSON, dataReturnQueryInput })
+
+    let isRulesSectionComplete = isComplete
+    if (this.rulesRef) {
+      isRulesSectionComplete = this.rulesRef.isComplete()
+    }
+
+    this.setState({
+      isRulesSectionComplete,
+      rulesJSON,
+      dataReturnQueryInput,
+    })
   }
 
   getFirstQuery = term => {

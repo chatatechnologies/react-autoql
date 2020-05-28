@@ -133,6 +133,7 @@
       padding: 20px;
       padding-top: 0;
       opacity: 0.9;
+      border-left: 1px solid rgba(0, 0, 0, 0.05);
     }
   }
 
@@ -142,7 +143,6 @@
     justify-content: stretch;
     flex: 3 3 0px;
     overflow: hidden;
-    border-right: 1px solid rgba(0, 0, 0, 0.05);
 
     .chata-notificaton-chart-container {
       flex: 1;

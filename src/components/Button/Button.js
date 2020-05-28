@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 
 import { Spinner } from '../Spinner'
@@ -14,7 +14,7 @@ export default class Button extends React.Component {
     size: PropTypes.oneOf(validSizes),
     onClick: PropTypes.func,
     loading: PropTypes.bool,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -22,7 +22,7 @@ export default class Button extends React.Component {
     loading: false,
     size: 'large',
     disabled: false,
-    onClick: () => {}
+    onClick: () => {},
   }
 
   getType = () => {
@@ -53,12 +53,12 @@ export default class Button extends React.Component {
     if (size === 'small') {
       sizeCss = {
         padding: '2px 8px',
-        margin: '2px 3px'
+        margin: '2px 3px',
       }
     } else if (size === 'large') {
       sizeCss = {
         padding: '5px 16px',
-        margin: '2px 5px'
+        margin: '2px 5px',
       }
     }
 

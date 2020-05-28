@@ -5,7 +5,7 @@ import { Icon } from '../../Icon'
 
 import {
   fetchNotificationCount,
-  resetNotificationCount
+  resetNotificationCount,
 } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
@@ -25,19 +25,27 @@ export default class NotificationButton extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     overflowCount: PropTypes.number,
+    style: PropTypes.shape({}),
+    size: PropTypes.number,
+    useDot: PropTypes.bool,
+    clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
-    onErrorCallback: PropTypes.func
+    onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     overflowCount: 99,
+    useDot: false,
+    style: {},
+    // size: 17,
+    clearCountOnClick: true,
     onNewNotification: () => {},
-    onErrorCallback: () => {}
+    onErrorCallback: () => {},
   }
 
   state = {
-    count: 0
+    count: 0,
   }
 
   componentDidMount = async () => {
@@ -95,6 +103,10 @@ export default class NotificationButton extends React.Component {
       return null
     }
 
+    if (this.props.useDot) {
+      return <div className="chata-notifications-badge-dot" />
+    }
+
     let finalCount = count
     if (count > overflowCount) {
       finalCount = `${overflowCount}+`
@@ -106,10 +118,23 @@ export default class NotificationButton extends React.Component {
   render = () => {
     return (
       <div
-        className="chata-notifications-button-container"
+        className={`chata-notifications-button-container ${
+          this.props.useDot ? 'dot' : ''
+        }
+        ${!this.state.count ? 'no-badge' : ''}`}
         data-test="notification-button"
+        style={{ ...this.props.style }}
+        onClick={() => {
+          if (this.props.clearCountOnClick) {
+            this.resetCount()
+          }
+        }}
       >
-        <Icon type="notification" className="chata-notifications-button" />
+        <Icon
+          type="notification"
+          className="chata-notifications-button"
+          // style={{ fontSize: '1em' }}
+        />
         {this.renderBadge()}
       </div>
     )

@@ -75,10 +75,15 @@ export default class NotificationRules extends React.Component {
   }
 
   isComplete = () => {
-    return (
-      this.state.groups.length &&
-      !this.state.groups.find(group => !group.isComplete)
-    )
+    const isComplete = this.state.groups.every((group, i) => {
+      const groupRef = this.groupRefs[i]
+      if (groupRef) {
+        return groupRef.isComplete()
+      }
+      return false
+    })
+
+    return isComplete
   }
 
   getJSON = () => {
@@ -140,6 +145,7 @@ export default class NotificationRules extends React.Component {
     })
 
     this.setState({ groups: newGroups })
+    this.props.onUpdate(this.isComplete(), this.getJSON())
   }
 
   renderReadOnlyRules = () => {

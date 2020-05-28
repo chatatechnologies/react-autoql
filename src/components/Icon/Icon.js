@@ -1,10 +1,9 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 
 // Icons
 import {
   MdClose,
-  MdLightbulbOutline,
   MdError,
   MdContentCopy,
   MdFileDownload,
@@ -39,6 +38,7 @@ import {
   AiFillCaretRight,
   AiFillCaretLeft,
   AiOutlineEdit,
+  AiOutlineBulb,
 } from 'react-icons/ai'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
@@ -191,7 +191,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'light-bulb': {
-        icon = <MdLightbulbOutline />
+        icon = <AiOutlineBulb />
         break
       }
       case 'line-chart': {
@@ -283,6 +283,7 @@ export default class Icon extends React.Component {
         {...nativeProps}
         data-test="chata-icon"
         className={`chata-icon ${this.props.className}`}
+        style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
       >
         {icon}
       </span>

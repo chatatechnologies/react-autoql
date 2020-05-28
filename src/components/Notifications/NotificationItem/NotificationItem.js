@@ -29,6 +29,7 @@ import {
   authenticationDefault,
   themeConfigDefault,
 } from '../../../props/defaults'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import './NotificationItem.scss'
 
@@ -42,10 +43,11 @@ export default class NotificationItem extends React.Component {
     authentication: authenticationType,
     themeConfig: themeConfigType,
     notification: PropTypes.shape({}).isRequired,
+    activeNotificationData: PropTypes.shape({}),
+    showNotificationDetails: PropTypes.bool,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
-    activeNotificationData: PropTypes.shape({}),
     onErrorCallback: PropTypes.func,
   }
 
@@ -53,6 +55,7 @@ export default class NotificationItem extends React.Component {
     authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
+    showNotificationDetails: true,
     onExpandCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
@@ -259,7 +262,10 @@ export default class NotificationItem extends React.Component {
             <Icon type="notification" /> Turn these notifications back on
           </Button>
         )}
-        <Button onClick={this.props.onEditClick} type="default">
+        <Button
+          onClick={() => this.props.onEditClick(notification.id)}
+          type="default"
+        >
           <Icon type="edit" /> Edit notification
         </Button>
       </div>
@@ -322,16 +328,22 @@ export default class NotificationItem extends React.Component {
               </div>
             )}
           </div>
-          <div className="chata-notification-details">
-            <div className="chata-notificaiton-details-title">Conditions:</div>
-            <NotificationRulesCopy
-              key={this.COMPONENT_KEY}
-              notificationData={_get(notification, 'expression')}
-              readOnly
-            />
-            <div className="chata-notificaiton-details-title">Description:</div>
-            <div>{this.getFrequencyDescription()}</div>
-          </div>
+          {this.props.showNotificationDetails && (
+            <div className="chata-notification-details">
+              <div className="chata-notificaiton-details-title">
+                Conditions:
+              </div>
+              <NotificationRulesCopy
+                key={this.COMPONENT_KEY}
+                notificationData={_get(notification, 'expression')}
+                readOnly
+              />
+              <div className="chata-notificaiton-details-title">
+                Description:
+              </div>
+              <div>{this.getFrequencyDescription()}</div>
+            </div>
+          )}
         </div>
         {this.renderNotificationFooter(notification)}
       </div>
@@ -341,17 +353,19 @@ export default class NotificationItem extends React.Component {
   render = () => {
     const { notification } = this.props
     return (
-      <div
-        key={`chata-notification-item-${this.COMPONENT_KEY}`}
-        className={`chata-notification-list-item
+      <ErrorBoundary>
+        <div
+          key={`chata-notification-item-${this.COMPONENT_KEY}`}
+          className={`chata-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
-      >
-        {this.renderNotificationHeader(notification)}
-        {this.renderNotificationContent(notification)}
-        {this.renderAlertColorStrip()}
-      </div>
+        >
+          {this.renderNotificationHeader(notification)}
+          {this.renderNotificationContent(notification)}
+          {this.renderAlertColorStrip()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

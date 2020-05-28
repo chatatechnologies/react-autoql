@@ -34,6 +34,8 @@ import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
 import { NewNotificationModal } from '../Notifications/NewNotificationModal'
+import { NotificationButton } from '../Notifications/NotificationButton'
+import { NotificationList } from '../Notifications/NotificationList'
 import {
   runDrilldown,
   cancelQuery,
@@ -70,6 +72,7 @@ export default class DataMessenger extends React.Component {
     maxMessages: number,
     introMessage: string,
     enableExploreQueriesTab: bool,
+    enableNotificationsTab: bool,
     resizable: bool,
     inputPlaceholder: string,
     introMessageTopics: array,
@@ -107,6 +110,7 @@ export default class DataMessenger extends React.Component {
     maxMessages: undefined,
     introMessage: undefined,
     enableExploreQueriesTab: true,
+    enableNotificationsTab: true,
     resizable: true,
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
@@ -602,37 +606,82 @@ export default class DataMessenger extends React.Component {
     this.queryInputRef = ref
   }
 
-  renderPageSwitcher = () => {
+  renderTabs = () => {
     const page = this.state.activePage
 
     if (this.props.isVisible) {
       return (
-        <div
-          className={`page-switcher-shadow-container  ${this.props.placement}`}
-          // style={tabStyles.tabShadowContainerStyle}
-        >
-          <div className={`page-switcher-container ${this.props.placement}`}>
-            <div
-              className={`tab${page === 'data-messenger' ? ' active' : ''}`}
-              onClick={() => this.setState({ activePage: 'data-messenger' })}
-              data-tip="Data Messenger"
-              data-for="chata-header-tooltip"
-              data-delay-show={1000}
-              // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
-            >
-              <Icon type="chata-bubbles-outlined" />
-            </div>
-            <div
-              className={`tab${
-                page === 'expore-queries' ? ' active' : ''
-              } tips`}
-              onClick={() => this.setState({ activePage: 'expore-queries' })}
-              data-tip="Explore Queries"
-              data-for="chata-header-tooltip"
-              data-delay-show={1000}
-              // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
-            >
-              <Icon type="light-bulb" size={22} />
+        <div className={`data-messenger-tab-container ${this.props.placement}`}>
+          <div
+            className={`page-switcher-shadow-container  ${this.props.placement}`}
+            // style={tabStyles.tabShadowContainerStyle}
+          >
+            <div className={`page-switcher-container ${this.props.placement}`}>
+              <div
+                className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+                onClick={() => this.setState({ activePage: 'data-messenger' })}
+                data-tip="Data Messenger"
+                data-for="chata-header-tooltip"
+                data-delay-show={1000}
+                // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
+              >
+                <Icon type="chata-bubbles-outlined" />
+              </div>
+              {this.props.enableExploreQueriesTab && (
+                <div
+                  className={`tab${
+                    page === 'expore-queries' ? ' active' : ''
+                  } tips`}
+                  onClick={() =>
+                    this.setState({ activePage: 'expore-queries' })
+                  }
+                  data-tip="Explore Queries"
+                  data-for="chata-header-tooltip"
+                  data-delay-show={1000}
+                  // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
+                >
+                  <Icon type="light-bulb" size={22} />
+                </div>
+              )}
+              {this.props.enableNotificationsTab && (
+                <div
+                  className={`tab${
+                    page === 'notifications' ? ' active' : ''
+                  } notifications`}
+                  onClick={() => {
+                    if (this.notificationBadgeRef) {
+                      this.notificationBadgeRef.resetCount()
+                    }
+                    this.setState({ activePage: 'notifications' })
+                  }}
+                  data-tip="Notifications"
+                  data-for="chata-header-tooltip"
+                  data-delay-show={1000}
+                >
+                  <div className="data-messenger-notification-btn">
+                    <NotificationButton
+                      ref={r => (this.notificationBadgeRef = r)}
+                      authentication={this.props.authentication}
+                      themeConfig={this.props.themeConfig}
+                      clearCountOnClick={false}
+                      style={{ fontSize: '19px' }}
+                      overflowCount={9}
+                      useDot
+                      // style={{ marginLeft: '3px', marginTop: '-4px' }}
+                      onNewNotification={() => {
+                        // If a new notification is detected, refresh the list
+                        if (
+                          this.notificationListRef &&
+                          this.state.activePage === 'notifications'
+                        ) {
+                          this.notificationListRef.refreshNotifications()
+                        }
+                      }}
+                      onErrorCallback={this.props.onErrorCallback}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -697,6 +746,9 @@ export default class DataMessenger extends React.Component {
     if (this.state.activePage === 'expore-queries') {
       title = 'Explore Queries'
     }
+    if (this.state.activePage === 'notifications') {
+      title = 'Notifications'
+    }
     return <div className="header-title">{title}</div>
   }
 
@@ -730,6 +782,9 @@ export default class DataMessenger extends React.Component {
       }
       case 'expore-queries': {
         return this.renderQueryTipsContent()
+      }
+      case 'notifications': {
+        return this.renderNotificationsContent()
       }
     }
   }
@@ -942,6 +997,22 @@ export default class DataMessenger extends React.Component {
     />
   )
 
+  renderNotificationsContent = () => {
+    return (
+      <NotificationList
+        ref={ref => (this.notificationListRef = ref)}
+        authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
+        onExpandCallback={this.props.onNotificationExpandCallback}
+        onCollapseCallback={this.props.onNotificationCollapseCallback}
+        activeNotificationData={this.props.activeNotificationData}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessCallback={this.props.onSuccessCallback}
+        showNotificationDetails={false}
+      />
+    )
+  }
+
   resizeDrawer = e => {
     const self = this
     const placement = this.getPlacementProp()
@@ -1101,7 +1172,9 @@ export default class DataMessenger extends React.Component {
             // onKeyDown={this.escFunction}
           >
             {this.props.resizable && this.renderResizeHandle()}
-            {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
+            {(this.props.enableExploreQueriesTab ||
+              this.props.enableNotificationsTab) &&
+              this.renderTabs()}
             <div className="chata-drawer-content-container">
               <div className="chat-header-container">
                 {this.renderHeaderContent()}

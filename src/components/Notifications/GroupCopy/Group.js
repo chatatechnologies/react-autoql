@@ -104,10 +104,15 @@ export default class Group extends React.Component {
 
   isComplete = () => {
     // If we can find one rule that is not complete, then the whole group is incomplete
-    return (
-      this.state.rules.length &&
-      !this.state.rules.find(rule => !rule.isComplete)
-    )
+    const isComplete = this.state.rules.every((rule, i) => {
+      const ruleRef = this.ruleRefs[i]
+      if (ruleRef) {
+        return ruleRef.isComplete()
+      }
+      return false
+    })
+
+    return isComplete
   }
 
   deleteRuleOrGroup = id => {
