@@ -741,7 +741,7 @@ export default class DashboardTile extends React.Component {
 
   renderSplitResponse = () => {
     const response = this.props.queryResponse
-    const secondResponse = this.props.tile.secondQueryResponse
+    const secondResponse = this.props.tile.secondQueryResponse || response
 
     const firstDisplayType = isDisplayTypeValid(
       response,
@@ -802,9 +802,9 @@ export default class DashboardTile extends React.Component {
         </div>
         <div className="dashboard-tile-split-pane-container">
           {this.renderSingleResponse({
-            displayType: secondDisplayType || 'table',
+            response: secondResponse,
+            displayType: secondDisplayType,
             onDisplayTypeChange: this.onSecondDisplayTypeChange,
-            response: this.props.tile.secondQueryResponse,
             queryValidationSelections: this.props.tile
               .secondqueryValidationSelections,
             selectedSuggestion: this.props.tile.secondSelectedSuggestion,
