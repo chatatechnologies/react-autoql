@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
+import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Checkbox } from '../Checkbox'
@@ -20,6 +21,10 @@ export default class Button extends React.Component {
 
   state = {
     selected: []
+  }
+
+  unselectAll = () => {
+    this.setState({ selected: [] })
   }
 
   interpolateArray = (num1, num2) => {
@@ -42,9 +47,11 @@ export default class Button extends React.Component {
         newSelected = this.interpolateArray(currentFirstSelected, index)
       }
 
+      this.props.onSelect(newSelected)
       this.setState({ selected: newSelected })
     } else {
       // Nothing currently selected, just select the clicked row
+      this.props.onSelect([index])
       this.setState({ selected: [index] })
     }
   }
@@ -56,6 +63,7 @@ export default class Button extends React.Component {
     } else {
       newSelected = [...this.state.selected, index]
     }
+    this.props.onSelect(newSelected)
     this.setState({ selected: newSelected })
   }
 
@@ -82,35 +90,37 @@ export default class Button extends React.Component {
 
     return (
       <div className="chata-selectable-list">
-        <div className="col-visibility-header">
-          {this.props.columns.map((col, index) => {
-            if (index === this.props.columns.length - 1) {
-              const allItemsChecked = items.every(col => col.checked)
-              return (
-                <div key={uuid.v4()}>
-                  {col.name}
-                  <Checkbox
-                    checked={allItemsChecked}
-                    style={{ marginLeft: '10px' }}
-                    onChange={() => {
-                      if (allItemsChecked) {
-                        items.forEach(item => {
-                          item.checked = false
-                        })
-                      } else {
-                        items.forEach(item => {
-                          item.checked = true
-                        })
-                      }
-                      this.props.onChange(items)
-                    }}
-                  />
-                </div>
-              )
-            }
-            return <div>{col.name}</div>
-          })}
-        </div>
+        {!!_get(this.props.columns, 'length') && (
+          <div className="col-visibility-header">
+            {this.props.columns.map((col, index) => {
+              if (index === this.props.columns.length - 1) {
+                const allItemsChecked = items.every(col => col.checked)
+                return (
+                  <div key={uuid.v4()}>
+                    {col.name}
+                    <Checkbox
+                      checked={allItemsChecked}
+                      style={{ marginLeft: '10px' }}
+                      onChange={() => {
+                        if (allItemsChecked) {
+                          items.forEach(item => {
+                            item.checked = false
+                          })
+                        } else {
+                          items.forEach(item => {
+                            item.checked = true
+                          })
+                        }
+                        this.props.onChange(items)
+                      }}
+                    />
+                  </div>
+                )
+              }
+              return <div>{col.name}</div>
+            })}
+          </div>
+        )}
         {items.map((item, index) => {
           return (
             <div
@@ -124,11 +134,12 @@ export default class Button extends React.Component {
                 } else if (e.ctrlKey || e.metaKey) {
                   this.handleCtrlSelect(index)
                 } else {
+                  this.props.onSelect([index])
                   this.setState({ selected: [index] })
                 }
               }}
             >
-              <div>{item.content}</div>
+              <div>{item.content} </div>
               <div>
                 <Checkbox
                   checked={item.checked}

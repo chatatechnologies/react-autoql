@@ -3,21 +3,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
 import './VizToolbar.scss'
-
-import {
-  tableIcon,
-  pivotTableIcon,
-  columnChartIcon,
-  barChartIcon,
-  lineChartIcon,
-  pieChartIcon,
-  heatmapIcon,
-  bubbleChartIcon
-  // stackedBarChartIcon
-} from '../../svgIcons.js'
 
 import { Icon } from '../Icon'
 
@@ -26,11 +17,21 @@ class VizToolbar extends React.Component {
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
     displayType: PropTypes.string.isRequired,
     onDisplayTypeChange: PropTypes.func.isRequired,
-    disableCharts: PropTypes.bool
+    disableCharts: PropTypes.bool,
+    vertical: PropTypes.bool,
+    themeConfig: themeConfigType,
   }
 
   static defaultProps = {
-    disableCharts: false
+    disableCharts: false,
+    vertical: false,
+    themeConfig: themeConfigDefault,
+  }
+
+  componentDidMount = () => {
+    const { themeConfig } = this.props
+    const prefix = '--chata-viz-toolbar-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = () => {
@@ -63,6 +64,7 @@ class VizToolbar extends React.Component {
         </button>
       )
     }
+
     return null
   }
 
@@ -84,7 +86,9 @@ class VizToolbar extends React.Component {
     ) {
       return (
         <div
-          className={`${this.props.className || ''} viz-toolbar`}
+          className={`${this.props.className || ''} viz-toolbar ${
+            this.props.vertical ? 'vertical' : ''
+          }`}
           data-test="viz-toolbar"
         >
           {this.createVisButton('table', 'Table', <Icon type="table" />)}
@@ -114,12 +118,17 @@ class VizToolbar extends React.Component {
           {this.createVisButton(
             'stacked_bar',
             'Stacked Bar Chart',
-            <Icon type="bar-chart" />
+            <Icon type="stacked-bar-chart" />
           )}
           {this.createVisButton(
             'stacked_column',
             'Stacked Column Chart',
-            <Icon type="column-chart" />
+            <Icon type="stacked-column-chart" />
+          )}
+          {this.createVisButton(
+            'stacked_line',
+            'Stacked Area Chart',
+            <Icon type="stacked-line-chart" />
           )}
         </div>
       )

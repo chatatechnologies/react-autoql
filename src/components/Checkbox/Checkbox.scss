@@ -8,19 +8,15 @@
 }
 
 .chata-checkbox {
-  // --accent-color: #26a7df;
-  // --accent-color: var(--chata-messenger-accent-color) || #26a7df;
-
   display: flex;
   align-items: center;
   position: relative;
-  // margin: 0.5rem;
-  // height: 100%;
   cursor: pointer;
 
-  .chata-checkbox--switch__input:checked {
-    border-color: var(--chata-messenger-accent-color);
-    background: var(--chata-messenger-accent-color);
+  .chata-checkbox--switch__input:checked,
+  .chata-checkbox__input:checked {
+    border-color: var(--chata-messenger-accent-color, #26a7df);
+    background: var(--chata-messenger-accent-color, #26a7df);
   }
 }
 .chata-checkbox__label {
@@ -40,25 +36,25 @@
   outline: none;
   background: transparent;
   border: 1px solid;
+  border-color: var(--chata-messenger-accent-color, #26a7df);
   border-radius: 2px;
 
   cursor: pointer;
 }
 .chata-checkbox__input::before {
-  content: " ";
+  content: ' ';
   position: absolute;
   top: 50%;
   right: 50%;
   bottom: 50%;
   left: 50%;
   transition: all 0.2s;
-  background: var(--chata-messenger-accent-color);
+  background: var(--chata-messenger-accent-color, #26a7df);
 }
 
 .chata-checkbox-tick {
   position: absolute;
   color: white;
-  top: 0px;
   left: 3px;
   line-height: 20px;
   pointer-events: none;
@@ -98,7 +94,7 @@
   background-color: red;
 }
 .chata-checkbox--switch__label::after {
-  content: "off";
+  content: 'off';
   margin-left: 0.25rem;
 }
 .chata-checkbox--switch__input {
@@ -118,11 +114,13 @@
   background: #fff;
 }
 .chata-checkbox--switch__input:checked + .chata-checkbox--switch__label::after {
-  content: "on";
+  content: 'on';
 }
 .chata-checkbox--switch__input:checked::before {
   right: 2px;
   left: 18px;
+  top: 2px;
+  bottom: 2px;
 }
 
 .chata-checkbox-label {

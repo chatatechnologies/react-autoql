@@ -1,13 +1,9 @@
 import Numbro from 'numbro'
-import dayjs from 'dayjs'
 import _get from 'lodash.get'
+import dayjs from './dayjsWithPlugins'
 
-import {
-  MONTH_NAMES,
-  CHART_TYPES,
-  TABLE_TYPES,
-  FORECAST_TYPES
-} from './Constants'
+import { CHART_TYPES, TABLE_TYPES, FORECAST_TYPES } from './Constants'
+import { LIGHT_THEME, DARK_THEME } from './Themes'
 
 export const getParameterByName = (
   parameterName,
@@ -46,17 +42,25 @@ export const isDayJSDateValid = date => {
 }
 
 export const formatEpochDate = (value, col, config) => {
+  if (value == null) {
+    // catches null and undefined
+    return value
+  }
+
   try {
     const { monthYearFormat, dayMonthYearFormat } = config
     const year = 'YYYY'
     const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'll'
 
     // Use title to determine significant digits of date format
     const title = col.title
-    let date = dayjs.unix(value).format(dayMonthYear)
+    let date = dayjs
+      .unix(value)
+      .utc()
+      .format(dayMonthYear)
 
-    if (!Number(value)) {
+    if (Number.isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
         date = dayjs(value).format(year)
@@ -65,9 +69,15 @@ export const formatEpochDate = (value, col, config) => {
       }
       date = dayjs(value).format(dayMonthYear)
     } else if (title && title.toLowerCase().includes('year')) {
-      date = dayjs.unix(value).format(year)
+      date = dayjs
+        .unix(value)
+        .utc()
+        .format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs.unix(value).format(monthYear)
+      date = dayjs
+        .unix(value)
+        .utc()
+        .format(monthYear)
     }
 
     if (isDayJSDateValid(date)) {
@@ -90,7 +100,7 @@ export const formatStringDate = (value, config) => {
 
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || 'MMM YYYY'
-    const dayMonthYear = dayMonthYearFormat || 'MMM D, YYYY'
+    const dayMonthYear = dayMonthYearFormat || 'll'
 
     if (day) {
       const date = dayjs(value).format(dayMonthYear)
@@ -131,7 +141,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
-      isTruncated: false
+      isTruncated: false,
     }
   }
 
@@ -155,7 +165,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             style: 'currency',
             currency: `${currency}`,
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            maximumFractionDigits: 0,
             // maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (error) {
@@ -164,7 +174,7 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            maximumFractionDigits: 0,
             // maximumSignificantDigits: sigDigs
           }).format(d)
         }
@@ -197,7 +207,10 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
     // }
     case 'PERCENT': {
       if (Number(d)) {
-        formattedLabel = Numbro(d).format('0%')
+        formattedLabel = Numbro(d).format({
+          output: 'percent',
+          mantissa: 0,
+        })
       }
       break
     }
@@ -208,8 +221,8 @@ export const formatChartLabel = ({ d, col, config = {} }) => {
 
   const fullWidthLabel = formattedLabel
   let isTruncated = false
-  if (typeof formattedLabel === 'string' && formattedLabel.length > 50) {
-    formattedLabel = `${formattedLabel.substring(0, 43)}...`
+  if (typeof formattedLabel === 'string' && formattedLabel.length > 20) {
+    formattedLabel = `${formattedLabel.substring(0, 20)}...`
     isTruncated = true
   }
 
@@ -220,7 +233,7 @@ export const formatElement = ({
   element,
   column,
   config = {},
-  htmlElement
+  htmlElement,
 }) => {
   try {
     let formattedElement = element
@@ -228,7 +241,7 @@ export const formatElement = ({
       currencyCode,
       languageCode,
       currencyDecimals,
-      quantityDecimals
+      quantityDecimals,
     } = config
 
     if (column) {
@@ -251,7 +264,7 @@ export const formatElement = ({
                 style: 'currency',
                 currency: `${currency}`,
                 minimumFractionDigits: validatedCurrencyDecimals,
-                maximumFractionDigits: validatedCurrencyDecimals
+                maximumFractionDigits: validatedCurrencyDecimals,
               }).format(element)
             } catch (error) {
               console.error(error)
@@ -259,7 +272,7 @@ export const formatElement = ({
                 style: 'currency',
                 currency: 'USD',
                 minimumFractionDigits: validatedCurrencyDecimals,
-                maximumFractionDigits: validatedCurrencyDecimals
+                maximumFractionDigits: validatedCurrencyDecimals,
               }).format(element)
             }
           }
@@ -272,7 +285,7 @@ export const formatElement = ({
           if (Number(element) && Number(element) % 1 !== 0) {
             formattedElement = Numbro(element).format({
               thousandSeparated: true,
-              mantissa: validatedQuantityDecimals
+              mantissa: validatedQuantityDecimals,
             })
           }
           break
@@ -300,12 +313,12 @@ export const formatElement = ({
           break
         }
         // This is for QBO demo ratios. Not sure why it isn't RATIO
-        case 'NUMBER': {
-          if (Number(element)) {
-            formattedElement = Numbro(element).format('0.0000')
-          }
-          break
-        }
+        // case 'NUMBER': {
+        //   if (Number(element)) {
+        //     formattedElement = Numbro(element).format('0.0000')
+        //   }
+        //   break
+        // }
         case 'PERCENT': {
           if (Number(element)) {
             formattedElement = Numbro(element).format('0.00%')
@@ -339,7 +352,7 @@ export const formatElement = ({
  * @return {Promise} a promise to the bas64 png image
  */
 export const svgToPng = (svgElement, margin = 0, fill) => {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function(resolve, reject) {
     try {
       const domUrl = window.URL || window.webkitURL || window
       if (!domUrl) {
@@ -351,7 +364,8 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       // get svg data
       var xml = new XMLSerializer().serializeToString(svgElement)
       // make it base64
-      var svg64 = btoa(xml)
+      var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
+      // var svg64 = btoa(xml)
       var b64Start = 'data:image/svg+xml;base64,'
       // prepend a "header"
       var image64 = b64Start + svg64
@@ -372,7 +386,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       var img = new Image()
 
       // when the image is loaded we can get it as base64 url
-      img.onload = function () {
+      img.onload = function() {
         // draw it to the canvas
         ctx.drawImage(this, margin, margin, width, height)
 
@@ -392,7 +406,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
         }
         resolve(canvas.toDataURL('image/png', 1))
       }
-      img.onerror = function (error) {
+      img.onerror = function(error) {
         reject('failed to load image with that url' + url)
       }
 
@@ -489,9 +503,10 @@ export const getSupportedDisplayTypes = response => {
           'pivot_table',
           'stacked_bar',
           'stacked_column',
+          'stacked_line',
           'bubble',
           'heatmap',
-          'table'
+          'table',
         ]
       }
       return supportedDisplayTypes
@@ -505,16 +520,34 @@ export const getSupportedDisplayTypes = response => {
       // }
 
       // create pivot based on month and year
-      const dateColumn = columns.find(
+      const dateColumnIndex = columns.findIndex(
         col => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
+      const dateColumn = columns[dateColumnIndex]
 
+      // Check if date pivot should be supported
       if (
         dateColumn &&
         dateColumn.display_name.toLowerCase().includes('month') &&
         columns.length === 2
       ) {
-        supportedDisplayTypes.push('pivot_table')
+        const data = _get(response, 'data.data.rows')
+        const uniqueYears = []
+        data.forEach(row => {
+          const year = formatElement({
+            element: row[dateColumnIndex],
+            column: dateColumn,
+            config: { monthYearFormat: 'YYYY', dayMonthYearFormat: 'YYYY' },
+          })
+
+          if (!uniqueYears.includes(year)) {
+            uniqueYears.push(year)
+          }
+        })
+
+        if (uniqueYears.length > 1) {
+          supportedDisplayTypes.push('pivot_table')
+        }
       }
 
       return supportedDisplayTypes
@@ -532,7 +565,9 @@ export const isDisplayTypeValid = (response, displayType) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = supportedDisplayTypes.includes(displayType)
   if (!isValid) {
-    console.error('provided display type is not valid for this response data')
+    console.warn(
+      'Warning: provided display type is not valid for this response data'
+    )
   }
   return isValid
 }
@@ -556,20 +591,6 @@ export const getDefaultDisplayType = response => {
     return 'table'
   }
 
-  // ----------------- This probably won't happen anymore with CaaS ---------------
-  // If the display type is a recognized table type
-  if (isTableType(responseDisplayType)) {
-    return 'table'
-  }
-
-  // If the display type is a recognized chart type
-  // This probably won't happen with chata.io, it is
-  // usually returned as a table type initially
-  if (isChartType(responseDisplayType)) {
-    return responseDisplayType
-  }
-  // ------------------------------------------------------------------------------
-
   // Default to table type
   return 'table'
 }
@@ -578,55 +599,33 @@ export const getGroupBysFromPivotTable = (
   cell,
   tableColumns,
   pivotTableColumns,
-  originalColumnData,
-  demo
+  originalColumnData
 ) => {
-  let groupByName1
-  let groupByValue1
-  let groupByName2
-  let groupByValue2
   try {
-    if (tableColumns[0].type === 'DATE') {
+    let drilldownData = []
+    if (
+      cell &&
+      cell.getColumn() &&
+      cell.getColumn().getDefinition() &&
+      cell.getColumn().getDefinition().drilldownData
+    ) {
+      drilldownData = cell.getColumn().getDefinition().drilldownData
+    }
+
+    if (!drilldownData.length) {
+      return undefined
+    }
+
+    if (tableColumns.length === 2) {
+      // This is a date pivot
       const year = Number(pivotTableColumns[cell.getField()].name)
       const month = cell.getData()[0]
-      groupByName1 = tableColumns[0].name
-      groupByValue1 = `${originalColumnData[year][month]}`
+      drilldownData[0].value = `${originalColumnData[year][month]}`
     } else {
-      groupByName1 = tableColumns[0].name
-      groupByValue1 = cell.getData()[0]
-
-      groupByName2 = tableColumns[1].name
-      groupByValue2 = pivotTableColumns[cell.getField()].name
+      drilldownData[0].value = `${cell.getData()[0]}`
     }
 
-    if (demo) {
-      if (groupByName2) {
-        return {
-          [groupByName1]: groupByValue1
-        }
-      }
-      return {
-        [groupByName1]: groupByValue1,
-        [groupByName2]: groupByValue2
-      }
-    } else if (groupByName2) {
-      return [
-        {
-          name: groupByName1,
-          value: groupByValue1
-        }
-      ]
-    }
-    return [
-      {
-        name: groupByName1,
-        value: groupByValue1
-      },
-      {
-        name: groupByName2,
-        value: groupByValue2
-      }
-    ]
+    return drilldownData
   } catch (error) {
     console.error(error)
     return undefined
@@ -636,119 +635,27 @@ export const getGroupBysFromPivotTable = (
 export const nameValueObject = (name, value) => {
   return {
     name,
-    value
+    value,
   }
 }
 
-export const getGroupBysFromTable = (row, tableColumns, demo) => {
+export const getGroupBysFromTable = (row, tableColumns) => {
   const groupableColumns = getGroupableColumns(tableColumns)
   const numGroupables = groupableColumns.length
   if (!numGroupables) {
-    return {}
+    return undefined
   }
 
   const rowData = row.getData()
 
-  if (demo) {
-    const groupByObject = {}
-    groupableColumns.forEach(colIndex => {
-      const groupByName = tableColumns[colIndex].name
-      const groupByValue = rowData[colIndex]
-      groupByObject[groupByName] = groupByValue
-    })
-
-    return groupByObject
-  } else {
-    const groupByArray = []
-    groupableColumns.forEach(colIndex => {
-      const groupByName = tableColumns[colIndex].name
-      const groupByValue = rowData[colIndex]
-      groupByArray.push(nameValueObject(groupByName, groupByValue))
-    })
-
-    return groupByArray
-  }
-}
-
-export const getgroupByObjectFromTable = (
-  rowData,
-  origColumns,
-  forceDateAxis
-) => {
-  const jsonData = {}
-  let columns = [...origColumns]
-
-  if (!columns[0]) {
-    return
-  }
-
-  if (forceDateAxis) {
-    // Swap first two columns if second one is DATE and first is not
-    // rowData is already swapped here if necessary so don't swap again.
-    if (
-      columns[1] &&
-      (columns[0].type !== 'DATE' && columns[1].type === 'DATE')
-    ) {
-      columns = [columns[1], columns[0], ...columns.slice(2)]
-    }
-  }
-
-  columns.forEach((column, index) => {
-    if (column.groupable) {
-      const columnName = column.name
-      if (column.type === 'DATE') {
-        jsonData[columnName] = `${rowData[index]}`
-      } else {
-        jsonData[columnName.toLowerCase()] = `${rowData[index]}`
-      }
-    }
+  const groupByArray = []
+  groupableColumns.forEach(colIndex => {
+    const groupByName = tableColumns[colIndex].name
+    const groupByValue = `${rowData[colIndex]}`
+    groupByArray.push(nameValueObject(groupByName, groupByValue))
   })
-  return jsonData
-}
 
-export const getGroupBysFrom3dChart = (row, column, tableColumns, demo) => {
-  const groupBy1Name = tableColumns[0].name
-  const groupBy2Name = tableColumns[1].name
-
-  let groupBy1Value = column
-  let groupBy2Value = row
-
-  if (typeof groupBy1Value !== 'string') {
-    groupBy1Value = `${groupBy1Value}`
-  }
-  if (typeof groupBy2Value !== 'string') {
-    groupBy2Value = `${groupBy2Value}`
-  }
-
-  if (demo) {
-    return {
-      [groupBy1Name]: groupBy1Value,
-      [groupBy2Name]: groupBy2Value
-    }
-  }
-
-  // Not demo. Need to format groupbys differently
-  return [
-    nameValueObject(groupBy1Name, groupBy1Value),
-    nameValueObject(groupBy2Name, groupBy2Value)
-  ]
-}
-
-export const getGroupBysFrom2dChart = (row, tableColumns, demo) => {
-  const groupByName = tableColumns[0].name
-
-  let groupByValue = row[0]
-  if (typeof groupByValue !== 'string') {
-    groupByValue = `${groupByValue}`
-  }
-
-  if (demo) {
-    return {
-      [groupByName]: groupByValue
-    }
-  }
-
-  return [nameValueObject(groupByName, groupByValue)]
+  return groupByArray
 }
 
 export const getObjSize = obj => Object.keys(obj).length
@@ -777,31 +684,36 @@ export const getMinValueFromKeyValueObj = obj => {
   return minValue
 }
 
-export const calculateMinAndMaxSums = (data, labelValue, dataValue) => {
+export const calculateMinAndMaxSums = data => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
   // Loop through data array to get maximum and minimum sums of postive and negative values
   // These will be used to get the max and min values for the x Scale (data values)
-  for (let i = 0; i < data.length; i++) {
-    const value = data[i][dataValue]
-
-    if (value >= 0) {
-      // Calculate positive sum
-      if (positiveSumsObject[data[i][labelValue]]) {
-        positiveSumsObject[data[i][labelValue]] += value
-      } else {
-        positiveSumsObject[data[i][labelValue]] = value
+  data.forEach(d => {
+    const label = d.label
+    d.cells.forEach(cell => {
+      const cellConvertedToNumber = Number(cell.value)
+      const value = !Number.isNaN(cellConvertedToNumber)
+        ? cellConvertedToNumber
+        : 0
+      if (value >= 0) {
+        // Calculate positive sum
+        if (positiveSumsObject[label]) {
+          positiveSumsObject[label] += value
+        } else {
+          positiveSumsObject[label] = value
+        }
+      } else if (value < 0) {
+        // Calculate negative sum
+        if (negativeSumsObject[label]) {
+          negativeSumsObject[label] -= value
+        } else {
+          negativeSumsObject[label] = value
+        }
       }
-    } else if (value < 0) {
-      // Calculate negative sum
-      if (negativeSumsObject[data[i][labelValue]]) {
-        negativeSumsObject[data[i][labelValue]] -= value
-      } else {
-        negativeSumsObject[data[i][labelValue]] = value
-      }
-    }
-  }
+    })
+  })
 
   // Get max and min sums from those sum objects
   const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
@@ -809,7 +721,7 @@ export const calculateMinAndMaxSums = (data, labelValue, dataValue) => {
 
   return {
     max: maxValue,
-    min: minValue
+    min: minValue,
   }
 }
 
@@ -885,6 +797,24 @@ export const getTickWidth = (scale, innerPadding) => {
   }
 }
 
+export const setCSSVars = ({ themeConfig, prefix }) => {
+  const { theme, accentColor, fontFamily } = themeConfig
+  const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
+  if (accentColor) {
+    themeStyles['accent-color'] = accentColor
+  }
+  if (fontFamily) {
+    themeStyles['font-family'] = fontFamily
+  }
+
+  for (let property in themeStyles) {
+    document.documentElement.style.setProperty(
+      `${prefix}${property}`,
+      themeStyles[property]
+    )
+  }
+}
+
 export const setStyleVars = ({ themeStyles, prefix }) => {
   for (let property in themeStyles) {
     document.documentElement.style.setProperty(
@@ -913,4 +843,93 @@ export const getQueryParams = url => {
   } catch (error) {
     return undefined
   }
+}
+
+export const getNumberColumnIndices = columns => {
+  const dollarAmtIndices = []
+  const quantityIndices = []
+  const ratioIndices = []
+
+  columns.forEach((col, index) => {
+    const { type } = col
+    if (type === 'DOLLAR_AMT') {
+      dollarAmtIndices.push(index)
+    } else if (type === 'QUANTITY') {
+      quantityIndices.push(index)
+    } else if (type === 'PERCENT' || type === 'RATIO') {
+      ratioIndices.push(index)
+    }
+  })
+
+  // Returning highest priority of non-empty arrays
+  if (dollarAmtIndices.length) {
+    return dollarAmtIndices
+  }
+
+  if (quantityIndices.length) {
+    return quantityIndices
+  }
+
+  if (ratioIndices.length) {
+    return ratioIndices
+  }
+
+  return []
+}
+
+export const filterDataForDrilldown = (response, drilldownData) => {
+  const drilldownDataObject = drilldownData[0]
+  const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
+    col => col.name === drilldownDataObject.name
+  )
+
+  const filteredRows = _get(response, 'data.data.rows', []).filter(row => {
+    return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
+  })
+
+  const newResponseData = {
+    ...response,
+    data: {
+      ...response.data,
+      data: {
+        ...response.data.data,
+        rows: filteredRows,
+      },
+    },
+  }
+
+  return newResponseData
+}
+
+export const getPadding = element => {
+  const padding = { left: 0, right: 0, top: 0, bottom: 0 }
+  try {
+    let left = parseInt(window.getComputedStyle(element)['padding-left'], 10)
+    let right = parseInt(window.getComputedStyle(element)['padding-right'], 10)
+    let top = parseInt(window.getComputedStyle(element)['padding-top'], 10)
+    let bottom = parseInt(
+      window.getComputedStyle(element)['padding-bottom'],
+      10
+    )
+
+    padding.left = left
+    padding.right = right
+    padding.top = top
+    padding.bottom = bottom
+  } catch (error) {
+    return padding
+  }
+
+  return padding
+}
+
+export const capitalizeFirstChar = string => {
+  let capitalized = string
+  try {
+    capitalized = string.charAt(0).toUpperCase() + string.slice(1)
+  } catch (error) {
+    console.error(error)
+  }
+
+  return capitalized
 }

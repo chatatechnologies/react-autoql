@@ -3,8 +3,9 @@ import PropTypes from 'prop-types'
 import { Axes } from '../Axes'
 import { Line } from '../Line'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import _get from 'lodash.get'
 
-import { getMinAndMaxValues } from '../helpers.js'
+import { getMinAndMaxValues, getTickValues } from '../helpers.js'
 import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
 
 export default class ChataLineChart extends Component {
@@ -22,10 +23,12 @@ export default class ChataLineChart extends Component {
     bottomMargin: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     labelValue: PropTypes.string,
-    tooltipFormatter: PropTypes.func,
     onLegendClick: PropTypes.func,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
+    legendLocation: PropTypes.string,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -41,8 +44,10 @@ export default class ChataLineChart extends Component {
     labelValue: 'label',
     dataFormatting: {},
     numberColumnIndices: [],
-    onLabelChange: () => {},
-    tooltipFormatter: () => {}
+    legendLocation: undefined,
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
+    onLabelChange: () => {}
   }
 
   handleLabelRotation = (tickWidth, labelArray) => {
@@ -54,20 +59,27 @@ export default class ChataLineChart extends Component {
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
 
   render = () => {
     const {
+      hasMultipleStringColumns,
+      hasMultipleNumberColumns,
       activeChartElementKey,
+      enableDynamicCharting,
       bottomLegendMargin,
-      bottomLegendWidth,
-      tooltipFormatter,
+      stringColumnIndex,
+      numberColumnIndex,
+      numberAxisTitle,
       backgroundColor,
+      legendLocation,
       dataFormatting,
       onLegendClick,
+      onXAxisClick,
+      onYAxisClick,
       innerPadding,
       outerPadding,
       bottomMargin,
@@ -91,35 +103,24 @@ export default class ChataLineChart extends Component {
       .domain(data.map(d => d[labelValue]))
       .range([leftMargin, width - rightMargin])
       .paddingInner(innerPadding)
-      .paddingOuter(outerPadding)
+      .paddingOuter(0.1)
 
     const yScale = this.yScale
       .domain([minValue, maxValue])
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const barWidth = width / data.length
-    const interval = Math.ceil((data.length * 16) / width)
-    let xTickValues
-    if (barWidth < 16) {
-      xTickValues = []
-      data.forEach((element, index) => {
-        if (index % interval === 0) {
-          xTickValues.push(element[labelValue])
-        }
-      })
-    }
-
     const labelArray = data.map(element => element[labelValue])
     const tickWidth = getTickWidth(xScale, innerPadding)
+    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
       <g data-test="chata-line-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[this.props.stringColumnIndex]}
-          yCol={columns[this.props.numberColumnIndices[0]]}
+          xCol={columns[stringColumnIndex]}
+          yCol={columns[numberColumnIndex]}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -132,12 +133,17 @@ export default class ChataLineChart extends Component {
           xTicks={xTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={dataFormatting}
-          bottomLegendWidth={bottomLegendWidth}
           legendLabels={legendLabels}
-          hasBottomLegend={data[0].origRow.length > 2}
+          hasRightLegend={legendLocation === 'right'}
+          hasBottomLegend={legendLocation === 'bottom'}
           onLegendClick={onLegendClick}
           chartColors={chartColors}
           yGridLines
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
+          hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
+          hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
+          yAxisTitle={numberAxisTitle}
         />
         <Line
           scales={{ xScale, yScale }}
@@ -153,7 +159,6 @@ export default class ChataLineChart extends Component {
           height={height}
           labelValue={labelValue}
           onChartClick={onChartClick}
-          tooltipFormatter={tooltipFormatter}
           chartColors={chartColors}
           backgroundColor={backgroundColor}
           activeKey={activeChartElementKey}

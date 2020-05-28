@@ -30,19 +30,27 @@ body {
 }
 
 .ui-overlay.locate {
-  background-image: url("./locate_ui.png");
+  background-image: url('./locate_ui.png');
 }
 
 .ui-overlay.purefacts {
-  background-image: url("./purefacts_ui.png");
+  background-image: url('./purefacts_ui.png');
 }
 
 .ui-overlay.qbo-demo {
-  background-image: url("./qbo_demo_ui.png");
+  background-image: url('./qbo_demo_ui.png');
 }
 
 .ui-overlay.spira {
-  background-image: url("./spira_ui2.png");
+  background-image: url('./spira_ui2.png');
+}
+
+.ui-overlay.vitruvi {
+  background-image: url('./vitruvi_ui.png');
+}
+
+.ui-overlay.demo {
+  background-image: url('./xero_ui.png');
 }
 
 /* .ui-overlay.sage-demo {
@@ -63,4 +71,9 @@ body {
 
 .ant-form-item input {
   max-width: unset;
+}
+
+.drawer-handle img.demo {
+  width: 50px;
+  height: 50px;
 }

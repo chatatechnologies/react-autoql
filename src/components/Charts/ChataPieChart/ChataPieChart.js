@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
@@ -20,6 +21,7 @@ export default class Axis extends Component {
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
+    columns: PropTypes.arrayOf(PropTypes.shape()).isRequired,
     onChartClick: PropTypes.func,
     margin: PropTypes.number,
     backgroundColor: PropTypes.string,
@@ -35,7 +37,7 @@ export default class Axis extends Component {
   }
 
   static defaultProps = {
-    margin: 20,
+    margin: 40,
     backgroundColor: 'transparent',
     dataFormatting: {},
     onChartClick: () => {}
@@ -46,10 +48,15 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
+    this.LEGEND_ID = `chata-pie-legend-${uuid.v4()}`
     this.renderPie()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    if (!_isEqual(this.props.data, nextProps.data)) {
+      return true
+    }
+
     if (this.state.activeKey !== nextState.activeKey) {
       return true
     }
@@ -103,7 +110,7 @@ export default class Axis extends Component {
       return d.value.cells[0].value
     })
 
-    this.dataReady = pieChart(entries(self.sortedData))
+    this.dataReady = pieChart(entries(self.sortedData.filter(d => !d.hidden)))
   }
 
   renderPieSlices = () => {
@@ -127,7 +134,7 @@ export default class Axis extends Component {
       })
       .attr('data-for', 'chart-element-tooltip')
       .attr('data-tip', function(d) {
-        return self.props.tooltipFormatter(d)
+        return _get(d, 'data.value.cells[0].tooltipData')
       })
       .style('fill-opacity', 0.85)
       .attr('stroke-width', '0.5px')
@@ -139,15 +146,16 @@ export default class Axis extends Component {
         select(this).style('fill-opacity', 0.85)
       })
       .on('click', function(d) {
-        if (d.data.value[self.props.labelValue] === self.state.activeKey) {
+        const newActiveKey = _get(d, `data.value[${self.props.labelValue}]`)
+        if (newActiveKey === self.state.activeKey) {
           // Put it back if it is expanded
           self.setState({ activeKey: null })
         } else {
           self.props.onChartClick({
-            row: _get(d, 'data.value.origRow', []),
-            activeKey: d.data.value[self.props.labelValue]
+            drilldownData: _get(d, 'data.value.cells[0].drilldownData'),
+            activeKey: newActiveKey
           })
-          self.setState({ activeKey: d.data.value[self.props.labelValue] })
+          self.setState({ activeKey: newActiveKey })
         }
       })
 
@@ -203,22 +211,25 @@ export default class Axis extends Component {
       numberColumnIndex
     } = this.props
 
-    const legendLabels = this.sortedData.map(d => {
+    this.legendLabels = this.sortedData.map(d => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
-        column: _get(d, `origColumns[${stringColumnIndex}]`)
+        column: _get(this.props, `columns[${stringColumnIndex}]`)
       })}: ${formatElement({
         element: d.cells[0].value || 0,
-        column: _get(d, `origColumns[${numberColumnIndex}]`),
+        column: _get(this.props, `columns[${numberColumnIndex}]`),
         config: this.props.dataFormatting
       })}`
-      return legendString.trim()
+      return {
+        hidden: d.hidden,
+        label: legendString.trim()
+      }
     })
 
     let legendScale
-    if (legendLabels) {
+    if (this.legendLabels) {
       legendScale = scaleOrdinal()
-        .domain(legendLabels)
+        .domain(self.legendLabels.map(item => item.label))
         .range(chartColors)
     } else {
       return
@@ -236,6 +247,7 @@ export default class Axis extends Component {
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
       .style('font-size', '10px')
+      .style('stroke-width', '2px')
     var legendOrdinal = legendColor()
       .shape(
         'path',
@@ -247,6 +259,15 @@ export default class Axis extends Component {
       .shapePadding(5)
       .labelWrap(legendWrapLength)
       .scale(legendScale)
+      .on('cellclick', function(d) {
+        const dataIndex = self.legendLabels.findIndex(legendObj => {
+          return legendObj.label === d
+        })
+
+        if (dataIndex >= 0) {
+          self.props.onLegendClick(self.sortedData[dataIndex])
+        }
+      })
 
     svg.select('.legendOrdinal').call(legendOrdinal)
 
@@ -265,6 +286,33 @@ export default class Axis extends Component {
     svg
       .select('.legendOrdinal')
       .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+
+    this.applyStylesForHiddenSeries()
+  }
+
+  applyStylesForHiddenSeries = () => {
+    const legendLabelTexts = this.legendLabels
+      .filter(l => l.hidden)
+      .map(l => l.label)
+
+    const legendSwatchElements = document.querySelectorAll(
+      `#${this.LEGEND_ID} .label tspan`
+    )
+
+    if (legendSwatchElements) {
+      legendSwatchElements.forEach(el => {
+        const swatchElement = el.parentElement.parentElement.querySelector(
+          '.swatch'
+        )
+        swatchElement.style.strokeWidth = '2px'
+
+        if (legendLabelTexts.includes(el.textContent)) {
+          swatchElement.style.opacity = 0.3
+        } else {
+          swatchElement.style.opacity = 1
+        }
+      })
+    }
   }
 
   setPieRadius = () => {
@@ -280,7 +328,7 @@ export default class Axis extends Component {
     }
 
     this.outerRadius = pieWidth / 2
-    this.innerRadius = this.outerRadius - 40 > 15 ? this.outerRadius - 40 : 0
+    this.innerRadius = this.outerRadius - 50 > 15 ? this.outerRadius - 50 : 0
   }
 
   renderPie = () => {
@@ -326,7 +374,8 @@ export default class Axis extends Component {
           ref={el => {
             this.legendElement = el
           }}
-          className="legendOrdinal-container"
+          id={this.LEGEND_ID}
+          className="legendOrdinal"
         />
       </g>
     )

@@ -1,16 +1,16 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Numbro from 'numbro'
-import dayjs from 'dayjs'
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
-import { select } from 'd3-selection'
+import { select, intersection } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
 import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
 import { formatChartLabel } from '../../../js/Util.js'
+import { doesElementOverflowContainer } from '../helpers'
 
 import './Axis.scss'
 
@@ -33,6 +33,7 @@ export default class Axis extends Component {
     hasRightLegend: PropTypes.bool,
     hasBottomLegend: PropTypes.bool,
     onLegendClick: PropTypes.func,
+    onLegendTitleClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -50,7 +51,8 @@ export default class Axis extends Component {
     hasBottomLegend: false,
     dataFormatting: {},
     margins: {},
-    onLegendClick: () => {}
+    onLegendClick: () => {},
+    onLegendTitleClick: () => {}
   }
 
   componentDidMount = () => {
@@ -59,6 +61,65 @@ export default class Axis extends Component {
 
   componentDidUpdate = () => {
     this.renderAxis()
+  }
+
+  styleLegendTitle = svg => {
+    svg
+      .select('.legendTitle')
+      .style('font-weight', 'bold')
+      .style('transform', 'translate(0, -5px)')
+      .append('tspan')
+      .text('  ▼')
+      .style('font-size', '8px')
+      .style('opacity', 0)
+      .attr('class', 'chata-axis-selector-arrow')
+
+    // Add border that shows on hover
+    let titleBBox = {}
+    try {
+      titleBBox = svg
+        .select('.legendTitle')
+        .node()
+        .getBBox()
+    } catch (error) {}
+
+    select(this.legendBorder)
+      .attr('class', 'legend-title-border')
+      .attr('width', _get(titleBBox, 'width', 0) + 20)
+      .attr('height', _get(titleBBox, 'height', 0) + 10)
+      .attr('x', _get(titleBBox, 'x', 0) - 10)
+      .attr('y', _get(titleBBox, 'y', 0) - 10)
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', '1px')
+      .attr('fill', 'transparent')
+      .attr('rx', 4)
+
+    // Move to front
+    const legendElement = select(this.legendBorder).node()
+    legendElement.parentNode.appendChild(legendElement)
+  }
+
+  removeOverlappingLegendLabels = () => {
+    const legendContainer = select(
+      `#legend-bounding-box-${this.LEGEND_ID}`
+    ).node()
+
+    select(this.rightLegendElement)
+      .selectAll('.cell')
+      .attr('opacity', function(d) {
+        // todo: fix this so the bboxes are absolute and intersection is possible
+        // const tspanElement = select(this)
+        //   .select('tspan')
+        //   .node()
+        // const isOverflowing = doesElementOverflowContainer(
+        //   this,
+        //   legendContainer
+        // )
+        // if (isOverflowing) {
+        //   return 0
+        // }
+        // return 1
+      })
   }
 
   renderLegend = () => {
@@ -71,20 +132,16 @@ export default class Axis extends Component {
 
     const legendScale = this.getLegendScale()
 
-    const svg = select(this.legendElement)
-
-    svg
-      .append('g')
-      .attr(
-        'class',
-        `legendOrdinal${this.props.hasBottomLegend ? ' interactive' : ''}`
-      )
-      .style('fill', 'currentColor')
-      .style('fill-opacity', '0.7')
-      .style('font-family', 'inherit')
-      .style('font-size', '10px')
-
     if (this.props.hasRightLegend) {
+      const svg = select(this.rightLegendElement)
+
+      svg
+        .attr('class', 'legendOrdinal')
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '0.7')
+        .style('font-family', 'inherit')
+        .style('font-size', '10px')
+
       var legendOrdinal = legendColor()
         .shape(
           'path',
@@ -96,10 +153,36 @@ export default class Axis extends Component {
         .shapePadding(5)
         .labelWrap(100)
         .scale(legendScale)
-      // .on('cellclick', function(d) {
-      //   alert('clicked ' + d)
-      // })
+        .on('cellclick', function(d) {
+          self.props.onLegendClick(d)
+        })
+
+      if (this.props.legendTitle) {
+        legendOrdinal.title(this.props.legendTitle).titleWidth(100)
+      }
+
+      svg.call(legendOrdinal).style('font-family', 'inherit')
+
+      if (this.props.legendTitle) {
+        this.styleLegendTitle(svg)
+      }
+
+      // adjust container width to exact width of legend
+      // this is so the updateMargins function works properly
+      const legendWidth = select(this.rightLegendElement)
+        .node()
+        .getBBox().width
+      select(this.legendClippingContainer).attr('width', legendWidth + 30)
+      svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
     } else if (this.props.hasBottomLegend) {
+      const svg = select(this.bottomLegendElement)
+      svg
+        .attr('class', 'legendOrdinal')
+        .style('fill', 'currentColor')
+        .style('fill-opacity', '0.7')
+        .style('font-family', 'inherit')
+        .style('font-size', '10px')
+
       var legendOrdinal = legendColor()
         .shape(
           'path',
@@ -107,55 +190,54 @@ export default class Axis extends Component {
             .type(symbolCircle)
             .size(75)()
         )
-        // .useClass(true)
-        // .classPrefix('item-')
         .orient('horizontal')
         .shapePadding(self.LEGEND_PADDING)
         .labelWrap(120)
         .labelAlign('left')
-        // .cellFilter(d => {
-        //   return d[self.props.labelValueY] !== 'e'
-        // })
-        // .labels(formattedLabels)
-        // .titleWidth(600)
         .scale(legendScale)
         .on('cellclick', function(d) {
           self.props.onLegendClick(d)
         })
-      // .on('cellover', function(d) {
-      //   alert('cell over ' + d)
-      // })
-      // .on('cellout', function(d) {
-      //   alert('cell out ' + d)
-      // })
+
+      svg.call(legendOrdinal).style('font-family', 'inherit')
     }
 
-    svg.select('.legendOrdinal').call(legendOrdinal)
-
     this.applyStylesForHiddenSeries()
+    // todo: get this working properly
+    // this.removeOverlappingLegendLabels()
   }
 
   applyStylesForHiddenSeries = () => {
-    const legendLabelTexts = this.props.legendLabels
-      .filter(l => l.hidden)
-      .map(l => l.label)
+    try {
+      const legendLabelTexts = this.props.legendLabels
+        .filter(l => {
+          return l.hidden
+        })
+        .map(l => l.label)
 
-    const legendSwatchElements = document.querySelectorAll(
-      `#${this.LEGEND_ID} .label tspan`
-    )
+      const legendSwatchElements = document.querySelectorAll(
+        `#${this.LEGEND_ID} .label`
+      )
 
-    if (legendSwatchElements) {
-      legendSwatchElements.forEach(el => {
-        const swatchElement = el.parentElement.parentElement.querySelector(
-          '.swatch'
-        )
+      if (legendSwatchElements) {
+        legendSwatchElements.forEach(el => {
+          let textStrings = []
+          el.querySelectorAll('tspan').forEach(tspan => {
+            textStrings.push(tspan.textContent)
+          })
 
-        if (legendLabelTexts.includes(el.textContent)) {
-          swatchElement.style.opacity = 0.3
-        } else {
-          swatchElement.style.opacity = 1
-        }
-      })
+          const legendLabelText = textStrings.join(' ')
+          const swatchElement = el.parentElement.querySelector('.swatch')
+
+          if (legendLabelTexts.includes(legendLabelText)) {
+            swatchElement.style.opacity = 0.3
+          } else {
+            swatchElement.style.opacity = 1
+          }
+        })
+      }
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -222,6 +304,7 @@ export default class Axis extends Component {
     }
 
     if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+      // https://d3-legend.susielu.com/
       this.renderLegend()
     }
 
@@ -242,6 +325,7 @@ export default class Axis extends Component {
         }
         return null
       })
+      .attr('data-effect', 'float')
 
     select(this.axisElement)
       .selectAll('.axis path')
@@ -253,6 +337,13 @@ export default class Axis extends Component {
       .style('stroke', 'currentColor')
       .style('opacity', '0.15')
       .style('shape-rendering', 'crispedges')
+
+    // Make tick line at 0 darker
+    select(this.axisElement)
+      .selectAll('g.tick')
+      .filter(d => d == 0)
+      .select('line')
+      .style('opacity', 0.4)
   }
 
   render = () => {
@@ -271,20 +362,55 @@ export default class Axis extends Component {
           }}
           transform={this.props.translate}
         />
-        <g
-          ref={el => {
-            this.legendElement = el
-          }}
-          id={this.LEGEND_ID}
-          className="legendOrdinal-container"
-          transform={
-            this.props.hasRightLegend
-              ? `translate(${this.props.width + 15},15)`
-              : `translate(${(this.props.width - marginLeft) / 2 +
-                  marginLeft -
-                  legendDx},${this.props.height - 30})`
-          }
-        />
+        {this.props.hasRightLegend && (
+          <g
+            ref={el => {
+              this.rightLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className="legendOrdinal"
+            transform={`translate(${this.props.width + 15}, ${
+              this.props.legendTitle ? '30' : '25'
+            })`}
+          >
+            <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
+              <rect
+                ref={el => {
+                  this.legendClippingContainer = el
+                }}
+                id={`legend-bounding-box-${this.LEGEND_ID}`}
+                height={
+                  this.props.height -
+                  this.props.margins.top -
+                  // make legend smaller if labels are not rotated
+                  // because they might overlap the legend
+                  (!this.props.rotateLabels ? this.props.margins.bottom : 44) + // distance to bottom of axis labels
+                  20 // account for translation
+                }
+                width={this.props.margins.right + 30}
+                style={{ transform: 'translate(-30px, -30px)' }}
+              />
+            </clipPath>
+            <rect
+              ref={el => {
+                this.legendBorder = el
+              }}
+              onClick={this.props.onLegendTitleClick}
+            />
+          </g>
+        )}
+        {this.props.hasBottomLegend && (
+          <g
+            ref={el => {
+              this.bottomLegendElement = el
+            }}
+            id={this.LEGEND_ID}
+            className="legendOrdinal"
+            transform={`translate(${(this.props.width - marginLeft) / 2 +
+              marginLeft -
+              legendDx},${this.props.height - 30})`}
+          />
+        )}
       </g>
     )
   }

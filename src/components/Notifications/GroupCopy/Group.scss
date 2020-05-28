@@ -1,3 +1,13 @@
+.notification-read-only-group {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 10px;
+
+  // &.no-border {
+  //   border: none;
+  // }
+}
+
 .notification-group-wrapper {
   position: relative;
   margin-right: 0px;

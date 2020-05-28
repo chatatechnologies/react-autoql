@@ -1,4 +1,7 @@
 .chata-notification-list-item {
+  display: flex;
+  flex-direction: column;
+  flex-basis: auto;
   --accent-color: #26a7df;
 
   position: relative;
@@ -6,7 +9,6 @@
   background: #fff;
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-  height: 93px;
 
   margin-bottom: 8px;
 
@@ -21,33 +23,75 @@
   animation-delay: 0s;
   // opacity: 0;
 
-  cursor: pointer;
+  .viz-toolbar {
+    position: relative;
+    border: none;
+
+    .chata-toolbar-btn {
+      height: 33px;
+    }
+  }
+
+  .chata-notificaiton-details-title {
+    font-weight: 600;
+    padding-top: 20px;
+    padding-bottom: 5px;
+  }
+
+  &.expanded .chata-notification-list-item-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  .chata-notification-details {
+    overflow: hidden;
+  }
+  &.animation-complete .chata-notification-details {
+    overflow: auto;
+  }
 
   &:hover {
-    background: rgba(0, 0, 0, 0.01);
+    &:not(.expanded) {
+      background-color: rgba(0, 0, 0, 0.01);
+    }
 
     .chata-notification-delete-icon {
       opacity: 1;
     }
   }
 
-  &.expanded {
-    height: 320px;
-  }
-
   &.triggered {
     .chata-notification-display-name {
-      color: var(--accent-color) !important;
+      color: var(--chata-messenger-accent-color, #26a7df) !important;
     }
 
     .chata-notification-dismiss-btn {
       margin-top: 3px;
-      color: var(--accent-color);
+      color: var(--chata-messenger-accent-color, #26a7df);
     }
 
     .chata-notification-alert-strip {
       opacity: 1;
     }
+  }
+
+  .chata-notification-expanded-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    transition: height 0.2s ease;
+    height: 0;
+    opacity: 0;
+    &.visible {
+      height: 400px;
+      opacity: 1;
+    }
+  }
+
+  .chata-notification-extra-content {
+    text-align: center;
+    flex: 0;
+    padding: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   .chata-notification-description {
@@ -63,10 +107,61 @@
     cursor: pointer;
   }
 
+  .chata-notification-query-title {
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-family: inherit;
+    color: currentcolor;
+    opacity: 0.9;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin: 0 10px;
+    padding-top: 20px;
+    padding-bottom: 7px;
+  }
+  .chata-notification-details-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+    overflow: hidden;
+
+    .chata-notification-details {
+      flex: 1 1;
+      padding: 20px;
+      padding-top: 0;
+      opacity: 0.9;
+      border-left: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  }
+
   .chata-notification-data-container {
-    width: 100%;
-    height: 230px;
-    padding: 7px 20px;
+    display: flex;
+    flex-direction: row;
+    justify-content: stretch;
+    flex: 3 3 0px;
+    overflow: hidden;
+
+    .chata-notificaton-chart-container {
+      flex: 1;
+      height: 100%;
+      width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0px 20px 10px 20px;
+    }
+
+    .chata-table-container {
+      width: 100%;
+      padding: 0 10px;
+    }
+    .chata-table {
+      opacity: 0.9;
+      color: currentColor;
+      font-size: 11px;
+    }
   }
 
   .chata-notification-data-title {
@@ -84,8 +179,7 @@
 
   .chata-notification-dismiss-icon {
     font-size: 21px;
-    margin-top: 21px;
-    margin-right: 20px;
+    margin: 11px;
     width: 40px;
     height: 40px;
     padding: 10px;
@@ -128,7 +222,7 @@
     position: absolute;
     top: -7px;
     left: -7px;
-    color: var(--accent-color);
+    color: var(--chata-messenger-accent-color, #26a7df);
     line-height: 10px;
     background: #fff;
     border-radius: 10px;
@@ -143,11 +237,17 @@
     top: 0;
     width: 4px;
 
-    background: var(--accent-color);
+    background: var(--chata-messenger-accent-color, #26a7df);
 
-    transition-property: opacity, height;
-    transition-duration: 0.2s, 0.3s;
-    transition-timing-function: ease, cubic-bezier(0.26, 0.26, 0, 1);
+    transition-property: opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+  }
+
+  .chata-notification-viz-switcher {
+    flex: 0 0 50px;
+    padding: 10px;
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   .chata-notification-img-container {
@@ -160,7 +260,7 @@
       line-height: 45px;
       font-size: 22px;
       color: white;
-      background-color: var(--chata-messenger-accent-color);
+      background-color: var(--chata-messenger-accent-color, #26a7df);
       text-align: center;
       margin-top: 13px;
       margin-right: 17px;
@@ -170,7 +270,7 @@
   .chata-notification-display-name-container {
     flex: 1;
     line-height: 23px;
-    padding-top: 13px;
+    padding: 13px 0px;
     transition: color 0.2s ease;
 
     .chata-notification-display-name {

@@ -1,6 +1,6 @@
 .chata-notification-settings-container {
   margin: 20px;
-  margin-top: 15px;
+  margin-top: 10px;
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
   background-color: #fff;
@@ -62,17 +62,23 @@
   // }
 }
 
-.chata-notification-add-btn-container {
-  text-align: right;
-  padding-right: 20px;
-  padding-top: 15px;
+.chata-notification-settings {
+  margin-top: 20px;
+}
+
+.chata-notification-title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 20px;
+  padding-bottom: 0;
 
   .chata-notification-add-btn {
     display: inline-block;
     height: 35px;
     width: 35px;
     border-radius: 20px;
-    background: #26a7df;
+    background: var(--chata-messenger-accent-color, #26a7df);
     color: white;
     line-height: 38px;
     text-align: center;
@@ -123,7 +129,7 @@
     vertical-align: top;
   }
   .frequency-settings-container {
-    flex: 0 1 350px;
+    flex: 0 1 288px;
   }
   .frequency-description-box-container {
     flex: 1 1 0%;

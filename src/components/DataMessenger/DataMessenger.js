@@ -1,28 +1,29 @@
 import React, { Fragment } from 'react'
-import { number, bool, string, func, shape } from 'prop-types'
+import { number, bool, string, func, shape, array } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import { Scrollbars } from 'react-custom-scrollbars'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 // import { throttle, debounce } from 'throttle-debounce'
 
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 // Components
@@ -32,11 +33,14 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
+import { NewNotificationModal } from '../Notifications/NewNotificationModal'
+import { NotificationButton } from '../Notifications/NotificationButton'
+import { NotificationList } from '../Notifications/NotificationList'
 import {
   runDrilldown,
   cancelQuery,
   fetchQueryTips,
-  fetchSuggestions
+  fetchSuggestions,
 } from '../../js/queryService'
 
 // Styles
@@ -68,15 +72,18 @@ export default class DataMessenger extends React.Component {
     maxMessages: number,
     introMessage: string,
     enableExploreQueriesTab: bool,
+    enableNotificationsTab: bool,
     resizable: bool,
     inputPlaceholder: string,
-    introMessageTopics: shape({}),
+    introMessageTopics: array,
+    enableDynamicCharting: bool,
+    landingPage: string,
 
     // Callbacks
     onVisibleChange: func,
     onHandleClick: func,
     onErrorCallback: func,
-    onSuccessAlert: func
+    onSuccessAlert: func,
   }
 
   static defaultProps = {
@@ -103,19 +110,24 @@ export default class DataMessenger extends React.Component {
     maxMessages: undefined,
     introMessage: undefined,
     enableExploreQueriesTab: true,
+    enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: undefined,
     introMessageTopics: undefined,
+    enableDynamicCharting: true,
+    landingPage: 'data-messenger',
 
     // Callbacks
     onHandleClick: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
-    onSuccessAlert: () => {}
+    onSuccessAlert: () => {},
   }
 
   state = {
-    activePage: 'messenger',
+    hasError: false,
+
+    activePage: this.props.landingPage,
     width: this.props.width,
     height: this.props.height,
     isResizing: false,
@@ -128,48 +140,72 @@ export default class DataMessenger extends React.Component {
     queryTipsLoading: false,
     queryTipsError: false,
     queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 1
+    queryTipsCurrentPage: 1,
   }
 
   componentDidMount = () => {
-    this.setStyles()
-    this.setintroMessages()
+    try {
+      this.setStyles()
+      this.setintroMessages()
 
-    // Listen for esc press to cancel queries while they are running
-    document.addEventListener('keydown', this.escFunction, false)
+      // Listen for esc press to cancel queries while they are running
+      document.addEventListener('keydown', this.escFunction, false)
 
-    // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-    setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 100)
+      // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
+      setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, 100)
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
+    }
   }
 
-  componentDidUpdate = prevProps => {
-    setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 1000)
-    if (this.props.isVisible && !prevProps.isVisible) {
-      if (this.queryInputRef) {
-        this.queryInputRef.focus()
-      }
-    }
-    if (
-      !this.props.isVisible &&
-      prevProps.isVisible &&
-      this.props.clearOnClose
-    ) {
-      this.clearMessages()
-    }
+  componentDidUpdate = (prevProps, prevState) => {
+    try {
+      setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, 1000)
 
-    const thisTheme = this.props.themeConfig.theme
-    const prevTheme = prevProps.themeConfig.theme
-    if (thisTheme && thisTheme !== prevTheme) {
-      this.setStyles()
+      if (
+        this.state.activePage === 'data-messenger' &&
+        prevState.activePage !== 'data-messenger'
+      ) {
+        this.scrollToBottom()
+      }
+
+      if (this.props.isVisible && !prevProps.isVisible) {
+        if (this.queryInputRef) {
+          this.queryInputRef.focus()
+        }
+      }
+
+      if (
+        !this.props.isVisible &&
+        prevProps.isVisible &&
+        this.props.clearOnClose
+      ) {
+        this.clearMessages()
+      }
+
+      const thisTheme = this.props.themeConfig.theme
+      const prevTheme = prevProps.themeConfig.theme
+      if (thisTheme && thisTheme !== prevTheme) {
+        this.setStyles()
+      }
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
     }
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.escFunction, false)
+    try {
+      document.removeEventListener('keydown', this.escFunction, false)
+    } catch (error) {
+      console.error(error)
+      this.setState({ hasError: true })
+    }
   }
 
   escFunction = event => {
@@ -183,11 +219,22 @@ export default class DataMessenger extends React.Component {
       id: uuid.v4(),
       isResponse: true,
       type: type || 'text',
-      content: content || ''
+      content: content || '',
     }
   }
 
   createTopicsMessage = () => {
+    const topics = this.props.introMessageTopics.map(topic => {
+      return {
+        label: topic.topic,
+        value: uuid.v4(),
+        children: topic.queries.map(query => ({
+          label: query,
+          value: uuid.v4(),
+        })),
+      }
+    })
+
     try {
       const content = (
         <div>
@@ -196,7 +243,7 @@ export default class DataMessenger extends React.Component {
           <div className="topics-container">
             {
               <Cascader
-                options={this.props.introMessageTopics}
+                options={topics}
                 onFinalOptionClick={option => {
                   this.onSuggestionClick(
                     option.label,
@@ -212,7 +259,7 @@ export default class DataMessenger extends React.Component {
           Use{' '}
           <span
             className="intro-qi-link"
-            onClick={() => this.setState({ activePage: 'tips' })}
+            onClick={() => this.setState({ activePage: 'expore-queries' })}
           >
             <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
             Queries
@@ -234,11 +281,14 @@ export default class DataMessenger extends React.Component {
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
-              'there'}! Let’s dive into your data. What can I help you discover today?`
-      })
+              'there'}! Let’s dive into your data. What can I help you discover today?`,
+      }),
     ]
 
-    if (!this.props.introMessage && this.props.introMessageTopics) {
+    if (
+      !this.props.introMessage &&
+      _get(this.props.introMessageTopics, 'length')
+    ) {
       const topicsMessageContent = this.createTopicsMessage()
 
       if (topicsMessageContent) {
@@ -251,7 +301,7 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
-      isClearMessageConfirmVisible: false
+      isClearMessageConfirmVisible: false,
     })
   }
 
@@ -351,7 +401,7 @@ export default class DataMessenger extends React.Component {
       if (this.messengerScrollComponent) {
         this.messengerScrollComponent.scrollToBottom()
       }
-    }, 50)
+    }, 0)
   }
 
   onInputSubmit = text => {
@@ -369,17 +419,17 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  onResponse = response => {
-    this.addResponseMessage({ response })
+  onResponse = (response, query) => {
+    this.addResponseMessage({ response, query })
 
     if (_get(response, 'reference_id') === '1.1.430') {
       // Fetch suggestion list now
       fetchSuggestions({
         query: response.originalQuery,
-        ...this.props.authentication
+        ...this.props.authentication,
       })
         .then(response => {
-          this.addResponseMessage({ response })
+          this.addResponseMessage({ response, query })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
             this.queryInputRef.focus()
@@ -387,7 +437,8 @@ export default class DataMessenger extends React.Component {
         })
         .catch(error => {
           this.addResponseMessage({
-            content: _get(error, 'response.data.message')
+            content: _get(error, 'response.data.message'),
+            query,
           })
           this.setState({ isChataThinking: false })
           if (this.queryInputRef) {
@@ -402,45 +453,61 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  processDrilldown = (groupByObject, queryID, singleValueResponse) => {
+  runDrilldownFromAPI = (data, queryID) => {
+    runDrilldown({
+      ...this.props.authentication,
+      ...this.props.autoQLConfig,
+      queryID,
+      data,
+    })
+      .then(response => {
+        this.addResponseMessage({
+          response: { ...response, enableDrilldowns: true },
+        })
+        this.setState({ isChataThinking: false })
+      })
+      .catch(error => {
+        console.error(error)
+        this.addResponseMessage({
+          content: _get(error, 'message'),
+        })
+        this.setState({ isChataThinking: false })
+      })
+  }
+
+  runFilterDrilldown = (drilldownData, messageId) => {
+    const response = this.state.messages.find(
+      message => message.id === messageId
+    ).response
+
+    if (!response) {
+      return
+    }
+
+    const drilldownResponse = filterDataForDrilldown(response, drilldownData)
+
+    setTimeout(() => {
+      this.addResponseMessage({
+        response: drilldownResponse,
+      })
+      this.setState({ isChataThinking: false })
+    }, 1500)
+  }
+
+  processDrilldown = (drilldownData, queryID, messageId) => {
     if (this.props.autoQLConfig.enableDrilldowns) {
-      // We only want to allow empty groupByObjects for single value responses
-      if (
-        !singleValueResponse &&
-        (!groupByObject || JSON.stringify(groupByObject) === JSON.stringify({}))
-      ) {
+      if (!drilldownData || !drilldownData.data) {
         return
       }
 
-      // // This is a hack.
-      // // How do we get the right text?? Can we make an api call to get the text first?
-      // const drilldownText = `Drill down on ${columns[0].title} "${formatElement(
-      //   rowData[0],
-      //   columns[0],
-      //   config: this.props.dataFormatting
-      // )}"`
-      // this.addRequestMessage('drilldown')
-
+      const { data } = drilldownData
       this.setState({ isChataThinking: true })
 
-      runDrilldown({
-        ...this.props.authentication,
-        queryID,
-        groupByObject
-      })
-        .then(response => {
-          this.addResponseMessage({
-            response: { ...response, enableDrilldowns: true }
-          })
-          this.setState({ isChataThinking: false })
-        })
-        .catch(error => {
-          console.error(error)
-          this.addResponseMessage({
-            content: _get(error, 'message')
-          })
-          this.setState({ isChataThinking: false })
-        })
+      if (!drilldownData.supportedByAPI) {
+        this.runFilterDrilldown(data, messageId)
+      } else {
+        this.runDrilldownFromAPI(data, queryID)
+      }
     }
   }
 
@@ -455,29 +522,30 @@ export default class DataMessenger extends React.Component {
   deleteMessage = id => {
     const newMessages = this.state.messages.filter(message => message.id !== id)
     this.setState({
-      messages: newMessages
+      messages: newMessages,
     })
   }
 
   createErrorMessage = content => {
     return {
-      content: content || errorMessages.GENERAL_ERROR_MESSAGE,
+      content: content || errorMessages.GENERAL,
       id: uuid.v4(),
       type: 'error',
-      isResponse: true
+      isResponse: true,
     }
   }
 
-  createMessage = ({ response, content }) => {
+  createMessage = ({ response, content, query }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
     return {
       content,
       response,
+      query,
       id,
       type: _get(response, 'data.data.display_type'),
-      isResponse: true
+      isResponse: true,
     }
   }
 
@@ -494,15 +562,15 @@ export default class DataMessenger extends React.Component {
     const message = {
       content: text,
       id: uuid.v4(),
-      isResponse: false
+      isResponse: false,
     }
     this.setState({
-      messages: [...currentMessages, message]
+      messages: [...currentMessages, message],
     })
     this.scrollToBottom()
   }
 
-  addResponseMessage = ({ response, content }) => {
+  addResponseMessage = ({ response, content, query }) => {
     let currentMessages = this.state.messages
     if (
       this.props.maxMessages > 1 &&
@@ -515,24 +583,17 @@ export default class DataMessenger extends React.Component {
     if (_get(response, 'error') === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
     } else if (_get(response, 'error') === 'unauthenticated') {
-      message = this.createErrorMessage(
-        <div>
-          Uh oh.. It looks like you don't have access to this resource. <br />
-          <br />
-          Please double check that all required authentication fields are
-          correct.
-        </div>
-      )
+      message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
     } else if (_get(response, 'error') === 'parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage({ response, content })
+      message = this.createMessage({ response, content, query })
     }
     this.setState({
-      messages: [...currentMessages, message]
+      messages: [...currentMessages, message],
     })
     this.scrollToBottom()
   }
@@ -545,35 +606,83 @@ export default class DataMessenger extends React.Component {
     this.queryInputRef = ref
   }
 
-  renderPageSwitcher = () => {
+  renderTabs = () => {
     const page = this.state.activePage
 
     if (this.props.isVisible) {
       return (
-        <div
-          className={`page-switcher-shadow-container  ${this.props.placement}`}
-          // style={tabStyles.tabShadowContainerStyle}
-        >
-          <div className={`page-switcher-container ${this.props.placement}`}>
-            <div
-              className={`tab${page === 'messenger' ? ' active' : ''}`}
-              onClick={() => this.setState({ activePage: 'messenger' })}
-              data-tip="Data Messenger"
-              data-for="chata-header-tooltip"
-              data-delay-show={1000}
-              // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
-            >
-              <Icon type="chata-bubbles-outlined" />
-            </div>
-            <div
-              className={`tab${page === 'tips' ? ' active' : ''} tips`}
-              onClick={() => this.setState({ activePage: 'tips' })}
-              data-tip="Explore Queries"
-              data-for="chata-header-tooltip"
-              data-delay-show={1000}
-              // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
-            >
-              <Icon type="light-bulb" size={22} />
+        <div className={`data-messenger-tab-container ${this.props.placement}`}>
+          <div
+            className={`page-switcher-shadow-container  ${this.props.placement}`}
+            // style={tabStyles.tabShadowContainerStyle}
+          >
+            <div className={`page-switcher-container ${this.props.placement}`}>
+              <div
+                className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+                onClick={() => this.setState({ activePage: 'data-messenger' })}
+                data-tip="Data Messenger"
+                data-for="chata-header-tooltip"
+                data-delay-show={1000}
+                // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
+              >
+                <Icon type="chata-bubbles-outlined" />
+              </div>
+              {this.props.enableExploreQueriesTab && (
+                <div
+                  className={`tab${
+                    page === 'expore-queries' ? ' active' : ''
+                  } tips`}
+                  onClick={() =>
+                    this.setState({ activePage: 'expore-queries' })
+                  }
+                  data-tip="Explore Queries"
+                  data-for="chata-header-tooltip"
+                  data-delay-show={1000}
+                  // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
+                >
+                  <Icon type="light-bulb" size={22} />
+                </div>
+              )}
+              {this.props.enableNotificationsTab && (
+                <div
+                  className={`tab${
+                    page === 'notifications' ? ' active' : ''
+                  } notifications`}
+                  onClick={() => {
+                    if (this.notificationBadgeRef) {
+                      this.notificationBadgeRef.resetCount()
+                    }
+                    this.setState({ activePage: 'notifications' })
+                  }}
+                  data-tip="Notifications"
+                  data-for="chata-header-tooltip"
+                  data-delay-show={1000}
+                  style={{ paddingBottom: '5px', paddingLeft: '2px' }}
+                >
+                  <div className="data-messenger-notification-btn">
+                    <NotificationButton
+                      ref={r => (this.notificationBadgeRef = r)}
+                      authentication={this.props.authentication}
+                      themeConfig={this.props.themeConfig}
+                      clearCountOnClick={false}
+                      style={{ fontSize: '19px' }}
+                      overflowCount={9}
+                      useDot
+                      // style={{ marginLeft: '3px', marginTop: '-4px' }}
+                      onNewNotification={() => {
+                        // If a new notification is detected, refresh the list
+                        if (
+                          this.notificationListRef &&
+                          this.state.activePage === 'notifications'
+                        ) {
+                          this.notificationListRef.refreshNotifications()
+                        }
+                      }}
+                      onErrorCallback={this.props.onErrorCallback}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -582,7 +691,7 @@ export default class DataMessenger extends React.Component {
   }
 
   renderClearMessagesButton = () => {
-    if (this.state.activePage === 'messenger') {
+    if (this.state.activePage === 'data-messenger') {
       return (
         <Popover
           isOpen={this.state.isClearMessageConfirmVisible}
@@ -632,11 +741,14 @@ export default class DataMessenger extends React.Component {
 
   renderHeaderTitle = () => {
     let title = ''
-    if (this.state.activePage === 'messenger') {
+    if (this.state.activePage === 'data-messenger') {
       title = this.props.title
     }
-    if (this.state.activePage === 'tips') {
+    if (this.state.activePage === 'expore-queries') {
       title = 'Explore Queries'
+    }
+    if (this.state.activePage === 'notifications') {
+      title = 'Notifications'
     }
     return <div className="header-title">{title}</div>
   }
@@ -666,11 +778,14 @@ export default class DataMessenger extends React.Component {
 
   renderBodyContent = () => {
     switch (this.state.activePage) {
-      case 'messenger': {
+      case 'data-messenger': {
         return this.renderDataMessengerContent()
       }
-      case 'tips': {
+      case 'expore-queries': {
         return this.renderQueryTipsContent()
+      }
+      case 'notifications': {
+        return this.renderNotificationsContent()
       }
     }
   }
@@ -684,40 +799,51 @@ export default class DataMessenger extends React.Component {
           }}
           className="chat-message-container"
         >
-          <div style={{ height: 'calc(100% - 20px)' }}>
-            {this.state.messages.length > 0 &&
-              this.state.messages.map(message => {
-                return (
-                  <ChatMessage
-                    key={message.id}
-                    id={message.id}
-                    authentication={this.props.authentication}
-                    autoQLConfig={this.props.autoQLConfig}
-                    themeConfig={this.props.themeConfig}
-                    scrollRef={this.messengerScrollComponent}
-                    setActiveMessage={this.setActiveMessage}
-                    isActive={this.state.activeMessageId === message.id}
-                    processDrilldown={this.processDrilldown}
-                    isResponse={message.isResponse}
-                    isChataThinking={this.state.isChataThinking}
-                    onSuggestionClick={this.onSuggestionClick}
-                    content={message.content}
-                    scrollToBottom={this.scrollToBottom}
-                    lastMessageId={this.state.lastMessageId}
-                    dataFormatting={this.props.dataFormatting}
-                    displayType={
-                      message.displayType ||
-                      _get(message, 'response.data.data.display_type')
-                    }
-                    response={message.response}
-                    type={message.type}
-                    onErrorCallback={this.props.onErrorCallback}
-                    onSuccessAlert={this.props.onSuccessAlert}
-                    deleteMessageCallback={this.deleteMessage}
-                  />
-                )
-              })}
-          </div>
+          {this.state.messages.length > 0 &&
+            this.state.messages.map(message => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  scrollRef={this.messengerScrollComponent}
+                  setActiveMessage={this.setActiveMessage}
+                  isActive={this.state.activeMessageId === message.id}
+                  processDrilldown={(drilldownData, queryID) =>
+                    this.processDrilldown(drilldownData, queryID, message.id)
+                  }
+                  isResponse={message.isResponse}
+                  originalQuery={message.query}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.onSuggestionClick}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  lastMessageId={this.state.lastMessageId}
+                  dataFormatting={this.props.dataFormatting}
+                  displayType={
+                    message.displayType ||
+                    _get(message, 'response.data.data.display_type')
+                  }
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent}
+                  isResizing={this.state.isResizing}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
+                  enableNotifications={this.props.enableNotificationsTab}
+                  onNewNotificationCallback={query => {
+                    this.setState({
+                      isNewNotificationModalVisible: true,
+                      activeQuery: query,
+                    })
+                  }}
+                />
+              )
+            })}
         </Scrollbars>
         {this.state.isChataThinking && (
           <div className="response-loading-container">
@@ -749,6 +875,7 @@ export default class DataMessenger extends React.Component {
             showLoadingDots={false}
             placeholder={this.props.inputPlaceholder}
             onErrorCallback={this.props.onErrorCallback}
+            hideInput={this.props.hideInput}
             source={['data_messenger']}
           />
         </div>
@@ -769,14 +896,14 @@ export default class DataMessenger extends React.Component {
       keywords,
       pageSize,
       pageNumber,
-      skipSafetyNet
+      skipSafetyNet,
     })
       .then(response => {
         // if caught by safetynet...
         if (_get(response, 'data.full_suggestion')) {
           this.setState({
             queryTipsLoading: false,
-            queryTipsSafetyNetResponse: response
+            queryTipsSafetyNetResponse: response,
           })
         } else {
           const totalQueries = Number(
@@ -796,7 +923,7 @@ export default class DataMessenger extends React.Component {
             queryTipsTotalPages: totalPages,
             queryTipsCurrentPage: pageNumber,
             queryTipsTotalQueries: totalQueries,
-            queryTipsSafetyNetResponse: undefined
+            queryTipsSafetyNetResponse: undefined,
           })
         }
       })
@@ -806,7 +933,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
-          queryTipsSafetyNetResponse: undefined
+          queryTipsSafetyNetResponse: undefined,
         })
       })
   }
@@ -834,7 +961,7 @@ export default class DataMessenger extends React.Component {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
           this.setState({
-            queryTipsInputValue: text.slice(0, i)
+            queryTipsInputValue: text.slice(0, i),
           })
           if (i === text.length) {
             this.fetchQueryTipsList(text, 1)
@@ -845,7 +972,7 @@ export default class DataMessenger extends React.Component {
   }
 
   runTopicInExporeQueries = topic => {
-    this.setState({ activePage: 'tips' })
+    this.setState({ activePage: 'expore-queries' })
     setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
@@ -864,7 +991,7 @@ export default class DataMessenger extends React.Component {
       currentPage={this.state.queryTipsCurrentPage}
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={query => {
-        this.setState({ activePage: 'messenger' })
+        this.setState({ activePage: 'data-messenger' })
         setTimeout(() => {
           this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
         }, 500)
@@ -872,42 +999,66 @@ export default class DataMessenger extends React.Component {
     />
   )
 
+  renderNotificationsContent = () => {
+    return (
+      <NotificationList
+        ref={ref => (this.notificationListRef = ref)}
+        authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
+        onExpandCallback={this.props.onNotificationExpandCallback}
+        onCollapseCallback={this.props.onNotificationCollapseCallback}
+        activeNotificationData={this.props.activeNotificationData}
+        onErrorCallback={this.props.onErrorCallback}
+        onSuccessCallback={this.props.onSuccessCallback}
+        showNotificationDetails={false}
+      />
+    )
+  }
+
   resizeDrawer = e => {
     const self = this
     const placement = this.getPlacementProp()
+    const maxWidth =
+      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
+      45
+    const maxHeight =
+      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
+      45
 
     if (placement === 'right') {
       const offset = _get(self.state.startingResizePosition, 'x') - e.pageX
-      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
-          width: newWidth
+          width: newWidth,
         })
       }
     } else if (placement === 'left') {
       const offset = e.pageX - _get(self.state.startingResizePosition, 'x')
-      const newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
+      if (newWidth > maxWidth) newWidth = maxWidth
       if (Number(newWidth)) {
         self.setState({
-          width: newWidth
+          width: newWidth,
         })
       }
     } else if (placement === 'bottom') {
       const offset = _get(self.state.startingResizePosition, 'y') - e.pageY
-      const newHeight =
-        _get(self.state.startingResizePosition, 'height') + offset
+      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
+      if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
-          height: newHeight
+          height: newHeight,
         })
       }
     } else if (placement === 'top') {
       const offset = e.pageY - _get(self.state.startingResizePosition, 'y')
-      const newHeight =
-        _get(self.state.startingResizePosition, 'height') + offset
+      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
+      if (newHeight > maxHeight) newHeight = maxHeight
       if (Number(newHeight)) {
         self.setState({
-          height: newHeight
+          height: newHeight,
         })
       }
     }
@@ -915,7 +1066,7 @@ export default class DataMessenger extends React.Component {
 
   stopResizingDrawer = () => {
     this.setState({
-      isResizing: false
+      isResizing: false,
     })
     window.removeEventListener('mousemove', this.resizeDrawer)
     window.removeEventListener('mouseup', this.stopResizingDrawer)
@@ -935,8 +1086,8 @@ export default class DataMessenger extends React.Component {
                 x: e.pageX,
                 y: e.pageY,
                 width: this.state.width,
-                height: this.state.height
-              }
+                height: this.state.height,
+              },
             })
             window.addEventListener('mousemove', self.resizeDrawer)
             window.addEventListener('mouseup', self.stopResizingDrawer)
@@ -975,38 +1126,67 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  render = () => {
+  renderNewNotificationModal = () => {
     return (
-      <Fragment>
-        {this.renderTooltips()}
-        <Drawer
-          data-test="chata-drawer-test"
-          className={`chata-drawer${
-            this.state.isResizing ? ' disable-selection' : ''
-          }`}
-          open={this.props.isVisible}
-          showMask={this.props.showMask}
-          placement={this.getPlacementProp()}
-          width={this.getDrawerWidth()}
-          height={this.getDrawerHeight()}
-          onMaskClick={this.handleMaskClick}
-          onHandleClick={this.props.onHandleClick}
-          afterVisibleChange={this.props.onVisibleChange}
-          handler={this.getHandlerProp()}
-          level={this.props.shiftScreen ? 'all' : null}
-          keyboard={false}
-          // onKeyDown={this.escFunction}
-        >
-          {this.props.resizable && this.renderResizeHandle()}
-          {this.props.enableExploreQueriesTab && this.renderPageSwitcher()}
-          <div className="chata-drawer-content-container">
-            <div className="chat-header-container">
-              {this.renderHeaderContent()}
+      <NewNotificationModal
+        authentication={this.props.authentication}
+        isVisible={this.state.isNewNotificationModalVisible}
+        onClose={() => this.setState({ isNewNotificationModalVisible: false })}
+        onSave={() => {
+          this.props.onSuccessAlert('Notification created!')
+          this.setState({ isNewNotificationModalVisible: false })
+        }}
+        onError={() =>
+          this.props.onErrorCallback(
+            'Something went wrong when creating this notification. Please try again.'
+          )
+        }
+        initialQuery={this.state.activeQuery}
+      />
+    )
+  }
+
+  render = () => {
+    if (this.state.hasError) {
+      return null
+    }
+
+    return (
+      <ErrorBoundary>
+        <Fragment>
+          {this.renderTooltips()}
+          <Drawer
+            data-test="chata-drawer-test"
+            className={`chata-drawer${
+              this.state.isResizing ? ' disable-selection' : ''
+            }`}
+            open={this.props.isVisible}
+            showMask={this.props.showMask}
+            placement={this.getPlacementProp()}
+            width={this.getDrawerWidth()}
+            height={this.getDrawerHeight()}
+            onMaskClick={this.handleMaskClick}
+            onHandleClick={this.props.onHandleClick}
+            afterVisibleChange={this.props.onVisibleChange}
+            handler={this.getHandlerProp()}
+            level={this.props.shiftScreen ? 'all' : null}
+            keyboard={false}
+            // onKeyDown={this.escFunction}
+          >
+            {this.props.resizable && this.renderResizeHandle()}
+            {(this.props.enableExploreQueriesTab ||
+              this.props.enableNotificationsTab) &&
+              this.renderTabs()}
+            <div className="chata-drawer-content-container">
+              <div className="chat-header-container">
+                {this.renderHeaderContent()}
+              </div>
+              {this.renderBodyContent()}
             </div>
-            {this.renderBodyContent()}
-          </div>
-        </Drawer>
-      </Fragment>
+          </Drawer>
+          {this.renderNewNotificationModal()}
+        </Fragment>
+      </ErrorBoundary>
     )
   }
 }

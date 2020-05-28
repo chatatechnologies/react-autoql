@@ -3,8 +3,7 @@ import { shape, number, string, oneOf, bool, arrayOf } from 'prop-types'
 export const authenticationType = shape({
   token: string,
   apiKey: string,
-  domain: string,
-  demo: bool
+  domain: string
 })
 
 export const dataFormattingType = shape({

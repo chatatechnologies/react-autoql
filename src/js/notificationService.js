@@ -10,8 +10,8 @@ export const fetchNotificationCount = ({ domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const url = `${domain}/autoql/api/v1/rules/notifications/state-count?key=${apiKey}`
@@ -31,7 +31,7 @@ export const fetchNotificationList = ({
   apiKey,
   token,
   offset,
-  limit
+  limit,
 }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
@@ -40,8 +40,8 @@ export const fetchNotificationList = ({
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=${offset}&limit=${limit}`
@@ -56,8 +56,8 @@ export const fetchNotificationList = ({
           limit: _get(response, 'data.data.limit'),
           page_number: _get(response, 'data.data.page_number'),
           total_elements: _get(response, 'data.data.total_elements'),
-          total_pages: _get(response, 'data.data.total_pages')
-        }
+          total_pages: _get(response, 'data.data.total_pages'),
+        },
       }
       return Promise.resolve(formattedResponse)
     })
@@ -74,8 +74,8 @@ export const fetchNotificationSettings = ({ domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const url = `${domain}/autoql/api/v1/rules?key=${apiKey}`
@@ -99,13 +99,13 @@ export const resetNotificationCount = ({ domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
     notification_id: null,
-    state: 'ACKNOWLEDGED'
+    state: 'ACKNOWLEDGED',
   }
 
   const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
@@ -124,7 +124,7 @@ export const deleteNotification = ({
   notificationId,
   domain,
   apiKey,
-  token
+  token,
 }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
@@ -138,12 +138,12 @@ export const deleteNotification = ({
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    state: 'DELETED'
+    state: 'DELETED',
   }
 
   const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
@@ -166,12 +166,12 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    state: 'DISMISSED'
+    state: 'DISMISSED',
   }
 
   const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
@@ -190,7 +190,7 @@ export const dismissNotification = ({
   notificationId,
   domain,
   apiKey,
-  token
+  token,
 }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
@@ -204,12 +204,12 @@ export const dismissNotification = ({
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    state: 'DISMISSED'
+    state: 'DISMISSED',
   }
 
   const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
@@ -229,7 +229,7 @@ export const updateNotificationRuleStatus = ({
   status,
   domain,
   apiKey,
-  token
+  token,
 }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
@@ -243,12 +243,12 @@ export const updateNotificationRuleStatus = ({
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    status
+    status,
   }
 
   const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
@@ -274,12 +274,12 @@ export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    ...rule
+    ...rule,
   }
 
   const url = `${domain}/autoql/api/v1/rules/${rule.id}?key=${apiKey}`
@@ -301,12 +301,12 @@ export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const data = {
-    ...rule
+    ...rule,
   }
 
   const url = `${domain}/autoql/api/v1/rules?key=${apiKey}`
@@ -330,8 +330,8 @@ export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
 
   const axiosInstance = axios.create({
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 
   const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`

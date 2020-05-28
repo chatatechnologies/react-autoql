@@ -13,19 +13,23 @@ export default class Select extends React.Component {
   static propTypes = {
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
+    popupClassname: PropTypes.string,
     value: PropTypes.string,
-    label: PropTypes.string
+    label: PropTypes.string,
+    size: PropTypes.string,
   }
 
   static defaultProps = {
     onChange: () => {},
     options: [],
+    popupClassname: undefined,
     value: undefined,
-    label: undefined
+    label: undefined,
+    size: 'large',
   }
 
   state = {
-    isOpen: false
+    isOpen: false,
   }
 
   render = () => {
@@ -37,7 +41,7 @@ export default class Select extends React.Component {
       <Popover
         isOpen={this.state.isOpen}
         position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
-        padding={10} // adjust padding here!
+        padding={0} // adjust padding here!
         onClickOutside={() => this.setState({ isOpen: false })}
         // contentLocation={this.state.contextMenuPosition}
         content={({
@@ -45,10 +49,13 @@ export default class Select extends React.Component {
           nudgedLeft,
           nudgedTop,
           targetRect,
-          popoverRect
+          popoverRect,
         }) => {
           return (
-            <div className="chata-select-popup-container">
+            <div
+              className={`chata-select-popup-container ${this.props
+                .popupClassname || ''}`}
+            >
               <ReactTooltip
                 id={`select-tooltip-${this.ID}`}
                 className="chata-drawer-tooltip"
@@ -72,7 +79,7 @@ export default class Select extends React.Component {
                       data-tip={option.tooltip || null}
                       data-for={`select-tooltip-${this.ID}`}
                     >
-                      {option.label}
+                      {option.listLabel || option.label}
                     </li>
                   )
                 })}
@@ -97,7 +104,10 @@ export default class Select extends React.Component {
                 option => option.value === this.props.value
               ),
               'value',
-              null
+              <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+                {this.props.selectionPlaceholder || 'Select an item'}
+              </span>
+              // null
             )}
         </div>
       </Popover>

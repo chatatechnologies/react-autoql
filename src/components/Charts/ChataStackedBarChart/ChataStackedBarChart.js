@@ -1,46 +1,16 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
-
 import { Axes } from '../Axes'
 import { StackedBars } from '../StackedBars'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { scaleLinear, scaleBand } from 'd3-scale'
+import _get from 'lodash.get'
 
-import {
-  calculateMinAndMaxSums,
-  onlyUnique,
-  shouldRotateLabels
-} from '../../../js/Util'
+import { calculateMinAndMaxSums, shouldRotateLabels } from '../../../js/Util'
+import { getTickValues } from '../helpers'
 
 export default class ChataStackedBarChart extends Component {
   xScale = scaleLinear()
   yScale = scaleBand()
-
-  constructor(props) {
-    super(props)
-
-    // Only calculate these things one time. They will never change
-    const { data, labelValueX, labelValueY, chartColors } = props
-
-    this.uniqueYLabels = data
-      .map(d => d[labelValueY])
-      .filter(onlyUnique)
-      .sort()
-      .reverse() // sorts dates correctly
-
-    this.uniqueXLabels = data.map(d => d[labelValueX]).filter(onlyUnique)
-
-    this.legendScale = scaleOrdinal()
-      .domain(this.uniqueXLabels)
-      .range(chartColors)
-
-    this.legendLabels = this.uniqueXLabels.map(label => {
-      return {
-        label,
-        color: this.legendScale(label)
-      }
-    })
-  }
 
   static propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -52,10 +22,11 @@ export default class ChataStackedBarChart extends Component {
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
     chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
-    dataValues: PropTypes.string,
-    labelValue: PropTypes.string,
-    tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
+    legendLocation: PropTypes.string,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -68,141 +39,132 @@ export default class ChataStackedBarChart extends Component {
   }
 
   static defaultProps = {
-    dataValues: 'values',
-    labelValue: 'label',
     dataFormatting: {},
-    onLabelChange: () => {},
-    tooltipFormatter: () => {}
+    numberColumnIndices: [],
+    legendLocation: undefined,
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
+    onLabelChange: () => {}
   }
-
-  state = {}
 
   handleLabelRotation = (tickWidth, labelArray) => {
     const prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
-      this.props.columns[2],
+      this.props.columns[this.props.numberColumnIndex],
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
-    }
-  }
-
-  getTickValues = barHeight => {
-    try {
-      const interval = Math.ceil(
-        (this.uniqueYLabels.length * 16) / this.props.height
-      )
-      let yTickValues
-      if (barHeight < 16) {
-        yTickValues = []
-        this.uniqueYLabels.forEach((element, index) => {
-          if (index % interval === 0) {
-            yTickValues.push(element)
-          }
-        })
-      }
-
-      return yTickValues
-    } catch (error) {
-      console.error(error)
-      return []
     }
   }
 
   render = () => {
     const {
       activeChartElementKey,
-      tooltipFormatter,
+      enableDynamicCharting,
+      onLegendTitleClick,
+      numberColumnIndices,
+      stringColumnIndices,
+      bottomLegendMargin,
+      numberColumnIndex,
+      numberAxisTitle,
+      dataFormatting,
+      legendLocation,
+      onLegendClick,
+      legendColumn,
+      innerPadding,
+      outerPadding,
+      bottomMargin,
       onChartClick,
+      legendLabels,
+      onXAxisClick,
+      onYAxisClick,
+      chartColors,
       rightMargin,
       leftMargin,
       topMargin,
-      bottomMargin,
-      innerPadding,
-      outerPadding,
-      dataValue,
-      labelValueX,
-      labelValueY,
-      dataFormatting,
-      chartColors,
       columns,
       height,
       width,
       data
     } = this.props
 
-    const { max, min } = calculateMinAndMaxSums(data, labelValueY, dataValue)
+    // Get max and min values from all series
+    const { max, min } = calculateMinAndMaxSums(data)
 
     const xScale = this.xScale
       .domain([min, max])
       .range([leftMargin, width - rightMargin])
+      .nice()
 
     const yScale = this.yScale
-      .domain(this.uniqueYLabels)
+      .domain(data.map(d => d.label))
       .range([height - bottomMargin, topMargin])
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
+    const yLabelArray = data.map(element => element.label)
+    const xLabelArray = data.map(element => element.cells[numberColumnIndex])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
-    const barHeight = height / this.uniqueYLabels.length
-    const yTickValues = this.getTickValues(barHeight)
-    this.handleLabelRotation(tickWidth, this.uniqueYLabels)
+    const barHeight = height / data.length
+    const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
+    this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (
-      <ErrorBoundary>
-        <g data-test="chata-stacked-bar-chart">
-          <Axes
-            scales={{ xScale, yScale }}
-            xCol={columns[2]}
-            yCol={columns[1]}
-            // valueCol={columns[2]}
-            margins={{
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-              top: topMargin
-            }}
-            width={width}
-            height={height}
-            yTicks={yTickValues}
-            rotateLabels={tickWidth < 135}
-            dataFormatting={dataFormatting}
-            chartColors={chartColors}
-            xGridLines
-            legendLabels={this.legendLabels}
-            legendColumn={columns[0]}
-            hasRightLegend
-          />
-          <StackedBars
-            scales={{ xScale, yScale }}
-            margins={{
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-              top: topMargin
-            }}
-            data={data}
-            maxValue={max}
-            uniqueYLabels={this.uniqueYLabels}
-            uniqueXLabels={this.uniqueXLabels}
-            width={width}
-            height={height}
-            labelValueX={labelValueY}
-            labelValueY={labelValueX}
-            dataValue={dataValue}
-            onChartClick={onChartClick}
-            tooltipFormatter={tooltipFormatter}
-            legendColumn={columns[0]}
-            legendScale={this.legendScale}
-            chartColors={chartColors}
-            activeKey={activeChartElementKey}
-          />
-        </g>
-      </ErrorBoundary>
+      <g data-test="chata-stacked-bar-chart">
+        <Axes
+          scales={{ xScale, yScale }}
+          xCol={columns[numberColumnIndex]}
+          yCol={columns[0]}
+          margins={{
+            left: leftMargin,
+            right: rightMargin,
+            bottom: bottomMargin,
+            top: topMargin,
+            bottomLegend: bottomLegendMargin
+          }}
+          width={width}
+          height={height}
+          yTicks={yTickValues}
+          rotateLabels={this.rotateLabels}
+          dataFormatting={dataFormatting}
+          hasRightLegend={legendLocation === 'right'}
+          hasBottomLegend={legendLocation === 'bottom'}
+          legendLabels={legendLabels}
+          onLegendClick={onLegendClick}
+          legendTitle={_get(legendColumn, 'display_name')}
+          onLegendTitleClick={onLegendTitleClick}
+          enableDynamicCharting={enableDynamicCharting}
+          chartColors={chartColors}
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
+          stringColumnIndices={stringColumnIndices}
+          numberColumnIndices={numberColumnIndices}
+          // hasXDropdown={enableDynamicCharting && hasMultipleNumberColumns}
+          // hasYDropdown={enableDynamicCharting && hasMultipleStringColumns}
+          hasYDropdown={enableDynamicCharting}
+          xAxisTitle={numberAxisTitle}
+          xGridLines
+        />
+        <StackedBars
+          scales={{ xScale, yScale }}
+          margins={{
+            left: leftMargin,
+            right: rightMargin,
+            bottom: bottomMargin,
+            top: topMargin
+          }}
+          data={data}
+          width={width}
+          height={height}
+          onChartClick={onChartClick}
+          chartColors={chartColors}
+          activeKey={activeChartElementKey}
+        />
+      </g>
     )
   }
 }

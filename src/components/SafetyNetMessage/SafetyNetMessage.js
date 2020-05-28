@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 
 import { Icon } from '../Icon'
+import { Select } from '../Select'
 
 export default class SafetyNetMessage extends React.Component {
   originalReplaceWords = []
@@ -19,6 +20,7 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   static defaultProps = {
+    autoSelectSuggestion: true,
     initialSelections: undefined,
     isQueryRunning: false,
     message: undefined,
@@ -152,6 +154,10 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   onChangeSafetyNetSelectOption = (suggestionId, index) => {
+    if (suggestionId === 'remove-word') {
+      this.deleteSafetyNetSuggestion(index)
+    }
+
     const newSuggestion = this.suggestionLists[index].find(
       suggestion => suggestion.id === suggestionId
     )
@@ -191,60 +197,56 @@ export default class SafetyNetMessage extends React.Component {
     })
   }
 
-  getSuggestionElement = suggestionDropdownIndex => {
+  renderWordSelector = suggestionDropdownIndex => {
     const suggestion = this.state.selectedSuggestions[suggestionDropdownIndex]
     if (!suggestion || suggestion.hidden) {
       return null
     }
 
-    // Create temporary div to autosize select element
-    // to the suggestion length
-    const suggestionText = `${suggestion.text}${
-      suggestion.value_label ? ` (${suggestion.value_label})` : ''
-    }`
-    const suggestionDiv = document.createElement('DIV')
-    suggestionDiv.innerHTML = suggestionText
-    suggestionDiv.style.display = 'inline-block'
-    suggestionDiv.style.position = 'absolute'
-    suggestionDiv.style.visibility = 'hidden'
-    document.body.appendChild(suggestionDiv)
-    const selectWidth = suggestionDiv.clientWidth + 36
+    const wordList = this.suggestionLists[suggestionDropdownIndex]
+
+    const options = wordList.map((suggestionItem, i) => {
+      const option = {
+        value: suggestionItem.id,
+        label: suggestionItem.text
+      }
+
+      // The last word is the original suggestion, append "original word" to the list label
+      if (i === wordList.length - 1) {
+        option.listLabel = `${option.label} (Original term)`
+      } else {
+        option.listLabel = `${suggestionItem.text}${
+          suggestionItem.value_label ? ` (${suggestionItem.value_label})` : ''
+        }`
+      }
+
+      return option
+    })
+
+    options.push({
+      value: 'remove-word',
+      label: (
+        <span>
+          <Icon type="trash" /> Remove term
+        </span>
+      )
+    })
 
     return (
       <div
         className="chata-safety-net-selector-container"
         key={`query-element-${suggestion.id}`}
       >
-        <select
+        <Select
+          options={options}
           key={uuid.v4()}
           value={suggestion.id}
           className="chata-safetynet-select"
-          style={{ width: selectWidth }}
-          onChange={e =>
-            this.onChangeSafetyNetSelectOption(
-              e.target.value,
-              suggestionDropdownIndex
-            )
+          popupClassname="safetynet-select"
+          // style={{ width: selectWidth }}
+          onChange={value =>
+            this.onChangeSafetyNetSelectOption(value, suggestionDropdownIndex)
           }
-        >
-          {this.suggestionLists[suggestionDropdownIndex].map(suggestionItem => {
-            return (
-              <option key={suggestionItem.id} value={suggestionItem.id}>
-                {`${suggestionItem.text}${
-                  suggestionItem.value_label
-                    ? ` (${suggestionItem.value_label})`
-                    : ''
-                }`}
-              </option>
-            )
-          })}
-        </select>
-        <Icon
-          type="close-circle"
-          className="chata-safety-net-delete-button"
-          onClick={() => {
-            this.deleteSafetyNetSuggestion(suggestionDropdownIndex)
-          }}
         />
       </div>
     )
@@ -257,7 +259,7 @@ export default class SafetyNetMessage extends React.Component {
           const textElement = (
             <span key={`query-element-${index}`}>{textValue}</span>
           )
-          let suggestionElement = this.getSuggestionElement(index)
+          let suggestionElement = this.renderWordSelector(index)
 
           return (
             <span key={uuid.v4()}>

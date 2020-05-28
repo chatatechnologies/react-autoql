@@ -24,8 +24,9 @@ export default class ChataHeatmapChart extends Component {
     dataValue: PropTypes.string,
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
-    tooltipFormatter: PropTypes.func,
     onLabelChange: PropTypes.func,
+    onXAxisClick: PropTypes.func,
+    onYAxisClick: PropTypes.func,
     dataFormatting: PropTypes.shape({
       currencyCode: PropTypes.string,
       languageCode: PropTypes.string,
@@ -42,8 +43,9 @@ export default class ChataHeatmapChart extends Component {
     labelValueX: 'labelX',
     labelValueY: 'labelY',
     dataFormatting: {},
-    onLabelChange: () => {},
-    tooltipFormatter: () => {}
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
+    onLabelChange: () => {}
   }
 
   handleLabelRotation = labelArray => {
@@ -51,28 +53,27 @@ export default class ChataHeatmapChart extends Component {
     this.rotateLabels = shouldRotateLabels(
       this.squareWidth,
       labelArray,
-      this.props.columns[1],
+      this.props.columns[0],
       this.props.dataFormatting
     )
 
-    if (prevRotateLabels !== this.rotateLabels) {
+    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
   }
 
-  getXTickValues = uniqueXLabels => {
+  getXTickValues = labelArray => {
     try {
-      this.squareWidth = this.props.width / uniqueXLabels.length
-      const intervalWidth = Math.ceil(
-        (uniqueXLabels.length * 16) / this.props.width
-      )
-
+      const interval = Math.ceil(
+        (this.props.data.length * 16) / this.props.width
+      ) // we should take into account the outer padding here
       let xTickValues
+
       if (this.squareWidth < 16) {
         xTickValues = []
-        uniqueXLabels.forEach((element, index) => {
-          if (index % intervalWidth === 0) {
-            xTickValues.push(element)
+        labelArray.forEach((label, index) => {
+          if (index % interval === 0) {
+            xTickValues.push(label)
           }
         })
       }
@@ -111,7 +112,10 @@ export default class ChataHeatmapChart extends Component {
   render = () => {
     const {
       activeChartElementKey,
-      tooltipFormatter,
+      dataFormatting,
+      onXAxisClick,
+      onYAxisClick,
+      legendColumn,
       onChartClick,
       bottomMargin,
       rightMargin,
@@ -127,25 +131,21 @@ export default class ChataHeatmapChart extends Component {
       data
     } = this.props
 
-    const maxValue = max(data, d => d[dataValue])
+    const maxValue = max(data, d => max(d.cells, cell => cell.value))
 
-    const uniqueXLabels = data
-      .map(d => d[labelValueX])
-      .filter(onlyUnique)
-      .sort()
-      .reverse() // sorts dates correctly
-
-    const xScale = this.xScale
-      .domain(uniqueXLabels)
-      .range([width - rightMargin, leftMargin])
-      .paddingInner(0.01)
-
-    const uniqueYLabels = data.map(d => d[labelValueY]).filter(onlyUnique)
-    const yScale = this.yScale
+    const uniqueYLabels = data.map(d => d.label)
+    const yScale = this.xScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
       .paddingInner(0.01)
 
+    const uniqueXLabels = data[0].cells.map(cell => cell.label)
+    const xScale = this.yScale
+      .domain(uniqueXLabels)
+      .range([leftMargin, width - rightMargin])
+      .paddingInner(0.01)
+
+    this.squareWidth = xScale.bandwidth()
     const xTickValues = this.getXTickValues(uniqueXLabels)
     const yTickValues = this.getYTickValues(uniqueYLabels)
     this.handleLabelRotation(uniqueXLabels)
@@ -154,7 +154,7 @@ export default class ChataHeatmapChart extends Component {
       <g data-test="chata-heatmap-chart">
         <Axes
           scales={{ xScale, yScale }}
-          xCol={columns[1]}
+          xCol={legendColumn}
           yCol={columns[0]}
           valueCol={columns[2]}
           margins={{
@@ -167,9 +167,11 @@ export default class ChataHeatmapChart extends Component {
           height={height}
           yTicks={yTickValues}
           xTicks={xTickValues}
-          dataFormatting={this.props.dataFormatting}
+          dataFormatting={dataFormatting}
           rotateLabels={this.rotateLabels}
           chartColors={chartColors}
+          onXAxisClick={onXAxisClick}
+          onYAxisClick={onYAxisClick}
         />
         {
           <Squares
@@ -181,6 +183,8 @@ export default class ChataHeatmapChart extends Component {
               top: topMargin
             }}
             data={data}
+            columns={columns}
+            legendColumn={legendColumn}
             maxValue={maxValue}
             width={width}
             height={height}
@@ -188,7 +192,6 @@ export default class ChataHeatmapChart extends Component {
             labelValueX={labelValueX}
             labelValueY={labelValueY}
             onChartClick={onChartClick}
-            tooltipFormatter={tooltipFormatter}
             chartColors={chartColors}
             activeKey={activeChartElementKey}
           />

@@ -46,6 +46,7 @@ export default class Checkbox extends React.Component {
 
   render = () => {
     const { label, type, indeterminate, hasError, ...inputProps } = this.props
+    const nativeProps = { ...inputProps, style: undefined }
 
     const checkboxClassname = `
       chata-checkbox
@@ -71,7 +72,7 @@ export default class Checkbox extends React.Component {
           style={this.props.style}
         >
           <input
-            {...inputProps}
+            {...nativeProps}
             type="checkbox"
             className={inputClassname}
             ref={el => (this.selector = el)}
@@ -79,7 +80,7 @@ export default class Checkbox extends React.Component {
             checked={this.props.checked}
             onChange={this.onCheckedChange}
           />
-          {this.props.checked && (
+          {this.props.checked && this.props.type === 'default' && (
             <div className="chata-checkbox-tick">
               <Icon type="check" />
             </div>

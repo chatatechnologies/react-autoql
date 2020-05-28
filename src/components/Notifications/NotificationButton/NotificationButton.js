@@ -5,7 +5,7 @@ import { Icon } from '../../Icon'
 
 import {
   fetchNotificationCount,
-  resetNotificationCount
+  resetNotificationCount,
 } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
@@ -14,7 +14,7 @@ import { authenticationDefault } from '../../../props/defaults'
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
-  NOTIFICATION_POLLING_INTERVAL = 10000
+  NOTIFICATION_POLLING_INTERVAL = 60000
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
 
   // Open event source http connection here to receive SSE
@@ -25,19 +25,27 @@ export default class NotificationButton extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     overflowCount: PropTypes.number,
+    style: PropTypes.shape({}),
+    size: PropTypes.number,
+    useDot: PropTypes.bool,
+    clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
-    onErrorCallback: PropTypes.func
+    onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     overflowCount: 99,
+    useDot: false,
+    style: {},
+    // size: 17,
+    clearCountOnClick: true,
     onNewNotification: () => {},
-    onErrorCallback: () => {}
+    onErrorCallback: () => {},
   }
 
   state = {
-    count: 0
+    count: 0,
   }
 
   componentDidMount = async () => {
@@ -74,7 +82,6 @@ export default class NotificationButton extends React.Component {
       })
       .catch(error => {
         console.error(error)
-        this.props.onErrorCallback(error)
       })
   }
 
@@ -82,7 +89,6 @@ export default class NotificationButton extends React.Component {
     resetNotificationCount({ ...this.props.authentication })
       .catch(error => {
         console.error(error)
-        this.props.onErrorCallback(error)
       })
       .finally(() => {
         this.setState({ count: 0 })
@@ -97,6 +103,10 @@ export default class NotificationButton extends React.Component {
       return null
     }
 
+    if (this.props.useDot) {
+      return <div className="chata-notifications-badge-dot" />
+    }
+
     let finalCount = count
     if (count > overflowCount) {
       finalCount = `${overflowCount}+`
@@ -108,10 +118,23 @@ export default class NotificationButton extends React.Component {
   render = () => {
     return (
       <div
-        className="chata-notifications-button-container"
+        className={`chata-notifications-button-container ${
+          this.props.useDot ? 'dot' : ''
+        }
+        ${!this.state.count ? 'no-badge' : ''}`}
         data-test="notification-button"
+        style={{ ...this.props.style }}
+        onClick={() => {
+          if (this.props.clearCountOnClick) {
+            this.resetCount()
+          }
+        }}
       >
-        <Icon type="notification" className="chata-notifications-button" />
+        <Icon
+          type="notification"
+          className="chata-notifications-button"
+          // style={{ fontSize: '1em' }}
+        />
         {this.renderBadge()}
       </div>
     )

@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
@@ -10,14 +11,14 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
@@ -31,7 +32,7 @@ import {
   getDefaultDisplayType,
   isTableType,
   isChartType,
-  getSupportedDisplayTypes
+  getSupportedDisplayTypes,
 } from '../../js/Util'
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
@@ -58,12 +59,15 @@ export default class ChatMessage extends React.Component {
     displayType: PropTypes.string,
     onSuggestionClick: PropTypes.func.isRequired,
     response: PropTypes.shape({}),
-    content: PropTypes.string,
+    content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     tableOptions: PropTypes.shape({}),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
-    onSuccessAlert: PropTypes.func
+    onSuccessAlert: PropTypes.func,
+    isResizing: PropTypes.bool,
+    enableDynamicCharting: PropTypes.bool,
+    enableNotifications: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -82,62 +86,98 @@ export default class ChatMessage extends React.Component {
     type: 'text',
     text: null,
     tableOptions: undefined,
-    enableColumnVisibilityManager: true
+    enableColumnVisibilityManager: true,
+    isResizing: false,
+    enableDynamicCharting: true,
+    enableNotifications: false,
   }
 
   state = {
     displayType: getDefaultDisplayType(this.props.response),
     isSettingColumnVisibility: false,
-    activeMenu: undefined
+    activeMenu: undefined,
+  }
+
+  componentDidMount = () => {
+    setTimeout(() => {
+      this.setTableMessageHeights()
+      this.forceUpdate()
+    }, 0)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
-
-    // We must explicitly set the message height in order to avoid scroll jumping
-    // when message bubbles resize due to their content
-    this.setMessageHeightCss(prevState)
+    ReactTooltip.hide()
   }
 
-  setMessageHeightCss = prevState => {
-    if (
-      isTableType(this.state.displayType) &&
-      isTableType(prevState.displayType) &&
-      this.props.type !== 'text' &&
-      !this.TABLE_CONTAINER_HEIGHT
-    ) {
-      const messageContainer = document.getElementById(
-        `message-${this.props.id}`
-      )
-      this.TABLE_CONTAINER_HEIGHT = _get(messageContainer, 'clientHeight')
-      messageContainer.style.height = `${this.TABLE_CONTAINER_HEIGHT}px`
-    } else if (
-      this.state.displayType !== prevState.displayType &&
-      isChartType(this.state.displayType)
-    ) {
-      const messageContainer = document.getElementById(
-        `message-${this.props.id}`
-      )
-      if (messageContainer) {
-        messageContainer.style.height = 'unset'
-        this.TABLE_CONTAINER_HEIGHT = undefined
-      }
-      this.forceUpdate()
+  setTableMessageHeights = () => {
+    // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
+    this.TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
+      _get(this.responseRef, 'numberOfTableRows')
+    )
+    this.PIVOT_TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
+      _get(this.responseRef, 'numberOfPivotTableRows')
+    )
+  }
+
+  getHeightOfTableFromRows = rows => {
+    // This is hacky but it eliminates the jumpy bug
+    // 39px per row, 81px leftover for padding and headers
+    return rows * 39 + 81
+  }
+
+  isScrolledIntoView = elem => {
+    if (this.props.scrollContainerRef) {
+      const scrollTop = this.props.scrollContainerRef.getScrollTop()
+      const scrollBottom =
+        scrollTop + this.props.scrollContainerRef.getClientHeight()
+
+      const elemTop = elem.offsetTop
+      const elemBottom = elemTop + elem.offsetHeight
+
+      return elemBottom <= scrollBottom && elemTop >= scrollTop
     }
+
+    return false
+  }
+
+  scrollIntoView = () => {
+    setTimeout(() => {
+      const element = document.getElementById(`message-${this.props.id}`)
+
+      if (!this.isScrolledIntoView(element)) {
+        element.scrollIntoView({
+          block: 'end',
+          inline: 'nearest',
+          behavior: 'smooth',
+        })
+        // If it didnt work the first time, it probably needs slightly more time
+        setTimeout(() => {
+          element.scrollIntoView({
+            block: 'end',
+            inline: 'nearest',
+            behavior: 'smooth',
+          })
+        }, 300)
+      }
+    }, 0)
   }
 
   switchView = displayType => {
     this.filtering = false
-    this.setState({ displayType })
+    this.setState({ displayType }, this.scrollIntoView)
   }
 
   onTableFilter = newTableData => {
     if (this.state.displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
-        disableChartingOptions: _get(newTableData, 'length') < 2
+        disableChartingOptions: _get(newTableData, 'length') < 2,
       })
     }
+  }
+
+  updateDataConfig = config => {
+    this.setState({ dataConfig: config })
   }
 
   renderContent = (chartWidth, chartHeight) => {
@@ -172,10 +212,14 @@ export default class ChatMessage extends React.Component {
           renderTooltips={false}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
+          isResizing={this.props.isResizing}
+          enableDynamicCharting={this.props.enableDynamicCharting}
+          dataConfig={this.state.dataConfig}
+          onDataConfigChange={this.updateDataConfig}
         />
       )
     }
-    return errorMessages.GENERAL_ERROR_MESSAGE
+    return errorMessages.GENERAL
   }
 
   setFilterTags = ({ isFilteringTable } = {}) => {
@@ -235,18 +279,23 @@ export default class ChatMessage extends React.Component {
 
       if (this.filtering) {
         messageElement.style.maxHeight = 'calc(85% + 35px)'
+        messageElement.style.height = `${messageElement.offsetHeight + 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'inline-block'
         })
+
         colHeaderElements.forEach(element => {
           element.style.height = '72px !important'
         })
         this.setFilterTags({ isFilteringTable: true })
+        this.scrollIntoView()
       } else {
         messageElement.style.maxHeight = '85%'
+        messageElement.style.height = `${messageElement.offsetHeight - 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'none'
         })
+
         colHeaderElements.forEach(element => {
           element.style.height = '37px !important'
         })
@@ -304,7 +353,13 @@ export default class ChatMessage extends React.Component {
   }
 
   isTableResponse = () => {
-    return !!_get(this.responseRef, 'tableRef')
+    return (
+      this.props.isResponse &&
+      !this.isSingleValueResponse() &&
+      this.props.type !== 'text' &&
+      _get(this.props.response, 'data.data.rows.length', 0) > 0 &&
+      isTableType(this.state.displayType)
+    )
   }
 
   renderInterpretationTip = () => {
@@ -329,9 +384,9 @@ export default class ChatMessage extends React.Component {
       columns: [
         {
           name: columnDefinition.name,
-          is_visible: false
-        }
-      ]
+          is_visible: false,
+        },
+      ],
     })
       .then(() => {
         column.hide()
@@ -352,7 +407,7 @@ export default class ChatMessage extends React.Component {
     const formattedColumns = columns.map(col => {
       return {
         name: col.name,
-        is_visible: col.visible
+        is_visible: col.visible,
       }
     })
 
@@ -379,7 +434,7 @@ export default class ChatMessage extends React.Component {
 
         this.setState({
           isHideColumnsModalVisible: false,
-          isSettingColumnVisibility: false
+          isSettingColumnVisibility: false,
         })
       })
       .catch(error => {
@@ -418,16 +473,15 @@ export default class ChatMessage extends React.Component {
   renderHideColumnsModal = () => {
     const tableRef = _get(this.responseRef, 'tableRef.ref.table')
 
-    if (!tableRef) {
-      return
+    let columns = []
+    if (tableRef) {
+      columns = tableRef.getColumns().map(col => {
+        return {
+          ...col.getDefinition(),
+          visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+        }
+      })
     }
-
-    const columns = tableRef.getColumns().map(col => {
-      return {
-        ...col.getDefinition(),
-        visible: col.getVisibility() // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
-      }
-    })
 
     return (
       <ColumnVisibilityModal
@@ -447,7 +501,10 @@ export default class ChatMessage extends React.Component {
         onClose={() => {
           this.setState({ activeMenu: undefined })
         }}
-        onConfirm={() => this.reportQueryProblem()}
+        onConfirm={() => {
+          this.reportQueryProblem(this.reportProblemMessage)
+          this.reportProblemMessage = undefined
+        }}
         confirmLoading={this.state.isReportingProblem}
         title="Report a Problem"
         enableBodyScroll={true}
@@ -455,7 +512,10 @@ export default class ChatMessage extends React.Component {
         confirmText="Report"
       >
         Please tell us more about the problem you are experiencing:
-        <textarea className="report-problem-text-area" />
+        <textarea
+          className="report-problem-text-area"
+          onChange={e => (this.reportProblemMessage = e.target.value)}
+        />
       </Modal>
     )
   }
@@ -463,7 +523,11 @@ export default class ChatMessage extends React.Component {
   reportQueryProblem = reason => {
     const queryId = _get(this.props, 'response.data.data.query_id')
     this.setState({ isReportingProblem: true })
-    reportProblem({ queryId, ...this.props.authentication })
+    reportProblem({
+      message: reason,
+      queryId,
+      ...this.props.authentication,
+    })
       .then(() => {
         this.props.onSuccessAlert('Thank you for your feedback.')
         this.setState({ activeMenu: undefined, isReportingProblem: false })
@@ -556,6 +620,20 @@ export default class ChatMessage extends React.Component {
               <Icon type="copy" /> Copy generated query to clipboard
             </li>
           )}
+          {shouldShowButton.showCreateNotificationButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: undefined })
+                this.props.onNewNotificationCallback(this.props.originalQuery)
+              }}
+            >
+              <Icon
+                style={{ verticalAlign: 'middle', marginRight: '3px' }}
+                type="notification"
+              />
+              Create a notification from this query
+            </li>
+          )}
         </ul>
       </div>
     )
@@ -576,6 +654,7 @@ export default class ChatMessage extends React.Component {
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnVisibilityManager &&
         this.isTableResponse() &&
+        this.state.displayType !== 'pivot_table' &&
         !this.props.authentication.demo &&
         _get(this.props, 'response.data.data.columns.length') > 0,
       showSQLButton:
@@ -584,7 +663,11 @@ export default class ChatMessage extends React.Component {
       showDeleteButton: true,
       showMoreOptionsButton: true,
       showReportProblemButton:
-        _get(this.props, 'response.data.data.display_type') === 'data'
+        _get(this.props, 'response.data.data.display_type') === 'data',
+      showCreateNotificationButton:
+        _get(this.props, 'response.data.data.display_type') === 'data' &&
+        this.props.enableNotifications &&
+        this.props.originalQuery,
     }
 
     // If there is nothing to put in the toolbar, don't render it
@@ -681,7 +764,7 @@ export default class ChatMessage extends React.Component {
                 data-tip="More options"
                 data-for="chata-toolbar-btn-tooltip"
               >
-                <Icon type="more" />
+                <Icon type="more-vertical" />
               </button>
             </Popover>
           )}
@@ -692,7 +775,12 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    const supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+    // Use QueryOutputs supported display types if possible,
+    // they may have been updated because of certain errors
+    let supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
+    if (_get(this.responseRef, 'supportedDisplayTypes.length')) {
+      supportedDisplayTypes = _get(this.responseRef, 'supportedDisplayTypes')
+    }
 
     let displayType = this.state.displayType
     if (
@@ -723,7 +811,7 @@ export default class ChatMessage extends React.Component {
 
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 88% of chat height minus message margins
+      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 85% of chat height minus message margins
     }
 
     if (this.state.displayType === 'pie' && chartHeight > 330) {
@@ -735,8 +823,19 @@ export default class ChatMessage extends React.Component {
 
   getMessageHeight = () => {
     let messageHeight = 'unset'
-    if (isTableType(this.state.displayType) && this.props.type !== 'text') {
-      messageHeight = this.TABLE_CONTAINER_HEIGHT || 'unset'
+
+    if (
+      this.state.displayType === 'table' &&
+      this.isTableResponse() &&
+      this.TABLE_CONTAINER_HEIGHT
+    ) {
+      messageHeight = this.TABLE_CONTAINER_HEIGHT
+    } else if (
+      this.state.displayType === 'pivot_table' &&
+      this.isTableResponse() &&
+      this.PIVOT_TABLE_CONTAINER_HEIGHT
+    ) {
+      messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
     }
 
     return messageHeight
@@ -748,7 +847,7 @@ export default class ChatMessage extends React.Component {
         <Icon
           type="warning"
           className="data-limit-warning-icon"
-          data-tip="Warning: The data limit has been reached. <br />You may have data that is not displayed here."
+          data-tip="The display limit for your data has been reached. Try querying a smaller time-frame to ensure all your data is displayed."
           data-for="chart-element-tooltip"
         />
       )
@@ -766,8 +865,8 @@ export default class ChatMessage extends React.Component {
           className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
           style={{
-            maxHeight: chartHeight ? chartHeight + 30 : '85%',
-            height: messageHeight
+            maxHeight: chartHeight ? chartHeight + 40 : '85%',
+            height: messageHeight,
           }}
           data-test="chat-message"
         >
@@ -777,7 +876,7 @@ export default class ChatMessage extends React.Component {
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
             style={{
-              minWidth: this.isTableResponse() ? '300px' : undefined
+              minWidth: this.isTableResponse() ? '300px' : undefined,
             }}
           >
             {this.renderContent(chartWidth, chartHeight)}

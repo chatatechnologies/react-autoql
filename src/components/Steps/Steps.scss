@@ -5,46 +5,67 @@
 .chata-step-container {
   position: relative;
   border-left: 1px solid lightgray;
-  margin-left: 10px;
-  padding-left: 25px;
-  // padding-bottom: 20px;
+  margin-left: 12px;
+  padding-left: 20px;
+  padding-bottom: 5px;
   transition: all 0.5s ease;
 
   &.complete {
-    border-color: var(--chata-messenger-accent-color);
+    border-color: var(--chata-messenger-accent-color, #26a7df);
     .chata-step-dot {
-      border-color: var(--chata-messenger-accent-color);
-      background: var(--chata-messenger-accent-color);
+      border-color: var(--chata-messenger-accent-color, #26a7df);
+      background: var(--chata-messenger-accent-color, #26a7df);
+      color: white;
     }
+  }
+
+  &:not(.active) .chata-step-content-container {
+    pointer-events: none;
+    height: 10px;
+    opacity: 0;
+    margin: 0;
   }
 }
 
 .chata-step-dot {
   position: absolute;
   top: 0;
-  left: -8px;
-  height: 15px;
-  width: 15px;
+  left: -10px;
+  height: 20px;
+  width: 20px;
+  border-radius: 15px;
   background: white;
-  border-radius: 8px;
   border: 1px solid lightgray;
   transition: all 0.5s ease;
+
+  font-size: 10.5px;
+  color: lightgray;
+  text-align: center;
+}
+
+.chata-step-title-container {
+  cursor: pointer;
 }
 
 .chata-step-title {
   font-weight: 500;
   font-size: 15px;
   line-height: 15px;
-  // margin-bottom: 15px;
+  padding-top: 2px;
 }
 
 .chata-step-subtitle {
   font-size: 13px;
-  margin-top: 6px;
+  padding-top: 6px;
   color: rgba(0, 0, 0, 0.4);
 }
-
 .chata-step-content {
-  padding: 15px;
-  padding-bottom: 25px;
+  margin: 15px;
+}
+.chata-step-content-container {
+  transition-timing-function: ease;
+  transition-property: height, opacity, margin;
+  transition-duration: 0.5s;
+
+  opacity: 1;
 }

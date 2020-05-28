@@ -8,18 +8,20 @@
   height: 34px;
   margin: 0 3px;
   padding: 0 11px;
-  color: var(--chata-messenger-accent-color);
+  color: var(--chata-messenger-accent-color, #26a7df);
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--chata-messenger-accent-color);
+    border-color: var(--chata-messenger-accent-color, #26a7df);
   }
 }
 
 .chata-select-popup-container {
   background: var(--chata-messenger-background-color);
   padding: 10px 0;
+  max-height: 300px;
+  overflow-y: auto;
 
   .chata-select-option.active {
     background: rgba(0, 0, 0, 0.04);

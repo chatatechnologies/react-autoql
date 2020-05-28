@@ -1,25 +1,48 @@
 .chata-notifications-button-container {
   position: relative;
-  // margin-right: 10px;
+  display: inline-block;
+  font-size: inherit;
+  // line-height: 1.48em;
+  line-height: 1em;
+  width: 1em;
+
+  // &.dot {
+  //   line-height: 1.2em;
+  // }
+
+  // &.no-badge {
+  //   line-height: 1em;
+  // }
 
   .chata-notifications-button {
-    // font-size: inherit;
-    font-size: 17px;
-    vertical-align: middle;
-    line-height: inherit;
+    font-size: 1em;
+    line-height: 0;
+    vertical-align: bottom;
   }
 
   .chata-notifications-badge {
+    position: absolute;
     border: 2px solid #fff;
     background: #f5222d;
-    border-radius: 31px;
-    position: absolute;
-    top: 4px;
-    left: 6px;
-    height: 22px;
-    line-height: 18px;
+    border-radius: 6.3em;
+    line-height: 1.3em;
+    left: 0.6em;
+    top: -0.8em;
+    padding: 0.15em 0.5em;
+    text-align: center;
     color: white;
-    font-size: 9px;
-    padding: 0px 6px;
+    font-size: 0.5em;
+  }
+
+  .chata-notifications-badge-dot {
+    position: absolute;
+    display: inline-block;
+    border: 2px solid #fff;
+    background: #f5222d;
+    border-radius: 50%;
+    height: 0.6em;
+    width: 0.6em;
+    left: 0.5em;
+    top: -2px;
   }
 }

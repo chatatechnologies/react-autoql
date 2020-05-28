@@ -19,8 +19,7 @@ const defaultProps = {
       .domain(['label1', 'label2'])
       .range([0, 200])
       .paddingInner(0.1)
-  },
-  tooltipFormatter: () => {}
+  }
 }
 
 const setup = (props = {}, state = null) => {

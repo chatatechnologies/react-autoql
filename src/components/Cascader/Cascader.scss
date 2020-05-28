@@ -29,6 +29,12 @@
       }
     }
 
+    .options-title {
+      padding: 4px;
+      padding-left: 10px;
+      font-weight: 600;
+    }
+
     .cascader-back-arrow {
       position: absolute;
       cursor: pointer;
@@ -40,7 +46,6 @@
     }
 
     .option {
-      transition: background-color 0.2s ease;
       cursor: pointer;
       padding: 4px;
       display: flex;
@@ -60,7 +65,7 @@
 
       &:hover,
       &.active {
-        background-color: var(--chata-messenger-accent-color);
+        background-color: var(--chata-messenger-accent-color, #26a7df);
         color: #fff;
 
         .option-execute-icon {

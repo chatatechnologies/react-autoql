@@ -11,46 +11,79 @@ import { Icon } from '../../Icon'
 
 import './NotificationRules.scss'
 
+const getInitialStateData = initialData => {
+  let state = {}
+  const groups = []
+
+  if (!_get(initialData, 'length')) {
+    groups.push({
+      id: uuid.v4(),
+      isComplete: false,
+    })
+
+    state = { groups }
+  } else {
+    initialData.map(groupItem => {
+      groups.push({
+        initialData: groupItem.term_value,
+        // We can safely assume that if there is initial data, it is complete
+        isComplete: true,
+        type: 'group',
+        id: groupItem.id,
+      })
+    })
+
+    state = {
+      groups,
+      andOrValue: initialData[0].condition === 'OR' ? 'ANY' : 'ALL',
+    }
+  }
+  return state
+}
+
 export default class NotificationRules extends React.Component {
+  groupRefs = []
+
   static propTypes = {
-    onUpdate: PropTypes.func
+    onUpdate: PropTypes.func,
+    readOnly: PropTypes.bool,
   }
 
   static defaultProps = {
-    onUpdate: () => {}
+    onUpdate: () => {},
+    readOnly: false,
   }
 
   state = {
-    // outerId: _get(this.props.notificationData, '[0].id', uuid.v4()),
     groups: [],
-    andOrValue: 'ALL'
+    andOrValue: 'ALL',
+    ...getInitialStateData(this.props.notificationData),
   }
 
   componentDidMount = () => {
-    if (this.props.notificationData) {
-      this.props.notificationData.map(groupItem => {
-        this.addGroup({
-          initialData: groupItem.term_value,
-          isComplete: this.isComplete(groupItem),
-          id: groupItem.id
-        })
-      })
-    } else {
-      this.addGroup({})
-    }
+    this.props.onUpdate(this.isComplete(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (!isEqual(prevProps.notificationData, this.props.notificationData)) {
+      // Recalculate rules on notification data change
+      this.setState({ ...getInitialStateData(this.props.notificationData) })
+    }
     if (!isEqual(prevState, this.state)) {
       this.props.onUpdate(this.isComplete(), this.getJSON())
     }
   }
 
   isComplete = () => {
-    return (
-      this.state.groups.length &&
-      !this.state.groups.find(group => !group.isComplete)
-    )
+    const isComplete = this.state.groups.every((group, i) => {
+      const groupRef = this.groupRefs[i]
+      if (groupRef) {
+        return groupRef.isComplete()
+      }
+      return false
+    })
+
+    return isComplete
   }
 
   getJSON = () => {
@@ -60,39 +93,34 @@ export default class NotificationRules extends React.Component {
         condition = 'TERMINATOR'
       }
 
+      const groupRef = this.groupRefs[i]
+      let termValue = []
+      if (groupRef) {
+        termValue = groupRef.getJSON()
+      }
+
       return {
-        // id: this.state.outerId,
-        // id: _get(this.props.notificationData, '[0].id', uuid.v4()),
         id: group.id || uuid.v4(),
         term_type: 'group',
         condition,
-        term_value: group.groupJSON
+        term_value: termValue,
       }
     })
   }
 
   validateLogic = () => {}
 
-  addGroup = ({ initialData, isComplete = false, id }) => {
+  addGroup = ({ initialData, isComplete, id }) => {
     const newId = id || uuid.v4()
     const newGroups = [
       ...this.state.groups,
       {
-        id: newId,
+        initialData,
         isComplete,
-        initialData
-        // element: (
-        //   <Group
-        //     groupId={newId}
-        //     disableAddGroupBtn={true}
-        //     onDelete={this.onDeleteGroup}
-        //     hideTopCondition={!!hideTopCondition}
-        //     getTopCondition={this.getAndOrValue}
-        //     // onAdd={this.addGroup}
-        //   />
-        // )
-      }
+        id: newId,
+      },
     ]
+
     this.setState({ groups: newGroups })
   }
 
@@ -105,26 +133,80 @@ export default class NotificationRules extends React.Component {
     return this.state.andOrValue
   }
 
-  onGroupUpdate = (id, isComplete, groupJSON) => {
+  onGroupUpdate = (id, isComplete) => {
     const newGroups = this.state.groups.map(group => {
       if (group.id === id) {
         return {
           ...group,
           isComplete,
-          groupJSON
         }
       }
       return group
     })
 
     this.setState({ groups: newGroups })
+    this.props.onUpdate(this.isComplete(), this.getJSON())
   }
 
-  render = () => {
+  renderReadOnlyRules = () => {
+    const hasOnlyOneGroup = this.state.groups.length <= 1
+
+    let conditionText = null
+    if (this.state.andOrValue === 'ALL') {
+      conditionText = 'AND'
+    } else if (this.state.andOrValue === 'ANY') {
+      conditionText = 'OR'
+    }
+
+    return (
+      <div
+        className={`notification-rules-container ${
+          this.props.readOnly ? 'read-only' : ''
+        }`}
+      >
+        {!!this.state.groups.length &&
+          this.state.groups.map((group, i) => {
+            return (
+              <Fragment>
+                <Group
+                  ref={r => (this.groupRefs[i] = r)}
+                  key={group.id}
+                  groupId={group.id}
+                  disableAddGroupBtn={true}
+                  onDelete={this.onDeleteGroup}
+                  onUpdate={this.onGroupUpdate}
+                  hideTopCondition={i === 0}
+                  topCondition={this.state.andOrValue}
+                  onlyGroup={hasOnlyOneGroup}
+                  initialData={group.initialData}
+                  readOnly={this.props.readOnly}
+                />
+                {i !== this.state.groups.length - 1 && (
+                  <div style={{ textAlign: 'center', margin: '2px' }}>
+                    <span
+                      className="read-only-rule-term"
+                      style={{ width: '100%' }}
+                    >
+                      {conditionText}
+                    </span>
+                  </div>
+                )}
+              </Fragment>
+            )
+          })}
+      </div>
+    )
+  }
+
+  renderRules = () => {
     const hasOnlyOneGroup = this.state.groups.length <= 1
 
     return (
-      <Fragment>
+      <div
+        className={`notification-rules-container ${
+          this.props.readOnly ? 'read-only' : ''
+        }`}
+      >
         {!hasOnlyOneGroup && (
           <div
             className="notification-rule-and-or-select"
@@ -140,59 +222,46 @@ export default class NotificationRules extends React.Component {
           </div>
         )}
         <div
-          // className={`notification-rule-outer-container${
-          //   this.state.groups.length > 1 ? ' outlined' : ''
-          // }`}
           className="notification-rule-outer-container"
           data-test="notification-rules"
         >
-          {
-            //   this.state.groups.length > 1 && (
-            //   <div className="notification-outer-all-any">
-            //     ALL/ANY FOR OUTER GROUP
-            //   </div>
-            // )
-          }
-          {
-            // <div className="notification-rules-container">
-            // </div>
-          }
           {!!this.state.groups.length &&
             this.state.groups.map((group, i) => {
               return (
                 <Group
+                  ref={r => (this.groupRefs[i] = r)}
                   key={group.id}
                   groupId={group.id}
                   disableAddGroupBtn={true}
                   onDelete={this.onDeleteGroup}
                   onUpdate={this.onGroupUpdate}
                   hideTopCondition={i === 0}
-                  // getTopCondition={this.getAndOrValue}
-                  // onAdd={this.addGroup}
                   topCondition={this.state.andOrValue}
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
+                  readOnly={this.props.readOnly}
                 />
               )
             })}
-          <div className="notification-first-group-btn-container">
-            <Button
-              className="notification-rule-add-btn-outer"
-              onClick={this.addGroup}
-            >
-              <Icon type="plus" /> Add Condition Group
-            </Button>
-            {
-              //   <Button
-              //   className="notification-rule-validate-btn-outer"
-              //   onClick={this.validateLogic}
-              // >
-              //   <Icon type="plus" /> Validate
-              // </Button>
-            }
-          </div>
+          {!this.props.readOnly && (
+            <div className="notification-first-group-btn-container">
+              <Button
+                className="notification-rule-add-btn-outer"
+                onClick={this.addGroup}
+              >
+                <Icon type="plus" /> Add Condition Group
+              </Button>
+            </div>
+          )}
         </div>
-      </Fragment>
+      </div>
     )
+  }
+
+  render = () => {
+    if (this.props.readOnly) {
+      return this.renderReadOnlyRules()
+    }
+    return this.renderRules()
   }
 }

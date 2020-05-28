@@ -17,6 +17,24 @@ export default class Columns extends Component {
   }
   Y = (d, i) => this.props.scales.yScale(_get(d, `cells[${i}].value`))
 
+  getKey = (d, i) => {
+    const { labelValue } = this.props
+    return `${d[labelValue]}-${d.cells[i].label}`
+  }
+
+  onColumnClick = (d, i) => {
+    const newActiveKey = this.getKey(d, i)
+    this.props.onChartClick({
+      // row: d.origRow,
+      // column: d,
+      // cellIndex: i,
+      activeKey: newActiveKey,
+      drilldownData: d.cells[i].drilldownData
+    })
+
+    this.setState({ activeKey: newActiveKey })
+  }
+
   render = () => {
     const { scales, data, labelValue } = this.props
     const { xScale } = scales
@@ -39,20 +57,14 @@ export default class Columns extends Component {
             <rect
               key={d[labelValue]}
               className={`bar${
-                this.state.activeKey === d[labelValue] ? ' active' : ''
+                this.state.activeKey === this.getKey(d, i) ? ' active' : ''
               }`}
               x={finalBarXPosition}
               y={d.cells[i].value < 0 ? this.Y0() : this.Y(d, i)}
               height={Math.abs(this.Y(d, i) - this.Y0())}
               width={barWidth}
-              onClick={() => {
-                this.setState({ activeKey: d[labelValue] })
-                this.props.onChartClick({
-                  row: d.origRow,
-                  activeKey: d[labelValue]
-                })
-              }}
-              data-tip={this.props.tooltipFormatter(d, i)}
+              onClick={() => this.onColumnClick(d, i)}
+              data-tip={_get(d, `cells[${i}].tooltipData`)}
               data-for="chart-element-tooltip"
               style={{ fill: d.cells[i].color, fillOpacity: 0.7 }}
             />

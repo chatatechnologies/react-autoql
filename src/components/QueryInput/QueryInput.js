@@ -7,13 +7,13 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
@@ -23,7 +23,7 @@ import { Icon } from '../Icon'
 import {
   runQuery,
   runQueryOnly,
-  fetchAutocomplete
+  fetchAutocomplete,
 } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
@@ -50,7 +50,7 @@ export default class QueryInput extends React.Component {
     className: string,
     autoCompletePlacement: string,
     showLoadingDots: bool,
-    showChataIcon: bool
+    showChataIcon: bool,
   }
 
   static defaultProps = {
@@ -66,13 +66,13 @@ export default class QueryInput extends React.Component {
     showChataIcon: true,
     source: [],
     onSubmit: () => {},
-    onResponseCallback: () => {}
+    onResponseCallback: () => {},
   }
 
   state = {
     inputValue: '',
     suggestions: [],
-    isQueryRunning: false
+    isQueryRunning: false,
   }
 
   componentDidMount = () => {
@@ -103,7 +103,7 @@ export default class QueryInput extends React.Component {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
           this.setState({
-            inputValue: text.slice(0, i)
+            inputValue: text.slice(0, i),
           })
           if (i === text.length) {
             setTimeout(() => {
@@ -128,10 +128,10 @@ export default class QueryInput extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: newSource
+          source: newSource,
         })
           .then(response => {
-            this.props.onResponseCallback(response)
+            this.props.onResponseCallback(response, query)
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
@@ -144,17 +144,17 @@ export default class QueryInput extends React.Component {
           query,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
-          source: newSource
+          source: newSource,
         })
           .then(response => {
-            this.props.onResponseCallback(response)
+            this.props.onResponseCallback(response, query)
             this.setState({ isQueryRunning: false })
           })
           .catch(error => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: 'unauthenticated'
+              error: 'unauthenticated',
             }
             this.props.onResponseCallback(finalError)
             this.setState({ isQueryRunning: false })
@@ -215,12 +215,10 @@ export default class QueryInput extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...this.props.authentication
+        ...this.props.authentication,
       })
         .then(response => {
-          const body = this.props.authentication.demo
-            ? response.data
-            : _get(response, 'data.data')
+          const body = _get(response, 'data.data')
 
           const sortingArray = []
           let suggestionsMatchArray = []
@@ -237,13 +235,13 @@ export default class QueryInput extends React.Component {
           sortingArray.sort((a, b) => b.length - a.length)
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
-              name: sortingArray[idx]
+              name: sortingArray[idx],
             }
             autoCompleteArray.push(anObject)
           }
 
           this.setState({
-            suggestions: autoCompleteArray
+            suggestions: autoCompleteArray,
           })
         })
         .catch(error => {
@@ -254,7 +252,7 @@ export default class QueryInput extends React.Component {
 
   onSuggestionsClearRequested = () => {
     this.setState({
-      suggestions: []
+      suggestions: [],
     })
   }
 
@@ -311,7 +309,7 @@ export default class QueryInput extends React.Component {
               onKeyPress: this.onKeyPress,
               value: this.state.inputValue,
               onFocus: this.moveCaretAtEnd,
-              autoFocus: true
+              autoFocus: true,
             }}
           />
         ) : (

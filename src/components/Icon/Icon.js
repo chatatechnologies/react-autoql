@@ -1,17 +1,14 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 
 // Icons
 import {
   MdClose,
-  MdLightbulbOutline,
   MdError,
   MdContentCopy,
   MdFileDownload,
   MdInfoOutline,
   MdPlayCircleOutline,
-  MdEdit
-  // MdTitle,
   // MdDescription
 } from 'react-icons/md'
 import {
@@ -24,24 +21,24 @@ import {
   FiCheck,
   FiEye,
   FiTrash2,
-  FiAlertTriangle
-  // FiFileText
+  FiAlertTriangle,
+  FiMoreHorizontal,
+  FiMoreVertical,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline,
-  IoMdMore
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
   AiOutlineDashboard,
   AiOutlineFileText,
   AiOutlineBook,
-  AiOutlineBorderVerticle,
   AiFillCaretRight,
   AiFillCaretLeft,
-  AiOutlineWarning
+  AiOutlineEdit,
+  AiOutlineBulb,
 } from 'react-icons/ai'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
@@ -53,10 +50,15 @@ import {
   pivotTableIcon,
   columnChartIcon,
   barChartIcon,
+  stackedBarIcon,
+  stackedColumnIcon,
+  stackedLineIcon,
   lineChartIcon,
   pieChartIcon,
   heatmapIcon,
-  bubbleChartIcon
+  bubbleChartIcon,
+  splitViewIcon,
+  singleViewIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -64,11 +66,11 @@ import './Icon.scss'
 export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
-    size: PropTypes.number // used for the image icons ie. chata-bubbles
+    size: PropTypes.number, // used for the image icons ie. chata-bubbles
   }
 
   static defaultProps = {
-    size: undefined
+    size: undefined,
   }
 
   render = () => {
@@ -78,6 +80,10 @@ export default class Icon extends React.Component {
     switch (this.props.type) {
       case 'bar-chart': {
         icon = barChartIcon
+        break
+      }
+      case 'stacked-bar-chart': {
+        icon = stackedBarIcon
         break
       }
       case 'bubble-chart': {
@@ -136,6 +142,10 @@ export default class Icon extends React.Component {
         icon = columnChartIcon
         break
       }
+      case 'stacked-column-chart': {
+        icon = stackedColumnIcon
+        break
+      }
       case 'copy': {
         icon = <MdContentCopy />
         break
@@ -157,7 +167,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'edit': {
-        icon = <MdEdit />
+        icon = <AiOutlineEdit />
         break
       }
       case 'eye': {
@@ -181,15 +191,23 @@ export default class Icon extends React.Component {
         break
       }
       case 'light-bulb': {
-        icon = <MdLightbulbOutline />
+        icon = <AiOutlineBulb />
         break
       }
       case 'line-chart': {
         icon = lineChartIcon
         break
       }
-      case 'more': {
-        icon = <IoMdMore />
+      case 'stacked-line-chart': {
+        icon = stackedLineIcon
+        break
+      }
+      case 'more-vertical': {
+        icon = <FiMoreVertical />
+        break
+      }
+      case 'more-horizontal': {
+        icon = <FiMoreHorizontal />
         break
       }
       case 'notification': {
@@ -229,7 +247,11 @@ export default class Icon extends React.Component {
         break
       }
       case 'split-view': {
-        icon = <AiOutlineBorderVerticle />
+        icon = splitViewIcon
+        break
+      }
+      case 'single-view': {
+        icon = singleViewIcon
         break
       }
       case 'table': {
@@ -258,10 +280,10 @@ export default class Icon extends React.Component {
     }
     return (
       <span
-        // style={{ verticalAlign: 'middle', lineHeight: '100%' }}
         {...nativeProps}
         data-test="chata-icon"
         className={`chata-icon ${this.props.className}`}
+        style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
       >
         {icon}
       </span>

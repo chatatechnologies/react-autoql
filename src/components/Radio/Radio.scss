@@ -12,21 +12,21 @@
     cursor: pointer;
 
     &.active {
-      background-color: var(--chata-messenger-accent-color);
-      border-color: var(--chata-messenger-accent-color);
+      background-color: var(--chata-messenger-accent-color, #26a7df);
+      border-color: var(--chata-messenger-accent-color, #26a7df);
       color: #fff;
       z-index: 3;
     }
     &.active.outlined {
       background-color: inherit;
-      color: var(--chata-messenger-accent-color);
+      color: var(--chata-messenger-accent-color, #26a7df);
       // font-weight: 600;
       z-index: 3;
     }
 
     &:hover:not(.active) {
-      border-color: var(--chata-messenger-accent-color);
-      color: var(--chata-messenger-accent-color);
+      border-color: var(--chata-messenger-accent-color, #26a7df);
+      color: var(--chata-messenger-accent-color, #26a7df);
       z-index: 2;
     }
 

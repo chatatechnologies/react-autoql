@@ -16,19 +16,19 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { CHART_TYPES } from '../../js/Constants'
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
 
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType
+  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import './Dashboard.scss'
@@ -61,7 +61,8 @@ class Dashboard extends React.Component {
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     notExecutedText: PropTypes.string,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    enableDynamicCharting: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -75,13 +76,14 @@ class Dashboard extends React.Component {
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
-    notExecutedText: undefined
+    notExecutedText: undefined,
+    enableDynamicCharting: true,
     // onChange: () => {}
   }
 
   state = {
     isDragging: false,
-    previousTileState: this.props.tiles
+    previousTileState: this.props.tiles,
   }
 
   componentDidMount = () => {
@@ -90,6 +92,8 @@ class Dashboard extends React.Component {
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
+
+    window.addEventListener('resize', this.onWindowResize)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -123,9 +127,24 @@ class Dashboard extends React.Component {
       }
 
       this.setState({
-        justPerformedUndo: false
+        justPerformedUndo: false,
       })
     }
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('resize', this.onWindowResize)
+  }
+
+  onWindowResize = e => {
+    if (!this.state.isWindowResizing) {
+      this.setState({ isWindowResizing: true })
+    }
+
+    clearTimeout(this.windowResizeTimer)
+    this.windowResizeTimer = setTimeout(() => {
+      this.setState({ isWindowResizing: false })
+    }, 300)
   }
 
   setStyles = () => {
@@ -143,7 +162,7 @@ class Dashboard extends React.Component {
 
   setPreviousTileState = tiles => {
     this.setState({
-      previousTileState: tiles
+      previousTileState: tiles,
     })
   }
 
@@ -176,7 +195,7 @@ class Dashboard extends React.Component {
           w: tile.w,
           h: tile.h,
           x: tile.x,
-          y: tile.y
+          y: tile.y,
         }
       })
 
@@ -196,7 +215,7 @@ class Dashboard extends React.Component {
 
   onMoveStart = () => {
     this.setState({
-      isDragging: true
+      isDragging: true,
     })
   }
 
@@ -212,7 +231,7 @@ class Dashboard extends React.Component {
       // after moving a tile
       setTimeout(() => {
         this.setState({
-          isDragging: false
+          isDragging: false,
         })
       }, 100)
     } catch (error) {
@@ -225,7 +244,7 @@ class Dashboard extends React.Component {
       const tiles = this.props.tiles.map((tile, index) => {
         return {
           ...tile,
-          ...layout[index]
+          ...layout[index],
         }
       })
 
@@ -254,7 +273,7 @@ class Dashboard extends React.Component {
         y: Infinity,
         query: '',
         title: '',
-        isNewTile: true
+        isNewTile: true,
       })
 
       this.props.onChange(tiles)
@@ -268,7 +287,7 @@ class Dashboard extends React.Component {
       this.props.onChange(this.state.previousTileState)
       this.setState({
         previousTileState: this.props.tiles,
-        justPerformedUndo: true
+        justPerformedUndo: true,
       })
     } catch (error) {
       console.error(error)
@@ -297,7 +316,7 @@ class Dashboard extends React.Component {
       const tileIndex = tiles.map(item => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],
-        ...params
+        ...params,
       }
 
       this.props.onChange(tiles)
@@ -305,39 +324,69 @@ class Dashboard extends React.Component {
       console.error(error)
     }
   }
-
-  startDrilldown = (groupByObject, queryID) => {
-    this.setState({ isDrilldownRunning: true })
+  runDrilldownFromAPI = (data, queryID) => {
     runDrilldown({
       queryID,
-      groupByObject,
+      data,
       ...this.props.authentication,
-      ...this.props.autoQLConfig
+      ...this.props.autoQLConfig,
     })
       .then(drilldownResponse => {
         this.setState({
           activeDrilldownResponse: drilldownResponse,
-          isDrilldownRunning: false
+          isDrilldownRunning: false,
         })
       })
       .catch(error => {
         console.error(error)
         this.setState({
           isDrilldownRunning: false,
-          activeDrilldownResponse: undefined
+          activeDrilldownResponse: undefined,
         })
       })
   }
 
-  processDrilldown = (tileId, groupByObject, queryID, activeKey) => {
-    this.setState({
-      isDrilldownModalVisible: true,
-      activeDrilldownTile: tileId,
-      activeDrilldownResponse: null,
-      activeDrilldownChartElementKey: activeKey
-    })
+  runFilterDrilldown = (data, tileId) => {
+    const tile = this.props.tiles.find(tile => tile.i === tileId)
+    if (!tile) {
+      return
+    }
 
-    this.startDrilldown(groupByObject, queryID)
+    const drilldownResponse = filterDataForDrilldown(tile.queryResponse, data)
+
+    setTimeout(() => {
+      this.setState({
+        isDrilldownRunning: false,
+        activeDrilldownResponse: drilldownResponse,
+      })
+    }, 1500)
+  }
+
+  startDrilldown = (drilldownData, queryID, tileId) => {
+    this.setState({ isDrilldownRunning: true })
+
+    if (drilldownData.supportedByAPI) {
+      this.runDrilldownFromAPI(drilldownData.data, queryID)
+    } else {
+      this.runFilterDrilldown(drilldownData.data, tileId)
+    }
+  }
+
+  processDrilldown = (tileId, drilldownData, queryID, activeKey) => {
+    if (this.props.autoQLConfig.enableDrilldowns) {
+      if (!drilldownData || !drilldownData.data) {
+        return
+      }
+
+      this.setState({
+        isDrilldownModalVisible: true,
+        activeDrilldownTile: tileId,
+        activeDrilldownResponse: null,
+        activeDrilldownChartElementKey: activeKey,
+      })
+
+      this.startDrilldown(drilldownData, queryID, tileId)
+    }
   }
 
   shouldShowOriginalQuery = tile => {
@@ -362,14 +411,8 @@ class Dashboard extends React.Component {
         onClose={() => {
           this.setState({
             isDrilldownModalVisible: false,
-            activeDrilldownTile: null
+            activeDrilldownTile: null,
           })
-          // This gets glitchy if you do it at the same time as the state update
-          // setTimeout(
-          //   () =>
-          //     document.documentElement.style.setProperty('overflow', 'auto'),
-          //   300
-          // )
         }}
       >
         <Fragment>
@@ -381,8 +424,9 @@ class Dashboard extends React.Component {
                 queryResponse={tile.queryResponse}
                 displayType={tile.displayType}
                 dataFormatting={this.props.dataFormatting}
-                onDataClick={this.startDrilldown}
-                demo={this.props.authentication.demo}
+                onDataClick={(drilldownData, queryID) => {
+                  this.startDrilldown(drilldownData, queryID, tile.i)
+                }}
                 activeChartElementKey={
                   this.state.activeDrilldownChartElementKey
                 }
@@ -405,7 +449,6 @@ class Dashboard extends React.Component {
                 queryResponse={this.state.activeDrilldownResponse}
                 renderTooltips={false}
                 dataFormatting={this.props.dataFormatting}
-                demo={this.props.authentication.demo}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--chata-dashboard-background-color'
                 )}
@@ -424,7 +467,7 @@ class Dashboard extends React.Component {
         i: tile.key,
         maxH: 12,
         minH: 2,
-        minW: 3
+        minW: 3,
       }
     })
 
@@ -452,7 +495,8 @@ class Dashboard extends React.Component {
               cols={12}
               isDraggable={this.props.isEditing}
               isResizable={this.props.isEditing}
-              draggableHandle=".chata-dashboard-tile-inner-div"
+              // draggableHandle=".chata-dashboard-tile-inner-div"
+              draggableHandle=".chata-dashboard-tile-drag-handle"
               layout={tileLayout}
               margin={[20, 20]}
             >
@@ -473,11 +517,13 @@ class Dashboard extends React.Component {
                   queryResponse={tile.queryResponse}
                   isEditing={this.props.isEditing}
                   isDragging={this.state.isDragging}
+                  isWindowResizing={this.state.isWindowResizing}
                   setParamsForTile={this.setParamsForTile}
                   deleteTile={this.deleteTile}
                   dataFormatting={this.props.dataFormatting}
                   notExecutedText={this.props.notExecutedText}
                   processDrilldown={this.processDrilldown}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
                 />
               ))}
             </ReactGridLayout>

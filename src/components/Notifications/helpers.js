@@ -1,9 +1,5 @@
-import dayjs from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
-
+import dayjs from '../../js/dayjsWithPlugins'
 import { WEEKDAY_NAMES, MONTH_NAMES } from '../../js/Constants'
-
-dayjs.extend(advancedFormat)
 
 const getEnglishList = (strings, inclusive) => {
   const connector = inclusive ? 'and' : 'or'
@@ -162,5 +158,10 @@ export const getScheduleDescription = (
   } else if (category === 'SCHEDULE') {
     categoryDescription = 'Notify me every (description of schedule)'
   }
+
+  if (!categoryDescription || !frequencyDescription) {
+    return null
+  }
+
   return `${categoryDescription}${frequencyDescription}`
 }

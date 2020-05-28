@@ -1,8 +1,6 @@
 .chata-drawer {
-  /* font-family: sans-serif; */
   font-family: var(--chata-messenger-font-family), sans-serif;
   line-height: 22px;
-  // z-index: 10000;
 }
 
 .chata-drawer.disable-selection {
@@ -101,10 +99,6 @@
   width: calc(100% - 10px);
   font-size: 13px;
 }
-.chata-drawer .watermark svg {
-  // width: 16px;
-  // transform: translate(0, 7px);
-}
 
 .chata-drawer .chata-drawer:focus {
   outline: none;
@@ -161,16 +155,16 @@
   font-size: 22px;
 }
 .chata-drawer.drawer-right .drawer-handle {
-  left: -70px;
+  left: -70px !important;
 }
 .chata-drawer.drawer-left .drawer-handle {
-  right: -60px;
+  right: -60px !important;
 }
 .chata-drawer.drawer-top .drawer-handle {
-  bottom: -60px;
+  bottom: -60px !important;
 }
 .chata-drawer.drawer-bottom .drawer-handle {
-  top: -60px;
+  top: -60px !important;
 }
 .chata-drawer .drawer-handle.hide {
   opacity: 0;
@@ -302,6 +296,36 @@
   background: var(--chata-messenger-accent-color);
 }
 
+.data-messenger-tab-container {
+  position: absolute;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+
+  &.right {
+    height: 100vh;
+    width: 60px;
+    left: -60px;
+  }
+  &.left {
+    height: 100vh;
+    width: 60px;
+    right: -60px;
+  }
+  &.top {
+    width: 100vw;
+    height: 60px;
+    bottom: -60px;
+  }
+  &.bottom {
+    width: 100vw;
+    height: 60px;
+    top: -60px;
+  }
+}
+
 /* Shadow container (this is used to cut off the shadow so it doesnt show in the drawer) */
 .page-switcher-shadow-container {
   position: absolute;
@@ -310,23 +334,11 @@
 }
 .page-switcher-shadow-container.right {
   top: 80px;
-  left: -60px;
   width: 60px;
 }
 .page-switcher-shadow-container.left {
   top: 80px;
-  right: -60px;
   width: 60px;
-}
-.page-switcher-shadow-container.top {
-  left: calc(50% - 85px);
-  bottom: -60px;
-  height: 60px;
-}
-.page-switcher-shadow-container.bottom {
-  left: calc(50% - 85px);
-  top: -60px;
-  height: 60px;
 }
 
 /* Container holding the tabs */
@@ -334,6 +346,8 @@
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   box-sizing: border-box;
+  display: flex;
+  pointer-events: all;
 
   .tab {
     position: relative;
@@ -342,10 +356,6 @@
     background: var(--chata-messenger-accent-color);
     color: #fff;
     opacity: 1;
-
-    padding-left: 0px;
-    padding-top: 10px;
-    padding-bottom: 10px;
 
     font-size: 22px;
     text-align: center;
@@ -356,10 +366,6 @@
       width, margin-right, margin-top, margin-left, margin-bottom, z-index,
       opacity;
     transition-duration: 0.2s;
-
-    &:not(.active):hover {
-      opacity: 0.8;
-    }
 
     &.tips svg {
       height: 22px;
@@ -373,6 +379,7 @@
     margin-top: 20px;
     margin-left: 20px;
     margin-bottom: 20px;
+    flex-direction: column;
 
     .tab {
       box-shadow: inset -18px 0px 8px -10px rgba(0, 0, 0, 0.2);
@@ -386,6 +393,7 @@
     margin-right: 20px;
     margin-bottom: 20px;
     margin-left: -5px;
+    flex-direction: column;
 
     .tab {
       box-shadow: inset 18px 0px 8px -10px rgba(0, 0, 0, 0.2);
@@ -398,6 +406,8 @@
     margin-right: 20px;
     margin-left: 20px;
     margin-bottom: 20px;
+    flex-direction: row;
+    height: 40px;
 
     .tab {
       box-shadow: inset 0px 12px 8px -10px rgba(0, 0, 0, 0.2);
@@ -410,6 +420,8 @@
     margin-top: 20px;
     margin-left: 20px;
     margin-right: 20px;
+    flex-direction: row;
+    height: 40px;
 
     .tab {
       box-shadow: inset 0px -17px 8px -10px rgba(0, 0, 0, 0.2);
@@ -418,30 +430,27 @@
 }
 
 /* Individual Tabs */
-.page-switcher-container.right .tab {
-  text-align: left;
-  padding-left: 10px;
-  height: 65px;
-  width: 45px;
-  line-height: 49px;
+.page-switcher-container .tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+.data-messenger-notification-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  line-height: inherit;
+}
+.page-switcher-container.right .tab,
 .page-switcher-container.left .tab {
-  text-align: left;
-  padding-left: 13px;
   height: 65px;
-  width: 45px;
-  line-height: 52px;
 }
+
 .page-switcher-container.top .tab,
 .page-switcher-container.bottom .tab {
-  padding-top: 4px;
-  height: 45px;
   width: 65px;
-  line-height: 45px;
 }
-.page-switcher-container.top .tab {
-  vertical-align: top;
-}
+
 .page-switcher-container.bottom .tab {
   background: var(--chata-messenger-background-color);
   color: var(--chata-messenger-text-color-primary);
@@ -458,10 +467,6 @@
   background: var(--chata-messenger-accent-color);
   color: #fff;
   font-weight: bold;
-}
-.page-switcher-container.top .tab,
-.page-switcher-container.bottom .tab {
-  display: inline-block;
 }
 
 /* animations */

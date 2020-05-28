@@ -169,6 +169,91 @@ export const pieChartIcon = (
   </svg>
 )
 
+export const stackedBarIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <g>
+      <g>
+        <path
+          className="hm1"
+          d="M1.4,16C0.6,16,0,15.4,0,14.6v-3.9h4.5V16H1.4z"
+        />
+        <path
+          className="hm2"
+          d="M8,10.7l-1.1,0V16L8,16c0.9,0,1.7-0.6,1.7-1.4v-2.5C9.7,11.3,8.9,10.7,8,10.7L8,10.7z"
+        />
+        <rect x="4.5" y="10.7" className="hm0" width="2.4" height="5.3" />
+      </g>
+      <g>
+        <path className="hm1" d="M0,5.4l0-4.1C0,0.6,0.6,0,1.4,0h4.5v5.4H0z" />
+        <path
+          className="hm2"
+          d="M9.2,0v5.4h1.9c0.9,0,1.6-0.7,1.6-1.5V1.5C12.7,0.7,12,0,11.2,0L9.2,0z"
+        />
+        <rect x="5.9" y="0" className="hm0" width="3.3" height="5.4" />
+      </g>
+      <g>
+        <rect className="hm1" x="0" y="5.4" width="8" height="5.2" />
+        <path
+          className="hm2"
+          d="M11.4,5.4v5.2h3.1c0.8,0,1.4-0.6,1.4-1.4V6.9c0-0.8-0.6-1.4-1.4-1.4H11.4z"
+        />
+        <rect x="8" y="5.4" className="hm0" width="3.4" height="5.2" />
+      </g>
+    </g>
+  </svg>
+)
+
+export const stackedColumnIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <g>
+      <path className="hm1" d="M0,11.5h5.3V16H1.4C0.6,16,0,15.4,0,14.6V11.5z" />
+      <path
+        className="hm2"
+        d="M5.3,8c0-0.9-0.6-1.7-1.4-1.7H1.4C0.6,6.3,0,7.1,0,8l0,1.1h5.3V8L5.3,8z"
+      />
+      <rect x="0" y="9.1" className="hm0" width="5.3" height="2.4" />
+    </g>
+    <g>
+      <path
+        className="hm1"
+        d="M10.6,10.1H16v4.5c0,0.8-0.6,1.4-1.4,1.4h-4.1V10.1z"
+      />
+      <path
+        className="hm2"
+        d="M16,4.8c0-0.9-0.7-1.6-1.5-1.6H12c-0.8,0-1.5,0.7-1.5,1.6v1.9H16V4.8z"
+      />
+      <rect x="10.6" y="6.8" className="hm0" width="5.4" height="3.3" />
+    </g>
+    <g>
+      <rect className="hm1" x="5.3" y="8" width="5.2" height="8" />
+      <path
+        className="hm2"
+        d="M10.6,1.4C10.6,0.6,9.9,0,9.1,0H6.7C6,0,5.3,0.6,5.3,1.4v3.1h5.2V1.4z"
+      />
+      <rect x="5.3" y="4.6" className="hm0" width="5.2" height="3.4" />
+    </g>
+  </svg>
+)
+
+export const stackedLineIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <g className="st2">
+      <polygon
+        className="hm2"
+        points="12,5.5 9.1,10 4.8,0 0,5 0,8 4.4,6.1 9.1,11.8 12,9.3 16,10.7 16,9.7 		"
+      />
+    </g>
+    <polygon
+      className="hm0"
+      points="12,9.3 9.1,11.8 4.4,6.1 0,8 0,12.4 4.2,7.7 9.7,15.4 12.2,11.1 16,14.3 16,10.7 	"
+    />
+    <path
+      className="hm1"
+      d="M9.7,15.4L4.2,7.6L0,12.4v2.3c0,0.7,0.6,1.3,1.3,1.3h13.4c0.7,0,1.3-0.6,1.3-1.3v-0.4L12.2,11L9.7,15.4z"
+    />
+  </svg>
+)
+
 export const heatmapIcon = (
   <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
     <path className="hm0" d="M12,16h2.5c0.8,0,1.5-0.7,1.5-1.5v-2.4l-4,0V16z" />
@@ -207,5 +292,60 @@ export const bubbleChartIcon = (
     <circle className="chart-icon-svg-0" cx="2.6" cy="8.8" r="2.6" />
     <circle className="chart-icon-svg-0" cx="11.7" cy="4.3" r="4.3" />
     <circle className="chart-icon-svg-0" cx="1.8" cy="14.8" r="1.2" />
+  </svg>
+)
+
+export const splitViewIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <g>
+      <rect className="chart-icon-svg-0" y="7.2" width="1.6" height="1.6" />
+      <path
+        className="chart-icon-svg-0"
+        d="M1.6,14.4v-3.8H0v3.7c0,1,0.8,1.7,1.7,1.7h12.6c1,0,1.7-0.8,1.7-1.7v-3.7h-1.6v3.8H1.6z"
+      />
+      <path
+        className="chart-icon-svg-0"
+        d="M0,1.7v3.6l1.6,0V1.6l12.8,0v3.8H16V1.7c0-1-0.8-1.7-1.7-1.7H1.7C0.8,0,0,0.8,0,1.7z"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="3.6"
+        y="7.2"
+        width="1.6"
+        height="1.6"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="7.2"
+        y="7.2"
+        width="1.6"
+        height="1.6"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="10.8"
+        y="7.2"
+        width="1.6"
+        height="1.6"
+      />
+      <rect
+        className="chart-icon-svg-0"
+        x="14.4"
+        y="7.2"
+        width="1.6"
+        height="1.6"
+      />
+    </g>
+  </svg>
+)
+
+export const singleViewIcon = (
+  <svg x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16">
+    <path
+      className="chart-icon-svg-0"
+      d="M14.3,0H1.7C0.8,0,0,0.8,0,1.7v2.8v0.8v5.3v0.6v3.1c0,1,0.8,1.7,1.7,1.7h12.6c1,0,1.7-0.8,1.7-1.7v-3.4v-0.3V5.4V5V1.7
+    C16,0.7,15.2,0,14.3,0z M14.4,5.4v5.2v0.3v3.5H1.6v-3.2v-0.6V5.3V4.5V1.6h12.8V5V5.4z"
+    />
+    <rect className="chart-icon-svg-0" y="7.2" width="1.6" height="1.6" />
   </svg>
 )

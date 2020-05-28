@@ -8,13 +8,13 @@
   font-size: 14px;
   height: 100%;
   width: 100%;
-  max-height: 100vh !important; // this safetynet forces progressive rendering
   overflow: hidden;
 }
 
-// .chata-suggestions-container {
-//   margin-top: 5px;
-// }
+.chata-response-content-container.table {
+  max-height: 100vh !important; // this safetynet forces progressive rendering
+}
+
 .chata-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
@@ -105,8 +105,26 @@
   position: relative;
   margin-left: -5px;
 }
+.chata-select-popup-container.safetynet-select {
+  padding: 5px 0;
+  letter-spacing: 0.03em;
+  font-family: var(--chata-output-font-family), sans-serif;
+
+  .chata-select-option {
+    height: unset;
+    font-size: 14px;
+    line-height: 24px;
+    padding: 0 15px;
+  }
+  .chata-select-option:last-of-type {
+    color: #d84830;
+  }
+}
+.chata-safety-net-query {
+  text-align: center;
+}
 .chata-safety-net-execute-btn {
-  height: 30px;
+  height: 38px;
   background: none;
   border-radius: 4px;
   margin-top: 24px;
@@ -120,27 +138,33 @@
 .chata-safety-net-execute-btn:hover {
   border-color: #28a8e0;
 }
-.chata-execute-query-icon svg {
-  height: 15px;
-  width: 15px;
-  margin-top: 4px;
-  margin-right: 4px;
-  vertical-align: top;
-  fill: var(--chata-output-accent-color);
+.chata-execute-query-icon {
+  font-size: 23px;
+
+  svg {
+    height: 19px;
+    width: 19px;
+    margin-top: 4px;
+    margin-right: 4px;
+    vertical-align: top;
+    fill: var(--chata-output-accent-color);
+  }
 }
 .chata-safetynet-select {
   position: relative;
   display: inline-block;
-  height: 30px;
+  height: 2em;
   background: none;
   outline: none !important;
   border: none;
   letter-spacing: 0.05em;
   font-family: inherit;
-
-  /* Default style outside of drawer */
-  color: #28a8e0;
   font-size: inherit;
+  margin: 0 0.4em;
+  padding: 0;
+  border-radius: 0;
+  border-bottom: 1px dashed;
+  color: var(--chata-output-accent-color);
 }
 .chata-safety-net-delete-button {
   position: relative;
@@ -160,11 +184,16 @@
 }
 .single-value-response {
   color: inherit;
+  cursor: unset;
+  &:hover {
+    color: inherit;
+  }
 }
-.single-value-response:hover {
+.single-value-response.with-drilldown:hover {
   color: inherit;
   text-decoration: underline;
   font-weight: 600;
+  cursor: pointer;
 }
 .chata-safety-net-container {
   width: 100%;
