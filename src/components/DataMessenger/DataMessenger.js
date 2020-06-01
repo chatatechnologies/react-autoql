@@ -335,7 +335,7 @@ export default class DataMessenger extends React.Component {
               draggable="false"
             />
           ) : (
-            <Icon type="chata-bubbles" />
+            <Icon type="chata-bubbles-outlined" size={26} />
           )}
         </div>
       )
