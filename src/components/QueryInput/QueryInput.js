@@ -331,7 +331,7 @@ export default class QueryInput extends React.Component {
         )}
         {this.props.showChataIcon && (
           <div className="chat-bar-input-icon">
-            <Icon type="chata-bubbles" />
+            <Icon type="chata-bubbles-outlined" />
           </div>
         )}
         {this.props.showLoadingDots && this.state.isQueryRunning && (
