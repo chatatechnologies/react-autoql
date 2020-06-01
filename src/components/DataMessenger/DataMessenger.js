@@ -259,7 +259,7 @@ export default class DataMessenger extends React.Component {
           Use{' '}
           <span
             className="intro-qi-link"
-            onClick={() => this.setState({ activePage: 'expore-queries' })}
+            onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
             <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
             Queries
@@ -630,10 +630,10 @@ export default class DataMessenger extends React.Component {
               {this.props.enableExploreQueriesTab && (
                 <div
                   className={`tab${
-                    page === 'expore-queries' ? ' active' : ''
+                    page === 'explore-queries' ? ' active' : ''
                   } tips`}
                   onClick={() =>
-                    this.setState({ activePage: 'expore-queries' })
+                    this.setState({ activePage: 'explore-queries' })
                   }
                   data-tip="Explore Queries"
                   data-for="chata-header-tooltip"
@@ -744,7 +744,7 @@ export default class DataMessenger extends React.Component {
     if (this.state.activePage === 'data-messenger') {
       title = this.props.title
     }
-    if (this.state.activePage === 'expore-queries') {
+    if (this.state.activePage === 'explore-queries') {
       title = 'Explore Queries'
     }
     if (this.state.activePage === 'notifications') {
@@ -781,7 +781,7 @@ export default class DataMessenger extends React.Component {
       case 'data-messenger': {
         return this.renderDataMessengerContent()
       }
-      case 'expore-queries': {
+      case 'explore-queries': {
         return this.renderQueryTipsContent()
       }
       case 'notifications': {
@@ -972,7 +972,7 @@ export default class DataMessenger extends React.Component {
   }
 
   runTopicInExporeQueries = topic => {
-    this.setState({ activePage: 'expore-queries' })
+    this.setState({ activePage: 'explore-queries' })
     setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
