@@ -639,6 +639,20 @@ export const nameValueObject = (name, value) => {
   }
 }
 
+export const isAggregation = response => {
+  try {
+    let isAgg = false
+    const columns = _get(response, 'data.data.columns')
+    if (columns) {
+      isAgg = !!columns.find(col => col.groupable)
+    }
+    return isAgg
+  } catch (error) {
+    console.error(error)
+    return false
+  }
+}
+
 export const getGroupBysFromTable = (row, tableColumns) => {
   const groupableColumns = getGroupableColumns(tableColumns)
   const numGroupables = groupableColumns.length

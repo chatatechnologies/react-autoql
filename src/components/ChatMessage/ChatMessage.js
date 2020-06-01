@@ -31,8 +31,8 @@ import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
 import {
   getDefaultDisplayType,
   isTableType,
-  isChartType,
   getSupportedDisplayTypes,
+  isAggregation,
 } from '../../js/Util'
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import errorMessages from '../../js/errorMessages'
@@ -653,9 +653,9 @@ export default class ChatMessage extends React.Component {
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnVisibilityManager &&
+        !isAggregation(this.props.response) &&
         this.isTableResponse() &&
         this.state.displayType !== 'pivot_table' &&
-        !this.props.authentication.demo &&
         _get(this.props, 'response.data.data.columns.length') > 0,
       showSQLButton:
         this.props.autoQLConfig.debug &&
@@ -688,6 +688,7 @@ export default class ChatMessage extends React.Component {
           className={`chat-message-toolbar right ${
             this.state.activeMenu ? 'active' : ''
           }`}
+          data-test="chat-message-options-toolbar"
         >
           {shouldShowButton.showFilterButton && (
             <button
@@ -705,6 +706,7 @@ export default class ChatMessage extends React.Component {
               className="chata-toolbar-btn"
               data-tip="Show/hide columns"
               data-for="chata-toolbar-btn-tooltip"
+              data-test="options-toolbar-col-vis"
             >
               <Icon type="eye" />
             </button>
