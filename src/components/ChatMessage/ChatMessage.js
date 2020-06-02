@@ -653,7 +653,7 @@ export default class ChatMessage extends React.Component {
       showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
       showHideColumnsButton:
         this.props.autoQLConfig.enableColumnVisibilityManager &&
-        !isAggregation(this.props.response) &&
+        // !isAggregation(this.props.response) &&
         this.isTableResponse() &&
         this.state.displayType !== 'pivot_table' &&
         _get(this.props, 'response.data.data.columns.length') > 0,
