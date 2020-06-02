@@ -154,6 +154,11 @@
   height: 50px;
   border-radius: 50px !important;
   font-size: 22px;
+
+  .chata-bubbles-outlined svg {
+    width: 26px;
+    height: 26px;
+  }
 }
 .chata-drawer.drawer-right .drawer-handle {
   left: -70px !important;

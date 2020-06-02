@@ -282,7 +282,9 @@ export default class Icon extends React.Component {
       <span
         {...nativeProps}
         data-test="chata-icon"
-        className={`chata-icon ${this.props.className}`}
+        className={`chata-icon ${this.props.className || ''} ${
+          this.props.type
+        }`}
         style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
       >
         {icon}
