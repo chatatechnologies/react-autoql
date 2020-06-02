@@ -1,6 +1,6 @@
 {
   "name": "@chata-ai/core",
-  "version": "0.2.93",
+  "version": "0.0.0-semantically-released",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -22,7 +22,9 @@
     "storybook:build": "build-storybook -c storybook",
     "predeploy:storybook": "npm run storybook:build",
     "deploy:storybook": "gh-pages -d storybook-static",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "semantic-release": "semantic-release",
+    "cz": "git-cz"
   },
   "style": "dist/styles.css",
   "husky": {
@@ -96,6 +98,7 @@
     "babel-preset-es2015-rollup": "^3.0.0",
     "babel-preset-react": "^6.24.1",
     "check-prop-types": "^1.1.2",
+    "cz-conventional-changelog": "^3.2.0",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.15.1",
     "eslint": "^5.16.0",
@@ -125,6 +128,8 @@
     "rollup-plugin-postcss": "^2.0.3",
     "rollup-plugin-svg": "^1.0.1",
     "rollup-plugin-terser": "^5.1.2",
+    "semantic-release": "^17.0.8",
+    "semantic-release-cli": "^5.3.1",
     "watch": "^1.0.2"
   },
   "peerDependencies": {
@@ -135,5 +140,10 @@
   },
   "resolutions": {
     "**/**/fsevents": "^1.2.9"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
