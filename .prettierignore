@@ -4,6 +4,4 @@ node_modules
 
 *.html
 
-storybook-static
-
 coverage
