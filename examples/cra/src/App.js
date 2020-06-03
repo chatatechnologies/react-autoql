@@ -135,7 +135,7 @@ export default class App extends Component {
     lightAccentColor: '#26a7df',
     // lightAccentColor: '#2466AE',
     darkAccentColor: '#525252',
-    maxMessages: 10,
+    maxMessages: 12,
     isEditing: false,
     debug: true,
     test: !isProd(),
