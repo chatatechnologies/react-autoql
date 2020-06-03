@@ -29,8 +29,7 @@ workflows:
       - build-and-test:
           filters:
             branches:
-              # ignore: master
-              only: develop
+              ignore: master
   test-and-release:
     jobs:
       - test-and-release:
