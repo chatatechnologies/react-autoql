@@ -29,7 +29,7 @@ workflows:
       - build-and-test:
           filters:
             branches:
-              only: develop
+              ignore: master
   test-and-release:
     jobs:
       - test-and-release:
