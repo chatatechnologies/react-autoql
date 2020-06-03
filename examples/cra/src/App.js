@@ -158,6 +158,7 @@ export default class App extends Component {
     dashboardTiles: undefined,
     activeDashboardId: undefined,
     enableDynamicCharting: true,
+    landingPage: 'data-messenger'
   }
 
   componentDidMount = () => {
@@ -853,6 +854,10 @@ export default class App extends Component {
           'left',
           'right',
         ])}
+        {this.createRadioInputGroup('Landing Page', 'landingPage', [
+          'data-messenger',
+          'explore-queries'
+        ])}
         <h4>Currency Code</h4>
         <Input
           type="text"
@@ -1165,6 +1170,7 @@ export default class App extends Component {
           this.setState({ currentNotificationContent: null })
         }}
         activeNotificationData={this.state.activeNotificationContent}
+        landingPage={this.state.landingPage}
       />
     )
   }
