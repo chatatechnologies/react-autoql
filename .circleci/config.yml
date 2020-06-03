@@ -24,6 +24,15 @@ jobs:
             - run: npm run test
             - run: npx semantic-release
 workflows:
+  build-and-test:
+    jobs:
+      - build-and-test:
+          filters:
+            branches:
+              only: develop
   test-and-release:
     jobs:
-      - test-and-release
+      - test-and-release:
+          filters:
+            branches:
+              only: master
