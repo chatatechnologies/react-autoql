@@ -112,6 +112,8 @@
     "postcss-prefixer": "^2.1.2",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
     "react-test-renderer": "^16.11.0",
     "rimraf": "^2.7.1",
     "rollup": "^1.25.2",
@@ -127,7 +129,8 @@
     "watch": "^1.0.2"
   },
   "peerDependencies": {
-    "react": ">=16.2"
+    "react": ">=16.2",
+    "react-dom": "^16.13.1"
   },
   "engines": {
     "node": ">=8"
