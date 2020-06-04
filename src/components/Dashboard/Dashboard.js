@@ -63,6 +63,8 @@ class Dashboard extends React.Component {
     notExecutedText: PropTypes.string,
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
+    onErrorCallback: PropTypes.func,
+    onSuccessCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -78,6 +80,8 @@ class Dashboard extends React.Component {
     isEditing: false,
     notExecutedText: undefined,
     enableDynamicCharting: true,
+    onErrorCallback: () => {},
+    onSuccessCallback: () => {},
     // onChange: () => {}
   }
 
@@ -524,6 +528,8 @@ class Dashboard extends React.Component {
                   notExecutedText={this.props.notExecutedText}
                   processDrilldown={this.processDrilldown}
                   enableDynamicCharting={this.props.enableDynamicCharting}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessCallback={this.props.onErrorCallback}
                 />
               ))}
             </ReactGridLayout>
