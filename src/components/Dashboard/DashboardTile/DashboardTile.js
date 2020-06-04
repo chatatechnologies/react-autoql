@@ -12,6 +12,7 @@ import 'react-splitter-layout/lib/index.css'
 
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'
+import { OptionsToolbar } from '../../OptionsToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
@@ -61,6 +62,8 @@ export default class DashboardTile extends React.Component {
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
     queryResponse: PropTypes.shape({}),
+    onErrorCallback: PropTypes.func,
+    onSuccessCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -76,6 +79,8 @@ export default class DashboardTile extends React.Component {
     isNewTile: false,
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
+    onErrorCallback: () => {},
+    onSuccessCallback: () => {},
   }
 
   state = {
@@ -129,6 +134,21 @@ export default class DashboardTile extends React.Component {
 
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
+    }
+
+    if (
+      !_isEqual(this.props.queryResponse, prevProps.queryResponse) ||
+      !_isEqual(
+        this.props.secondQueryResponse,
+        prevProps.secondQueryResponse
+      ) ||
+      this.props.displayType !== prevProps.displayType ||
+      this.props.secondDisplayType !== prevProps.secondDisplayType
+    ) {
+      // This is necessary to update the toolbar with the newly rendered <QueryOutput />
+      setTimeout(() => {
+        this.forceUpdate()
+      }, 0)
     }
   }
 
@@ -646,12 +666,19 @@ export default class DashboardTile extends React.Component {
     isSecondHalf,
   }) => {
     const queryResponse = response || this.props.queryResponse
+    const responseRef = isSecondHalf ? this.secondResponseRef : this.responseRef
     return (
       <Fragment>
         {this.getIsSuggestionResponse(queryResponse) &&
           this.renderSuggestionPrefix()}
         <QueryOutput
-          ref={ref => (this.responseRef = ref)}
+          ref={ref => {
+            if (isSecondHalf) {
+              this.secondResponseRef = ref
+            } else {
+              this.responseRef = ref
+            }
+          }}
           themeConfig={this.props.themeConfig}
           autoQLConfig={this.props.autoQLConfig}
           displayType={displayType || this.props.displayType}
@@ -735,6 +762,19 @@ export default class DashboardTile extends React.Component {
               )}
           </div>
         )}
+        {
+          // !this.props.isEditing && (
+          <OptionsToolbar
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            themeConfig={this.props.themeConfig}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            responseRef={responseRef}
+            enableNotifications
+          />
+          // )
+        }
       </Fragment>
     )
   }

@@ -1,0 +1,16 @@
+.autoql-options-toolbar {
+  position: absolute;
+  background: inherit;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  border: 1px solid #d3d3d352;
+
+  &.vertical .chata-toolbar-btn {
+    display: block;
+  }
+
+  .chata-toolbar-btn {
+    color: var(--chata-options-toolbar-accent-color);
+  }
+}

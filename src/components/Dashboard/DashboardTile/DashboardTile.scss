@@ -57,7 +57,16 @@
   opacity: 1;
 }
 
-// Toolbar
+// Toolbars
+.autoql-options-toolbar {
+  transition: opacity 0.3s ease, color 0.3s ease;
+  visibility: hidden;
+  opacity: 0;
+  bottom: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
 .dashboard-tile-viz-toolbar-container {
   transition: opacity 0.3s ease, color 0.3s ease;
   color: var(--chata-dashboard-accent-color);
@@ -101,7 +110,8 @@
 }
 
 .chata-dashboard-tile:hover .dashboard-tile-viz-toolbar-container,
-.chata-dashboard-tile:hover .split-view-query-btn {
+.chata-dashboard-tile:hover .split-view-query-btn,
+.chata-dashboard-tile:hover .autoql-options-toolbar {
   visibility: visible;
   opacity: 1;
 }
