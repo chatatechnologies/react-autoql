@@ -1,5 +1,5 @@
 import React from 'react'
-import { shallow, mount } from 'enzyme'
+import { shallow, mount, exists } from 'enzyme'
 
 import { testAuthentication } from '../../../test/testData'
 import { autoQLConfigDefault } from '../../props/defaults'
@@ -87,7 +87,7 @@ describe('renders correctly', () => {
 })
 
 describe('column visibility manager', () => {
-  describe('does not render col visibility btn when autoqlconfig prop is false', () => {
+  test('does not render col visibility btn when autoqlconfig prop is false', () => {
     const propsWithColVisDisabled = {
       ...defaultProps,
       autoQLConfig: {
@@ -131,7 +131,7 @@ describe('column visibility manager', () => {
   //   expect(colVisibilityBtn.exists()).toBe(false)
   // })
 
-  describe('renders col visibility btn for list queries', () => {
+  test('renders col visibility btn for list queries', () => {
     const response = { ...sampleResponse }
     response.data.data.columns = [
       {
@@ -155,5 +155,24 @@ describe('column visibility manager', () => {
     })
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(true)
+  })
+})
+
+describe('trash button', () => {
+  test('do not render trash button by default', () => {
+    const wrapper = setup()
+    const trashBtn = findByTestAttr(wrapper, 'options-toolbar-trash-btn')
+    expect(trashBtn.exists()).toBe(false)
+  })
+})
+
+describe('more options button', () => {
+  test('renders by default', () => {
+    const wrapper = setup()
+    const moreOptionsBtn = findByTestAttr(
+      wrapper,
+      'chata-toolbar-more-options-btn'
+    )
+    expect(moreOptionsBtn.exists()).toBe(true)
   })
 })

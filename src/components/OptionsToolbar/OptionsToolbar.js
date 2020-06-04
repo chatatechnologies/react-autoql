@@ -18,11 +18,17 @@ import {
   getSupportedDisplayTypes,
   isAggregation,
   isTableResponse,
+  setCSSVars,
 } from '../../js/Util'
-import { autoQLConfigType, authenticationType } from '../../props/types'
+import {
+  autoQLConfigType,
+  authenticationType,
+  themeConfigType,
+} from '../../props/types'
 import {
   autoQLConfigDefault,
   authenticationDefault,
+  themeConfigDefault,
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
@@ -31,6 +37,7 @@ export default class Input extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
+    themeConfig: themeConfigType,
     responseRef: PropTypes.instanceOf(QueryOutput).isRequired,
     enableNotifications: PropTypes.bool,
     enableDeleteBtn: PropTypes.bool,
@@ -45,6 +52,7 @@ export default class Input extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
+    themeConfig: themeConfigDefault,
     enableNotifications: false,
     enableDeleteBtn: false,
     originalQuery: undefined,
@@ -67,6 +75,16 @@ export default class Input extends React.Component {
   //       ${interpretation}
   //     </div>`
   // }
+
+  componentDidMount = () => {
+    const { themeConfig } = this.props
+    const prefix = '--chata-options-toolbar-'
+    setCSSVars({ themeConfig, prefix })
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return true
+  }
 
   onTableFilter = newTableData => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
@@ -404,7 +422,7 @@ export default class Input extends React.Component {
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
     return (
-      <div className="more-options-menu">
+      <div className="more-options-menu" data-test="chata-toolbar-more-options">
         <ul className="context-menu-list">
           {shouldShowButton.showSaveAsCSVButton && (
             <li
@@ -499,7 +517,7 @@ export default class Input extends React.Component {
       showSQLButton:
         this.props.autoQLConfig.debug &&
         _get(response, 'data.data.display_type') === 'data',
-      showDeleteButton: true,
+      showDeleteButton: this.props.enableDeleteBtn,
       showMoreOptionsButton: true,
       showReportProblemButton:
         _get(response, 'data.data.display_type') === 'data',
@@ -518,9 +536,9 @@ export default class Input extends React.Component {
 
     return (
       <div
-        className={`chat-message-toolbar right ${
-          this.state.activeMenu ? 'active' : ''
-        }`}
+        className={`autoql-options-toolbar
+        ${this.state.activeMenu ? 'active' : ''}
+        ${this.props.className || ''}`}
         data-test="autoql-options-toolbar"
       >
         {shouldShowButton.showFilterButton && (
@@ -573,6 +591,7 @@ export default class Input extends React.Component {
             className="chata-toolbar-btn"
             data-tip="Delete data response"
             data-for="chata-toolbar-btn-tooltip"
+            data-test="options-toolbar-trash-btn"
           >
             <Icon type="trash" />
           </button>
@@ -598,6 +617,7 @@ export default class Input extends React.Component {
               className="chata-toolbar-btn"
               data-tip="More options"
               data-for="chata-toolbar-btn-tooltip"
+              data-test="chata-toolbar-more-options-btn"
             >
               <Icon type="more-vertical" />
             </button>
