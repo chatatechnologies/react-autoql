@@ -947,3 +947,26 @@ export const capitalizeFirstChar = string => {
 
   return capitalized
 }
+
+export const isSingleValueResponse = response => {
+  if (!response) {
+    return false
+  }
+
+  return (
+    _get(response, 'data.data.rows.length') === 1 &&
+    _get(response, 'data.data.rows[0].length') === 1
+  )
+}
+
+export const isTableResponse = (response, displayType) => {
+  if (!response) {
+    return false
+  }
+
+  return (
+    !isSingleValueResponse(response) &&
+    _get(response, 'data.data.rows.length', 0) > 0 &&
+    isTableType(displayType)
+  )
+}

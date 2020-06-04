@@ -4,8 +4,8 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
-import uuid from 'uuid'
+// import Popover from 'react-tiny-popover'
+// import uuid from 'uuid'
 
 import {
   authenticationType,
@@ -22,10 +22,11 @@ import {
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
-import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
+// import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
+import { OptionsToolbar } from '../OptionsToolbar'
 
 import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
 import {
@@ -167,14 +168,14 @@ export default class ChatMessage extends React.Component {
     this.setState({ displayType }, this.scrollIntoView)
   }
 
-  onTableFilter = newTableData => {
-    if (this.state.displayType === 'table') {
-      // this shouldn't be affected when editing a pivot table
-      this.setState({
-        disableChartingOptions: _get(newTableData, 'length') < 2,
-      })
-    }
-  }
+  // onTableFilter = newTableData => {
+  //   if (this.state.displayType === 'table') {
+  //     // this shouldn't be affected when editing a pivot table
+  //     this.setState({
+  //       disableChartingOptions: _get(newTableData, 'length') < 2,
+  //     })
+  //   }
+  // }
 
   updateDataConfig = config => {
     this.setState({ dataConfig: config })
@@ -222,44 +223,44 @@ export default class ChatMessage extends React.Component {
     return errorMessages.GENERAL
   }
 
-  setFilterTags = ({ isFilteringTable } = {}) => {
-    const tableRef =
-      this.state.displayType === 'pivot_table'
-        ? _get(this.responseRef, 'pivotTableRef.ref.table')
-        : _get(this.responseRef, 'tableRef.ref.table')
+  // setFilterTags = ({ isFilteringTable } = {}) => {
+  //   const tableRef =
+  //     this.state.displayType === 'pivot_table'
+  //       ? _get(this.responseRef, 'pivotTableRef.ref.table')
+  //       : _get(this.responseRef, 'tableRef.ref.table')
 
-    if (!tableRef) {
-      return
-    }
+  //   if (!tableRef) {
+  //     return
+  //   }
 
-    const filterValues = tableRef.getHeaderFilters()
-    if (filterValues) {
-      filterValues.forEach(filter => {
-        try {
-          if (!isFilteringTable) {
-            const filterTagEl = document.createElement('span')
-            filterTagEl.innerText = 'F'
-            filterTagEl.setAttribute('class', 'filter-tag')
+  //   const filterValues = tableRef.getHeaderFilters()
+  //   if (filterValues) {
+  //     filterValues.forEach(filter => {
+  //       try {
+  //         if (!isFilteringTable) {
+  //           const filterTagEl = document.createElement('span')
+  //           filterTagEl.innerText = 'F'
+  //           filterTagEl.setAttribute('class', 'filter-tag')
 
-            const columnTitleEl = document.querySelector(
-              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
-            )
-            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-          } else if (isFilteringTable) {
-            var filterTagEl = document.querySelector(
-              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
-            )
-            if (filterTagEl) {
-              filterTagEl.parentNode.removeChild(filterTagEl)
-            }
-          }
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-        }
-      })
-    }
-  }
+  //           const columnTitleEl = document.querySelector(
+  //             `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+  //           )
+  //           columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
+  //         } else if (isFilteringTable) {
+  //           var filterTagEl = document.querySelector(
+  //             `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+  //           )
+  //           if (filterTagEl) {
+  //             filterTagEl.parentNode.removeChild(filterTagEl)
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error(error)
+  //         this.props.onErrorCallback(error)
+  //       }
+  //     })
+  //   }
+  // }
 
   toggleTableFilter = () => {
     // We want to do this without updating the component for performance reasons
@@ -267,12 +268,12 @@ export default class ChatMessage extends React.Component {
     this.filtering = !this.filtering
 
     try {
-      const filterHeaderElements = document.querySelectorAll(
-        `#message-${this.props.id} .chata-table .tabulator-header-filter`
-      )
-      const colHeaderElements = document.querySelectorAll(
-        `#message-${this.props.id} .chata-table .tabulator-col`
-      )
+      // const filterHeaderElements = document.querySelectorAll(
+      //   `#message-${this.props.id} .chata-table .tabulator-header-filter`
+      // )
+      // const colHeaderElements = document.querySelectorAll(
+      //   `#message-${this.props.id} .chata-table .tabulator-col`
+      // )
       const messageElement = document.querySelector(
         `#message-${this.props.id}.response`
       )
@@ -280,26 +281,26 @@ export default class ChatMessage extends React.Component {
       if (this.filtering) {
         messageElement.style.maxHeight = 'calc(85% + 35px)'
         messageElement.style.height = `${messageElement.offsetHeight + 35}px`
-        filterHeaderElements.forEach(element => {
-          element.style.display = 'inline-block'
-        })
+        // filterHeaderElements.forEach(element => {
+        //   element.style.display = 'inline-block'
+        // })
 
-        colHeaderElements.forEach(element => {
-          element.style.height = '72px !important'
-        })
-        this.setFilterTags({ isFilteringTable: true })
+        // colHeaderElements.forEach(element => {
+        //   element.style.height = '72px !important'
+        // })
+        // this.setFilterTags({ isFilteringTable: true })
         this.scrollIntoView()
       } else {
         messageElement.style.maxHeight = '85%'
         messageElement.style.height = `${messageElement.offsetHeight - 35}px`
-        filterHeaderElements.forEach(element => {
-          element.style.display = 'none'
-        })
+        // filterHeaderElements.forEach(element => {
+        //   element.style.display = 'none'
+        // })
 
-        colHeaderElements.forEach(element => {
-          element.style.height = '37px !important'
-        })
-        this.setFilterTags({ isFilteringTable: false })
+        // colHeaderElements.forEach(element => {
+        //   element.style.height = '37px !important'
+        // })
+        // this.setFilterTags({ isFilteringTable: false })
       }
     } catch (error) {
       console.error(error)
@@ -307,42 +308,42 @@ export default class ChatMessage extends React.Component {
     }
   }
 
-  setTemporaryState = (key, value, duration) => {
-    this.setState({ [key]: value })
-    setTimeout(() => {
-      this.setState({ [key]: undefined })
-    }, duration)
-  }
+  // setTemporaryState = (key, value, duration) => {
+  //   this.setState({ [key]: value })
+  //   setTimeout(() => {
+  //     this.setState({ [key]: undefined })
+  //   }, duration)
+  // }
 
-  // todo: put all right toolbar functions into separate component
-  copyTableToClipboard = () => {
-    if (this.responseRef) {
-      this.responseRef.copyTableToClipboard()
-      this.props.onSuccessAlert('Successfully copied table to clipboard!')
-      this.setTemporaryState('copiedTable', true, 1000)
-      ReactTooltip.hide()
-      // changeTooltipText(
-      //   `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
-      //   'Copied!',
-      //   32,
-      //   1000
-      // )
-    } else {
-      this.setTemporaryState('copiedTable', false, 1000)
-    }
-  }
+  // // todo: put all right toolbar functions into separate component
+  // copyTableToClipboard = () => {
+  //   if (this.responseRef) {
+  //     this.responseRef.copyTableToClipboard()
+  //     this.props.onSuccessAlert('Successfully copied table to clipboard!')
+  //     this.setTemporaryState('copiedTable', true, 1000)
+  //     ReactTooltip.hide()
+  //     // changeTooltipText(
+  //     //   `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
+  //     //   'Copied!',
+  //     //   32,
+  //     //   1000
+  //     // )
+  //   } else {
+  //     this.setTemporaryState('copiedTable', false, 1000)
+  //   }
+  // }
 
-  saveTableAsCSV = () => {
-    if (this.responseRef) {
-      this.responseRef.saveTableAsCSV()
-    }
-  }
+  // saveTableAsCSV = () => {
+  //   if (this.responseRef) {
+  //     this.responseRef.saveTableAsCSV()
+  //   }
+  // }
 
-  saveChartAsPNG = () => {
-    if (this.responseRef) {
-      this.responseRef.saveChartAsPNG()
-    }
-  }
+  // saveChartAsPNG = () => {
+  //   if (this.responseRef) {
+  //     this.responseRef.saveChartAsPNG()
+  //   }
+  // }
 
   isSingleValueResponse = () => {
     const { response } = this.props
@@ -362,418 +363,445 @@ export default class ChatMessage extends React.Component {
     )
   }
 
-  renderInterpretationTip = () => {
-    const interpretation = `<span>
-        <strong>Interpretation: </strong>
-        ${_get(this.props.response, 'data.data.interpretation')}
-      </span>`
+  // renderInterpretationTip = () => {
+  //   const interpretation = `<span>
+  //       <strong>Interpretation: </strong>
+  //       ${_get(this.props.response, 'data.data.interpretation')}
+  //     </span>`
 
-    return `<div>
-        ${interpretation}
-      </div>`
-  }
+  //   return `<div>
+  //       ${interpretation}
+  //     </div>`
+  // }
 
-  hideColumnCallback = column => {
-    if (!column) {
-      return
-    }
+  // hideColumnCallback = column => {
+  //   if (!column) {
+  //     return
+  //   }
 
-    const columnDefinition = column.getDefinition()
-    setColumnVisibility({
-      ...this.props.authentication,
-      columns: [
-        {
-          name: columnDefinition.name,
-          is_visible: false,
-        },
-      ],
-    })
-      .then(() => {
-        column.hide()
-      })
-      .catch(error => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
-      })
-  }
+  //   const columnDefinition = column.getDefinition()
+  //   setColumnVisibility({
+  //     ...this.props.authentication,
+  //     columns: [
+  //       {
+  //         name: columnDefinition.name,
+  //         is_visible: false,
+  //       },
+  //     ],
+  //   })
+  //     .then(() => {
+  //       column.hide()
+  //     })
+  //     .catch(error => {
+  //       console.error(error)
+  //       this.props.onErrorCallback(error)
+  //       this.setState({ isSettingColumnVisibility: false })
+  //     })
+  // }
 
-  showHideColumnsModal = () => {
-    this.setState({ isHideColumnsModalVisible: true })
-  }
+  // showHideColumnsModal = () => {
+  //   this.setState({ isHideColumnsModalVisible: true })
+  // }
 
-  onColumnVisibilitySave = columns => {
-    const { authentication } = this.props
-    const formattedColumns = columns.map(col => {
-      return {
-        name: col.name,
-        is_visible: col.visible,
-      }
-    })
+  // onColumnVisibilitySave = columns => {
+  //   const { authentication } = this.props
+  //   const formattedColumns = columns.map(col => {
+  //     return {
+  //       name: col.name,
+  //       is_visible: col.visible,
+  //     }
+  //   })
 
-    this.setState({ isSettingColumnVisibility: true })
-    setColumnVisibility({ ...authentication, columns: formattedColumns })
-      .then(() => {
-        const tableRef = _get(this.responseRef, 'tableRef.ref.table')
-        if (tableRef) {
-          const columnComponents = tableRef.getColumns()
-          columnComponents.forEach((component, index) => {
-            const id = component.getDefinition().id
-            const isVisible = columns.find(col => col.id === id).visible
-            if (isVisible) {
-              component.show()
-            } else {
-              component.hide()
-            }
+  //   this.setState({ isSettingColumnVisibility: true })
+  //   setColumnVisibility({ ...authentication, columns: formattedColumns })
+  //     .then(() => {
+  //       const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+  //       if (tableRef) {
+  //         const columnComponents = tableRef.getColumns()
+  //         columnComponents.forEach((component, index) => {
+  //           const id = component.getDefinition().id
+  //           const isVisible = columns.find(col => col.id === id).visible
+  //           if (isVisible) {
+  //             component.show()
+  //           } else {
+  //             component.hide()
+  //           }
 
-            if (_get(this.responseRef, `tableColumns[${index}]`)) {
-              this.responseRef.tableColumns[index].visible = isVisible
-            }
-          })
-        }
+  //           if (_get(this.responseRef, `tableColumns[${index}]`)) {
+  //             this.responseRef.tableColumns[index].visible = isVisible
+  //           }
+  //         })
+  //       }
 
-        this.setState({
-          isHideColumnsModalVisible: false,
-          isSettingColumnVisibility: false,
-        })
-      })
-      .catch(error => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
-      })
-  }
+  //       this.setState({
+  //         isHideColumnsModalVisible: false,
+  //         isSettingColumnVisibility: false,
+  //       })
+  //     })
+  //     .catch(error => {
+  //       console.error(error)
+  //       this.props.onErrorCallback(error)
+  //       this.setState({ isSettingColumnVisibility: false })
+  //     })
+  // }
 
-  deleteMessage = () => {
-    ReactTooltip.hide()
-    this.props.deleteMessageCallback(this.props.id)
-  }
+  // deleteMessage = () => {
+  //   ReactTooltip.hide()
+  //   this.props.deleteMessageCallback(this.props.id)
+  // }
 
-  copySQL = () => {
-    const sql = _get(this.props.response, 'data.data.sql')
-    const el = document.createElement('textarea')
-    el.value = sql
-    document.body.appendChild(el)
-    el.select()
-    document.execCommand('copy')
-    document.body.removeChild(el)
-    this.setTemporaryState('copiedSQL', true, 1000)
-    this.props.onSuccessAlert(
-      'Successfully copied generated query to clipboard!'
-    )
-    ReactTooltip.hide()
-    // changeTooltipText(
-    //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,
-    //   'Copied!',
-    //   32,
-    //   1000
-    // )
-  }
+  // copySQL = () => {
+  //   const sql = _get(this.props.response, 'data.data.sql')
+  //   const el = document.createElement('textarea')
+  //   el.value = sql
+  //   document.body.appendChild(el)
+  //   el.select()
+  //   document.execCommand('copy')
+  //   document.body.removeChild(el)
+  //   this.setTemporaryState('copiedSQL', true, 1000)
+  //   this.props.onSuccessAlert(
+  //     'Successfully copied generated query to clipboard!'
+  //   )
+  //   ReactTooltip.hide()
+  //   // changeTooltipText(
+  //   //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,
+  //   //   'Copied!',
+  //   //   32,
+  //   //   1000
+  //   // )
+  // }
 
-  renderHideColumnsModal = () => {
-    const tableRef = _get(this.responseRef, 'tableRef.ref.table')
+  // renderHideColumnsModal = () => {
+  //   const tableRef = _get(this.responseRef, 'tableRef.ref.table')
 
-    let columns = []
-    if (tableRef) {
-      columns = tableRef.getColumns().map(col => {
-        return {
-          ...col.getDefinition(),
-          visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
-        }
-      })
-    }
+  //   let columns = []
+  //   if (tableRef) {
+  //     columns = tableRef.getColumns().map(col => {
+  //       return {
+  //         ...col.getDefinition(),
+  //         visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+  //       }
+  //     })
+  //   }
 
-    return (
-      <ColumnVisibilityModal
-        columns={columns}
-        isVisible={this.state.isHideColumnsModalVisible}
-        onClose={() => this.setState({ isHideColumnsModalVisible: false })}
-        isSettingColumns={this.state.isSettingColumnVisibility}
-        onConfirm={this.onColumnVisibilitySave}
-      />
-    )
-  }
+  //   return (
+  //     <ColumnVisibilityModal
+  //       columns={columns}
+  //       isVisible={this.state.isHideColumnsModalVisible}
+  //       onClose={() => this.setState({ isHideColumnsModalVisible: false })}
+  //       isSettingColumns={this.state.isSettingColumnVisibility}
+  //       onConfirm={this.onColumnVisibilitySave}
+  //     />
+  //   )
+  // }
 
-  renderReportProblemModal = () => {
-    return (
-      <Modal
-        isVisible={this.state.activeMenu === 'other-problem'}
-        onClose={() => {
-          this.setState({ activeMenu: undefined })
-        }}
-        onConfirm={() => {
-          this.reportQueryProblem(this.reportProblemMessage)
-          this.reportProblemMessage = undefined
-        }}
-        confirmLoading={this.state.isReportingProblem}
-        title="Report a Problem"
-        enableBodyScroll={true}
-        width={600}
-        confirmText="Report"
-      >
-        Please tell us more about the problem you are experiencing:
-        <textarea
-          className="report-problem-text-area"
-          onChange={e => (this.reportProblemMessage = e.target.value)}
-        />
-      </Modal>
-    )
-  }
+  // renderReportProblemModal = () => {
+  //   return (
+  //     <Modal
+  //       isVisible={this.state.activeMenu === 'other-problem'}
+  //       onClose={() => {
+  //         this.setState({ activeMenu: undefined })
+  //       }}
+  //       onConfirm={() => {
+  //         this.reportQueryProblem(this.reportProblemMessage)
+  //         this.reportProblemMessage = undefined
+  //       }}
+  //       confirmLoading={this.state.isReportingProblem}
+  //       title="Report a Problem"
+  //       enableBodyScroll={true}
+  //       width={600}
+  //       confirmText="Report"
+  //     >
+  //       Please tell us more about the problem you are experiencing:
+  //       <textarea
+  //         className="report-problem-text-area"
+  //         onChange={e => (this.reportProblemMessage = e.target.value)}
+  //       />
+  //     </Modal>
+  //   )
+  // }
 
-  reportQueryProblem = reason => {
-    const queryId = _get(this.props, 'response.data.data.query_id')
-    this.setState({ isReportingProblem: true })
-    reportProblem({
-      message: reason,
-      queryId,
-      ...this.props.authentication,
-    })
-      .then(() => {
-        this.props.onSuccessAlert('Thank you for your feedback.')
-        this.setState({ activeMenu: undefined, isReportingProblem: false })
-      })
-      .catch(error => {
-        this.props.onErrorCallback(error)
-        this.setState({ isReportingProblem: false })
-      })
-  }
+  // reportQueryProblem = reason => {
+  //   const queryId = _get(this.props, 'response.data.data.query_id')
+  //   this.setState({ isReportingProblem: true })
+  //   reportProblem({
+  //     message: reason,
+  //     queryId,
+  //     ...this.props.authentication,
+  //   })
+  //     .then(() => {
+  //       this.props.onSuccessAlert('Thank you for your feedback.')
+  //       this.setState({ activeMenu: undefined, isReportingProblem: false })
+  //     })
+  //     .catch(error => {
+  //       this.props.onErrorCallback(error)
+  //       this.setState({ isReportingProblem: false })
+  //     })
+  // }
 
-  renderReportProblemMenu = () => {
-    return (
-      <div className="report-problem-menu">
-        <ul className="context-menu-list">
-          <li
-            onClick={() => {
-              this.setState({ activeMenu: undefined })
-              this.reportQueryProblem('The data is incorrect')
-            }}
-          >
-            The data is incorrect
-          </li>
-          <li
-            onClick={() => {
-              this.setState({ activeMenu: undefined })
-              this.reportQueryProblem('The data is incomplete')
-            }}
-          >
-            The data is incomplete
-          </li>
-          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
-            Other...
-          </li>
-        </ul>
-      </div>
-    )
-  }
+  // renderReportProblemMenu = () => {
+  //   return (
+  //     <div className="report-problem-menu">
+  //       <ul className="context-menu-list">
+  //         <li
+  //           onClick={() => {
+  //             this.setState({ activeMenu: undefined })
+  //             this.reportQueryProblem('The data is incorrect')
+  //           }}
+  //         >
+  //           The data is incorrect
+  //         </li>
+  //         <li
+  //           onClick={() => {
+  //             this.setState({ activeMenu: undefined })
+  //             this.reportQueryProblem('The data is incomplete')
+  //           }}
+  //         >
+  //           The data is incomplete
+  //         </li>
+  //         <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
+  //           Other...
+  //         </li>
+  //       </ul>
+  //     </div>
+  //   )
+  // }
 
-  renderMoreOptionsMenu = (props, shouldShowButton) => {
-    return (
-      <div className="more-options-menu">
-        <ul className="context-menu-list">
-          {shouldShowButton.showSaveAsCSVButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.saveTableAsCSV()
-              }}
-            >
-              <Icon type="download" /> Download as CSV
-            </li>
-          )}
-          {shouldShowButton.showSaveAsPNGButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.saveChartAsPNG()
-              }}
-            >
-              <Icon type="download" /> Download as PNG
-            </li>
-          )}
-          {shouldShowButton.showCopyButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.copyTableToClipboard()
-              }}
-              // className={`chata-toolbar-btn${
-              //   this.state.copiedTable === true ? ' green' : ''
-              // }${this.state.copiedTable === false ? ' red' : ''}`}
-              // data-tip="Copy table to clipboard"
-              // data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
-            >
-              <Icon type="copy" /> Copy table to clipboard
-            </li>
-          )}
-          {shouldShowButton.showSQLButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.copySQL()
-              }}
-              // className={`chata-toolbar-btn${
-              //   this.state.copiedSQL === true ? ' green' : ''
-              // }${this.state.copiedSQL === false ? ' red' : ''}`}
-              // data-tip="Copy generated query to clipboard"
-              // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
-            >
-              <Icon type="copy" /> Copy generated query to clipboard
-            </li>
-          )}
-          {shouldShowButton.showCreateNotificationButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.props.onNewNotificationCallback(this.props.originalQuery)
-              }}
-            >
-              <Icon
-                style={{ verticalAlign: 'middle', marginRight: '3px' }}
-                type="notification"
-              />
-              Create a notification from this query
-            </li>
-          )}
-        </ul>
-      </div>
-    )
-  }
+  // renderMoreOptionsMenu = (props, shouldShowButton) => {
+  //   return (
+  //     <div className="more-options-menu">
+  //       <ul className="context-menu-list">
+  //         {shouldShowButton.showSaveAsCSVButton && (
+  //           <li
+  //             onClick={() => {
+  //               this.setState({ activeMenu: undefined })
+  //               this.saveTableAsCSV()
+  //             }}
+  //           >
+  //             <Icon type="download" /> Download as CSV
+  //           </li>
+  //         )}
+  //         {shouldShowButton.showSaveAsPNGButton && (
+  //           <li
+  //             onClick={() => {
+  //               this.setState({ activeMenu: undefined })
+  //               this.saveChartAsPNG()
+  //             }}
+  //           >
+  //             <Icon type="download" /> Download as PNG
+  //           </li>
+  //         )}
+  //         {shouldShowButton.showCopyButton && (
+  //           <li
+  //             onClick={() => {
+  //               this.setState({ activeMenu: undefined })
+  //               this.copyTableToClipboard()
+  //             }}
+  //             // className={`chata-toolbar-btn${
+  //             //   this.state.copiedTable === true ? ' green' : ''
+  //             // }${this.state.copiedTable === false ? ' red' : ''}`}
+  //             // data-tip="Copy table to clipboard"
+  //             // data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
+  //           >
+  //             <Icon type="copy" /> Copy table to clipboard
+  //           </li>
+  //         )}
+  //         {shouldShowButton.showSQLButton && (
+  //           <li
+  //             onClick={() => {
+  //               this.setState({ activeMenu: undefined })
+  //               this.copySQL()
+  //             }}
+  //             // className={`chata-toolbar-btn${
+  //             //   this.state.copiedSQL === true ? ' green' : ''
+  //             // }${this.state.copiedSQL === false ? ' red' : ''}`}
+  //             // data-tip="Copy generated query to clipboard"
+  //             // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
+  //           >
+  //             <Icon type="copy" /> Copy generated query to clipboard
+  //           </li>
+  //         )}
+  //         {shouldShowButton.showCreateNotificationButton && (
+  //           <li
+  //             onClick={() => {
+  //               this.setState({ activeMenu: undefined })
+  //               this.props.onNewNotificationCallback(this.props.originalQuery)
+  //             }}
+  //           >
+  //             <Icon
+  //               style={{ verticalAlign: 'middle', marginRight: '3px' }}
+  //               type="notification"
+  //             />
+  //             Create a notification from this query
+  //           </li>
+  //         )}
+  //       </ul>
+  //     </div>
+  //   )
+  // }
 
   renderRightToolbar = () => {
-    const shouldShowButton = {
-      showFilterButton:
-        this.isTableResponse() &&
-        _get(this.props, 'response.data.data.rows.length') > 1,
-      showCopyButton:
-        this.isTableResponse() &&
-        !!_get(this.props, 'response.data.data.rows.length'),
-      showSaveAsCSVButton:
-        this.isTableResponse() &&
-        !!_get(this.props, 'response.data.data.rows.length'),
-      showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
-      showHideColumnsButton:
-        this.props.autoQLConfig.enableColumnVisibilityManager &&
-        // !isAggregation(this.props.response) &&
-        this.isTableResponse() &&
-        this.state.displayType !== 'pivot_table' &&
-        _get(this.props, 'response.data.data.columns.length') > 0,
-      showSQLButton:
-        this.props.autoQLConfig.debug &&
-        _get(this.props, 'response.data.data.display_type') === 'data',
-      showDeleteButton: true,
-      showMoreOptionsButton: true,
-      showReportProblemButton:
-        _get(this.props, 'response.data.data.display_type') === 'data',
-      showCreateNotificationButton:
-        _get(this.props, 'response.data.data.display_type') === 'data' &&
-        this.props.enableNotifications &&
-        this.props.originalQuery,
-    }
-
-    // If there is nothing to put in the toolbar, don't render it
-    if (
-      !Object.values(shouldShowButton).find(showButton => showButton === true)
-    ) {
-      return null
-    }
-
     if (
       this.props.isResponse &&
       this.props.type !== 'text' &&
-      this.state.displayType !== 'help' &&
-      this.state.displayType !== 'suggestion'
+      this.props.displayType !== 'help' &&
+      this.props.displayType !== 'suggestion'
     ) {
       return (
-        <div
-          className={`chat-message-toolbar right ${
-            this.state.activeMenu ? 'active' : ''
-          }`}
-          data-test="chat-message-options-toolbar"
-        >
-          {shouldShowButton.showFilterButton && (
-            <button
-              onClick={this.toggleTableFilter}
-              className="chata-toolbar-btn"
-              data-tip="Filter table"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="filter" />
-            </button>
-          )}
-          {shouldShowButton.showHideColumnsButton && (
-            <button
-              onClick={this.showHideColumnsModal}
-              className="chata-toolbar-btn"
-              data-tip="Show/hide columns"
-              data-for="chata-toolbar-btn-tooltip"
-              data-test="options-toolbar-col-vis"
-            >
-              <Icon type="eye" />
-            </button>
-          )}
-          {shouldShowButton.showReportProblemButton && (
-            <Popover
-              key={uuid.v4()}
-              isOpen={this.state.activeMenu === 'report-problem'}
-              padding={8}
-              onClickOutside={() => {
-                this.setState({ activeMenu: undefined })
-              }}
-              position="bottom" // preferred position
-              content={props => this.renderReportProblemMenu(props)}
-            >
-              <button
-                onClick={() => {
-                  this.setState({ activeMenu: 'report-problem' })
-                }}
-                className="chata-toolbar-btn"
-                data-tip="Report a problem"
-                data-for="chata-toolbar-btn-tooltip"
-              >
-                <Icon type="warning-triangle" />
-              </button>
-            </Popover>
-          )}
-          {shouldShowButton.showDeleteButton && (
-            <button
-              onClick={this.deleteMessage}
-              className="chata-toolbar-btn"
-              data-tip="Delete data response"
-              data-for="chata-toolbar-btn-tooltip"
-            >
-              <Icon type="trash" />
-            </button>
-          )}
-          {shouldShowButton.showMoreOptionsButton && (
-            <Popover
-              key={uuid.v4()}
-              isOpen={this.state.activeMenu === 'more-options'}
-              position="bottom"
-              padding={8}
-              onClickOutside={() => {
-                this.setState({ activeMenu: undefined })
-              }}
-              content={props =>
-                this.renderMoreOptionsMenu(props, shouldShowButton)
-              }
-            >
-              <button
-                onClick={() => {
-                  ReactTooltip.hide()
-                  this.setState({ activeMenu: 'more-options' })
-                }}
-                className="chata-toolbar-btn"
-                data-tip="More options"
-                data-for="chata-toolbar-btn-tooltip"
-              >
-                <Icon type="more-vertical" />
-              </button>
-            </Popover>
-          )}
-        </div>
+        <OptionsToolbar
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
+          responseRef={this.responseRef}
+          enableNotifications={this.props.enableNotifications}
+          originalQuery={this.props.originalQuery}
+          onSuccessAlert={this.props.onSuccessAlert}
+          onErrorCallback={this.props.onErrorCallback}
+          onNewNotificationCallback={this.props.onNewNotificationCallback}
+          enableDeleteBtn
+          deleteMessageCallback={() =>
+            this.props.deleteMessageCallback(this.props.id)
+          }
+          onFilterCallback={this.toggleTableFilter}
+        />
       )
     }
+
     return null
+
+    //   const shouldShowButton = {
+    //     showFilterButton:
+    //       this.isTableResponse() &&
+    //       _get(this.props, 'response.data.data.rows.length') > 1,
+    //     showCopyButton:
+    //       this.isTableResponse() &&
+    //       !!_get(this.props, 'response.data.data.rows.length'),
+    //     showSaveAsCSVButton:
+    //       this.isTableResponse() &&
+    //       !!_get(this.props, 'response.data.data.rows.length'),
+    //     showSaveAsPNGButton: CHART_TYPES.includes(this.state.displayType),
+    //     showHideColumnsButton:
+    //       this.props.autoQLConfig.enableColumnVisibilityManager &&
+    //       // !isAggregation(this.props.response) &&
+    //       this.isTableResponse() &&
+    //       this.state.displayType !== 'pivot_table' &&
+    //       _get(this.props, 'response.data.data.columns.length') > 0,
+    //     showSQLButton:
+    //       this.props.autoQLConfig.debug &&
+    //       _get(this.props, 'response.data.data.display_type') === 'data',
+    //     showDeleteButton: true,
+    //     showMoreOptionsButton: true,
+    //     showReportProblemButton:
+    //       _get(this.props, 'response.data.data.display_type') === 'data',
+    //     showCreateNotificationButton:
+    //       _get(this.props, 'response.data.data.display_type') === 'data' &&
+    //       this.props.enableNotifications &&
+    //       this.props.originalQuery,
+    //   }
+
+    //   // If there is nothing to put in the toolbar, don't render it
+    //   if (
+    //     !Object.values(shouldShowButton).find(showButton => showButton === true)
+    //   ) {
+    //     return null
+    //   }
+
+    //   if (
+    //     this.props.isResponse &&
+    //     this.props.type !== 'text' &&
+    //     this.state.displayType !== 'help' &&
+    //     this.state.displayType !== 'suggestion'
+    //   ) {
+    //     return (
+    //       <div
+    //         className={`chat-message-toolbar right ${
+    //           this.state.activeMenu ? 'active' : ''
+    //         }`}
+    //         data-test="chat-message-options-toolbar"
+    //       >
+    //         {shouldShowButton.showFilterButton && (
+    //           <button
+    //             onClick={this.toggleTableFilter}
+    //             className="chata-toolbar-btn"
+    //             data-tip="Filter table"
+    //             data-for="chata-toolbar-btn-tooltip"
+    //           >
+    //             <Icon type="filter" />
+    //           </button>
+    //         )}
+    //         {shouldShowButton.showHideColumnsButton && (
+    //           <button
+    //             onClick={this.showHideColumnsModal}
+    //             className="chata-toolbar-btn"
+    //             data-tip="Show/hide columns"
+    //             data-for="chata-toolbar-btn-tooltip"
+    //             data-test="options-toolbar-col-vis"
+    //           >
+    //             <Icon type="eye" />
+    //           </button>
+    //         )}
+    //         {shouldShowButton.showReportProblemButton && (
+    //           <Popover
+    //             key={uuid.v4()}
+    //             isOpen={this.state.activeMenu === 'report-problem'}
+    //             padding={8}
+    //             onClickOutside={() => {
+    //               this.setState({ activeMenu: undefined })
+    //             }}
+    //             position="bottom" // preferred position
+    //             content={props => this.renderReportProblemMenu(props)}
+    //           >
+    //             <button
+    //               onClick={() => {
+    //                 this.setState({ activeMenu: 'report-problem' })
+    //               }}
+    //               className="chata-toolbar-btn"
+    //               data-tip="Report a problem"
+    //               data-for="chata-toolbar-btn-tooltip"
+    //             >
+    //               <Icon type="warning-triangle" />
+    //             </button>
+    //           </Popover>
+    //         )}
+    //         {shouldShowButton.showDeleteButton && (
+    //           <button
+    //             onClick={this.deleteMessage}
+    //             className="chata-toolbar-btn"
+    //             data-tip="Delete data response"
+    //             data-for="chata-toolbar-btn-tooltip"
+    //           >
+    //             <Icon type="trash" />
+    //           </button>
+    //         )}
+    //         {shouldShowButton.showMoreOptionsButton && (
+    //           <Popover
+    //             key={uuid.v4()}
+    //             isOpen={this.state.activeMenu === 'more-options'}
+    //             position="bottom"
+    //             padding={8}
+    //             onClickOutside={() => {
+    //               this.setState({ activeMenu: undefined })
+    //             }}
+    //             content={props =>
+    //               this.renderMoreOptionsMenu(props, shouldShowButton)
+    //             }
+    //           >
+    //             <button
+    //               onClick={() => {
+    //                 ReactTooltip.hide()
+    //                 this.setState({ activeMenu: 'more-options' })
+    //               }}
+    //               className="chata-toolbar-btn"
+    //               data-tip="More options"
+    //               data-for="chata-toolbar-btn-tooltip"
+    //             >
+    //               <Icon type="more-vertical" />
+    //             </button>
+    //           </Popover>
+    //         )}
+    //       </div>
+    //     )
+    //   }
+    //   return null
   }
 
   renderLeftToolbar = () => {
@@ -861,35 +889,37 @@ export default class ChatMessage extends React.Component {
     const messageHeight = this.getMessageHeight()
 
     return (
-      <Fragment>
-        <div
-          id={`message-${this.props.id}`}
-          className={`chat-single-message-container
+      <div
+        id={`message-${this.props.id}`}
+        className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
-          style={{
-            maxHeight: chartHeight ? chartHeight + 40 : '85%',
-            height: messageHeight,
-          }}
-          data-test="chat-message"
-        >
-          <div
-            className={`chat-message-bubble
+        style={{
+          maxHeight: chartHeight ? chartHeight + 40 : '85%',
+          height: messageHeight,
+        }}
+        data-test="chat-message"
+      >
+        <div
+          className={`chat-message-bubble
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
-            style={{
-              minWidth: this.isTableResponse() ? '300px' : undefined,
-            }}
-          >
-            {this.renderContent(chartWidth, chartHeight)}
-            {this.renderRightToolbar()}
-            {this.renderLeftToolbar()}
-            {this.renderHideColumnsModal()}
-            {this.renderReportProblemModal()}
-            {this.renderDataLimitWarning()}
-          </div>
+          style={{
+            minWidth: this.isTableResponse() ? '300px' : undefined,
+          }}
+        >
+          {this.renderContent(chartWidth, chartHeight)}
+          {this.renderRightToolbar()}
+          {this.renderLeftToolbar()}
+          {
+            // this.renderHideColumnsModal()
+          }
+          {
+            // this.renderReportProblemModal()
+          }
+          {this.renderDataLimitWarning()}
         </div>
-      </Fragment>
+      </div>
     )
   }
 }
