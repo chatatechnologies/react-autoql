@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "watch 'npm run build' src",
+    "dev": "env NODE_ENV=dev watch 'npm run build' src",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -22,7 +22,7 @@
     "semantic-release": "semantic-release",
     "cz": "git-cz"
   },
-  "style": "dist/styles.css",
+  "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"

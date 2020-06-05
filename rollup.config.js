@@ -10,11 +10,11 @@ import pkg from './package.json'
 const dist = 'dist'
 const bundle = 'autoql'
 
-const production = !process.env.ROLLUP_WATCH
+const production = process.env.NODE_ENV !== 'dev'
 
 const external = [
   ...Object.keys(pkg.peerDependencies || {}),
-  ...Object.keys(pkg.dependencies || {})
+  ...Object.keys(pkg.dependencies || {}),
 ]
 
 const makeExternalPredicate = externalArr => {
@@ -33,16 +33,16 @@ const common = {
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
       extract: true,
-      minimize: false
+      minimize: false,
     }),
     svg(),
     babel({
       plugins: ['external-helpers'],
-      exclude: 'node_modules/**'
+      exclude: 'node_modules/**',
     }),
-    production && terser()
+    production && terser(),
   ],
-  external: makeExternalPredicate(external)
+  external: makeExternalPredicate(external),
 }
 
 const outputs = [
@@ -60,28 +60,13 @@ const outputs = [
   //     babel({
   //       plugins: ['external-helpers'],
   //       exclude: 'node_modules/**'
-  //     }),
-  //     production && terser()
+  //     })
   //   ]
   // },
   {
     file: `${dist}/${bundle}.esm.js`,
-    // use ES modules to support tree-shaking
-    format: 'esm',
-    plugins: [
-      resolve(),
-      postcss({
-        plugins: [autoprefixer],
-        extensions: ['.css', '.scss']
-      }),
-      svg(),
-      babel({
-        plugins: ['external-helpers'],
-        exclude: 'node_modules/**'
-      }),
-      production && terser()
-    ]
-  }
+    format: 'esm', // use ES modules to support tree-shaking
+  },
   // {
   //   name: 'ChataAI',
   //   file: `${dist}/${bundle}.umd.js`,
@@ -124,5 +109,5 @@ const outputs = [
 
 export default outputs.map(output => ({
   ...common,
-  output
+  output,
 }))
