@@ -762,19 +762,15 @@ export default class DashboardTile extends React.Component {
               )}
           </div>
         )}
-        {
-          // !this.props.isEditing && (
-          <OptionsToolbar
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
-            onErrorCallback={this.props.onErrorCallback}
-            onSuccessAlert={this.props.onSuccessCallback}
-            responseRef={responseRef}
-            enableNotifications
-          />
-          // )
-        }
+        <OptionsToolbar
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
+          themeConfig={this.props.themeConfig}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessCallback}
+          responseRef={responseRef}
+          enableNotifications
+        />
       </Fragment>
     )
   }

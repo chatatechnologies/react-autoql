@@ -65,17 +65,6 @@ export default class Input extends React.Component {
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
 
-  // renderInterpretationTip = () => {
-  //   const interpretation = `<span>
-  //       <strong>Interpretation: </strong>
-  //       ${_get(this.props.response, 'data.data.interpretation')}
-  //     </span>`
-
-  //   return `<div>
-  //       ${interpretation}
-  //     </div>`
-  // }
-
   componentDidMount = () => {
     const { themeConfig } = this.props
     const prefix = '--chata-options-toolbar-'
@@ -150,13 +139,8 @@ export default class Input extends React.Component {
       const colHeaderElements = document.querySelectorAll(
         `#chata-response-content-container-${queryOutputId} .chata-table .tabulator-col`
       )
-      // const messageElement = document.querySelector(
-      //   `#message-${this.props.id}.response`
-      // )
 
       if (this.filtering) {
-        // messageElement.style.maxHeight = 'calc(85% + 35px)'
-        // messageElement.style.height = `${messageElement.offsetHeight + 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'inline-block'
         })
@@ -165,10 +149,7 @@ export default class Input extends React.Component {
           element.style.height = '72px !important'
         })
         this.setFilterTags({ isFilteringTable: true })
-        // this.scrollIntoView()
       } else {
-        // messageElement.style.maxHeight = '85%'
-        // messageElement.style.height = `${messageElement.offsetHeight - 35}px`
         filterHeaderElements.forEach(element => {
           element.style.display = 'none'
         })
@@ -191,19 +172,12 @@ export default class Input extends React.Component {
     }, duration)
   }
 
-  // todo: put all right toolbar functions into separate component
   copyTableToClipboard = () => {
     if (this.props.responseRef) {
       this.props.responseRef.copyTableToClipboard()
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
       ReactTooltip.hide()
-      // changeTooltipText(
-      //   `chata-toolbar-btn-copy-tooltip-${this.props.id}`,
-      //   'Copied!',
-      //   32,
-      //   1000
-      // )
     } else {
       this.setTemporaryState('copiedTable', false, 1000)
     }
@@ -242,12 +216,6 @@ export default class Input extends React.Component {
       'Successfully copied generated query to clipboard!'
     )
     ReactTooltip.hide()
-    // changeTooltipText(
-    //   `chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`,
-    //   'Copied!',
-    //   32,
-    //   1000
-    // )
   }
 
   showHideColumnsModal = () => {
@@ -450,11 +418,6 @@ export default class Input extends React.Component {
                 this.setState({ activeMenu: undefined })
                 this.copyTableToClipboard()
               }}
-              // className={`chata-toolbar-btn${
-              //   this.state.copiedTable === true ? ' green' : ''
-              // }${this.state.copiedTable === false ? ' red' : ''}`}
-              // data-tip="Copy table to clipboard"
-              // data-for={`chata-toolbar-btn-copy-tooltip-${this.props.id}`}
             >
               <Icon type="copy" /> Copy table to clipboard
             </li>
@@ -465,11 +428,6 @@ export default class Input extends React.Component {
                 this.setState({ activeMenu: undefined })
                 this.copySQL()
               }}
-              // className={`chata-toolbar-btn${
-              //   this.state.copiedSQL === true ? ' green' : ''
-              // }${this.state.copiedSQL === false ? ' red' : ''}`}
-              // data-tip="Copy generated query to clipboard"
-              // data-for={`chata-toolbar-btn-copy-sql-tooltip-${this.props.id}`}
             >
               <Icon type="copy" /> Copy generated query to clipboard
             </li>
