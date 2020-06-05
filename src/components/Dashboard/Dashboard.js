@@ -82,7 +82,7 @@ class Dashboard extends React.Component {
     enableDynamicCharting: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
-    // onChange: () => {}
+    onChange: () => {},
   }
 
   state = {
