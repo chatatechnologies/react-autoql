@@ -151,7 +151,6 @@
     }
   },
   "cacheDirectories": [
-    "node_modules",
-    "example/node_modules"
+    "node_modules"
   ]
 }
