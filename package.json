@@ -150,7 +150,5 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "cacheDirectories": [
-    "node_modules"
-  ]
+  "cacheDirectories": []
 }
