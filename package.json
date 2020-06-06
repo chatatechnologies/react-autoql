@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "start": "cd examples/cra && npm start",
+    "start": "cd example && npm start",
     "dev": "env NODE_ENV=dev watch 'npm run build' src",
     "test": "jest",
     "test:watch": "jest --watch",
