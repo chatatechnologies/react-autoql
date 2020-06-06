@@ -1,0 +1,2 @@
+example=https://github.com/mars/create-react-app-buildpack.git
+https://github.com/heroku/heroku-buildpack-nodejs.git
