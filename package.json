@@ -9,14 +9,14 @@
     "dist"
   ],
   "scripts": {
-    "start": "cd examples/cra && npm install && npm start",
+    "start": "cd examples/cra && npm start",
     "dev": "env NODE_ENV=dev watch 'npm run build' src",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:staged": "jest --findRelatedTests",
     "prebuild": "rimraf dist",
-    "build": "rollup -c",
+    "build": "rollup -c && cd examples/cra && npm install",
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "prepublish": "npm run build",
