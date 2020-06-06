@@ -16,7 +16,7 @@
     "test:coverage": "jest --coverage",
     "test:staged": "jest --findRelatedTests",
     "prebuild": "rimraf dist",
-    "build": "rollup -c && cd examples/cra && npm install",
+    "build": "rollup -c",
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "prepublish": "npm run build",
