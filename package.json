@@ -149,5 +149,9 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
-  }
+  },
+  "cacheDirectories": [
+    "node_modules",
+    "example/node_modules"
+  ]
 }
