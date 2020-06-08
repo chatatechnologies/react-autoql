@@ -2,10 +2,10 @@
   "name": "@chata-ai/core",
   "version": "0.0.0-semantically-released",
   "description": "React Widget Library",
-  "homepage": "./example",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
   "sideEffects": false,
+  "homepage": "./example",
   "files": [
     "dist"
   ],
