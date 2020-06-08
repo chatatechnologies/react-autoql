@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "start": "cd example && npm start",
-    "dev": "env NODE_ENV=dev watch 'npm pack' src",
+    "dev": "env NODE_ENV=dev watch 'npm run build' src",
+    "packexample": "cd example && npm pack ..",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -26,7 +27,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged && npm pack"
+      "pre-commit": "lint-staged && npm run packexample"
     }
   },
   "lint-staged": {
