@@ -80,7 +80,8 @@ so we dont have to redraw the whole table */
 .chat-single-message-container.response.filtering-table {
   max-height: calc(85% + 35px) !important;
 }
-.chat-message-toolbar {
+.chat-message-toolbar,
+.chat-message-toolbar.autoql-options-toolbar {
   display: none;
   position: absolute;
   background: inherit;

@@ -112,6 +112,7 @@ export default class QueryOutput extends React.Component {
     isResizing: bool,
     enableDynamicCharting: bool,
     onDataConfigChange: func,
+    onDisplayTypeUpdate: func,
   }
 
   static defaultProps = {
@@ -147,6 +148,7 @@ export default class QueryOutput extends React.Component {
     onTableFilterCallback: () => {},
     onDataConfigChange: () => {},
     onErrorCallback: () => {},
+    onDisplayTypeUpdate: () => {},
   }
 
   state = {
@@ -184,6 +186,8 @@ export default class QueryOutput extends React.Component {
           ? this.props.displayType
           : getDefaultDisplayType(this.props.queryResponse),
       })
+
+      this.props.onDisplayTypeUpdate()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -219,6 +223,7 @@ export default class QueryOutput extends React.Component {
 
     // Initial display type has been determined, set the table and chart data now
     if (!prevState.displayType && this.state.displayType) {
+      this.props.onDisplayTypeUpdate()
       this.setResponseData(this.state.displayType)
       this.forceUpdate()
       ReactTooltip.hide()
@@ -1607,23 +1612,9 @@ export default class QueryOutput extends React.Component {
       `chata-response-content-container-${this.COMPONENT_KEY}`
     )
 
-    // const chartContainer = document.querySelector(
-    //   `#chata-response-content-container-${this.COMPONENT_KEY} .chata-chart-container`
-    // )
-
     let height = 0
     let width = 0
 
-    // if (chartContainer) {
-    //   height =
-    //     chartContainer.clientHeight -
-    //     getPadding(chartContainer).top -
-    //     getPadding(chartContainer).bottom
-    //   width =
-    //     chartContainer.clientWidth -
-    //     getPadding(chartContainer).left -
-    //     getPadding(chartContainer).right
-    // } else
     if (responseContainer) {
       height =
         responseContainer.clientHeight -
@@ -1652,21 +1643,10 @@ export default class QueryOutput extends React.Component {
           className={`chata-response-content-container ${
             isTableType(this.state.displayType) ? 'table' : ''
           }`}
-          // style={{ ...style }}
         >
           {this.renderResponse(width, height)}
         </div>
         {this.renderContextMenu()}
-        {
-          //   this.props.renderTooltips && (
-          //   <ReactTooltip
-          //     className="chata-chart-tooltip"
-          //     id="chart-element-tooltip"
-          //     effect="solid"
-          //     html
-          //   />
-          // )
-        }
       </Fragment>
     )
   }
