@@ -714,10 +714,17 @@ export default class DashboardTile extends React.Component {
           onQueryValidationSelectOption={
             onQueryValidationSelectOption || this.onQueryValidationSelectOption
           }
+          onDisplayTypeUpdate={() => {
+            // This is necessary to update the toolbar with the newly rendered <QueryOutput />
+            setTimeout(() => {
+              this.forceUpdate()
+            }, 0)
+          }}
         />
         {this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
             <VizToolbar
+              themeConfig={this.props.themeConfig}
               displayType={displayType}
               onDisplayTypeChange={onDisplayTypeChange}
               supportedDisplayTypes={
@@ -762,15 +769,17 @@ export default class DashboardTile extends React.Component {
               )}
           </div>
         )}
-        <OptionsToolbar
-          authentication={this.props.authentication}
-          autoQLConfig={this.props.autoQLConfig}
-          themeConfig={this.props.themeConfig}
-          onErrorCallback={this.props.onErrorCallback}
-          onSuccessAlert={this.props.onSuccessCallback}
-          responseRef={responseRef}
-          enableNotifications
-        />
+        {responseRef && (
+          <OptionsToolbar
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            themeConfig={this.props.themeConfig}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            responseRef={responseRef}
+            enableNotifications
+          />
+        )}
       </Fragment>
     )
   }

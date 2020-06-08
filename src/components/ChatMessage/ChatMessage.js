@@ -301,6 +301,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.isResponse && this.props.type !== 'text') {
       return (
         <VizToolbar
+          themeConfig={this.props.themeConfig}
           className="chat-message-toolbar left"
           supportedDisplayTypes={supportedDisplayTypes || []}
           displayType={displayType}

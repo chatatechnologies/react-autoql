@@ -11,6 +11,9 @@
 # production
 /build
 
+# since package.json changes based on the environment we want to disable this
+package-lock.json 
+
 # misc
 .DS_Store
 .env.local
