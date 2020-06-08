@@ -1,3 +1,4 @@
 example/public/
 example/src/
 example/package.json
+example/environments.json
