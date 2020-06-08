@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "start": "cd example && npm start",
+    "postinstall": "cd example && npm install",
     "dev": "env NODE_ENV=dev watch 'npm run build' src",
     "test": "jest",
     "test:watch": "jest --watch",
