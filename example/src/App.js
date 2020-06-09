@@ -838,13 +838,13 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Darken Background Behind Data Messenger',
-          'showMask',
+          'Shift Screen on Open/Close',
+          'shiftScreen',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Shift Screen on Open/Close',
-          'shiftScreen',
+          'Darken Background Behind Data Messenger',
+          'showMask',
           [true, false]
         )}
         {this.createRadioInputGroup('Theme', 'theme', ['light', 'dark'])}
