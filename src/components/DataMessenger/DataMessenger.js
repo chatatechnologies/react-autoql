@@ -77,7 +77,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: string,
     queryQuickStartTopics: array,
     enableDynamicCharting: bool,
-    landingPage: string,
+    defaultTab: string,
 
     // Callbacks
     onVisibleChange: func,
@@ -115,7 +115,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: undefined,
     queryQuickStartTopics: undefined,
     enableDynamicCharting: true,
-    landingPage: 'data-messenger',
+    defaultTab: 'data-messenger',
 
     // Callbacks
     onHandleClick: () => {},
@@ -127,7 +127,7 @@ export default class DataMessenger extends React.Component {
   state = {
     hasError: false,
 
-    activePage: this.props.landingPage,
+    activePage: this.props.defaultTab,
     width: this.props.width,
     height: this.props.height,
     isResizing: false,
