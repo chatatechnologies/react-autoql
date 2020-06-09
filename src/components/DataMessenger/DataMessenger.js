@@ -75,7 +75,7 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: bool,
     resizable: bool,
     inputPlaceholder: string,
-    introMessageTopics: array,
+    queryQuickStartTopics: array,
     enableDynamicCharting: bool,
     landingPage: string,
 
@@ -113,7 +113,7 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: undefined,
-    introMessageTopics: undefined,
+    queryQuickStartTopics: undefined,
     enableDynamicCharting: true,
     landingPage: 'data-messenger',
 
@@ -224,7 +224,7 @@ export default class DataMessenger extends React.Component {
   }
 
   createTopicsMessage = () => {
-    const topics = this.props.introMessageTopics.map(topic => {
+    const topics = this.props.queryQuickStartTopics.map(topic => {
       return {
         label: topic.topic,
         value: uuid.v4(),
@@ -287,7 +287,7 @@ export default class DataMessenger extends React.Component {
 
     if (
       !this.props.introMessage &&
-      _get(this.props.introMessageTopics, 'length')
+      _get(this.props.queryQuickStartTopics, 'length')
     ) {
       const topicsMessageContent = this.createTopicsMessage()
 
