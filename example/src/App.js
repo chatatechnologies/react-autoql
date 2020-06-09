@@ -158,7 +158,7 @@ export default class App extends Component {
     dashboardTiles: undefined,
     activeDashboardId: undefined,
     enableDynamicCharting: true,
-    landingPage: 'data-messenger',
+    defaultTab: 'data-messenger',
   }
 
   componentDidMount = () => {
@@ -495,10 +495,11 @@ export default class App extends Component {
     }
   }
 
-  createRadioInputGroup = (title, propName, propValues = []) => {
+  createRadioInputGroup = (title, propName, propValues = [], reload) => {
     return (
       <div>
         <h4>{title}</h4>
+        {reload && <h6>(Must click 'Reload Data Messenger' to apply this)</h6>}
         <Radio.Group
           defaultValue={this.state[propName]}
           onChange={e => this.setState({ [propName]: e.target.value })}
@@ -854,10 +855,12 @@ export default class App extends Component {
           'left',
           'right',
         ])}
-        {this.createRadioInputGroup('Default Tab', 'landingPage', [
-          'data-messenger',
-          'explore-queries',
-        ])}
+        {this.createRadioInputGroup(
+          'Default Tab',
+          'defaultTab',
+          ['data-messenger', 'explore-queries'],
+          true
+        )}
         <h4>Currency Code</h4>
         <Input
           type="text"
@@ -1171,7 +1174,7 @@ export default class App extends Component {
           this.setState({ currentNotificationContent: null })
         }}
         activeNotificationData={this.state.activeNotificationContent}
-        landingPage={this.state.landingPage}
+        defaultTab={this.state.defaultTab}
       />
     )
   }
