@@ -71,10 +71,6 @@ export default class Input extends React.Component {
     setCSSVars({ themeConfig, prefix })
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
-    return true
-  }
-
   onTableFilter = newTableData => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     if (displayType === 'table') {
@@ -281,6 +277,10 @@ export default class Input extends React.Component {
           isHideColumnsModalVisible: false,
           isSettingColumnVisibility: false,
         })
+
+        if (this.props.responseRef) {
+          this.props.responseRef.updateColumns(columns)
+        }
       })
       .catch(error => {
         console.error(error)
@@ -487,6 +487,7 @@ export default class Input extends React.Component {
 
     // If there is nothing to put in the toolbar, don't render it
     if (
+      !this.props.responseRef ||
       !Object.values(shouldShowButton).find(showButton => showButton === true)
     ) {
       return null

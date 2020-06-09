@@ -187,6 +187,9 @@ export default class QueryOutput extends React.Component {
           : getDefaultDisplayType(this.props.queryResponse),
       })
 
+      if (this.props.optionsToolbarRef) {
+        this.props.optionsToolbarRef.forceUpdate()
+      }
       this.props.onDisplayTypeUpdate()
     } catch (error) {
       console.error(error)
@@ -249,11 +252,23 @@ export default class QueryOutput extends React.Component {
       disableScroll.off()
     }
 
+    if (this.props.optionsToolbarRef) {
+      this.props.optionsToolbarRef.forceUpdate()
+    }
+
     ReactTooltip.rebuild()
   }
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+  }
+
+  updateColumns = columns => {
+    if (this.tableColumns) {
+      this.tableColumns = columns
+      this.setColumnIndices()
+      this.forceUpdate()
+    }
   }
 
   setResponseData = () => {
