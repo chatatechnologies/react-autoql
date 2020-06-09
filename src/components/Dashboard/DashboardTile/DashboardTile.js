@@ -135,7 +135,6 @@ export default class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
-
   }
 
   componentWillUnmount = () => {
@@ -709,6 +708,26 @@ export default class DashboardTile extends React.Component {
             setTimeout(() => {
               this.forceUpdate()
             }, 0)
+          }}
+          onColumnsUpdate={columns => {
+            const newResponse = {
+              ...queryResponse,
+              data: {
+                ...queryResponse.data,
+                data: {
+                  ...queryResponse.data.data,
+                  columns: columns,
+                },
+              },
+            }
+
+            const queryResponseKey = isSecondHalf
+              ? 'secondQueryResponse'
+              : 'queryResponse'
+            this.props.setParamsForTile(
+              { [queryResponseKey]: newResponse },
+              this.props.tile.i
+            )
           }}
         />
         {this.props.isEditing && (

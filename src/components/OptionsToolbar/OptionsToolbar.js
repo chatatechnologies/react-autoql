@@ -279,7 +279,14 @@ export default class Input extends React.Component {
         })
 
         if (this.props.responseRef) {
-          this.props.responseRef.updateColumns(columns)
+          this.props.responseRef.updateColumns(
+            columns.map(col => {
+              return {
+                ...col,
+                is_visible: col.visible,
+              }
+            })
+          )
         }
       })
       .catch(error => {

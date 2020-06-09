@@ -266,6 +266,8 @@ export default class QueryOutput extends React.Component {
   updateColumns = columns => {
     if (this.tableColumns) {
       this.tableColumns = columns
+
+      this.props.onColumnsUpdate(this.tableColumns)
       this.setColumnIndices()
       this.forceUpdate()
     }
