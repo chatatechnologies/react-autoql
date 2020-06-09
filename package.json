@@ -1,5 +1,5 @@
 {
-  "name": "@chata-ai/core",
+  "name": "react-autoql",
   "version": "0.0.0-semantically-released",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",

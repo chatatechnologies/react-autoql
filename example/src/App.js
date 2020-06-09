@@ -10,7 +10,7 @@ import {
   NotificationList,
   NotificationSettings,
   Icon as ChataIcon,
-} from '@chata-ai/core'
+} from 'react-autoql'
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
 
@@ -48,7 +48,7 @@ import spiraLogo from './spira-logo.png'
 import vitruviLogo from './vitruvi_logo.png'
 
 import 'antd/dist/antd.css'
-import '@chata-ai/core/dist/autoql.esm.css'
+import 'react-autoql/dist/autoql.esm.css'
 import './index.css'
 
 const getStoredProp = name => {
