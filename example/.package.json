@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@chata-ai/core": "file:chata-ai-core-0.0.0-semantically-released.tgz",
+    "react-autoql": "file:react-autoql-0.0.0-semantically-released.tgz",
     "antd": "^4.0.1",
     "axios": "^0.19.0",
     "penv": "^0.2.0",
