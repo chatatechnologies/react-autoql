@@ -203,6 +203,7 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           dataConfig={this.state.dataConfig}
           onDataConfigChange={this.updateDataConfig}
+          optionsToolbarRef={this.optionsToolbarRef}
         />
       )
     }
@@ -260,6 +261,7 @@ export default class ChatMessage extends React.Component {
     ) {
       return (
         <OptionsToolbar
+          ref={r => (this.optionsToolbarRef = r)}
           className={`chat-message-toolbar right`}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
@@ -384,7 +386,7 @@ export default class ChatMessage extends React.Component {
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
           style={{
-            minWidth: this.isTableResponse() ? '300px' : undefined,
+            minWidth: this.isTableResponse() ? '317px' : undefined,
           }}
         >
           {this.renderContent(chartWidth, chartHeight)}

@@ -135,21 +135,6 @@ export default class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
-
-    if (
-      !_isEqual(this.props.queryResponse, prevProps.queryResponse) ||
-      !_isEqual(
-        this.props.secondQueryResponse,
-        prevProps.secondQueryResponse
-      ) ||
-      this.props.displayType !== prevProps.displayType ||
-      this.props.secondDisplayType !== prevProps.secondDisplayType
-    ) {
-      // This is necessary to update the toolbar with the newly rendered <QueryOutput />
-      setTimeout(() => {
-        this.forceUpdate()
-      }, 0)
-    }
   }
 
   componentWillUnmount = () => {
@@ -667,6 +652,9 @@ export default class DashboardTile extends React.Component {
   }) => {
     const queryResponse = response || this.props.queryResponse
     const responseRef = isSecondHalf ? this.secondResponseRef : this.responseRef
+    const optionsToolbarRef = isSecondHalf
+      ? this.secondOptionsToolbarRef
+      : this.optionsToolbarRef
     return (
       <Fragment>
         {this.getIsSuggestionResponse(queryResponse) &&
@@ -714,11 +702,32 @@ export default class DashboardTile extends React.Component {
           onQueryValidationSelectOption={
             onQueryValidationSelectOption || this.onQueryValidationSelectOption
           }
+          optionsToolbarRef={optionsToolbarRef}
           onDisplayTypeUpdate={() => {
             // This is necessary to update the toolbar with the newly rendered <QueryOutput />
             setTimeout(() => {
               this.forceUpdate()
             }, 0)
+          }}
+          onColumnsUpdate={columns => {
+            const newResponse = {
+              ...queryResponse,
+              data: {
+                ...queryResponse.data,
+                data: {
+                  ...queryResponse.data.data,
+                  columns: columns,
+                },
+              },
+            }
+
+            const queryResponseKey = isSecondHalf
+              ? 'secondQueryResponse'
+              : 'queryResponse'
+            this.props.setParamsForTile(
+              { [queryResponseKey]: newResponse },
+              this.props.tile.i
+            )
           }}
         />
         {this.props.isEditing && (
@@ -769,17 +778,22 @@ export default class DashboardTile extends React.Component {
               )}
           </div>
         )}
-        {responseRef && (
-          <OptionsToolbar
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
-            onErrorCallback={this.props.onErrorCallback}
-            onSuccessAlert={this.props.onSuccessCallback}
-            responseRef={responseRef}
-            enableNotifications
-          />
-        )}
+        <OptionsToolbar
+          ref={ref => {
+            if (isSecondHalf) {
+              this.secondOptionsToolbarRef = ref
+            } else {
+              this.optionsToolbarRef = ref
+            }
+          }}
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
+          themeConfig={this.props.themeConfig}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessAlert={this.props.onSuccessCallback}
+          responseRef={responseRef}
+          enableNotifications
+        />
       </Fragment>
     )
   }
