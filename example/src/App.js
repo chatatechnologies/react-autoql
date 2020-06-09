@@ -854,7 +854,7 @@ export default class App extends Component {
           'left',
           'right',
         ])}
-        {this.createRadioInputGroup('Landing Page', 'landingPage', [
+        {this.createRadioInputGroup('Default Tab', 'landingPage', [
           'data-messenger',
           'explore-queries',
         ])}
