@@ -1,12 +1,12 @@
 {
   "production": {
     "dependencies": {
-      "@chata-ai/core": "file:chata-ai-core-0.0.0-semantically-released.tgz"
+      "react-autoql": "file:react-autoql-0.0.0-semantically-released.tgz"
     }
   },
   "dev": {
     "dependencies": {
-      "@chata-ai/core": "file:../"
+      "react-autoql": "file:../"
     }
   }
 }
