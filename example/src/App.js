@@ -614,7 +614,7 @@ export default class App extends Component {
     }
   }
 
-  getIntroMessageTopics = () => {
+  getQueryQuickStartTopics = () => {
     return topics[this.state.activeIntegrator]
   }
 
@@ -1162,7 +1162,7 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
-        introMessageTopics={this.getIntroMessageTopics()}
+        queryQuickStartTopics={this.getQueryQuickStartTopics()}
         inputStyles
         handleStyles={{ right: '25px' }}
         enableDynamicCharting={this.state.enableDynamicCharting}
