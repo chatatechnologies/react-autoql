@@ -113,6 +113,7 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: bool,
     onDataConfigChange: func,
     onDisplayTypeUpdate: func,
+    onColumnsUpdate: func,
   }
 
   static defaultProps = {
@@ -149,6 +150,7 @@ export default class QueryOutput extends React.Component {
     onDataConfigChange: () => {},
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
+    onColumnsUpdate: () => {},
   }
 
   state = {
