@@ -9,18 +9,16 @@
     "dist"
   ],
   "scripts": {
-    "start": "cd example && npm start",
     "dev": "env NODE_ENV=dev watch 'npm run build' src",
     "packexample": "cd example && npm pack ..",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:staged": "jest --findRelatedTests",
-    "prebuild": "rimraf dist",
     "build": "rollup -c",
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
-    "prepublish": "npm run build",
+    "prepublish": "npx rimraf dist && npm run build",
     "semantic-release": "semantic-release",
     "cz": "git-cz"
   },
