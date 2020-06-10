@@ -65,6 +65,7 @@ class Dashboard extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    enableNotifications: PropTypes.func,
   }
 
   static defaultProps = {
@@ -80,6 +81,7 @@ class Dashboard extends React.Component {
     isEditing: false,
     notExecutedText: undefined,
     enableDynamicCharting: true,
+    enableNotifications: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
