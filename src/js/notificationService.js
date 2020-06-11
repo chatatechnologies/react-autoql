@@ -142,14 +142,10 @@ export const deleteNotification = ({
     },
   })
 
-  const data = {
-    state: 'DELETED',
-  }
-
   const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
 
   return axiosInstance
-    .put(url, data)
+    .delete(url)
     .then(response => {
       return Promise.resolve(response)
     })
