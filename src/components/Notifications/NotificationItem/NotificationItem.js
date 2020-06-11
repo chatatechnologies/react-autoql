@@ -199,10 +199,10 @@ export default class NotificationItem extends React.Component {
       >
         <div className="chata-notification-display-name-container">
           <div className="chata-notification-display-name">
-            {notification.title}
+            {notification.rule_title}
           </div>
           <div className="chata-notification-description">
-            {notification.message}
+            {notification.rule_message}
           </div>
           <div className="chata-notification-timestamp">
             <Icon type="calendar" />{' '}
@@ -273,7 +273,7 @@ export default class NotificationItem extends React.Component {
   }
 
   renderNotificationContent = notification => {
-    const queryTitle = notification.query
+    const queryTitle = notification.rule_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
     const queryResponse = {
@@ -335,7 +335,7 @@ export default class NotificationItem extends React.Component {
               </div>
               <NotificationRulesCopy
                 key={this.COMPONENT_KEY}
-                notificationData={_get(notification, 'expression')}
+                notificationData={_get(notification, 'rule_expression')}
                 readOnly
               />
               <div className="chata-notificaiton-details-title">

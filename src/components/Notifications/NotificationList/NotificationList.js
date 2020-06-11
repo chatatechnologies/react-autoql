@@ -236,15 +236,14 @@ export default class NotificationList extends React.Component {
     const activeNotification = this.state.notificationList.find(n => n.expanded)
     if (activeNotification) {
       const ruleData = {
-        expression: activeNotification.expression,
+        expression: activeNotification.rule_expression,
         id: activeNotification.rule_id,
-        message: activeNotification.message,
+        message: activeNotification.rule_message,
         notification_type: activeNotification.notification_type,
-        query: activeNotification.query,
+        query: activeNotification.rule_query,
         status: activeNotification.rule_status,
-        title: activeNotification.title,
+        title: activeNotification.rule_title,
       }
-
       return ruleData
     }
     return undefined
