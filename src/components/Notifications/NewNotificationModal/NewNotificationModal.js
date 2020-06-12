@@ -290,7 +290,7 @@ export default class NewNotificationModal extends React.Component {
       <ScheduleBuilder
         ref={r => (this.scheduleBuilderRef = r)}
         key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
-        initialData={this.props.currentNotification}
+        rule={this.props.currentNotification}
         onCompletedChange={isComplete => {
           this.setState({ isScheduleSectionComplete: isComplete })
         }}
@@ -361,11 +361,7 @@ export default class NewNotificationModal extends React.Component {
             ref={r => (this.expressionRef = r)}
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
-            notificationData={_get(
-              this.props.currentNotification,
-              'expression',
-              []
-            )}
+            expression={_get(this.props.currentNotification, 'expression', [])}
           />
         ),
         complete: this.state.isExpressionSectionComplete,

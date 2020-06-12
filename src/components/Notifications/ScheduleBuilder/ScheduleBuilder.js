@@ -31,14 +31,14 @@ export default class ScheduleBuilder extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    initialData: PropTypes.shape({}),
+    rule: PropTypes.shape({}),
     onChange: PropTypes.func,
     onCompletedChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
-    initialData: undefined,
+    rule: undefined,
     onChange: () => {},
     onCompletedChange: () => {},
     onErrorCallback: () => {},
@@ -55,15 +55,14 @@ export default class ScheduleBuilder extends React.Component {
 
   componentDidMount = () => {
     this.props.onCompletedChange(this.isComplete())
-    if (this.props.initialData) {
-      const { initialData } = this.props
+    if (this.props.rule) {
+      const { rule } = this.props
 
       this.setState({
-        frequencyCategorySelectValue: initialData.notification_type,
-        frequencySelectValue: initialData.reset_period || undefined,
+        frequencyCategorySelectValue: rule.notification_type,
+        frequencySelectValue: rule.reset_period || undefined,
         everyCheckboxValue:
-          initialData.notification_type === 'SINGLE_EVENT' &&
-          !!initialData.reset_period,
+          rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
 
         // weekSelectValue: [2],
         // monthSelectValue: [1],

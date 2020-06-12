@@ -45,19 +45,21 @@ export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
-    onChange: PropTypes.func,
-    readOnly: PropTypes.bool,
+    expression: PropTypes.shape({}), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
+    onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }
 
   static defaultProps = {
-    onChange: () => {},
+    expression: undefined,
     readOnly: false,
+    onChange: () => {},
   }
 
   state = {
     groups: [],
     andOrValue: 'ALL',
-    ...getInitialStateData(this.props.notificationData),
+    ...getInitialStateData(this.props.expression),
   }
 
   componentDidMount = () => {
@@ -65,9 +67,9 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!isEqual(prevProps.notificationData, this.props.notificationData)) {
+    if (!isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
-      this.setState({ ...getInitialStateData(this.props.notificationData) })
+      this.setState({ ...getInitialStateData(this.props.expression) })
     }
     if (!isEqual(prevState, this.state)) {
       this.props.onChange(this.isComplete(), this.getJSON())

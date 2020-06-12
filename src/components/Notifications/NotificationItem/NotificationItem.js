@@ -335,7 +335,7 @@ export default class NotificationItem extends React.Component {
               </div>
               <ExpressionBuilder
                 key={this.COMPONENT_KEY}
-                notificationData={_get(notification, 'rule_expression')}
+                expression={_get(notification, 'rule_expression')}
                 readOnly
               />
               <div className="chata-notificaiton-details-title">
