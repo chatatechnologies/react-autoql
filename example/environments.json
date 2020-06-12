@@ -1,12 +1,12 @@
 {
   "production": {
     "dependencies": {
-      "react-autoql": "file:react-autoql-0.0.0-semantically-released.tgz"
+      "react-autoql": "file:package/react-autoql-0.0.0-semantically-released.tgz"
     }
   },
   "dev": {
     "dependencies": {
-      "react-autoql": "file:../"
+      "react-autoql": "file:package/react-autoql-0.0.0-semantically-released.tgz"
     }
   }
 }

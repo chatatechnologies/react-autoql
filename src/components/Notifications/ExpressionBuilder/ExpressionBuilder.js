@@ -4,12 +4,12 @@ import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 
-import { Group } from '../GroupCopy'
+import { Group } from '../Group'
 import { Button } from '../../Button'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 
-import './NotificationRules.scss'
+import './ExpressionBuilder.scss'
 
 const getInitialStateData = initialData => {
   let state = {}
@@ -41,16 +41,16 @@ const getInitialStateData = initialData => {
   return state
 }
 
-export default class NotificationRules extends React.Component {
+export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
-    onUpdate: PropTypes.func,
+    onChange: PropTypes.func,
     readOnly: PropTypes.bool,
   }
 
   static defaultProps = {
-    onUpdate: () => {},
+    onChange: () => {},
     readOnly: false,
   }
 
@@ -61,7 +61,7 @@ export default class NotificationRules extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -70,7 +70,7 @@ export default class NotificationRules extends React.Component {
       this.setState({ ...getInitialStateData(this.props.notificationData) })
     }
     if (!isEqual(prevState, this.state)) {
-      this.props.onUpdate(this.isComplete(), this.getJSON())
+      this.props.onChange(this.isComplete(), this.getJSON())
     }
   }
 
@@ -145,7 +145,7 @@ export default class NotificationRules extends React.Component {
     })
 
     this.setState({ groups: newGroups })
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   renderReadOnlyRules = () => {

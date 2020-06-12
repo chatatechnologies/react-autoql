@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "watch 'npm run build' src",
-    "packexample": "cd example && npm pack ..",
+    "packexample": "cd example/package && npm pack ../..",
     "test": "NODE_ENV=test && jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
