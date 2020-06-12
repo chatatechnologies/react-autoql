@@ -58,12 +58,6 @@ export default class ScheduleBuilder extends React.Component {
     if (this.props.initialData) {
       const { initialData } = this.props
 
-      console.log(
-        'setting everyCheckboxValue to:',
-        initialData.notification_type === 'SINGLE_EVENT' &&
-          !!initialData.reset_period
-      )
-
       this.setState({
         frequencyCategorySelectValue: initialData.notification_type,
         frequencySelectValue: initialData.reset_period || undefined,

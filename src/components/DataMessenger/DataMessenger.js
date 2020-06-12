@@ -1136,7 +1136,7 @@ export default class DataMessenger extends React.Component {
           this.props.onSuccessAlert('Notification created!')
           this.setState({ isNewNotificationModalVisible: false })
         }}
-        onError={() =>
+        onErrorCallback={() =>
           this.props.onErrorCallback(
             'Something went wrong when creating this notification. Please try again.'
           )

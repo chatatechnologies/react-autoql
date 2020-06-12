@@ -255,10 +255,6 @@ export default class NotificationList extends React.Component {
     this.props.onSuccessCallback('Notification successfully updated.')
   }
 
-  onRuleError = () => {
-    this.props.onErrorCallback()
-  }
-
   renderDismissAllButton = () => (
     <div className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllClick}>
@@ -281,7 +277,7 @@ export default class NotificationList extends React.Component {
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentNotification={this.getActiveRuleData()}
         onSave={this.onRuleSave}
-        onError={this.onRuleError}
+        onErrorCallback={this.props.onErrorCallback}
         hideDeleteBtn
       />
     )

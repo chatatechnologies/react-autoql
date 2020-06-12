@@ -96,10 +96,6 @@ export default class NotificationSettings extends React.Component {
     this.setState({ isEditModalVisible: false, ruleList: newRuleList })
   }
 
-  onRuleError = () => {
-    this.props.onErrorCallback()
-  }
-
   onRuleDelete = ruleId => {
     const newList = this.state.ruleList.filter(rule => rule.id !== ruleId)
     this.setState({
@@ -141,7 +137,7 @@ export default class NotificationSettings extends React.Component {
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentNotification={this.state.activeRule}
         onSave={this.onRuleSave}
-        onError={this.onRuleError}
+        onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onRuleDelete}
       />
     )

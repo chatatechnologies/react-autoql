@@ -26,7 +26,7 @@ export default class NewNotificationModal extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    onError: PropTypes.func,
+    onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
     currentNotification: PropTypes.shape({}),
@@ -38,7 +38,7 @@ export default class NewNotificationModal extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     onSave: () => {},
-    onError: () => {},
+    onErrorCallback: () => {},
     initialQuery: undefined,
     currentNotification: undefined,
     isVisible: false,
@@ -239,7 +239,7 @@ export default class NewNotificationModal extends React.Component {
         })
         .catch(error => {
           console.error(error)
-          this.props.onError(error)
+          this.props.onErrorCallback(error)
           this.setState({
             isSavingRule: false,
           })
@@ -256,7 +256,7 @@ export default class NewNotificationModal extends React.Component {
         })
         .catch(error => {
           console.error(error)
-          this.props.onError(error)
+          this.props.onErrorCallback(error)
           this.setState({
             isSavingRule: false,
           })
@@ -339,7 +339,7 @@ export default class NewNotificationModal extends React.Component {
         })
         .catch(error => {
           console.error(error)
-          this.props.onError(error)
+          this.props.onErrorCallback(error)
           this.setState({
             isDeletingRule: false,
           })
