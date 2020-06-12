@@ -9,6 +9,8 @@ import {
   NotificationButton,
   NotificationList,
   NotificationSettings,
+  ExpressionBuilder,
+  ScheduleBuilder,
   Icon as ChataIcon,
 } from 'react-autoql'
 import uuid from 'uuid'
@@ -819,6 +821,8 @@ export default class App extends Component {
           false,
         ])}
         <h1>Customize Widgets</h1>
+        <ExpressionBuilder />
+        <ScheduleBuilder />
         <Button
           onClick={() => this.setState({ componentKey: uuid.v4() })}
           style={{ marginRight: '10px' }}

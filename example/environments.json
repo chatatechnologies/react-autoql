@@ -6,7 +6,7 @@
   },
   "dev": {
     "dependencies": {
-      "react-autoql": "file:package/react-autoql-0.0.0-semantically-released.tgz"
+      "react-autoql": "file:../"
     }
   }
 }

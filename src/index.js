@@ -6,11 +6,13 @@ export {
   NotificationButton,
   NotificationList,
   NotificationItem,
-  NotificationSettings
+  NotificationSettings,
+  ExpressionBuilder,
+  ScheduleBuilder,
 } from './components/Notifications'
 export { Icon } from './components/Icon'
 export {
   getSupportedDisplayTypes,
   getDefaultDisplayType,
-  isDisplayTypeValid
+  isDisplayTypeValid,
 } from './js/Util.js'
