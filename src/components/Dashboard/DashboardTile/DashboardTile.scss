@@ -86,7 +86,7 @@
   }
 
   .split-view-btn {
-    margin-left: 7px;
+    margin-right: 7px;
     .chata-icon {
       font-size: 14px;
     }
@@ -384,6 +384,12 @@
 }
 .dashboard-tile-input-container input::placeholder {
   opacity: 0.5;
+}
+.chata-dashboard .edit-mode-placeholder-icon {
+  display: inline-block;
+  line-height: 22px;
+  vertical-align: middle;
+  height: 23px;
 }
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
