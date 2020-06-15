@@ -520,7 +520,21 @@ export default class DataMessenger extends React.Component {
   }
 
   deleteMessage = id => {
-    const newMessages = this.state.messages.filter(message => message.id !== id)
+    const messagesToDelete = [id]
+    const messageIndex = this.state.messages.findIndex(
+      message => message.id === id
+    )
+
+    // If there is a query message right above it (not a drilldown), delete the query message also
+    const messageAbove = this.state.messages[messageIndex - 1]
+    if (!messageAbove.isResponse) {
+      messagesToDelete.push(messageAbove.id)
+    }
+
+    const newMessages = this.state.messages.filter(
+      message => !messagesToDelete.includes(message.id)
+    )
+
     this.setState({
       messages: newMessages,
     })
