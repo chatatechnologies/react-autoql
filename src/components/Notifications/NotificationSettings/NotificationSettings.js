@@ -7,7 +7,7 @@ import uuid from 'uuid'
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
-import { NewNotificationModal } from '../NewNotificationModal'
+import { NotificationModal } from '../NotificationModal'
 
 import {
   fetchNotificationSettings,
@@ -96,10 +96,6 @@ export default class NotificationSettings extends React.Component {
     this.setState({ isEditModalVisible: false, ruleList: newRuleList })
   }
 
-  onRuleError = () => {
-    this.props.onErrorCallback()
-  }
-
   onRuleDelete = ruleId => {
     const newList = this.state.ruleList.filter(rule => rule.id !== ruleId)
     this.setState({
@@ -134,14 +130,14 @@ export default class NotificationSettings extends React.Component {
 
   renderNotificationEditModal = () => {
     return (
-      <NewNotificationModal
+      <NotificationModal
         key={this.COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentNotification={this.state.activeRule}
         onSave={this.onRuleSave}
-        onError={this.onRuleError}
+        onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onRuleDelete}
       />
     )

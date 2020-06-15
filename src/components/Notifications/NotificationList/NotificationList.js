@@ -7,7 +7,7 @@ import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-import { NewNotificationModal } from '../NewNotificationModal'
+import { NotificationModal } from '../NotificationModal'
 import {
   fetchNotificationList,
   dismissAllNotifications,
@@ -274,14 +274,14 @@ export default class NotificationList extends React.Component {
 
   renderEditRuleModal = () => {
     return (
-      <NewNotificationModal
+      <NotificationModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentNotification={this.getActiveRuleData()}
         onSave={this.onRuleSave}
-        onError={this.onRuleError}
+        onErrorCallback={this.onRuleError}
         hideDeleteBtn
       />
     )

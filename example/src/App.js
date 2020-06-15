@@ -125,6 +125,7 @@ export default class App extends Component {
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
     enableNotificationsTab: true,
+    enableNotifications: true,
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
@@ -204,6 +205,7 @@ export default class App extends Component {
       enableDrilldowns: this.state.enableDrilldowns,
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
+      enableNotifications: this.state.enableNotifications,
       debug: this.state.debug,
       test: this.state.test,
     }
@@ -833,6 +835,48 @@ export default class App extends Component {
         >
           Open Data Messenger
         </Button>
+        <h2>AutoQL API Configuration Options</h2>
+        {this.createBooleanRadioGroup(
+          'Enable Autocomplete',
+          'enableAutocomplete',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Query Validation',
+          'enableQueryValidation',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Query Suggestions',
+          'enableQuerySuggestions',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
+          true,
+          false,
+        ])}
+        {this.createBooleanRadioGroup(
+          'Enable Column Visibility Editor',
+          'enableColumnVisibilityManager',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Notifications',
+          'enableNotifications',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Debug Mode - Show copy to SQL button in message toolbar',
+          'debug',
+          [true, false]
+        )}
+        {!isProd() &&
+          this.createBooleanRadioGroup(
+            'Test Mode (Provides extra logging on the server side)',
+            'test',
+            [true, false]
+          )}
+        <h2>UI Configuration Options</h2>
         {this.createBooleanRadioGroup(
           'Show Data Messenger Button',
           'showHandle',
@@ -1060,25 +1104,6 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Enable Autocomplete',
-          'enableAutocomplete',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
-          'Enable Query Validation',
-          'enableQueryValidation',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
-          'Enable Query Suggestions',
-          'enableQuerySuggestions',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup('Enable Drilldowns', 'enableDrilldowns', [
-          true,
-          false,
-        ])}
-        {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
           'enableExploreQueriesTab',
           [true, false]
@@ -1090,26 +1115,10 @@ export default class App extends Component {
             [true, false]
           )}
         {this.createBooleanRadioGroup(
-          'Enable Column Visibility Editor',
-          'enableColumnVisibilityManager',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
           'Enable Speech to Text',
           'enableVoiceRecord',
           [true, false]
         )}
-        {this.createBooleanRadioGroup(
-          'Debug Mode - Show copy to SQL button in message toolbar',
-          'debug',
-          [true, false]
-        )}
-        {!isProd() &&
-          this.createBooleanRadioGroup(
-            'Test Mode (Provides extra logging on the server side)',
-            'test',
-            [true, false]
-          )}
       </div>
     )
   }
@@ -1363,30 +1372,34 @@ export default class App extends Component {
         {this.state.isAuthenticated && (
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
         )}
-        {this.state.isAuthenticated && !isProd() && (
-          <Menu.Item key="settings">Notification Settings</Menu.Item>
-        )}
-        {this.state.isAuthenticated && !isProd() && (
-          <Menu.Item key="notifications">
-            <NotificationButton
-              ref={r => (this.notificationBadgeRef = r)}
-              authentication={this.getAuthProp()}
-              themeConfig={this.getThemeConfigProp()}
-              clearCountOnClick={false}
-              style={{ fontSize: '18px' }}
-              onNewNotification={() => {
-                // If a new notification is detected, refresh the list
-                if (
-                  this.notificationListRef &&
-                  this.state.currentPage === 'notifications'
-                ) {
-                  this.notificationListRef.refreshNotifications()
-                }
-              }}
-              onErrorCallback={this.onError}
-            />
-          </Menu.Item>
-        )}
+        {this.state.isAuthenticated &&
+          !isProd() &&
+          this.state.enableNotifications && (
+            <Menu.Item key="settings">Notification Settings</Menu.Item>
+          )}
+        {this.state.isAuthenticated &&
+          !isProd() &&
+          this.state.enableNotifications && (
+            <Menu.Item key="notifications">
+              <NotificationButton
+                ref={r => (this.notificationBadgeRef = r)}
+                authentication={this.getAuthProp()}
+                themeConfig={this.getThemeConfigProp()}
+                clearCountOnClick={false}
+                style={{ fontSize: '18px' }}
+                onNewNotification={() => {
+                  // If a new notification is detected, refresh the list
+                  if (
+                    this.notificationListRef &&
+                    this.state.currentPage === 'notifications'
+                  ) {
+                    this.notificationListRef.refreshNotifications()
+                  }
+                }}
+                onErrorCallback={this.onError}
+              />
+            </Menu.Item>
+          )}
       </Menu>
     )
   }

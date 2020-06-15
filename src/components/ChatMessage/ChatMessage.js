@@ -63,7 +63,6 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
-    enableNotifications: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -85,7 +84,6 @@ export default class ChatMessage extends React.Component {
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
-    enableNotifications: false,
   }
 
   state = {
@@ -267,11 +265,9 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           themeConfig={this.props.themeConfig}
           responseRef={this.responseRef}
-          enableNotifications={this.props.enableNotifications}
           originalQuery={this.props.originalQuery}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
-          onNewNotificationCallback={this.props.onNewNotificationCallback}
           enableDeleteBtn
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
