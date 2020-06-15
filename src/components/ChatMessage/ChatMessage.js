@@ -253,7 +253,6 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     if (
       this.props.isResponse &&
-      this.props.type !== 'text' &&
       this.props.displayType !== 'help' &&
       this.props.displayType !== 'suggestion'
     ) {
