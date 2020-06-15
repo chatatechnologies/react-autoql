@@ -33,7 +33,7 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
-import { NewNotificationModal } from '../Notifications/NewNotificationModal'
+import { NotificationModal } from '../Notifications/NotificationModal'
 import { NotificationButton } from '../Notifications/NotificationButton'
 import { NotificationList } from '../Notifications/NotificationList'
 import {
@@ -110,7 +110,7 @@ export default class DataMessenger extends React.Component {
     maxMessages: undefined,
     introMessage: undefined,
     enableExploreQueriesTab: true,
-    enableNotificationsTab: false,
+    enableNotificationsTab: true,
     resizable: true,
     inputPlaceholder: undefined,
     queryQuickStartTopics: undefined,
@@ -614,7 +614,6 @@ export default class DataMessenger extends React.Component {
         <div className={`data-messenger-tab-container ${this.props.placement}`}>
           <div
             className={`page-switcher-shadow-container  ${this.props.placement}`}
-            // style={tabStyles.tabShadowContainerStyle}
           >
             <div className={`page-switcher-container ${this.props.placement}`}>
               <div
@@ -623,7 +622,6 @@ export default class DataMessenger extends React.Component {
                 data-tip="Data Messenger"
                 data-for="chata-header-tooltip"
                 data-delay-show={1000}
-                // style={{ ...tabStyles.tabStyle, ...tabStyles.messengerTabStyle }}
               >
                 <Icon type="chata-bubbles-outlined" />
               </div>
@@ -638,51 +636,50 @@ export default class DataMessenger extends React.Component {
                   data-tip="Explore Queries"
                   data-for="chata-header-tooltip"
                   data-delay-show={1000}
-                  // style={{ ...tabStyles.tabStyle, ...tabStyles.tipsTabStyle }}
                 >
                   <Icon type="light-bulb" size={22} />
                 </div>
               )}
-              {this.props.enableNotificationsTab && (
-                <div
-                  className={`tab${
-                    page === 'notifications' ? ' active' : ''
-                  } notifications`}
-                  onClick={() => {
-                    if (this.notificationBadgeRef) {
-                      this.notificationBadgeRef.resetCount()
-                    }
-                    this.setState({ activePage: 'notifications' })
-                  }}
-                  data-tip="Notifications"
-                  data-for="chata-header-tooltip"
-                  data-delay-show={1000}
-                  style={{ paddingBottom: '5px', paddingLeft: '2px' }}
-                >
-                  <div className="data-messenger-notification-btn">
-                    <NotificationButton
-                      ref={r => (this.notificationBadgeRef = r)}
-                      authentication={this.props.authentication}
-                      themeConfig={this.props.themeConfig}
-                      clearCountOnClick={false}
-                      style={{ fontSize: '19px' }}
-                      overflowCount={9}
-                      useDot
-                      // style={{ marginLeft: '3px', marginTop: '-4px' }}
-                      onNewNotification={() => {
-                        // If a new notification is detected, refresh the list
-                        if (
-                          this.notificationListRef &&
-                          this.state.activePage === 'notifications'
-                        ) {
-                          this.notificationListRef.refreshNotifications()
-                        }
-                      }}
-                      onErrorCallback={this.props.onErrorCallback}
-                    />
+              {this.props.enableNotificationsTab &&
+                this.props.autoQLConfig.enableNotifications && (
+                  <div
+                    className={`tab${
+                      page === 'notifications' ? ' active' : ''
+                    } notifications`}
+                    onClick={() => {
+                      if (this.notificationBadgeRef) {
+                        this.notificationBadgeRef.resetCount()
+                      }
+                      this.setState({ activePage: 'notifications' })
+                    }}
+                    data-tip="Notifications"
+                    data-for="chata-header-tooltip"
+                    data-delay-show={1000}
+                    style={{ paddingBottom: '5px', paddingLeft: '2px' }}
+                  >
+                    <div className="data-messenger-notification-btn">
+                      <NotificationButton
+                        ref={r => (this.notificationBadgeRef = r)}
+                        authentication={this.props.authentication}
+                        themeConfig={this.props.themeConfig}
+                        clearCountOnClick={false}
+                        style={{ fontSize: '19px' }}
+                        overflowCount={9}
+                        useDot
+                        onNewNotification={() => {
+                          // If a new notification is detected, refresh the list
+                          if (
+                            this.notificationListRef &&
+                            this.state.activePage === 'notifications'
+                          ) {
+                            this.notificationListRef.refreshNotifications()
+                          }
+                        }}
+                        onErrorCallback={this.props.onErrorCallback}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>
@@ -834,13 +831,6 @@ export default class DataMessenger extends React.Component {
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
-                  enableNotifications={this.props.enableNotificationsTab}
-                  onNewNotificationCallback={query => {
-                    this.setState({
-                      isNewNotificationModalVisible: true,
-                      activeQuery: query,
-                    })
-                  }}
                 />
               )
             })}
@@ -1126,17 +1116,17 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderNewNotificationModal = () => {
+  renderNotificationModal = () => {
     return (
-      <NewNotificationModal
+      <NotificationModal
         authentication={this.props.authentication}
-        isVisible={this.state.isNewNotificationModalVisible}
-        onClose={() => this.setState({ isNewNotificationModalVisible: false })}
+        isVisible={this.state.isNotificationModalVisible}
+        onClose={() => this.setState({ isNotificationModalVisible: false })}
         onSave={() => {
           this.props.onSuccessAlert('Notification created!')
-          this.setState({ isNewNotificationModalVisible: false })
+          this.setState({ isNotificationModalVisible: false })
         }}
-        onError={() =>
+        onErrorCallback={() =>
           this.props.onErrorCallback(
             'Something went wrong when creating this notification. Please try again.'
           )
@@ -1171,7 +1161,6 @@ export default class DataMessenger extends React.Component {
             handler={this.getHandlerProp()}
             level={this.props.shiftScreen ? 'all' : null}
             keyboard={false}
-            // onKeyDown={this.escFunction}
           >
             {this.props.resizable && this.renderResizeHandle()}
             {(this.props.enableExploreQueriesTab ||
@@ -1184,7 +1173,7 @@ export default class DataMessenger extends React.Component {
               {this.renderBodyContent()}
             </div>
           </Drawer>
-          {this.renderNewNotificationModal()}
+          {this.renderNotificationModal()}
         </Fragment>
       </ErrorBoundary>
     )

@@ -38,7 +38,6 @@ export default class NotificationButton extends React.Component {
     overflowCount: 99,
     useDot: false,
     style: {},
-    // size: 17,
     clearCountOnClick: true,
     onNewNotification: () => {},
     onErrorCallback: () => {},
@@ -130,11 +129,7 @@ export default class NotificationButton extends React.Component {
           }
         }}
       >
-        <Icon
-          type="notification"
-          className="chata-notifications-button"
-          // style={{ fontSize: '1em' }}
-        />
+        <Icon type="notification" className="chata-notifications-button" />
         {this.renderBadge()}
       </div>
     )

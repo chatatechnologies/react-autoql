@@ -47,7 +47,6 @@ const sampleResponse = {
 const defaultProps = {
   authentication: testAuthentication,
   autoQLConfig: autoQLConfigDefault,
-  enableNotifications: false,
   enableDeleteBtn: false,
   originalQuery: undefined,
   onSuccessAlert: () => {},
