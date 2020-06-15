@@ -497,14 +497,19 @@ export default class Input extends React.Component {
         this.props.autoQLConfig.debug &&
         _get(response, 'data.data.display_type') === 'data',
       showDeleteButton: this.props.enableDeleteBtn,
-      showMoreOptionsButton: true,
-      showReportProblemButton:
-        _get(response, 'data.data.display_type') === 'data',
+      showReportProblemButton: !!response,
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
         this.props.autoQLConfig.enableNotifications &&
         this.props.originalQuery,
     }
+
+    shouldShowButton.showMoreOptionsButton =
+      shouldShowButton.showCopyButton ||
+      shouldShowButton.showSQLButton ||
+      shouldShowButton.showCreateNotificationButton ||
+      shouldShowButton.showSaveAsCSVButton ||
+      shouldShowButton.showSaveAsPNGButton
 
     // If there is nothing to put in the toolbar, don't render it
     if (
