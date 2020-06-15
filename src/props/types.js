@@ -3,7 +3,7 @@ import { shape, number, string, oneOf, bool, arrayOf } from 'prop-types'
 export const authenticationType = shape({
   token: string,
   apiKey: string,
-  domain: string
+  domain: string,
 })
 
 export const dataFormattingType = shape({
@@ -13,7 +13,7 @@ export const dataFormattingType = shape({
   quantityDecimals: number,
   comparisonDisplay: string,
   monthYearFormat: string,
-  dayMonthYearFormat: string
+  dayMonthYearFormat: string,
 })
 
 export const autoQLConfigType = shape({
@@ -23,12 +23,13 @@ export const autoQLConfigType = shape({
   enableQueryValidation: bool,
   enableDrilldowns: bool,
   enableQuerySuggestions: bool,
-  enableColumnVisibilityManager: bool
+  enableColumnVisibilityManager: bool,
+  enableNotifications: bool,
 })
 
 export const themeConfigType = shape({
   theme: oneOf(['light', 'dark']),
   chartColors: arrayOf(string),
   accentColor: string,
-  fontFamily: string
+  fontFamily: string,
 })

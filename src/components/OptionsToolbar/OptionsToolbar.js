@@ -7,6 +7,7 @@ import ReactTooltip from 'react-tooltip'
 
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
+import { NotificationModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
 
@@ -39,7 +40,6 @@ export default class Input extends React.Component {
     autoQLConfig: autoQLConfigType,
     themeConfig: themeConfigType,
     responseRef: PropTypes.instanceOf(QueryOutput).isRequired,
-    enableNotifications: PropTypes.bool,
     enableDeleteBtn: PropTypes.bool,
     originalQuery: PropTypes.string,
     onSuccessAlert: PropTypes.func,
@@ -53,7 +53,6 @@ export default class Input extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     themeConfig: themeConfigDefault,
-    enableNotifications: false,
     enableDeleteBtn: false,
     originalQuery: undefined,
     onSuccessAlert: () => {},
@@ -320,6 +319,22 @@ export default class Input extends React.Component {
     )
   }
 
+  renderNotificationModal = () => {
+    return (
+      <NotificationModal
+        authentication={this.props.authentication}
+        isVisible={this.state.activeMenu === 'notification'}
+        initialQuery={this.props.originalQuery}
+        onClose={() => this.setState({ activeMenu: undefined })}
+        onErrorCallback={this.props.onErrorCallback}
+        onSave={() => {
+          this.props.onSuccessAlert('Successfully created a notification')
+          this.setState({ activeMenu: undefined })
+        }}
+      />
+    )
+  }
+
   renderReportProblemModal = () => {
     return (
       <Modal
@@ -442,8 +457,7 @@ export default class Input extends React.Component {
           {shouldShowButton.showCreateNotificationButton && (
             <li
               onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.props.onNewNotificationCallback(this.props.originalQuery)
+                this.setState({ activeMenu: 'notification' })
               }}
             >
               <Icon
@@ -488,7 +502,7 @@ export default class Input extends React.Component {
         _get(response, 'data.data.display_type') === 'data',
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
-        this.props.enableNotifications &&
+        this.props.autoQLConfig.enableNotifications &&
         this.props.originalQuery,
     }
 
@@ -599,6 +613,7 @@ export default class Input extends React.Component {
         {this.renderToolbar()}
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
+        {this.renderNotificationModal()}
       </Fragment>
     )
   }

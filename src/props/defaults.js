@@ -1,7 +1,7 @@
 export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
-  domain: undefined
+  domain: undefined,
 }
 
 export const dataFormattingDefault = {
@@ -11,7 +11,7 @@ export const dataFormattingDefault = {
   quantityDecimals: 1,
   comparisonDisplay: 'PERCENT',
   monthYearFormat: 'MMM YYYY',
-  dayMonthYearFormat: 'll'
+  dayMonthYearFormat: 'll',
 }
 
 export const autoQLConfigDefault = {
@@ -21,7 +21,8 @@ export const autoQLConfigDefault = {
   enableQueryValidation: true,
   enableQuerySuggestions: true,
   enableColumnVisibilityManager: true,
-  enableDrilldowns: true
+  enableDrilldowns: true,
+  enableNotifications: false,
 }
 
 export const themeConfigDefault = {
@@ -29,5 +30,5 @@ export const themeConfigDefault = {
   chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
   accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
-  titleColor: '#356f90' // DASHBOARD TILES ONLY
+  titleColor: '#356f90', // DASHBOARD TILES ONLY
 }

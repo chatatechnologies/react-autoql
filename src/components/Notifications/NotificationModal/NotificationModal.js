@@ -19,9 +19,9 @@ import {
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
 
-import './NewNotificationModal.scss'
+import './NotificationModal.scss'
 
-export default class NewNotificationModal extends React.Component {
+export default class NotificationModal extends React.Component {
   NEW_NOTIFICATION_MODAL_ID = uuid.v4()
 
   static propTypes = {
@@ -361,7 +361,11 @@ export default class NewNotificationModal extends React.Component {
             ref={r => (this.expressionRef = r)}
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
-            expression={_get(this.props.currentNotification, 'expression', [])}
+            expression={_get(
+              this.props.currentNotification,
+              'expression',
+              this.state.expressionJSON
+            )}
           />
         ),
         complete: this.state.isExpressionSectionComplete,

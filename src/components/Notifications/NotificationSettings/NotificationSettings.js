@@ -7,7 +7,7 @@ import uuid from 'uuid'
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
-import { NewNotificationModal } from '../NewNotificationModal'
+import { NotificationModal } from '../NotificationModal'
 
 import {
   fetchNotificationSettings,
@@ -130,7 +130,7 @@ export default class NotificationSettings extends React.Component {
 
   renderNotificationEditModal = () => {
     return (
-      <NewNotificationModal
+      <NotificationModal
         key={this.COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}

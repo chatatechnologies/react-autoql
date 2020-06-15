@@ -791,8 +791,10 @@ export default class DashboardTile extends React.Component {
           themeConfig={this.props.themeConfig}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessAlert={this.props.onSuccessCallback}
+          originalQuery={
+            isSecondHalf ? this.props.tile.secondQuery : this.props.tile.query
+          }
           responseRef={responseRef}
-          enableNotifications
         />
       </Fragment>
     )
