@@ -46,7 +46,6 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
-    lastMessageId: PropTypes.string.isRequired,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,

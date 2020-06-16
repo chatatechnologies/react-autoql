@@ -497,7 +497,7 @@ export default class Input extends React.Component {
         this.props.autoQLConfig.debug &&
         _get(response, 'data.data.display_type') === 'data',
       showDeleteButton: this.props.enableDeleteBtn,
-      showReportProblemButton: !!response,
+      showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
         this.props.autoQLConfig.enableNotifications &&
