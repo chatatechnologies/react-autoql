@@ -1094,6 +1094,28 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
+  setSorterFunction = col => {
+    if (col.type === 'DATE' || col.type === 'DATE_STRING') {
+      return function(a, b, aRow, bRow, column, dir, sorterParams) {
+        const aDate = dayjs(a).unix()
+        const bDate = dayjs(b).unix()
+
+        if (!aDate || !bDate) {
+          return a - b
+        }
+
+        return aDate - bDate
+      }
+    } else if (col.type === 'STRING') {
+      // There is some bug in tabulator where its not sorting
+      // certain columns. This explicitly sets the sorter so
+      // it works every time
+      return 'string'
+    }
+
+    return undefined
+  }
+
   getColTitle = col => {
     if (col.display_name) {
       return col.display_name
@@ -1176,6 +1198,9 @@ export default class QueryOutput extends React.Component {
       // displayed differently than the data (ie. dates)
       col.headerFilterFunc = this.setFilterFunction(col)
 
+      // Allow proper chronological sorting for date strings
+      col.sorter = this.setSorterFunction(col)
+
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {
         // Do not show native context menu
@@ -1185,20 +1210,6 @@ export default class QueryOutput extends React.Component {
           activeColumn: column,
           contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
         })
-      }
-
-      // Allow proper chronological sorting for date strings
-      if (col.type === 'DATE' || col.type === 'DATE_STRING') {
-        col.sorter = function(a, b, aRow, bRow, column, dir, sorterParams) {
-          const aDate = dayjs(a).unix()
-          const bDate = dayjs(b).unix()
-
-          if (!aDate || !bDate) {
-            return a - b
-          }
-
-          return aDate - bDate
-        }
       }
 
       return col
