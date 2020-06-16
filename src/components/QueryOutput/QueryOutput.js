@@ -839,7 +839,7 @@ export default class QueryOutput extends React.Component {
   getTooltipDataForCell = (row, columnIndex, numberValue) => {
     let tooltipElement = null
     try {
-      const numberColumn = this.tableColumns[this.dataConfig.numberColumnIndex]
+      const numberColumn = this.tableColumns[columnIndex]
       const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
 
       if (this.supportsPivot) {
@@ -993,7 +993,7 @@ export default class QueryOutput extends React.Component {
                 value: newValue,
                 tooltipData: this.getTooltipDataForCell(
                   row,
-                  undefined,
+                  this.dataConfig.seriesIndices[index],
                   newValue
                 ),
               }
