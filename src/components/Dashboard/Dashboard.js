@@ -427,6 +427,7 @@ class Dashboard extends React.Component {
                 themeConfig={this.props.themeConfig}
                 queryResponse={tile.queryResponse}
                 displayType={tile.displayType}
+                dataConfig={tile.dataConfig}
                 dataFormatting={this.props.dataFormatting}
                 onDataClick={(drilldownData, queryID) => {
                   this.startDrilldown(drilldownData, queryID, tile.i)
