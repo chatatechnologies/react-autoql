@@ -1,4 +1,4 @@
-![](public/autoql-logo.png)
+<img src="public/autoql-logo.png" width="400px"/>
 React Components for AutoQL
 
 ![chatatechnologies](https://circleci.com/gh/chatatechnologies/react-autoql/tree/master.svg?style=shield)
