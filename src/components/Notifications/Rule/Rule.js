@@ -60,8 +60,8 @@ export default class Rule extends React.Component {
   }
 
   static propTypes = {
-    ruleId: PropTypes.string.isRequired,
-    onAdd: PropTypes.func.isRequired,
+    ruleId: PropTypes.string,
+    onAdd: PropTypes.func,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
@@ -69,6 +69,8 @@ export default class Rule extends React.Component {
   }
 
   static defaultProps = {
+    ruleId: undefined,
+    onAdd: () => {},
     onDelete: () => {},
     onUpdate: () => {},
     initialData: undefined,

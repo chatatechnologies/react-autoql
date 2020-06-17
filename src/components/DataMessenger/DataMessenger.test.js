@@ -9,8 +9,8 @@ const defaultProps = {
   placement: 'right',
   maskClosable: true,
   isVisible: false,
-  width: 500,
-  height: 350,
+  width: '500px',
+  height: '350px',
   showHandle: true,
   theme: 'light',
   handleStyles: {},
@@ -19,7 +19,7 @@ const defaultProps = {
   apiKey: 'test-apikey',
   projectId: 500,
   onHandleClick: () => {},
-  onVisibleChange: () => {}
+  onVisibleChange: () => {},
 }
 
 const setup = (props = {}, state = null) => {

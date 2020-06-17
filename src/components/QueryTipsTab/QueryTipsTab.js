@@ -12,11 +12,19 @@ import './QueryTipsTab.scss'
 
 export default class QueryTipsTab extends React.Component {
   static propTypes = {
-    onQueryTipsInputKeyPress: PropTypes.func.isRequired,
-    loading: PropTypes.bool.isRequired,
-    error: PropTypes.bool.isRequired,
-    queryTipsList: PropTypes.array.isRequired,
-    executeQuery: PropTypes.func.isRequired
+    onQueryTipsInputKeyPress: PropTypes.func,
+    loading: PropTypes.bool,
+    error: PropTypes.bool,
+    queryTipsList: PropTypes.array,
+    executeQuery: PropTypes.func,
+  }
+
+  static defaultProps = {
+    loading: false,
+    error: false,
+    queryTipsList: [],
+    executeQuery: () => {},
+    onQueryTipsInputKeyPress: () => {},
   }
 
   // state = {

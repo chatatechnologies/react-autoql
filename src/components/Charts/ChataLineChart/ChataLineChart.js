@@ -7,21 +7,28 @@ import _get from 'lodash.get'
 
 import { getMinAndMaxValues, getTickValues } from '../helpers.js'
 import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
+import { themeConfigType, dataFormattingType } from '../../../props/types'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+} from '../../../props/defaults'
 
 export default class ChataLineChart extends Component {
   xScale = scaleBand()
   yScale = scaleLinear()
 
   static propTypes = {
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number.isRequired,
-    rightMargin: PropTypes.number.isRequired,
-    topMargin: PropTypes.number.isRequired,
-    bottomMargin: PropTypes.number.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    leftMargin: PropTypes.number,
+    rightMargin: PropTypes.number,
+    topMargin: PropTypes.number,
+    bottomMargin: PropTypes.number,
     labelValue: PropTypes.string,
     onLegendClick: PropTypes.func,
     onLabelChange: PropTypes.func,
@@ -29,25 +36,22 @@ export default class ChataLineChart extends Component {
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
     legendLocation: PropTypes.string,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
+    leftMargin: 0,
+    rightMargin: 0,
+    topMargin: 0,
+    bottomMargin: 0,
     labelValue: 'label',
-    dataFormatting: {},
     numberColumnIndices: [],
     legendLocation: undefined,
     onXAxisClick: () => {},
     onYAxisClick: () => {},
-    onLabelChange: () => {}
+    onLabelChange: () => {},
   }
 
   handleLabelRotation = (tickWidth, labelArray) => {
@@ -85,7 +89,7 @@ export default class ChataLineChart extends Component {
       bottomMargin,
       legendLabels,
       onChartClick,
-      chartColors,
+      themeConfig,
       rightMargin,
       leftMargin,
       labelValue,
@@ -93,7 +97,7 @@ export default class ChataLineChart extends Component {
       columns,
       height,
       width,
-      data
+      data,
     } = this.props
 
     // Get max and min values from all series
@@ -118,6 +122,7 @@ export default class ChataLineChart extends Component {
     return (
       <g data-test="chata-line-chart">
         <Axes
+          themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           xCol={columns[stringColumnIndex]}
           yCol={columns[numberColumnIndex]}
@@ -126,7 +131,7 @@ export default class ChataLineChart extends Component {
             right: rightMargin,
             bottom: bottomMargin,
             top: topMargin,
-            bottomLegend: bottomLegendMargin
+            bottomLegend: bottomLegendMargin,
           }}
           width={width}
           height={height}
@@ -137,7 +142,6 @@ export default class ChataLineChart extends Component {
           hasRightLegend={legendLocation === 'right'}
           hasBottomLegend={legendLocation === 'bottom'}
           onLegendClick={onLegendClick}
-          chartColors={chartColors}
           yGridLines
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
@@ -146,12 +150,13 @@ export default class ChataLineChart extends Component {
           yAxisTitle={numberAxisTitle}
         />
         <Line
+          themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           margins={{
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
-            top: topMargin
+            top: topMargin,
           }}
           data={data}
           maxValue={maxValue}
@@ -159,7 +164,6 @@ export default class ChataLineChart extends Component {
           height={height}
           labelValue={labelValue}
           onChartClick={onChartClick}
-          chartColors={chartColors}
           backgroundColor={backgroundColor}
           activeKey={activeChartElementKey}
         />

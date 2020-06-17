@@ -40,6 +40,7 @@ const sampleResponse = {
 }
 
 const defaultProps = {
+  id: 'r9837592385',
   authentication: testAuthentication,
   response: sampleResponse,
   isResponse: true,

@@ -88,7 +88,7 @@ export default class QueryOutput extends React.Component {
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
-    queryResponse: shape({}).isRequired,
+    queryResponse: shape({}),
     queryInputRef: instanceOf(QueryInput),
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
@@ -129,6 +129,8 @@ export default class QueryOutput extends React.Component {
       legendColumnIndex: undefined,
       seriesIndices: undefined,
     },
+
+    queryResponse: undefined,
     displayType: undefined,
     queryInputRef: undefined,
     onSuggestionClick: undefined,
@@ -703,6 +705,7 @@ export default class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
+          themeConfig={this.props.themeConfig}
           ref={ref => (this.chartRef = ref)}
           type={displayType || this.state.displayType}
           data={this.chartData}
@@ -713,23 +716,11 @@ export default class QueryOutput extends React.Component {
           height={height}
           width={width}
           dataFormatting={this.props.dataFormatting}
-          chartColors={this.props.themeConfig.chartColors}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
-          stringColumnIndices={this.dataConfig.stringColumnIndices}
-          numberColumnIndices={this.dataConfig.numberColumnIndices}
-          seriesIndices={this.dataConfig.seriesIndices}
-          stringColumnIndex={this.dataConfig.stringColumnIndex}
-          legendColumnIndex={this.dataConfig.legendColumnIndex}
-          numberColumnIndex={this.dataConfig.numberColumnIndex}
+          dataConfig={_cloneDeep(this.dataConfig)}
           themeConfig={chartThemeConfig}
-          // valueFormatter={formatElement}
-          // onChartClick={(row, columns) => {
-          //   if (!this.props.isDrilldownDisabled) {
-          //     this.props.processDrilldown(row, columns, this.queryID)
-          //   }
-          // }}
           changeStringColumnIndex={index => {
             if (this.dataConfig.legendColumnIndex === index) {
               this.dataConfig.legendColumnIndex = undefined
@@ -1175,9 +1166,9 @@ export default class QueryOutput extends React.Component {
         col.type === 'RATIO' ||
         col.type === 'NUMBER'
       ) {
-        col.align = 'right'
+        col.hozAlign = 'right'
       } else {
-        col.align = 'center'
+        col.hozAlign = 'center'
       }
 
       // Cell formattingg
@@ -1533,7 +1524,6 @@ export default class QueryOutput extends React.Component {
     if (!queryResponse) {
       console.warn('Warning: No response object supplied')
       return this.renderErrorMessage('No response supplied')
-      // return null
     }
 
     // Response prop was provided, but it has no response data

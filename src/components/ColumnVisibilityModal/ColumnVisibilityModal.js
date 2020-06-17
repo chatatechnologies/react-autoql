@@ -9,19 +9,21 @@ import './ColumnVisibilityModal.scss'
 
 export default class ColumnVisibilityModal extends React.Component {
   static propTypes = {
-    isSettingColumns: PropTypes.bool.isRequired
+    isSettingColumns: PropTypes.bool,
   }
 
-  static defaultProps = {}
+  static defaultProps = {
+    isSettingColumns: false,
+  }
 
   state = {
     columns: this.props.columns.map(col => {
       return {
         ...col,
         content: col.display_name || col.title,
-        checked: col.visible
+        checked: col.visible,
       }
-    })
+    }),
   }
 
   componentDidUpdate = prevProps => {
@@ -31,9 +33,9 @@ export default class ColumnVisibilityModal extends React.Component {
           return {
             ...col,
             content: col.display_name || col.title,
-            checked: col.visible
+            checked: col.visible,
           }
-        })
+        }),
       })
     }
   }
@@ -50,7 +52,7 @@ export default class ColumnVisibilityModal extends React.Component {
                 ...col,
                 visible: col.checked,
                 content: undefined,
-                checked: undefined
+                checked: undefined,
               }
             })
           )

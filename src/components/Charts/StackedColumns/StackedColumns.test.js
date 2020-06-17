@@ -6,10 +6,9 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import StackedColumns from './StackedColumns'
 
 const defaultProps = {
-  labelValue: 'label',
   data: [
     { cells: [{ value: 50 }, { value: 75 }], label: 'label1`' },
-    { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' }
+    { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' },
   ],
   scales: {
     xScale: scaleBand()
@@ -18,8 +17,10 @@ const defaultProps = {
       .paddingInner(0.1),
     yScale: scaleLinear()
       .domain([0, 100])
-      .range([0, 300])
-  }
+      .range([0, 300]),
+  },
+  height: 300,
+  width: 300,
 }
 
 const setup = (props = {}, state = null) => {

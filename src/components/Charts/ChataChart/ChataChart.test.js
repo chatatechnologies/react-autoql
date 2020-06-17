@@ -1,24 +1,29 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import { findByTestAttr } from '../../../../test/testUtils'
 import ChataChart from './ChataChart'
 
+import { findByTestAttr } from '../../../../test/testUtils'
+import { themeConfigDefault } from '../../../props/defaults'
+
 const defaultProps = {
+  themeConfig: themeConfigDefault,
   data: [
     {
       cells: [{ value: 50 }, { value: 75 }],
       label: 'label1`',
-      origRow: ['label1', 50, 75]
+      origRow: ['label1', 50, 75],
     },
     {
       cells: [{ value: 30 }, { value: 65 }],
       label: 'label2`',
-      origRow: ['label2', 30, 65]
-    }
+      origRow: ['label2', 30, 65],
+    },
   ],
   columns: [{}, {}, {}],
-  chartColors: ['#FFF']
+  height: 300,
+  width: 300,
+  type: 'bar',
 }
 
 const setup = (props = {}, state = null) => {

@@ -10,9 +10,8 @@ const defaultProps = {
   test: false,
   enableQueryValidation: true,
   isEditing: false,
-  dataFormatting: {},
   titleColor: '#000',
-  deleteTile: () => {}
+  deleteTile: () => {},
 }
 
 const setup = (props = {}, state = null) => {
