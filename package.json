@@ -14,7 +14,7 @@
     "test": "NODE_ENV=test && jest",
     "test:watch": "jest --watch",
     "test:coverage": "npm test -- --coverage",
-    "test:badges": "npm run test:coverage  && make-coverage-badge",
+    "test:badges": "npm run test:coverage  && make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "jest --findRelatedTests",
     "build": "NODE_ENV=dev rollup -c",
     "lint": "eslint '**/*.js'",
@@ -26,7 +26,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "npm run test:badges && git add coverage && npm run packexample && git add example/react-autoql-0.0.0-semantically-released.tgz"
+      "pre-commit": "npm run test:badges && git add public/badge.svg && npm run packexample && git add example/react-autoql-0.0.0-semantically-released.tgz"
     }
   },
   "lint-staged": {
