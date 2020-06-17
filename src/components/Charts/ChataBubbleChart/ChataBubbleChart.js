@@ -6,46 +6,50 @@ import { max } from 'd3-array'
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 import { shouldRotateLabels } from '../../../js/Util.js'
+import { themeConfigType, dataFormattingType } from '../../../props/types'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+} from '../../../props/defaults'
 
-export default class ChataHeatmapChart extends Component {
+export default class ChataBubbleChart extends Component {
   xScale = scaleBand()
   yScale = scaleBand()
 
   static propTypes = {
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number.isRequired,
-    rightMargin: PropTypes.number.isRequired,
-    topMargin: PropTypes.number.isRequired,
-    bottomMargin: PropTypes.number.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    leftMargin: PropTypes.number,
+    rightMargin: PropTypes.number,
+    topMargin: PropTypes.number,
+    bottomMargin: PropTypes.number,
     dataValue: PropTypes.string,
     labelValueX: PropTypes.string,
     labelValueY: PropTypes.string,
     onLabelChange: PropTypes.func,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
+    leftMargin: 0,
+    rightMargin: 0,
+    topMargin: 0,
+    bottomMargin: 0,
     dataValue: 'value',
     labelValueX: 'labelX',
     labelValueY: 'labelY',
-    dataFormatting: {},
     onXAxisClick: () => {},
     onYAxisClick: () => {},
-    onLabelChange: () => {}
+    onLabelChange: () => {},
   }
 
   handleLabelRotation = labelArray => {
@@ -121,14 +125,14 @@ export default class ChataHeatmapChart extends Component {
       rightMargin,
       labelValueY,
       labelValueX,
-      chartColors,
+      themeConfig,
       leftMargin,
       topMargin,
       dataValue,
       columns,
       height,
       width,
-      data
+      data,
     } = this.props
 
     const maxValue = max(data, d => max(d.cells, cell => cell.value))
@@ -153,6 +157,7 @@ export default class ChataHeatmapChart extends Component {
     return (
       <g data-test="chata-bubble-chart">
         <Axes
+          themeConfig={this.props.themeConfig}
           scales={{ xScale, yScale }}
           xCol={legendColumn}
           yCol={columns[0]}
@@ -161,7 +166,7 @@ export default class ChataHeatmapChart extends Component {
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
-            top: topMargin
+            top: topMargin,
           }}
           width={width}
           height={height}
@@ -169,18 +174,18 @@ export default class ChataHeatmapChart extends Component {
           xTicks={xTickValues}
           dataFormatting={dataFormatting}
           rotateLabels={this.rotateLabels}
-          chartColors={chartColors}
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
         />
         {
           <Circles
+            themeConfig={this.props.themeConfig}
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,
               right: rightMargin,
               bottom: bottomMargin,
-              top: topMargin
+              top: topMargin,
             }}
             data={data}
             columns={columns}
@@ -192,7 +197,6 @@ export default class ChataHeatmapChart extends Component {
             labelValueX={labelValueX}
             labelValueY={labelValueY}
             onChartClick={onChartClick}
-            chartColors={chartColors}
             activeKey={activeChartElementKey}
           />
         }

@@ -19,6 +19,7 @@ module.exports = {
     NODE_ENV: 'test',
     React: 'React',
   },
+  transform: { '^.+\\.js?$': 'babel-jest' },
   moduleFileExtensions: ['js', 'jsx'],
   moduleDirectories: ['node_modules'],
 }

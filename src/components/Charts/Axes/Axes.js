@@ -4,9 +4,17 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 
 import { Axis } from '../Axis'
+import { dataFormattingType, themeConfigType } from '../../../props/types'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+} from '../../../props/defaults'
 
 export default class Axes extends React.Component {
   static propTypes = {
+    dataFormatting: dataFormattingType,
+    themeConfig: themeConfigType,
+
     scales: PropTypes.shape({}).isRequired,
     margins: PropTypes.shape({}),
     height: PropTypes.number,
@@ -20,10 +28,8 @@ export default class Axes extends React.Component {
     yGridLines: PropTypes.bool,
     legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
     legendColumn: PropTypes.shape({}),
-    dataFormatting: PropTypes.shape({}),
     hasRightLegend: PropTypes.bool,
     hasBottomLegend: PropTypes.bool,
-    chartColors: PropTypes.arrayOf(PropTypes.string),
     onLegendClick: PropTypes.func,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
@@ -31,11 +37,14 @@ export default class Axes extends React.Component {
     hasYDropdown: PropTypes.bool,
     xAxisTitle: PropTypes.string,
     yAxisTitle: PropTypes.string,
-    legendTitle: PropTypes.string
+    legendTitle: PropTypes.string,
   }
 
   static defaultProps = {
-    legendTitle: undefined
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
+    legendTitle: undefined,
   }
 
   renderAxisLabel = (title = '', hasDropdown) => {
@@ -76,6 +85,7 @@ export default class Axes extends React.Component {
 
   render = () => {
     const {
+      themeConfig,
       scales,
       margins,
       height,
@@ -92,7 +102,6 @@ export default class Axes extends React.Component {
       dataFormatting,
       hasRightLegend,
       hasBottomLegend,
-      chartColors,
       onLegendClick,
       onXAxisClick,
       onYAxisClick,
@@ -101,7 +110,7 @@ export default class Axes extends React.Component {
       xAxisTitle,
       yAxisTitle,
       legendTitle,
-      onLegendTitleClick
+      onLegendTitleClick,
     } = this.props
 
     const xProps = {
@@ -122,10 +131,10 @@ export default class Axes extends React.Component {
       legendLabels,
       legendColumn,
       dataFormatting,
-      chartColors,
+      themeConfig,
       onLegendClick,
       onLegendTitleClick,
-      legendTitle
+      legendTitle,
     }
 
     const yProps = {
@@ -141,8 +150,8 @@ export default class Axes extends React.Component {
       title: yAxisTitle || yCol.title,
       showGridLines: yGridLines,
       dataFormatting,
-      chartColors,
-      onLegendClick
+      themeConfig,
+      onLegendClick,
     }
 
     const labelInlineStyles = {
@@ -150,7 +159,7 @@ export default class Axes extends React.Component {
       fontFamily: 'inherit',
       fill: 'currentColor',
       fillOpacity: 0.7,
-      cursor: 'default'
+      cursor: 'default',
     }
 
     // x-axis positions

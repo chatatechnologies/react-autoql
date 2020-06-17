@@ -7,12 +7,20 @@ import _get from 'lodash.get'
 
 import { calculateMinAndMaxSums, shouldRotateLabels } from '../../../js/Util'
 import { getTickValues } from '../helpers'
+import { dataFormattingType, themeConfigType } from '../../../props/types'
+import {
+  dataFormattingDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 export default class ChataStackedLineChart extends Component {
   xScale = scaleBand()
   yScale = scaleLinear()
 
   static propTypes = {
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
@@ -21,24 +29,16 @@ export default class ChataStackedLineChart extends Component {
     rightMargin: PropTypes.number.isRequired,
     topMargin: PropTypes.number.isRequired,
     bottomMargin: PropTypes.number.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     onLabelChange: PropTypes.func,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
     legendLocation: PropTypes.string,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string,
-    }),
   }
 
   static defaultProps = {
-    dataFormatting: {},
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
     numberColumnIndices: [],
     legendLocation: undefined,
     onXAxisClick: () => {},
@@ -72,14 +72,12 @@ export default class ChataStackedLineChart extends Component {
       legendLocation,
       onLegendClick,
       legendColumn,
-      innerPadding,
-      outerPadding,
       bottomMargin,
       onChartClick,
       legendLabels,
       onXAxisClick,
       onYAxisClick,
-      chartColors,
+      themeConfig,
       rightMargin,
       leftMargin,
       topMargin,
@@ -90,7 +88,7 @@ export default class ChataStackedLineChart extends Component {
     } = this.props
 
     // Get max and min values from all series
-    const { max, min } = calculateMinAndMaxSums(data)
+    const { max } = calculateMinAndMaxSums(data)
 
     const xScale = this.xScale
       .domain(data.map(d => d.label))
@@ -99,7 +97,6 @@ export default class ChataStackedLineChart extends Component {
       .paddingOuter(0)
 
     const yScale = this.yScale
-      // .domain([min, max])
       .domain([0, max]) // do we want to deal with negative values for these visualizations?
       .range([height - bottomMargin, topMargin])
       .nice()
@@ -114,6 +111,7 @@ export default class ChataStackedLineChart extends Component {
     return (
       <g data-test="chata-stacked-column-chart">
         <Axes
+          themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           xCol={columns[0]}
           yCol={columns[numberColumnIndex]}
@@ -135,16 +133,14 @@ export default class ChataStackedLineChart extends Component {
           onLegendClick={onLegendClick}
           legendTitle={_get(legendColumn, 'display_name')}
           onLegendTitleClick={onLegendTitleClick}
-          chartColors={chartColors}
           yGridLines
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
-          // hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
-          // hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
           hasXDropdown={enableDynamicCharting}
           yAxisTitle={numberAxisTitle}
         />
         <StackedLines
+          themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           margins={{
             left: leftMargin,
@@ -156,10 +152,8 @@ export default class ChataStackedLineChart extends Component {
           width={width}
           height={height}
           onChartClick={onChartClick}
-          chartColors={chartColors}
           activeKey={activeChartElementKey}
           legendTitle={legendColumn.display_name}
-          // minValue={min}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

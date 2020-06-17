@@ -21,7 +21,7 @@ export default class Modal extends React.Component {
     confirmLoading: PropTypes.bool,
     confirmText: PropTypes.string,
     confirmDisabled: PropTypes.bool,
-    footer: PropTypes.instanceOf(<div></div>)
+    footer: PropTypes.element,
   }
 
   static defaultProps = {
@@ -37,7 +37,7 @@ export default class Modal extends React.Component {
     footer: undefined,
     confirmDisabled: false,
     onClose: () => {},
-    onConfirm: () => {}
+    onConfirm: () => {},
   }
 
   render = () => {
@@ -55,7 +55,7 @@ export default class Modal extends React.Component {
             style={{
               ...this.props.style,
               width: this.props.width,
-              height: this.props.height
+              height: this.props.height,
             }}
           >
             <div className="chata-modal-header">
@@ -69,7 +69,7 @@ export default class Modal extends React.Component {
             <div
               className="chata-modal-body"
               style={{
-                overflow: this.props.enableBodyScroll ? 'auto' : 'hidden'
+                overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
               }}
             >
               {this.props.children}

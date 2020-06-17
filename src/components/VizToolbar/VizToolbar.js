@@ -14,18 +14,21 @@ import { Icon } from '../Icon'
 
 class VizToolbar extends React.Component {
   static propTypes = {
+    themeConfig: themeConfigType,
+
     supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
-    displayType: PropTypes.string.isRequired,
     onDisplayTypeChange: PropTypes.func.isRequired,
+    displayType: PropTypes.string,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
-    themeConfig: themeConfigType,
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
+
+    displayType: undefined,
     disableCharts: false,
     vertical: false,
-    themeConfig: themeConfigDefault,
   }
 
   componentDidMount = () => {

@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { number, bool, string, func, shape, array } from 'prop-types'
+import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
@@ -59,8 +59,8 @@ export default class DataMessenger extends React.Component {
     placement: string,
     maskClosable: bool,
     isVisible: bool,
-    width: number,
-    height: number,
+    width: oneOfType([string, number]),
+    height: oneOfType([string, number]),
     showHandle: bool,
     handleImage: string,
     handleStyles: shape({}),
@@ -384,7 +384,7 @@ export default class DataMessenger extends React.Component {
     if (this.props.maskClosable === false) {
       return
     }
-    if (this.props.onMakClick) {
+    if (this.props.onMaskClick) {
       this.props.onMaskClick()
     }
     if (this.props.onHandleClick) {
@@ -520,7 +520,21 @@ export default class DataMessenger extends React.Component {
   }
 
   deleteMessage = id => {
-    const newMessages = this.state.messages.filter(message => message.id !== id)
+    const messagesToDelete = [id]
+    const messageIndex = this.state.messages.findIndex(
+      message => message.id === id
+    )
+
+    // If there is a query message right above it (not a drilldown), delete the query message also
+    const messageAbove = this.state.messages[messageIndex - 1]
+    if (!messageAbove.isResponse) {
+      messagesToDelete.push(messageAbove.id)
+    }
+
+    const newMessages = this.state.messages.filter(
+      message => !messagesToDelete.includes(message.id)
+    )
+
     this.setState({
       messages: newMessages,
     })
@@ -1155,7 +1169,8 @@ export default class DataMessenger extends React.Component {
             placement={this.getPlacementProp()}
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
-            onMaskClick={this.handleMaskClick}
+            onClose={this.handleMaskClick}
+            maskClosable={true}
             onHandleClick={this.props.onHandleClick}
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}

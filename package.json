@@ -66,7 +66,7 @@
     "lodash.reduce": "^4.6.0",
     "numbro": "^2.2.0",
     "prop-types": "^15.6.2",
-    "rc-drawer": "^1.10.1",
+    "rc-drawer": "^4.1.0",
     "react-autosuggest": "^9.4.3",
     "react-custom-scrollbars": "^4.2.1",
     "react-grid-layout": "^0.16.6",

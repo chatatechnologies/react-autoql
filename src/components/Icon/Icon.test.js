@@ -4,7 +4,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import Icon from './Icon'
 
-const defaultProps = {}
+const defaultProps = {
+  type: 'edit',
+}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }

@@ -12,15 +12,8 @@ import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
 
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
-import { TABLE_TYPES, CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
-import {
-  getDefaultDisplayType,
-  isTableType,
-  getSupportedDisplayTypes,
-  isAggregation,
-  isTableResponse,
-  setCSSVars,
-} from '../../js/Util'
+import { CHART_TYPES } from '../../js/Constants.js'
+import { isTableResponse, setCSSVars } from '../../js/Util'
 import {
   autoQLConfigType,
   authenticationType,
@@ -39,7 +32,8 @@ export default class Input extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     themeConfig: themeConfigType,
-    responseRef: PropTypes.instanceOf(QueryOutput).isRequired,
+
+    responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
     originalQuery: PropTypes.string,
     onSuccessAlert: PropTypes.func,
@@ -53,6 +47,8 @@ export default class Input extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     themeConfig: themeConfigDefault,
+
+    responseRef: undefined,
     enableDeleteBtn: false,
     originalQuery: undefined,
     onSuccessAlert: () => {},
@@ -497,14 +493,19 @@ export default class Input extends React.Component {
         this.props.autoQLConfig.debug &&
         _get(response, 'data.data.display_type') === 'data',
       showDeleteButton: this.props.enableDeleteBtn,
-      showMoreOptionsButton: true,
-      showReportProblemButton:
-        _get(response, 'data.data.display_type') === 'data',
+      showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
         this.props.autoQLConfig.enableNotifications &&
         this.props.originalQuery,
     }
+
+    shouldShowButton.showMoreOptionsButton =
+      shouldShowButton.showCopyButton ||
+      shouldShowButton.showSQLButton ||
+      shouldShowButton.showCreateNotificationButton ||
+      shouldShowButton.showSaveAsCSVButton ||
+      shouldShowButton.showSaveAsPNGButton
 
     // If there is nothing to put in the toolbar, don't render it
     if (

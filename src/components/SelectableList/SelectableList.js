@@ -8,19 +8,19 @@ import { Checkbox } from '../Checkbox'
 
 import './SelectableList.scss'
 
-export default class Button extends React.Component {
+export default class SelectableList extends React.Component {
   static propTypes = {
     columns: PropTypes.arrayOf(PropTypes.shape({})),
-    items: PropTypes.arrayOf(PropTypes.shape({}))
+    items: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
     columns: [],
-    items: []
+    items: [],
   }
 
   state = {
-    selected: []
+    selected: [],
   }
 
   unselectAll = () => {
@@ -89,14 +89,19 @@ export default class Button extends React.Component {
     const items = _cloneDeep(this.props.items)
 
     return (
-      <div className="chata-selectable-list">
+      <div
+        className="chata-selectable-list"
+        onClick={e => {
+          e.stopPropagation()
+        }}
+      >
         {!!_get(this.props.columns, 'length') && (
           <div className="col-visibility-header">
             {this.props.columns.map((col, index) => {
               if (index === this.props.columns.length - 1) {
                 const allItemsChecked = items.every(col => col.checked)
                 return (
-                  <div key={uuid.v4()}>
+                  <div key={`list-header-${uuid.v4()}`}>
                     {col.name}
                     <Checkbox
                       checked={allItemsChecked}
@@ -124,11 +129,11 @@ export default class Button extends React.Component {
         {items.map((item, index) => {
           return (
             <div
+              key={`list-item-${uuid.v4()}`}
               className={`chata-list-item${
                 this.state.selected.includes(index) ? ' selected' : ''
               }`}
               onClick={e => {
-                // e.stopPropagation()
                 if (e.shiftKey) {
                   this.handleShiftSelect(index)
                 } else if (e.ctrlKey || e.metaKey) {
@@ -143,9 +148,6 @@ export default class Button extends React.Component {
               <div>
                 <Checkbox
                   checked={item.checked}
-                  onClick={e => {
-                    e.stopPropagation()
-                  }}
                   onChange={() => {
                     if (
                       this.state.selected.length > 1 &&

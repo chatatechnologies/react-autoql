@@ -1,5 +1,9 @@
 import React, { Component } from 'react'
 import { scaleLinear } from 'd3-scale'
+import _get from 'lodash.get'
+
+import { themeConfigType } from '../../../props/types'
+import { themeConfigDefault } from '../../../props/defaults'
 
 export default class Squares extends Component {
   constructor(props) {
@@ -10,10 +14,16 @@ export default class Squares extends Component {
       .range([0, 1])
   }
 
-  static propTypes = {}
+  static propTypes = {
+    themeConfig: themeConfigType,
+  }
+
+  static defaultProps = {
+    themeConfig: themeConfigDefault,
+  }
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   render = () => {
@@ -25,8 +35,10 @@ export default class Squares extends Component {
     data.forEach(d => {
       d.cells.forEach((cell, i) => {
         const fillColor =
-          cell.value >= 0 ? this.props.chartColors[0] : 'rgba(221, 106, 106)'
-        const activeFillColor = this.props.chartColors[1]
+          cell.value >= 0
+            ? _get(this.props.themeConfig, 'chartColors[0]')
+            : 'rgba(221, 106, 106)'
+        const activeFillColor = _get(this.props.themeConfig, 'chartColors[1]')
 
         squares.push(
           <rect
@@ -43,11 +55,11 @@ export default class Squares extends Component {
             height={yScale.bandwidth()}
             onClick={() => {
               this.setState({
-                activeKey: `${cell.label}-${d.label}`
+                activeKey: `${cell.label}-${d.label}`,
               })
               this.props.onChartClick({
                 activeKey: `${cell.label}-${d.label}`,
-                drilldownData: cell.drilldownData
+                drilldownData: cell.drilldownData,
               })
             }}
             data-tip={cell.tooltipData}

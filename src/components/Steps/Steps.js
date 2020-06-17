@@ -9,12 +9,13 @@ export default class Steps extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
-    steps: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
   }
 
   static defaultProps = {
+    steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
   }

@@ -2,10 +2,12 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../../test/testUtils'
+import { testAuthentication } from '../../../../test/testData'
 import NotificationList from './NotificationList'
 
 const defaultProps = {
-  notifications: []
+  authentication: testAuthentication,
+  notifications: [],
 }
 
 const setup = (props = {}, state = null) => {

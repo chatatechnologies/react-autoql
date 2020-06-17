@@ -3,23 +3,29 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 
-import { select, intersection } from 'd3-selection'
+import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
 import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
 import { formatChartLabel } from '../../../js/Util.js'
-import { doesElementOverflowContainer } from '../helpers'
 
 import './Axis.scss'
+import { themeConfigType, dataFormattingType } from '../../../props/types.js'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+} from '../../../props/defaults.js'
 
 export default class Axis extends Component {
   LEGEND_PADDING = 130
   LEGEND_ID = `axis-${uuid.v4()}`
 
   static propTypes = {
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+
     margins: PropTypes.shape({}),
     height: PropTypes.number,
     orient: PropTypes.string,
@@ -34,25 +40,18 @@ export default class Axis extends Component {
     hasBottomLegend: PropTypes.bool,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
     orient: 'Bottom',
     hasRightLegend: false,
     hasBottomLegend: false,
-    dataFormatting: {},
     margins: {},
     onLegendClick: () => {},
-    onLegendTitleClick: () => {}
+    onLegendTitleClick: () => {},
   }
 
   componentDidMount = () => {
@@ -266,7 +265,7 @@ export default class Axis extends Component {
         return formatChartLabel({
           d,
           col: self.props.col,
-          config: self.props.dataFormatting
+          config: self.props.dataFormatting,
         }).formattedLabel
       })
 
@@ -318,7 +317,7 @@ export default class Axis extends Component {
         const { fullWidthLabel, isTruncated } = formatChartLabel({
           d,
           col: self.props.col,
-          config: self.props.dataFormatting
+          config: self.props.dataFormatting,
         })
         if (isTruncated) {
           return fullWidthLabel

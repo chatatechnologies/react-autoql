@@ -1045,15 +1045,6 @@ export default class App extends Component {
           color formats are accepted. Hit "enter" to add a color.
         </h5>
         {this.renderChartColorsList()}
-        {
-          // <Select
-          //   mode="tags"
-          //   onChange={colors => {
-          //     this.setState({ chartColors: colors })
-          //   }}
-          //   value={this.state.chartColors}
-          // />
-        }
         {this.createBooleanRadioGroup(
           'Enable Dynamic Charting',
           'enableDynamicCharting',

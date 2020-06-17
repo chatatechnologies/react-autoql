@@ -46,14 +46,13 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
-    lastMessageId: PropTypes.string.isRequired,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     displayType: PropTypes.string,
-    onSuggestionClick: PropTypes.func.isRequired,
+    onSuggestionClick: PropTypes.func,
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     tableOptions: PropTypes.shape({}),
@@ -71,6 +70,7 @@ export default class ChatMessage extends React.Component {
     dataFormatting: dataFormattingDefault,
     themeConfig: themeConfigDefault,
 
+    onSuggestionClick: () => {},
     setActiveMessage: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -253,7 +253,6 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     if (
       this.props.isResponse &&
-      this.props.type !== 'text' &&
       this.props.displayType !== 'help' &&
       this.props.displayType !== 'suggestion'
     ) {
