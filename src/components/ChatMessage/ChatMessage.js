@@ -52,7 +52,7 @@ export default class ChatMessage extends React.Component {
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     displayType: PropTypes.string,
-    onSuggestionClick: PropTypes.func.isRequired,
+    onSuggestionClick: PropTypes.func,
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     tableOptions: PropTypes.shape({}),
@@ -70,6 +70,7 @@ export default class ChatMessage extends React.Component {
     dataFormatting: dataFormattingDefault,
     themeConfig: themeConfigDefault,
 
+    onSuggestionClick: () => {},
     setActiveMessage: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},

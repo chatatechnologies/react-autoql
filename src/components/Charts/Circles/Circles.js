@@ -1,14 +1,23 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import _get from 'lodash.get'
 import { scaleLinear } from 'd3-scale'
+import { themeConfigDefault } from '../../../props/defaults'
+import { themeConfigType } from '../../../props/types'
 
 export default class Circles extends Component {
   static propTypes = {
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    themeConfig: themeConfigType,
+
+    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  }
+
+  static defaultProps = {
+    themeConfig: themeConfigDefault,
   }
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   render = () => {
@@ -36,11 +45,11 @@ export default class Circles extends Component {
             r={cell.value < 0 ? 0 : radiusScale(cell.value)}
             onClick={() => {
               this.setState({
-                activeKey: `${cell.label}-${d.label}`
+                activeKey: `${cell.label}-${d.label}`,
               })
               this.props.onChartClick({
                 activeKey: `${cell.label}-${d.label}`,
-                drilldownData: cell.drilldownData
+                drilldownData: cell.drilldownData,
               })
             }}
             data-tip={cell.tooltipData}
@@ -50,9 +59,9 @@ export default class Circles extends Component {
               strokeWidth: 10,
               fill:
                 this.state.activeKey === `${cell.label}-${d.label}`
-                  ? this.props.chartColors[1]
-                  : this.props.chartColors[0],
-              fillOpacity: 0.7
+                  ? _get(this.props.themeConfig, 'chartColors[1]')
+                  : _get(this.props.themeConfig, 'chartColors[0]'),
+              fillOpacity: 0.7,
             }}
           />
         )

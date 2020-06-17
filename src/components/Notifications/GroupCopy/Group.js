@@ -1,9 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import isEqual from 'lodash.isequal'
 
-import { Button } from '../../Button'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
@@ -54,7 +52,7 @@ export default class Group extends React.Component {
   ruleRefs = []
 
   static propTypes = {
-    groupId: PropTypes.string.isRequired,
+    groupId: PropTypes.string,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
     disableAddGroupBtn: PropTypes.bool,
@@ -63,6 +61,7 @@ export default class Group extends React.Component {
   }
 
   static defaultProps = {
+    groupId: undefined,
     disableAddGroupBtn: false,
     hideTopCondition: false,
     readOnly: false,

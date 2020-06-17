@@ -5,7 +5,8 @@ import { findByTestAttr } from '../../../test/testUtils'
 import ChataTable from './ChataTable'
 
 const defaultProps = {
-  columns: [{}, {}]
+  data: [],
+  columns: [{}, {}],
 }
 
 const setup = (props = {}, state = null) => {

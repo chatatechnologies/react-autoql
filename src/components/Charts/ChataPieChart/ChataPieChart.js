@@ -13,11 +13,19 @@ import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
 import { formatElement } from '../../../js/Util'
+import { themeConfigType, dataFormattingType } from '../../../props/types'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+} from '../../../props/defaults'
 
 export default class Axis extends Component {
   CHART_ID = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+
     height: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
@@ -25,26 +33,19 @@ export default class Axis extends Component {
     onChartClick: PropTypes.func,
     margin: PropTypes.number,
     backgroundColor: PropTypes.string,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string
-    })
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+
     margin: 40,
     backgroundColor: 'transparent',
-    dataFormatting: {},
-    onChartClick: () => {}
+    onChartClick: () => {},
   }
 
   state = {
-    activeKey: this.props.activeChartElementKey
+    activeKey: this.props.activeChartElementKey,
   }
 
   componentDidMount = () => {
@@ -97,6 +98,7 @@ export default class Axis extends Component {
 
   setColorScale = () => {
     const self = this
+    const { chartColors } = this.props.themeConfig
 
     this.color = scaleOrdinal()
       .domain(
@@ -104,7 +106,7 @@ export default class Axis extends Component {
           return d[self.props.labelValue]
         })
       )
-      .range(this.props.chartColors)
+      .range(chartColors)
 
     const pieChart = pie().value(d => {
       return d.value.cells[0].value
@@ -153,7 +155,7 @@ export default class Axis extends Component {
         } else {
           self.props.onChartClick({
             drilldownData: _get(d, 'data.value.cells[0].drilldownData'),
-            activeKey: newActiveKey
+            activeKey: newActiveKey,
           })
           self.setState({ activeKey: newActiveKey })
         }
@@ -206,23 +208,23 @@ export default class Axis extends Component {
       height,
       margin,
       labelValue,
-      chartColors,
       stringColumnIndex,
-      numberColumnIndex
+      numberColumnIndex,
     } = this.props
+    const { chartColors } = this.props.themeConfig
 
     this.legendLabels = this.sortedData.map(d => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
-        column: _get(this.props, `columns[${stringColumnIndex}]`)
+        column: _get(this.props, `columns[${stringColumnIndex}]`),
       })}: ${formatElement({
         element: d.cells[0].value || 0,
         column: _get(this.props, `columns[${numberColumnIndex}]`),
-        config: this.props.dataFormatting
+        config: this.props.dataFormatting,
       })}`
       return {
         hidden: d.hidden,
-        label: legendString.trim()
+        label: legendString.trim(),
       }
     })
 

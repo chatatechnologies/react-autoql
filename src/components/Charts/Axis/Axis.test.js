@@ -1,11 +1,13 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import { findByTestAttr } from '../../../../test/testUtils'
 import Axis from './Axis'
 
+import { findByTestAttr } from '../../../../test/testUtils'
+import { themeConfigDefault } from '../../../props/defaults'
+
 const defaultProps = {
-  chartColors: ['#FFF']
+  themeConfig: themeConfigDefault,
 }
 
 const setup = (props = {}, state = null) => {

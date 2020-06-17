@@ -25,6 +25,17 @@ import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 import './ChataChart.scss'
 import Popover from 'react-tiny-popover'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import {
+  themeConfigType,
+  dataFormattingType,
+  dataConfigType,
+} from '../../../props/types'
+import {
+  themeConfigDefault,
+  dataFormattingDefault,
+  dataConfigDefault,
+} from '../../../props/defaults'
+import isEqual from 'lodash.isequal'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -32,7 +43,7 @@ export default class ChataChart extends Component {
 
   constructor(props) {
     super(props)
-    const { chartColors } = props
+    const { chartColors } = props.themeConfig
 
     this.colorScale = scaleOrdinal().range(chartColors)
   }
@@ -45,27 +56,27 @@ export default class ChataChart extends Component {
   }
 
   static propTypes = {
+    themeConfig: themeConfigType,
+    dataFormatting: dataFormattingType,
+    dataConfig: dataConfigType,
+
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})),
     type: PropTypes.string.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    chartColors: PropTypes.arrayOf(PropTypes.string).isRequired,
     onLegendClick: PropTypes.func,
-    enableDynamicCharting: PropTypes.bool.isRequired,
-    dataFormatting: PropTypes.shape({
-      currencyCode: PropTypes.string,
-      languageCode: PropTypes.string,
-      currencyDecimals: PropTypes.number,
-      quantityDecimals: PropTypes.number,
-      comparisonDisplay: PropTypes.string,
-      monthYearFormat: PropTypes.string,
-      dayMonthYearFormat: PropTypes.string,
-    }),
+    enableDynamicCharting: PropTypes.bool,
   }
 
   static defaultProps = {
-    dataFormatting: {},
+    themeConfig: themeConfigDefault,
+    dataFormatting: dataFormattingDefault,
+    dataConfig: dataConfigDefault,
+
+    tableColumns: [],
+    enableDynamicCharting: true,
     onLegendClick: () => {},
   }
 
@@ -74,7 +85,6 @@ export default class ChataChart extends Component {
     rightMargin: 10,
     topMargin: 10,
     bottomMargin: 100,
-    // bottomLegendWidth: 0,
     bottomLegendMargin: 0,
 
     currencySelectorState: [],
@@ -96,11 +106,7 @@ export default class ChataChart extends Component {
       this.updateMargins(350)
     }
 
-    if (
-      this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
-      this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
-      this.props.numberColumnIndices != prevProps.numberColumnIndices
-    ) {
+    if (!isEqual(this.props.dataConfig, prevProps.dataConfig)) {
       this.updateMargins()
     }
 
@@ -115,7 +121,8 @@ export default class ChataChart extends Component {
   }
 
   setNumberColumnSelectorState = () => {
-    const { tableColumns, numberColumnIndices } = this.props
+    const { tableColumns } = this.props
+    const { numberColumnIndices } = this.props.dataConfig
 
     if (!tableColumns || !numberColumnIndices) {
       return
@@ -216,7 +223,7 @@ export default class ChataChart extends Component {
 
     let bottomLegendMargin = 0
     const legendLocation = getLegendLocation(
-      this.props.numberColumnIndices,
+      _get(this.props.dataConfig, 'numberColumnIndices'),
       this.props.type
     )
 
@@ -310,17 +317,17 @@ export default class ChataChart extends Component {
     ) {
       return _get(
         this.props.tableColumns,
-        `[${this.props.numberColumnIndex}].display_name`
+        `[${_get(this.props, 'numberColumnIndex')}].display_name`
       )
     }
 
-    if (_get(this.props.numberColumnIndices, 'length', 0) <= 1) {
+    if (_get(this.props.dataConfig, 'numberColumnIndices.length', 0) <= 1) {
       return undefined
     }
 
     try {
       const columnType = this.props.columns.find(
-        (col, i) => i === this.props.numberColumnIndices[0]
+        (col, i) => i === _get(this.props.dataConfig, 'numberColumnIndices[0]')
       ).type
 
       if (columnType === 'DOLLAR_AMT') {
@@ -351,22 +358,25 @@ export default class ChataChart extends Component {
     } = this.state
 
     const {
-      width,
-      height,
-      data,
-      columns,
-      onChartClick,
-      chartColors,
       activeChartElementKey,
+      enableDynamicCharting,
       dataFormatting,
       onLegendClick,
-      stringColumnIndex,
-      stringColumnIndices,
-      numberColumnIndex,
-      numberColumnIndices,
-      enableDynamicCharting,
-      legendColumnIndex,
+      onChartClick,
+      themeConfig,
+      columns,
+      height,
+      width,
+      data,
     } = this.props
+
+    const {
+      stringColumnIndices,
+      numberColumnIndices,
+      stringColumnIndex,
+      numberColumnIndex,
+      legendColumnIndex,
+    } = this.props.dataConfig
 
     const filteredSeriesData = this.getFilteredSeriesData(data)
 
@@ -409,7 +419,7 @@ export default class ChataChart extends Component {
       bottomLegendMargin,
       onChartClick,
       dataFormatting,
-      chartColors,
+      themeConfig,
       activeChartElementKey,
       onLegendClick,
       stringColumnIndex,
@@ -424,12 +434,8 @@ export default class ChataChart extends Component {
           ...this.state.quantitySelectorState,
           ...this.state.ratioSelectorState,
         ].length > 1,
-      hasMultipleStringColumns:
-        _get(this.props.stringColumnIndices, 'length', 0) > 1,
-      legendLocation: getLegendLocation(
-        this.props.numberColumnIndices,
-        this.props.type
-      ),
+      hasMultipleStringColumns: stringColumnIndices.length > 1,
+      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
       legendColumn: this.props.tableColumns[legendColumnIndex],
       legendLabels: getLegendLabelsForMultiSeries(
         this.props.columns,
@@ -474,11 +480,13 @@ export default class ChataChart extends Component {
     return (
       <div className="axis-selector-container">
         <ul className="axis-selector-content">
-          {this.props.stringColumnIndices.map((colIndex, i) => {
+          {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
             return (
               <li
                 className={`string-select-list-item ${
-                  colIndex === this.props.stringColumnIndex ? 'active' : ''
+                  colIndex === _get(this.props.dataConfig, 'stringColumnIndex')
+                    ? 'active'
+                    : ''
                 }`}
                 key={uuid.v4()}
                 onClick={() => {
@@ -635,18 +643,20 @@ export default class ChataChart extends Component {
   }
 
   renderLegendSelectorContent = () => {
-    if (_get(this.props.stringColumnIndices, 'length', 0) < 2) {
+    if (_get(this.props.dataConfig, 'stringColumnIndices.length', 0) < 2) {
       return null
     }
 
     return (
       <div className="axis-selector-container">
         <ul className="axis-selector-content">
-          {this.props.stringColumnIndices.map((colIndex, i) => {
+          {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
             return (
               <li
                 className={`string-select-list-item ${
-                  colIndex === this.props.legendColumnIndex ? 'active' : ''
+                  colIndex === _get(this.props.dataConfig, 'legendColumnIndex')
+                    ? 'active'
+                    : ''
                 }`}
                 key={uuid.v4()}
                 onClick={() => {
@@ -776,8 +786,6 @@ export default class ChataChart extends Component {
   )
 
   renderPieChart = () => {
-    const { stringColumnIndex, numberColumnIndex } = this.props
-
     return (
       <ChataPieChart
         {...this.getCommonChartProps()}

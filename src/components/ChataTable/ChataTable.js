@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
@@ -21,9 +21,9 @@ export default class ChataTable extends React.Component {
   ref = null
 
   static propTypes = {
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    data: PropTypes.arrayOf(PropTypes.array),
+    columns: PropTypes.arrayOf(PropTypes.shape({})),
     onRowClick: PropTypes.func,
-    data: PropTypes.arrayOf(PropTypes.array).isRequired,
     borderColor: PropTypes.string,
     hoverColor: PropTypes.string,
     onFilterCallback: PropTypes.func,
@@ -31,6 +31,8 @@ export default class ChataTable extends React.Component {
   }
 
   static defaultProps = {
+    data: undefined,
+    columns: undefined,
     borderColor: '#ddd',
     hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
@@ -153,25 +155,20 @@ export default class ChataTable extends React.Component {
         className="chata-table-container"
         style={this.props.style}
       >
-        <ReactTabulator
-          ref={ref => (this.ref = ref)}
-          columns={this.state.columns}
-          data={this.props.data}
-          // rowClick={this.rowClick}
-          cellClick={this.cellClick}
-          options={options}
-          data-custom-attr="test-custom-attribute"
-          className="chata-table"
-          // selectable
-          height="100%"
-          // style={{
-          //   height: showFilteredDataWarning
-          //     ? 'calc(100% - 50px) !important'
-          //     : '100%'
-          // }}
-          clipboard
-          download
-        />
+        {this.props.data && this.props.columns && (
+          <ReactTabulator
+            ref={ref => (this.ref = ref)}
+            columns={this.state.columns}
+            data={this.props.data}
+            cellClick={this.cellClick}
+            options={options}
+            data-custom-attr="test-custom-attribute"
+            className="chata-table"
+            height="100%"
+            clipboard
+            download
+          />
+        )}
       </div>
     )
   }

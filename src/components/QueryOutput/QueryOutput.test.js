@@ -14,12 +14,12 @@ const defaultProps = {
   displayType: undefined,
   queryInputRef: undefined,
   onSuggestionClick: undefined,
-  processDrilldown: () => {}
+  processDrilldown: () => {},
 }
 
 const createMockResponse = responseBody => {
   return {
-    data: responseBody
+    data: responseBody,
   }
 }
 
@@ -47,7 +47,7 @@ describe('test each response case', () => {
       })
       test(`renders correctly with default props: response index ${i}`, () => {
         const wrapper = setup({
-          response: createMockResponse(testCases[i])
+          response: createMockResponse(testCases[i]),
         })
         expect(wrapper.exists()).toBe(true)
       })

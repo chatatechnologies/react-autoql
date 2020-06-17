@@ -32,3 +32,12 @@ export const themeConfigDefault = {
   fontFamily: 'sans-serif',
   titleColor: '#356f90', // DASHBOARD TILES ONLY
 }
+
+export const dataConfigDefault = {
+  stringColumnIndices: [],
+  numberColumnIndices: [],
+  seriesIndices: [],
+  stringColumnIndex: 0,
+  legendColumnIndex: undefined,
+  numberColumnIndex: 1,
+}

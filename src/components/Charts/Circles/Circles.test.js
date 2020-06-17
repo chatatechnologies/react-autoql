@@ -10,8 +10,9 @@ const defaultProps = {
   labelValueY: 'label',
   data: [
     { cells: [{ value: 50 }, { value: 75 }], label: 'label1`' },
-    { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' }
+    { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' },
   ],
+  columns: [{}, {}],
   scales: {
     xScale: scaleBand()
       .domain(['label1', 'label2'])
@@ -20,9 +21,8 @@ const defaultProps = {
     yScale: scaleBand()
       .domain(['label1', 'label2'])
       .range([0, 200])
-      .paddingInner(0.1)
+      .paddingInner(0.1),
   },
-  chartColors: ['#fff']
 }
 
 const setup = (props = {}, state = null) => {

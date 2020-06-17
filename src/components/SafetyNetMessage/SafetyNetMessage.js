@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
+import _get from 'lodash.get'
 
 import { Icon } from '../Icon'
 import { Select } from '../Select'
@@ -10,30 +11,32 @@ export default class SafetyNetMessage extends React.Component {
   suggestionLists = []
 
   static propTypes = {
-    response: PropTypes.shape({}).isRequired,
-    onSuggestionClick: PropTypes.func.isRequired,
-    autoSelectSuggestion: PropTypes.bool.isRequired,
+    response: PropTypes.shape({}),
+    onSuggestionClick: PropTypes.func,
+    autoSelectSuggestion: PropTypes.bool,
     isQueryRunning: PropTypes.bool,
     initialSelections: PropTypes.arrayOf(PropTypes.shape({})),
     onQueryValidationSelectOption: PropTypes.func,
-    message: PropTypes.string
+    message: PropTypes.string,
   }
 
   static defaultProps = {
+    response: undefined,
     autoSelectSuggestion: true,
     initialSelections: undefined,
     isQueryRunning: false,
     message: undefined,
-    onQueryValidationSelectOption: () => {}
+    onSuggestionClick: () => {},
+    onQueryValidationSelectOption: () => {},
   }
 
   state = {
     safetyNetQueryArray: [],
-    selectedSuggestions: undefined
+    selectedSuggestions: undefined,
   }
 
   componentDidMount = () => {
-    if (this.props.response && this.props.response.data) {
+    if (_get(this.props, 'response.data')) {
       this.initializeSafetyNetOptions(this.props.response.data)
     }
   }
@@ -53,7 +56,7 @@ export default class SafetyNetMessage extends React.Component {
             return {
               id: uuid.v4(),
               hidden: false,
-              ...suggestion
+              ...suggestion,
             }
           }
         )
@@ -61,7 +64,7 @@ export default class SafetyNetMessage extends React.Component {
         // Add original query value to suggestion list
         const list = [
           ...originalSuggestionList,
-          { id: uuid.v4(), text: originalWord }
+          { id: uuid.v4(), text: originalWord },
         ]
 
         suggestionLists.push(list)
@@ -117,21 +120,21 @@ export default class SafetyNetMessage extends React.Component {
       })
 
       this.setState({
-        selectedSuggestions: this.props.initialSelections
+        selectedSuggestions: this.props.initialSelections,
       })
     } else if (this.props.autoSelectSuggestion) {
       // Use first suggestion in list
       this.setState({
         selectedSuggestions: this.suggestionLists.map(
           suggestionList => suggestionList[0]
-        )
+        ),
       })
     } else {
       // Use original query (last value)
       this.setState({
         selectedSuggestions: this.suggestionLists.map(
           suggestionList => suggestionList[suggestionList.length - 1]
-        )
+        ),
       })
     }
   }
@@ -179,7 +182,7 @@ export default class SafetyNetMessage extends React.Component {
         if (index === suggestionIndex) {
           return {
             ...suggestion,
-            hidden: true
+            hidden: true,
           }
         }
         return suggestion
@@ -193,7 +196,7 @@ export default class SafetyNetMessage extends React.Component {
     )
 
     this.setState({
-      selectedSuggestions: newSelectedSuggestions
+      selectedSuggestions: newSelectedSuggestions,
     })
   }
 
@@ -208,7 +211,7 @@ export default class SafetyNetMessage extends React.Component {
     const options = wordList.map((suggestionItem, i) => {
       const option = {
         value: suggestionItem.id,
-        label: suggestionItem.text
+        label: suggestionItem.text,
       }
 
       // The last word is the original suggestion, append "original word" to the list label
@@ -229,7 +232,7 @@ export default class SafetyNetMessage extends React.Component {
         <span>
           <Icon type="trash" /> Remove term
         </span>
-      )
+      ),
     })
 
     return (
