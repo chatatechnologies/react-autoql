@@ -22,4 +22,5 @@ module.exports = {
   transform: { '^.+\\.js?$': 'babel-jest' },
   moduleFileExtensions: ['js', 'jsx'],
   moduleDirectories: ['node_modules'],
+  coverageReporters: ['json-summary'],
 }
