@@ -830,15 +830,23 @@ export default class QueryOutput extends React.Component {
   getTooltipDataForCell = (row, columnIndex, numberValue) => {
     let tooltipElement = null
     try {
-      const numberColumn = this.tableColumns[columnIndex]
-      const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
-
       if (this.supportsPivot) {
+        const stringColumn = this.tableColumns[
+          this.dataConfig.stringColumnIndex
+        ]
+        const numberColumn = this.tableColumns[
+          this.dataConfig.numberColumnIndex
+        ]
+
         tooltipElement = `<div>
             <div>
-              <strong>${this.pivotTableColumns[0].display_name}:</strong> ${
-          row[0]
-        }
+              <strong>${
+                this.pivotTableColumns[0].display_name
+              }:</strong> ${formatElement({
+          element: row[0],
+          column: this.pivotTableColumns[0],
+          config: this.props.dataFormatting,
+        })}
             </div>
             <div><strong>${
               this.tableColumns[this.dataConfig.legendColumnIndex].display_name
@@ -855,6 +863,11 @@ export default class QueryOutput extends React.Component {
             </div>
           </div>`
       } else {
+        const stringColumn = this.tableColumns[
+          this.dataConfig.stringColumnIndex
+        ]
+        const numberColumn = this.tableColumns[columnIndex]
+
         tooltipElement = `<div>
             <div>
               <strong>${stringColumn.display_name}:</strong> ${formatElement({
