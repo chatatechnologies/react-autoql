@@ -25,7 +25,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged && npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz"
+      "pre-commit": "npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz"
     }
   },
   "lint-staged": {

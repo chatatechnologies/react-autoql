@@ -234,7 +234,7 @@ export default class NotificationModal extends React.Component {
       ...this.props.authentication,
     }
 
-    console.log('on Rule Save 1', this.props.isManagement)
+    console.log('on Rule Save 2', this.props.isManagement)
 
     if (this.props.isManagement) {
       console.log('isManagement')
