@@ -237,6 +237,7 @@ export default class NotificationModal extends React.Component {
     console.log('on Rule Save', this.props.isManagement)
 
     if (this.props.isManagement) {
+      console.log('isManagement')
         this.props.onManagementCreateRule(newRule)
         this.setState({
           isSavingRule: false,
