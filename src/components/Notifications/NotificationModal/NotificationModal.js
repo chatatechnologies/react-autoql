@@ -33,6 +33,10 @@ export default class NotificationModal extends React.Component {
     isVisible: PropTypes.bool,
     hideDeleteBtn: PropTypes.bool,
     onClose: PropTypes.func,
+    isManagement: PropTypes.bool,
+    onManagementCreateRule: PropTypes.func,
+    onManagementDeleteRule: PropTypes.func,
+    title: PropTypes.string,
   }
 
   static defaultProps = {
@@ -44,6 +48,10 @@ export default class NotificationModal extends React.Component {
     isVisible: false,
     hideDeleteBtn: false,
     onClose: () => {},
+    isManagement: false,
+    onManagementCreateRule: () => {},
+    onManagementDeleteRule: () => {},
+    title: 'Custom Notification',
   }
 
   state = {
@@ -226,7 +234,24 @@ export default class NotificationModal extends React.Component {
       ...this.props.authentication,
     }
 
-    if (newRule.id) {
+    if (this.props.isManagement) {
+        this.props.onManagementCreateRule(newRule)
+        this.setState({
+          isSavingRule: false,
+        })
+          // .then(ruleResponse => {
+          //   this.setState({
+          //     isSavingRule: false,
+          //   })
+          // })
+          // .catch(error => {
+          //   console.error(error)
+          //   this.props.onErrorCallback(error)
+          //   this.setState({
+          //     isSavingRule: false,
+          //   })
+          // })
+    } else if (newRule.id) {
       updateNotificationRule({
         ...requestParams,
       })
@@ -398,7 +423,7 @@ export default class NotificationModal extends React.Component {
 
     return (
       <Modal
-        title="Custom Notification"
+        title={this.props.title} // "Custom Notification"
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         enableBodyScroll
