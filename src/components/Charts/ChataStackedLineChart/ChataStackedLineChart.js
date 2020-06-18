@@ -109,7 +109,7 @@ export default class ChataStackedLineChart extends Component {
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
-      <g data-test="chata-stacked-column-chart">
+      <g data-test="chata-stacked-line-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
@@ -153,7 +153,7 @@ export default class ChataStackedLineChart extends Component {
           height={height}
           onChartClick={onChartClick}
           activeKey={activeChartElementKey}
-          legendTitle={legendColumn.display_name}
+          legendTitle={_get(legendColumn, 'display_name')}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

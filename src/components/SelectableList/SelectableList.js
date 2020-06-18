@@ -91,6 +91,7 @@ export default class SelectableList extends React.Component {
     return (
       <div
         className="chata-selectable-list"
+        data-test="selectable-list"
         onClick={e => {
           e.stopPropagation()
         }}

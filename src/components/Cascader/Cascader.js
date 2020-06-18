@@ -111,6 +111,7 @@ export default class Cascader extends React.Component {
       <div
         id={`chata-cascader-${this.COMPONENT_ID}`}
         className="chata-cascader"
+        data-test="chata-cascader"
       >
         {this.state.optionsArray.map((optionsObject, index) => {
           return this.renderOptionsList({

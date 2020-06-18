@@ -719,9 +719,9 @@ export default class DataMessenger extends React.Component {
               <Button
                 type="default"
                 size="small"
-                onClick={() =>
-                  this.setState({ isClearMessageConfirmVisible: false })
-                }
+                // onClick={() =>
+                //   this.setState({ isClearMessageConfirmVisible: false })
+                // }
               >
                 Cancel
               </Button>
