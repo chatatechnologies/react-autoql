@@ -60,6 +60,16 @@ export default class ChataBarChart extends Component {
       this.props.dataFormatting
     )
 
+    console.error(
+      'should rotate labels??',
+      this.rotateLabels,
+      tickWidth,
+      labelArray,
+      this.props.columns[this.props.numberColumnIndex],
+      this.props.dataFormatting
+    )
+    console.error('these are the labels', labelArray)
+
     if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
       this.props.onLabelChange()
     }
