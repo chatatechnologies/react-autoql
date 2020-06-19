@@ -784,10 +784,8 @@ export const getChartLabelTextWidthInPx = text => {
 export const getLongestLabelInPx = (labels, col, config) => {
   let max = getChartLabelTextWidthInPx(labels[0])
   labels.forEach(label => {
-    console.log('this is the label to be formatted', label)
     const formattedLabel = formatChartLabel({ d: label, col, config })
       .formattedLabel
-    console.error('this is the formatted label', formattedLabel)
     const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
 
     if (newLabelWidth > max) {
@@ -800,7 +798,6 @@ export const getLongestLabelInPx = (labels, col, config) => {
 
 export const shouldRotateLabels = (tickWidth, labels, col, config) => {
   const labelWidth = getLongestLabelInPx(labels, col, config)
-  console.error('this is the label width:', labelWidth)
   return tickWidth < labelWidth
 }
 

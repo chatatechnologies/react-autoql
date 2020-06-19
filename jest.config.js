@@ -17,7 +17,6 @@ module.exports = {
   },
   globals: {
     NODE_ENV: 'test',
-    React: 'React',
   },
   transform: { '^.+\\.js?$': 'babel-jest' },
   moduleFileExtensions: ['js', 'jsx'],

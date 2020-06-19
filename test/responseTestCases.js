@@ -10,10 +10,10 @@ export default [
       display_type: null,
       interpretation: 'all invoices for invoice of this month ',
       query_id: 'q_VzB9irC-RpKY-13XwgHrrw',
-      rows: null
+      rows: null,
     },
     message: '',
-    referenceId: '1.1.0'
+    referenceId: '1.1.0',
   },
   {
     // valid pivot data response
@@ -23,14 +23,14 @@ export default [
           type: 'DATE',
           groupable: true,
           active: false,
-          name: 'sale__transaction_date__month'
+          name: 'sale__transaction_date__month',
         },
         {
           active: false,
           groupable: false,
           name: 'sale__line_item___sum',
-          type: 'DOLLAR_AMT'
-        }
+          type: 'DOLLAR_AMT',
+        },
       ],
       display_type: 'date_pivot',
       interpretation: 'total sales by line item by transaction month',
@@ -40,17 +40,17 @@ export default [
         [1488240000, 8742.68],
         [1490918400, 11723.36],
         [1493510400, 3243.12],
-        [1496188800, 14642.19]
-      ]
+        [1496188800, 14642.19],
+      ],
     },
     message: '',
-    referenceId: '1.1.0'
+    referenceId: '1.1.0',
   },
   {
     // valid help response
     data: {
       columns: [
-        { type: 'STRING', groupable: false, active: false, name: 'Help Link' }
+        { type: 'STRING', groupable: false, active: false, name: 'Help Link' },
       ],
 
       active: false,
@@ -60,10 +60,10 @@ export default [
       display_type: 'help',
       interpretation: 'help on bar-chart',
       query_id: 'q_t_LufuRpQsGh71LE51qYnA',
-      rows: [['http://chata.ai/userguide/#bar-chart-2']]
+      rows: [['http://chata.ai/userguide/#bar-chart-2']],
     },
     message: '',
-    referenceId: '1.1.0'
+    referenceId: '1.1.0',
   },
   {
     // valid suggestion response
@@ -73,8 +73,8 @@ export default [
           type: 'STRING',
           groupable: false,
           active: false,
-          name: 'query_suggestion'
-        }
+          name: 'query_suggestion',
+        },
       ],
       display_type: 'suggestion',
       interpretation: '',
@@ -84,11 +84,11 @@ export default [
         ['All expenses in this year'],
         ['Show me all invoices in this month'],
         ['List all customers'],
-        ['None of these']
-      ]
+        ['None of these'],
+      ],
     },
     message: '',
-    referenceId: '1.1.0'
+    referenceId: '1.1.0',
   },
   {
     // valid safetynet response single suggestion
@@ -96,12 +96,12 @@ export default [
       {
         start: 10,
         suggestion_list: [
-          { text: 'Jane Johnson', value_label: 'customer name' }
+          { text: 'Jane Johnson', value_label: 'customer name' },
         ],
-        end: 14
-      }
+        end: 14,
+      },
     ],
-    query: 'sales for john'
+    query: 'sales for john',
   },
   {
     // display type that we dont understand
@@ -111,14 +111,14 @@ export default [
           type: 'DATE',
           groupable: true,
           active: false,
-          name: 'sale__transaction_date__month'
+          name: 'sale__transaction_date__month',
         },
         {
           active: false,
           groupable: false,
           name: 'sale__line_item___sum',
-          type: 'DOLLAR_AMT'
-        }
+          type: 'DOLLAR_AMT',
+        },
       ],
       display_type: 'unknown_type',
       interpretation: 'total sales by line item by transaction month',
@@ -128,11 +128,11 @@ export default [
         [1488240000, 8742.68],
         [1490918400, 11723.36],
         [1493510400, 3243.12],
-        [1496188800, 14642.19]
-      ]
+        [1496188800, 14642.19],
+      ],
     },
     message: '',
-    referenceId: '1.1.0'
+    referenceId: '1.1.0',
   },
   {
     data: {
@@ -142,15 +142,15 @@ export default [
           groupable: true,
           is_visible: true,
           name: 'hldSecurity.SecurityDescription',
-          type: 'STRING'
+          type: 'STRING',
         },
         {
           display_name: 'Market Value',
           groupable: false,
           is_visible: true,
           name: 'sum(hldHolding.MVwithAccruedLocal)',
-          type: 'DOLLAR_AMT'
-        }
+          type: 'DOLLAR_AMT',
+        },
       ],
       display_type: 'data',
       interpretation:
@@ -176,11 +176,11 @@ export default [
         ['Purefacts Canadian Equity Fund', 3485],
         ['Purefacts Money Market Fund', 0],
         ['Total Return Bond ETF', 1100763],
-        ['U.S. Mid Cap ETF', 1379040]
+        ['U.S. Mid Cap ETF', 1379040],
       ],
       sql: [
-        "select hldSecurity.SecurityDescription, sum(hldHolding.MVwithAccruedLocal) from hldHolding join hldSecurity on hldSecurity.ID = hldHolding.SecurityID and hldSecurity.SponsorID = hldHolding.SponsorID where hldHolding.ValuationDate = cast('31-DEC-2018' as DATETIME) group by hldSecurity.SecurityDescription"
-      ]
-    }
-  }
+        "select hldSecurity.SecurityDescription, sum(hldHolding.MVwithAccruedLocal) from hldHolding join hldSecurity on hldSecurity.ID = hldHolding.SecurityID and hldSecurity.SponsorID = hldHolding.SponsorID where hldHolding.ValuationDate = cast('31-DEC-2018' as DATETIME) group by hldSecurity.SecurityDescription",
+      ],
+    },
+  },
 ]

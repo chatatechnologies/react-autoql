@@ -596,9 +596,9 @@ export default class DataMessenger extends React.Component {
     let message = {}
     if (_get(response, 'error') === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
-    } else if (_get(response, 'error') === 'unauthenticated') {
+    } else if (_get(response, 'error') === 'Unauthenticated') {
       message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
-    } else if (_get(response, 'error') === 'parse error') {
+    } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
     } else if (!response && !content) {

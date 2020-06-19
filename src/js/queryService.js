@@ -76,8 +76,6 @@ export const runQueryOnly = ({
   token,
   source,
 } = {}) => {
-  const axiosInstance = axios.create({})
-
   // if (!queryCall) {
   // queryCall = axios.CancelToken.source()
 
@@ -99,17 +97,21 @@ export const runQueryOnly = ({
     }
   }
 
-  if (!apiKey || !domain) {
-    return Promise.reject({ error: 'unauthenticated' })
+  if (!query || !query.trim()) {
+    return Promise.reject({ error: 'No query supplied' })
   }
 
-  return axiosInstance
+  if (!apiKey || !domain || !token) {
+    return Promise.reject({ error: 'Unauthenticated' })
+  }
+
+  return axios
     .post(url, data, config)
     .then(response => {
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
         // queryCall = null
-        return Promise.reject({ error: 'parse error' })
+        return Promise.reject({ error: 'Parse error' })
       }
 
       // We don't want to return the detailed table types here because
@@ -129,7 +131,7 @@ export const runQueryOnly = ({
     })
     .catch(error => {
       if (error.response === 401 || !_get(error, 'response.data')) {
-        return Promise.reject({ error: 'unauthenticated' })
+        return Promise.reject({ error: 'Unauthenticated' })
       } else if (error.code === 'ECONNABORTED') {
         error.data = { message: 'Request Timed Out' }
       }
@@ -204,7 +206,13 @@ export const runQuery = ({
 }
 
 export const runSafetyNet = ({ text, domain, apiKey, token }) => {
-  const axiosInstance = axios.create({})
+  if (!text) {
+    return Promise.reject(new Error('No query supplied'))
+  }
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
 
   const url = `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
     text
@@ -212,13 +220,11 @@ export const runSafetyNet = ({ text, domain, apiKey, token }) => {
 
   const config = {}
   // config.cancelToken = safetyNetCall.token
-  if (token) {
-    config.headers = {
-      Authorization: `Bearer ${token}`,
-    }
+  config.headers = {
+    Authorization: `Bearer ${token}`,
   }
 
-  return axiosInstance
+  return axios
     .get(url, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
@@ -233,7 +239,6 @@ export const runDrilldown = ({
   apiKey,
   token,
 } = {}) => {
-  const axiosInstance = axios.create({})
   // drilldownCall = axios.CancelToken.source()
 
   const requestData = {
@@ -252,7 +257,7 @@ export const runDrilldown = ({
 
   const url = `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
-  return axiosInstance
+  return axios
     .post(url, requestData, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
@@ -268,8 +273,6 @@ export const fetchAutocomplete = ({
   if (!suggestion || !suggestion.trim()) {
     return
   }
-
-  const axiosInstance = axios.create({})
 
   // Cancel current autocomplete call if there is one
   if (autoCompleteCall) {
@@ -290,7 +293,7 @@ export const fetchAutocomplete = ({
     }
   }
 
-  return axiosInstance
+  return axios
     .get(url, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
@@ -311,8 +314,7 @@ export const setColumnVisibility = ({
     }
   }
 
-  const axiosInstance = axios.create({})
-  return axiosInstance
+  return axios
     .put(url, data, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
@@ -330,11 +332,11 @@ export const fetchQueryTips = ({
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
   const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
 
-  const axiosInstance = axios.create({
+  const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  })
+  }
 
   if (!skipSafetyNet) {
     return runSafetyNet({
@@ -352,21 +354,21 @@ export const fetchQueryTips = ({
           const newResponse = transformSafetyNetResponse(safetyNetResponse)
           return Promise.resolve(newResponse)
         }
-        return axiosInstance
-          .get(queryTipsUrl)
+        return axios
+          .get(queryTipsUrl, config)
           .then(response => Promise.resolve(response))
           .catch(error => Promise.reject(_get(error, 'response.data')))
       })
       .catch(() => {
-        return axiosInstance
-          .get(queryTipsUrl)
+        return axios
+          .get(queryTipsUrl, config)
           .then(response => Promise.resolve(response))
           .catch(error => Promise.reject(_get(error, 'response.data')))
       })
   }
 
-  return axiosInstance
-    .get(queryTipsUrl)
+  return axios
+    .get(queryTipsUrl, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
@@ -375,14 +377,14 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
   const commaSeparatedKeywords = query ? query.split(' ') : []
   const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
 
-  const axiosInstance = axios.create({
+  const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  })
+  }
 
-  return axiosInstance
-    .get(relatedQueriesUrl)
+  return axios
+    .get(relatedQueriesUrl, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
@@ -396,11 +398,11 @@ export const reportProblem = ({
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}?key=${apiKey}`
 
-  const axiosInstance = axios.create({
+  const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  })
+  }
 
   const data = {
     is_correct: false,
@@ -410,8 +412,8 @@ export const reportProblem = ({
     data.message = message
   }
 
-  return axiosInstance
-    .put(url, data)
+  return axios
+    .put(url, data, config)
     .then(response => Promise.resolve(response))
     .catch(error => Promise.reject(_get(error, 'response.data')))
 }
