@@ -1169,8 +1169,7 @@ export default class DataMessenger extends React.Component {
             placement={this.getPlacementProp()}
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
-            onClose={this.handleMaskClick}
-            maskClosable={true}
+            onMaskClick={this.handleMaskClick}
             onHandleClick={this.props.onHandleClick}
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}
