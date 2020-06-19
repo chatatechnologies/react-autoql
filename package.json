@@ -14,14 +14,14 @@
     "test": "NODE_ENV=test && jest",
     "test:watch": "jest --watch",
     "test:coverage": "npm test -- --coverage",
-    "test:badges": "npm run test:coverage  && make-coverage-badge --output-path ./public/badge.svg",
+    "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "jest --findRelatedTests",
     "build": "NODE_ENV=dev rollup -c",
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "prepublish": "npx rimraf dist && npm run build",
     "semantic-release": "semantic-release",
-    "cz": "git-cz"
+    "cz": "npx git-cz"
   },
   "style": "dist/autoql.esm.css",
   "husky": {
