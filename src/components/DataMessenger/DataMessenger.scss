@@ -73,8 +73,12 @@
   max-height: calc(100% - 140px);
   overflow-y: auto;
   overflow-x: hidden;
-  /* padding: 20px; */
   flex: 1;
+
+  .custom-crollbar-container {
+    overflow-x: hidden !important;
+    margin-bottom: 0 !important;
+  }
 }
 
 .chata-drawer .chat-bar-container {
