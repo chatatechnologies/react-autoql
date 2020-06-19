@@ -62,6 +62,7 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
+    scrollToBottom: PropTypes.func,
   }
 
   static defaultProps = {
@@ -84,6 +85,7 @@ export default class ChatMessage extends React.Component {
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
+    scrollToBottom: () => {},
   }
 
   state = {
@@ -95,7 +97,10 @@ export default class ChatMessage extends React.Component {
   componentDidMount = () => {
     setTimeout(() => {
       this.setTableMessageHeights()
-      this.forceUpdate()
+      // If we scroll to the bottom after the second update
+      // it should be rendered enough so it scrolls all the
+      // way to the bottom
+      this.forceUpdate(this.props.scrollToBottom)
     }, 0)
   }
 

@@ -167,13 +167,6 @@ export default class DataMessenger extends React.Component {
         ReactTooltip.rebuild()
       }, 1000)
 
-      if (
-        this.state.activePage === 'data-messenger' &&
-        prevState.activePage !== 'data-messenger'
-      ) {
-        this.scrollToBottom()
-      }
-
       if (this.props.isVisible && !prevProps.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
@@ -395,13 +388,12 @@ export default class DataMessenger extends React.Component {
   scrollToBottom = () => {
     if (this.messengerScrollComponent) {
       this.messengerScrollComponent.scrollToBottom()
-    }
-    // Required to make animation smooth
-    setTimeout(() => {
-      if (this.messengerScrollComponent) {
+
+      // Required to make animation smooth
+      setTimeout(() => {
         this.messengerScrollComponent.scrollToBottom()
-      }
-    }, 0)
+      }, 0)
+    }
   }
 
   onInputSubmit = text => {
@@ -581,7 +573,6 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
   addResponseMessage = ({ response, content, query }) => {
@@ -609,7 +600,6 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
   setActiveMessage = id => {
