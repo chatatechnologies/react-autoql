@@ -25,6 +25,7 @@ import {
   message,
   Modal,
   Spin,
+  Select,
 } from 'antd'
 
 import {
@@ -38,6 +39,8 @@ import {
   PlusOutlined,
   RollbackOutlined,
   SaveOutlined,
+  DeleteOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons'
 
 import topics from './topics.js'
@@ -143,8 +146,8 @@ export default class App extends Component {
     demo: getStoredProp('demo') == 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
-    customerId: getStoredProp('customer-id') || '',
-    userId: getStoredProp('user-id') || '',
+    projectId: getStoredProp('customer-id') || '',
+    displayName: getStoredProp('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
     currencyDecimals: undefined,
@@ -156,7 +159,7 @@ export default class App extends Component {
     monthFormat: 'MMM YYYY',
     // dayFormat: 'MMM DD, YYYY',
     dayFormat: 'll',
-    dashboardTiles: undefined,
+    dashboardTiles: [],
     activeDashboardId: undefined,
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -165,7 +168,8 @@ export default class App extends Component {
   componentDidMount = () => {
     this.testAuthentication()
       .then(() => {
-        this.fetchDashboard()
+        this.fetchDashboards()
+        this.fetchTopics()
       })
       .catch(() => {
         this.logoutUser()
@@ -173,10 +177,6 @@ export default class App extends Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (prevState.demo !== this.state.demo) {
-      this.fetchDashboard()
-    }
-
     const handleImage = document.querySelector('.drawer-handle img')
     if (handleImage) {
       handleImage.classList.add(`${this.state.activeIntegrator}`)
@@ -194,7 +194,6 @@ export default class App extends Component {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey, // required if demo is false
       domain: this.state.domain,
-      demo: this.state.demo,
     }
   }
 
@@ -337,17 +336,51 @@ export default class App extends Component {
       })
   }
 
-  fetchDashboard = async () => {
+  fetchTopics = async () => {
+    this.setState({ isFetchingTopics: true })
+
+    try {
+      const jwtToken = getStoredProp('jwtToken')
+      if (jwtToken) {
+        const baseUrl = getBaseUrl()
+
+        const url = `${baseUrl}/api/v1/topics?key=${this.state.apiKey}&project_id=${this.state.projectId}`
+        const topicsResponse = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+            'Integrator-Domain': this.state.domain,
+          },
+        })
+
+        this.setState({
+          componentKey: uuid.v4(),
+          topics: topicsResponse.data.items,
+          topicsError: false,
+          isFetchingTopics: false,
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        componentKey: uuid.v4(),
+        topics: undefined,
+        topicsError: true,
+        isFetchingTopics: false,
+      })
+    }
+  }
+
+  fetchDashboards = async () => {
     this.setState({
       isFetchingDashboard: true,
     })
 
     try {
       const jwtToken = getStoredProp('jwtToken')
-      if (jwtToken && !this.state.demo) {
+      if (jwtToken) {
         const baseUrl = getBaseUrl()
 
-        const url = `${baseUrl}/api/v1/dashboards?key=${this.state.apiKey}`
+        const url = `${baseUrl}/api/v1/dashboards?key=${this.state.apiKey}&project_id=${this.state.projectId}`
         const dashboardResponse = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
@@ -356,17 +389,18 @@ export default class App extends Component {
         })
 
         this.setState({
-          dashboardTiles: dashboardResponse.data[0].data,
+          dashboardsList: dashboardResponse.data.items,
+          dashboardTiles: dashboardResponse.data.items[0].data,
           dashboardError: false,
           isFetchingDashboard: false,
-          activeDashboardId: dashboardResponse.data[0].id,
-          activeDashboardName: dashboardResponse.data[0].name,
+          activeDashboardId: dashboardResponse.data.items[0].id,
         })
       }
     } catch (error) {
       console.error(error)
       this.setState({
-        dashboardTiles: undefined,
+        dashboardsList: undefined,
+        dashboardTiles: [],
         dashboardError: true,
         isFetchingDashboard: false,
         activeDashboardId: null,
@@ -381,7 +415,7 @@ export default class App extends Component {
       }
 
       const baseUrl = getBaseUrl()
-      let url = `${baseUrl}/api/v1/jwt?display_name=${this.state.userId}&project_id=${this.state.customerId}`
+      let url = `${baseUrl}/api/v1/jwt?display_name=${this.state.displayName}&project_id=${this.state.projectId}`
 
       // Use login token to get JWT token
       const jwtResponse = await axios.get(url, {
@@ -456,7 +490,8 @@ export default class App extends Component {
       await this.getJWT(loginToken)
 
       message.success('Login Sucessful!', 0.8)
-      this.fetchDashboard()
+      this.fetchDashboards()
+      this.fetchTopics()
     } catch (error) {
       console.error(error)
       // Clear tokens
@@ -470,7 +505,6 @@ export default class App extends Component {
       })
 
       // Dont fetch dashboard if authentication failed...
-      // this.fetchDashboard()
       message.error('Invalid Credentials')
     }
   }
@@ -553,6 +587,93 @@ export default class App extends Component {
     }
   }
 
+  reloadDataMessenger = () => {
+    this.setState({ componentKey: uuid.v4() })
+  }
+
+  createDashboard = async () => {
+    this.setState({
+      isSavingDashboard: true,
+    })
+
+    try {
+      const data = {
+        username: this.state.username,
+        project_id: this.state.projectId,
+        name: this.state.dashboardNameInput,
+      }
+
+      const baseUrl = getBaseUrl()
+
+      const url = `${baseUrl}/api/v1/dashboards?key=${this.state.apiKey}`
+
+      const response = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${getStoredProp('jwtToken')}`,
+          'Integrator-Domain': this.state.domain,
+        },
+      })
+
+      const newDashboardsList = [...this.state.dashboardsList, response.data]
+
+      this.setState({
+        dashboardsList: newDashboardsList,
+        dashboardTiles: response.data.data,
+        activeDashboardId: response.data.id,
+        isSavingDashboard: false,
+        isEditing: true,
+      })
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        isSavingDashboard: false,
+        dashboardError: true,
+      })
+    }
+  }
+
+  deleteDashboard = async () => {
+    this.setState({
+      isDeletingDashboard: true,
+    })
+
+    try {
+      const baseUrl = getBaseUrl()
+      const url = `${baseUrl}/api/v1/dashboards/${this.state.activeDashboardId}?key=${this.state.apiKey}&project_id=${this.state.projectId}`
+
+      await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${getStoredProp('jwtToken')}`,
+          'Integrator-Domain': this.state.domain,
+        },
+      })
+
+      const newDashboardsList = this.state.dashboardsList.filter(
+        dashboard => dashboard.id !== this.state.activeDashboardId
+      )
+      const newActiveDashboardId = newDashboardsList[0]
+        ? newDashboardsList[0].id
+        : undefined
+      const newDashboardTiles = newDashboardsList[0]
+        ? newDashboardsList[0].data
+        : undefined
+
+      this.setState({
+        dashboardsList: newDashboardsList,
+        activeDashboardId: newActiveDashboardId,
+        dashboardTiles: newDashboardTiles,
+        isDeletingDashboard: false,
+        isEditing: false,
+      })
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        isSavingDashboard: false,
+        dashboardError: true,
+      })
+    }
+  }
+
   saveDashboard = async () => {
     this.setState({
       isSavingDashboard: true,
@@ -560,12 +681,13 @@ export default class App extends Component {
 
     try {
       // const { tiles, domain, apiKey } = this.state
+      const activeDashboard = this.state.dashboardsList.find(
+        dashboard => dashboard.id === this.state.activeDashboardId
+      )
 
       const data = {
-        user_id: this.state.userId,
-        customer_id: this.state.customerId,
         username: this.state.username,
-        name: this.state.activeDashboardName,
+        name: activeDashboard.name,
         data: this.state.dashboardTiles.map(tile => {
           return {
             ...tile,
@@ -692,8 +814,8 @@ export default class App extends Component {
         <Form
           {...layout}
           initialValues={{
-            customerId: this.state.customerId,
-            userId: this.state.userId,
+            projectId: this.state.projectId,
+            displayName: this.state.displayName,
             apiKey: this.state.apiKey,
             domain: this.state.domain,
           }}
@@ -703,7 +825,7 @@ export default class App extends Component {
         >
           <Form.Item
             label="Project ID"
-            name="customerId"
+            name="projectId"
             rules={[
               { required: true, message: 'Please enter your project ID' },
             ]}
@@ -711,25 +833,25 @@ export default class App extends Component {
             <Input
               name="customer-id"
               onChange={e => {
-                this.setState({ customerId: e.target.value })
+                this.setState({ projectId: e.target.value })
               }}
               onBlur={e => setStoredProp('customer-id', e.target.value)}
-              value={this.state.customerId}
+              value={this.state.projectId}
               // autoComplete="on"
             />
           </Form.Item>
           <Form.Item
             label="User Email"
-            name="userId"
+            name="displayName"
             rules={[{ required: true, message: 'Please enter your email' }]}
           >
             <Input
               name="user-id"
               onChange={e => {
-                this.setState({ userId: e.target.value })
+                this.setState({ displayName: e.target.value })
               }}
-              onBlur={e => setStoredProp('userid', e.target.value)}
-              value={this.state.userId}
+              onBlur={e => setStoredProp('user-id', e.target.value)}
+              value={this.state.displayName}
               // autoComplete="on"
             />
           </Form.Item>
@@ -822,7 +944,7 @@ export default class App extends Component {
         ])}
         <h1>Customize Widgets</h1>
         <Button
-          onClick={() => this.setState({ componentKey: uuid.v4() })}
+          onClick={this.reloadDataMessenger}
           style={{ marginRight: '10px' }}
           icon={<ReloadOutlined />}
         >
@@ -1165,7 +1287,7 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
-        queryQuickStartTopics={this.getQueryQuickStartTopics()}
+        queryQuickStartTopics={this.state.topics}
         inputStyles
         handleStyles={{ right: '25px' }}
         enableDynamicCharting={this.state.enableDynamicCharting}
@@ -1216,12 +1338,37 @@ export default class App extends Component {
             <QueryOutput
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
-              demo={this.state.demo}
             />
           </div>
         )}
       </div>
     )
+  }
+
+  handleDashboardSelect = value => {
+    if (value === 'new-dashboard') {
+      this.setState({ isNewDashboardModalOpen: true })
+    } else {
+      const newDashboard = this.state.dashboardsList.find(
+        dashboard => dashboard.id === value
+      )
+      this.setState({
+        activeDashboardId: value,
+        dashboardTiles: newDashboard.data,
+      })
+    }
+  }
+
+  renderConfirmDeleteDashboardModal = () => {
+    return Modal.confirm({
+      icon: <ExclamationCircleOutlined />,
+      okText: 'Delete Dashboard',
+      okType: 'danger',
+      onOk: this.deleteDashboard,
+      okButtonProps: { ghost: true },
+      onCancel: () => this.setState({ isDeleteDashboardModalVisible: false }),
+      title: 'Are you sure you want to delete this Dashboard?',
+    })
   }
 
   renderDashboardPage = () => {
@@ -1232,8 +1379,15 @@ export default class App extends Component {
     return (
       <div
         className="dashboard-container"
-        style={{ width: '100%', height: 'auto' }}
+        style={{
+          width: '100%',
+          height: 'auto',
+          minHeight: 'calc(100vh - 185px)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
+        {this.renderNewDashboardModal()}
         <div
           className="dashboard-toolbar-container"
           style={{
@@ -1242,28 +1396,30 @@ export default class App extends Component {
             padding: '10px',
           }}
         >
-          <div style={{ paddingTop: '6px', marginLeft: '10px' }}>
-            Run Dashboard Automatically&nbsp;&nbsp;
-            <Switch
-              defaultChecked={this.state.runDashboardAutomatically}
-              checked={this.state.runDashboardAutomatically === true}
-              onChange={e => {
-                if (e) {
-                  executeDashboard(this.dashboardRef)
-                }
-                this.setState({ runDashboardAutomatically: e })
-              }}
-            />
-          </div>
+          {this.state.dashboardsList && (
+            <div>
+              <Select
+                style={{ minWidth: '200px' }}
+                onChange={this.handleDashboardSelect}
+                value={this.state.activeDashboardId}
+              >
+                {this.state.dashboardsList.map(dashboard => {
+                  return (
+                    <Select.Option
+                      value={dashboard.id}
+                      key={`dashboard-option-${dashboard.id}`}
+                    >
+                      {dashboard.name}
+                    </Select.Option>
+                  )
+                })}
+                <Select.Option value="new-dashboard">
+                  <PlusOutlined /> New Dashboard
+                </Select.Option>
+              </Select>
+            </div>
+          )}
           {
-            //   !this.state.isEditing && (
-            //   <Button
-            //     onClick={() => this.setState({ isNewDashboardModalOpen: true })}
-            //     icon="plus"
-            //   >
-            //     New Dashboard
-            //   </Button>
-            // )
           }
           <Button
             onClick={() => this.setState({ isEditing: !this.state.isEditing })}
@@ -1276,7 +1432,7 @@ export default class App extends Component {
             icon={<PlayCircleOutlined />}
             style={{ marginLeft: '10px' }}
           >
-            Execute Dashboard
+            Execute
           </Button>
           <Button
             onClick={() => console.log(this.state.dashboardTiles)}
@@ -1306,7 +1462,7 @@ export default class App extends Component {
               Undo
             </Button>
           )}
-          {this.state.isEditing && !this.state.demo && (
+          {this.state.isEditing && (
             <Button
               onClick={this.saveDashboard}
               loading={this.state.isSavingDashboard}
@@ -1317,7 +1473,20 @@ export default class App extends Component {
               Save Dashboard
             </Button>
           )}
+          {this.state.isEditing && (
+            <Button
+              onClick={this.renderConfirmDeleteDashboardModal}
+              loading={this.state.isDeletingDashboard}
+              type="danger"
+              ghost
+              icon={<DeleteOutlined />}
+              style={{ marginLeft: '10px' }}
+            >
+              Delete Dashboard
+            </Button>
+          )}
         </div>
+
         <Dashboard
           ref={ref => (this.dashboardRef = ref)}
           authentication={this.getAuthProp()}
@@ -1325,6 +1494,7 @@ export default class App extends Component {
           dataFormatting={this.getDataFormattingProp()}
           themeConfig={this.getThemeConfigProp()}
           isEditing={this.state.isEditing}
+          startEditingCallback={() => this.setState({ isEditing: true })}
           executeOnMount={this.state.runDashboardAutomatically}
           executeOnStopEditing={this.state.runDashboardAutomatically}
           enableDynamicCharting={this.state.enableDynamicCharting}
@@ -1355,7 +1525,7 @@ export default class App extends Component {
           <ChataIcon type="chata-bubbles-outlined" />
           Data Messenger
         </Menu.Item>
-        {this.state.isAuthenticated && this.state.dashboardTiles && (
+        {this.state.isAuthenticated && this.state.dashboardsList && (
           <Menu.Item key="dashboard">
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
@@ -1395,18 +1565,33 @@ export default class App extends Component {
     )
   }
 
+  onNewDashboardOk = () => {
+    this.createDashboard()
+      .then(() => {
+        this.setState({
+          isNewDashboardModalOpen: false,
+          dashboardNameInput: undefined,
+        })
+      })
+      .catch(error => {
+        message.error(error.message)
+      })
+  }
+
   renderNewDashboardModal = () => {
     return (
       <Modal
         visible={this.state.isNewDashboardModalOpen}
-        onOk={() => {}}
-        onCancel={() => {}}
+        confirmLoading={this.state.isSavingDashboard}
+        onOk={this.onNewDashboardOk}
+        onCancel={() => this.setState({ isNewDashboardModalOpen: false })}
         title="New Dashboard"
       >
         <Input
           placeholder="Dashboard Name"
           value={this.state.dashboardNameInput}
           onChange={e => this.setState({ dashboardNameInput: e.target.value })}
+          onPressEnter={this.onNewDashboardOk}
         />
       </Modal>
     )
@@ -1515,19 +1700,12 @@ export default class App extends Component {
   }
 
   renderUIOverlay = () => {
-    // Only render overlay if drawer is active and prop is enabled
-    if (!this.state.uiOverlay || this.state.currentPage !== 'drawer') {
+    if (!this.state.isAuthenticated) {
       return null
     }
 
-    // Use QBO for demo project
-    if (this.state.demo) {
-      return <div className="ui-overlay qbo-demo" />
-      // this.state.demo && <div className="ui-overlay sage-demo" />
-    }
-
-    // If using custom integrator but not authenticated
-    if (!this.state.demo && !this.state.isAuthenticated) {
+    // Only render overlay if drawer is active and prop is enabled
+    if (!this.state.uiOverlay || this.state.currentPage !== 'drawer') {
       return null
     }
 

@@ -352,6 +352,18 @@ export default class ChatMessage extends React.Component {
     return messageHeight
   }
 
+  getMaxMessageheight = () => {
+    const { chartHeight } = this.getChartDimensions()
+
+    if (this.props.type === 'text') {
+      return undefined
+    } else if (chartHeight) {
+      return chartHeight + 40
+    }
+
+    return '85%'
+  }
+
   renderDataLimitWarning = () => {
     if (_get(this.props, 'response.data.data.rows.length') === MAX_ROW_LIMIT) {
       return (
@@ -368,6 +380,7 @@ export default class ChatMessage extends React.Component {
   render = () => {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
+    const maxMessageHeight = this.getMaxMessageheight()
 
     return (
       <div
@@ -375,7 +388,7 @@ export default class ChatMessage extends React.Component {
         className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
         style={{
-          maxHeight: chartHeight ? chartHeight + 40 : '85%',
+          maxHeight: maxMessageHeight,
           height: messageHeight,
         }}
         data-test="chat-message"
