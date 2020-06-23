@@ -6,7 +6,7 @@ export const TABLE_TYPES = [
   'date_pivot',
   'table',
   'compare_table',
-  'compare_table_budget'
+  'compare_table_budget',
 ]
 
 export const CHART_TYPES = [
@@ -19,12 +19,8 @@ export const CHART_TYPES = [
   'pie',
   'stacked_bar',
   'stacked_column',
-  'stacked_line'
+  'stacked_line',
 ]
-
-export const CONTRAST_TYPES = ['compare_table', 'compare_table_budget']
-
-export const FORECAST_TYPES = ['forecasting', 'status_forecasting']
 
 export const MONTH_NAMES = {
   1: dayjs('1-1-2020').format('MMMM'),
@@ -38,7 +34,7 @@ export const MONTH_NAMES = {
   9: dayjs('9-9-2020').format('MMMM'),
   10: dayjs('10-10-2020').format('MMMM'),
   11: dayjs('11-11-2020').format('MMMM'),
-  12: dayjs('12-12-2020').format('MMMM')
+  12: dayjs('12-12-2020').format('MMMM'),
 }
 
 export const WEEKDAY_NAMES = {
@@ -48,7 +44,7 @@ export const WEEKDAY_NAMES = {
   4: 'Wednesday',
   5: 'Thursday',
   6: 'Friday',
-  7: 'Saturday'
+  7: 'Saturday',
 }
 
 export const MAX_ROW_LIMIT = 10000

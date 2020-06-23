@@ -22,21 +22,17 @@ export default class ErrorBoundary extends React.Component {
   }
 
   getErrorMessage = () => {
-    try {
-      if (this.props.message && typeof this.props.message === 'string') {
-        return this.props.message
-      }
-
-      return null
-    } catch (error) {
-      return null
+    if (this.props.message && typeof this.props.message === 'string') {
+      return this.props.message
     }
+
+    return null
   }
 
   render = () => {
     if (this.state.hasError) {
       // You can render any custom fallback UI
-      return this.getErrorMessage()
+      return <div data-test="error-container">{this.getErrorMessage()}</div>
     }
     return this.props.children
   }

@@ -38,7 +38,6 @@ import { NotificationButton } from '../Notifications/NotificationButton'
 import { NotificationList } from '../Notifications/NotificationList'
 import {
   runDrilldown,
-  cancelQuery,
   fetchQueryTips,
   fetchSuggestions,
 } from '../../js/queryService'
@@ -203,7 +202,8 @@ export default class DataMessenger extends React.Component {
 
   escFunction = event => {
     if (this.props.isVisible && event.keyCode === 27) {
-      cancelQuery()
+      // todo: add this functionality back
+      // cancelQuery()
     }
   }
 

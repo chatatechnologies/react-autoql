@@ -54,7 +54,6 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  isForecastType,
   setStyleVars,
   getQueryParams,
   supportsRegularPivotTable,
@@ -294,8 +293,6 @@ export default class QueryOutput extends React.Component {
         this.shouldGeneratePivotData() &&
           this.generatePivotData({ isFirstGeneration: true })
         this.shouldGenerateChartData() && this.generateChartData()
-      } else if (isForecastType(displayType)) {
-        this.generateForecastData()
       }
     }
   }
@@ -1587,8 +1584,6 @@ export default class QueryOutput extends React.Component {
     if (displayType && data) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (isForecastType(displayType)) {
-        return this.renderForecastVis()
       } else if (isTableType(displayType)) {
         return this.renderTable()
       } else if (isChartType(displayType)) {

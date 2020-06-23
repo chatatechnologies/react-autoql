@@ -2,25 +2,8 @@ import Numbro from 'numbro'
 import _get from 'lodash.get'
 import dayjs from './dayjsWithPlugins'
 
-import { CHART_TYPES, TABLE_TYPES, FORECAST_TYPES } from './Constants'
+import { CHART_TYPES, TABLE_TYPES } from './Constants'
 import { LIGHT_THEME, DARK_THEME } from './Themes'
-
-export const getParameterByName = (
-  parameterName,
-  url = window.location.href
-) => {
-  const processedParameterName = parameterName.replace(/[\[\]]/g, '\\$&')
-  const regex = new RegExp(`[?&]${processedParameterName}(=([^&#]*)|&|#|$)`)
-
-  const results = regex.exec(url)
-  if (!results) {
-    return null
-  }
-  if (!results[2]) {
-    return ''
-  }
-  return decodeURIComponent(results[2].replace(/\+/g, ' '))
-}
 
 export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
@@ -41,10 +24,11 @@ export const isDayJSDateValid = date => {
   return date !== 'Invalid Date'
 }
 
-export const formatEpochDate = (value, col, config) => {
-  if (value == null) {
-    // catches null and undefined
-    return value
+export const formatEpochDate = (value, col = {}, config = {}) => {
+  if (!value) {
+    // If this is 0, its most likely not the right date
+    // Any other falsy values are invalid
+    return undefined
   }
 
   try {
@@ -92,6 +76,10 @@ export const formatEpochDate = (value, col, config) => {
 }
 
 export const formatStringDate = (value, config) => {
+  if (!value) {
+    return undefined
+  }
+
   if (value && typeof value === 'string') {
     const dateArray = value.split('-')
     const year = _get(dateArray, '[0]')
@@ -136,7 +124,7 @@ export const isColumnStringType = col => {
   return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
 }
 
-export const formatChartLabel = ({ d, col, config = {} }) => {
+export const formatChartLabel = ({ d, col = {}, config = {} }) => {
   if (d == null) {
     return {
       fullWidthLabel: 'Untitled Category',
@@ -282,10 +270,11 @@ export const formatElement = ({
           const validatedQuantityDecimals =
             quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
-          if (Number(element) && Number(element) % 1 !== 0) {
+          if (Number(element)) {
             formattedElement = Numbro(element).format({
               thousandSeparated: true,
-              mantissa: validatedQuantityDecimals,
+              mantissa:
+                Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0,
             })
           }
           break
@@ -460,7 +449,6 @@ export const getGroupableColumns = columns => {
 
 export const isChartType = type => CHART_TYPES.includes(type)
 export const isTableType = type => TABLE_TYPES.includes(type)
-export const isForecastType = type => FORECAST_TYPES.includes(type)
 
 export const supportsRegularPivotTable = columns => {
   const hasTwoGroupables = getNumberOfGroupables(columns) === 2
