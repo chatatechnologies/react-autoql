@@ -271,6 +271,7 @@ export default class DataMessenger extends React.Component {
   setintroMessages = () => {
     const introMessages = [
       this.createIntroMessage({
+        type: 'text',
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
@@ -388,12 +389,14 @@ export default class DataMessenger extends React.Component {
   scrollToBottom = () => {
     if (this.messengerScrollComponent) {
       this.messengerScrollComponent.scrollToBottom()
-
-      // Required to make animation smooth
-      setTimeout(() => {
-        this.messengerScrollComponent.scrollToBottom()
-      }, 0)
     }
+
+    // Required to make animation smooth
+    setTimeout(() => {
+      if (this.messengerScrollComponent) {
+        this.messengerScrollComponent.scrollToBottom()
+      }
+    }, 0)
   }
 
   onInputSubmit = text => {
