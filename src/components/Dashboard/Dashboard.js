@@ -543,7 +543,6 @@ class Dashboard extends React.Component {
         cols={12}
         isDraggable={this.props.isEditing}
         isResizable={this.props.isEditing}
-        // draggableHandle=".chata-dashboard-tile-inner-div"
         draggableHandle=".chata-dashboard-tile-drag-handle"
         layout={tileLayout}
         margin={[20, 20]}
