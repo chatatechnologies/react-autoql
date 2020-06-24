@@ -390,10 +390,14 @@ export default class App extends Component {
 
         this.setState({
           dashboardsList: dashboardResponse.data.items,
-          dashboardTiles: dashboardResponse.data.items[0].data,
+          dashboardTiles: dashboardResponse.data.items[0]
+            ? dashboardResponse.data.items[0].data
+            : undefined,
           dashboardError: false,
           isFetchingDashboard: false,
-          activeDashboardId: dashboardResponse.data.items[0].id,
+          activeDashboardId: dashboardResponse.data.items[0]
+            ? dashboardResponse.data.items[0].id
+            : undefined,
         })
       }
     } catch (error) {
@@ -622,9 +626,11 @@ export default class App extends Component {
         activeDashboardId: response.data.id,
         isSavingDashboard: false,
         isEditing: true,
+        isNewDashboardModalOpen: false,
+        dashboardNameInput: undefined,
       })
     } catch (error) {
-      console.error(error)
+      message.error(error.message)
       this.setState({
         isSavingDashboard: false,
         dashboardError: true,
@@ -1388,122 +1394,137 @@ export default class App extends Component {
         }}
       >
         {this.renderNewDashboardModal()}
-        <div
-          className="dashboard-toolbar-container"
-          style={{
-            textAlign: 'center',
-            background: '#fafafa',
-            padding: '10px',
-          }}
-        >
-          {this.state.dashboardsList && (
-            <div>
+        {this.state.activeDashboardId ? (
+          <Fragment>
+            <div
+              className="dashboard-toolbar-container"
+              style={{
+                textAlign: 'center',
+                background: '#fafafa',
+                padding: '10px',
+              }}
+            >
               <Select
                 style={{ minWidth: '200px' }}
                 onChange={this.handleDashboardSelect}
                 value={this.state.activeDashboardId}
               >
-                {this.state.dashboardsList.map(dashboard => {
-                  return (
-                    <Select.Option
-                      value={dashboard.id}
-                      key={`dashboard-option-${dashboard.id}`}
-                    >
-                      {dashboard.name}
-                    </Select.Option>
-                  )
-                })}
+                {this.state.dashboardsList &&
+                  this.state.dashboardsList.map(dashboard => {
+                    return (
+                      <Select.Option
+                        value={dashboard.id}
+                        key={`dashboard-option-${dashboard.id}`}
+                      >
+                        {dashboard.name}
+                      </Select.Option>
+                    )
+                  })}
                 <Select.Option value="new-dashboard">
                   <PlusOutlined /> New Dashboard
                 </Select.Option>
               </Select>
+
+              <Button
+                onClick={() =>
+                  this.setState({ isEditing: !this.state.isEditing })
+                }
+                icon={
+                  this.state.isEditing ? <StopOutlined /> : <EditOutlined />
+                }
+              >
+                {this.state.isEditing ? 'Stop Editing' : 'Edit'}
+              </Button>
+              <Button
+                onClick={() => executeDashboard(this.dashboardRef)}
+                icon={<PlayCircleOutlined />}
+                style={{ marginLeft: '10px' }}
+              >
+                Execute
+              </Button>
+              <Button
+                onClick={() => console.log(this.state.dashboardTiles)}
+                style={{ marginLeft: '10px' }}
+              >
+                Log Current Tile State
+              </Button>
+
+              <br />
+              {this.state.isEditing && (
+                <Button
+                  onClick={() =>
+                    this.dashboardRef && this.dashboardRef.addTile()
+                  }
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  style={{ marginLeft: '10px' }}
+                >
+                  Add Tile
+                </Button>
+              )}
+              {this.state.isEditing && (
+                <Button
+                  onClick={() => this.dashboardRef && this.dashboardRef.undo()}
+                  type="primary"
+                  icon={<RollbackOutlined />}
+                  style={{ marginLeft: '10px' }}
+                >
+                  Undo
+                </Button>
+              )}
+              {this.state.isEditing && (
+                <Button
+                  onClick={this.saveDashboard}
+                  loading={this.state.isSavingDashboard}
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  style={{ marginLeft: '10px' }}
+                >
+                  Save Dashboard
+                </Button>
+              )}
+              {this.state.isEditing && (
+                <Button
+                  onClick={this.renderConfirmDeleteDashboardModal}
+                  loading={this.state.isDeletingDashboard}
+                  type="danger"
+                  ghost
+                  icon={<DeleteOutlined />}
+                  style={{ marginLeft: '10px' }}
+                >
+                  Delete Dashboard
+                </Button>
+              )}
             </div>
-          )}
-          {
-          }
-          <Button
-            onClick={() => this.setState({ isEditing: !this.state.isEditing })}
-            icon={this.state.isEditing ? <StopOutlined /> : <EditOutlined />}
-          >
-            {this.state.isEditing ? 'Stop Editing' : 'Edit'}
-          </Button>
-          <Button
-            onClick={() => executeDashboard(this.dashboardRef)}
-            icon={<PlayCircleOutlined />}
-            style={{ marginLeft: '10px' }}
-          >
-            Execute
-          </Button>
-          <Button
-            onClick={() => console.log(this.state.dashboardTiles)}
-            style={{ marginLeft: '10px' }}
-          >
-            Log Current Tile State
-          </Button>
 
-          <br />
-          {this.state.isEditing && (
+            <Dashboard
+              ref={ref => (this.dashboardRef = ref)}
+              authentication={this.getAuthProp()}
+              autoQLConfig={this.getAutoQLConfigProp()}
+              dataFormatting={this.getDataFormattingProp()}
+              themeConfig={this.getThemeConfigProp()}
+              isEditing={this.state.isEditing}
+              startEditingCallback={() => this.setState({ isEditing: true })}
+              executeOnMount={this.state.runDashboardAutomatically}
+              executeOnStopEditing={this.state.runDashboardAutomatically}
+              enableDynamicCharting={this.state.enableDynamicCharting}
+              tiles={this.state.dashboardTiles}
+              notExecutedText='Hit "Execute" to run this dashboard'
+              onChange={newTiles => {
+                this.setState({ dashboardTiles: newTiles })
+              }}
+            />
+          </Fragment>
+        ) : (
+          <div style={{ marginTop: '100px', textAlign: 'center' }}>
             <Button
-              onClick={() => this.dashboardRef && this.dashboardRef.addTile()}
               type="primary"
-              icon={<PlusOutlined />}
-              style={{ marginLeft: '10px' }}
+              onClick={() => this.setState({ isNewDashboardModalOpen: true })}
             >
-              Add Tile
+              Create a new Dashboard
             </Button>
-          )}
-          {this.state.isEditing && (
-            <Button
-              onClick={() => this.dashboardRef && this.dashboardRef.undo()}
-              type="primary"
-              icon={<RollbackOutlined />}
-              style={{ marginLeft: '10px' }}
-            >
-              Undo
-            </Button>
-          )}
-          {this.state.isEditing && (
-            <Button
-              onClick={this.saveDashboard}
-              loading={this.state.isSavingDashboard}
-              type="primary"
-              icon={<SaveOutlined />}
-              style={{ marginLeft: '10px' }}
-            >
-              Save Dashboard
-            </Button>
-          )}
-          {this.state.isEditing && (
-            <Button
-              onClick={this.renderConfirmDeleteDashboardModal}
-              loading={this.state.isDeletingDashboard}
-              type="danger"
-              ghost
-              icon={<DeleteOutlined />}
-              style={{ marginLeft: '10px' }}
-            >
-              Delete Dashboard
-            </Button>
-          )}
-        </div>
-
-        <Dashboard
-          ref={ref => (this.dashboardRef = ref)}
-          authentication={this.getAuthProp()}
-          autoQLConfig={this.getAutoQLConfigProp()}
-          dataFormatting={this.getDataFormattingProp()}
-          themeConfig={this.getThemeConfigProp()}
-          isEditing={this.state.isEditing}
-          startEditingCallback={() => this.setState({ isEditing: true })}
-          executeOnMount={this.state.runDashboardAutomatically}
-          executeOnStopEditing={this.state.runDashboardAutomatically}
-          enableDynamicCharting={this.state.enableDynamicCharting}
-          tiles={this.state.dashboardTiles}
-          notExecutedText='Hit "Execute" to run this dashboard'
-          onChange={newTiles => {
-            this.setState({ dashboardTiles: newTiles })
-          }}
-        />
+          </div>
+        )}
       </div>
     )
   }
@@ -1525,7 +1546,7 @@ export default class App extends Component {
           <ChataIcon type="chata-bubbles-outlined" />
           Data Messenger
         </Menu.Item>
-        {this.state.isAuthenticated && this.state.dashboardsList && (
+        {this.state.isAuthenticated && (
           <Menu.Item key="dashboard">
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
@@ -1565,25 +1586,13 @@ export default class App extends Component {
     )
   }
 
-  onNewDashboardOk = () => {
-    this.createDashboard()
-      .then(() => {
-        this.setState({
-          isNewDashboardModalOpen: false,
-          dashboardNameInput: undefined,
-        })
-      })
-      .catch(error => {
-        message.error(error.message)
-      })
-  }
-
   renderNewDashboardModal = () => {
     return (
       <Modal
         visible={this.state.isNewDashboardModalOpen}
         confirmLoading={this.state.isSavingDashboard}
-        onOk={this.onNewDashboardOk}
+        onOk={this.createDashboard}
+        okText="Create Dashboard"
         onCancel={() => this.setState({ isNewDashboardModalOpen: false })}
         title="New Dashboard"
       >
@@ -1591,7 +1600,7 @@ export default class App extends Component {
           placeholder="Dashboard Name"
           value={this.state.dashboardNameInput}
           onChange={e => this.setState({ dashboardNameInput: e.target.value })}
-          onPressEnter={this.onNewDashboardOk}
+          onPressEnter={this.createDashboard}
         />
       </Modal>
     )
