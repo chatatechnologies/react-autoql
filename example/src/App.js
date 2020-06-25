@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
+import _ from 'lodash'
 import {
   DataMessenger,
   QueryOutput,
@@ -192,7 +193,7 @@ export default class App extends Component {
   getAuthProp = () => {
     return {
       token: getStoredProp('jwtToken'),
-      apiKey: this.state.apiKey, // required if demo is false
+      apiKey: this.state.apiKey,
       domain: this.state.domain,
     }
   }
@@ -388,16 +389,23 @@ export default class App extends Component {
           },
         })
 
+        let sortedDashboardList = []
+        if (_.get(dashboardResponse, 'data.items.length')) {
+          // sortedDashboardList = _.sortBy(
+          //   dashboardResponse.data.items,
+          //   dashboard => {
+          //     return new Date(dashboard.created_at)
+          //   }
+          // )
+          sortedDashboardList = _.get(dashboardResponse, 'data.items')
+        }
+
         this.setState({
-          dashboardsList: dashboardResponse.data.items,
-          dashboardTiles: dashboardResponse.data.items[0]
-            ? dashboardResponse.data.items[0].data
-            : undefined,
+          dashboardsList: sortedDashboardList,
+          dashboardTiles: _.get(sortedDashboardList, '[0].data'),
           dashboardError: false,
           isFetchingDashboard: false,
-          activeDashboardId: dashboardResponse.data.items[0]
-            ? dashboardResponse.data.items[0].id
-            : undefined,
+          activeDashboardId: _.get(sortedDashboardList, '[0].id'),
         })
       }
     } catch (error) {
@@ -1404,27 +1412,28 @@ export default class App extends Component {
                 padding: '10px',
               }}
             >
-              <Select
-                style={{ minWidth: '200px' }}
-                onChange={this.handleDashboardSelect}
-                value={this.state.activeDashboardId}
-              >
-                {this.state.dashboardsList &&
-                  this.state.dashboardsList.map(dashboard => {
-                    return (
-                      <Select.Option
-                        value={dashboard.id}
-                        key={`dashboard-option-${dashboard.id}`}
-                      >
-                        {dashboard.name}
-                      </Select.Option>
-                    )
-                  })}
-                <Select.Option value="new-dashboard">
-                  <PlusOutlined /> New Dashboard
-                </Select.Option>
-              </Select>
-
+              <div>
+                <Select
+                  style={{ minWidth: '200px' }}
+                  onChange={this.handleDashboardSelect}
+                  value={this.state.activeDashboardId}
+                >
+                  {this.state.dashboardsList &&
+                    this.state.dashboardsList.map(dashboard => {
+                      return (
+                        <Select.Option
+                          value={dashboard.id}
+                          key={`dashboard-option-${dashboard.id}`}
+                        >
+                          {dashboard.name}
+                        </Select.Option>
+                      )
+                    })}
+                  <Select.Option value="new-dashboard">
+                    <PlusOutlined /> New Dashboard
+                  </Select.Option>
+                </Select>
+              </div>
               <Button
                 onClick={() =>
                   this.setState({ isEditing: !this.state.isEditing })

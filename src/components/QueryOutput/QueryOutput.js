@@ -202,6 +202,16 @@ export default class QueryOutput extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // If data config was changed by a prop, change data config here
+    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
+      if (this.props.dataConfig) {
+        this.dataConfig = this.props.dataConfig
+      } else {
+        this.setColumnIndices()
+      }
+    }
+
+    // If data config was changed here, tell the parent
     if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
       this.props.onDataConfigChange(this.dataConfig)
     }
