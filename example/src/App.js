@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
-import _ from 'lodash'
+// import _ from 'lodash'
 import {
   DataMessenger,
   QueryOutput,
@@ -389,23 +389,35 @@ export default class App extends Component {
           },
         })
 
-        let sortedDashboardList = []
-        if (_.get(dashboardResponse, 'data.items.length')) {
-          // sortedDashboardList = _.sortBy(
-          //   dashboardResponse.data.items,
-          //   dashboard => {
-          //     return new Date(dashboard.created_at)
-          //   }
-          // )
-          sortedDashboardList = _.get(dashboardResponse, 'data.items')
+        let dashboardTiles
+        let activeDashboardId
+        let dashboardsList = []
+        if (
+          dashboardResponse &&
+          dashboardResponse.data &&
+          dashboardResponse.data.items &&
+          dashboardResponse.data.items.length
+        ) {
+          dashboardsList = dashboardResponse.data.items
+          dashboardTiles = dashboardResponse.data.items[0].data
+          activeDashboardId = dashboardResponse.data.items[0].id
         }
 
+        // if (_.get(dashboardResponse, 'data.items.length')) {
+        //   sortedDashboardList = _.sortBy(
+        //     dashboardResponse.data.items,
+        //     dashboard => {
+        //       return new Date(dashboard.created_at)
+        //     }
+        //   )
+        // }
+
         this.setState({
-          dashboardsList: sortedDashboardList,
-          dashboardTiles: _.get(sortedDashboardList, '[0].data'),
+          dashboardsList,
+          dashboardTiles,
           dashboardError: false,
           isFetchingDashboard: false,
-          activeDashboardId: _.get(sortedDashboardList, '[0].id'),
+          activeDashboardId,
         })
       }
     } catch (error) {
