@@ -893,7 +893,7 @@ export default class DashboardTile extends React.Component {
         },
       },
       vizToolbarProps: {
-        displayType: this.props.displayType,
+        displayType: displayType,
         onDisplayTypeChange: this.onDisplayTypeChange,
         supportedDisplayTypes:
           getSupportedDisplayTypes(this.props.queryResponse) || [],
@@ -959,7 +959,7 @@ export default class DashboardTile extends React.Component {
         },
       },
       vizToolbarProps: {
-        displayType: this.props.secondDisplayType,
+        displayType: displayType,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
         supportedDisplayTypes: getSupportedDisplayTypes(queryResponse) || [],
       },
