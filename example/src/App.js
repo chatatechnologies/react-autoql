@@ -396,8 +396,8 @@ export default class App extends Component {
           dashboardsList = _.sortBy(dashboardResponse.data.items, dashboard => {
             return new Date(dashboard.created_at)
           })
-          dashboardTiles = _.get(dashboardResponse, 'data.items[0].data')
-          activeDashboardId = _.get(dashboardResponse, 'data.items[0].id')
+          dashboardTiles = _.get(dashboardsList, '[0].data')
+          activeDashboardId = _.get(dashboardsList, '[0].id')
         }
 
         this.setState({
@@ -1492,18 +1492,21 @@ export default class App extends Component {
                   Save Dashboard
                 </Button>
               )}
-              {this.state.isEditing && (
-                <Button
-                  onClick={this.renderConfirmDeleteDashboardModal}
-                  loading={this.state.isDeletingDashboard}
-                  type="danger"
-                  ghost
-                  icon={<DeleteOutlined />}
-                  style={{ marginLeft: '10px' }}
-                >
-                  Delete Dashboard
-                </Button>
-              )}
+              {
+                // Keep this out for now, we risk people deleting important test dashboards
+                //   this.state.isEditing && (
+                //   <Button
+                //     onClick={this.renderConfirmDeleteDashboardModal}
+                //     loading={this.state.isDeletingDashboard}
+                //     type="danger"
+                //     ghost
+                //     icon={<DeleteOutlined />}
+                //     style={{ marginLeft: '10px' }}
+                //   >
+                //     Delete Dashboard
+                //   </Button>
+                // )
+              }
             </div>
 
             <Dashboard
@@ -1602,6 +1605,7 @@ export default class App extends Component {
         confirmLoading={this.state.isSavingDashboard}
         onOk={this.createDashboard}
         okText="Create Dashboard"
+        okButtonProps={{ disabled: !this.state.dashboardNameInput }}
         onCancel={() => this.setState({ isNewDashboardModalOpen: false })}
         title="New Dashboard"
       >

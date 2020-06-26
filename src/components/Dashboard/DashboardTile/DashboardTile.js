@@ -150,12 +150,9 @@ export default class DashboardTile extends React.Component {
     return query && query.trim()
   }
 
-  startQuery = ({ isSecondHalf } = {}) => {
-    this.setState({
-      isTopExecuting: true,
-      isBottomExecuting: true,
-      isSecondQueryInputOpen: false,
-    })
+  startTopQuery = () => {
+    this.COMPONENT_KEY = uuid.v4()
+    this.setState({ isTopExecuting: true })
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -172,41 +169,52 @@ export default class DashboardTile extends React.Component {
     )
   }
 
-  endQuery = ({ response, isSecondHalf }) => {
+  startBottomQuery = () => {
+    this.setState({ isBottomExecuting: true, isSecondQueryInputOpen: false })
+    // New query is running, reset temporary state fields
+    this.props.setParamsForTile(
+      {
+        secondQueryResponse: null,
+        secondSelectedSuggestion: undefined,
+        secondSafetyNetSelection: undefined,
+      },
+      this.props.tile.i
+    )
+  }
+
+  endTopQuery = ({ response, isSecondHalf }) => {
     // Update component key after getting new response
     // so QueryOutput completely resets
     this.COMPONENT_KEY = uuid.v4()
 
-    if (isSecondHalf) {
-      this.props.setParamsForTile(
-        {
-          secondQueryResponse: response,
-          secondSelectedSuggestion: undefined,
-          secondSafetyNetSelection: undefined,
-        },
-        this.props.tile.i
-      )
-    } else {
-      this.props.setParamsForTile(
-        {
-          queryResponse: response,
-          selectedSuggestion: undefined,
-          safetyNetSelection: undefined,
-          isNewTile: false,
-        },
-        this.props.tile.i
-      )
-    }
+    this.props.setParamsForTile(
+      {
+        queryResponse: response,
+        selectedSuggestion: undefined,
+        safetyNetSelection: undefined,
+        isNewTile: false,
+      },
+      this.props.tile.i
+    )
 
-    if (isSecondHalf) {
-      this.setState({
-        isBottomExecuting: false,
-      })
-    } else {
-      this.setState({
-        isTopExecuting: false,
-      })
-    }
+    this.setState({
+      isTopExecuting: false,
+    })
+  }
+
+  endBottomQuery = ({ response }) => {
+    this.props.setParamsForTile(
+      {
+        secondQueryResponse: response,
+        secondSelectedSuggestion: undefined,
+        secondSafetyNetSelection: undefined,
+      },
+      this.props.tile.i
+    )
+
+    this.setState({
+      isBottomExecuting: false,
+    })
   }
 
   fetchSuggestionsFromErrorResponse = error => {
@@ -262,30 +270,30 @@ export default class DashboardTile extends React.Component {
   }
 
   processTile = ({ query, secondQuery, skipSafetyNet, source } = {}) => {
-    this.startQuery()
-
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
       this.props.tile.secondSelectedSuggestion ||
       this.state.secondQuery
 
+    this.startTopQuery()
     this.processQuery({
       query: q1,
       skipSafetyNet,
       source,
     })
-      .then(response => this.endQuery({ response }))
-      .catch(response => this.endQuery({ response }))
+      .then(response => this.endTopQuery({ response }))
+      .catch(response => this.endTopQuery({ response }))
 
     if (this.getIsSplitView() && q2 && q1 !== q2) {
+      this.startBottomQuery()
       this.processQuery({
         query: q2,
         skipSafetyNet,
         source,
       })
-        .then(response => this.endQuery({ response, isSecondHalf: true }))
-        .catch(response => this.endQuery({ response, isSecondHalf: true }))
+        .then(response => this.endBottomQuery({ response }))
+        .catch(response => this.endBottomQuery({ response }))
     }
   }
 
@@ -751,9 +759,12 @@ export default class DashboardTile extends React.Component {
     showSplitViewBtn,
     isSecondHalf,
   }) => {
-    const isExecuting = isSecondHalf
-      ? this.state.isBottomExecuting
-      : this.state.isTopExecuting
+    const isExecuting =
+      isSecondHalf &&
+      this.props.tile.secondQuery &&
+      this.props.tile.secondQuery !== this.props.tile.query
+        ? this.state.isBottomExecuting
+        : this.state.isTopExecuting
 
     return (
       <Fragment>
