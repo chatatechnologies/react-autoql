@@ -4,7 +4,7 @@ import { shallow } from 'enzyme'
 import ChataChart from './ChataChart'
 
 import { findByTestAttr } from '../../../../test/testUtils'
-import { themeConfigDefault } from '../../../props/defaults'
+import { themeConfigDefault, dataConfigDefault } from '../../../props/defaults'
 
 const defaultProps = {
   themeConfig: themeConfigDefault,
@@ -21,6 +21,7 @@ const defaultProps = {
     },
   ],
   columns: [{}, {}, {}],
+  dataConfig: dataConfigDefault,
   height: 300,
   width: 300,
   type: 'bar',

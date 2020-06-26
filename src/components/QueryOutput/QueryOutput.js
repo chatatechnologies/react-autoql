@@ -84,7 +84,6 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
-  dataConfig = {}
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
@@ -121,14 +120,7 @@ export default class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
     dataFormatting: dataFormattingDefault,
-    dataConfig: {
-      numberColumnIndex: undefined,
-      numberColumnIndices: undefined,
-      stringColumnIndex: undefined,
-      stringColumnIndices: undefined,
-      legendColumnIndex: undefined,
-      seriesIndices: undefined,
-    },
+    dataConfig: undefined,
 
     queryResponse: undefined,
     displayType: undefined,
@@ -205,7 +197,7 @@ export default class QueryOutput extends React.Component {
     // If data config was changed by a prop, change data config here
     if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
       if (this.props.dataConfig) {
-        this.dataConfig = this.props.dataConfig
+        this.dataConfig = _cloneDeep(this.props.dataConfig)
       } else {
         this.setColumnIndices()
       }
@@ -807,6 +799,10 @@ export default class QueryOutput extends React.Component {
       return
     }
 
+    if (!this.dataConfig) {
+      this.dataConfig = {}
+    }
+
     const allStringColumnIndices = []
     this.tableColumns.forEach((col, index) => {
       if (isColumnStringType(col) || col.groupable) {
@@ -945,6 +941,10 @@ export default class QueryOutput extends React.Component {
         tableData = this.pivotTableData
       }
 
+      if (!this.dataConfig) {
+        this.setColumnIndices()
+      }
+
       let stringIndex = this.dataConfig.stringColumnIndex
       this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices
 
@@ -1022,7 +1022,7 @@ export default class QueryOutput extends React.Component {
       if (!this.chartDataError) {
         // Try one more time after resetting data config settings
         this.chartDataError = true
-        this.dataConfig = {}
+        this.dataConfig = undefined
         this.setColumnIndices()
         this.generateChartData()
       } else {
