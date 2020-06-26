@@ -147,7 +147,7 @@ export default class DashboardTile extends React.Component {
   }
 
   isQueryValid = query => {
-    return query && query.trim()
+    return !!query && !!query.trim()
   }
 
   startTopQuery = () => {
@@ -267,6 +267,7 @@ export default class DashboardTile extends React.Component {
           .catch(this.fetchSuggestionsFromErrorResponse)
       }
     }
+    return Promise.reject()
   }
 
   processTile = ({ query, secondQuery, skipSafetyNet, source } = {}) => {
@@ -298,7 +299,7 @@ export default class DashboardTile extends React.Component {
   }
 
   onQueryTextKeyDown = e => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && e.target.value) {
       this.processTile({ query: e.target.value })
       e.target.blur()
     }
@@ -569,7 +570,7 @@ export default class DashboardTile extends React.Component {
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (this.props.tile.isNewTile && this.props.isEditing) {
+    } else if (!_get(this.state.query, 'trim()') && this.props.isEditing) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -585,7 +586,7 @@ export default class DashboardTile extends React.Component {
           </em>
         </div>
       )
-    } else if (this.props.tile.isNewTile) {
+    } else if (!_get(this.props.tile, 'query.trim()')) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>You haven’t filled this tile yet.</em>
