@@ -38,7 +38,6 @@ import { ChataChart } from '../Charts/ChataChart'
 import { QueryInput } from '../QueryInput'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { Icon } from '../Icon'
-// import { ChataForecast } from '../ChataForecast'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages from '../../js/errorMessages'
@@ -305,12 +304,6 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
-  generateForecastData = () => {
-    // This is temporary until we create the forecast vis
-    this.generateTableData()
-    this.shouldGenerateChartData() && this.generateChartData()
-  }
-
   generateTableData = () => {
     this.tableColumns = this.formatColumnsForTable(
       this.props.queryResponse.data.data.columns
@@ -461,11 +454,6 @@ export default class QueryOutput extends React.Component {
     if (this.chartRef) {
       this.chartRef.saveAsPNG()
     }
-  }
-
-  renderForecastVis = () => {
-    return this.renderTable()
-    // return <ChataForecast />
   }
 
   processCellClick = cell => {

@@ -660,7 +660,13 @@ export const getGroupBysFromTable = (row, tableColumns) => {
   return groupByArray
 }
 
-export const getObjSize = obj => Object.keys(obj).length
+export const getObjSize = obj => {
+  if (typeof obj !== 'object') {
+    return undefined
+  }
+
+  return Object.keys(obj).length
+}
 
 export const getMaxValueFromKeyValueObj = obj => {
   const size = getObjSize(obj)
@@ -669,7 +675,10 @@ export const getMaxValueFromKeyValueObj = obj => {
   if (size === 1) {
     maxValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
-    maxValue = Math.max(...Object.values(obj))
+    const numberValues = [...Object.values(obj)].filter(value => {
+      return !Number.isNaN(Number(value))
+    })
+    maxValue = Math.max(...numberValues)
   }
   return maxValue
 }
@@ -681,7 +690,10 @@ export const getMinValueFromKeyValueObj = obj => {
   if (size === 1) {
     minValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
-    minValue = Math.min(...Object.values(obj))
+    const numberValues = [...Object.values(obj)].filter(value => {
+      return !Number.isNaN(Number(value))
+    })
+    minValue = Math.min(...numberValues)
   }
   return minValue
 }

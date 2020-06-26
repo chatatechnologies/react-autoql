@@ -9,7 +9,6 @@ import {
   isColumnStringType,
   formatChartLabel,
   formatElement,
-  svgToPng,
   getColumnTypeAmounts,
   getNumberOfGroupables,
   getGroupableColumns,
@@ -18,7 +17,67 @@ import {
   supportsRegularPivotTable,
   supports2DCharts,
   getSupportedDisplayTypes,
+  isDisplayTypeValid,
+  getDefaultDisplayType,
+  nameValueObject,
+  isAggregation,
+  getObjSize,
+  getMaxValueFromKeyValueObj,
+  getMinValueFromKeyValueObj,
 } from './Util'
+import responseTestCases from '../../test/responseTestCases'
+
+const sampleListResponse = {
+  data: {
+    data: {
+      display_type: 'data',
+      columns: [{ type: 'STRING' }, { type: 'STRING' }, { type: 'QUANTITY' }],
+      rows: [
+        ['Nikki', 'Moore', 100],
+        ['John', 'Deer', 350],
+      ],
+    },
+  },
+}
+const sampleSingleValueResponse = {
+  data: {
+    data: {
+      display_type: 'data',
+      columns: [{ type: 'STRING' }],
+      rows: [['Nikki']],
+    },
+  },
+}
+
+const sampleSingleGroupableResponse = {
+  data: {
+    data: {
+      display_type: 'data',
+      columns: [{ type: 'STRING', groupable: true }, { type: 'QUANTITY' }],
+      rows: [
+        ['Nikki', 100],
+        ['John', 350],
+      ],
+    },
+  },
+}
+
+const sampleDoubleGroupableResponse = {
+  data: {
+    data: {
+      display_type: 'data',
+      columns: [
+        { type: 'STRING', groupable: true },
+        { type: 'STRING', groupable: true },
+        { type: 'QUANTITY' },
+      ],
+      rows: [
+        ['Nikki', 'Moore', 100],
+        ['John', 'Deer', 350],
+      ],
+    },
+  },
+}
 
 describe('onlyUnique', () => {
   test('only unique filter works', () => {
@@ -446,24 +505,7 @@ describe('getSupportedDisplayTypes', () => {
   })
 
   test('supports 3d charts', () => {
-    const response = {
-      data: {
-        data: {
-          display_type: 'data',
-          columns: [
-            { type: 'STRING', groupable: true },
-            { type: 'STRING', groupable: true },
-            { type: 'QUANTITY' },
-          ],
-          rows: [
-            ['Nikki', 'Moore', 100],
-            ['John', 'Deer', 350],
-          ],
-        },
-      },
-    }
-
-    expect(getSupportedDisplayTypes(response)).toEqual([
+    expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
       'pivot_table',
       'stacked_bar',
       'stacked_column',
@@ -475,20 +517,110 @@ describe('getSupportedDisplayTypes', () => {
   })
 })
 
-// export const isDisplayTypeValid = (response, displayType)
-// export const getDefaultDisplayType = response
-// export const getGroupBysFromPivotTable = (
-//   cell,
-//   tableColumns,
-//   pivotTableColumns,
-//   originalColumnData
-// )
-// export const nameValueObject = (name, value)
-// export const isAggregation = response
-// export const getGroupBysFromTable = (row, tableColumns)
-// export const getObjSize = obj
-// export const getMaxValueFromKeyValueObj
-// export const getMinValueFromKeyValueObj = obj
+describe('isDisplayTypeValid', () => {
+  test('returns true for valid display type', () => {
+    expect(
+      isDisplayTypeValid(sampleDoubleGroupableResponse, 'stacked_bar')
+    ).toBe(true)
+  })
+
+  test('returns false for invalid display type', () => {
+    expect(isDisplayTypeValid(sampleDoubleGroupableResponse, 'bar')).toBe(false)
+  })
+})
+
+describe('getDefaultDisplayType', () => {
+  test('returns "table" for non-pivot data', () => {
+    expect(getDefaultDisplayType(sampleListResponse)).toEqual('table')
+  })
+
+  test('returns "table" for single value response', () => {
+    expect(getDefaultDisplayType(sampleSingleValueResponse)).toEqual('table')
+  })
+
+  test('returns "pivot_table" if available', () => {
+    expect(getDefaultDisplayType(sampleDoubleGroupableResponse)).toEqual(
+      'pivot_table'
+    )
+  })
+
+  test('returns "suggestion" for suggestion response', () => {
+    console.log('suggestion response', responseTestCases[5])
+    expect(getDefaultDisplayType(responseTestCases[5])).toEqual('suggestion')
+  })
+})
+
+describe('nameValueObject', () => {
+  test('has expected output with valid input', () => {
+    expect(nameValueObject('key', 90)).toEqual({ name: 'key', value: 90 })
+  })
+
+  test('has expected output with undefined input', () => {
+    expect(nameValueObject()).toEqual({})
+  })
+})
+
+describe('isAggregation', () => {
+  test('single groupable', () => {
+    expect(isAggregation(sampleSingleGroupableResponse)).toBe(true)
+  })
+  test('double groupable', () => {
+    expect(isAggregation(sampleDoubleGroupableResponse)).toBe(true)
+  })
+  test('single value', () => {
+    expect(isAggregation(sampleSingleValueResponse)).toBe(false)
+  })
+  test('list', () => {
+    expect(isAggregation(sampleListResponse)).toBe(false)
+  })
+})
+
+describe('getObjSize', () => {
+  test('returns 0 for empty object', () => {
+    expect(getObjSize({})).toEqual(0)
+  })
+  test('returns 0 for undefined object', () => {
+    expect(getObjSize()).toBeUndefined()
+  })
+  test('returns undefined for string type', () => {
+    expect(getObjSize('not an object')).toBeUndefined()
+  })
+  test('returns correct length for array type', () => {
+    expect(getObjSize(['array', 'of', 'strings'])).toEqual(3)
+  })
+  test('returns correct length for object type', () => {
+    expect(getObjSize({ key1: 1, key2: '2', key3: {} })).toEqual(3)
+  })
+})
+
+describe('getMaxValueFromKeyValueObj', () => {
+  test('returns correct value from valid data', () => {
+    const inputObject = {
+      key1: 6,
+      key2: -5,
+      key4: 8,
+      key5: null,
+      key6: undefined,
+      key7: 'string',
+    }
+    expect(getMaxValueFromKeyValueObj(inputObject)).toEqual(8)
+  })
+})
+
+describe('getMinValueFromKeyValueObj', () => {
+  test('returns correct value from valid data', () => {
+    const inputObject = {
+      key1: 6,
+      key2: -5,
+      key4: 8,
+      key5: null,
+      key6: undefined,
+      key7: 'string',
+    }
+    expect(getMinValueFromKeyValueObj(inputObject)).toEqual(-5)
+  })
+})
+
 // export const calculateMinAndMaxSums = data
 // export const changeTooltipText = (id, text, tooltipShiftDistance, duration)
 // export const getChartLabelTextWidthInPx = text
@@ -504,3 +636,10 @@ describe('getSupportedDisplayTypes', () => {
 // export const capitalizeFirstChar = string
 // export const isSingleValueResponse = response
 // export const isTableResponse = (response, displayType)
+// export const getGroupBysFromTable = (row, tableColumns)
+// getGroupBysFromPivotTable = (
+//   cell,
+//   tableColumns,
+//   pivotTableColumns,
+//   originalColumnData
+// )
