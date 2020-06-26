@@ -157,7 +157,12 @@ export default class QueryOutput extends React.Component {
     try {
       // Set initial config if needed
       // If this config causes errors, it will be reset when the error occurs
-      this.dataConfig = _cloneDeep(this.props.dataConfig)
+      if (
+        this.props.dataConfig &&
+        this.isDataConfigValid(this.props.dataConfig)
+      ) {
+        this.dataConfig = _cloneDeep(this.props.dataConfig)
+      }
 
       const { theme, chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
@@ -267,6 +272,47 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+  }
+
+  isDataConfigValid = dataConfig => {
+    if (
+      !dataConfig ||
+      !dataConfig.numberColumnIndices ||
+      !dataConfig.stringColumnIndices ||
+      Number.isNaN(Number(dataConfig.numberColumnIndex)) ||
+      Number.isNaN(Number(dataConfig.stringColumnIndex))
+    ) {
+      return false
+    }
+
+    if (
+      !Array.isArray(dataConfig.numberColumnIndices) ||
+      !Array.isArray(dataConfig.stringColumnIndices)
+    ) {
+      return false
+    }
+
+    const columns = _get(this.props.queryResponse, 'data.data.columns')
+
+    const areNumberColumnsValid = dataConfig.numberColumnIndices.every(
+      index => {
+        return columns[index] && isColumnNumberType(columns[index])
+      }
+    )
+    if (!areNumberColumnsValid) {
+      return false
+    }
+
+    const areStringColumnsValid = dataConfig.stringColumnIndices.every(
+      index => {
+        return columns[index] && isColumnStringType(columns[index])
+      }
+    )
+    if (!areStringColumnsValid) {
+      return false
+    }
+
+    return true
   }
 
   updateColumns = columns => {
