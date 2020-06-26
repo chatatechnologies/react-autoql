@@ -586,7 +586,7 @@ export default class DashboardTile extends React.Component {
           </em>
         </div>
       )
-    } else if (!_get(this.props.tile, 'query.trim()')) {
+    } else if (this.props.isNewTile) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>You haven’t filled this tile yet.</em>
