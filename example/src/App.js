@@ -694,10 +694,10 @@ export default class App extends Component {
     })
 
     try {
-      // const { tiles, domain, apiKey } = this.state
-      const activeDashboard = this.state.dashboardsList.find(
+      const index = this.state.dashboardsList.findIndex(
         dashboard => dashboard.id === this.state.activeDashboardId
       )
+      const activeDashboard = this.state.dashboardsList[index]
 
       const data = {
         username: this.state.username,
@@ -722,8 +722,18 @@ export default class App extends Component {
         },
       })
 
+      const newDashboardsList = _.cloneDeep(this.state.dashboardsList)
+      newDashboardsList[index].data = this.state.dashboardTiles.map(tile => {
+        return {
+          ...tile,
+          queryResponse: undefined,
+          secondQueryResponse: undefined,
+        }
+      })
+
       this.setState({
         isSavingDashboard: false,
+        dashboardsList: newDashboardsList,
         isEditing: false,
       })
     } catch (error) {
@@ -1366,6 +1376,7 @@ export default class App extends Component {
       const newDashboard = this.state.dashboardsList.find(
         dashboard => dashboard.id === value
       )
+
       this.setState({
         activeDashboardId: value,
         dashboardTiles: newDashboard.data,
