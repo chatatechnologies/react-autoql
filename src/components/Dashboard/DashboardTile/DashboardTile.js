@@ -753,6 +753,35 @@ export default class DashboardTile extends React.Component {
     )
   }
 
+  renderSplitViewBtn = () => {
+    return (
+      <div className="viz-toolbar split-view-btn" data-test="split-view-btn">
+        <button
+          onClick={() => {
+            this.props.setParamsForTile(
+              { splitView: !this.props.tile.splitView },
+              this.props.tile.i
+            )
+            ReactTooltip.hide()
+          }}
+          className="chata-toolbar-btn"
+          data-tip={this.props.tile.splitView ? 'Single View' : 'Split View'}
+          data-for="chata-dashboard-toolbar-btn-tooltip"
+          data-test="viz-toolbar-button"
+        >
+          <Icon
+            type={this.getIsSplitView() ? 'single-view' : 'split-view'}
+            style={{
+              color: this.props.tile.splitView
+                ? this.props.themeConfig.accentColor
+                : 'inherit',
+            }}
+          />
+        </button>
+      </div>
+    )
+  }
+
   renderQueryOutput = ({
     queryOutputProps = {},
     vizToolbarProps = {},
@@ -796,37 +825,9 @@ export default class DashboardTile extends React.Component {
         )}
         {this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
-            {this.props.isEditing && showSplitViewBtn && (
-              <div
-                className="viz-toolbar split-view-btn"
-                data-test="split-view-btn"
-              >
-                <button
-                  onClick={() => {
-                    this.props.setParamsForTile(
-                      { splitView: !this.props.tile.splitView },
-                      this.props.tile.i
-                    )
-                    ReactTooltip.hide()
-                  }}
-                  className="chata-toolbar-btn"
-                  data-tip={
-                    this.props.tile.splitView ? 'Single View' : 'Split View'
-                  }
-                  data-for="chata-dashboard-toolbar-btn-tooltip"
-                  data-test="viz-toolbar-button"
-                >
-                  <Icon
-                    type={this.getIsSplitView() ? 'single-view' : 'split-view'}
-                    style={{
-                      color: this.props.tile.splitView
-                        ? this.props.themeConfig.accentColor
-                        : 'inherit',
-                    }}
-                  />
-                </button>
-              </div>
-            )}
+            {this.props.isEditing &&
+              showSplitViewBtn &&
+              this.renderSplitViewBtn()}
             <VizToolbar
               themeConfig={this.props.themeConfig}
               {...vizToolbarProps}
