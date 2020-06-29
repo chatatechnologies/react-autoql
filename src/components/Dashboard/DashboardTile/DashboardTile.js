@@ -465,7 +465,7 @@ export default class DashboardTile extends React.Component {
                   }}
                   inputProps={{
                     className: `dashboard-tile-autocomplete-input`,
-                    placeholder: 'Query',
+                    placeholder: 'Type a query in your own words',
                     value: this.state.query,
                     onFocus: () => this.setState({ isQueryInputFocused: true }),
                     onChange: this.onQueryInputChange,
@@ -484,7 +484,7 @@ export default class DashboardTile extends React.Component {
               ) : (
                 <input
                   className="dashboard-tile-input query"
-                  placeholder="Query"
+                  placeholder="Type a query in your own words"
                   value={this.state.query}
                   onChange={e => this.setState({ query: e.target.value })}
                   onKeyDown={this.onQueryTextKeyDown}
@@ -574,7 +574,7 @@ export default class DashboardTile extends React.Component {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
-            To get started, type a query in the search bar and click{' '}
+            To get started, enter a query and click{' '}
             <Icon
               type="play"
               style={{
@@ -739,7 +739,9 @@ export default class DashboardTile extends React.Component {
                     )
                   }
                 }}
-                placeholder={this.props.tile.query || 'type your query here'}
+                placeholder={
+                  this.props.tile.query || 'Type a query in your own words'
+                }
                 style={{
                   width: this.state.isSecondQueryInputOpen
                     ? secondQueryInputWidth
