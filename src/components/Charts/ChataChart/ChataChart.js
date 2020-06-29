@@ -33,7 +33,6 @@ import {
 import {
   themeConfigDefault,
   dataFormattingDefault,
-  dataConfigDefault,
 } from '../../../props/defaults'
 import isEqual from 'lodash.isequal'
 
@@ -73,7 +72,7 @@ export default class ChataChart extends Component {
   static defaultProps = {
     themeConfig: themeConfigDefault,
     dataFormatting: dataFormattingDefault,
-    dataConfig: dataConfigDefault,
+    dataConfig: undefined,
 
     tableColumns: [],
     enableDynamicCharting: true,
