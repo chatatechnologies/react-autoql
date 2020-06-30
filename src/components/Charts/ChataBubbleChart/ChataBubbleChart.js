@@ -155,7 +155,7 @@ export default class ChataBubbleChart extends Component {
     this.handleLabelRotation(uniqueXLabels)
 
     return (
-      <g data-test="chata-bubble-chart">
+      <g className="chata-bubble-chart" data-test="chata-bubble-chart">
         <Axes
           themeConfig={this.props.themeConfig}
           scales={{ xScale, yScale }}
