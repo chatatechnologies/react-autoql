@@ -462,6 +462,11 @@
 
 .dashboard-tile-placeholder-text {
   color: rgba(0, 0, 0, 0.3);
+
+  .play-icon {
+    vertical-align: bottom;
+    line-height: 20px;
+  }
 }
 
 /* React Grid Layout overrides */

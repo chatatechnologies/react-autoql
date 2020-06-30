@@ -580,10 +580,7 @@ export default class DashboardTile extends React.Component {
         <div className="dashboard-tile-placeholder-text">
           <em>
             To get started, enter a query and click{' '}
-            <Icon
-              style={{ verticalAlign: 'bottom', lineHeight: '20px' }}
-              type="play"
-            />
+            <Icon className="play-icon" type="play" />
           </em>
         </div>
       )
@@ -868,12 +865,13 @@ export default class DashboardTile extends React.Component {
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: this.props.tile.selectedSuggestion,
         onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown(
-            this.props.tile.i,
+          this.props.processDrilldown({
+            tileId: this.props.tile.i,
             drilldownData,
             queryID,
-            activeKey
-          )
+            activeKey,
+            isSecondHalf: false,
+          })
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onColumnsUpdate: columns => {
@@ -933,13 +931,13 @@ export default class DashboardTile extends React.Component {
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: this.props.tile.secondSelectedSuggestion,
         onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown(
-            this.props.tile.i,
+          this.props.processDrilldown({
+            tileId: this.props.tile.i,
             drilldownData,
             queryID,
             activeKey,
-            true
-          )
+            isSecondHalf: true,
+          })
         },
         onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption,
         onColumnsUpdate: columns => {
