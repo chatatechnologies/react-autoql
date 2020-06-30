@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { scaleBand } from 'd3-scale'
-import { max } from 'd3-array'
+import { max, min } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
@@ -136,18 +136,18 @@ export default class ChataBubbleChart extends Component {
     } = this.props
 
     const maxValue = max(data, d => max(d.cells, cell => cell.value))
+    const minValue = min(data, d => min(d.cells, cell => cell.value))
 
     const uniqueYLabels = data.map(d => d.label)
     const yScale = this.xScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
-      .paddingInner(0.01)
+      .paddingOuter(0.5)
 
     const uniqueXLabels = data[0].cells.map(cell => cell.label)
     const xScale = this.yScale
       .domain(uniqueXLabels)
       .range([leftMargin, width - rightMargin])
-      .paddingInner(0.01)
 
     this.squareWidth = xScale.bandwidth()
     const xTickValues = this.getXTickValues(uniqueXLabels)
@@ -172,6 +172,7 @@ export default class ChataBubbleChart extends Component {
           height={height}
           yTicks={yTickValues}
           xTicks={xTickValues}
+          yGridLines
           dataFormatting={dataFormatting}
           rotateLabels={this.rotateLabels}
           onXAxisClick={onXAxisClick}
@@ -189,6 +190,7 @@ export default class ChataBubbleChart extends Component {
             }}
             data={data}
             columns={columns}
+            minValue={minValue}
             maxValue={maxValue}
             legendColumn={legendColumn}
             width={width}
