@@ -10,10 +10,14 @@ export default class Circles extends Component {
     themeConfig: themeConfigType,
 
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    maxValue: PropTypes.number,
+    minValue: PropTypes.number,
   }
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
+    maxValue: 0,
+    minValue: 0,
   }
 
   state = {
@@ -25,8 +29,8 @@ export default class Circles extends Component {
     const { xScale, yScale } = scales
 
     const radiusScale = scaleLinear()
-      .domain([0, this.props.maxValue])
-      .range([0, 2 * Math.min(xScale.bandwidth(), yScale.bandwidth())])
+      .domain([this.props.minValue, this.props.maxValue])
+      .range([0, Math.min(xScale.bandwidth(), yScale.bandwidth())])
 
     const circles = []
     data.forEach(d => {
