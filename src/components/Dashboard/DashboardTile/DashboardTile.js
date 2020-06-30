@@ -77,7 +77,6 @@ export default class DashboardTile extends React.Component {
     query: '',
     title: '',
     displayType: 'table',
-    isNewTile: false,
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
@@ -157,7 +156,6 @@ export default class DashboardTile extends React.Component {
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
       {
-        isNewTile: false,
         queryResponse: null,
         secondQueryResponse: null,
         selectedSuggestion: undefined,
@@ -192,13 +190,13 @@ export default class DashboardTile extends React.Component {
         queryResponse: response,
         selectedSuggestion: undefined,
         safetyNetSelection: undefined,
-        isNewTile: false,
       },
       this.props.tile.i
     )
 
     this.setState({
       isTopExecuting: false,
+      isTopExecuted: true,
     })
   }
 
@@ -214,6 +212,7 @@ export default class DashboardTile extends React.Component {
 
     this.setState({
       isBottomExecuting: false,
+      isBottomExecuted: true,
     })
   }
 
@@ -565,31 +564,27 @@ export default class DashboardTile extends React.Component {
     )
   }
 
-  renderContentPlaceholder = ({ isExecuting } = {}) => {
+  renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
     let content = null
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (!_get(this.state.query, 'trim()') && this.props.isEditing) {
+    } else if (!this.props.isEditing && isExecuted) {
+      content = (
+        <div className="dashboard-tile-placeholder-text">
+          <em>No query was supplied for this tile.</em>
+        </div>
+      )
+    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
             To get started, enter a query and click{' '}
             <Icon
+              style={{ verticalAlign: 'bottom', lineHeight: '20px' }}
               type="play"
-              style={{
-                display: 'inline-block',
-                marginRight: '3px',
-                marginBottom: '-2px',
-              }}
             />
           </em>
-        </div>
-      )
-    } else if (this.props.isNewTile) {
-      content = (
-        <div className="dashboard-tile-placeholder-text">
-          <em>You haven’t filled this tile yet.</em>
         </div>
       )
     } else {
@@ -798,12 +793,16 @@ export default class DashboardTile extends React.Component {
         ? this.state.isBottomExecuting
         : this.state.isTopExecuting
 
+    const isExecuted = isSecondHalf
+      ? this.state.isBottomExecuted
+      : this.state.isTopExecuted
+
     return (
       <Fragment>
         {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
           this.renderSuggestionPrefix()}
         {!queryOutputProps.queryResponse || isExecuting ? (
-          this.renderContentPlaceholder({ isExecuting })
+          this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <QueryOutput
             themeConfig={this.props.themeConfig}

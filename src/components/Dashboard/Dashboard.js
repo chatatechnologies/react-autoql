@@ -279,7 +279,6 @@ class Dashboard extends React.Component {
         y: Infinity,
         query: '',
         title: '',
-        isNewTile: true,
       })
 
       this.props.onChange(tiles)
