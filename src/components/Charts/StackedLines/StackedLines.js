@@ -5,7 +5,7 @@ export default class StackedLines extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   getKey = (d, i) => {
@@ -16,7 +16,7 @@ export default class StackedLines extends Component {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -44,7 +44,7 @@ export default class StackedLines extends Component {
           strokeWidth: 3,
           strokeOpacity: 0.7,
           fillOpacity: 1,
-          fill: this.props.backgroundColor || '#fff'
+          fill: this.props.backgroundColor || '#fff',
         }}
       />
     )
@@ -73,7 +73,7 @@ export default class StackedLines extends Component {
         data-effect="float"
         style={{
           fill: data[0].cells[series].color,
-          fillOpacity: 1
+          fillOpacity: 1,
         }}
       />
     )
@@ -90,7 +90,7 @@ export default class StackedLines extends Component {
     const firstPoint = [xScale(data[0].label), yScale(this.props.minValue)]
     const lastPoint = [
       xScale(data[data.length - 1].label),
-      yScale(this.props.minValue)
+      yScale(this.props.minValue),
     ]
 
     let runningPositiveSumObject = {}
