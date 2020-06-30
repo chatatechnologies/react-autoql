@@ -364,14 +364,14 @@ class Dashboard extends React.Component {
       })
   }
 
-  runFilterDrilldown = (data, tileId) => {
+  runFilterDrilldown = (data, tileId, isSecondHalf) => {
     try {
       const tile = this.props.tiles.find(tile => tile.i === tileId)
       if (!tile) {
         return
       }
 
-      const queryResponse = this.state.isDrilldownSecondHalf
+      const queryResponse = isSecondHalf
         ? tile.secondQueryResponse
         : tile.queryResponse
 
@@ -389,23 +389,23 @@ class Dashboard extends React.Component {
     }
   }
 
-  startDrilldown = (drilldownData, queryID, tileId) => {
+  startDrilldown = (drilldownData, queryID, tileId, isSecondHalf) => {
     this.setState({ isDrilldownRunning: true })
 
     if (drilldownData.supportedByAPI) {
-      this.runDrilldownFromAPI(drilldownData.data, queryID)
+      this.runDrilldownFromAPI(drilldownData.data, queryID, isSecondHalf)
     } else {
-      this.runFilterDrilldown(drilldownData.data, tileId)
+      this.runFilterDrilldown(drilldownData.data, tileId, isSecondHalf)
     }
   }
 
-  processDrilldown = (
+  processDrilldown = ({
     tileId,
     drilldownData,
     queryID,
     activeKey,
-    isSecondHalf
-  ) => {
+    isSecondHalf,
+  }) => {
     if (this.props.autoQLConfig.enableDrilldowns) {
       if (!drilldownData || !drilldownData.data) {
         return
@@ -419,7 +419,7 @@ class Dashboard extends React.Component {
         activeDrilldownChartElementKey: activeKey,
       })
 
-      this.startDrilldown(drilldownData, queryID, tileId)
+      this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
     }
   }
 
