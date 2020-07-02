@@ -129,7 +129,7 @@ export default class App extends Component {
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
     enableNotificationsTab: true,
-    enableNotifications: true,
+    enableNotifications: !isProd(),
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
