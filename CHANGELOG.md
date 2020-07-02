@@ -1,3 +1,15 @@
+## [1.7.1](https://github.com/chatatechnologies/react-autoql/compare/v1.7.0...v1.7.1) (2020-07-02)
+
+
+### Bug Fixes
+
+* **charts:** fix range for bubble charts so bubbles always fit inside chart area ([6d99433](https://github.com/chatatechnologies/react-autoql/commit/6d994336bff77b495588f51875afe92b13405d78))
+* **charts:** fix scale of heatmap charts so they dont get cut off on the right side ([f67bd3f](https://github.com/chatatechnologies/react-autoql/commit/f67bd3f160de76afc7ad5ab38ca83512299aa74e))
+* **charts:** use correct range when negative values are present ([cac4981](https://github.com/chatatechnologies/react-autoql/commit/cac4981de7bff51726b647ae50ce81bdc21085a8))
+* **dashboards:** add better messaging for empty tiles before and after running dashboard ([4e1475d](https://github.com/chatatechnologies/react-autoql/commit/4e1475d444ffa8df4e8981f2cc23faac533e9178))
+* **dashboards:** fix drilldowns for list queries in bottom of split view dashboard tiles ([9c44c59](https://github.com/chatatechnologies/react-autoql/commit/9c44c598f0f11d2874f87f0a964d03740e16a6c7))
+* **test page:** disable notifications by default on prod ([b57a514](https://github.com/chatatechnologies/react-autoql/commit/b57a5144578ecff1bac478581f457948bd9e09b7))
+
 # [1.7.0](https://github.com/chatatechnologies/react-autoql/compare/v1.6.0...v1.7.0) (2020-06-29)
 
 
