@@ -67,6 +67,10 @@ export default class Input extends React.Component {
     setCSSVars({ themeConfig, prefix })
   }
 
+  componentDidUpdate = () => {
+    ReactTooltip.rebuild()
+  }
+
   onTableFilter = newTableData => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     if (displayType === 'table') {
