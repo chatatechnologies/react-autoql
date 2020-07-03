@@ -150,6 +150,7 @@ export default class DataMessenger extends React.Component {
 
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
+      window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
       setTimeout(() => {
@@ -166,6 +167,11 @@ export default class DataMessenger extends React.Component {
       setTimeout(() => {
         ReactTooltip.rebuild()
       }, 1000)
+
+      if (!this.state.isWindowResizing && prevState.isWindowResizing) {
+        // Update the component so that the message sizes autoadjust again
+        this.forceUpdate()
+      }
 
       if (this.props.isVisible && !prevProps.isVisible) {
         if (this.queryInputRef) {
@@ -195,10 +201,22 @@ export default class DataMessenger extends React.Component {
   componentWillUnmount() {
     try {
       document.removeEventListener('keydown', this.escFunction, false)
+      window.removeEventListener('resize', this.onWindowResize)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
     }
+  }
+
+  onWindowResize = () => {
+    if (!this.state.isWindowResizing) {
+      this.setState({ isWindowResizing: true })
+    }
+
+    clearTimeout(this.windowResizeTimer)
+    this.windowResizeTimer = setTimeout(() => {
+      this.setState({ isWindowResizing: false })
+    }, 300)
   }
 
   escFunction = event => {
