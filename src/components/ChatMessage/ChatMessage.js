@@ -277,6 +277,9 @@ export default class ChatMessage extends React.Component {
             this.props.deleteMessageCallback(this.props.id)
           }
           onFilterCallback={this.toggleTableFilter}
+          onColumnVisibilitySave={() => {
+            this.forceUpdate()
+          }}
         />
       )
     }
@@ -332,6 +335,14 @@ export default class ChatMessage extends React.Component {
     return { chartWidth, chartHeight }
   }
 
+  allColumnsAreHidden = newColumns => {
+    if (this.responseRef) {
+      return this.responseRef.areAllColumnsHidden()
+    }
+
+    return false
+  }
+
   getMessageHeight = () => {
     let messageHeight = 'unset'
 
@@ -340,7 +351,12 @@ export default class ChatMessage extends React.Component {
       this.isTableResponse() &&
       this.TABLE_CONTAINER_HEIGHT
     ) {
-      messageHeight = this.TABLE_CONTAINER_HEIGHT
+      if (this.allColumnsAreHidden()) {
+        // Allow space for the error message in case the table is small
+        messageHeight = 210
+      } else {
+        messageHeight = this.TABLE_CONTAINER_HEIGHT
+      }
     } else if (
       this.state.displayType === 'pivot_table' &&
       this.isTableResponse() &&
