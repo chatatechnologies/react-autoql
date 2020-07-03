@@ -56,6 +56,7 @@ export default class Input extends React.Component {
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
     onFilterCallback: () => {},
+    onColumnVisibilitySave: () => {},
   }
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
@@ -283,6 +284,8 @@ export default class Input extends React.Component {
             })
           )
         }
+
+        this.props.onColumnVisibilitySave(columns)
       })
       .catch(error => {
         console.error(error)
