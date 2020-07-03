@@ -466,6 +466,8 @@ export default class DashboardTile extends React.Component {
                     className: `dashboard-tile-autocomplete-input`,
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
+                    'data-tip': 'Query',
+                    'data-for': 'chata-dashboard-toolbar-btn-tooltip',
                     onFocus: () => this.setState({ isQueryInputFocused: true }),
                     onChange: this.onQueryInputChange,
                     onKeyDown: this.onQueryTextKeyDown,
@@ -485,6 +487,8 @@ export default class DashboardTile extends React.Component {
                   className="dashboard-tile-input query"
                   placeholder="Type a query in your own words"
                   value={this.state.query}
+                  data-tip="Query"
+                  data-for="chata-dashboard-toolbar-btn-tooltip"
                   onChange={e => this.setState({ query: e.target.value })}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
@@ -507,6 +511,8 @@ export default class DashboardTile extends React.Component {
                 className="dashboard-tile-input title"
                 placeholder="Add descriptive title (optional)"
                 value={this.state.title}
+                data-tip="Title"
+                data-for="chata-dashboard-toolbar-btn-tooltip"
                 onChange={e => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={e => {
@@ -536,7 +542,7 @@ export default class DashboardTile extends React.Component {
             onMouseDown={e => e.stopPropagation()}
             onClick={() => this.props.deleteTile(this.props.tile.i)}
           >
-            <Icon type="close" />
+            <Icon style={{ fontSize: '18px' }} type="close" />
           </div>
         </div>
       )
