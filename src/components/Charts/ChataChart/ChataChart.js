@@ -727,6 +727,8 @@ export default class ChataChart extends Component {
             e.pageX !== this.state.axisSelectorLocation.left &&
             e.pageY !== this.state.axisSelectorLocation.top
           ) {
+            // Reset axis selections to original
+            this.setNumberColumnSelectorState()
             this.setState({ activeAxisSelector: undefined })
           }
         }}
