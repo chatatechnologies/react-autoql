@@ -834,6 +834,7 @@ export default class DataMessenger extends React.Component {
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
                   scrollRef={this.messengerScrollComponent}
+                  isDataMessengerOpen={this.props.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   processDrilldown={(drilldownData, queryID) =>
