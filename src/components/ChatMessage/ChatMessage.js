@@ -46,6 +46,7 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
+    isDataMessengerOpen: PropTypes.bool,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,
@@ -75,6 +76,7 @@ export default class ChatMessage extends React.Component {
     setActiveMessage: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
+    isDataMessengerOpen: false,
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -419,8 +421,8 @@ export default class ChatMessage extends React.Component {
           }}
         >
           {this.renderContent(chartWidth, chartHeight)}
-          {this.renderRightToolbar()}
-          {this.renderLeftToolbar()}
+          {this.props.isDataMessengerOpen && this.renderRightToolbar()}
+          {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
           {this.renderDataLimitWarning()}
         </div>
       </div>
