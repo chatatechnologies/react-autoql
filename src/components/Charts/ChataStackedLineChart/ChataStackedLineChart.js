@@ -92,7 +92,7 @@ export default class ChataStackedLineChart extends Component {
     } = this.props
 
     // Get max and min values from all series
-    const { max } = calculateMinAndMaxSums(data)
+    const { max, min } = calculateMinAndMaxSums(data)
 
     const xScale = this.xScale
       .domain(data.map(d => d.label))
@@ -101,7 +101,7 @@ export default class ChataStackedLineChart extends Component {
       .paddingOuter(0)
 
     const yScale = this.yScale
-      .domain([0, max]) // do we want to deal with negative values for these visualizations?
+      .domain([min, max]) // do we want to deal with negative values for these visualizations?
       .range([height - bottomMargin, topMargin])
       .nice()
 

@@ -279,7 +279,6 @@ class Dashboard extends React.Component {
         y: Infinity,
         query: '',
         title: '',
-        isNewTile: true,
       })
 
       this.props.onChange(tiles)
@@ -325,6 +324,18 @@ class Dashboard extends React.Component {
         ...params,
       }
 
+      if (
+        Object.keys(params).includes('query') &&
+        params.query !== this.props.tiles[tileIndex].query
+      ) {
+        tiles[tileIndex].dataConfig = undefined
+      } else if (
+        Object.keys(params).includes('secondQuery') &&
+        params.secondQuery !== this.props.tiles[tileIndex].secondQuery
+      ) {
+        tiles[tileIndex].secondDataConfig = undefined
+      }
+
       this.props.onChange(tiles)
     } catch (error) {
       console.error(error)
@@ -352,14 +363,18 @@ class Dashboard extends React.Component {
       })
   }
 
-  runFilterDrilldown = (data, tileId) => {
+  runFilterDrilldown = (data, tileId, isSecondHalf) => {
     try {
       const tile = this.props.tiles.find(tile => tile.i === tileId)
       if (!tile) {
         return
       }
 
-      const drilldownResponse = filterDataForDrilldown(tile.queryResponse, data)
+      const queryResponse = isSecondHalf
+        ? tile.secondQueryResponse
+        : tile.queryResponse
+
+      const drilldownResponse = filterDataForDrilldown(queryResponse, data)
 
       setTimeout(() => {
         this.setState({
@@ -373,17 +388,23 @@ class Dashboard extends React.Component {
     }
   }
 
-  startDrilldown = (drilldownData, queryID, tileId) => {
+  startDrilldown = (drilldownData, queryID, tileId, isSecondHalf) => {
     this.setState({ isDrilldownRunning: true })
 
     if (drilldownData.supportedByAPI) {
-      this.runDrilldownFromAPI(drilldownData.data, queryID)
+      this.runDrilldownFromAPI(drilldownData.data, queryID, isSecondHalf)
     } else {
-      this.runFilterDrilldown(drilldownData.data, tileId)
+      this.runFilterDrilldown(drilldownData.data, tileId, isSecondHalf)
     }
   }
 
-  processDrilldown = (tileId, drilldownData, queryID, activeKey) => {
+  processDrilldown = ({
+    tileId,
+    drilldownData,
+    queryID,
+    activeKey,
+    isSecondHalf,
+  }) => {
     if (this.props.autoQLConfig.enableDrilldowns) {
       if (!drilldownData || !drilldownData.data) {
         return
@@ -391,17 +412,21 @@ class Dashboard extends React.Component {
 
       this.setState({
         isDrilldownModalVisible: true,
+        isDrilldownSecondHalf: isSecondHalf,
         activeDrilldownTile: tileId,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
       })
 
-      this.startDrilldown(drilldownData, queryID, tileId)
+      this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
     }
   }
 
   shouldShowOriginalQuery = tile => {
-    return CHART_TYPES.includes(tile.displayType)
+    const displayType = this.state.isDrilldownSecondHalf
+      ? tile.secondDisplayType
+      : tile.displayType
+    return CHART_TYPES.includes(displayType)
   }
 
   renderDrilldownModal = () => {
@@ -410,10 +435,26 @@ class Dashboard extends React.Component {
         tile => tile.i === this.state.activeDrilldownTile
       )
 
+      let title
+      let queryResponse
+      let displayType
+      let dataConfig
+      if (tile && this.state.isDrilldownSecondHalf) {
+        title = tile.secondQuery
+        queryResponse = tile.secondQueryResponse
+        displayType = tile.secondDisplayType
+        dataConfig = tile.secondDataConfig
+      } else if (tile && !this.state.isDrilldownSecondHalf) {
+        title = tile.query
+        queryResponse = tile.queryResponse
+        displayType = tile.displayType
+        dataConfig = tile.dataConfig
+      }
+
       return (
         <Modal
           className=""
-          title={tile ? tile.query : ''}
+          title={title}
           isVisible={this.state.isDrilldownModalVisible}
           width={800}
           height="calc(100vh - 90px)"
@@ -433,10 +474,10 @@ class Dashboard extends React.Component {
                 <QueryOutput
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
-                  queryResponse={tile.queryResponse}
-                  displayType={tile.displayType}
-                  dataConfig={tile.dataConfig}
                   dataFormatting={this.props.dataFormatting}
+                  queryResponse={queryResponse}
+                  displayType={displayType}
+                  dataConfig={dataConfig}
                   onDataClick={(drilldownData, queryID) => {
                     this.startDrilldown(drilldownData, queryID, tile.i)
                   }}
@@ -459,9 +500,9 @@ class Dashboard extends React.Component {
                   authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
+                  dataFormatting={this.props.dataFormatting}
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
-                  dataFormatting={this.props.dataFormatting}
                   backgroundColor={document.documentElement.style.getPropertyValue(
                     '--chata-dashboard-background-color'
                   )}

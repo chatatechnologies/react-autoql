@@ -82,7 +82,6 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
-  dataConfig = {}
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
@@ -119,14 +118,7 @@ export default class QueryOutput extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
     dataFormatting: dataFormattingDefault,
-    dataConfig: {
-      numberColumnIndex: undefined,
-      numberColumnIndices: undefined,
-      stringColumnIndex: undefined,
-      stringColumnIndices: undefined,
-      legendColumnIndex: undefined,
-      seriesIndices: undefined,
-    },
+    dataConfig: undefined,
 
     queryResponse: undefined,
     displayType: undefined,
@@ -163,7 +155,12 @@ export default class QueryOutput extends React.Component {
     try {
       // Set initial config if needed
       // If this config causes errors, it will be reset when the error occurs
-      this.dataConfig = _cloneDeep(this.props.dataConfig)
+      if (
+        this.props.dataConfig &&
+        this.isDataConfigValid(this.props.dataConfig)
+      ) {
+        this.dataConfig = _cloneDeep(this.props.dataConfig)
+      }
 
       const { theme, chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
@@ -200,6 +197,16 @@ export default class QueryOutput extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // If data config was changed by a prop, change data config here
+    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
+      if (this.props.dataConfig) {
+        this.dataConfig = _cloneDeep(this.props.dataConfig)
+      } else {
+        this.setColumnIndices()
+      }
+    }
+
+    // If data config was changed here, tell the parent
     if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
       this.props.onDataConfigChange(this.dataConfig)
     }
@@ -263,6 +270,47 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+  }
+
+  isDataConfigValid = dataConfig => {
+    if (
+      !dataConfig ||
+      !dataConfig.numberColumnIndices ||
+      !dataConfig.stringColumnIndices ||
+      Number.isNaN(Number(dataConfig.numberColumnIndex)) ||
+      Number.isNaN(Number(dataConfig.stringColumnIndex))
+    ) {
+      return false
+    }
+
+    if (
+      !Array.isArray(dataConfig.numberColumnIndices) ||
+      !Array.isArray(dataConfig.stringColumnIndices)
+    ) {
+      return false
+    }
+
+    const columns = _get(this.props.queryResponse, 'data.data.columns')
+
+    const areNumberColumnsValid = dataConfig.numberColumnIndices.every(
+      index => {
+        return columns[index] && isColumnNumberType(columns[index])
+      }
+    )
+    if (!areNumberColumnsValid) {
+      return false
+    }
+
+    const areStringColumnsValid = dataConfig.stringColumnIndices.every(
+      index => {
+        return columns[index] && isColumnStringType(columns[index])
+      }
+    )
+    if (!areStringColumnsValid) {
+      return false
+    }
+
+    return true
   }
 
   updateColumns = columns => {
@@ -782,6 +830,10 @@ export default class QueryOutput extends React.Component {
       return
     }
 
+    if (!this.dataConfig) {
+      this.dataConfig = {}
+    }
+
     const allStringColumnIndices = []
     this.tableColumns.forEach((col, index) => {
       if (isColumnStringType(col) || col.groupable) {
@@ -920,6 +972,10 @@ export default class QueryOutput extends React.Component {
         tableData = this.pivotTableData
       }
 
+      if (!this.dataConfig) {
+        this.setColumnIndices()
+      }
+
       let stringIndex = this.dataConfig.stringColumnIndex
       this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices
 
@@ -997,7 +1053,7 @@ export default class QueryOutput extends React.Component {
       if (!this.chartDataError) {
         // Try one more time after resetting data config settings
         this.chartDataError = true
-        this.dataConfig = {}
+        this.dataConfig = undefined
         this.setColumnIndices()
         this.generateChartData()
       } else {
@@ -1331,6 +1387,7 @@ export default class QueryOutput extends React.Component {
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = 12
     } catch (error) {
+      console.error(error)
       this.supportedDisplayTypes.filter(
         displayType => displayType !== 'pivot_table'
       )

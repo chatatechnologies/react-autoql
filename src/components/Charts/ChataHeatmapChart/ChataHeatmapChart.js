@@ -5,7 +5,7 @@ import { max } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Squares } from '../Squares'
-import { onlyUnique, shouldRotateLabels } from '../../../js/Util.js'
+import { shouldRotateLabels } from '../../../js/Util.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
@@ -137,15 +137,15 @@ export default class ChataHeatmapChart extends Component {
     const maxValue = max(data, d => max(d.cells, cell => cell.value))
 
     const uniqueYLabels = data.map(d => d.label)
-    const yScale = this.xScale
+    const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
       .paddingInner(0.01)
 
     const uniqueXLabels = data[0].cells.map(cell => cell.label)
-    const xScale = this.yScale
+    const xScale = this.xScale
       .domain(uniqueXLabels)
-      .range([leftMargin, width - rightMargin])
+      .range([leftMargin + 10, width - rightMargin])
       .paddingInner(0.01)
 
     this.squareWidth = xScale.bandwidth()
@@ -154,7 +154,7 @@ export default class ChataHeatmapChart extends Component {
     this.handleLabelRotation(uniqueXLabels)
 
     return (
-      <g data-test="chata-heatmap-chart">
+      <g data-test="chata-heatmap-chart" className="chata-heatmap-chart">
         <Axes
           themeConfig={this.props.themeConfig}
           scales={{ xScale, yScale }}
@@ -171,6 +171,7 @@ export default class ChataHeatmapChart extends Component {
           height={height}
           yTicks={yTickValues}
           xTicks={xTickValues}
+          yGridLines
           dataFormatting={dataFormatting}
           rotateLabels={this.rotateLabels}
           onXAxisClick={onXAxisClick}
