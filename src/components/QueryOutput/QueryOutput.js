@@ -1402,6 +1402,7 @@ export default class QueryOutput extends React.Component {
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = 12
     } catch (error) {
+      console.error(error)
       this.supportedDisplayTypes.filter(
         displayType => displayType !== 'pivot_table'
       )
