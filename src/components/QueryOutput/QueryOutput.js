@@ -1571,11 +1571,9 @@ export default class QueryOutput extends React.Component {
   }
 
   renderErrorMessage = message => {
-    if (message) {
-      return message
-    }
+    const errorMessage = message || errorMessages.GENERAL
 
-    return errorMessages.GENERAL
+    return <div style={{ padding: '20px' }}>{errorMessage}</div>
   }
 
   renderResponse = (width, height) => {

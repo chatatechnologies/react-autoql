@@ -4,6 +4,7 @@ import { terser } from 'rollup-plugin-terser'
 import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
+import image from '@rollup/plugin-image'
 
 import pkg from './package.json'
 
@@ -35,6 +36,7 @@ const common = {
       extract: true,
       minimize: false,
     }),
+    image(),
     svg(),
     babel({
       plugins: ['external-helpers'],

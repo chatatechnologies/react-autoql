@@ -6,7 +6,6 @@ import {
   MdClose,
   MdError,
   MdContentCopy,
-  MdFileDownload,
   MdInfoOutline,
   MdPlayCircleOutline,
 } from 'react-icons/md'
@@ -23,6 +22,7 @@ import {
   FiAlertTriangle,
   FiMoreHorizontal,
   FiMoreVertical,
+  FiDownload,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
@@ -59,6 +59,9 @@ import {
   splitViewIcon,
   singleViewIcon,
 } from '../../svgIcons.js'
+
+import slackLogo from '../../images/slack-logo.png'
+import teamsLogo from '../../images/ms-teams-logo.png'
 
 import './Icon.scss'
 
@@ -162,7 +165,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'download': {
-        icon = <MdFileDownload />
+        icon = <FiDownload />
         break
       }
       case 'edit': {
@@ -199,6 +202,18 @@ export default class Icon extends React.Component {
       }
       case 'stacked-line-chart': {
         icon = stackedLineIcon
+        break
+      }
+      case 'teams': {
+        icon = (
+          <img
+            className="slack-logo"
+            src={teamsLogo}
+            alt="Slack"
+            style={{ ...this.props.style, height: '1em', width: '1em' }}
+            draggable="false"
+          />
+        )
         break
       }
       case 'more-vertical': {
@@ -243,6 +258,18 @@ export default class Icon extends React.Component {
       }
       case 'search': {
         icon = <IoIosSearch />
+        break
+      }
+      case 'slack': {
+        icon = (
+          <img
+            className="slack-logo"
+            src={slackLogo}
+            alt="Slack"
+            style={{ ...this.props.style, height: '1em', width: '1em' }}
+            draggable="false"
+          />
+        )
         break
       }
       case 'split-view': {

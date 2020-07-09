@@ -132,6 +132,8 @@ export default class App extends Component {
     enableNotifications: !isProd(),
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
+    enableSlackSharing: true,
+    enableTeamsSharing: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
@@ -206,6 +208,8 @@ export default class App extends Component {
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
       enableNotifications: this.state.enableNotifications,
+      enableSlackSharing: this.state.enableSlackSharing,
+      enableTeamsSharing: this.state.enableTeamsSharing,
       debug: this.state.debug,
       test: this.state.test,
     }
@@ -1009,6 +1013,16 @@ export default class App extends Component {
         {this.createBooleanRadioGroup(
           'Enable Notifications',
           'enableNotifications',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable Slack Sharing',
+          'enableSlackSharing',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable MS Teams Sharing',
+          'enableTeamsSharing',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
