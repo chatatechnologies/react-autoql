@@ -841,7 +841,6 @@ export default class DataMessenger extends React.Component {
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
                   isResponse={message.isResponse}
-                  originalQuery={message.query}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
                   content={message.content}

@@ -458,11 +458,8 @@ export default class QueryOutput extends React.Component {
   }
 
   renderSuggestionMessage = suggestions => {
-    const { queryResponse } = this.props
-
-    const queryParams = getQueryParams(_get(queryResponse, 'config.url'))
-    if (suggestions.length && queryParams) {
-      const originalQuery = queryParams.search
+    const originalQuery = _get(this.props.queryResponse, 'data.data.text')
+    if (suggestions.length && originalQuery) {
       return this.createSuggestionMessage(originalQuery, suggestions)
     } else {
       return this.createSuggestionMessage()
