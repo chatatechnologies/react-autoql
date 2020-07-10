@@ -271,7 +271,6 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           themeConfig={this.props.themeConfig}
           responseRef={this.responseRef}
-          originalQuery={this.props.originalQuery}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
           enableDeleteBtn

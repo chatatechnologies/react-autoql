@@ -35,7 +35,6 @@ export default class Input extends React.Component {
 
     responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
-    originalQuery: PropTypes.string,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -50,7 +49,6 @@ export default class Input extends React.Component {
 
     responseRef: undefined,
     enableDeleteBtn: false,
-    originalQuery: undefined,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
@@ -323,11 +321,16 @@ export default class Input extends React.Component {
   }
 
   renderNotificationModal = () => {
+    const initialQuery = _get(
+      this.props.responseRef,
+      'props.queryResponse.data.data.text'
+    )
+
     return (
       <NotificationModal
         authentication={this.props.authentication}
         isVisible={this.state.activeMenu === 'notification'}
-        initialQuery={this.props.originalQuery}
+        initialQuery={initialQuery}
         onClose={() => this.setState({ activeMenu: undefined })}
         onErrorCallback={this.props.onErrorCallback}
         onSave={() => {
@@ -503,8 +506,7 @@ export default class Input extends React.Component {
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
-        this.props.autoQLConfig.enableNotifications &&
-        this.props.originalQuery,
+        this.props.autoQLConfig.enableNotifications,
     }
 
     shouldShowButton.showMoreOptionsButton =

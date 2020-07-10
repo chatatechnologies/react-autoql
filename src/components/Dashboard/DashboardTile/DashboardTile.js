@@ -907,7 +907,6 @@ export default class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: r => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
-        originalQuery: this.props.tile.query,
       },
       showSplitViewBtn: !this.getIsSplitView(),
     })
@@ -972,7 +971,6 @@ export default class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: r => (this.secondOptionsToolbarRef = r),
         responseRef: this.secondResponseRef,
-        originalQuery: this.props.tile.secondQuery,
       },
       showSplitViewBtn: this.getIsSplitView(),
       isSecondHalf: true,
