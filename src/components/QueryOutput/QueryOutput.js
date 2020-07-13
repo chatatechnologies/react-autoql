@@ -74,7 +74,7 @@ String.prototype.isUpperCase = function() {
 }
 
 String.prototype.toProperCase = function() {
-  return this.replace(/\w\S*/g, txt => {
+  return this.replace(/\w\S*/g, (txt) => {
     if (txt.isUpperCase()) {
       return txt
     }
@@ -274,48 +274,52 @@ export default class QueryOutput extends React.Component {
     ReactTooltip.hide()
   }
 
-  isDataConfigValid = dataConfig => {
-    if (
-      !dataConfig ||
-      !dataConfig.numberColumnIndices ||
-      !dataConfig.stringColumnIndices ||
-      Number.isNaN(Number(dataConfig.numberColumnIndex)) ||
-      Number.isNaN(Number(dataConfig.stringColumnIndex))
-    ) {
-      return false
-    }
-
-    if (
-      !Array.isArray(dataConfig.numberColumnIndices) ||
-      !Array.isArray(dataConfig.stringColumnIndices)
-    ) {
-      return false
-    }
-
-    const columns = _get(this.props.queryResponse, 'data.data.columns')
-
-    const areNumberColumnsValid = dataConfig.numberColumnIndices.every(
-      index => {
-        return columns[index] && isColumnNumberType(columns[index])
+  isDataConfigValid = (dataConfig) => {
+    try {
+      if (
+        !dataConfig ||
+        !dataConfig.numberColumnIndices ||
+        !dataConfig.stringColumnIndices ||
+        Number.isNaN(Number(dataConfig.numberColumnIndex)) ||
+        Number.isNaN(Number(dataConfig.stringColumnIndex))
+      ) {
+        return false
       }
-    )
-    if (!areNumberColumnsValid) {
-      return false
-    }
 
-    const areStringColumnsValid = dataConfig.stringColumnIndices.every(
-      index => {
-        return columns[index] && isColumnStringType(columns[index])
+      if (
+        !Array.isArray(dataConfig.numberColumnIndices) ||
+        !Array.isArray(dataConfig.stringColumnIndices)
+      ) {
+        return false
       }
-    )
-    if (!areStringColumnsValid) {
+
+      const columns = _get(this.props.queryResponse, 'data.data.columns')
+
+      const areNumberColumnsValid = dataConfig.numberColumnIndices.every(
+        (index) => {
+          return columns[index] && isColumnNumberType(columns[index])
+        }
+      )
+      if (!areNumberColumnsValid) {
+        return false
+      }
+
+      const areStringColumnsValid = dataConfig.stringColumnIndices.every(
+        (index) => {
+          return columns[index] && isColumnStringType(columns[index])
+        }
+      )
+      if (!areStringColumnsValid) {
+        return false
+      }
+
+      return true
+    } catch (error) {
       return false
     }
-
-    return true
   }
 
-  updateColumns = columns => {
+  updateColumns = (columns) => {
     if (this.tableColumns) {
       this.tableColumns = columns
 
@@ -389,8 +393,9 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  createSuggestionMessage = (userInput, suggestions) => {
+  renderSuggestionMessage = (suggestions) => {
     let suggestionListMessage
+
     try {
       suggestionListMessage = (
         <div className="chata-suggestion-message">
@@ -398,7 +403,7 @@ export default class QueryOutput extends React.Component {
             {this.props.renderSuggestionsAsDropdown ? (
               <select
                 key={uuid.v4()}
-                onChange={e => {
+                onChange={(e) => {
                   this.setState({ suggestionSelection: e.target.value })
                   this.onSuggestionClick(
                     e.target.value,
@@ -410,9 +415,6 @@ export default class QueryOutput extends React.Component {
                 value={this.state.suggestionSelection}
                 className="chata-suggestions-select"
               >
-                <option key={uuid.v4()} value={userInput}>
-                  {userInput}
-                </option>
                 {suggestions.map((suggestion, i) => {
                   return (
                     <option key={uuid.v4()} value={suggestion}>
@@ -422,7 +424,7 @@ export default class QueryOutput extends React.Component {
                 })}
               </select>
             ) : (
-              suggestions.map(suggestion => {
+              suggestions.map((suggestion) => {
                 return (
                   <div key={uuid.v4()}>
                     <button
@@ -455,15 +457,6 @@ export default class QueryOutput extends React.Component {
     }
 
     return suggestionListMessage
-  }
-
-  renderSuggestionMessage = suggestions => {
-    const originalQuery = _get(this.props.queryResponse, 'data.data.text')
-    if (suggestions.length && originalQuery) {
-      return this.createSuggestionMessage(originalQuery, suggestions)
-    } else {
-      return this.createSuggestionMessage()
-    }
   }
 
   renderSingleValueResponse = () => {
@@ -516,7 +509,7 @@ export default class QueryOutput extends React.Component {
     // return <ChataForecast />
   }
 
-  processCellClick = cell => {
+  processCellClick = (cell) => {
     if (this.state.isContextMenuOpen) {
       this.setState({ isContextMenuOpen: false })
     } else {
@@ -540,7 +533,7 @@ export default class QueryOutput extends React.Component {
     this.props.onDataClick(drilldownData, this.queryID, activeKey)
   }
 
-  onTableFilter = async filters => {
+  onTableFilter = async (filters) => {
     if (
       this.state.displayType === 'table' &&
       _get(this.tableRef, 'ref.table')
@@ -573,12 +566,12 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  onLegendClick = d => {
+  onLegendClick = (d) => {
     if (this.state.displayType === 'pie') {
       this.onPieChartLegendClick(d)
     } else {
-      const newChartData = this.chartData.map(data => {
-        const newCells = data.cells.map(cell => {
+      const newChartData = this.chartData.map((data) => {
+        const newCells = data.cells.map((cell) => {
           if (cell.label === d) {
             return {
               ...cell,
@@ -596,7 +589,7 @@ export default class QueryOutput extends React.Component {
 
       let newColumns = []
       if (this.supportsPivot) {
-        newColumns = this.pivotTableColumns.map(col => {
+        newColumns = this.pivotTableColumns.map((col) => {
           if (col.title === d) {
             return {
               ...col,
@@ -607,7 +600,7 @@ export default class QueryOutput extends React.Component {
         })
         this.pivotTableColumns = newColumns
       } else {
-        newColumns = this.tableColumns.map(col => {
+        newColumns = this.tableColumns.map((col) => {
           if (col.title === d) {
             return {
               ...col,
@@ -625,8 +618,8 @@ export default class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  onPieChartLegendClick = d => {
-    const newChartData = this.chartData.map(data => {
+  onPieChartLegendClick = (d) => {
+    const newChartData = this.chartData.map((data) => {
       if (data.label === d.label) {
         return {
           ...data,
@@ -641,7 +634,7 @@ export default class QueryOutput extends React.Component {
 
   areAllColumnsHidden = () => {
     try {
-      const allColumnsHidden = this.tableColumns.every(col => !col.visible)
+      const allColumnsHidden = this.tableColumns.every((col) => !col.visible)
 
       return allColumnsHidden
     } catch (error) {
@@ -696,7 +689,7 @@ export default class QueryOutput extends React.Component {
       return (
         <ChataTable
           key={this.pivotTableID}
-          ref={ref => (this.pivotTableRef = ref)}
+          ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
           borderColor={tableBorderColor}
@@ -717,7 +710,7 @@ export default class QueryOutput extends React.Component {
         {this.renderAllColumnsHiddenMessage()}
         <ChataTable
           key={this.tableID}
-          ref={ref => (this.tableRef = ref)}
+          ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
           data={this.tableData}
           borderColor={tableBorderColor}
@@ -751,7 +744,7 @@ export default class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           themeConfig={this.props.themeConfig}
-          ref={ref => (this.chartRef = ref)}
+          ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.state.displayType}
           data={this.chartData}
           tableColumns={this.tableColumns}
@@ -766,7 +759,7 @@ export default class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
           themeConfig={chartThemeConfig}
-          changeStringColumnIndex={index => {
+          changeStringColumnIndex={(index) => {
             if (this.dataConfig.legendColumnIndex === index) {
               this.dataConfig.legendColumnIndex = undefined
             }
@@ -778,7 +771,7 @@ export default class QueryOutput extends React.Component {
             this.generateChartData()
             this.forceUpdate()
           }}
-          changeLegendColumnIndex={index => {
+          changeLegendColumnIndex={(index) => {
             if (this.dataConfig.stringColumnIndex === index) {
               this.dataConfig.stringColumnIndex = undefined
             }
@@ -790,7 +783,7 @@ export default class QueryOutput extends React.Component {
             this.generateChartData()
             this.forceUpdate()
           }}
-          changeNumberColumnIndices={indices => {
+          changeNumberColumnIndices={(indices) => {
             if (indices) {
               this.dataConfig.numberColumnIndices = indices
               this.dataConfig.numberColumnIndex = indices[0]
@@ -862,7 +855,7 @@ export default class QueryOutput extends React.Component {
 
     if (!(this.dataConfig.stringColumnIndex >= 0)) {
       this.dataConfig.stringColumnIndex = this.supportsPivot
-        ? this.tableColumns.findIndex(col => col.groupable)
+        ? this.tableColumns.findIndex((col) => col.groupable)
         : this.dataConfig.stringColumnIndices[1] ||
           this.dataConfig.stringColumnIndices[0]
     }
@@ -973,7 +966,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generateChartData = newTableData => {
+  generateChartData = (newTableData) => {
     try {
       this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
       let columns = this.tableColumns
@@ -1077,7 +1070,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  setFilterFunction = col => {
+  setFilterFunction = (col) => {
     const self = this
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
       return (headerValue, rowValue, rowData, filterParams) => {
@@ -1151,7 +1144,7 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
-  setSorterFunction = col => {
+  setSorterFunction = (col) => {
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
       return function(a, b, aRow, bRow, column, dir, sorterParams) {
         const aDate = dayjs(a).unix()
@@ -1173,7 +1166,7 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
-  getColTitle = col => {
+  getColTitle = (col) => {
     if (col.display_name) {
       return col.display_name
     }
@@ -1204,7 +1197,7 @@ export default class QueryOutput extends React.Component {
     return title
   }
 
-  formatColumnsForTable = columns => {
+  formatColumnsForTable = (columns) => {
     if (!columns) {
       return null
     }
@@ -1291,7 +1284,7 @@ export default class QueryOutput extends React.Component {
     return dayjs(data[dateColumnIndex]).format('MMMM')
   }
 
-  generateDatePivotData = newTableData => {
+  generateDatePivotData = (newTableData) => {
     try {
       // todo: just make this from a simple array
       const uniqueMonths = {
@@ -1310,7 +1303,7 @@ export default class QueryOutput extends React.Component {
       }
 
       const dateColumnIndex = this.tableColumns.findIndex(
-        col => col.type === 'DATE' || col.type === 'DATE_STRING'
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
       if (!(this.dataConfig.numberColumnIndex >= 0)) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
@@ -1321,7 +1314,7 @@ export default class QueryOutput extends React.Component {
       const tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
-      const allYears = tableData.map(d => {
+      const allYears = tableData.map((d) => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
           return Number(
             dayjs
@@ -1379,7 +1372,7 @@ export default class QueryOutput extends React.Component {
         pivotTableData[i][0] = month
       })
       // Populate remaining columns
-      tableData.forEach(row => {
+      tableData.forEach((row) => {
         const year = this.formatDatePivotYear(row, dateColumnIndex)
         const month = this.formatDatePivotMonth(row, dateColumnIndex)
 
@@ -1401,7 +1394,7 @@ export default class QueryOutput extends React.Component {
     } catch (error) {
       console.error(error)
       this.supportedDisplayTypes.filter(
-        displayType => displayType !== 'pivot_table'
+        (displayType) => displayType !== 'pivot_table'
       )
       this.setState({ displayType: 'table' })
     }
@@ -1426,7 +1419,7 @@ export default class QueryOutput extends React.Component {
         )
       } else {
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
-          col => col.groupable
+          (col) => col.groupable
         )
         this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
@@ -1441,7 +1434,7 @@ export default class QueryOutput extends React.Component {
       }
 
       let uniqueValues0 = tableData
-        .map(d => d[this.dataConfig.stringColumnIndex])
+        .map((d) => d[this.dataConfig.stringColumnIndex])
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1450,7 +1443,7 @@ export default class QueryOutput extends React.Component {
         }, {})
 
       let uniqueValues1 = tableData
-        .map(d => d[this.dataConfig.legendColumnIndex])
+        .map((d) => d[this.dataConfig.legendColumnIndex])
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1524,7 +1517,7 @@ export default class QueryOutput extends React.Component {
         Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
         Object.keys(uniqueValues0).length
       )
-      tableData.forEach(row => {
+      tableData.forEach((row) => {
         // Populate first column
         pivotTableData[
           uniqueValues0[row[this.dataConfig.stringColumnIndex]]
@@ -1567,7 +1560,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderErrorMessage = message => {
+  renderErrorMessage = (message) => {
     if (message) {
       return message
     }
@@ -1606,7 +1599,7 @@ export default class QueryOutput extends React.Component {
         <SafetyNetMessage
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
-          onSuggestionClick={query =>
+          onSuggestionClick={(query) =>
             this.onSuggestionClick(query, true, true, 'validation')
           }
           onQueryValidationSelectOption={
@@ -1687,7 +1680,7 @@ export default class QueryOutput extends React.Component {
         padding={10} // adjust padding here!
         onClickOutside={() => this.setState({ isContextMenuOpen: false })}
         contentLocation={this.state.contextMenuPosition}
-        content={props => this.renderContextMenuContent(props)}
+        content={(props) => this.renderContextMenuContent(props)}
       >
         <div />
       </Popover>
