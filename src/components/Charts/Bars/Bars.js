@@ -6,11 +6,18 @@ export default class Bars extends Component {
   static propTypes = {
     data: PropTypes.array.isRequired,
     scales: PropTypes.shape({}).isRequired,
-    labelValue: PropTypes.string.isRequired
+    labelValue: PropTypes.string.isRequired,
+    activeKey: PropTypes.string,
+    onChartClick: PropTypes.func,
+  }
+
+  static defaultProps = {
+    activeKey: undefined,
+    onChartClick: () => {},
   }
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   X0 = () => {
@@ -31,7 +38,7 @@ export default class Bars extends Component {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -48,7 +55,7 @@ export default class Bars extends Component {
     const allBars = []
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
-        data.map(d => {
+        data.map((d, index) => {
           // x0 - position of first bar
           // cX - adjustment for position of bar number 2+
           const y0 = yScale(d[labelValue])
@@ -61,6 +68,7 @@ export default class Bars extends Component {
               className={`bar${
                 this.state.activeKey === this.getKey(d, i) ? ' active' : ''
               }`}
+              data-test={`bar-${i}-${index}`}
               y={finalBarYPosition}
               x={d.cells[i].value > 0 ? this.X0() : this.X(d, i)}
               width={Math.abs(this.X(d, i) - this.X0())}

@@ -22,10 +22,6 @@ export const CHART_TYPES = [
   'stacked_line',
 ]
 
-export const CONTRAST_TYPES = ['compare_table', 'compare_table_budget']
-
-export const FORECAST_TYPES = ['forecasting', 'status_forecasting']
-
 export const MONTH_NAMES = {
   1: dayjs('2020-1-1').format('MMMM'),
   2: dayjs('2020-2-2').format('MMMM'),

@@ -1,6 +1,6 @@
 module.exports = {
   setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
-  setupFiles: ['<rootDir>/test/globals.js'],
+  setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
   verbose: false,
   transform: {
     '^.+\\.js$': 'babel-jest',
@@ -17,9 +17,9 @@ module.exports = {
   },
   globals: {
     NODE_ENV: 'test',
-    React: 'React',
   },
   transform: { '^.+\\.js?$': 'babel-jest' },
   moduleFileExtensions: ['js', 'jsx'],
   moduleDirectories: ['node_modules'],
+  coverageReporters: ['json-summary', 'text', 'lcov'],
 }

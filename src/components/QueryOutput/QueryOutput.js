@@ -38,7 +38,6 @@ import { ChataChart } from '../Charts/ChataChart'
 import { QueryInput } from '../QueryInput'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 import { Icon } from '../Icon'
-// import { ChataForecast } from '../ChataForecast'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages from '../../js/errorMessages'
@@ -54,7 +53,6 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  isForecastType,
   setStyleVars,
   getQueryParams,
   supportsRegularPivotTable,
@@ -346,8 +344,6 @@ export default class QueryOutput extends React.Component {
         this.shouldGeneratePivotData() &&
           this.generatePivotData({ isFirstGeneration: true })
         this.shouldGenerateChartData() && this.generateChartData()
-      } else if (isForecastType(displayType)) {
-        this.generateForecastData()
       }
     }
   }
@@ -358,12 +354,6 @@ export default class QueryOutput extends React.Component {
 
   shouldGenerateChartData = () => {
     return this.supportedDisplayTypes.length > 1
-  }
-
-  generateForecastData = () => {
-    // This is temporary until we create the forecast vis
-    this.generateTableData()
-    this.shouldGenerateChartData() && this.generateChartData()
   }
 
   generateTableData = () => {
@@ -1634,8 +1624,6 @@ export default class QueryOutput extends React.Component {
     if (displayType && data) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
-      } else if (isForecastType(displayType)) {
-        return this.renderForecastVis()
       } else if (isTableType(displayType)) {
         return this.renderTable()
       } else if (isChartType(displayType)) {

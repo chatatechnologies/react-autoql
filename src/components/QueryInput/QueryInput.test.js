@@ -22,3 +22,20 @@ describe('renders correctly', () => {
     expect(queryInputComponent.exists()).toBe(true)
   })
 })
+
+describe('validation call', () => {
+  test('should call validation when prop is set to true', () => {
+    // const queryResponse = {}
+    // axios.get.mockImplementation(() => Promise.resolve(queryResponse))
+    // const users = [{name: 'Bob'}];
+    // const resp = {data: users};
+    // axios.get.mockResolvedValue(resp);
+    // or you could use the following depending on your use case:
+    // axios.get.mockImplementation(() => Promise.resolve(resp))
+    // return Users.all().then(data => expect(data).toEqual(users));
+  })
+
+  test('should call query endpoint only when validation is set to false', () => {})
+})
+
+// disable "enter" if no query or if only spaces

@@ -154,7 +154,7 @@ export default class QueryInput extends React.Component {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: 'unauthenticated',
+              error: 'Unauthenticated',
             }
             this.props.onResponseCallback(finalError)
             this.setState({ isQueryRunning: false })

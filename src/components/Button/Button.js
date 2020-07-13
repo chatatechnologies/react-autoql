@@ -32,54 +32,46 @@ export default class Button extends React.Component {
         return type
       }
     } catch (error) {
-      console.error('The type provided was invalid')
+      console.warn(
+        'Warning: The type provided was invalid, using "default" instead'
+      )
       return 'default'
     }
+    return 'default'
   }
 
   getSize = () => {
-    let size
     try {
       const trimmedSize = this.props.size.trim().toLowerCase()
       if (validSizes.includes(trimmedSize)) {
-        size = trimmedSize
+        return trimmedSize
       }
     } catch (error) {
-      console.error('The size provided was invalid')
-      size = 'large'
+      console.warn(
+        'Warning: The size provided was invalid, using "large" instead'
+      )
+      return 'large'
     }
-
-    let sizeCss = {}
-    if (size === 'small') {
-      sizeCss = {
-        padding: '2px 8px',
-        margin: '2px 3px',
-      }
-    } else if (size === 'large') {
-      sizeCss = {
-        padding: '5px 16px',
-        margin: '2px 5px',
-      }
-    }
-
-    return sizeCss
+    return 'large'
   }
 
   render = () => {
     const type = this.getType()
-    const sizeCss = this.getSize()
+    const size = this.getSize()
     const isDisabled = this.props.loading || this.props.disabled
 
     return (
       <button
-        className={`chata-btn ${type} ${this.props.className || ''}${
-          isDisabled ? ' disabled' : ''
-        }`}
+        className={`chata-btn
+          ${this.props.className || ''}
+          ${type}
+          ${size}
+          ${isDisabled ? ' disabled' : ''}`}
         data-test="chata-btn"
-        style={{ ...sizeCss, ...this.props.style }}
+        style={{ ...this.props.style }}
         onClick={this.props.onClick}
       >
-        {this.props.loading && <Spinner />}
+        {this.props.loading && <Spinner data-test="chata-button-loading" />}
         {this.props.children}
       </button>
     )

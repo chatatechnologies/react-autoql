@@ -272,14 +272,14 @@ export default class App extends Component {
     }
 
     if (!this.state.apiKey || !this.state.domain) {
-      return Promise.reject({ error: 'unauthenticated' })
+      return Promise.reject({ error: 'Unauthenticated' })
     }
 
     return axios
       .get(url, config)
       .then(response => {
         if (response.data && typeof response.data === 'string') {
-          return Promise.reject({ error: 'parse error' })
+          return Promise.reject({ error: 'Parse error' })
         }
         if (
           !response ||
