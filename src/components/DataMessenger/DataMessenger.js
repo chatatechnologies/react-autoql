@@ -447,7 +447,6 @@ export default class DataMessenger extends React.Component {
     if (this.queryInputRef) {
       this.queryInputRef.focus()
     }
-    // }
   }
 
   runDrilldownFromAPI = (data, queryID) => {
