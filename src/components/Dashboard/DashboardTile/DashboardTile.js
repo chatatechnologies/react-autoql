@@ -905,7 +905,7 @@ export default class DashboardTile extends React.Component {
           getSupportedDisplayTypes(this.props.queryResponse) || [],
       },
       optionsToolbarProps: {
-        ref: this.optionsToolbarRef,
+        ref: r => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
         originalQuery: this.props.tile.query,
       },
@@ -970,7 +970,7 @@ export default class DashboardTile extends React.Component {
         supportedDisplayTypes: getSupportedDisplayTypes(queryResponse) || [],
       },
       optionsToolbarProps: {
-        ref: this.secondOptionsToolbarRef,
+        ref: r => (this.secondOptionsToolbarRef = r),
         responseRef: this.secondResponseRef,
         originalQuery: this.props.tile.secondQuery,
       },

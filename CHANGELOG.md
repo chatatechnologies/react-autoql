@@ -1,3 +1,21 @@
+# [1.8.0](https://github.com/chatatechnologies/react-autoql/compare/v1.7.1...v1.8.0) (2020-07-08)
+
+
+### Bug Fixes
+
+* **charts:** reset selection in axis selector popup if user clicks outside (cancels) ([faedf14](https://github.com/chatatechnologies/react-autoql/commit/faedf14c3f102ff86531b8ec8e7af485f9f4b1cd))
+* **dashboards:** fix bug where options tooltips disappeared after opening more options menu ([3f243c0](https://github.com/chatatechnologies/react-autoql/commit/3f243c082db75986686918fef3db5bc394983db7))
+* **dashboards:** fix bug where toolbar options in dashboard tiles are not updating properly ([5058923](https://github.com/chatatechnologies/react-autoql/commit/5058923638a21175b4d7eaad4d4e0a07726ca0d8))
+* **data messenger:** fix bug where all columns are hidden and the message gets cut off ([03ad207](https://github.com/chatatechnologies/react-autoql/commit/03ad20707a834db522aab6eae24616aad03c87ff))
+* **data messenger:** fix bug where popup menus stay open after closing data messenger ([4f89ca0](https://github.com/chatatechnologies/react-autoql/commit/4f89ca02c00505191069d987dd8c17f675e33c71))
+* **styles:** change styles of dashboard tiles to have bigger text and buttons ([4bec330](https://github.com/chatatechnologies/react-autoql/commit/4bec33052e4b3524198bb64520718181317cf8bf))
+* **tables:** fix bug in Safari and Firefox where date pivots were throwing an error ([633766d](https://github.com/chatatechnologies/react-autoql/commit/633766d5d9fcdd6291e3916f3c23d8a2cc926e0d))
+
+
+### Features
+
+* **data messenger:** resize message bubbles after resizing browser window (if necessary) ([24faad4](https://github.com/chatatechnologies/react-autoql/commit/24faad4d9669e78e9bda2a9c846299e3a476b83c))
+
 ## [1.7.1](https://github.com/chatatechnologies/react-autoql/compare/v1.7.0...v1.7.1) (2020-07-02)
 
 
