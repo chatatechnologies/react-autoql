@@ -3,7 +3,7 @@ import _get from 'lodash.get'
 
 var autoCompleteCall = null
 
-const formatSourceString = sourceArray => {
+const formatSourceString = (sourceArray) => {
   try {
     const sourceString = sourceArray.join('.')
     return sourceString
@@ -12,35 +12,63 @@ const formatSourceString = sourceArray => {
   }
 }
 
-const transformSafetyNetResponse = response => {
-  // todo: refactor safetynet component to use new response format
-  const newResponse = {
-    data: {
-      ...response.data,
-      full_suggestion: response.data.data.replacements.map(suggs => {
-        let newSuggestionList = suggs.suggestions
-        if (newSuggestionList) {
-          newSuggestionList = suggs.suggestions.map(sugg => {
-            return {
-              ...sugg,
-              value_label: sugg.value_label,
-            }
-          })
-        }
-        return {
-          ...suggs,
-          suggestion_list: newSuggestionList,
-        }
-      }),
-      query: response.data.data.query || response.data.data.text,
-    },
+const transformSafetyNetResponse = (response) => {
+  let newResponse = response
+  if (_get(response, 'data.data.replacements')) {
+    newResponse = {
+      ...newResponse,
+      data: {
+        ...newResponse.data,
+        full_suggestion: response.data.data.replacements.map((suggs) => {
+          let newSuggestionList = suggs.suggestions
+          if (newSuggestionList) {
+            newSuggestionList = suggs.suggestions.map((sugg) => {
+              return {
+                ...sugg,
+                value_label: sugg.value_label,
+              }
+            })
+          }
+          return {
+            ...suggs,
+            suggestion_list: newSuggestionList,
+          }
+        }),
+        query: response.data.data.query || response.data.data.text,
+      },
+    }
   }
 
   return newResponse
 }
 
-const failedValidation = response => {
+const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
+}
+
+export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
+  if (!query) {
+    return Promise.reject(new Error('No query supplied'))
+  }
+
+  if (!domain || !token || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const commaSeparatedKeywords =
+    typeof query === 'string' ? query.split(' ') : []
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(relatedQueriesUrl, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const runQueryOnly = ({
@@ -77,7 +105,7 @@ export const runQueryOnly = ({
 
   return axios
     .post(url, data, config)
-    .then(response => {
+    .then((response) => {
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
         // queryCall = null
@@ -86,7 +114,7 @@ export const runQueryOnly = ({
 
       return Promise.resolve(response)
     })
-    .catch(error => {
+    .catch((error) => {
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
@@ -100,11 +128,7 @@ export const runQueryOnly = ({
         _get(error, 'response.data.reference_id') === '1.1.430' ||
         _get(error, 'response.data.reference_id') === '1.1.431'
       ) {
-        return Promise.reject({
-          ..._get(error, 'response.data', {}),
-          originalQuery: query,
-          suggestionResponse: true,
-        })
+        return fetchSuggestions({ query, domain, apiKey, token })
       }
       return Promise.reject(_get(error, 'response.data'))
     })
@@ -127,7 +151,7 @@ export const runQuery = ({
       apiKey,
       token,
     })
-      .then(response => {
+      .then((response) => {
         if (failedValidation(response)) {
           const newResponse = transformSafetyNetResponse(response)
           return Promise.resolve(newResponse)
@@ -142,7 +166,7 @@ export const runQuery = ({
           source,
         })
       })
-      .catch(error => {
+      .catch((error) => {
         return Promise.reject(error)
       })
   }
@@ -171,15 +195,16 @@ export const runSafetyNet = ({ text, domain, apiKey, token } = {}) => {
     text
   )}&key=${apiKey}`
 
-  const config = {}
-  config.headers = {
-    Authorization: `Bearer ${token}`,
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   }
 
   return axios
     .get(url, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const runDrilldown = ({
@@ -215,8 +240,8 @@ export const runDrilldown = ({
 
   return axios
     .post(url, requestData, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const fetchAutocomplete = ({
@@ -233,13 +258,6 @@ export const fetchAutocomplete = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  // Cancel current autocomplete call if there is one
-  if (autoCompleteCall) {
-    autoCompleteCall.cancel('Autocomplete operation cancelled by the user.')
-  }
-
-  autoCompleteCall = axios.CancelToken.source()
-
   const url = `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
     suggestion
   )}&key=${apiKey}`
@@ -252,8 +270,8 @@ export const fetchAutocomplete = ({
 
   return axios
     .get(url, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const setColumnVisibility = ({
@@ -277,8 +295,8 @@ export const setColumnVisibility = ({
 
   return axios
     .put(url, data, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const fetchQueryTips = ({
@@ -310,7 +328,7 @@ export const fetchQueryTips = ({
       apiKey,
       token,
     })
-      .then(safetyNetResponse => {
+      .then((safetyNetResponse) => {
         if (
           _get(safetyNetResponse, 'data.full_suggestion.length') > 0 ||
           _get(safetyNetResponse, 'data.data.replacements.length') > 0
@@ -320,46 +338,21 @@ export const fetchQueryTips = ({
         }
         return axios
           .get(queryTipsUrl, config)
-          .then(response => Promise.resolve(response))
-          .catch(error => Promise.reject(_get(error, 'response.data')))
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
       })
       .catch(() => {
         return axios
           .get(queryTipsUrl, config)
-          .then(response => Promise.resolve(response))
-          .catch(error => Promise.reject(_get(error, 'response.data')))
+          .then((response) => Promise.resolve(response))
+          .catch((error) => Promise.reject(_get(error, 'response.data')))
       })
   }
 
   return axios
     .get(queryTipsUrl, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
-}
-
-export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
-  if (!query) {
-    return Promise.reject(new Error('No query supplied'))
-  }
-
-  if (!domain || !token || !apiKey) {
-    return Promise.reject(new Error('Unauthenticated'))
-  }
-
-  const commaSeparatedKeywords =
-    typeof query === 'string' ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  return axios
-    .get(relatedQueriesUrl, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
 export const reportProblem = ({
@@ -392,6 +385,6 @@ export const reportProblem = ({
 
   return axios
     .put(url, data, config)
-    .then(response => Promise.resolve(response))
-    .catch(error => Promise.reject(_get(error, 'response.data')))
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

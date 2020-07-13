@@ -36,7 +36,7 @@ import 'react-grid-layout/css/styles.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
-const executeDashboard = ref => {
+const executeDashboard = (ref) => {
   if (ref) {
     try {
       ref.executeDashboard()
@@ -142,7 +142,7 @@ class Dashboard extends React.Component {
     window.removeEventListener('resize', this.onWindowResize)
   }
 
-  onWindowResize = e => {
+  onWindowResize = (e) => {
     if (!this.state.isWindowResizing) {
       this.setState({ isWindowResizing: true })
     }
@@ -166,7 +166,7 @@ class Dashboard extends React.Component {
     setStyleVars({ themeStyles, prefix: '--chata-dashboard-' })
   }
 
-  setPreviousTileState = tiles => {
+  setPreviousTileState = (tiles) => {
     this.setState({
       previousTileState: tiles,
     })
@@ -193,7 +193,7 @@ class Dashboard extends React.Component {
 
   getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
-      const newTiles = tiles.map(tile => {
+      const newTiles = tiles.map((tile) => {
         return {
           query: !ignoreInputs && tile.query,
           title: !ignoreInputs && tile.title,
@@ -225,7 +225,7 @@ class Dashboard extends React.Component {
     })
   }
 
-  onMoveEnd = layout => {
+  onMoveEnd = (layout) => {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
@@ -245,7 +245,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  updateTileLayout = layout => {
+  updateTileLayout = (layout) => {
     try {
       const tiles = this.props.tiles.map((tile, index) => {
         return {
@@ -299,12 +299,12 @@ class Dashboard extends React.Component {
     }
   }
 
-  deleteTile = id => {
+  deleteTile = (id) => {
     try {
       this.setPreviousTileState(this.props.tiles)
 
       const tiles = _cloneDeep(this.props.tiles)
-      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      const tileIndex = tiles.map((item) => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
       this.props.onChange(tiles)
@@ -318,7 +318,7 @@ class Dashboard extends React.Component {
       this.setPreviousTileState(this.props.tiles)
 
       const tiles = _cloneDeep(this.props.tiles)
-      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      const tileIndex = tiles.map((item) => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
@@ -329,11 +329,13 @@ class Dashboard extends React.Component {
         params.query !== this.props.tiles[tileIndex].query
       ) {
         tiles[tileIndex].dataConfig = undefined
+        tiles[tileIndex].skipSafetyNet = false
       } else if (
         Object.keys(params).includes('secondQuery') &&
         params.secondQuery !== this.props.tiles[tileIndex].secondQuery
       ) {
         tiles[tileIndex].secondDataConfig = undefined
+        tiles[tileIndex].secondSkipSafetyNet = false
       }
 
       this.props.onChange(tiles)
@@ -348,13 +350,13 @@ class Dashboard extends React.Component {
       ...this.props.authentication,
       ...this.props.autoQLConfig,
     })
-      .then(drilldownResponse => {
+      .then((drilldownResponse) => {
         this.setState({
           activeDrilldownResponse: drilldownResponse,
           isDrilldownRunning: false,
         })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.setState({
           isDrilldownRunning: false,
@@ -365,7 +367,7 @@ class Dashboard extends React.Component {
 
   runFilterDrilldown = (data, tileId, isSecondHalf) => {
     try {
-      const tile = this.props.tiles.find(tile => tile.i === tileId)
+      const tile = this.props.tiles.find((tile) => tile.i === tileId)
       if (!tile) {
         return
       }
@@ -422,7 +424,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  shouldShowOriginalQuery = tile => {
+  shouldShowOriginalQuery = (tile) => {
     const displayType = this.state.isDrilldownSecondHalf
       ? tile.secondDisplayType
       : tile.displayType
@@ -432,7 +434,7 @@ class Dashboard extends React.Component {
   renderDrilldownModal = () => {
     try {
       const tile = this.props.tiles.find(
-        tile => tile.i === this.state.activeDrilldownTile
+        (tile) => tile.i === this.state.activeDrilldownTile
       )
 
       let title
@@ -559,7 +561,7 @@ class Dashboard extends React.Component {
   }
 
   renderTiles = () => {
-    const tileLayout = this.props.tiles.map(tile => {
+    const tileLayout = this.props.tiles.map((tile) => {
       return {
         ...tile,
         i: tile.key,
@@ -571,7 +573,7 @@ class Dashboard extends React.Component {
 
     return (
       <ReactGridLayout
-        onLayoutChange={layout => {
+        onLayoutChange={(layout) => {
           this.updateTileLayout(layout)
           this.setState({ layout })
         }}
@@ -588,12 +590,12 @@ class Dashboard extends React.Component {
         layout={tileLayout}
         margin={[20, 20]}
       >
-        {tileLayout.map(tile => (
+        {tileLayout.map((tile) => (
           <DashboardTile
             className={`chata-dashboard-tile${
               this.state.isDragging ? ' dragging' : ''
             } ${tile.i}`}
-            ref={ref => (this.tileRefs[tile.key] = ref)}
+            ref={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
@@ -625,7 +627,7 @@ class Dashboard extends React.Component {
       <ErrorBoundary>
         <Fragment>
           <div
-            ref={ref => (this.ref = ref)}
+            ref={(ref) => (this.ref = ref)}
             className={`chata-dashboard-container${
               this.props.isEditing ? ' edit-mode' : ''
             }`}
