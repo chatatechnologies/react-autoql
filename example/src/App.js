@@ -159,7 +159,6 @@ export default class App extends Component {
     comparisonDisplay: true,
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     monthFormat: 'MMM YYYY',
-    // dayFormat: 'MMM DD, YYYY',
     dayFormat: 'll',
     dashboardTiles: [],
     activeDashboardId: undefined,
