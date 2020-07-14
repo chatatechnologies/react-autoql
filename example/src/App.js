@@ -139,6 +139,7 @@ export default class App extends Component {
     title: 'Data Messenger',
     lightAccentColor: '#26a7df',
     // lightAccentColor: '#2466AE',
+    dashboardBackground: '#fafafa',
     darkAccentColor: '#525252',
     maxMessages: 12,
     isEditing: false,
@@ -229,6 +230,7 @@ export default class App extends Component {
     let darkAccentColor = this.state.darkAccentColor
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
+    let dashboardBackground = this.state.dashboardBackground
 
     if (this.state.isAuthenticated) {
       if (activeIntegrator === 'purefacts') {
@@ -254,6 +256,7 @@ export default class App extends Component {
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
       titleColor: dashboardTitleColor,
+      dashboardBackground: dashboardBackground,
     }
   }
 
@@ -1202,6 +1205,14 @@ export default class App extends Component {
           }}
           value={this.state.dashboardTitleColor}
         />
+        <h4>Dashboard Background Color</h4>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ dashboardBackground: e.target.value })
+          }}
+          value={this.state.dashboardBackground}
+        />
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
@@ -1419,7 +1430,7 @@ export default class App extends Component {
               className="dashboard-toolbar-container"
               style={{
                 textAlign: 'center',
-                background: '#fafafa',
+                background: this.state.dashboardBackground,
                 padding: '10px',
               }}
             >
