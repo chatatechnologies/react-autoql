@@ -38,12 +38,13 @@ export default class Cascader extends React.Component {
         key={`options-list-${index}-${this.COMPONENT_ID}`}
         className={`options-container
           ${isLastGroup ? 'visible' : 'hidden'}`}
+        data-test={`options-list-${index}`}
       >
         {!isFirstGroup && (
           <Fragment>
-            <Icon
+            <div
               className="cascader-back-arrow"
-              type="caret-left"
+              data-test={`cascader-back-arrow-${index}`}
               onClick={() => {
                 const newArray = [...this.state.optionsArray]
                 newArray.pop()
@@ -51,8 +52,12 @@ export default class Cascader extends React.Component {
                   optionsArray: newArray,
                 })
               }}
-            />
-            <div className="options-title">{mostRecentOptionLabel}</div>
+            >
+              <Icon type="caret-left" />
+            </div>
+            <div className="options-title" data-test="options-title">
+              {mostRecentOptionLabel}
+            </div>
           </Fragment>
         )}
         {options.map((option, i) => {
@@ -62,8 +67,11 @@ export default class Cascader extends React.Component {
               className={`option
                 ${option.value === active ? 'active' : ''}`}
               onClick={() => this.onOptionClick(option, index)}
+              data-test={`options-item-${index}-${i}`}
             >
-              <span>{option.label} </span>
+              <span data-test={`options-item-${index}-${i}-text`}>
+                {option.label}
+              </span>
               {!_get(option, 'children.length') && (
                 <Icon className="option-execute-icon" type="play" />
               )}
@@ -76,6 +84,7 @@ export default class Cascader extends React.Component {
         {hasNoChildren && mostRecentOptionLabel && (
           <div
             className="option"
+            data-test="see-more-option"
             onClick={() => {
               this.props.onSeeMoreClick(mostRecentOptionLabel)
             }}
@@ -111,6 +120,7 @@ export default class Cascader extends React.Component {
       <div
         id={`chata-cascader-${this.COMPONENT_ID}`}
         className="chata-cascader"
+        data-test="chata-cascader"
       >
         {this.state.optionsArray.map((optionsObject, index) => {
           return this.renderOptionsList({

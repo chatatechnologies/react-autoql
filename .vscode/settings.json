@@ -2,5 +2,6 @@
   "editor.formatOnSave": true,
   "prettier.options": { "configFile": "../.prettierrc" },
   "eslint.options": { "configFile": "../.eslintrc.json" },
-  "eslint.workingDirectories": ["./examples", "./src"]
+  "eslint.workingDirectories": ["./examples", "./src"],
+  "eslint.enable": false
 }

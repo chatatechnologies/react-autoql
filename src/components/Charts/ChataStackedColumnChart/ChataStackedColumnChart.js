@@ -71,8 +71,6 @@ export default class ChataStackedColumnChart extends Component {
 
   render = () => {
     const {
-      hasMultipleNumberColumns,
-      hasMultipleStringColumns,
       onLegendTitleClick,
       activeChartElementKey,
       enableDynamicCharting,

@@ -8,15 +8,18 @@ const defaultProps = {
   data: [
     {
       cells: [{ value: 50 }, { value: 75 }],
-      label: 'label1`',
+      label: 'label1',
       origRow: ['label1', 50, 75],
     },
     {
       cells: [{ value: 30 }, { value: 65 }],
-      label: 'label2`',
+      label: 'label2',
       origRow: ['label2', 30, 65],
     },
   ],
+  numberColumnIndex: 1,
+  numberColumnIndices: [1, 2],
+  stringColumnIndex: 1,
   columns: [{}, {}, {}],
   height: 300,
   width: 300,
@@ -38,3 +41,36 @@ describe('renders correctly', () => {
     expect(barChartComponent.exists()).toBe(true)
   })
 })
+
+// describe('onLabelChange is called when labels get rotated', () => {
+//   const onLabelChange = jest.fn()
+//   const wrapper = setup({ onLabelChange })
+//   wrapper.setProps({
+//     data: [
+//       {
+//         cells: [
+//           {
+//             value: 50,
+//             label: 'label1',
+//           },
+//           {
+//             value: 75,
+//             label:
+//               'label1 thats really really really really really really really really long',
+//           },
+//         ],
+//         label: 'test label',
+//         origRow: ['label1', 50, 75],
+//       },
+//       {
+//         cells: [
+//           { value: 30, label: 'one' },
+//           { value: 65, label: 'two' },
+//         ],
+//         label: 'test label 2',
+//         origRow: ['label2', 30, 65],
+//       },
+//     ],
+//   })
+//   expect(onLabelChange).toHaveBeenCalled()
+// })

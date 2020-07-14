@@ -205,34 +205,7 @@ export default class NotificationList extends React.Component {
     if (!this.state.activeNotificationId) {
       return undefined
     }
-    // RULE
-    // created_at: 1588607160
-    // created_by: "nmoore@chata.ai"
-    // expression: (2) [{…}, {…}]
-    // id: 18
-    // message: ""
-    // notification_type: "SINGLE_EVENT"
-    // project_public_id: "spira-demo3"
-    // query: "all tickets over 0"
-    // status: "INACTIVE"
-    // title: "Total tickets greater than 0"
-    // updated_at: 1590534286
-    // user_id: "nmoore@chata.ai"
 
-    // NOTIFICATION
-    // created_at: 1590526327
-    // expanded: true
-    // expression: (2) [{…}, {…}]
-    // id: 175
-    // message: ""
-    // notification_id: 175
-    // notification_type: "SINGLE_EVENT"
-    // outcome: "TRUE"
-    // query: "all tickets over 0"
-    // rule_id: 18
-    // rule_status: "INACTIVE"
-    // state: "ACKNOWLEDGED"
-    // title: "Total tickets greater than 0"
     const activeNotification = this.state.notificationList.find(n => n.expanded)
     if (activeNotification) {
       const ruleData = {

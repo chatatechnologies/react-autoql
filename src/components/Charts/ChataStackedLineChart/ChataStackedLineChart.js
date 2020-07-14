@@ -25,10 +25,10 @@ export default class ChataStackedLineChart extends Component {
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number.isRequired,
-    rightMargin: PropTypes.number.isRequired,
-    topMargin: PropTypes.number.isRequired,
-    bottomMargin: PropTypes.number.isRequired,
+    leftMargin: PropTypes.number,
+    rightMargin: PropTypes.number,
+    topMargin: PropTypes.number,
+    bottomMargin: PropTypes.number,
     onLabelChange: PropTypes.func,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
@@ -39,6 +39,10 @@ export default class ChataStackedLineChart extends Component {
     themeConfig: themeConfigDefault,
     dataFormatting: dataFormattingDefault,
 
+    leftMargin: 0,
+    rightMargin: 0,
+    topMargin: 0,
+    bottomMargin: 0,
     numberColumnIndices: [],
     legendLocation: undefined,
     onXAxisClick: () => {},
@@ -109,7 +113,7 @@ export default class ChataStackedLineChart extends Component {
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
-      <g data-test="chata-stacked-column-chart">
+      <g data-test="chata-stacked-line-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
@@ -153,7 +157,7 @@ export default class ChataStackedLineChart extends Component {
           height={height}
           onChartClick={onChartClick}
           activeKey={activeChartElementKey}
-          legendTitle={legendColumn.display_name}
+          legendTitle={_get(legendColumn, 'display_name')}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

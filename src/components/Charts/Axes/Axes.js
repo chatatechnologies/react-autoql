@@ -16,9 +16,9 @@ export default class Axes extends React.Component {
     themeConfig: themeConfigType,
 
     scales: PropTypes.shape({}).isRequired,
+    height: PropTypes.number.isRequired,
+    width: PropTypes.number.isRequired,
     margins: PropTypes.shape({}),
-    height: PropTypes.number,
-    width: PropTypes.number,
     xTicks: PropTypes.array,
     yTicks: PropTypes.array,
     rotateLabels: PropTypes.bool,
@@ -44,24 +44,49 @@ export default class Axes extends React.Component {
     themeConfig: themeConfigDefault,
     dataFormatting: dataFormattingDefault,
 
+    xCol: {},
+    yCol: {},
+    xTicks: undefined,
+    yTicks: undefined,
     legendTitle: undefined,
+    hasRightLegend: false,
+    hasBottomLegend: false,
+    hasXDropdown: false,
+    hasYDropdown: false,
+    xAxisTitle: undefined,
+    yAxisTitle: undefined,
+    legendTitle: undefined,
+    margins: {
+      right: 0,
+      left: 0,
+      top: 0,
+      bottom: 0,
+    },
+    onLegendClick: () => {},
+    onXAxisClick: () => {},
+    onYAxisClick: () => {},
   }
 
   renderAxisLabel = (title = '', hasDropdown) => {
     if (title.length > 35) {
       return (
-        <tspan data-tip={title} data-for="chart-element-tooltip">
+        <tspan
+          data-tip={title}
+          data-for="chart-element-tooltip"
+          data-test="axis-label"
+        >
           {`${title.substring(0, 35)}...`}
         </tspan>
       )
     }
 
     return (
-      <tspan>
+      <tspan data-test="axis-label">
         {title}{' '}
         {hasDropdown && (
           <tspan
             className="chata-axis-selector-arrow"
+            data-test="dropdown-arrow"
             opacity="0" // use css to style so it isnt exported in the png
             fontSize="8px"
           >
@@ -77,6 +102,7 @@ export default class Axes extends React.Component {
       const bBox = select(ref)
         .node()
         .getBBox()
+
       return bBox
     } catch (error) {
       return {}
@@ -181,6 +207,7 @@ export default class Axes extends React.Component {
           <text
             ref={r => (this.yLabelRef = r)}
             className="y-axis-label"
+            data-test="y-axis-label"
             textAnchor="middle"
             transform="rotate(-90)"
             fontWeight="bold"
@@ -193,6 +220,7 @@ export default class Axes extends React.Component {
           {hasYDropdown && (
             <rect
               className="y-axis-label-border"
+              data-test="y-axis-label-border"
               x={yLabelX - yLabelWidth / 2 - 10}
               y={yLabelY - 16}
               width={yLabelWidth + 20}
@@ -212,6 +240,7 @@ export default class Axes extends React.Component {
           <text
             ref={r => (this.xLabelRef = r)}
             className="x-axis-label"
+            data-test="x-axis-label"
             textAnchor="middle"
             fontWeight="bold"
             y={xLabelY}
@@ -223,6 +252,7 @@ export default class Axes extends React.Component {
           {hasXDropdown && (
             <rect
               className="x-axis-label-border"
+              data-test="x-axis-label-border"
               x={xLabelX - 10 - xLabelWidth / 2}
               y={xLabelY - 16}
               width={xLabelWidth + 20}
