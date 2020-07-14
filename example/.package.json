@@ -14,8 +14,8 @@
     "react-sortable": "^2.0.0"
   },
   "scripts": {
-    "preinstall": "npx penv $NODE_ENV",
-    "start": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-scripts start",
+    "preinstall": "NODE_ENV=dev && npx penv $NODE_ENV",
+    "start": "NODE_ENV=dev && npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-scripts start",
     "dev": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-scripts start",
     "build": "SKIP_PREFLIGHT_CHECK=true react-scripts build",
     "test": "react-scripts test",
