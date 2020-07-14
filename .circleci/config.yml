@@ -13,7 +13,7 @@ jobs:
             - run: npm i react react-dom
             - run:
                 name: Run Tests
-                no_output_timeout: 30m
+                no_output_timeout: 60m
                 command: npm run test
   test-and-release:
     executor:
@@ -26,7 +26,7 @@ jobs:
             - run: npm i react react-dom
             - run:
                 name: Run Tests
-                no_output_timeout: 30m
+                no_output_timeout: 60m
                 command: npm run test
             - run: npx semantic-release
 workflows:
