@@ -32,6 +32,7 @@ export const themeConfigType = shape({
   chartColors: arrayOf(string),
   accentColor: string,
   fontFamily: string,
+  dashboardBackground: string,
 })
 
 export const dataConfigType = shape({

@@ -110,6 +110,14 @@ class Dashboard extends React.Component {
       this.setStyles()
     }
 
+    if (
+      this.props.themeConfig.dashboardBackground &&
+      this.props.themeConfig.dashboardBackground !==
+        prevProps.themeConfig.dashboardBackground
+    ) {
+      this.setStyles()
+    }
+
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (
       prevProps.isEditing &&
@@ -154,13 +162,21 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    const { theme, accentColor, fontFamily } = this.props.themeConfig
+    const {
+      theme,
+      accentColor,
+      fontFamily,
+      dashboardBackground,
+    } = this.props.themeConfig
     const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
     if (accentColor) {
       themeStyles['accent-color'] = accentColor
     }
     if (fontFamily) {
       themeStyles['font-family'] = fontFamily
+    }
+    if (dashboardBackground) {
+      themeStyles['background-color'] = dashboardBackground
     }
 
     setStyleVars({ themeStyles, prefix: '--chata-dashboard-' })
