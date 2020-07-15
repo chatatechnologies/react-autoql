@@ -67,7 +67,7 @@ export default class NotificationItem extends React.Component {
     fullyExpanded: false,
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (
       !prevProps.activeNotificationData &&
       this.props.activeNotificationData
@@ -83,11 +83,11 @@ export default class NotificationItem extends React.Component {
     }
   }
 
-  getIsTriggered = state => {
+  getIsTriggered = (state) => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(state)
   }
 
-  onClick = notification => {
+  onClick = (notification) => {
     if (notification.expanded) {
       this.setState({ fullyExpanded: false })
       this.props.onCollapseCallback(notification)
@@ -109,7 +109,7 @@ export default class NotificationItem extends React.Component {
     dismissNotification({
       ...this.props.authentication,
       notificationId: notification.id,
-    }).catch(error => {
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -122,7 +122,7 @@ export default class NotificationItem extends React.Component {
     deleteNotification({
       ...this.props.authentication,
       notificationId: notification.id,
-    }).catch(error => {
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -131,19 +131,20 @@ export default class NotificationItem extends React.Component {
   changeRuleStatus = (notification, status) => {
     updateNotificationRuleStatus({
       ruleId: notification.rule_id,
+      type: notification.rule_type,
       status,
       ...this.props.authentication,
     })
       .then(() => {
         this.setState({ ruleStatus: status })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
       })
   }
 
-  formatTimestamp = timestamp => {
+  formatTimestamp = (timestamp) => {
     const time = dayjs.unix(timestamp).format('h:mma')
     const day = dayjs.unix(timestamp).format('MM-DD-YY')
     const today = dayjs().format('MM-DD-YY')
@@ -189,7 +190,7 @@ export default class NotificationItem extends React.Component {
     <div className="chata-notification-alert-strip" />
   )
 
-  renderNotificationHeader = notification => {
+  renderNotificationHeader = (notification) => {
     return (
       <div
         className="chata-notification-list-item-header"
@@ -216,7 +217,7 @@ export default class NotificationItem extends React.Component {
               className="chata-notification-dismiss-icon"
               data-tip="Dismiss"
               data-for="chata-notification-tooltip"
-              onClick={e => {
+              onClick={(e) => {
                 this.onDismissClick(e, notification)
                 ReactTooltip.hide()
               }}
@@ -229,7 +230,7 @@ export default class NotificationItem extends React.Component {
               className="chata-notification-delete-icon"
               data-tip="Delete"
               data-for="chata-notification-tooltip"
-              onClick={e => {
+              onClick={(e) => {
                 this.onDeleteClick(e, notification)
                 ReactTooltip.hide()
               }}
@@ -240,7 +241,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationFooter = notification => {
+  renderNotificationFooter = (notification) => {
     return (
       <div
         className="chata-notification-extra-content"
@@ -272,7 +273,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationContent = notification => {
+  renderNotificationContent = (notification) => {
     const queryTitle = notification.rule_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
@@ -289,7 +290,7 @@ export default class NotificationItem extends React.Component {
         <div className="chata-notification-details-container">
           <div
             className="chata-notification-data-container"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="chata-notificaton-chart-container">
               {this.props.activeNotificationData ? (
@@ -298,7 +299,7 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
-                    ref={r => (this.OUTPUT_REF = r)}
+                    ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={{
                       data: this.props.activeNotificationData,
                     }}
@@ -320,7 +321,7 @@ export default class NotificationItem extends React.Component {
                   themeConfig={this.props.themeConfig}
                   supportedDisplayTypes={this.supportedDisplayTypes}
                   displayType={this.state.displayType}
-                  onDisplayTypeChange={displayType =>
+                  onDisplayTypeChange={(displayType) =>
                     this.setState({ displayType })
                   }
                   vertical
