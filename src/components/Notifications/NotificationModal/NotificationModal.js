@@ -242,11 +242,6 @@ export default class NotificationModal extends React.Component {
         this.setState({
           isSavingRule: false,
         })
-          // .then(ruleResponse => {
-          //   this.setState({
-          //     isSavingRule: false,
-          //   })
-          // })
           // .catch(error => {
           //   console.error(error)
           //   this.props.onErrorCallback(error)
