@@ -140,11 +140,13 @@
 }
 .chata-execute-query-icon {
   font-size: 23px;
+  vertical-align: bottom;
+  line-height: 24px;
 
   svg {
     height: 19px;
     width: 19px;
-    margin-top: 4px;
+    margin-top: 3px;
     margin-right: 4px;
     vertical-align: top;
     fill: var(--chata-output-accent-color);

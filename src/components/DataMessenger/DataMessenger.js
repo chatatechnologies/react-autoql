@@ -150,6 +150,7 @@ export default class DataMessenger extends React.Component {
 
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
+      window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
       setTimeout(() => {
@@ -167,11 +168,9 @@ export default class DataMessenger extends React.Component {
         ReactTooltip.rebuild()
       }, 1000)
 
-      if (
-        this.state.activePage === 'data-messenger' &&
-        prevState.activePage !== 'data-messenger'
-      ) {
-        this.scrollToBottom()
+      if (!this.state.isWindowResizing && prevState.isWindowResizing) {
+        // Update the component so that the message sizes autoadjust again
+        this.forceUpdate()
       }
 
       if (this.props.isVisible && !prevProps.isVisible) {
@@ -202,10 +201,22 @@ export default class DataMessenger extends React.Component {
   componentWillUnmount() {
     try {
       document.removeEventListener('keydown', this.escFunction, false)
+      window.removeEventListener('resize', this.onWindowResize)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
     }
+  }
+
+  onWindowResize = () => {
+    if (!this.state.isWindowResizing) {
+      this.setState({ isWindowResizing: true })
+    }
+
+    clearTimeout(this.windowResizeTimer)
+    this.windowResizeTimer = setTimeout(() => {
+      this.setState({ isWindowResizing: false })
+    }, 300)
   }
 
   escFunction = event => {
@@ -278,6 +289,7 @@ export default class DataMessenger extends React.Component {
   setintroMessages = () => {
     const introMessages = [
       this.createIntroMessage({
+        type: 'text',
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
@@ -396,6 +408,7 @@ export default class DataMessenger extends React.Component {
     if (this.messengerScrollComponent) {
       this.messengerScrollComponent.scrollToBottom()
     }
+
     // Required to make animation smooth
     setTimeout(() => {
       if (this.messengerScrollComponent) {
@@ -581,7 +594,6 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
   addResponseMessage = ({ response, content, query }) => {
@@ -609,7 +621,6 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
   setActiveMessage = id => {
@@ -809,6 +820,9 @@ export default class DataMessenger extends React.Component {
             this.messengerScrollComponent = c
           }}
           className="chat-message-container"
+          renderView={props => (
+            <div {...props} className="custom-crollbar-container" />
+          )}
         >
           {this.state.messages.length > 0 &&
             this.state.messages.map(message => {
@@ -820,6 +834,7 @@ export default class DataMessenger extends React.Component {
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
                   scrollRef={this.messengerScrollComponent}
+                  isDataMessengerOpen={this.props.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   processDrilldown={(drilldownData, queryID) =>
@@ -1169,8 +1184,7 @@ export default class DataMessenger extends React.Component {
             placement={this.getPlacementProp()}
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
-            onClose={this.handleMaskClick}
-            maskClosable={true}
+            onMaskClick={this.handleMaskClick}
             onHandleClick={this.props.onHandleClick}
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}

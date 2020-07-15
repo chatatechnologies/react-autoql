@@ -56,6 +56,7 @@ export default class Input extends React.Component {
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
     onFilterCallback: () => {},
+    onColumnVisibilitySave: () => {},
   }
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
@@ -64,6 +65,10 @@ export default class Input extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--chata-options-toolbar-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = () => {
+    ReactTooltip.rebuild()
   }
 
   onTableFilter = newTableData => {
@@ -283,6 +288,8 @@ export default class Input extends React.Component {
             })
           )
         }
+
+        this.props.onColumnVisibilitySave(columns)
       })
       .catch(error => {
         console.error(error)

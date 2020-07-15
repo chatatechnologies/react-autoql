@@ -15,6 +15,8 @@ export default class SelectableList extends React.Component {
   }
 
   static defaultProps = {
+    onChange: () => {},
+    onSelect: () => {},
     columns: [],
     items: [],
   }
@@ -122,7 +124,7 @@ export default class SelectableList extends React.Component {
                   </div>
                 )
               }
-              return <div>{col.name}</div>
+              return <div key={`list-header-${uuid.v4()}`}>{col.name}</div>
             })}
           </div>
         )}
