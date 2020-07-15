@@ -107,6 +107,18 @@ export default class NotificationModal extends React.Component {
     }
 
     if (
+      this.props.initialQuery &&
+      this.props.initialQuery !== prevProps.initialQuery
+    ) {
+      this.resetFields()
+      const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+      this.setState({
+        isRulesSectionComplete: true,
+        rulesJSON,
+      })
+    }
+
+    if (
       this.state.frequencyCategorySelectValue !==
       prevState.frequencyCategorySelectValue
     ) {
