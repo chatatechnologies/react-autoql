@@ -58,9 +58,6 @@ export default class NotificationSettings extends React.Component {
       })
       .catch((error) => {
         console.error(error)
-        // this.setState({
-        //   isFetchingList: false,
-        // })
       })
   }
 
