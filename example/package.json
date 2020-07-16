@@ -28,7 +28,10 @@
     "not op_mini all"
   ],
   "engines": {
-    "node": ">=10.18"
+    "node": ">=10.15.1"
   },
-  "cacheDirectories": []
+  "cacheDirectories": [],
+  "env": {
+    "NODE_ENV": "dev"
+  }
 }
