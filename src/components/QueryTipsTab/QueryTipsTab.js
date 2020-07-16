@@ -22,7 +22,7 @@ export default class QueryTipsTab extends React.Component {
   static defaultProps = {
     loading: false,
     error: false,
-    queryTipsList: [],
+    queryTipsList: undefined,
     executeQuery: () => {},
     onQueryTipsInputKeyPress: () => {},
   }

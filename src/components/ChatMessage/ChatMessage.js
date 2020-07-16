@@ -46,6 +46,7 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
+    isDataMessengerOpen: PropTypes.bool,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,
@@ -62,6 +63,7 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
+    scrollToBottom: PropTypes.func,
   }
 
   static defaultProps = {
@@ -74,6 +76,7 @@ export default class ChatMessage extends React.Component {
     setActiveMessage: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
+    isDataMessengerOpen: false,
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -84,6 +87,7 @@ export default class ChatMessage extends React.Component {
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
+    scrollToBottom: () => {},
   }
 
   state = {
@@ -95,7 +99,10 @@ export default class ChatMessage extends React.Component {
   componentDidMount = () => {
     setTimeout(() => {
       this.setTableMessageHeights()
-      this.forceUpdate()
+      // If we scroll to the bottom after the second update
+      // it should be rendered enough so it scrolls all the
+      // way to the bottom
+      this.forceUpdate(this.props.scrollToBottom)
     }, 0)
   }
 
@@ -264,7 +271,6 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           themeConfig={this.props.themeConfig}
           responseRef={this.responseRef}
-          originalQuery={this.props.originalQuery}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
           enableDeleteBtn
@@ -272,6 +278,9 @@ export default class ChatMessage extends React.Component {
             this.props.deleteMessageCallback(this.props.id)
           }
           onFilterCallback={this.toggleTableFilter}
+          onColumnVisibilitySave={() => {
+            this.forceUpdate()
+          }}
         />
       )
     }
@@ -327,6 +336,14 @@ export default class ChatMessage extends React.Component {
     return { chartWidth, chartHeight }
   }
 
+  allColumnsAreHidden = newColumns => {
+    if (this.responseRef) {
+      return this.responseRef.areAllColumnsHidden()
+    }
+
+    return false
+  }
+
   getMessageHeight = () => {
     let messageHeight = 'unset'
 
@@ -335,7 +352,12 @@ export default class ChatMessage extends React.Component {
       this.isTableResponse() &&
       this.TABLE_CONTAINER_HEIGHT
     ) {
-      messageHeight = this.TABLE_CONTAINER_HEIGHT
+      if (this.allColumnsAreHidden()) {
+        // Allow space for the error message in case the table is small
+        messageHeight = 210
+      } else {
+        messageHeight = this.TABLE_CONTAINER_HEIGHT
+      }
     } else if (
       this.state.displayType === 'pivot_table' &&
       this.isTableResponse() &&
@@ -345,6 +367,18 @@ export default class ChatMessage extends React.Component {
     }
 
     return messageHeight
+  }
+
+  getMaxMessageheight = () => {
+    const { chartHeight } = this.getChartDimensions()
+
+    if (this.props.type === 'text') {
+      return undefined
+    } else if (chartHeight) {
+      return chartHeight + 40
+    }
+
+    return '85%'
   }
 
   renderDataLimitWarning = () => {
@@ -363,6 +397,7 @@ export default class ChatMessage extends React.Component {
   render = () => {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
+    const maxMessageHeight = this.getMaxMessageheight()
 
     return (
       <div
@@ -370,7 +405,7 @@ export default class ChatMessage extends React.Component {
         className={`chat-single-message-container
           ${this.props.isResponse ? ' response' : ' request'}`}
         style={{
-          maxHeight: chartHeight ? chartHeight + 40 : '85%',
+          maxHeight: maxMessageHeight,
           height: messageHeight,
         }}
         data-test="chat-message"
@@ -385,8 +420,8 @@ export default class ChatMessage extends React.Component {
           }}
         >
           {this.renderContent(chartWidth, chartHeight)}
-          {this.renderRightToolbar()}
-          {this.renderLeftToolbar()}
+          {this.props.isDataMessengerOpen && this.renderRightToolbar()}
+          {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
           {this.renderDataLimitWarning()}
         </div>
       </div>

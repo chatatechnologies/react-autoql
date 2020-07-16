@@ -60,7 +60,7 @@ export default class Steps extends React.Component {
 
   onStepTitleClick = (i, step) => {
     try {
-      if (step.onClick) {
+      if (step && step.onClick) {
         step.onClick()
       }
 
@@ -138,9 +138,11 @@ export default class Steps extends React.Component {
                     ? ' active'
                     : ''
                 }`}
+                data-test={`chata-step-container-${i}`}
               >
                 <div
                   className="chata-step-title-container"
+                  data-test={`chata-step-title-${i}`}
                   onClick={() => this.onStepTitleClick(i, step)}
                 >
                   <div className="chata-step-title">{step.title}</div>
@@ -152,7 +154,12 @@ export default class Steps extends React.Component {
                   <div className="chata-step-subtitle">
                     {step.subtitle || null}
                   </div>
-                  <div className="chata-step-content">{step.content}</div>
+                  <div
+                    className="chata-step-content"
+                    data-test={`chata-step-content-${i}`}
+                  >
+                    {step.content}
+                  </div>
                 </div>
                 <div className="chata-step-dot">{i + 1}</div>
               </div>

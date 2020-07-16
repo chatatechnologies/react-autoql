@@ -1,5 +1,5 @@
 .chata-dashboard-container {
-  background: #fafafa;
+  background: var(--chata-dashboard-background-color);
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -17,4 +17,19 @@
   flex: 1;
   height: 30vh;
   overflow: hidden;
+}
+
+.empty-dashboard-message-container {
+  font-family: var(--chata-dashboard-font-family);
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 100px;
+  height: 100%;
+  width: 100%;
+}
+
+.empty-dashboard-new-tile-btn {
+  color: var(--chata-dashboard-accent-color);
+  font-weight: bold;
+  cursor: pointer;
 }

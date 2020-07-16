@@ -38,9 +38,7 @@ import { NotificationButton } from '../Notifications/NotificationButton'
 import { NotificationList } from '../Notifications/NotificationList'
 import {
   runDrilldown,
-  cancelQuery,
   fetchQueryTips,
-  fetchSuggestions,
 } from '../../js/queryService'
 
 // Styles
@@ -150,6 +148,7 @@ export default class DataMessenger extends React.Component {
 
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
+      window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
       setTimeout(() => {
@@ -167,11 +166,9 @@ export default class DataMessenger extends React.Component {
         ReactTooltip.rebuild()
       }, 1000)
 
-      if (
-        this.state.activePage === 'data-messenger' &&
-        prevState.activePage !== 'data-messenger'
-      ) {
-        this.scrollToBottom()
+      if (!this.state.isWindowResizing && prevState.isWindowResizing) {
+        // Update the component so that the message sizes autoadjust again
+        this.forceUpdate()
       }
 
       if (this.props.isVisible && !prevProps.isVisible) {
@@ -202,15 +199,28 @@ export default class DataMessenger extends React.Component {
   componentWillUnmount() {
     try {
       document.removeEventListener('keydown', this.escFunction, false)
+      window.removeEventListener('resize', this.onWindowResize)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
     }
   }
 
-  escFunction = event => {
+  onWindowResize = () => {
+    if (!this.state.isWindowResizing) {
+      this.setState({ isWindowResizing: true })
+    }
+
+    clearTimeout(this.windowResizeTimer)
+    this.windowResizeTimer = setTimeout(() => {
+      this.setState({ isWindowResizing: false })
+    }, 300)
+  }
+
+  escFunction = (event) => {
     if (this.props.isVisible && event.keyCode === 27) {
-      cancelQuery()
+      // todo: add this functionality back
+      // cancelQuery()
     }
   }
 
@@ -224,11 +234,11 @@ export default class DataMessenger extends React.Component {
   }
 
   createTopicsMessage = () => {
-    const topics = this.props.queryQuickStartTopics.map(topic => {
+    const topics = this.props.queryQuickStartTopics.map((topic) => {
       return {
         label: topic.topic,
         value: uuid.v4(),
-        children: topic.queries.map(query => ({
+        children: topic.queries.map((query) => ({
           label: query,
           value: uuid.v4(),
         })),
@@ -244,7 +254,7 @@ export default class DataMessenger extends React.Component {
             {
               <Cascader
                 options={topics}
-                onFinalOptionClick={option => {
+                onFinalOptionClick={(option) => {
                   this.onSuggestionClick(
                     option.label,
                     undefined,
@@ -252,7 +262,7 @@ export default class DataMessenger extends React.Component {
                     'welcome_prompt'
                   )
                 }}
-                onSeeMoreClick={label => this.runTopicInExporeQueries(label)}
+                onSeeMoreClick={(label) => this.runTopicInExporeQueries(label)}
               />
             }
           </div>
@@ -278,6 +288,7 @@ export default class DataMessenger extends React.Component {
   setintroMessages = () => {
     const introMessages = [
       this.createIntroMessage({
+        type: 'text',
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
@@ -396,6 +407,7 @@ export default class DataMessenger extends React.Component {
     if (this.messengerScrollComponent) {
       this.messengerScrollComponent.scrollToBottom()
     }
+
     // Required to make animation smooth
     setTimeout(() => {
       if (this.messengerScrollComponent) {
@@ -404,7 +416,7 @@ export default class DataMessenger extends React.Component {
     }, 0)
   }
 
-  onInputSubmit = text => {
+  onInputSubmit = (text) => {
     this.addRequestMessage(text)
     this.setState({ isChataThinking: true })
   }
@@ -419,37 +431,21 @@ export default class DataMessenger extends React.Component {
     }
   }
 
+  getIsSuggestionResponse = (response) => {
+    return !!_get(response, 'data.data.items')
+  }
+
   onResponse = (response, query) => {
+    if (this.getIsSuggestionResponse(response)) {
+      this.addResponseMessage({
+        content: 'I want to make sure I understood your query. Did you mean:',
+      })
+    }
     this.addResponseMessage({ response, query })
 
-    if (_get(response, 'reference_id') === '1.1.430') {
-      // Fetch suggestion list now
-      fetchSuggestions({
-        query: response.originalQuery,
-        ...this.props.authentication,
-      })
-        .then(response => {
-          this.addResponseMessage({ response, query })
-          this.setState({ isChataThinking: false })
-          if (this.queryInputRef) {
-            this.queryInputRef.focus()
-          }
-        })
-        .catch(error => {
-          this.addResponseMessage({
-            content: _get(error, 'response.data.message'),
-            query,
-          })
-          this.setState({ isChataThinking: false })
-          if (this.queryInputRef) {
-            this.queryInputRef.focus()
-          }
-        })
-    } else {
-      this.setState({ isChataThinking: false })
-      if (this.queryInputRef) {
-        this.queryInputRef.focus()
-      }
+    this.setState({ isChataThinking: false })
+    if (this.queryInputRef) {
+      this.queryInputRef.focus()
     }
   }
 
@@ -460,13 +456,13 @@ export default class DataMessenger extends React.Component {
       queryID,
       data,
     })
-      .then(response => {
+      .then((response) => {
         this.addResponseMessage({
           response: { ...response, enableDrilldowns: true },
         })
         this.setState({ isChataThinking: false })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.addResponseMessage({
           content: _get(error, 'message'),
@@ -477,7 +473,7 @@ export default class DataMessenger extends React.Component {
 
   runFilterDrilldown = (drilldownData, messageId) => {
     const response = this.state.messages.find(
-      message => message.id === messageId
+      (message) => message.id === messageId
     ).response
 
     if (!response) {
@@ -519,10 +515,10 @@ export default class DataMessenger extends React.Component {
     this.setintroMessages()
   }
 
-  deleteMessage = id => {
+  deleteMessage = (id) => {
     const messagesToDelete = [id]
     const messageIndex = this.state.messages.findIndex(
-      message => message.id === id
+      (message) => message.id === id
     )
 
     // If there is a query message right above it (not a drilldown), delete the query message also
@@ -532,7 +528,7 @@ export default class DataMessenger extends React.Component {
     }
 
     const newMessages = this.state.messages.filter(
-      message => !messagesToDelete.includes(message.id)
+      (message) => !messagesToDelete.includes(message.id)
     )
 
     this.setState({
@@ -540,7 +536,7 @@ export default class DataMessenger extends React.Component {
     })
   }
 
-  createErrorMessage = content => {
+  createErrorMessage = (content) => {
     return {
       content: content || errorMessages.GENERAL,
       id: uuid.v4(),
@@ -563,7 +559,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  addRequestMessage = text => {
+  addRequestMessage = (text) => {
     let currentMessages = this.state.messages
     if (
       this.props.maxMessages > 1 &&
@@ -581,7 +577,6 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
   addResponseMessage = ({ response, content, query }) => {
@@ -596,9 +591,9 @@ export default class DataMessenger extends React.Component {
     let message = {}
     if (_get(response, 'error') === 'cancelled') {
       message = this.createErrorMessage('Query Cancelled.')
-    } else if (_get(response, 'error') === 'unauthenticated') {
+    } else if (_get(response, 'error') === 'Unauthenticated') {
       message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
-    } else if (_get(response, 'error') === 'parse error') {
+    } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
     } else if (!response && !content) {
@@ -609,14 +604,13 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: [...currentMessages, message],
     })
-    this.scrollToBottom()
   }
 
-  setActiveMessage = id => {
+  setActiveMessage = (id) => {
     this.setState({ activeMessageId: id })
   }
 
-  setQueryInputRef = ref => {
+  setQueryInputRef = (ref) => {
     this.queryInputRef = ref
   }
 
@@ -673,7 +667,7 @@ export default class DataMessenger extends React.Component {
                   >
                     <div className="data-messenger-notification-btn">
                       <NotificationButton
-                        ref={r => (this.notificationBadgeRef = r)}
+                        ref={(r) => (this.notificationBadgeRef = r)}
                         authentication={this.props.authentication}
                         themeConfig={this.props.themeConfig}
                         clearCountOnClick={false}
@@ -719,9 +713,9 @@ export default class DataMessenger extends React.Component {
               <Button
                 type="default"
                 size="small"
-                onClick={() =>
-                  this.setState({ isClearMessageConfirmVisible: false })
-                }
+                // onClick={() =>
+                //   this.setState({ isClearMessageConfirmVisible: false })
+                // }
               >
                 Cancel
               </Button>
@@ -805,13 +799,16 @@ export default class DataMessenger extends React.Component {
     return (
       <Fragment>
         <Scrollbars
-          ref={c => {
+          ref={(c) => {
             this.messengerScrollComponent = c
           }}
           className="chat-message-container"
+          renderView={(props) => (
+            <div {...props} className="custom-crollbar-container" />
+          )}
         >
           {this.state.messages.length > 0 &&
-            this.state.messages.map(message => {
+            this.state.messages.map((message) => {
               return (
                 <ChatMessage
                   key={message.id}
@@ -820,13 +817,13 @@ export default class DataMessenger extends React.Component {
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
                   scrollRef={this.messengerScrollComponent}
+                  isDataMessengerOpen={this.props.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   processDrilldown={(drilldownData, queryID) =>
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
                   isResponse={message.isResponse}
-                  originalQuery={message.query}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
                   content={message.content}
@@ -902,7 +899,7 @@ export default class DataMessenger extends React.Component {
       pageNumber,
       skipSafetyNet,
     })
-      .then(response => {
+      .then((response) => {
         // if caught by safetynet...
         if (_get(response, 'data.full_suggestion')) {
           this.setState({
@@ -931,7 +928,7 @@ export default class DataMessenger extends React.Component {
           })
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
         this.setState({
@@ -942,7 +939,7 @@ export default class DataMessenger extends React.Component {
       })
   }
 
-  onQueryTipsInputKeyPress = e => {
+  onQueryTipsInputKeyPress = (e) => {
     if (e.key == 'Enter') {
       this.fetchQueryTipsList(e.target.value, 1)
     } else {
@@ -955,12 +952,12 @@ export default class DataMessenger extends React.Component {
     this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
-  onQueryTipsSafetyNetSuggestionClick = keywords => {
+  onQueryTipsSafetyNetSuggestionClick = (keywords) => {
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
   }
 
-  animateQITextAndSubmit = text => {
+  animateQITextAndSubmit = (text) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
         setTimeout(() => {
@@ -975,7 +972,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  runTopicInExporeQueries = topic => {
+  runTopicInExporeQueries = (topic) => {
     this.setState({ activePage: 'explore-queries' })
     setTimeout(() => {
       this.animateQITextAndSubmit(topic)
@@ -994,7 +991,7 @@ export default class DataMessenger extends React.Component {
       totalPages={this.state.queryTipsTotalPages}
       currentPage={this.state.queryTipsCurrentPage}
       onPageChange={this.onQueryTipsPageChange}
-      executeQuery={query => {
+      executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
         setTimeout(() => {
           this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
@@ -1006,7 +1003,7 @@ export default class DataMessenger extends React.Component {
   renderNotificationsContent = () => {
     return (
       <NotificationList
-        ref={ref => (this.notificationListRef = ref)}
+        ref={(ref) => (this.notificationListRef = ref)}
         authentication={this.props.authentication}
         themeConfig={this.props.themeConfig}
         onExpandCallback={this.props.onNotificationExpandCallback}
@@ -1019,7 +1016,7 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  resizeDrawer = e => {
+  resizeDrawer = (e) => {
     const self = this
     const placement = this.getPlacementProp()
     const maxWidth =
@@ -1083,7 +1080,7 @@ export default class DataMessenger extends React.Component {
       return (
         <div
           className={`chata-drawer-resize-handle ${placement}`}
-          onMouseDown={e => {
+          onMouseDown={(e) => {
             this.setState({
               isResizing: true,
               startingResizePosition: {
@@ -1169,8 +1166,7 @@ export default class DataMessenger extends React.Component {
             placement={this.getPlacementProp()}
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
-            onClose={this.handleMaskClick}
-            maskClosable={true}
+            onMaskClick={this.handleMaskClick}
             onHandleClick={this.props.onHandleClick}
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}

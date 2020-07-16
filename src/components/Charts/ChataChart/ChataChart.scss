@@ -57,6 +57,11 @@
   transition: all 0.3s ease;
 }
 
+.chata-chart-container .chata-heatmap-chart g.tick line,
+.chata-chart-container .chata-bubble-chart g.tick line {
+  opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
+}
+
 .axis-selector-container {
   z-index: 9999;
   background: var(--chata-output-background-color);

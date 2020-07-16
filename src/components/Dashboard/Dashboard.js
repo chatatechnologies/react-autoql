@@ -36,7 +36,7 @@ import 'react-grid-layout/css/styles.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
-const executeDashboard = ref => {
+const executeDashboard = (ref) => {
   if (ref) {
     try {
       ref.executeDashboard()
@@ -60,6 +60,7 @@ class Dashboard extends React.Component {
     executeOnMount: PropTypes.bool,
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
+    isEditable: PropTypes.bool,
     notExecutedText: PropTypes.string,
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
@@ -78,6 +79,7 @@ class Dashboard extends React.Component {
     executeOnMount: true,
     executeOnStopEditing: true,
     isEditing: false,
+    isEditable: true,
     notExecutedText: undefined,
     enableDynamicCharting: true,
     onErrorCallback: () => {},
@@ -104,6 +106,14 @@ class Dashboard extends React.Component {
     if (
       this.props.themeConfig.fontFamily &&
       this.props.themeConfig.fontFamily !== prevProps.themeConfig.fontFamily
+    ) {
+      this.setStyles()
+    }
+
+    if (
+      this.props.themeConfig.dashboardBackground &&
+      this.props.themeConfig.dashboardBackground !==
+        prevProps.themeConfig.dashboardBackground
     ) {
       this.setStyles()
     }
@@ -140,7 +150,7 @@ class Dashboard extends React.Component {
     window.removeEventListener('resize', this.onWindowResize)
   }
 
-  onWindowResize = e => {
+  onWindowResize = (e) => {
     if (!this.state.isWindowResizing) {
       this.setState({ isWindowResizing: true })
     }
@@ -152,7 +162,12 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    const { theme, accentColor, fontFamily } = this.props.themeConfig
+    const {
+      theme,
+      accentColor,
+      fontFamily,
+      dashboardBackground,
+    } = this.props.themeConfig
     const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
     if (accentColor) {
       themeStyles['accent-color'] = accentColor
@@ -160,11 +175,14 @@ class Dashboard extends React.Component {
     if (fontFamily) {
       themeStyles['font-family'] = fontFamily
     }
+    if (dashboardBackground) {
+      themeStyles['background-color'] = dashboardBackground
+    }
 
     setStyleVars({ themeStyles, prefix: '--chata-dashboard-' })
   }
 
-  setPreviousTileState = tiles => {
+  setPreviousTileState = (tiles) => {
     this.setState({
       previousTileState: tiles,
     })
@@ -191,7 +209,7 @@ class Dashboard extends React.Component {
 
   getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
-      const newTiles = tiles.map(tile => {
+      const newTiles = tiles.map((tile) => {
         return {
           query: !ignoreInputs && tile.query,
           title: !ignoreInputs && tile.title,
@@ -223,7 +241,7 @@ class Dashboard extends React.Component {
     })
   }
 
-  onMoveEnd = layout => {
+  onMoveEnd = (layout) => {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
@@ -243,7 +261,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  updateTileLayout = layout => {
+  updateTileLayout = (layout) => {
     try {
       const tiles = this.props.tiles.map((tile, index) => {
         return {
@@ -277,7 +295,6 @@ class Dashboard extends React.Component {
         y: Infinity,
         query: '',
         title: '',
-        isNewTile: true,
       })
 
       this.props.onChange(tiles)
@@ -298,12 +315,12 @@ class Dashboard extends React.Component {
     }
   }
 
-  deleteTile = id => {
+  deleteTile = (id) => {
     try {
       this.setPreviousTileState(this.props.tiles)
 
       const tiles = _cloneDeep(this.props.tiles)
-      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      const tileIndex = tiles.map((item) => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
       this.props.onChange(tiles)
@@ -317,10 +334,24 @@ class Dashboard extends React.Component {
       this.setPreviousTileState(this.props.tiles)
 
       const tiles = _cloneDeep(this.props.tiles)
-      const tileIndex = tiles.map(item => item.i).indexOf(id)
+      const tileIndex = tiles.map((item) => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         ...params,
+      }
+
+      if (
+        Object.keys(params).includes('query') &&
+        params.query !== this.props.tiles[tileIndex].query
+      ) {
+        tiles[tileIndex].dataConfig = undefined
+        tiles[tileIndex].skipSafetyNet = false
+      } else if (
+        Object.keys(params).includes('secondQuery') &&
+        params.secondQuery !== this.props.tiles[tileIndex].secondQuery
+      ) {
+        tiles[tileIndex].secondDataConfig = undefined
+        tiles[tileIndex].secondSkipSafetyNet = false
       }
 
       this.props.onChange(tiles)
@@ -335,13 +366,13 @@ class Dashboard extends React.Component {
       ...this.props.authentication,
       ...this.props.autoQLConfig,
     })
-      .then(drilldownResponse => {
+      .then((drilldownResponse) => {
         this.setState({
           activeDrilldownResponse: drilldownResponse,
           isDrilldownRunning: false,
         })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.setState({
           isDrilldownRunning: false,
@@ -350,33 +381,48 @@ class Dashboard extends React.Component {
       })
   }
 
-  runFilterDrilldown = (data, tileId) => {
-    const tile = this.props.tiles.find(tile => tile.i === tileId)
-    if (!tile) {
-      return
+  runFilterDrilldown = (data, tileId, isSecondHalf) => {
+    try {
+      const tile = this.props.tiles.find((tile) => tile.i === tileId)
+      if (!tile) {
+        return
+      }
+
+      const queryResponse = isSecondHalf
+        ? tile.secondQueryResponse
+        : tile.queryResponse
+
+      const drilldownResponse = filterDataForDrilldown(queryResponse, data)
+
+      setTimeout(() => {
+        this.setState({
+          isDrilldownRunning: false,
+          activeDrilldownResponse: drilldownResponse,
+        })
+      }, 1500)
+    } catch (error) {
+      console.error(error)
+      this.props.onErrorCallback(error)
     }
-
-    const drilldownResponse = filterDataForDrilldown(tile.queryResponse, data)
-
-    setTimeout(() => {
-      this.setState({
-        isDrilldownRunning: false,
-        activeDrilldownResponse: drilldownResponse,
-      })
-    }, 1500)
   }
 
-  startDrilldown = (drilldownData, queryID, tileId) => {
+  startDrilldown = (drilldownData, queryID, tileId, isSecondHalf) => {
     this.setState({ isDrilldownRunning: true })
 
     if (drilldownData.supportedByAPI) {
-      this.runDrilldownFromAPI(drilldownData.data, queryID)
+      this.runDrilldownFromAPI(drilldownData.data, queryID, isSecondHalf)
     } else {
-      this.runFilterDrilldown(drilldownData.data, tileId)
+      this.runFilterDrilldown(drilldownData.data, tileId, isSecondHalf)
     }
   }
 
-  processDrilldown = (tileId, drilldownData, queryID, activeKey) => {
+  processDrilldown = ({
+    tileId,
+    drilldownData,
+    queryID,
+    activeKey,
+    isSecondHalf,
+  }) => {
     if (this.props.autoQLConfig.enableDrilldowns) {
       if (!drilldownData || !drilldownData.data) {
         return
@@ -384,89 +430,154 @@ class Dashboard extends React.Component {
 
       this.setState({
         isDrilldownModalVisible: true,
+        isDrilldownSecondHalf: isSecondHalf,
         activeDrilldownTile: tileId,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
       })
 
-      this.startDrilldown(drilldownData, queryID, tileId)
+      this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
     }
   }
 
-  shouldShowOriginalQuery = tile => {
-    return CHART_TYPES.includes(tile.displayType)
+  shouldShowOriginalQuery = (tile) => {
+    const displayType = this.state.isDrilldownSecondHalf
+      ? tile.secondDisplayType
+      : tile.displayType
+    return CHART_TYPES.includes(displayType)
   }
 
   renderDrilldownModal = () => {
-    const tile = this.props.tiles.find(
-      tile => tile.i === this.state.activeDrilldownTile
-    )
+    try {
+      const tile = this.props.tiles.find(
+        (tile) => tile.i === this.state.activeDrilldownTile
+      )
+
+      let title
+      let queryResponse
+      let displayType
+      let dataConfig
+      if (tile && this.state.isDrilldownSecondHalf) {
+        title = tile.secondQuery
+        queryResponse = tile.secondQueryResponse
+        displayType = tile.secondDisplayType
+        dataConfig = tile.secondDataConfig
+      } else if (tile && !this.state.isDrilldownSecondHalf) {
+        title = tile.query
+        queryResponse = tile.queryResponse
+        displayType = tile.displayType
+        dataConfig = tile.dataConfig
+      }
+
+      return (
+        <Modal
+          className=""
+          title={title}
+          isVisible={this.state.isDrilldownModalVisible}
+          width={800}
+          height="calc(100vh - 90px)"
+          style={{ marginTop: '45px' }}
+          confirmText="Done"
+          showFooter={false}
+          onClose={() => {
+            this.setState({
+              isDrilldownModalVisible: false,
+              activeDrilldownTile: null,
+            })
+          }}
+        >
+          <Fragment>
+            {tile && this.shouldShowOriginalQuery(tile) && (
+              <div className="chata-dashboard-drilldown-original">
+                <QueryOutput
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  dataFormatting={this.props.dataFormatting}
+                  queryResponse={queryResponse}
+                  displayType={displayType}
+                  dataConfig={dataConfig}
+                  onDataClick={(drilldownData, queryID) => {
+                    this.startDrilldown(drilldownData, queryID, tile.i)
+                  }}
+                  activeChartElementKey={
+                    this.state.activeDrilldownChartElementKey
+                  }
+                  backgroundColor={document.documentElement.style.getPropertyValue(
+                    '--chata-dashboard-background-color'
+                  )}
+                />
+              </div>
+            )}
+            <div className="chata-dashboard-drilldown-table">
+              {this.state.isDrilldownRunning ? (
+                <div className="dashboard-tile-loading-container">
+                  <LoadingDots />
+                </div>
+              ) : (
+                <QueryOutput
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  dataFormatting={this.props.dataFormatting}
+                  queryResponse={this.state.activeDrilldownResponse}
+                  renderTooltips={false}
+                  backgroundColor={document.documentElement.style.getPropertyValue(
+                    '--chata-dashboard-background-color'
+                  )}
+                />
+              )}
+            </div>
+          </Fragment>
+        </Modal>
+      )
+    } catch (error) {
+      console.error(error)
+      this.props.onErrorCallback(error)
+    }
+  }
+
+  renderEmptyDashboardMessage = () => {
+    if (this.props.isEditable && !this.props.isEditing) {
+      return (
+        <div className="empty-dashboard-message-container">
+          Start building a{' '}
+          <span
+            className="empty-dashboard-new-tile-btn"
+            onClick={() => {
+              this.props.startEditingCallback()
+            }}
+          >
+            New Dashboard
+          </span>
+        </div>
+      )
+    } else if (this.props.isEditing) {
+      return (
+        <div className="empty-dashboard-message-container">
+          Add a{' '}
+          <span
+            className="empty-dashboard-new-tile-btn"
+            onClick={() => {
+              this.addTile()
+            }}
+          >
+            New Tile
+          </span>{' '}
+          to get started
+        </div>
+      )
+    }
 
     return (
-      <Modal
-        className=""
-        title={tile ? tile.query : ''}
-        isVisible={this.state.isDrilldownModalVisible}
-        width={800}
-        height="calc(100vh - 90px)"
-        style={{ marginTop: '45px' }}
-        confirmText="Done"
-        showFooter={false}
-        onClose={() => {
-          this.setState({
-            isDrilldownModalVisible: false,
-            activeDrilldownTile: null,
-          })
-        }}
-      >
-        <Fragment>
-          {tile && this.shouldShowOriginalQuery(tile) && (
-            <div className="chata-dashboard-drilldown-original">
-              <QueryOutput
-                autoQLConfig={this.props.autoQLConfig}
-                themeConfig={this.props.themeConfig}
-                queryResponse={tile.queryResponse}
-                displayType={tile.displayType}
-                dataConfig={tile.dataConfig}
-                dataFormatting={this.props.dataFormatting}
-                onDataClick={(drilldownData, queryID) => {
-                  this.startDrilldown(drilldownData, queryID, tile.i)
-                }}
-                activeChartElementKey={
-                  this.state.activeDrilldownChartElementKey
-                }
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--chata-dashboard-background-color'
-                )}
-              />
-            </div>
-          )}
-          <div className="chata-dashboard-drilldown-table">
-            {this.state.isDrilldownRunning ? (
-              <div className="dashboard-tile-loading-container">
-                <LoadingDots />
-              </div>
-            ) : (
-              <QueryOutput
-                authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
-                themeConfig={this.props.themeConfig}
-                queryResponse={this.state.activeDrilldownResponse}
-                renderTooltips={false}
-                dataFormatting={this.props.dataFormatting}
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--chata-dashboard-background-color'
-                )}
-              />
-            )}
-          </div>
-        </Fragment>
-      </Modal>
+      <div className="empty-dashboard-message-container">
+        This dashboard doesn't have any tiles. Please contact your administrator
+        to add tiles to this dashboard
+      </div>
     )
   }
 
-  render = () => {
-    const tileLayout = this.props.tiles.map(tile => {
+  renderTiles = () => {
+    const tileLayout = this.props.tiles.map((tile) => {
       return {
         ...tile,
         i: tile.key,
@@ -477,63 +588,70 @@ class Dashboard extends React.Component {
     })
 
     return (
+      <ReactGridLayout
+        onLayoutChange={(layout) => {
+          this.updateTileLayout(layout)
+          this.setState({ layout })
+        }}
+        onDragStart={this.onMoveStart}
+        onResizeStart={this.onMoveStart}
+        onDragStop={this.onMoveEnd}
+        onResizeStop={this.onMoveEnd}
+        className="chata-dashboard"
+        rowHeight={60}
+        cols={12}
+        isDraggable={this.props.isEditing}
+        isResizable={this.props.isEditing}
+        draggableHandle=".chata-dashboard-tile-drag-handle"
+        layout={tileLayout}
+        margin={[20, 20]}
+      >
+        {tileLayout.map((tile) => (
+          <DashboardTile
+            className={`chata-dashboard-tile${
+              this.state.isDragging ? ' dragging' : ''
+            } ${tile.i}`}
+            ref={(ref) => (this.tileRefs[tile.key] = ref)}
+            key={tile.key}
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
+            themeConfig={this.props.themeConfig}
+            tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
+            displayType={tile.displayType}
+            secondDisplayType={tile.secondDisplayType}
+            secondDisplayPercentage={tile.secondDisplayPercentage}
+            queryResponse={tile.queryResponse}
+            isEditing={this.props.isEditing}
+            isDragging={this.state.isDragging}
+            isWindowResizing={this.state.isWindowResizing}
+            setParamsForTile={this.setParamsForTile}
+            deleteTile={this.deleteTile}
+            dataFormatting={this.props.dataFormatting}
+            notExecutedText={this.props.notExecutedText}
+            processDrilldown={this.processDrilldown}
+            enableDynamicCharting={this.props.enableDynamicCharting}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessCallback={this.props.onErrorCallback}
+          />
+        ))}
+      </ReactGridLayout>
+    )
+  }
+
+  render = () => {
+    return (
       <ErrorBoundary>
         <Fragment>
           <div
-            ref={ref => (this.ref = ref)}
+            ref={(ref) => (this.ref = ref)}
             className={`chata-dashboard-container${
               this.props.isEditing ? ' edit-mode' : ''
             }`}
             data-test="chata-dashboard"
           >
-            <ReactGridLayout
-              onLayoutChange={layout => {
-                this.updateTileLayout(layout)
-                this.setState({ layout })
-              }}
-              onDragStart={this.onMoveStart}
-              onResizeStart={this.onMoveStart}
-              onDragStop={this.onMoveEnd}
-              onResizeStop={this.onMoveEnd}
-              className="chata-dashboard"
-              rowHeight={60}
-              cols={12}
-              isDraggable={this.props.isEditing}
-              isResizable={this.props.isEditing}
-              // draggableHandle=".chata-dashboard-tile-inner-div"
-              draggableHandle=".chata-dashboard-tile-drag-handle"
-              layout={tileLayout}
-              margin={[20, 20]}
-            >
-              {tileLayout.map(tile => (
-                <DashboardTile
-                  className={`chata-dashboard-tile${
-                    this.state.isDragging ? ' dragging' : ''
-                  } ${tile.i}`}
-                  ref={ref => (this.tileRefs[tile.key] = ref)}
-                  key={tile.key}
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
-                  tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
-                  displayType={tile.displayType}
-                  secondDisplayType={tile.secondDisplayType}
-                  secondDisplayPercentage={tile.secondDisplayPercentage}
-                  queryResponse={tile.queryResponse}
-                  isEditing={this.props.isEditing}
-                  isDragging={this.state.isDragging}
-                  isWindowResizing={this.state.isWindowResizing}
-                  setParamsForTile={this.setParamsForTile}
-                  deleteTile={this.deleteTile}
-                  dataFormatting={this.props.dataFormatting}
-                  notExecutedText={this.props.notExecutedText}
-                  processDrilldown={this.processDrilldown}
-                  enableDynamicCharting={this.props.enableDynamicCharting}
-                  onErrorCallback={this.props.onErrorCallback}
-                  onSuccessCallback={this.props.onErrorCallback}
-                />
-              ))}
-            </ReactGridLayout>
+            {this.props.tiles.length
+              ? this.renderTiles()
+              : this.renderEmptyDashboardMessage()}
           </div>
           {this.renderDrilldownModal()}
           <ReactTooltip

@@ -73,8 +73,12 @@
   max-height: calc(100% - 140px);
   overflow-y: auto;
   overflow-x: hidden;
-  /* padding: 20px; */
   flex: 1;
+
+  .custom-crollbar-container {
+    overflow-x: hidden !important;
+    margin-bottom: 0 !important;
+  }
 }
 
 .chata-drawer .chat-bar-container {
@@ -155,9 +159,17 @@
   border-radius: 50px !important;
   font-size: 22px;
 
-  .chata-bubbles-outlined svg {
-    width: 26px;
-    height: 26px;
+  .chata-bubbles-outlined {
+    position: absolute;
+    vertical-align: top;
+    top: 11px;
+    left: 12px;
+
+    svg {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+    }
   }
 }
 .chata-drawer.drawer-right .drawer-handle {

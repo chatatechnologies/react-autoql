@@ -15,6 +15,8 @@ export default class SelectableList extends React.Component {
   }
 
   static defaultProps = {
+    onChange: () => {},
+    onSelect: () => {},
     columns: [],
     items: [],
   }
@@ -91,6 +93,7 @@ export default class SelectableList extends React.Component {
     return (
       <div
         className="chata-selectable-list"
+        data-test="selectable-list"
         onClick={e => {
           e.stopPropagation()
         }}
@@ -122,7 +125,7 @@ export default class SelectableList extends React.Component {
                   </div>
                 )
               }
-              return <div>{col.name}</div>
+              return <div key={`list-header-${uuid.v4()}`}>{col.name}</div>
             })}
           </div>
         )}

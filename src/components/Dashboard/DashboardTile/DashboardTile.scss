@@ -32,24 +32,24 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 10px;
+    height: 15px;
   }
   &.bottom {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 10px;
+    height: 15px;
   }
   &.left {
     top: 0;
     left: 0;
-    width: 10px;
+    width: 15px;
     height: 100%;
   }
   &.right {
     top: 0;
     right: 0;
-    width: 10px;
+    width: 15px;
     height: 100%;
   }
 }
@@ -210,7 +210,7 @@
   display: flex;
   width: 100%;
   height: 55px;
-  padding: 20px 23px 0 30px;
+  padding: 20px 20px 0 25px;
   flex-shrink: 0;
   flex-grow: 0;
 }
@@ -222,7 +222,7 @@
 }
 .dashboard-tile-play-button svg {
   cursor: pointer;
-  width: 20px;
+  width: 25px;
   height: 33px;
   margin-left: 10px;
   color: #366f90;
@@ -237,10 +237,11 @@
 
 .dashboard-tile-delete-button {
   opacity: 0;
+  font-size: 17px;
   color: rgba(0, 0, 0, 0.4);
   position: absolute;
-  top: 2px;
-  right: 4px;
+  top: 0px;
+  right: 2px;
   cursor: pointer;
   transition: opacity 0.3s ease;
   z-index: 1;
@@ -253,6 +254,7 @@
   display: flex;
   height: 100%;
   width: 100%;
+  padding: 20px;
   align-items: center;
   justify-content: center;
 }
@@ -270,6 +272,20 @@
   display: flex;
   width: 100%;
   height: 100%;
+  font-size: 15px;
+
+  .dashboard-tile-input,
+  .dashboard-tile-autocomplete-input {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    padding-left: 33px;
+
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    outline: none !important;
+    color: #356f90;
+  }
+
 }
 
 .query-focused .dashboard-tile-left-input-container,
@@ -290,33 +306,24 @@
 
   .query-input-icon,
   .title-input-icon {
+    color: #356f90;
     position: absolute;
     pointer-events: none;
-    opacity: 0.6;
     z-index: 1;
   }
 
   .query-input-icon {
-    top: 7px;
-    left: 6px;
+    font-size: 18px;
+    top: 4px;
+    left: 10px;
   }
   .title-input-icon {
+    font-size: 16px;
     top: 7px;
-    left: 9px;
+    left: 11px;
   }
 }
 
-.dashboard-tile-input-container .dashboard-tile-input,
-.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  padding-left: 30px;
-
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  outline: none !important;
-  color: #356f90;
-}
 .dashboard-tile-input.second.query {
   transition: all 0.3s ease;
   border: 1px solid transparent;
@@ -336,18 +343,17 @@
     pointer-events: unset;
   }
 }
-.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
-  width: 100%;
-  height: 100%;
-}
+
 .dashboard-tile-input:hover,
 .dashboard-tile-input:focus,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
   border: 1px solid rgb(38, 167, 233) !important;
+  border-color: var(--chata-dashboard-accent-color) !important;
 }
 .dashboard-tile-input-container .dashboard-tile-input.query,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input {
+  padding-left: 36px;
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
@@ -461,16 +467,29 @@
 }
 
 .dashboard-tile-placeholder-text {
+  font-size: 15px;
   color: rgba(0, 0, 0, 0.3);
+
+  .play-icon {
+    vertical-align: bottom;
+    line-height: 20px;
+  }
 }
 
 /* React Grid Layout overrides */
 .react-grid-item > .react-resizable-handle {
   z-index: 1;
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  bottom: 0;
+  right: 0;
 }
 .react-grid-item > .react-resizable-handle::after {
-  width: 8px !important;
-  height: 8px !important;
+  width: 11px !important;
+  height: 11px !important;
+  bottom: 4px;
+  right: 4px;
   opacity: 0;
   border-right: 1px solid rgba(0, 0, 0, 0.4) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;

@@ -35,7 +35,6 @@ export default class Input extends React.Component {
 
     responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
-    originalQuery: PropTypes.string,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -50,12 +49,12 @@ export default class Input extends React.Component {
 
     responseRef: undefined,
     enableDeleteBtn: false,
-    originalQuery: undefined,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
     onFilterCallback: () => {},
+    onColumnVisibilitySave: () => {},
   }
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
@@ -66,7 +65,11 @@ export default class Input extends React.Component {
     setCSSVars({ themeConfig, prefix })
   }
 
-  onTableFilter = newTableData => {
+  componentDidUpdate = () => {
+    ReactTooltip.rebuild()
+  }
+
+  onTableFilter = (newTableData) => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
@@ -90,7 +93,7 @@ export default class Input extends React.Component {
     const queryOutputId = this.props.responseRef.COMPONENT_KEY
     const filterValues = tableRef.getHeaderFilters()
     if (filterValues) {
-      filterValues.forEach(filter => {
+      filterValues.forEach((filter) => {
         try {
           if (!isFilteringTable) {
             const filterTagEl = document.createElement('span')
@@ -132,20 +135,20 @@ export default class Input extends React.Component {
       )
 
       if (this.filtering) {
-        filterHeaderElements.forEach(element => {
+        filterHeaderElements.forEach((element) => {
           element.style.display = 'inline-block'
         })
 
-        colHeaderElements.forEach(element => {
+        colHeaderElements.forEach((element) => {
           element.style.height = '72px !important'
         })
         this.setFilterTags({ isFilteringTable: true })
       } else {
-        filterHeaderElements.forEach(element => {
+        filterHeaderElements.forEach((element) => {
           element.style.display = 'none'
         })
 
-        colHeaderElements.forEach(element => {
+        colHeaderElements.forEach((element) => {
           element.style.height = '37px !important'
         })
         this.setFilterTags({ isFilteringTable: false })
@@ -213,7 +216,7 @@ export default class Input extends React.Component {
     this.setState({ isHideColumnsModalVisible: true })
   }
 
-  hideColumnCallback = column => {
+  hideColumnCallback = (column) => {
     if (!column) {
       return
     }
@@ -231,16 +234,16 @@ export default class Input extends React.Component {
       .then(() => {
         column.hide()
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
         this.setState({ isSettingColumnVisibility: false })
       })
   }
 
-  onColumnVisibilitySave = columns => {
+  onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
-    const formattedColumns = columns.map(col => {
+    const formattedColumns = columns.map((col) => {
       return {
         name: col.name,
         is_visible: col.visible,
@@ -255,7 +258,7 @@ export default class Input extends React.Component {
           const columnComponents = tableRef.getColumns()
           columnComponents.forEach((component, index) => {
             const id = component.getDefinition().id
-            const isVisible = columns.find(col => col.id === id).visible
+            const isVisible = columns.find((col) => col.id === id).visible
             if (isVisible) {
               component.show()
             } else {
@@ -275,7 +278,7 @@ export default class Input extends React.Component {
 
         if (this.props.responseRef) {
           this.props.responseRef.updateColumns(
-            columns.map(col => {
+            columns.map((col) => {
               return {
                 ...col,
                 is_visible: col.visible,
@@ -283,8 +286,10 @@ export default class Input extends React.Component {
             })
           )
         }
+
+        this.props.onColumnVisibilitySave(columns)
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
         this.setState({ isSettingColumnVisibility: false })
@@ -296,7 +301,7 @@ export default class Input extends React.Component {
 
     let columns = []
     if (tableRef) {
-      columns = tableRef.getColumns().map(col => {
+      columns = tableRef.getColumns().map((col) => {
         return {
           ...col.getDefinition(),
           visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
@@ -316,11 +321,16 @@ export default class Input extends React.Component {
   }
 
   renderNotificationModal = () => {
+    const initialQuery = _get(
+      this.props.responseRef,
+      'props.queryResponse.data.data.text'
+    )
+
     return (
       <NotificationModal
         authentication={this.props.authentication}
         isVisible={this.state.activeMenu === 'notification'}
-        initialQuery={this.props.originalQuery}
+        initialQuery={initialQuery}
         onClose={() => this.setState({ activeMenu: undefined })}
         onErrorCallback={this.props.onErrorCallback}
         onSave={() => {
@@ -351,13 +361,13 @@ export default class Input extends React.Component {
         Please tell us more about the problem you are experiencing:
         <textarea
           className="report-problem-text-area"
-          onChange={e => (this.reportProblemMessage = e.target.value)}
+          onChange={(e) => (this.reportProblemMessage = e.target.value)}
         />
       </Modal>
     )
   }
 
-  reportQueryProblem = reason => {
+  reportQueryProblem = (reason) => {
     const queryId = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.query_id'
@@ -372,7 +382,7 @@ export default class Input extends React.Component {
         this.props.onSuccessAlert('Thank you for your feedback.')
         this.setState({ activeMenu: undefined, isReportingProblem: false })
       })
-      .catch(error => {
+      .catch((error) => {
         this.props.onErrorCallback(error)
         this.setState({ isReportingProblem: false })
       })
@@ -468,6 +478,11 @@ export default class Input extends React.Component {
     )
   }
 
+  areAllColumnsHidden = () => {
+    const columns = _get(this.props.responseRef, 'tableColumns', [])
+    return !columns.find((col) => col.visible)
+  }
+
   renderToolbar = () => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     const response = _get(this.props.responseRef, 'props.queryResponse')
@@ -475,12 +490,15 @@ export default class Input extends React.Component {
     const shouldShowButton = {
       showFilterButton:
         isTableResponse(response, displayType) &&
+        !this.areAllColumnsHidden() &&
         _get(response, 'data.data.rows.length') > 1,
       showCopyButton:
         isTableResponse(response, displayType) &&
+        !this.areAllColumnsHidden() &&
         !!_get(response, 'data.data.rows.length'),
       showSaveAsCSVButton:
         isTableResponse(response, displayType) &&
+        !this.areAllColumnsHidden() &&
         !!_get(response, 'data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(displayType),
       showHideColumnsButton:
@@ -496,8 +514,7 @@ export default class Input extends React.Component {
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationButton:
         _get(response, 'data.data.display_type') === 'data' &&
-        this.props.autoQLConfig.enableNotifications &&
-        this.props.originalQuery,
+        this.props.autoQLConfig.enableNotifications,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -510,7 +527,7 @@ export default class Input extends React.Component {
     // If there is nothing to put in the toolbar, don't render it
     if (
       !this.props.responseRef ||
-      !Object.values(shouldShowButton).find(showButton => showButton === true)
+      !Object.values(shouldShowButton).find((showButton) => showButton === true)
     ) {
       return null
     }
@@ -552,7 +569,7 @@ export default class Input extends React.Component {
               this.setState({ activeMenu: undefined })
             }}
             position="bottom" // preferred position
-            content={props => this.renderReportProblemMenu(props)}
+            content={(props) => this.renderReportProblemMenu(props)}
           >
             <button
               onClick={() => {
@@ -586,7 +603,7 @@ export default class Input extends React.Component {
             onClickOutside={() => {
               this.setState({ activeMenu: undefined })
             }}
-            content={props =>
+            content={(props) =>
               this.renderMoreOptionsMenu(props, shouldShowButton)
             }
           >

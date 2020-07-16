@@ -31,7 +31,7 @@ export default class NotificationModal extends React.Component {
     initialQuery: PropTypes.string,
     currentNotification: PropTypes.shape({}),
     isVisible: PropTypes.bool,
-    hideDeleteBtn: PropTypes.bool,
+    allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
   }
 
@@ -42,7 +42,7 @@ export default class NotificationModal extends React.Component {
     initialQuery: undefined,
     currentNotification: undefined,
     isVisible: false,
-    hideDeleteBtn: false,
+    allowDelete: true,
     onClose: () => {},
   }
 
@@ -87,19 +87,31 @@ export default class NotificationModal extends React.Component {
       }
     }
 
-    // if (
-    //   this.state.frequencyCategorySelectValue !==
-    //   prevState.frequencyCategorySelectValue
-    // ) {
-    //   // Reset checkbox and frequency select values
-    //   this.setState({
-    //     everyCheckboxValue: false,
-    //     frequencySelectValue: 'MONTH',
-    //     weekSelectValue: [2],
-    //     monthSelectValue: [1],
-    //     yearSelectValue: [1],
-    //   })
-    // }
+    if (
+      this.props.initialQuery &&
+      this.props.initialQuery !== prevProps.initialQuery
+    ) {
+      this.resetFields()
+      const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+      this.setState({
+        isRulesSectionComplete: true,
+        rulesJSON,
+      })
+    }
+
+    if (
+      this.state.frequencyCategorySelectValue !==
+      prevState.frequencyCategorySelectValue
+    ) {
+      // Reset checkbox and frequency select values
+      this.setState({
+        everyCheckboxValue: false,
+        frequencySelectValue: 'MONTH',
+        weekSelectValue: [2],
+        monthSelectValue: [1],
+        yearSelectValue: [1],
+      })
+    }
   }
 
   resetFields = () => {
@@ -120,7 +132,7 @@ export default class NotificationModal extends React.Component {
     })
   }
 
-  createRuleJSONFromQuery = query => {
+  createRuleJSONFromQuery = (query) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -202,7 +214,7 @@ export default class NotificationModal extends React.Component {
     })
   }
 
-  getFirstQuery = term => {
+  getFirstQuery = (term) => {
     if (!term) {
       return undefined
     }
@@ -230,14 +242,14 @@ export default class NotificationModal extends React.Component {
       updateNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
 
           this.setState({
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -248,13 +260,13 @@ export default class NotificationModal extends React.Component {
       createNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
           this.setState({
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -272,7 +284,7 @@ export default class NotificationModal extends React.Component {
         icon="title"
         maxLength="50"
         value={this.state.titleInput}
-        onChange={e => this.setState({ titleInput: e.target.value })}
+        onChange={(e) => this.setState({ titleInput: e.target.value })}
       />
       <Input
         className="chata-notification-message-input"
@@ -280,7 +292,7 @@ export default class NotificationModal extends React.Component {
         type="multi"
         maxLength="200"
         value={this.state.messageInput}
-        onChange={e => this.setState({ messageInput: e.target.value })}
+        onChange={(e) => this.setState({ messageInput: e.target.value })}
       />
     </div>
   )
@@ -288,10 +300,10 @@ export default class NotificationModal extends React.Component {
   renderFrequencyStep = () => {
     return (
       <ScheduleBuilder
-        ref={r => (this.scheduleBuilderRef = r)}
+        ref={(r) => (this.scheduleBuilderRef = r)}
         key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
         rule={this.props.currentNotification}
-        onCompletedChange={isComplete => {
+        onCompletedChange={(isComplete) => {
           this.setState({ isScheduleSectionComplete: isComplete })
         }}
         onErrorCallback={this.props.onErrorCallback}
@@ -307,7 +319,7 @@ export default class NotificationModal extends React.Component {
           icon="chata-bubbles-outlined"
           placeholder="Query"
           value={this.state.dataReturnQueryInput}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (!this.state.isDataReturnDirty) {
               this.setState({ isDataReturnDirty: true })
             }
@@ -315,7 +327,7 @@ export default class NotificationModal extends React.Component {
               this.stepsRef.nextStep()
             }
           }}
-          onChange={e =>
+          onChange={(e) =>
             this.setState({ dataReturnQueryInput: e.target.value })
           }
         />
@@ -337,7 +349,7 @@ export default class NotificationModal extends React.Component {
             isDeletingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -358,7 +370,7 @@ export default class NotificationModal extends React.Component {
         subtitle: 'Notify me when the following conditions are met',
         content: (
           <ExpressionBuilder
-            ref={r => (this.expressionRef = r)}
+            ref={(r) => (this.expressionRef = r)}
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
             expression={_get(
@@ -407,7 +419,7 @@ export default class NotificationModal extends React.Component {
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
-              {this.props.currentNotification && !this.props.hideDeleteBtn && (
+              {this.props.currentNotification && this.props.allowDelete && (
                 <Button
                   type="danger"
                   onClick={this.onRuleDelete}
@@ -423,7 +435,7 @@ export default class NotificationModal extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
-                disabled={steps && !!steps.find(step => !step.complete)}
+                disabled={steps && !!steps.find((step) => !step.complete)}
               >
                 Save
               </Button>
@@ -431,7 +443,7 @@ export default class NotificationModal extends React.Component {
           </div>
         }
       >
-        <Steps ref={r => (this.stepsRef = r)} steps={steps} />
+        <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
       </Modal>
     )
   }

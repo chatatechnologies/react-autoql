@@ -48,7 +48,6 @@ const defaultProps = {
   authentication: testAuthentication,
   autoQLConfig: autoQLConfigDefault,
   enableDeleteBtn: false,
-  originalQuery: undefined,
   onSuccessAlert: () => {},
   onErrorCallback: () => {},
   onNewNotificationCallback: () => {},

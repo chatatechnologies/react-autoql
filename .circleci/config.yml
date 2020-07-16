@@ -11,7 +11,10 @@ jobs:
           steps:
             - run: npm i
             - run: npm i react react-dom
-            - run: npm run test
+            - run:
+                name: Run Tests
+                no_output_timeout: 60m
+                command: npm run test
   test-and-release:
     executor:
       name: node/default
@@ -21,7 +24,10 @@ jobs:
           steps:
             - run: npm install
             - run: npm i react react-dom
-            - run: npm run test
+            - run:
+                name: Run Tests
+                no_output_timeout: 60m
+                command: npm run test
             - run: npx semantic-release
 workflows:
   build-and-test:
