@@ -246,21 +246,11 @@ export default class NotificationModal extends React.Component {
       ...this.props.authentication,
     }
 
-    console.log('on Rule Save 2', this.props.isManagement)
-
     if (this.props.isManagement) {
-      console.log('isManagement')
         this.props.onManagementCreateRule(newRule)
         this.setState({
           isSavingRule: false,
         })
-          // .catch(error => {
-          //   console.error(error)
-          //   this.props.onErrorCallback(error)
-          //   this.setState({
-          //     isSavingRule: false,
-          //   })
-          // })
     } else if (newRule.id) {
       updateNotificationRule({
         ...requestParams,
