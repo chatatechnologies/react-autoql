@@ -129,12 +129,6 @@ export default class NotificationModal extends React.Component {
       expressionJSON: [],
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
-      // frequencyCategorySelectValue: undefined,
-      // frequencySelectValue: 'MONTH',
-      // weekSelectValue: [2],
-      // monthSelectValue: [1],
-      // yearSelectValue: [1],
-      // everyCheckboxValue: false,
       titleInput: '',
       messageInput: '',
     })
