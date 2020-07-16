@@ -4,12 +4,12 @@ import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 
-import { Group } from '../GroupCopy'
+import { Group } from '../Group'
 import { Button } from '../../Button'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 
-import './NotificationRules.scss'
+import './ExpressionBuilder.scss'
 
 const getInitialStateData = initialData => {
   let state = {}
@@ -41,36 +41,38 @@ const getInitialStateData = initialData => {
   return state
 }
 
-export default class NotificationRules extends React.Component {
+export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
-    onUpdate: PropTypes.func,
-    readOnly: PropTypes.bool,
+    expression: PropTypes.shape({}), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
+    onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }
 
   static defaultProps = {
-    onUpdate: () => {},
+    expression: undefined,
     readOnly: false,
+    onChange: () => {},
   }
 
   state = {
     groups: [],
     andOrValue: 'ALL',
-    ...getInitialStateData(this.props.notificationData),
+    ...getInitialStateData(this.props.expression),
   }
 
   componentDidMount = () => {
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!isEqual(prevProps.notificationData, this.props.notificationData)) {
+    if (!isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
-      this.setState({ ...getInitialStateData(this.props.notificationData) })
+      this.setState({ ...getInitialStateData(this.props.expression) })
     }
     if (!isEqual(prevState, this.state)) {
-      this.props.onUpdate(this.isComplete(), this.getJSON())
+      this.props.onChange(this.isComplete(), this.getJSON())
     }
   }
 
@@ -145,7 +147,7 @@ export default class NotificationRules extends React.Component {
     })
 
     this.setState({ groups: newGroups })
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   renderReadOnlyRules = () => {

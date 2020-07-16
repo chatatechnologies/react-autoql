@@ -9,7 +9,7 @@ import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
-import { NotificationRulesCopy } from '../NotificationRulesCopy'
+import { ExpressionBuilder } from '../ExpressionBuilder'
 import { VizToolbar } from '../../VizToolbar'
 import {
   dismissNotification,
@@ -334,9 +334,9 @@ export default class NotificationItem extends React.Component {
               <div className="chata-notificaiton-details-title">
                 Conditions:
               </div>
-              <NotificationRulesCopy
+              <ExpressionBuilder
                 key={this.COMPONENT_KEY}
-                notificationData={_get(notification, 'rule_expression')}
+                expression={_get(notification, 'rule_expression')}
                 readOnly
               />
               <div className="chata-notificaiton-details-title">

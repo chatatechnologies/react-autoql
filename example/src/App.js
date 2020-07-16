@@ -10,6 +10,8 @@ import {
   NotificationButton,
   NotificationList,
   NotificationSettings,
+  ExpressionBuilder,
+  ScheduleBuilder,
   Icon as ChataIcon,
 } from 'react-autoql'
 import uuid from 'uuid'

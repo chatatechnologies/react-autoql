@@ -1,22 +1,15 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Modal } from '../../Modal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
-import { Icon } from '../../Icon'
-import { Select } from '../../Select'
 import { Button } from '../../Button'
-import { Checkbox } from '../../Checkbox'
-import { WeekSelect } from '../../DateSelect/WeekSelect'
-import { MonthSelect } from '../../DateSelect/MonthSelect'
-import { YearSelect } from '../../DateSelect/YearSelect'
-import { NotificationRulesCopy } from '../NotificationRulesCopy'
+import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ScheduleBuilder } from '../ScheduleBuilder'
 
-import { getScheduleDescription } from '../helpers'
 import {
   createNotificationRule,
   updateNotificationRule,
@@ -40,6 +33,10 @@ export default class NotificationModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
+    isManagement: PropTypes.bool,
+    onManagementCreateRule: PropTypes.func,
+    onManagementDeleteRule: PropTypes.func,
+    title: PropTypes.string,
   }
 
   static defaultProps = {
@@ -51,21 +48,20 @@ export default class NotificationModal extends React.Component {
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
+    isManagement: false,
+    onManagementCreateRule: () => {},
+    onManagementDeleteRule: () => {},
+    title: 'Custom Notification',
   }
 
   state = {
     titleInput: '',
     messageInput: '',
-    isRulesSectionComplete: false,
-    rulesJSON: [],
+    isExpressionSectionComplete: false,
+    expressionJSON: [],
     dataReturnQueryInput: '',
     isDataReturnDirty: false,
-    frequencyCategorySelectValue: undefined,
-    frequencySelectValue: 'MONTH',
-    weekSelectValue: [2],
-    monthSelectValue: [1],
-    yearSelectValue: [1],
-    everyCheckboxValue: false,
+    isScheduleSectionComplete: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -83,25 +79,18 @@ export default class NotificationModal extends React.Component {
           messageInput: notification.message,
           dataReturnQueryInput: notification.query,
           isDataReturnDirty: true,
-          frequencyCategorySelectValue: notification.notification_type,
-          frequencySelectValue: notification.reset_period || undefined,
-          rulesJSON: _get(this.props.currentNotification, 'expression'),
-          everyCheckboxValue:
-            notification.notification_type === 'SINGLE_EVENT' &&
-            !!notification.reset_period,
-
-          // weekSelectValue: [2],
-          // monthSelectValue: [1],
-          // yearSelectValue: [1],
+          expressionJSON: _get(this.props.currentNotification, 'expression'),
         })
       } else if (
         this.props.initialQuery &&
         typeof this.props.initialQuery === 'string'
       ) {
-        const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+        const expressionJSON = this.createRuleJSONFromQuery(
+          this.props.initialQuery
+        )
         this.setState({
-          isRulesSectionComplete: true,
-          rulesJSON,
+          isExpressionSectionComplete: true,
+          expressionJSON,
         })
       }
     }
@@ -135,16 +124,11 @@ export default class NotificationModal extends React.Component {
 
   resetFields = () => {
     this.setState({
-      isRulesSectionComplete: false,
-      rulesJSON: [],
+      isExpressionSectionComplete: false,
+      isScheduleSectionComplete: false,
+      expressionJSON: [],
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
-      frequencyCategorySelectValue: undefined,
-      frequencySelectValue: 'MONTH',
-      weekSelectValue: [2],
-      monthSelectValue: [1],
-      yearSelectValue: [1],
-      everyCheckboxValue: false,
       titleInput: '',
       messageInput: '',
     })
@@ -176,19 +160,16 @@ export default class NotificationModal extends React.Component {
   }
 
   getNotificationRuleData = () => {
-    const {
-      titleInput,
-      dataReturnQueryInput,
-      messageInput,
-      frequencyCategorySelectValue,
-      everyCheckboxValue,
-      frequencySelectValue,
-      // rulesJSON,
-    } = this.state
+    const { titleInput, dataReturnQueryInput, messageInput } = this.state
 
-    let rulesJSON = this.state.rulesJSON
-    if (this.rulesRef) {
-      rulesJSON = this.rulesRef.getJSON()
+    let expressionJSON = this.state.expressionJSON
+    if (this.expressionRef) {
+      expressionJSON = this.expressionRef.getJSON()
+    }
+
+    let scheduleData = {}
+    if (this.scheduleBuilderRef) {
+      scheduleData = this.scheduleBuilderRef.getData()
     }
 
     const notificationRule = this.props.currentNotification
@@ -198,40 +179,39 @@ export default class NotificationModal extends React.Component {
       title: titleInput,
       query: dataReturnQueryInput,
       message: messageInput,
-      notification_type: frequencyCategorySelectValue,
-      cycle: frequencyCategorySelectValue === 'REPEAT_EVENT' ? 'WEEK' : null, // Hardcoded WEEK for MVP
+      notification_type: scheduleData.frequencyCategorySelectValue,
+      cycle:
+        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
+          ? 'WEEK'
+          : null, // Hardcoded WEEK for MVP
       reset_period:
-        !everyCheckboxValue || frequencyCategorySelectValue === 'REPEAT_EVENT'
+        !scheduleData.everyCheckboxValue ||
+        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
           ? null
-          : frequencySelectValue,
+          : scheduleData.frequencySelectValue,
       day_numbers:
-        frequencyCategorySelectValue === 'REPEAT_EVENT'
+        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
           ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
           : null,
       // Commenting out for MVP
       // month_number: [],
       // run_times: [],
-      expression: rulesJSON,
+      expression: expressionJSON,
     }
 
     return newRule
   }
 
-  onRulesUpdate = (isComplete, rulesJSON) => {
+  onExpressionChange = (isComplete, expressionJSON) => {
     let { dataReturnQueryInput } = this.state
-    const firstQuery = this.getFirstQuery(rulesJSON[0])
+    const firstQuery = this.getFirstQuery(expressionJSON[0])
     if (!this.state.isDataReturnDirty && firstQuery) {
       dataReturnQueryInput = firstQuery
     }
 
-    let isRulesSectionComplete = isComplete
-    if (this.rulesRef) {
-      isRulesSectionComplete = this.rulesRef.isComplete()
-    }
-
     this.setState({
-      isRulesSectionComplete,
-      rulesJSON,
+      isExpressionSectionComplete: isComplete,
+      expressionJSON,
       dataReturnQueryInput,
     })
   }
@@ -254,25 +234,23 @@ export default class NotificationModal extends React.Component {
       isSavingRule: true,
     })
 
-    // var newRuleList = [...this.state.ruleList]
     const newRule = this.getNotificationRuleData()
     const requestParams = {
       rule: newRule,
       ...this.props.authentication,
     }
 
-    if (newRule.id) {
+    if (this.props.isManagement) {
+        this.props.onManagementCreateRule(newRule)
+        this.setState({
+          isSavingRule: false,
+        })
+    } else if (newRule.id) {
       updateNotificationRule({
         ...requestParams,
       })
         .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
-          // newRuleList = this.state.ruleList.map(r => {
-          //   if (r.id === newRule.id) {
-          //     return _get(ruleResponse, 'data.data', newRule)
-          //   }
-          //   return r
-          // })
 
           this.setState({
             isSavingRule: false,
@@ -326,171 +304,17 @@ export default class NotificationModal extends React.Component {
     </div>
   )
 
-  renderFrequencySelector = (options) => {
-    return (
-      <Select
-        options={options}
-        className="notification-frequency-select"
-        value={this.state.frequencySelectValue}
-        onChange={(value) => this.setState({ frequencySelectValue: value })}
-      />
-    )
-  }
-
-  renderWeekSelector = () => (
-    <WeekSelect
-      multiSelect
-      value={this.state.weekSelectValue}
-      onChange={(value) => this.setState({ weekSelectValue: value })}
-    />
-  )
-
-  renderMonthSelector = () => (
-    <MonthSelect
-      multiSelect
-      value={this.state.monthSelectValue}
-      onChange={(value) => this.setState({ monthSelectValue: value })}
-    />
-  )
-
-  renderYearSelector = () => (
-    <YearSelect
-      multiSelect
-      value={this.state.yearSelectValue}
-      onChange={(value) => this.setState({ yearSelectValue: value })}
-    />
-  )
-
-  renderDateSelector = (type) => {
-    let selector
-    switch (type) {
-      case 'WEEK': {
-        selector = this.renderWeekSelector()
-        break
-      }
-      case 'MONTH': {
-        selector = this.renderMonthSelector()
-        break
-      }
-      case 'YEAR': {
-        selector = this.renderYearSelector()
-        break
-      }
-      default: {
-        return null
-      }
-    }
-
-    return <div className="frequency-date-select-container">{selector}</div>
-  }
-
-  renderRepeatCheckbox = (label) => {
-    return (
-      <Checkbox
-        label={label}
-        className="frequency-repeat-checkbox"
-        checked={this.state.everyCheckboxValue}
-        onChange={(e) => {
-          this.setState({ everyCheckboxValue: e.target.checked })
-        }}
-      />
-    )
-  }
-
-  renderFrequencyDescription = () => {
-    if (!this.isScheduleSectionComplete()) {
-      return null
-    }
-
-    let selection
-    if (this.state.frequencySelectValue === 'WEEK') {
-      selection = this.state.weekSelectValue
-    } else if (this.state.frequencySelectValue === 'MONTH') {
-      selection = this.state.monthSelectValue
-    } else if (this.state.frequencySelectValue === 'YEAR') {
-      selection = this.state.yearSelectValue
-    }
-
-    const description = getScheduleDescription(
-      this.state.frequencyCategorySelectValue,
-      this.state.frequencySelectValue,
-      this.state.everyCheckboxValue,
-      selection
-    )
-
-    return (
-      <div className="frequency-description-box">
-        <div className="frequency-description-title">Description:</div>
-        {description}
-      </div>
-    )
-  }
-
   renderFrequencyStep = () => {
     return (
-      <div className="notification-frequency-step">
-        <div className="frequency-settings-container">
-          Notify me{' '}
-          <Select
-            options={[
-              { value: 'SINGLE_EVENT', label: 'Once, when this happens' },
-              { value: 'REPEAT_EVENT', label: 'Every time this happens' },
-              // Commenting out for MVP
-              // { value: 'SCHEDULE', label: 'On a schedule' }
-            ]}
-            selectionPlaceholder="Select a frequency"
-            value={this.state.frequencyCategorySelectValue}
-            onChange={(value) =>
-              this.setState({ frequencyCategorySelectValue: value })
-            }
-          />
-          {this.state.frequencyCategorySelectValue === 'SINGLE_EVENT' && (
-            <div className="frequency-category-select">
-              {this.renderRepeatCheckbox('Repeat')}
-              {this.state.everyCheckboxValue && (
-                <Fragment>
-                  {this.renderFrequencySelector([
-                    { value: 'DAY', label: 'Daily' },
-                    { value: 'WEEK', label: 'Weekly' },
-                    { value: 'MONTH', label: 'Monthly' },
-                    // Commenting out for MVP
-                    // { value: 'YEAR', label: 'Yearly' }
-                  ])}
-                  {
-                    // Commenting out for MVP
-                    // {this.state.frequencySelectValue !== 'DAY' && (
-                    //   <span className="frequency-repeat-follow-text"> on:</span>
-                    // )}
-                    // {this.renderDateSelector(this.state.frequencySelectValue)}
-                  }
-                </Fragment>
-              )}
-            </div>
-          )}
-          {
-            // Commenting out for MVP
-            //   this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
-            //   <div className="frequency-category-select">
-            //     {this.renderRepeatCheckbox('Only on')}
-            //     {this.state.everyCheckboxValue && (
-            //       <Fragment>
-            //         {this.renderFrequencySelector([
-            //           { value: 'WEEK', label: 'Certain days of the week' },
-            //           { value: 'MONTH', label: 'Certain days of the month' },
-            //           { value: 'YEAR', label: 'Certain months of the year' }
-            //         ])}
-            //         {this.state.frequencySelectValue !== 'DAY' &&
-            //           this.renderDateSelector(this.state.frequencySelectValue)}
-            //       </Fragment>
-            //     )}
-            //   </div>
-            // )
-          }
-        </div>
-        <div className="frequency-description-box-container">
-          {this.renderFrequencyDescription()}
-        </div>
-      </div>
+      <ScheduleBuilder
+        ref={(r) => (this.scheduleBuilderRef = r)}
+        key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
+        rule={this.props.currentNotification}
+        onCompletedChange={(isComplete) => {
+          this.setState({ isScheduleSectionComplete: isComplete })
+        }}
+        onErrorCallback={this.props.onErrorCallback}
+      />
     )
   }
 
@@ -516,10 +340,6 @@ export default class NotificationModal extends React.Component {
         />
       </div>
     )
-  }
-
-  isScheduleSectionComplete = () => {
-    return !!this.state.frequencyCategorySelectValue
   }
 
   onRuleDelete = () => {
@@ -556,23 +376,23 @@ export default class NotificationModal extends React.Component {
         title: 'Notification Conditions',
         subtitle: 'Notify me when the following conditions are met',
         content: (
-          <NotificationRulesCopy
-            ref={(r) => (this.rulesRef = r)}
-            key={this.NEW_NOTIFICATION_MODAL_ID}
-            onUpdate={this.onRulesUpdate}
-            notificationData={_get(
+          <ExpressionBuilder
+            ref={(r) => (this.expressionRef = r)}
+            key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
+            onChange={this.onExpressionChange}
+            expression={_get(
               this.props.currentNotification,
               'expression',
-              this.state.rulesJSON
+              this.state.expressionJSON
             )}
           />
         ),
-        complete: this.state.isRulesSectionComplete,
+        complete: this.state.isExpressionSectionComplete,
       },
       {
         title: 'Frequency',
         content: this.renderFrequencyStep(),
-        complete: this.isScheduleSectionComplete(),
+        complete: this.state.isScheduleSectionComplete,
       },
       {
         title: 'Data Return',
@@ -597,7 +417,7 @@ export default class NotificationModal extends React.Component {
 
     return (
       <Modal
-        title="Custom Notification"
+        title={this.props.title} // "Custom Notification"
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         enableBodyScroll
