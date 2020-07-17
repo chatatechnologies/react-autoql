@@ -26,7 +26,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "npx jest --clearCache && npm run test:badges && git add public/badge.svg && npm run packexample && git add example/react-autoql-0.0.0-semantically-released.tgz"
+      "pre-commit": "npx jest --clearCache && npm run test:badges && git add public/badge.svg && npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz"
     }
   },
   "lint-staged": {
