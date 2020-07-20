@@ -24,17 +24,15 @@
   display: flex;
   justify-content: flex-start;
   padding-left: 20px;
-  /* transition: all 0.5s ease; */
-  /* max-height: 85%; */
 
-  animation: scale-up-bl 0.4s cubic-bezier(0.39, 0.575, 0.565, 1) both;
+  animation: scale-up-bl 0.6s ease;
 }
 .chat-single-message-container.request {
   display: flex;
   justify-content: flex-end;
   padding-right: 20px;
 
-  animation: scale-up-br 0.4s cubic-bezier(0.39, 0.575, 0.565, 1) both;
+  animation: scale-up-br 0.6s ease;
 }
 .chat-single-message-container .chat-message-bubble {
   position: relative;

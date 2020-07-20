@@ -36,10 +36,7 @@ import { Cascader } from '../Cascader'
 import { NotificationModal } from '../Notifications/NotificationModal'
 import { NotificationButton } from '../Notifications/NotificationButton'
 import { NotificationList } from '../Notifications/NotificationList'
-import {
-  runDrilldown,
-  fetchQueryTips,
-} from '../../js/queryService'
+import { runDrilldown, fetchQueryTips } from '../../js/queryService'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -713,9 +710,9 @@ export default class DataMessenger extends React.Component {
               <Button
                 type="default"
                 size="small"
-                // onClick={() =>
-                //   this.setState({ isClearMessageConfirmVisible: false })
-                // }
+                onClick={() =>
+                  this.setState({ isClearMessageConfirmVisible: false })
+                }
               >
                 Cancel
               </Button>
@@ -1158,9 +1155,9 @@ export default class DataMessenger extends React.Component {
           {this.renderTooltips()}
           <Drawer
             data-test="chata-drawer-test"
-            className={`chata-drawer${
-              this.state.isResizing ? ' disable-selection' : ''
-            }`}
+            className={`chata-drawer
+              ${this.state.isResizing ? ' disable-selection' : ''}
+              ${this.props.isVisible ? ' open' : ' closed'}`}
             open={this.props.isVisible}
             showMask={this.props.showMask}
             placement={this.getPlacementProp()}
