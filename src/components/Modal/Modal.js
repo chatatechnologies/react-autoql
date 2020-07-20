@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
+import ReactModal from 'react-modal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -42,64 +42,55 @@ export default class Modal extends React.Component {
 
   render = () => {
     return (
-      <Popover
+      <ReactModal
         isOpen={this.props.isVisible}
-        // onClickOutside={this.props.onClose}
-        // position={'bottom'} // preferred position
-        containerClassName="chata-modal-container"
+        bodyOpenClassName="chata-modal-container"
+        ariaHideApp={false}
         contentLocation={{ top: 0, left: 0 }}
-        data-test="chata-modal"
-        content={
-          <div
-            className="chata-modal"
-            style={{
-              ...this.props.style,
-              width: this.props.width,
-              height: this.props.height,
-            }}
-          >
-            <div className="chata-modal-header">
-              {this.props.title}
-              <Icon
-                type="close"
-                className="chata-modal-close-btn"
-                onClick={this.props.onClose}
-              />
-            </div>
-            <div
-              className="chata-modal-body"
-              style={{
-                overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
-              }}
-            >
-              {this.props.children}
-            </div>
-            {this.props.showFooter && (
-              <div className="chata-modal-footer">
-                {this.props.footer || (
-                  <div>
-                    {this.props.showCancelButton && (
-                      <Button type="default" onClick={this.props.onClose}>
-                        Cancel
-                      </Button>
-                    )}
-                    <Button
-                      type="primary"
-                      onClick={this.props.onConfirm}
-                      loading={this.props.confirmLoading}
-                      disabled={this.props.confirmDisabled}
-                    >
-                      {this.props.confirmText || 'Ok'}
-                    </Button>
-                  </div>
+        closeTimeoutMS={200}
+        data={{ test: 'chata-modal' }}
+        style={{
+          ...this.props.style,
+        }}
+      >
+        <div className="chata-modal-header">
+          {this.props.title}
+          <Icon
+            type="close"
+            className="chata-modal-close-btn"
+            onClick={this.props.onClose}
+          />
+        </div>
+        <div
+          className="chata-modal-body"
+          style={{
+            overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+          }}
+        >
+          {this.props.children}
+        </div>
+        {this.props.showFooter && (
+          <div className="chata-modal-footer">
+            {this.props.footer || (
+              <div>
+                {this.props.showCancelButton && (
+                  <Button type="default" onClick={this.props.onClose}>
+                    Cancel
+                  </Button>
                 )}
+                <Button
+                  type="primary"
+                  onClick={this.props.onConfirm}
+                  loading={this.props.confirmLoading}
+                  disabled={this.props.confirmDisabled}
+                >
+                  {this.props.confirmText || 'Ok'}
+                </Button>
               </div>
             )}
           </div>
-        }
-      >
-        <div />
-      </Popover>
+        )}
+      </ReactModal>
     )
   }
 }
