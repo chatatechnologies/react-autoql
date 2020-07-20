@@ -252,12 +252,10 @@ export default class DataMessenger extends React.Component {
               <Cascader
                 options={topics}
                 onFinalOptionClick={(option) => {
-                  this.onSuggestionClick(
-                    option.label,
-                    undefined,
-                    undefined,
-                    'welcome_prompt'
-                  )
+                  this.onSuggestionClick({
+                    query: option.label,
+                    source: 'welcome_prompt',
+                  })
                 }}
                 onSeeMoreClick={(label) => this.runTopicInExporeQueries(label)}
               />
@@ -418,13 +416,14 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
+  onSuggestionClick = ({ query, userSelection, skipSafetyNet, source }) => {
     if (this.queryInputRef) {
-      this.queryInputRef.animateInputTextAndSubmit(
-        suggestion,
+      this.queryInputRef.animateInputTextAndSubmit({
+        query,
+        userSelection,
         skipSafetyNet,
-        source
-      )
+        source,
+      })
     }
   }
 
@@ -991,7 +990,7 @@ export default class DataMessenger extends React.Component {
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
         setTimeout(() => {
-          this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
+          this.onSuggestionClick({ query, source: 'explore_queries' })
         }, 500)
       }}
     />

@@ -42,6 +42,28 @@ const transformSafetyNetResponse = (response) => {
   return newResponse
 }
 
+const transformUserSelection = (userSelection) => {
+  if (!userSelection || !userSelection.length) {
+    return undefined
+  }
+
+  const finalUserSelection = []
+
+  userSelection.forEach((suggestion) => {
+    if (!suggestion.hidden) {
+      finalUserSelection.push({
+        start: suggestion.start,
+        end: suggestion.end,
+        value: suggestion.text,
+        value_label: suggestion.value_label || 'ORIGINAL_TEXT',
+        canonical: suggestion.canonical || 'ORIGINAL_TEXT',
+      })
+    }
+  })
+
+  return finalUserSelection
+}
+
 const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
@@ -73,6 +95,7 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 
 export const runQueryOnly = ({
   query,
+  userSelection,
   debug,
   test,
   domain,
@@ -81,11 +104,13 @@ export const runQueryOnly = ({
   source,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
+  const finalUserSelection = transformUserSelection(userSelection)
 
   const data = {
     text: query,
     source: formatSourceString(source),
     translation: debug ? 'include' : 'exclude',
+    user_selection: finalUserSelection,
     test,
   }
 
@@ -136,6 +161,7 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
+  userSelection,
   debug,
   test,
   enableQueryValidation,
@@ -143,8 +169,9 @@ export const runQuery = ({
   apiKey,
   token,
   source,
+  skipQueryValidation,
 } = {}) => {
-  if (enableQueryValidation) {
+  if (enableQueryValidation && !skipQueryValidation) {
     return runSafetyNet({
       text: query,
       domain,
@@ -158,6 +185,7 @@ export const runQuery = ({
         }
         return runQueryOnly({
           query,
+          userSelection,
           debug,
           test,
           domain,
@@ -173,6 +201,7 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
+    userSelection,
     debug,
     test,
     token,

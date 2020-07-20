@@ -395,12 +395,10 @@ export default class QueryOutput extends React.Component {
                 key={uuid.v4()}
                 onChange={(e) => {
                   this.setState({ suggestionSelection: e.target.value })
-                  this.onSuggestionClick(
-                    e.target.value,
-                    undefined,
-                    undefined,
-                    'suggestion'
-                  )
+                  this.onSuggestionClick({
+                    query: e.target.value,
+                    source: 'suggestion',
+                  })
                 }}
                 value={this.state.suggestionSelection}
                 className="chata-suggestions-select"
@@ -419,12 +417,11 @@ export default class QueryOutput extends React.Component {
                   <div key={uuid.v4()}>
                     <button
                       onClick={() =>
-                        this.onSuggestionClick(
-                          suggestion,
-                          true,
-                          undefined,
-                          'suggestion'
-                        )
+                        this.onSuggestionClick({
+                          query: suggestion,
+                          isButtonClick: true,
+                          source: 'suggestion',
+                        })
                       }
                       className="chata-suggestion-btn"
                     >
@@ -1528,21 +1525,29 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    if (suggestion === 'None of these') {
+  onSuggestionClick = ({
+    query,
+    userSelection,
+    isButtonClick,
+    skipSafetyNet,
+    source,
+  }) => {
+    if (query === 'None of these') {
       this.setState({ customResponse: 'Thank you for your feedback.' })
     } else {
       if (this.props.onSuggestionClick) {
-        this.props.onSuggestionClick(
-          suggestion,
+        this.props.onSuggestionClick({
+          query,
+          userSelection,
           isButtonClick,
           skipSafetyNet,
-          source
-        )
+          source,
+        })
       }
       if (this.props.queryInputRef) {
         this.props.queryInputRef.submitQuery({
-          queryText: suggestion,
+          queryText: query,
+          userSelection,
           skipSafetyNet: true,
           source,
         })
@@ -1589,8 +1594,14 @@ export default class QueryOutput extends React.Component {
         <SafetyNetMessage
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
-          onSuggestionClick={(query) =>
-            this.onSuggestionClick(query, true, true, 'validation')
+          onSuggestionClick={({ query, userSelection }) =>
+            this.onSuggestionClick({
+              query,
+              userSelection,
+              isButtonClick: true,
+              skipSafetyNet: true,
+              source: 'validation',
+            })
           }
           onQueryValidationSelectOption={
             this.props.onQueryValidationSelectOption
