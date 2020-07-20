@@ -47,13 +47,17 @@ const transformUserSelection = (userSelection) => {
     return undefined
   }
 
-  const finalUserSelection = userSelection.map((suggestion) => {
-    return {
-      start: suggestion.start,
-      end: suggestion.end,
-      value: suggestion.text,
-      value_label: suggestion.value_label || 'ORIGINAL_TEXT',
-      canonical: suggestion.canonical || 'ORIGINAL_TEXT',
+  const finalUserSelection = []
+
+  userSelection.forEach((suggestion) => {
+    if (!suggestion.hidden) {
+      finalUserSelection.push({
+        start: suggestion.start,
+        end: suggestion.end,
+        value: suggestion.text,
+        value_label: suggestion.value_label || 'ORIGINAL_TEXT',
+        canonical: suggestion.canonical || 'ORIGINAL_TEXT',
+      })
     }
   })
 
