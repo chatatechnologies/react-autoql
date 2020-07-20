@@ -48,7 +48,7 @@ export default class Modal extends React.Component {
         ariaHideApp={false}
         contentLocation={{ top: 0, left: 0 }}
         closeTimeoutMS={200}
-        data={{ test: 'chata-modal' }}
+        data-test="chata-modal"
         style={{
           ...this.props.style,
         }}
