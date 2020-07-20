@@ -241,10 +241,10 @@ export default class NotificationModal extends React.Component {
     }
 
     if (this.props.isManagement) {
-        this.props.onManagementCreateRule(newRule)
-        this.setState({
-          isSavingRule: false,
-        })
+      this.props.onManagementCreateRule(newRule)
+      this.setState({
+        isSavingRule: false,
+      })
     } else if (newRule.id) {
       updateNotificationRule({
         ...requestParams,
@@ -421,8 +421,6 @@ export default class NotificationModal extends React.Component {
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         enableBodyScroll
-        width="95vw"
-        style={{ marginTop: '21px', maxWidth: '900px', maxHeight: '93vh' }}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>

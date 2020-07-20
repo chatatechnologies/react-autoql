@@ -1,36 +1,35 @@
-.chata-modal-container {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+.ReactModal__Overlay {
+  background-color: transparent !important;
+  transition: background-color 0.2s ease-in-out;
   z-index: 9999;
-  /* transition: opacity 0.2s ease 0s !important; */
-  /* backface-visibility: hidden; */
-  transition: none !important;
-  /* overflow: hidden; */
+}
+.ReactModal__Overlay--after-open {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+.ReactModal__Overlay--before-close {
+  background-color: transparent !important;
 }
 
-.chata-modal {
+.ReactModal__Content {
   display: flex;
   flex-direction: column;
 
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
+  transform: scale(0);
+  transition: all 0.2s ease-in-out;
 
-  margin: 100px auto;
-  width: 500px;
-  /* height: calc(100vh - 90px); */
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
+  padding: 0 !important;
+
+  margin: auto auto;
   max-width: 90vw;
   max-height: calc(100vh - 90px);
-
-  animation: createBox 0.25s cubic-bezier(0.19, 1, 0.22, 1);
-  /* the animation below is bouncy */
-  /* animation: createBox 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); */
+}
+.ReactModal__Overlay--after-open .ReactModal__Content {
+  transform: scale(1);
+}
+.ReactModal__Overlay--before-close .ReactModal__Content {
+  transform: scale(0);
 }
 
 .chata-modal-header {
@@ -48,7 +47,6 @@
   text-align: right;
   padding: 8px 10px;
 }
-
 .chata-modal-body {
   display: flex;
   flex-direction: column;
@@ -57,7 +55,6 @@
   flex: 1;
   overflow: hidden;
 }
-
 .chata-modal-close-btn {
   position: absolute;
   top: 16px;
@@ -68,13 +65,4 @@
 }
 .chata-modal-close-btn:hover {
   opacity: 1;
-}
-
-@keyframes createBox {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
-  }
 }

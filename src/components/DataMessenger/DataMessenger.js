@@ -709,9 +709,9 @@ export default class DataMessenger extends React.Component {
               <Button
                 type="default"
                 size="small"
-                // onClick={() =>
-                //   this.setState({ isClearMessageConfirmVisible: false })
-                // }
+                onClick={() =>
+                  this.setState({ isClearMessageConfirmVisible: false })
+                }
               >
                 Cancel
               </Button>
@@ -1154,9 +1154,9 @@ export default class DataMessenger extends React.Component {
           {this.renderTooltips()}
           <Drawer
             data-test="chata-drawer-test"
-            className={`chata-drawer${
-              this.state.isResizing ? ' disable-selection' : ''
-            }`}
+            className={`chata-drawer
+              ${this.state.isResizing ? ' disable-selection' : ''}
+              ${this.props.isVisible ? ' open' : ' closed'}`}
             open={this.props.isVisible}
             showMask={this.props.showMask}
             placement={this.getPlacementProp()}
