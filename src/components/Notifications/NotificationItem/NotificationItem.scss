@@ -88,8 +88,10 @@
   }
 
   .chata-notification-extra-content {
-    text-align: center;
     flex: 0;
+    flex-basis: 55px;
+
+    text-align: center;
     padding: 8px;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
   }
