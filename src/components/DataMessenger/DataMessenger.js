@@ -330,7 +330,9 @@ export default class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
-          className={`drawer-handle${this.props.isVisible ? ' hide' : ''}`}
+          className={`drawer-handle
+            ${this.props.isVisible ? ' hide' : ''}
+            ${this.props.handleImage ? '' : ' default-logo'}`}
           style={this.props.handleStyles}
         >
           {this.props.handleImage ? (
