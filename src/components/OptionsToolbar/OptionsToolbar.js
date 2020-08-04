@@ -355,7 +355,7 @@ export default class Input extends React.Component {
         confirmLoading={this.state.isReportingProblem}
         title="Report a Problem"
         enableBodyScroll={true}
-        width={600}
+        width="600px"
         confirmText="Report"
       >
         Please tell us more about the problem you are experiencing:

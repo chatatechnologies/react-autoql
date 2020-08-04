@@ -17,7 +17,7 @@ export default class ColumnVisibilityModal extends React.Component {
   }
 
   state = {
-    columns: this.props.columns.map(col => {
+    columns: this.props.columns.map((col) => {
       return {
         ...col,
         content: col.display_name || col.title,
@@ -26,10 +26,10 @@ export default class ColumnVisibilityModal extends React.Component {
     }),
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (this.props.isVisible && !prevProps.isVisible) {
       this.setState({
-        columns: this.props.columns.map(col => {
+        columns: this.props.columns.map((col) => {
           return {
             ...col,
             content: col.display_name || col.title,
@@ -47,7 +47,7 @@ export default class ColumnVisibilityModal extends React.Component {
         onClose={this.props.onClose}
         onConfirm={() =>
           this.props.onConfirm(
-            this.state.columns.map(col => {
+            this.state.columns.map((col) => {
               return {
                 ...col,
                 visible: col.checked,
@@ -59,7 +59,7 @@ export default class ColumnVisibilityModal extends React.Component {
         }
         title="Show/Hide Columns"
         enableBodyScroll={true}
-        width={600}
+        width="600px"
         confirmText="Apply"
         style={{ marginTop: '45px' }}
         confirmLoading={this.props.isSettingColumns}
@@ -68,7 +68,7 @@ export default class ColumnVisibilityModal extends React.Component {
           <SelectableList
             columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}
-            onChange={columns => {
+            onChange={(columns) => {
               this.setState({ columns })
             }}
           />
