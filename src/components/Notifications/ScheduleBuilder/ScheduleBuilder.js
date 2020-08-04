@@ -47,10 +47,12 @@ export default class ScheduleBuilder extends React.Component {
   state = {
     frequencyCategorySelectValue: undefined,
     frequencySelectValue: 'MONTH',
-    weekSelectValue: [2],
-    monthSelectValue: [1],
-    yearSelectValue: [1],
-    everyCheckboxValue: false,
+
+    // Commenting out for MVP
+    // weekSelectValue: [2],
+    // monthSelectValue: [1],
+    // yearSelectValue: [1],
+    // everyCheckboxValue: false,
   }
 
   componentDidMount = () => {
@@ -60,10 +62,11 @@ export default class ScheduleBuilder extends React.Component {
 
       this.setState({
         frequencyCategorySelectValue: rule.notification_type,
-        frequencySelectValue: rule.reset_period || undefined,
-        everyCheckboxValue:
-          rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
+        frequencySelectValue: rule.reset_period || 'MONTH',
 
+        // Commenting out for MVP
+        // everyCheckboxValue:
+        //   rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
         // weekSelectValue: [2],
         // monthSelectValue: [1],
         // yearSelectValue: [1],
@@ -82,16 +85,18 @@ export default class ScheduleBuilder extends React.Component {
     ) {
       // Reset checkbox and frequency select values
       this.setState({
-        everyCheckboxValue: false,
         frequencySelectValue: 'MONTH',
-        weekSelectValue: [2],
-        monthSelectValue: [1],
-        yearSelectValue: [1],
+
+        // Commenting out for MVP
+        // everyCheckboxValue: false,
+        // weekSelectValue: [2],
+        // monthSelectValue: [1],
+        // yearSelectValue: [1],
       })
     }
   }
 
-  isComplete = state => {
+  isComplete = (state) => {
     if (!state) {
       return !!this.state.frequencyCategorySelectValue
     }
@@ -111,26 +116,26 @@ export default class ScheduleBuilder extends React.Component {
     }
   }
 
-  renderRepeatCheckbox = label => {
+  renderRepeatCheckbox = (label) => {
     return (
       <Checkbox
         label={label}
         className="frequency-repeat-checkbox"
         checked={this.state.everyCheckboxValue}
-        onChange={e => {
+        onChange={(e) => {
           this.setState({ everyCheckboxValue: e.target.checked })
         }}
       />
     )
   }
 
-  renderFrequencySelector = options => {
+  renderFrequencySelector = (options) => {
     return (
       <Select
         options={options}
         className="notification-frequency-select"
         value={this.state.frequencySelectValue}
-        onChange={value => this.setState({ frequencySelectValue: value })}
+        onChange={(value) => this.setState({ frequencySelectValue: value })}
       />
     )
   }
@@ -139,7 +144,7 @@ export default class ScheduleBuilder extends React.Component {
     <WeekSelect
       multiSelect
       value={this.state.weekSelectValue}
-      onChange={value => this.setState({ weekSelectValue: value })}
+      onChange={(value) => this.setState({ weekSelectValue: value })}
     />
   )
 
@@ -147,7 +152,7 @@ export default class ScheduleBuilder extends React.Component {
     <MonthSelect
       multiSelect
       value={this.state.monthSelectValue}
-      onChange={value => this.setState({ monthSelectValue: value })}
+      onChange={(value) => this.setState({ monthSelectValue: value })}
     />
   )
 
@@ -155,11 +160,11 @@ export default class ScheduleBuilder extends React.Component {
     <YearSelect
       multiSelect
       value={this.state.yearSelectValue}
-      onChange={value => this.setState({ yearSelectValue: value })}
+      onChange={(value) => this.setState({ yearSelectValue: value })}
     />
   )
 
-  renderDateSelector = type => {
+  renderDateSelector = (type) => {
     let selector
     switch (type) {
       case 'WEEK': {
@@ -225,31 +230,27 @@ export default class ScheduleBuilder extends React.Component {
             ]}
             selectionPlaceholder="Select a frequency"
             value={this.state.frequencyCategorySelectValue}
-            onChange={value =>
+            onChange={(value) =>
               this.setState({ frequencyCategorySelectValue: value })
             }
           />
           {this.state.frequencyCategorySelectValue === 'SINGLE_EVENT' && (
             <div className="frequency-category-select">
-              {this.renderRepeatCheckbox('Repeat')}
-              {this.state.everyCheckboxValue && (
-                <Fragment>
-                  {this.renderFrequencySelector([
-                    { value: 'DAY', label: 'Daily' },
-                    { value: 'WEEK', label: 'Weekly' },
-                    { value: 'MONTH', label: 'Monthly' },
-                    // Commenting out for MVP
-                    // { value: 'YEAR', label: 'Yearly' }
-                  ])}
-                  {
-                    // Commenting out for MVP
-                    // {this.state.frequencySelectValue !== 'DAY' && (
-                    //   <span className="frequency-repeat-follow-text"> on:</span>
-                    // )}
-                    // {this.renderDateSelector(this.state.frequencySelectValue)}
-                  }
-                </Fragment>
-              )}
+              Repeat{' '}
+              {this.renderFrequencySelector([
+                { value: 'DAY', label: 'Daily' },
+                { value: 'WEEK', label: 'Weekly' },
+                { value: 'MONTH', label: 'Monthly' },
+                // Commenting out for MVP
+                // { value: 'YEAR', label: 'Yearly' }
+              ])}
+              {
+                // Commenting out for MVP
+                // {this.state.frequencySelectValue !== 'DAY' && (
+                //   <span className="frequency-repeat-follow-text"> on:</span>
+                // )}
+                // {this.renderDateSelector(this.state.frequencySelectValue)}
+              }
             </div>
           )}
           {
