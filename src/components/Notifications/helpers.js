@@ -27,8 +27,8 @@ const getEnglishList = (strings, inclusive) => {
   return englishList
 }
 
-const getSingleEventWeekDescription = dayNumbers => {
-  const dayNames = dayNumbers.map(day => {
+const getSingleEventWeekDescription = (dayNumbers) => {
+  const dayNames = dayNumbers.map((day) => {
     return WEEKDAY_NAMES[day]
   })
 
@@ -37,14 +37,14 @@ const getSingleEventWeekDescription = dayNumbers => {
     // All days are selected - same as "daily"
     dayString = 'day'
   } else if (
-    [2, 3, 4, 5, 6].every(weekday => dayNumbers.includes(weekday)) &&
-    [1, 7].every(weekday => !dayNumbers.includes(weekday))
+    [2, 3, 4, 5, 6].every((weekday) => dayNumbers.includes(weekday)) &&
+    [1, 7].every((weekday) => !dayNumbers.includes(weekday))
   ) {
     // Weekdays only
     dayString = 'work week'
   } else if (
-    [1, 7].every(weekday => dayNumbers.includes(weekday)) &&
-    [2, 3, 4, 5, 6].every(weekday => !dayNumbers.includes(weekday))
+    [1, 7].every((weekday) => dayNumbers.includes(weekday)) &&
+    [2, 3, 4, 5, 6].every((weekday) => !dayNumbers.includes(weekday))
   ) {
     // Weekends only
     dayString = 'weekend'
@@ -55,8 +55,8 @@ const getSingleEventWeekDescription = dayNumbers => {
   return `, but don't notify me again until the next ${dayString}.`
 }
 
-const getRepeatEventWeekDescription = dayNumbers => {
-  const dayNames = dayNumbers.map(day => {
+const getRepeatEventWeekDescription = (dayNumbers) => {
+  const dayNames = dayNumbers.map((day) => {
     // Make this plural for the inclusive case
     return `${WEEKDAY_NAMES[day]}s`
   })
@@ -66,13 +66,13 @@ const getRepeatEventWeekDescription = dayNumbers => {
     // All days are selected - same as not having the checkbox checked at all
     return '.'
   } else if (
-    [2, 3, 4, 5, 6].every(weekday => dayNumbers.includes(weekday)) &&
-    [1, 7].every(weekday => !dayNumbers.includes(weekday))
+    [2, 3, 4, 5, 6].every((weekday) => dayNumbers.includes(weekday)) &&
+    [1, 7].every((weekday) => !dayNumbers.includes(weekday))
   ) {
     dayString = 'weekdays'
   } else if (
-    [1, 7].every(weekday => dayNumbers.includes(weekday)) &&
-    [2, 3, 4, 5, 6].every(weekday => !dayNumbers.includes(weekday))
+    [1, 7].every((weekday) => dayNumbers.includes(weekday)) &&
+    [2, 3, 4, 5, 6].every((weekday) => !dayNumbers.includes(weekday))
   ) {
     dayString = 'weekends'
   } else {
@@ -82,32 +82,35 @@ const getRepeatEventWeekDescription = dayNumbers => {
   return `, but only notify me on ${dayString}.`
 }
 
-const getMonthDay = dayNumber => {
+const getMonthDay = (dayNumber) => {
   const dayName =
     dayNumber === -1 ? 'last' : dayjs(`January ${dayNumber}`).format('Do')
   return dayName
 }
 
-const getSingleEventMonthDescription = selection => {
-  const dayString = getEnglishList(selection.map(d => getMonthDay(d)))
+const getSingleEventMonthDescription = (selection) => {
+  const dayString = getEnglishList(selection.map((d) => getMonthDay(d)))
   return `, but don't notify me again until the ${dayString} day of the month.`
 }
 
-const getRepeatEventMonthDescription = selection => {
-  const dayString = getEnglishList(selection.map(d => getMonthDay(d)), true)
+const getRepeatEventMonthDescription = (selection) => {
+  const dayString = getEnglishList(
+    selection.map((d) => getMonthDay(d)),
+    true
+  )
   return `, but only notify me on the ${dayString} day of the month.`
 }
 
-const getSingleEventYearDescription = selection => {
-  const monthNames = selection.map(month => {
+const getSingleEventYearDescription = (selection) => {
+  const monthNames = selection.map((month) => {
     return MONTH_NAMES[month]
   })
   const monthString = getEnglishList(monthNames)
   return `, but don't notify me again until the next ${monthString}.`
 }
 
-const getRepeatEventYearDescription = selection => {
-  const monthNames = selection.map(month => {
+const getRepeatEventYearDescription = (selection) => {
+  const monthNames = selection.map((month) => {
     return MONTH_NAMES[month]
   })
   const monthString = getEnglishList(monthNames, true)
@@ -117,44 +120,51 @@ const getRepeatEventYearDescription = selection => {
 export const getScheduleDescription = (
   category,
   frequency,
-  repeat,
+  // Commenting out for MVP
+  // repeat,
   selection
 ) => {
+  console.log('category, frequency, selection:', category, frequency, selection)
   let categoryDescription = null
   let frequencyDescription = null
   if (category === 'SINGLE_EVENT') {
     categoryDescription = 'Notify me as soon as this happens'
-    if (repeat) {
-      if (frequency === 'DAY') {
-        frequencyDescription = ", but don't notify me again until the next day."
-      } else if (frequency === 'WEEK') {
-        // frequencyDescription = getSingleEventWeekDescription(selection)
-        frequencyDescription =
-          ", but don't notify me again until the next Monday."
-      } else if (frequency === 'MONTH') {
-        // frequencyDescription = getSingleEventMonthDescription(selection)
-        frequencyDescription =
-          ", but don't notify me again until the first of the next month."
-      } else if (frequency === 'YEAR') {
-        frequencyDescription = getSingleEventYearDescription(selection)
-      }
-    } else {
-      frequencyDescription = ", then don't notify me again."
+    // Commenting out for MVP
+    // if (repeat) {
+    if (frequency === 'DAY') {
+      frequencyDescription = ", but don't notify me again until the next day."
+    } else if (frequency === 'WEEK') {
+      // Commenting out for MVP
+      // frequencyDescription = getSingleEventWeekDescription(selection)
+      frequencyDescription =
+        ", but don't notify me again until the next Monday."
+    } else if (frequency === 'MONTH') {
+      // Commenting out for MVP
+      // frequencyDescription = getSingleEventMonthDescription(selection)
+      frequencyDescription =
+        ", but don't notify me again until the first of the next month."
+    } else if (frequency === 'YEAR') {
+      frequencyDescription = getSingleEventYearDescription(selection)
     }
+    // Commenting out for MVP
+    // } else {
+    //   frequencyDescription = ", then don't notify me again."
+    // }
   } else if (category === 'REPEAT_EVENT') {
     categoryDescription = 'Notify me every time this happens'
 
-    if (repeat) {
-      if (frequency === 'WEEK') {
-        frequencyDescription = getRepeatEventWeekDescription(selection)
-      } else if (frequency === 'MONTH') {
-        frequencyDescription = getRepeatEventMonthDescription(selection)
-      } else if (frequency === 'YEAR') {
-        frequencyDescription = getRepeatEventYearDescription(selection)
-      }
-    } else {
-      frequencyDescription = '.'
-    }
+    // Commenting out for MVP
+    // if (repeat) {
+    // if (frequency === 'WEEK') {
+    //   frequencyDescription = getRepeatEventWeekDescription(selection)
+    // } else if (frequency === 'MONTH') {
+    //   frequencyDescription = getRepeatEventMonthDescription(selection)
+    // } else if (frequency === 'YEAR') {
+    //   frequencyDescription = getRepeatEventYearDescription(selection)
+    // }
+    // } else {
+    frequencyDescription = '.'
+    // }
   } else if (category === 'SCHEDULE') {
     categoryDescription = 'Notify me every (description of schedule)'
   }
