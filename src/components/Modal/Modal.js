@@ -27,7 +27,7 @@ export default class Modal extends React.Component {
   static defaultProps = {
     title: '',
     isVisible: false,
-    width: 500,
+    width: '80vw',
     height: undefined,
     showCancelButton: true,
     enableBodyScroll: false,
@@ -50,7 +50,11 @@ export default class Modal extends React.Component {
         closeTimeoutMS={200}
         data-test="chata-modal"
         style={{
-          ...this.props.style,
+          content: {
+            ...this.props.style,
+            bottom: 'auto',
+            width: this.props.width,
+          },
         }}
       >
         <div className="chata-modal-header">

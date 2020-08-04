@@ -474,7 +474,7 @@ class Dashboard extends React.Component {
           className=""
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
-          width={800}
+          width="800px"
           height="calc(100vh - 90px)"
           style={{ marginTop: '45px' }}
           confirmText="Done"
