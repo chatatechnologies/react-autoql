@@ -124,7 +124,6 @@ export const getScheduleDescription = (
   // repeat,
   selection
 ) => {
-  console.log('category, frequency, selection:', category, frequency, selection)
   let categoryDescription = null
   let frequencyDescription = null
   if (category === 'SINGLE_EVENT') {
