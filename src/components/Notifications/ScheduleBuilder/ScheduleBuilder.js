@@ -1,29 +1,15 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
-import { Modal } from '../../Modal'
-import { Steps } from '../../Steps'
-import { Input } from '../../Input'
-import { Icon } from '../../Icon'
 import { Select } from '../../Select'
-import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { WeekSelect } from '../../DateSelect/WeekSelect'
 import { MonthSelect } from '../../DateSelect/MonthSelect'
 import { YearSelect } from '../../DateSelect/YearSelect'
 
 import { getScheduleDescription } from '../helpers'
-import {
-  createNotificationRule,
-  updateNotificationRule,
-  deleteNotificationRule,
-} from '../../../js/notificationService'
-
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
 
 import './ScheduleBuilder.scss'
 
@@ -204,7 +190,8 @@ export default class ScheduleBuilder extends React.Component {
     const description = getScheduleDescription(
       this.state.frequencyCategorySelectValue,
       this.state.frequencySelectValue,
-      this.state.everyCheckboxValue,
+      // Commenting out for MVP
+      // this.state.everyCheckboxValue,
       selection
     )
 
