@@ -100,7 +100,7 @@ export default class ChataChart extends Component {
     this.setNumberColumnSelectorState()
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (!this.props.isResizing && prevProps.isResizing) {
       this.updateMargins(350)
     }
@@ -169,7 +169,7 @@ export default class ChataChart extends Component {
     const yAxisLabels = select(this.chartRef)
       .select('.axis-Left')
       .selectAll('text')
-    const maxYLabelWidth = max(yAxisLabels.nodes(), n =>
+    const maxYLabelWidth = max(yAxisLabels.nodes(), (n) =>
       n.getComputedTextLength()
     )
     let leftMargin = Math.ceil(maxYLabelWidth) + 55 // margin to include axis label
@@ -285,7 +285,7 @@ export default class ChataChart extends Component {
     }
 
     svgToPng(svgElement, 20)
-      .then(data => {
+      .then((data) => {
         let dt = data // << this fails in IE/Edge...
         dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream')
         dt = dt.replace(
@@ -303,7 +303,7 @@ export default class ChataChart extends Component {
         link.click()
         document.body.removeChild(link)
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
       })
   }
@@ -362,6 +362,7 @@ export default class ChataChart extends Component {
       dataFormatting,
       onLegendClick,
       onChartClick,
+      tableColumns,
       themeConfig,
       columns,
       height,
@@ -389,19 +390,19 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       innerPadding,
       outerPadding: this.OUTER_PADDING,
-      onXAxisClick: e => {
+      onXAxisClick: (e) => {
         this.setState({
           activeAxisSelector: 'x',
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
-      onYAxisClick: e => {
+      onYAxisClick: (e) => {
         this.setState({
           activeAxisSelector: 'y',
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
-      onLegendTitleClick: e => {
+      onLegendTitleClick: (e) => {
         this.setState({
           activeAxisSelector: 'legend',
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
@@ -411,6 +412,7 @@ export default class ChataChart extends Component {
       height,
       width,
       columns,
+      tableColumns,
       topMargin,
       bottomMargin,
       rightMargin,
@@ -444,11 +446,11 @@ export default class ChataChart extends Component {
     }
   }
 
-  getFilteredSeriesData = data => {
+  getFilteredSeriesData = (data) => {
     if (_get(data, '[0].cells')) {
       try {
-        const filteredSeriesData = data.map(d => {
-          const newCells = d.cells.filter(cell => {
+        const filteredSeriesData = data.map((d) => {
+          const newCells = d.cells.filter((cell) => {
             return !cell.hidden
           })
 
@@ -516,21 +518,23 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Currency</div>
               <SelectableList
-                ref={r => (this.currencySelectRef = r)}
+                ref={(r) => (this.currencySelectRef = r)}
                 items={currencySelectorState}
                 onSelect={() => {
                   this.quantitySelectRef && this.quantitySelectRef.unselectAll()
                   this.ratioSelectRef && this.ratioSelectRef.unselectAll()
                 }}
-                onChange={currencySelectorState => {
+                onChange={(currencySelectorState) => {
                   const newQuantitySelectorState = quantitySelectorState.map(
-                    item => {
+                    (item) => {
                       return { ...item, checked: false }
                     }
                   )
-                  const newRatioSelectorState = ratioSelectorState.map(item => {
-                    return { ...item, checked: false }
-                  })
+                  const newRatioSelectorState = ratioSelectorState.map(
+                    (item) => {
+                      return { ...item, checked: false }
+                    }
+                  )
 
                   this.setState({
                     activeNumberType: 'DOLLAR_AMT',
@@ -547,21 +551,23 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Quantity</div>
               <SelectableList
-                ref={r => (this.quantitySelectRef = r)}
+                ref={(r) => (this.quantitySelectRef = r)}
                 items={quantitySelectorState}
                 onSelect={() => {
                   this.currencySelectRef && this.currencySelectRef.unselectAll()
                   this.ratioSelectRef && this.ratioSelectRef.unselectAll()
                 }}
-                onChange={quantitySelectorState => {
+                onChange={(quantitySelectorState) => {
                   const newCurrencySelectorState = currencySelectorState.map(
-                    item => {
+                    (item) => {
                       return { ...item, checked: false }
                     }
                   )
-                  const newRatioSelectorState = ratioSelectorState.map(item => {
-                    return { ...item, checked: false }
-                  })
+                  const newRatioSelectorState = ratioSelectorState.map(
+                    (item) => {
+                      return { ...item, checked: false }
+                    }
+                  )
                   this.setState({
                     activeNumberType: 'QUANTITY',
                     quantitySelectorState,
@@ -577,20 +583,20 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Ratio</div>
               <SelectableList
-                ref={r => (this.ratioSelectRef = r)}
+                ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioSelectorState}
                 onSelect={() => {
                   this.currencySelectRef && this.currencySelectRef.unselectAll()
                   this.quantitySelectRef && this.quantitySelectRef.unselectAll()
                 }}
-                onChange={ratioSelectorState => {
+                onChange={(ratioSelectorState) => {
                   const newCurrencySelectorState = currencySelectorState.map(
-                    item => {
+                    (item) => {
                       return { ...item, checked: false }
                     }
                   )
                   const newQuantitySelectorState = quantitySelectorState.map(
-                    item => {
+                    (item) => {
                       return { ...item, checked: false }
                     }
                   )
@@ -610,9 +616,9 @@ export default class ChataChart extends Component {
             style={{ width: 'calc(100% - 10px)' }}
             type="primary"
             disabled={
-              this.state.ratioSelectorState.every(item => !item.checked) &&
-              this.state.currencySelectorState.every(item => !item.checked) &&
-              this.state.quantitySelectorState.every(item => !item.checked)
+              this.state.ratioSelectorState.every((item) => !item.checked) &&
+              this.state.currencySelectorState.every((item) => !item.checked) &&
+              this.state.quantitySelectorState.every((item) => !item.checked)
             }
             onClick={() => {
               let activeNumberTypeColumns = []
@@ -626,8 +632,8 @@ export default class ChataChart extends Component {
 
               if (activeNumberTypeColumns.length) {
                 const activeNumberTypeIndices = activeNumberTypeColumns
-                  .filter(item => item.checked)
-                  .map(item => item.columnIndex)
+                  .filter((item) => item.checked)
+                  .map((item) => item.columnIndex)
 
                 this.props.changeNumberColumnIndices(activeNumberTypeIndices)
                 this.setState({ activeAxisSelector: undefined })
@@ -672,7 +678,7 @@ export default class ChataChart extends Component {
     )
   }
 
-  renderAxisSelectorContent = axis => {
+  renderAxisSelectorContent = (axis) => {
     try {
       const { type } = this.props
       let content = null
@@ -711,7 +717,7 @@ export default class ChataChart extends Component {
     }
   }
 
-  renderAxisSelector = axis => {
+  renderAxisSelector = (axis) => {
     const popoverContent = this.renderAxisSelectorContent(axis)
 
     if (!popoverContent) {
@@ -722,7 +728,7 @@ export default class ChataChart extends Component {
       <Popover
         isOpen={this.state.activeAxisSelector === axis}
         content={popoverContent}
-        onClickOutside={e => {
+        onClickOutside={(e) => {
           if (
             e.pageX !== this.state.axisSelectorLocation.left &&
             e.pageY !== this.state.axisSelectorLocation.top
@@ -880,7 +886,7 @@ export default class ChataChart extends Component {
         data-test="chata-chart"
       >
         <svg
-          ref={r => (this.chartRef = r)}
+          ref={(r) => (this.chartRef = r)}
           xmlns="http://www.w3.org/2000/svg"
           width={this.props.width}
           height={this.props.height}
