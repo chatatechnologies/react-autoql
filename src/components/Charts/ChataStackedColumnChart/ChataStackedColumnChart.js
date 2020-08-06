@@ -28,6 +28,7 @@ export default class ChataStackedColumnChart extends Component {
 
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     leftMargin: PropTypes.number,
@@ -80,6 +81,7 @@ export default class ChataStackedColumnChart extends Component {
       dataFormatting,
       legendLocation,
       onLegendClick,
+      tableColumns,
       legendColumn,
       innerPadding,
       outerPadding,
@@ -102,7 +104,7 @@ export default class ChataStackedColumnChart extends Component {
     const { max, min } = calculateMinAndMaxSums(data)
 
     const xScale = this.xScale
-      .domain(data.map(d => d.label))
+      .domain(data.map((d) => d.label))
       .range([leftMargin, width - rightMargin])
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
@@ -112,7 +114,7 @@ export default class ChataStackedColumnChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const labelArray = data.map(element => element.label)
+    const labelArray = data.map((element) => element.label)
     const tickWidth = getTickWidth(xScale, innerPadding)
     const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
@@ -123,7 +125,7 @@ export default class ChataStackedColumnChart extends Component {
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           xCol={columns[0]}
-          yCol={columns[numberColumnIndex]}
+          yCol={_get(tableColumns, `[${numberColumnIndex}]`)}
           margins={{
             left: leftMargin,
             right: rightMargin,

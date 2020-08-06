@@ -97,7 +97,7 @@ export default class Axes extends React.Component {
     )
   }
 
-  getBBoxFromRef = ref => {
+  getBBoxFromRef = (ref) => {
     try {
       const bBox = select(ref)
         .node()
@@ -205,7 +205,7 @@ export default class Axes extends React.Component {
       <g className="chata-axes" data-test="chata-axes">
         <g>
           <text
-            ref={r => (this.yLabelRef = r)}
+            ref={(r) => (this.yLabelRef = r)}
             className="y-axis-label"
             data-test="y-axis-label"
             textAnchor="middle"
@@ -226,7 +226,7 @@ export default class Axes extends React.Component {
               width={yLabelWidth + 20}
               height={yLabelHeight + 10}
               transform="rotate(-90)"
-              onClick={e => onYAxisClick(e)}
+              onClick={(e) => onYAxisClick(e)}
               fill="transparent"
               stroke="transparent"
               strokeWidth="1px"
@@ -238,7 +238,7 @@ export default class Axes extends React.Component {
         <Axis {...yProps} />
         <g>
           <text
-            ref={r => (this.xLabelRef = r)}
+            ref={(r) => (this.xLabelRef = r)}
             className="x-axis-label"
             data-test="x-axis-label"
             textAnchor="middle"
@@ -257,7 +257,7 @@ export default class Axes extends React.Component {
               y={xLabelY - 16}
               width={xLabelWidth + 20}
               height={xLabelHeight + 10}
-              onClick={e => onXAxisClick(e)}
+              onClick={(e) => onXAxisClick(e)}
               fill="transparent"
               stroke="transparent"
               strokeWidth="1px"
