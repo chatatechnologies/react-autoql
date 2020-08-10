@@ -25,6 +25,7 @@ import { Button } from '../../Button'
 
 export default class NotificationList extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
+  NOTIFICATION_LIST_KEY = uuid.v4()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
@@ -344,7 +345,9 @@ export default class NotificationList extends React.Component {
                       onDeleteCallback={this.onDeleteClick}
                       onExpandCallback={(notification) => {
                         this.props.onExpandCallback(notification)
-                        this.setState({ activeNotificationId: notification.id })
+                        this.setState({
+                          activeNotificationId: notification.id,
+                        })
                       }}
                       onCollapseCallback={this.props.onCollapseCallback}
                       activeNotificationData={this.props.activeNotificationData}

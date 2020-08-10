@@ -11,7 +11,7 @@ import { Icon } from '../../Icon'
 
 import './ExpressionBuilder.scss'
 
-const getInitialStateData = initialData => {
+const getInitialStateData = (initialData) => {
   let state = {}
   const groups = []
 
@@ -23,7 +23,7 @@ const getInitialStateData = initialData => {
 
     state = { groups }
   } else {
-    initialData.map(groupItem => {
+    initialData.map((groupItem) => {
       groups.push({
         initialData: groupItem.term_value,
         // We can safely assume that if there is initial data, it is complete
@@ -45,7 +45,7 @@ export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
-    expression: PropTypes.shape({}), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }
@@ -126,8 +126,8 @@ export default class ExpressionBuilder extends React.Component {
     this.setState({ groups: newGroups })
   }
 
-  onDeleteGroup = id => {
-    const newGroups = this.state.groups.filter(group => group.id !== id)
+  onDeleteGroup = (id) => {
+    const newGroups = this.state.groups.filter((group) => group.id !== id)
     this.setState({ groups: newGroups })
   }
 
@@ -136,7 +136,7 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   onGroupUpdate = (id, isComplete) => {
-    const newGroups = this.state.groups.map(group => {
+    const newGroups = this.state.groups.map((group) => {
       if (group.id === id) {
         return {
           ...group,
@@ -171,7 +171,7 @@ export default class ExpressionBuilder extends React.Component {
             return (
               <Fragment>
                 <Group
-                  ref={r => (this.groupRefs[i] = r)}
+                  ref={(r) => (this.groupRefs[i] = r)}
                   key={group.id}
                   groupId={group.id}
                   disableAddGroupBtn={true}
@@ -218,7 +218,7 @@ export default class ExpressionBuilder extends React.Component {
             <Radio
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
-              onChange={value => this.setState({ andOrValue: value })}
+              onChange={(value) => this.setState({ andOrValue: value })}
             />{' '}
             of the following:
           </div>
@@ -231,7 +231,7 @@ export default class ExpressionBuilder extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
-                  ref={r => (this.groupRefs[i] = r)}
+                  ref={(r) => (this.groupRefs[i] = r)}
                   key={group.id}
                   groupId={group.id}
                   disableAddGroupBtn={true}

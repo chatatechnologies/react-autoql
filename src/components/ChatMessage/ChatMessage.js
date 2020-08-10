@@ -97,7 +97,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    setTimeout(() => {
+    this.setTableMessageHeightsTimeout = setTimeout(() => {
       this.setTableMessageHeights()
       // If we scroll to the bottom after the second update
       // it should be rendered enough so it scrolls all the
@@ -110,6 +110,16 @@ export default class ChatMessage extends React.Component {
     ReactTooltip.hide()
   }
 
+  componentWillUnmount = () => {
+    if (this.scrollIntoViewTimeout) {
+      clearTimeout(this.scrollIntoViewTimeout)
+    }
+
+    if (this.setTableMessageHeightsTimeout) {
+      clearTimeout(this.setTableMessageHeightsTimeout)
+    }
+  }
+
   setTableMessageHeights = () => {
     // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
     this.TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
@@ -120,13 +130,13 @@ export default class ChatMessage extends React.Component {
     )
   }
 
-  getHeightOfTableFromRows = rows => {
+  getHeightOfTableFromRows = (rows) => {
     // This is hacky but it eliminates the jumpy bug
     // 39px per row, 81px leftover for padding and headers
     return rows * 39 + 81
   }
 
-  isScrolledIntoView = elem => {
+  isScrolledIntoView = (elem) => {
     if (this.props.scrollContainerRef) {
       const scrollTop = this.props.scrollContainerRef.getScrollTop()
       const scrollBottom =
@@ -146,14 +156,15 @@ export default class ChatMessage extends React.Component {
       const element = document.getElementById(`message-${this.props.id}`)
 
       if (!this.isScrolledIntoView(element)) {
-        element.scrollIntoView({
+        this.scrollIntoViewTimer = element.scrollIntoView({
           block: 'end',
           inline: 'nearest',
           behavior: 'smooth',
         })
         // If it didnt work the first time, it probably needs slightly more time
-        setTimeout(() => {
-          element.scrollIntoView({
+        this.scrollIntoViewTimer = setTimeout(() => {
+          const newElement = document.getElementById(`message-${this.props.id}`)
+          newElement.scrollIntoView({
             block: 'end',
             inline: 'nearest',
             behavior: 'smooth',
@@ -163,12 +174,12 @@ export default class ChatMessage extends React.Component {
     }, 0)
   }
 
-  switchView = displayType => {
+  switchView = (displayType) => {
     this.filtering = false
     this.setState({ displayType }, this.scrollIntoView)
   }
 
-  updateDataConfig = config => {
+  updateDataConfig = (config) => {
     this.setState({ dataConfig: config })
   }
 
@@ -179,7 +190,7 @@ export default class ChatMessage extends React.Component {
     } else if (response) {
       return (
         <QueryOutput
-          ref={ref => (this.responseRef = ref)}
+          ref={(ref) => (this.responseRef = ref)}
           autoQLConfig={this.props.autoQLConfig}
           onDataClick={this.props.processDrilldown}
           queryResponse={response}
@@ -265,7 +276,7 @@ export default class ChatMessage extends React.Component {
     ) {
       return (
         <OptionsToolbar
-          ref={r => (this.optionsToolbarRef = r)}
+          ref={(r) => (this.optionsToolbarRef = r)}
           className={`chat-message-toolbar right`}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
@@ -336,7 +347,7 @@ export default class ChatMessage extends React.Component {
     return { chartWidth, chartHeight }
   }
 
-  allColumnsAreHidden = newColumns => {
+  allColumnsAreHidden = (newColumns) => {
     if (this.responseRef) {
       return this.responseRef.areAllColumnsHidden()
     }
