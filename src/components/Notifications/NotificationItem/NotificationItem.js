@@ -354,19 +354,18 @@ export default class NotificationItem extends React.Component {
   render = () => {
     const { notification } = this.props
     return (
-      <ErrorBoundary>
-        <div
-          key={`chata-notification-item-${this.COMPONENT_KEY}`}
-          className={`chata-notification-list-item
+      <div
+        id={`chata-notification-item-${this.COMPONENT_KEY}`}
+        key={`chata-notification-item-${this.COMPONENT_KEY}`}
+        className={`chata-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
-        >
-          {this.renderNotificationHeader(notification)}
-          {this.renderNotificationContent(notification)}
-          {this.renderAlertColorStrip()}
-        </div>
-      </ErrorBoundary>
+      >
+        {this.renderNotificationHeader(notification)}
+        {this.renderNotificationContent(notification)}
+        {this.renderAlertColorStrip()}
+      </div>
     )
   }
 }

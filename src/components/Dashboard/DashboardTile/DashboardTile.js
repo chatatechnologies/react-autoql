@@ -186,9 +186,6 @@ export default class DashboardTile extends React.Component {
         finalSource.push('user')
       }
 
-      const skipQueryValidation =
-        skipSafetyNet || _get(this.props.queryResponse, 'data.full_suggestion')
-
       return runQuery({
         query,
         userSelection,
@@ -198,7 +195,7 @@ export default class DashboardTile extends React.Component {
           ? false
           : this.props.autoQLConfig.enableQueryValidation,
         source: finalSource,
-        skipQueryValidation,
+        skipQueryValidation: skipSafetyNet,
       })
         .then((response) => {
           return Promise.resolve(response)
@@ -320,7 +317,7 @@ export default class DashboardTile extends React.Component {
 
   onSecondQueryTextKeyDown = (e) => {
     if (e.key === 'Enter') {
-      this.processTileBottom({ secondQuery: e.target.value })
+      this.processTileBottom({ query: e.target.value })
       e.target.blur()
     }
   }
@@ -943,6 +940,7 @@ export default class DashboardTile extends React.Component {
   renderBottomResponse = () => {
     const queryResponse =
       this.props.tile.secondQueryResponse || this.props.queryResponse
+
     const displayType = isDisplayTypeValid(
       queryResponse,
       this.props.secondDisplayType
