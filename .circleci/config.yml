@@ -5,6 +5,7 @@ jobs:
   build-and-test:
     executor:
       name: node/default
+    resource_class: xlarge
     steps:
       - checkout
       - node/with-cache:
@@ -18,6 +19,7 @@ jobs:
   test-and-release:
     executor:
       name: node/default
+    resource_class: xlarge
     steps:
       - checkout
       - node/with-cache:
