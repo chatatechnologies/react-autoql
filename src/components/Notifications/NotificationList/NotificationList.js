@@ -202,29 +202,6 @@ export default class NotificationList extends React.Component {
     })
   }
 
-  getActiveRuleData = () => {
-    if (!this.state.activeNotificationId) {
-      return undefined
-    }
-
-    const activeNotification = this.state.notificationList.find(
-      (n) => n.expanded
-    )
-    if (activeNotification) {
-      const ruleData = {
-        expression: activeNotification.rule_expression,
-        id: activeNotification.rule_id,
-        message: activeNotification.rule_message,
-        notification_type: activeNotification.notification_type,
-        query: activeNotification.rule_query,
-        status: activeNotification.rule_status,
-        title: activeNotification.rule_title,
-      }
-      return ruleData
-    }
-    return undefined
-  }
-
   onRuleSave = () => {
     // todo: show success alert
     this.setState({ isEditModalVisible: false })
@@ -232,7 +209,7 @@ export default class NotificationList extends React.Component {
   }
 
   renderDismissAllButton = () => (
-    <div className="chata-notification-dismiss-all">
+    <div key="dismiss-all-btn" className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllClick}>
         <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
         Dismiss All
@@ -251,7 +228,7 @@ export default class NotificationList extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentNotification={this.getActiveRuleData()}
+        currentRule={this.state.activeRule}
         onSave={this.onRuleSave}
         onErrorCallback={this.onRuleError}
         allowDelete={false}
@@ -337,6 +314,7 @@ export default class NotificationList extends React.Component {
                 {this.state.notificationList.map((notification, i) => {
                   return (
                     <NotificationItem
+                      key={`notification-item-${i}`}
                       authentication={this.props.authentication}
                       themeConfig={this.props.themeConfig}
                       notification={notification}
@@ -355,7 +333,10 @@ export default class NotificationList extends React.Component {
                         this.props.showNotificationDetails
                       }
                       onErrorCallback={this.props.onErrorCallback}
-                      onEditClick={(id) => this.showEditRuleModal(id)}
+                      onEditClick={(rule) => {
+                        this.setState({ activeRule: rule })
+                        this.showEditRuleModal()
+                      }}
                     />
                   )
                 })}

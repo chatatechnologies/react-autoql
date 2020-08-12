@@ -31,33 +31,19 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   state = {
-    frequencyCategorySelectValue: undefined,
-    frequencySelectValue: 'MONTH',
+    frequencyCategorySelectValue: _get(this.props.rule, 'notification_type'),
+    frequencySelectValue: _get(this.props.rule, 'reset_period', 'MONTH'),
 
     // Commenting out for MVP
+    // everyCheckboxValue:
+    //   rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
     // weekSelectValue: [2],
     // monthSelectValue: [1],
     // yearSelectValue: [1],
-    // everyCheckboxValue: false,
   }
 
   componentDidMount = () => {
     this.props.onCompletedChange(this.isComplete())
-    if (this.props.rule) {
-      const { rule } = this.props
-
-      this.setState({
-        frequencyCategorySelectValue: rule.notification_type,
-        frequencySelectValue: rule.reset_period || 'MONTH',
-
-        // Commenting out for MVP
-        // everyCheckboxValue:
-        //   rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
-        // weekSelectValue: [2],
-        // monthSelectValue: [1],
-        // yearSelectValue: [1],
-      })
-    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {

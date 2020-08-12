@@ -8,7 +8,7 @@ import { Rule } from '../Rule'
 
 import './Group.scss'
 
-const isGroup = termValue => {
+const isGroup = (termValue) => {
   return (
     termValue[0] &&
     (termValue[0].condition === 'AND' ||
@@ -17,7 +17,7 @@ const isGroup = termValue => {
   )
 }
 
-const getInitialStateData = initialData => {
+const getInitialStateData = (initialData) => {
   let state = {}
   const rules = []
   if (!initialData || !initialData.length) {
@@ -28,7 +28,7 @@ const getInitialStateData = initialData => {
     })
     state = { rules }
   } else {
-    initialData.forEach(rule => {
+    initialData.forEach((rule) => {
       const id = rule.id || uuid.v4()
       rules.push({
         id,
@@ -114,13 +114,13 @@ export default class Group extends React.Component {
     return isComplete
   }
 
-  deleteRuleOrGroup = id => {
-    const newRules = this.state.rules.filter(rule => rule.id !== id)
+  deleteRuleOrGroup = (id) => {
+    const newRules = this.state.rules.filter((rule) => rule.id !== id)
     this.setState({ rules: newRules })
   }
 
   onRuleUpdate = (id, isComplete, termValue) => {
-    const newRules = this.state.rules.map(rule => {
+    const newRules = this.state.rules.map((rule) => {
       if (rule.id === id) {
         return {
           ...rule,
@@ -164,7 +164,7 @@ export default class Group extends React.Component {
   }
 
   shouldDisableRuleDeleteBtn = () => {
-    const rulesOnly = this.state.rules.filter(rule => rule.type === 'rule')
+    const rulesOnly = this.state.rules.filter((rule) => rule.type === 'rule')
     return rulesOnly.length <= 1
   }
 
@@ -179,7 +179,7 @@ export default class Group extends React.Component {
         <Radio
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
-          onChange={value => this.setState({ andOrSelectValue: value })}
+          onChange={(value) => this.setState({ andOrSelectValue: value })}
           // outlined
         />{' '}
         conditions
@@ -226,7 +226,7 @@ export default class Group extends React.Component {
 
   renderGroup = () => {
     const hasOnlyOneRule =
-      this.state.rules.filter(rule => rule.type === 'rule').length <= 1
+      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     return (
       <div
@@ -270,7 +270,7 @@ export default class Group extends React.Component {
             if (rule.type === 'rule') {
               return (
                 <Rule
-                  ref={r => (this.ruleRefs[i] = r)}
+                  ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
@@ -302,7 +302,7 @@ export default class Group extends React.Component {
 
   renderReadOnlyGroup = () => {
     const hasOnlyOneRule =
-      this.state.rules.filter(rule => rule.type === 'rule').length <= 1
+      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     let conditionText = null
     if (this.state.andOrSelectValue === 'ALL') {
@@ -320,25 +320,22 @@ export default class Group extends React.Component {
         {this.state.rules.map((rule, i) => {
           if (rule.type === 'rule') {
             return (
-              <Fragment>
-                <Rule
-                  ref={r => (this.ruleRefs[i] = r)}
-                  ruleId={rule.id}
-                  key={rule.id}
-                  initialData={rule.termValue}
-                  andOrValue={
-                    i !== this.state.rules.length - 1 ? conditionText : null
-                  }
-                  readOnly
-                />
-              </Fragment>
+              <Rule
+                key={`rule-readonly-${rule.id}`}
+                ref={(r) => (this.ruleRefs[i] = r)}
+                ruleId={rule.id}
+                initialData={rule.termValue}
+                andOrValue={
+                  i !== this.state.rules.length - 1 ? conditionText : null
+                }
+                readOnly
+              />
             )
           } else if (rule.type === 'group') {
             return (
-              <Fragment>
+              <div key={`group-${rule.id}`}>
                 <Group
                   groupId={rule.id}
-                  key={rule.id}
                   initialData={rule.termValue}
                   readOnly
                 />
@@ -347,7 +344,7 @@ export default class Group extends React.Component {
                     <span className="read-only-rule-term">{conditionText}</span>
                   </div>
                 )}
-              </Fragment>
+              </div>
             )
           }
         })}

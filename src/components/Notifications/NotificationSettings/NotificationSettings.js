@@ -138,7 +138,7 @@ export default class NotificationSettings extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentNotification={this.state.activeRule}
+        currentRule={this.state.activeRule}
         onSave={this.onRuleSave}
         onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onRuleDelete}
@@ -161,9 +161,7 @@ export default class NotificationSettings extends React.Component {
   )
 
   renderNotificationlist = (type, list) => {
-    if (type === 'user' && !_get(list, 'length')) {
-      return this.renderEmptyListMessage()
-    } else if (type === 'project' && !_get(list, 'length')) {
+    if (type === 'project' && !_get(list, 'length')) {
       return null
     }
 
@@ -175,6 +173,9 @@ export default class NotificationSettings extends React.Component {
             'Create your own customized notifications tailored to your needs',
             true
           )}
+        {type === 'user' &&
+          !_get(list, 'length') &&
+          this.renderEmptyListMessage()}
         {type === 'project' &&
           this.renderNotificationGroupTitle(
             'Default Notifications',

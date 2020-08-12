@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
@@ -169,10 +169,9 @@ export default class ExpressionBuilder extends React.Component {
         {!!this.state.groups.length &&
           this.state.groups.map((group, i) => {
             return (
-              <Fragment>
+              <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
                   ref={(r) => (this.groupRefs[i] = r)}
-                  key={group.id}
                   groupId={group.id}
                   disableAddGroupBtn={true}
                   onDelete={this.onDeleteGroup}
@@ -193,7 +192,7 @@ export default class ExpressionBuilder extends React.Component {
                     </span>
                   </div>
                 )}
-              </Fragment>
+              </div>
             )
           })}
       </div>
@@ -232,7 +231,7 @@ export default class ExpressionBuilder extends React.Component {
               return (
                 <Group
                   ref={(r) => (this.groupRefs[i] = r)}
-                  key={group.id}
+                  key={`group-${group.id}-${i}`}
                   groupId={group.id}
                   disableAddGroupBtn={true}
                   onDelete={this.onDeleteGroup}
