@@ -14,7 +14,7 @@ import { capitalizeFirstChar } from '../../../js/Util'
 
 import './Rule.scss'
 
-const getInitialStateData = initialData => {
+const getInitialStateData = (initialData) => {
   if (initialData && initialData.length === 1) {
     return {
       input1Value: initialData[0].term_value,
@@ -101,7 +101,7 @@ export default class Rule extends React.Component {
     }
   }
 
-  parseJSON = initialData => {
+  parseJSON = (initialData) => {
     if (initialData.length === 1) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = uuid.v4()
@@ -152,7 +152,7 @@ export default class Rule extends React.Component {
     ]
   }
 
-  isNumerical = num => {
+  isNumerical = (num) => {
     return !Number.isNaN(Number(num))
   }
 
@@ -167,7 +167,7 @@ export default class Rule extends React.Component {
     }
   }
 
-  userSelectedSuggestionHandler = userSelectedValueFromSuggestionBox => {
+  userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
     if (
       userSelectedValueFromSuggestionBox &&
       userSelectedValueFromSuggestionBox.name
@@ -189,7 +189,7 @@ export default class Rule extends React.Component {
         ...this.props.autoQLConfig,
         suggestion: value,
       })
-        .then(response => {
+        .then((response) => {
           const body = response.data
 
           const sortingArray = []
@@ -216,7 +216,7 @@ export default class Rule extends React.Component {
             suggestions: autoCompleteArray,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
         })
     }, 500)
@@ -228,7 +228,7 @@ export default class Rule extends React.Component {
     })
   }
 
-  renderConditionOperator = text => {
+  renderConditionOperator = (text) => {
     switch (text) {
       case 'GREATER_THAN': {
         return '>'
@@ -274,7 +274,7 @@ export default class Rule extends React.Component {
           icon="chata-bubbles-outlined"
           placeholder="Query"
           value={this.state.input1Value}
-          onChange={e => this.setState({ input1Value: e.target.value })}
+          onChange={(e) => this.setState({ input1Value: e.target.value })}
         />
         {
           // <div className="chata-bar-container">
@@ -309,7 +309,7 @@ export default class Rule extends React.Component {
           ]}
           value={this.state.conditionSelectValue}
           className="chata-rule-condition-select"
-          onChange={value => {
+          onChange={(value) => {
             this.setState({ conditionSelectValue: value })
           }}
         />
@@ -323,7 +323,7 @@ export default class Rule extends React.Component {
             icon="chata-bubbles-outlined"
             placeholder="Query or Number"
             value={this.state.input2Value}
-            onChange={e => this.setState({ input2Value: e.target.value })}
+            onChange={(e) => this.setState({ input2Value: e.target.value })}
           />
           {
             // <Input
