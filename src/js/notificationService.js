@@ -95,6 +95,29 @@ export const fetchNotificationSettings = ({
     })
 }
 
+export const fetchRule = ({ domain, apiKey, token, ruleId }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+
+  return axiosInstance
+    .get(url)
+    .then((response) => {
+      return Promise.resolve(_get(response, 'data.data'))
+    })
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
 // ----------------- PUT --------------------
 export const resetNotificationCount = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call

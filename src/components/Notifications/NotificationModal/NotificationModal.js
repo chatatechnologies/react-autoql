@@ -29,7 +29,7 @@ export default class NotificationModal extends React.Component {
     onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
-    currentNotification: PropTypes.shape({}),
+    currentRule: PropTypes.shape({}),
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
@@ -44,7 +44,7 @@ export default class NotificationModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     initialQuery: undefined,
-    currentNotification: undefined,
+    currentRule: undefined,
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
@@ -72,14 +72,14 @@ export default class NotificationModal extends React.Component {
       // this.NEW_NOTIFICATION_MODAL_ID = uuid.v4()
       // If we are editing an existing notification
       // Fill the fields with the current settings
-      if (this.props.currentNotification) {
-        const notification = this.props.currentNotification
+      if (this.props.currentRule) {
+        const notification = this.props.currentRule
         this.setState({
           titleInput: notification.title,
           messageInput: notification.message,
           dataReturnQueryInput: notification.query,
           isDataReturnDirty: true,
-          expressionJSON: _get(this.props.currentNotification, 'expression'),
+          expressionJSON: _get(this.props.currentRule, 'expression'),
         })
       } else if (
         this.props.initialQuery &&
@@ -172,7 +172,7 @@ export default class NotificationModal extends React.Component {
       scheduleData = this.scheduleBuilderRef.getData()
     }
 
-    const notificationRule = this.props.currentNotification
+    const notificationRule = this.props.currentRule
 
     const newRule = {
       id: _get(notificationRule, 'id'),
@@ -180,23 +180,22 @@ export default class NotificationModal extends React.Component {
       query: dataReturnQueryInput,
       message: messageInput,
       notification_type: scheduleData.frequencyCategorySelectValue,
-      cycle:
-        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
-          ? 'WEEK'
-          : null, // Hardcoded WEEK for MVP
+      expression: expressionJSON,
       reset_period:
-        !scheduleData.everyCheckboxValue ||
         scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
           ? null
           : scheduleData.frequencySelectValue,
-      day_numbers:
-        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
-          ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
-          : null,
       // Commenting out for MVP
+      // day_numbers:
+      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
+      //     ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
+      //     : null,
       // month_number: [],
       // run_times: [],
-      expression: expressionJSON,
+      // cycle:
+      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
+      //     ? 'WEEK'
+      //     : null,
     }
 
     return newRule
@@ -235,6 +234,7 @@ export default class NotificationModal extends React.Component {
     })
 
     const newRule = this.getNotificationRuleData()
+
     const requestParams = {
       rule: newRule,
       ...this.props.authentication,
@@ -309,7 +309,7 @@ export default class NotificationModal extends React.Component {
       <ScheduleBuilder
         ref={(r) => (this.scheduleBuilderRef = r)}
         key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
-        rule={this.props.currentNotification}
+        rule={this.props.currentRule}
         onCompletedChange={(isComplete) => {
           this.setState({ isScheduleSectionComplete: isComplete })
         }}
@@ -343,7 +343,7 @@ export default class NotificationModal extends React.Component {
   }
 
   onRuleDelete = () => {
-    const ruleId = _get(this.props.currentNotification, 'id')
+    const ruleId = _get(this.props.currentRule, 'id')
     if (ruleId) {
       this.setState({
         isDeletingRule: true,
@@ -381,7 +381,7 @@ export default class NotificationModal extends React.Component {
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
             expression={_get(
-              this.props.currentNotification,
+              this.props.currentRule,
               'expression',
               this.state.expressionJSON
             )}
@@ -424,7 +424,7 @@ export default class NotificationModal extends React.Component {
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
-              {this.props.currentNotification && this.props.allowDelete && (
+              {this.props.currentRule && this.props.allowDelete && (
                 <Button
                   type="danger"
                   onClick={this.onRuleDelete}
