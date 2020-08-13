@@ -60,8 +60,8 @@ export default class NotificationButton extends React.Component {
     })
       .then((response) => {
         const newCount = _get(response, 'data.data.unacknowledged')
-        this.setState({ count: newCount })
-        if (newCount !== this.state.count) {
+        if (newCount && newCount !== this.state.count) {
+          this.setState({ count: newCount })
           this.props.onNewNotification()
         }
         return Promise.resolve(newCount)

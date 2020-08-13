@@ -6,7 +6,7 @@ export const fetchNotificationCount = ({
   domain,
   apiKey,
   token,
-  unacknowledged,
+  unacknowledged = 0,
 }) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
