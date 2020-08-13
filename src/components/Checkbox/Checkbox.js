@@ -15,7 +15,7 @@ export default class Checkbox extends React.Component {
     label: PropTypes.string,
     type: PropTypes.oneOf(['default', 'switch']),
     checked: PropTypes.bool,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -24,7 +24,7 @@ export default class Checkbox extends React.Component {
     type: 'default',
     label: '',
     checked: false,
-    onChange: () => {}
+    onChange: () => {},
   }
 
   componentDidMount = () => {
@@ -34,13 +34,14 @@ export default class Checkbox extends React.Component {
     }
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (prevProps.indeterminate !== this.props.indeterminate) {
       this.selector.indeterminate = this.props.indeterminate
     }
   }
 
-  onCheckedChange = e => {
+  onCheckedChange = (e) => {
+    console.log('ON CHECKED CHANGE IN CHECKBOX')
     this.props.onChange(e)
   }
 
@@ -75,7 +76,7 @@ export default class Checkbox extends React.Component {
             {...nativeProps}
             type="checkbox"
             className={inputClassname}
-            ref={el => (this.selector = el)}
+            ref={(el) => (this.selector = el)}
             id={this.ID}
             checked={this.props.checked}
             onChange={this.onCheckedChange}
@@ -88,7 +89,7 @@ export default class Checkbox extends React.Component {
           {label && (
             <div
               className="chata-checkbox-label"
-              onClick={e => {
+              onClick={(e) => {
                 this.selector.click()
               }}
             >
