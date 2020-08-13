@@ -73,20 +73,20 @@ export default class NotificationButton extends React.Component {
 
   getNotificationCount = () => {
     fetchNotificationCount({ ...this.props.authentication })
-      .then(count => {
+      .then((count) => {
         this.setState({ count })
         if (count > 0) {
           this.props.onNewNotification()
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
       })
   }
 
   resetCount = () => {
     resetNotificationCount({ ...this.props.authentication })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
       })
       .finally(() => {

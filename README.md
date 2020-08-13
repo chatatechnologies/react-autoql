@@ -1,11 +1,24 @@
-<img src="public/autoql-logo.png" width="400px"/>
-React Components for AutoQL
-<hr />
+<h1 align="center"><img src="public/autoql-logo.png" style="text-align: center; width: 400px"/></h1>
+<h3 align="center"><b>React Components for AutoQL</b></h3>
+<p align="center">
+  <a href="https://badge.fury.io/js/react-autoql"><img src="https://badge.fury.io/js/react-autoql.svg" alt="npm latest version" height="20"></a>
+  <a>
+    <img alt="Circle CI" src="https://circleci.com/gh/chatatechnologies/react-autoql/tree/master.svg?style=shield">
+  </a>
+  <a href="https://snyk.io/test/github/chatatechnologies/react-autoql">
+    <img alt="known vulnerabilities" src="https://snyk.io/test/github/chatatechnologies/react-autoql/master/badge.svg">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/semantic-release/semantic-release">
+    <img alt="semantic-release" src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg">
+  </a>
+  <a href="http://commitizen.github.io/cz-cli/">
+    <img alt="commitizen friendly" src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg">
+  </a>
+</p>
 
-![chatatechnologies](https://circleci.com/gh/chatatechnologies/react-autoql/tree/master.svg?style=shield)
-[![Known Vulnerabilities](https://snyk.io/test/github/chatatechnologies/react-autoql/master/badge.svg)](https://snyk.io/test/github/chatatechnologies/react-autoql)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+<!-- [![Coverage](coverage/badge.svg)]() -->
 
 # Documentation
 
@@ -81,6 +94,7 @@ export default class App extends Component {
     return (
       <DataMessenger
         isVisible={this.state.isVisible}
+        onHandleClick={this.onHandleClick}
         authentication={{
           apiKey: "your-api-key"
           domain: "https://yourdomain.com"

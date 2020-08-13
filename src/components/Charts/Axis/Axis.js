@@ -26,12 +26,12 @@ export default class Axis extends Component {
     themeConfig: themeConfigType,
     dataFormatting: dataFormattingType,
 
+    scale: PropTypes.func.isRequired,
     margins: PropTypes.shape({}),
     height: PropTypes.number,
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
     translate: PropTypes.string,
-    scale: PropTypes.func,
     ticks: PropTypes.array,
     rotateLabels: PropTypes.bool,
     type: PropTypes.string,
@@ -46,10 +46,15 @@ export default class Axis extends Component {
     themeConfig: themeConfigDefault,
     dataFormatting: dataFormattingDefault,
 
+    margins: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    },
     orient: 'Bottom',
     hasRightLegend: false,
     hasBottomLegend: false,
-    margins: {},
     onLegendClick: () => {},
     onLegendTitleClick: () => {},
   }
@@ -67,6 +72,7 @@ export default class Axis extends Component {
       .select('.legendTitle')
       .style('font-weight', 'bold')
       .style('transform', 'translate(0, -5px)')
+      .attr('data-test', 'legend-title')
       .append('tspan')
       .text('  ▼')
       .style('font-size', '8px')
@@ -122,88 +128,92 @@ export default class Axis extends Component {
   }
 
   renderLegend = () => {
-    const self = this
-    const { legendLabels } = this.props
+    try {
+      const self = this
+      const { legendLabels } = this.props
 
-    if (!legendLabels) {
-      return
-    }
-
-    const legendScale = this.getLegendScale()
-
-    if (this.props.hasRightLegend) {
-      const svg = select(this.rightLegendElement)
-
-      svg
-        .attr('class', 'legendOrdinal')
-        .style('fill', 'currentColor')
-        .style('fill-opacity', '0.7')
-        .style('font-family', 'inherit')
-        .style('font-size', '10px')
-
-      var legendOrdinal = legendColor()
-        .shape(
-          'path',
-          symbol()
-            .type(symbolCircle)
-            .size(75)()
-        )
-        .orient('vertical')
-        .shapePadding(5)
-        .labelWrap(100)
-        .scale(legendScale)
-        .on('cellclick', function(d) {
-          self.props.onLegendClick(d)
-        })
-
-      if (this.props.legendTitle) {
-        legendOrdinal.title(this.props.legendTitle).titleWidth(100)
+      if (!legendLabels) {
+        return
       }
 
-      svg.call(legendOrdinal).style('font-family', 'inherit')
+      const legendScale = this.getLegendScale()
 
-      if (this.props.legendTitle) {
-        this.styleLegendTitle(svg)
+      if (this.props.hasRightLegend) {
+        const svg = select(this.rightLegendElement)
+
+        svg
+          .attr('class', 'legendOrdinal')
+          .style('fill', 'currentColor')
+          .style('fill-opacity', '0.7')
+          .style('font-family', 'inherit')
+          .style('font-size', '10px')
+
+        var legendOrdinal = legendColor()
+          .shape(
+            'path',
+            symbol()
+              .type(symbolCircle)
+              .size(75)()
+          )
+          .orient('vertical')
+          .shapePadding(5)
+          .labelWrap(100)
+          .scale(legendScale)
+          .on('cellclick', function(d) {
+            self.props.onLegendClick(d)
+          })
+
+        if (this.props.legendTitle) {
+          legendOrdinal.title(this.props.legendTitle).titleWidth(100)
+        }
+
+        svg.call(legendOrdinal).style('font-family', 'inherit')
+
+        if (this.props.legendTitle) {
+          this.styleLegendTitle(svg)
+        }
+
+        // adjust container width to exact width of legend
+        // this is so the updateMargins function works properly
+        const legendWidth = select(this.rightLegendElement)
+          .node()
+          .getBBox().width
+        select(this.legendClippingContainer).attr('width', legendWidth + 30)
+        svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
+      } else if (this.props.hasBottomLegend) {
+        const svg = select(this.bottomLegendElement)
+        svg
+          .attr('class', 'legendOrdinal')
+          .style('fill', 'currentColor')
+          .style('fill-opacity', '0.7')
+          .style('font-family', 'inherit')
+          .style('font-size', '10px')
+
+        var legendOrdinal = legendColor()
+          .shape(
+            'path',
+            symbol()
+              .type(symbolCircle)
+              .size(75)()
+          )
+          .orient('horizontal')
+          .shapePadding(self.LEGEND_PADDING)
+          .labelWrap(120)
+          .labelAlign('left')
+          .scale(legendScale)
+          .on('cellclick', function(d) {
+            self.props.onLegendClick(d)
+          })
+
+        svg.call(legendOrdinal).style('font-family', 'inherit')
       }
 
-      // adjust container width to exact width of legend
-      // this is so the updateMargins function works properly
-      const legendWidth = select(this.rightLegendElement)
-        .node()
-        .getBBox().width
-      select(this.legendClippingContainer).attr('width', legendWidth + 30)
-      svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
-    } else if (this.props.hasBottomLegend) {
-      const svg = select(this.bottomLegendElement)
-      svg
-        .attr('class', 'legendOrdinal')
-        .style('fill', 'currentColor')
-        .style('fill-opacity', '0.7')
-        .style('font-family', 'inherit')
-        .style('font-size', '10px')
-
-      var legendOrdinal = legendColor()
-        .shape(
-          'path',
-          symbol()
-            .type(symbolCircle)
-            .size(75)()
-        )
-        .orient('horizontal')
-        .shapePadding(self.LEGEND_PADDING)
-        .labelWrap(120)
-        .labelAlign('left')
-        .scale(legendScale)
-        .on('cellclick', function(d) {
-          self.props.onLegendClick(d)
-        })
-
-      svg.call(legendOrdinal).style('font-family', 'inherit')
+      this.applyStylesForHiddenSeries()
+      // todo: get this working properly
+      // this.removeOverlappingLegendLabels()
+    } catch (error) {
+      console.error(error)
     }
-
-    this.applyStylesForHiddenSeries()
-    // todo: get this working properly
-    // this.removeOverlappingLegendLabels()
   }
 
   applyStylesForHiddenSeries = () => {
@@ -367,6 +377,7 @@ export default class Axis extends Component {
               this.rightLegendElement = el
             }}
             id={this.LEGEND_ID}
+            data-test="right-legend"
             className="legendOrdinal"
             transform={`translate(${this.props.width + 15}, ${
               this.props.legendTitle ? '30' : '25'
@@ -403,6 +414,7 @@ export default class Axis extends Component {
             ref={el => {
               this.bottomLegendElement = el
             }}
+            data-test="bottom-legend"
             id={this.LEGEND_ID}
             className="legendOrdinal"
             transform={`translate(${(this.props.width - marginLeft) / 2 +

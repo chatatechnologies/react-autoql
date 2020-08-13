@@ -78,6 +78,7 @@ export default class ChataStackedBarChart extends Component {
       dataFormatting,
       legendLocation,
       onLegendClick,
+      tableColumns,
       legendColumn,
       innerPadding,
       outerPadding,
@@ -105,13 +106,13 @@ export default class ChataStackedBarChart extends Component {
       .nice()
 
     const yScale = this.yScale
-      .domain(data.map(d => d.label))
+      .domain(data.map((d) => d.label))
       .range([height - bottomMargin, topMargin])
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const yLabelArray = data.map(element => element.label)
-    const xLabelArray = data.map(element => element.cells[numberColumnIndex])
+    const yLabelArray = data.map((element) => element.label)
+    const xLabelArray = data.map((element) => element.cells[numberColumnIndex])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
     const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
@@ -122,7 +123,7 @@ export default class ChataStackedBarChart extends Component {
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
-          xCol={columns[numberColumnIndex]}
+          xCol={_get(tableColumns, `[${numberColumnIndex}]`)}
           yCol={columns[0]}
           margins={{
             left: leftMargin,

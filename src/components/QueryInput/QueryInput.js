@@ -81,7 +81,7 @@ export default class QueryInput extends React.Component {
     setStyleVars({ themeStyles, prefix: '--chata-input-' })
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (
       _get(prevProps, 'themeConfig.theme') !==
       _get(this.props, 'themeConfig.theme')
@@ -98,16 +98,26 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  animateInputTextAndSubmit = (text, skipSafetyNet, source) => {
-    if (typeof text === 'string' && _get(text, 'length')) {
-      for (let i = 1; i <= text.length; i++) {
+  animateInputTextAndSubmit = ({
+    query,
+    userSelection,
+    skipSafetyNet,
+    source,
+  }) => {
+    if (typeof query === 'string' && _get(query, 'length')) {
+      for (let i = 1; i <= query.length; i++) {
         setTimeout(() => {
           this.setState({
-            inputValue: text.slice(0, i),
+            inputValue: query.slice(0, i),
           })
-          if (i === text.length) {
+          if (i === query.length) {
             setTimeout(() => {
-              this.submitQuery({ queryText: text, skipSafetyNet: true, source })
+              this.submitQuery({
+                queryText: query,
+                userSelection,
+                skipSafetyNet: true,
+                source,
+              })
             }, 300)
           }
         }, i * 50)
@@ -115,7 +125,7 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  submitQuery = ({ queryText, skipSafetyNet, source } = {}) => {
+  submitQuery = ({ queryText, userSelection, skipSafetyNet, source } = {}) => {
     this.setState({ isQueryRunning: true })
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
@@ -126,15 +136,16 @@ export default class QueryInput extends React.Component {
       if (skipSafetyNet) {
         runQueryOnly({
           query,
+          userSelection,
           ...this.props.authentication,
           ...this.props.autoQLConfig,
           source: newSource,
         })
-          .then(response => {
+          .then((response) => {
             this.props.onResponseCallback(response, query)
             this.setState({ isQueryRunning: false })
           })
-          .catch(error => {
+          .catch((error) => {
             console.error(error)
             this.props.onResponseCallback(error)
             this.setState({ isQueryRunning: false })
@@ -146,15 +157,15 @@ export default class QueryInput extends React.Component {
           ...this.props.autoQLConfig,
           source: newSource,
         })
-          .then(response => {
+          .then((response) => {
             this.props.onResponseCallback(response, query)
             this.setState({ isQueryRunning: false })
           })
-          .catch(error => {
+          .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: 'unauthenticated',
+              error: 'Unauthenticated',
             }
             this.props.onResponseCallback(finalError)
             this.setState({ isQueryRunning: false })
@@ -164,13 +175,13 @@ export default class QueryInput extends React.Component {
     this.setState({ inputValue: '' })
   }
 
-  onKeyPress = e => {
+  onKeyPress = (e) => {
     if (e.key == 'Enter') {
       this.submitQuery()
     }
   }
 
-  onTranscriptChange = newTranscript => {
+  onTranscriptChange = (newTranscript) => {
     this.setState({ inputValue: newTranscript })
   }
 
@@ -180,7 +191,7 @@ export default class QueryInput extends React.Component {
     this.focus()
   }
 
-  setInputRef = ref => {
+  setInputRef = (ref) => {
     this.inputRef = ref
   }
 
@@ -197,7 +208,7 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  userSelectedSuggestionHandler = userSelectedValueFromSuggestionBox => {
+  userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
     if (
       userSelectedValueFromSuggestionBox &&
       userSelectedValueFromSuggestionBox.name
@@ -217,7 +228,7 @@ export default class QueryInput extends React.Component {
         suggestion: value,
         ...this.props.authentication,
       })
-        .then(response => {
+        .then((response) => {
           const body = _get(response, 'data.data')
 
           const sortingArray = []
@@ -244,7 +255,7 @@ export default class QueryInput extends React.Component {
             suggestions: autoCompleteArray,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
         })
     }, 300)
@@ -256,7 +267,7 @@ export default class QueryInput extends React.Component {
     })
   }
 
-  onInputChange = e => {
+  onInputChange = (e) => {
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
@@ -270,7 +281,7 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  moveCaretAtEnd = e => {
+  moveCaretAtEnd = (e) => {
     var temp_value = e.target.value
     e.target.value = ''
     e.target.value = temp_value
@@ -293,10 +304,10 @@ export default class QueryInput extends React.Component {
             onSuggestionsClearRequested={this.onSuggestionsClearRequested}
             getSuggestionValue={this.userSelectedSuggestionHandler}
             suggestions={this.state.suggestions}
-            ref={ref => {
+            ref={(ref) => {
               this.autoSuggest = ref
             }}
-            renderSuggestion={suggestion => (
+            renderSuggestion={(suggestion) => (
               <Fragment>{suggestion.name}</Fragment>
             )}
             inputProps={{
@@ -320,7 +331,7 @@ export default class QueryInput extends React.Component {
               }`}
               placeholder={this.props.placeholder || 'Type your queries here'}
               value={this.state.inputValue}
-              onChange={e => this.setState({ inputValue: e.target.value })}
+              onChange={(e) => this.setState({ inputValue: e.target.value })}
               onKeyPress={this.onKeyPress}
               disabled={this.props.isDisabled}
               ref={this.setInputRef}

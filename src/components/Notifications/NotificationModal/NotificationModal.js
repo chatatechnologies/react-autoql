@@ -1,22 +1,15 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Modal } from '../../Modal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
-import { Icon } from '../../Icon'
-import { Select } from '../../Select'
 import { Button } from '../../Button'
-import { Checkbox } from '../../Checkbox'
-import { WeekSelect } from '../../DateSelect/WeekSelect'
-import { MonthSelect } from '../../DateSelect/MonthSelect'
-import { YearSelect } from '../../DateSelect/YearSelect'
-import { NotificationRulesCopy } from '../NotificationRulesCopy'
+import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ScheduleBuilder } from '../ScheduleBuilder'
 
-import { getScheduleDescription } from '../helpers'
 import {
   createNotificationRule,
   updateNotificationRule,
@@ -36,10 +29,14 @@ export default class NotificationModal extends React.Component {
     onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
-    currentNotification: PropTypes.shape({}),
+    currentRule: PropTypes.shape({}),
     isVisible: PropTypes.bool,
-    hideDeleteBtn: PropTypes.bool,
+    allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
+    isManagement: PropTypes.bool,
+    onManagementCreateRule: PropTypes.func,
+    onManagementDeleteRule: PropTypes.func,
+    title: PropTypes.string,
   }
 
   static defaultProps = {
@@ -47,25 +44,24 @@ export default class NotificationModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     initialQuery: undefined,
-    currentNotification: undefined,
+    currentRule: undefined,
     isVisible: false,
-    hideDeleteBtn: false,
+    allowDelete: true,
     onClose: () => {},
+    isManagement: false,
+    onManagementCreateRule: () => {},
+    onManagementDeleteRule: () => {},
+    title: 'Custom Notification',
   }
 
   state = {
     titleInput: '',
     messageInput: '',
-    isRulesSectionComplete: false,
-    rulesJSON: [],
+    isExpressionSectionComplete: false,
+    expressionJSON: [],
     dataReturnQueryInput: '',
     isDataReturnDirty: false,
-    frequencyCategorySelectValue: undefined,
-    frequencySelectValue: 'MONTH',
-    weekSelectValue: [2],
-    monthSelectValue: [1],
-    yearSelectValue: [1],
-    everyCheckboxValue: false,
+    isScheduleSectionComplete: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -76,34 +72,39 @@ export default class NotificationModal extends React.Component {
       // this.NEW_NOTIFICATION_MODAL_ID = uuid.v4()
       // If we are editing an existing notification
       // Fill the fields with the current settings
-      if (this.props.currentNotification) {
-        const notification = this.props.currentNotification
+      if (this.props.currentRule) {
+        const notification = this.props.currentRule
         this.setState({
           titleInput: notification.title,
           messageInput: notification.message,
           dataReturnQueryInput: notification.query,
           isDataReturnDirty: true,
-          frequencyCategorySelectValue: notification.notification_type,
-          frequencySelectValue: notification.reset_period || undefined,
-          rulesJSON: _get(this.props.currentNotification, 'expression'),
-          everyCheckboxValue:
-            notification.notification_type === 'SINGLE_EVENT' &&
-            !!notification.reset_period,
-
-          // weekSelectValue: [2],
-          // monthSelectValue: [1],
-          // yearSelectValue: [1],
+          expressionJSON: _get(this.props.currentRule, 'expression'),
         })
       } else if (
         this.props.initialQuery &&
         typeof this.props.initialQuery === 'string'
       ) {
-        const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+        const expressionJSON = this.createRuleJSONFromQuery(
+          this.props.initialQuery
+        )
         this.setState({
-          isRulesSectionComplete: true,
-          rulesJSON,
+          isExpressionSectionComplete: true,
+          expressionJSON,
         })
       }
+    }
+
+    if (
+      this.props.initialQuery &&
+      this.props.initialQuery !== prevProps.initialQuery
+    ) {
+      this.resetFields()
+      const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+      this.setState({
+        isRulesSectionComplete: true,
+        rulesJSON,
+      })
     }
 
     if (
@@ -123,22 +124,17 @@ export default class NotificationModal extends React.Component {
 
   resetFields = () => {
     this.setState({
-      isRulesSectionComplete: false,
-      rulesJSON: [],
+      isExpressionSectionComplete: false,
+      isScheduleSectionComplete: false,
+      expressionJSON: [],
       dataReturnQueryInput: '',
       isDataReturnDirty: false,
-      frequencyCategorySelectValue: undefined,
-      frequencySelectValue: 'MONTH',
-      weekSelectValue: [2],
-      monthSelectValue: [1],
-      yearSelectValue: [1],
-      everyCheckboxValue: false,
       titleInput: '',
       messageInput: '',
     })
   }
 
-  createRuleJSONFromQuery = query => {
+  createRuleJSONFromQuery = (query) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -164,67 +160,62 @@ export default class NotificationModal extends React.Component {
   }
 
   getNotificationRuleData = () => {
-    const {
-      titleInput,
-      dataReturnQueryInput,
-      messageInput,
-      frequencyCategorySelectValue,
-      everyCheckboxValue,
-      frequencySelectValue,
-      // rulesJSON,
-    } = this.state
+    const { titleInput, dataReturnQueryInput, messageInput } = this.state
 
-    let rulesJSON = this.state.rulesJSON
-    if (this.rulesRef) {
-      rulesJSON = this.rulesRef.getJSON()
+    let expressionJSON = this.state.expressionJSON
+    if (this.expressionRef) {
+      expressionJSON = this.expressionRef.getJSON()
     }
 
-    const notificationRule = this.props.currentNotification
+    let scheduleData = {}
+    if (this.scheduleBuilderRef) {
+      scheduleData = this.scheduleBuilderRef.getData()
+    }
+
+    const notificationRule = this.props.currentRule
 
     const newRule = {
       id: _get(notificationRule, 'id'),
       title: titleInput,
       query: dataReturnQueryInput,
       message: messageInput,
-      notification_type: frequencyCategorySelectValue,
-      cycle: frequencyCategorySelectValue === 'REPEAT_EVENT' ? 'WEEK' : null, // Hardcoded WEEK for MVP
+      notification_type: scheduleData.frequencyCategorySelectValue,
+      expression: expressionJSON,
       reset_period:
-        !everyCheckboxValue || frequencyCategorySelectValue === 'REPEAT_EVENT'
+        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
           ? null
-          : frequencySelectValue,
-      day_numbers:
-        frequencyCategorySelectValue === 'REPEAT_EVENT'
-          ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
-          : null,
+          : scheduleData.frequencySelectValue,
       // Commenting out for MVP
+      // day_numbers:
+      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
+      //     ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
+      //     : null,
       // month_number: [],
       // run_times: [],
-      expression: rulesJSON,
+      // cycle:
+      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
+      //     ? 'WEEK'
+      //     : null,
     }
 
     return newRule
   }
 
-  onRulesUpdate = (isComplete, rulesJSON) => {
+  onExpressionChange = (isComplete, expressionJSON) => {
     let { dataReturnQueryInput } = this.state
-    const firstQuery = this.getFirstQuery(rulesJSON[0])
+    const firstQuery = this.getFirstQuery(expressionJSON[0])
     if (!this.state.isDataReturnDirty && firstQuery) {
       dataReturnQueryInput = firstQuery
     }
 
-    let isRulesSectionComplete = isComplete
-    if (this.rulesRef) {
-      isRulesSectionComplete = this.rulesRef.isComplete()
-    }
-
     this.setState({
-      isRulesSectionComplete,
-      rulesJSON,
+      isExpressionSectionComplete: isComplete,
+      expressionJSON,
       dataReturnQueryInput,
     })
   }
 
-  getFirstQuery = term => {
+  getFirstQuery = (term) => {
     if (!term) {
       return undefined
     }
@@ -242,31 +233,30 @@ export default class NotificationModal extends React.Component {
       isSavingRule: true,
     })
 
-    // var newRuleList = [...this.state.ruleList]
     const newRule = this.getNotificationRuleData()
+
     const requestParams = {
       rule: newRule,
       ...this.props.authentication,
     }
 
-    if (newRule.id) {
+    if (this.props.isManagement) {
+      this.props.onManagementCreateRule(newRule)
+      this.setState({
+        isSavingRule: false,
+      })
+    } else if (newRule.id) {
       updateNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
-          // newRuleList = this.state.ruleList.map(r => {
-          //   if (r.id === newRule.id) {
-          //     return _get(ruleResponse, 'data.data', newRule)
-          //   }
-          //   return r
-          // })
 
           this.setState({
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -277,13 +267,13 @@ export default class NotificationModal extends React.Component {
       createNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
           this.setState({
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -301,7 +291,7 @@ export default class NotificationModal extends React.Component {
         icon="title"
         maxLength="50"
         value={this.state.titleInput}
-        onChange={e => this.setState({ titleInput: e.target.value })}
+        onChange={(e) => this.setState({ titleInput: e.target.value })}
       />
       <Input
         className="chata-notification-message-input"
@@ -309,176 +299,22 @@ export default class NotificationModal extends React.Component {
         type="multi"
         maxLength="200"
         value={this.state.messageInput}
-        onChange={e => this.setState({ messageInput: e.target.value })}
+        onChange={(e) => this.setState({ messageInput: e.target.value })}
       />
     </div>
   )
 
-  renderFrequencySelector = options => {
-    return (
-      <Select
-        options={options}
-        className="notification-frequency-select"
-        value={this.state.frequencySelectValue}
-        onChange={value => this.setState({ frequencySelectValue: value })}
-      />
-    )
-  }
-
-  renderWeekSelector = () => (
-    <WeekSelect
-      multiSelect
-      value={this.state.weekSelectValue}
-      onChange={value => this.setState({ weekSelectValue: value })}
-    />
-  )
-
-  renderMonthSelector = () => (
-    <MonthSelect
-      multiSelect
-      value={this.state.monthSelectValue}
-      onChange={value => this.setState({ monthSelectValue: value })}
-    />
-  )
-
-  renderYearSelector = () => (
-    <YearSelect
-      multiSelect
-      value={this.state.yearSelectValue}
-      onChange={value => this.setState({ yearSelectValue: value })}
-    />
-  )
-
-  renderDateSelector = type => {
-    let selector
-    switch (type) {
-      case 'WEEK': {
-        selector = this.renderWeekSelector()
-        break
-      }
-      case 'MONTH': {
-        selector = this.renderMonthSelector()
-        break
-      }
-      case 'YEAR': {
-        selector = this.renderYearSelector()
-        break
-      }
-      default: {
-        return null
-      }
-    }
-
-    return <div className="frequency-date-select-container">{selector}</div>
-  }
-
-  renderRepeatCheckbox = label => {
-    return (
-      <Checkbox
-        label={label}
-        className="frequency-repeat-checkbox"
-        checked={this.state.everyCheckboxValue}
-        onChange={e => {
-          this.setState({ everyCheckboxValue: e.target.checked })
-        }}
-      />
-    )
-  }
-
-  renderFrequencyDescription = () => {
-    if (!this.isScheduleSectionComplete()) {
-      return null
-    }
-
-    let selection
-    if (this.state.frequencySelectValue === 'WEEK') {
-      selection = this.state.weekSelectValue
-    } else if (this.state.frequencySelectValue === 'MONTH') {
-      selection = this.state.monthSelectValue
-    } else if (this.state.frequencySelectValue === 'YEAR') {
-      selection = this.state.yearSelectValue
-    }
-
-    const description = getScheduleDescription(
-      this.state.frequencyCategorySelectValue,
-      this.state.frequencySelectValue,
-      this.state.everyCheckboxValue,
-      selection
-    )
-
-    return (
-      <div className="frequency-description-box">
-        <div className="frequency-description-title">Description:</div>
-        {description}
-      </div>
-    )
-  }
-
   renderFrequencyStep = () => {
     return (
-      <div className="notification-frequency-step">
-        <div className="frequency-settings-container">
-          Notify me{' '}
-          <Select
-            options={[
-              { value: 'SINGLE_EVENT', label: 'Once, when this happens' },
-              { value: 'REPEAT_EVENT', label: 'Every time this happens' },
-              // Commenting out for MVP
-              // { value: 'SCHEDULE', label: 'On a schedule' }
-            ]}
-            selectionPlaceholder="Select a frequency"
-            value={this.state.frequencyCategorySelectValue}
-            onChange={value =>
-              this.setState({ frequencyCategorySelectValue: value })
-            }
-          />
-          {this.state.frequencyCategorySelectValue === 'SINGLE_EVENT' && (
-            <div className="frequency-category-select">
-              {this.renderRepeatCheckbox('Repeat')}
-              {this.state.everyCheckboxValue && (
-                <Fragment>
-                  {this.renderFrequencySelector([
-                    { value: 'DAY', label: 'Daily' },
-                    { value: 'WEEK', label: 'Weekly' },
-                    { value: 'MONTH', label: 'Monthly' },
-                    // Commenting out for MVP
-                    // { value: 'YEAR', label: 'Yearly' }
-                  ])}
-                  {
-                    // Commenting out for MVP
-                    // {this.state.frequencySelectValue !== 'DAY' && (
-                    //   <span className="frequency-repeat-follow-text"> on:</span>
-                    // )}
-                    // {this.renderDateSelector(this.state.frequencySelectValue)}
-                  }
-                </Fragment>
-              )}
-            </div>
-          )}
-          {
-            // Commenting out for MVP
-            //   this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
-            //   <div className="frequency-category-select">
-            //     {this.renderRepeatCheckbox('Only on')}
-            //     {this.state.everyCheckboxValue && (
-            //       <Fragment>
-            //         {this.renderFrequencySelector([
-            //           { value: 'WEEK', label: 'Certain days of the week' },
-            //           { value: 'MONTH', label: 'Certain days of the month' },
-            //           { value: 'YEAR', label: 'Certain months of the year' }
-            //         ])}
-            //         {this.state.frequencySelectValue !== 'DAY' &&
-            //           this.renderDateSelector(this.state.frequencySelectValue)}
-            //       </Fragment>
-            //     )}
-            //   </div>
-            // )
-          }
-        </div>
-        <div className="frequency-description-box-container">
-          {this.renderFrequencyDescription()}
-        </div>
-      </div>
+      <ScheduleBuilder
+        ref={(r) => (this.scheduleBuilderRef = r)}
+        key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
+        rule={this.props.currentRule}
+        onCompletedChange={(isComplete) => {
+          this.setState({ isScheduleSectionComplete: isComplete })
+        }}
+        onErrorCallback={this.props.onErrorCallback}
+      />
     )
   }
 
@@ -490,7 +326,7 @@ export default class NotificationModal extends React.Component {
           icon="chata-bubbles-outlined"
           placeholder="Query"
           value={this.state.dataReturnQueryInput}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (!this.state.isDataReturnDirty) {
               this.setState({ isDataReturnDirty: true })
             }
@@ -498,7 +334,7 @@ export default class NotificationModal extends React.Component {
               this.stepsRef.nextStep()
             }
           }}
-          onChange={e =>
+          onChange={(e) =>
             this.setState({ dataReturnQueryInput: e.target.value })
           }
         />
@@ -506,12 +342,8 @@ export default class NotificationModal extends React.Component {
     )
   }
 
-  isScheduleSectionComplete = () => {
-    return !!this.state.frequencyCategorySelectValue
-  }
-
   onRuleDelete = () => {
-    const ruleId = _get(this.props.currentNotification, 'id')
+    const ruleId = _get(this.props.currentRule, 'id')
     if (ruleId) {
       this.setState({
         isDeletingRule: true,
@@ -524,7 +356,7 @@ export default class NotificationModal extends React.Component {
             isDeletingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -544,23 +376,23 @@ export default class NotificationModal extends React.Component {
         title: 'Notification Conditions',
         subtitle: 'Notify me when the following conditions are met',
         content: (
-          <NotificationRulesCopy
-            ref={r => (this.rulesRef = r)}
-            key={this.NEW_NOTIFICATION_MODAL_ID}
-            onUpdate={this.onRulesUpdate}
-            notificationData={_get(
-              this.props.currentNotification,
+          <ExpressionBuilder
+            ref={(r) => (this.expressionRef = r)}
+            key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
+            onChange={this.onExpressionChange}
+            expression={_get(
+              this.props.currentRule,
               'expression',
-              this.state.rulesJSON
+              this.state.expressionJSON
             )}
           />
         ),
-        complete: this.state.isRulesSectionComplete,
+        complete: this.state.isExpressionSectionComplete,
       },
       {
         title: 'Frequency',
         content: this.renderFrequencyStep(),
-        complete: this.isScheduleSectionComplete(),
+        complete: this.state.isScheduleSectionComplete,
       },
       {
         title: 'Data Return',
@@ -585,16 +417,14 @@ export default class NotificationModal extends React.Component {
 
     return (
       <Modal
-        title="Custom Notification"
+        title={this.props.title} // "Custom Notification"
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         enableBodyScroll
-        width="95vw"
-        style={{ marginTop: '21px', maxWidth: '900px', maxHeight: '93vh' }}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
-              {this.props.currentNotification && !this.props.hideDeleteBtn && (
+              {this.props.currentRule && this.props.allowDelete && (
                 <Button
                   type="danger"
                   onClick={this.onRuleDelete}
@@ -610,7 +440,7 @@ export default class NotificationModal extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
-                disabled={steps && !!steps.find(step => !step.complete)}
+                disabled={steps && !!steps.find((step) => !step.complete)}
               >
                 Save
               </Button>
@@ -618,7 +448,7 @@ export default class NotificationModal extends React.Component {
           </div>
         }
       >
-        <Steps ref={r => (this.stepsRef = r)} steps={steps} />
+        <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
       </Modal>
     )
   }

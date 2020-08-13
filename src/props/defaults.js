@@ -33,6 +33,7 @@ export const themeConfigDefault = {
   accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
   titleColor: '#356f90', // DASHBOARD TILES ONLY
+  dashboardBackground: '#fafafa',
 }
 
 export const dataConfigDefault = {

@@ -1,17 +1,17 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 
-import { Group } from '../GroupCopy'
+import { Group } from '../Group'
 import { Button } from '../../Button'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 
-import './NotificationRules.scss'
+import './ExpressionBuilder.scss'
 
-const getInitialStateData = initialData => {
+const getInitialStateData = (initialData) => {
   let state = {}
   const groups = []
 
@@ -23,7 +23,7 @@ const getInitialStateData = initialData => {
 
     state = { groups }
   } else {
-    initialData.map(groupItem => {
+    initialData.map((groupItem) => {
       groups.push({
         initialData: groupItem.term_value,
         // We can safely assume that if there is initial data, it is complete
@@ -41,36 +41,38 @@ const getInitialStateData = initialData => {
   return state
 }
 
-export default class NotificationRules extends React.Component {
+export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
-    onUpdate: PropTypes.func,
-    readOnly: PropTypes.bool,
+    expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
+    onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }
 
   static defaultProps = {
-    onUpdate: () => {},
+    expression: undefined,
     readOnly: false,
+    onChange: () => {},
   }
 
   state = {
     groups: [],
     andOrValue: 'ALL',
-    ...getInitialStateData(this.props.notificationData),
+    ...getInitialStateData(this.props.expression),
   }
 
   componentDidMount = () => {
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!isEqual(prevProps.notificationData, this.props.notificationData)) {
+    if (!isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
-      this.setState({ ...getInitialStateData(this.props.notificationData) })
+      this.setState({ ...getInitialStateData(this.props.expression) })
     }
     if (!isEqual(prevState, this.state)) {
-      this.props.onUpdate(this.isComplete(), this.getJSON())
+      this.props.onChange(this.isComplete(), this.getJSON())
     }
   }
 
@@ -124,8 +126,8 @@ export default class NotificationRules extends React.Component {
     this.setState({ groups: newGroups })
   }
 
-  onDeleteGroup = id => {
-    const newGroups = this.state.groups.filter(group => group.id !== id)
+  onDeleteGroup = (id) => {
+    const newGroups = this.state.groups.filter((group) => group.id !== id)
     this.setState({ groups: newGroups })
   }
 
@@ -134,7 +136,7 @@ export default class NotificationRules extends React.Component {
   }
 
   onGroupUpdate = (id, isComplete) => {
-    const newGroups = this.state.groups.map(group => {
+    const newGroups = this.state.groups.map((group) => {
       if (group.id === id) {
         return {
           ...group,
@@ -145,7 +147,7 @@ export default class NotificationRules extends React.Component {
     })
 
     this.setState({ groups: newGroups })
-    this.props.onUpdate(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.getJSON())
   }
 
   renderReadOnlyRules = () => {
@@ -167,10 +169,9 @@ export default class NotificationRules extends React.Component {
         {!!this.state.groups.length &&
           this.state.groups.map((group, i) => {
             return (
-              <Fragment>
+              <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
-                  ref={r => (this.groupRefs[i] = r)}
-                  key={group.id}
+                  ref={(r) => (this.groupRefs[i] = r)}
                   groupId={group.id}
                   disableAddGroupBtn={true}
                   onDelete={this.onDeleteGroup}
@@ -191,7 +192,7 @@ export default class NotificationRules extends React.Component {
                     </span>
                   </div>
                 )}
-              </Fragment>
+              </div>
             )
           })}
       </div>
@@ -216,7 +217,7 @@ export default class NotificationRules extends React.Component {
             <Radio
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
-              onChange={value => this.setState({ andOrValue: value })}
+              onChange={(value) => this.setState({ andOrValue: value })}
             />{' '}
             of the following:
           </div>
@@ -229,8 +230,8 @@ export default class NotificationRules extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
-                  ref={r => (this.groupRefs[i] = r)}
-                  key={group.id}
+                  ref={(r) => (this.groupRefs[i] = r)}
+                  key={`group-${group.id}-${i}`}
                   groupId={group.id}
                   disableAddGroupBtn={true}
                   onDelete={this.onDeleteGroup}

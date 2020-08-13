@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 
 import { Icon } from '../Icon'
 import { Select } from '../Select'
@@ -44,7 +45,7 @@ export default class SafetyNetMessage extends React.Component {
   getSuggestionLists = (query, fullSuggestions) => {
     const suggestionLists = []
     if (fullSuggestions.length) {
-      fullSuggestions.forEach(suggestionInfo => {
+      fullSuggestions.forEach((suggestionInfo) => {
         const originalWord = query.slice(
           suggestionInfo.start,
           suggestionInfo.end
@@ -52,7 +53,7 @@ export default class SafetyNetMessage extends React.Component {
 
         // Add ID to each original suggestion
         const originalSuggestionList = suggestionInfo.suggestion_list.map(
-          suggestion => {
+          (suggestion) => {
             return {
               id: uuid.v4(),
               hidden: false,
@@ -100,7 +101,7 @@ export default class SafetyNetMessage extends React.Component {
       if (
         !this.suggestionLists[index] ||
         !this.suggestionLists[index].find(
-          suggestion => suggestion.text === selection.text
+          (suggestion) => suggestion.text === selection.text
         )
       ) {
         isValid = false
@@ -109,37 +110,55 @@ export default class SafetyNetMessage extends React.Component {
     return isValid
   }
 
+  updateStartAndEndIndexes = (selectedSuggestions) => {
+    if (!_get(selectedSuggestions, 'length')) {
+      return
+    }
+
+    let safetyNetQueryString = ''
+    this.plainTextList.forEach((word, dropdownIndex) => {
+      safetyNetQueryString = safetyNetQueryString.concat(word)
+      const suggestion = selectedSuggestions[dropdownIndex]
+
+      if (suggestion && !suggestion.hidden) {
+        const startIndex = safetyNetQueryString.length
+        suggestion.start = startIndex
+        suggestion.end = startIndex + suggestion.text.length
+        safetyNetQueryString = safetyNetQueryString.concat(suggestion.text)
+      }
+    })
+  }
+
   setInitialSelections = () => {
+    let selectedSuggestions
+
     if (this.props.initialSelections && this.isInitialSelectionValid()) {
       // Replace IDs with new ones from user
       this.suggestionLists.forEach((suggestionList, index) => {
         suggestionList.find(
-          suggestion =>
+          (suggestion) =>
             suggestion.text === this.props.initialSelections[index].text
         ).id = this.props.initialSelections[index].id || uuid.v4()
       })
 
-      this.setState({
-        selectedSuggestions: this.props.initialSelections,
-      })
+      selectedSuggestions = this.props.initialSelections
     } else if (this.props.autoSelectSuggestion) {
       // Use first suggestion in list
-      this.setState({
-        selectedSuggestions: this.suggestionLists.map(
-          suggestionList => suggestionList[0]
-        ),
-      })
+      selectedSuggestions = this.suggestionLists.map(
+        (suggestionList) => suggestionList[0]
+      )
     } else {
       // Use original query (last value)
-      this.setState({
-        selectedSuggestions: this.suggestionLists.map(
-          suggestionList => suggestionList[suggestionList.length - 1]
-        ),
-      })
+      selectedSuggestions = this.suggestionLists.map(
+        (suggestionList) => suggestionList[suggestionList.length - 1]
+      )
     }
+
+    this.updateStartAndEndIndexes(selectedSuggestions)
+    this.setState({ selectedSuggestions: _cloneDeep(selectedSuggestions) })
   }
 
-  initializeSafetyNetOptions = responseBody => {
+  initializeSafetyNetOptions = (responseBody) => {
     const { full_suggestion: fullSuggestions, query } = responseBody
     if (!fullSuggestions || !query) {
       return []
@@ -159,12 +178,13 @@ export default class SafetyNetMessage extends React.Component {
   onChangeSafetyNetSelectOption = (suggestionId, index) => {
     if (suggestionId === 'remove-word') {
       this.deleteSafetyNetSuggestion(index)
+      return
     }
 
     const newSuggestion = this.suggestionLists[index].find(
-      suggestion => suggestion.id === suggestionId
+      (suggestion) => suggestion.id === suggestionId
     )
-    const newSelectedSuggestions = [...this.state.selectedSuggestions]
+    const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
     // If user provided callback for safetynet selection
@@ -173,12 +193,13 @@ export default class SafetyNetMessage extends React.Component {
       newSelectedSuggestions
     )
 
-    this.setState({ selectedSuggestions: newSelectedSuggestions })
+    this.updateStartAndEndIndexes(newSelectedSuggestions)
+    this.setState({ selectedSuggestions: _cloneDeep(newSelectedSuggestions) })
   }
 
-  deleteSafetyNetSuggestion = suggestionIndex => {
-    const newSelectedSuggestions = this.state.selectedSuggestions.map(
-      (suggestion, index) => {
+  deleteSafetyNetSuggestion = (suggestionIndex) => {
+    const newSelectedSuggestions = _cloneDeep(
+      this.state.selectedSuggestions.map((suggestion, index) => {
         if (index === suggestionIndex) {
           return {
             ...suggestion,
@@ -186,7 +207,7 @@ export default class SafetyNetMessage extends React.Component {
           }
         }
         return suggestion
-      }
+      })
     )
 
     // Update list in callback
@@ -195,13 +216,16 @@ export default class SafetyNetMessage extends React.Component {
       newSelectedSuggestions
     )
 
+    this.updateStartAndEndIndexes(newSelectedSuggestions)
     this.setState({
-      selectedSuggestions: newSelectedSuggestions,
+      selectedSuggestions: _cloneDeep(newSelectedSuggestions),
     })
   }
 
-  renderWordSelector = suggestionDropdownIndex => {
-    const suggestion = this.state.selectedSuggestions[suggestionDropdownIndex]
+  renderWordSelector = (suggestionDropdownIndex) => {
+    const suggestion = _cloneDeep(
+      this.state.selectedSuggestions[suggestionDropdownIndex]
+    )
     if (!suggestion || suggestion.hidden) {
       return null
     }
@@ -247,7 +271,7 @@ export default class SafetyNetMessage extends React.Component {
           className="chata-safetynet-select"
           popupClassname="safetynet-select"
           // style={{ width: selectWidth }}
-          onChange={value =>
+          onChange={(value) =>
             this.onChangeSafetyNetSelectOption(value, suggestionDropdownIndex)
           }
         />
@@ -275,7 +299,7 @@ export default class SafetyNetMessage extends React.Component {
     )
   }
 
-  getSafetyNetQueryText = newSelectedSuggestions => {
+  getSafetyNetQueryText = (newSelectedSuggestions) => {
     let safetyNetQueryText = ''
     this.plainTextList.forEach((word, dropdownIndex) => {
       safetyNetQueryText = safetyNetQueryText.concat(word)
@@ -307,9 +331,12 @@ export default class SafetyNetMessage extends React.Component {
           <button
             className="chata-safety-net-execute-btn"
             onClick={() => {
-              this.props.onSuggestionClick(
-                this.getSafetyNetQueryText(this.state.selectedSuggestions)
-              )
+              this.props.onSuggestionClick({
+                query: this.getSafetyNetQueryText(
+                  this.state.selectedSuggestions
+                ),
+                userSelection: this.state.selectedSuggestions,
+              })
             }}
           >
             <Icon

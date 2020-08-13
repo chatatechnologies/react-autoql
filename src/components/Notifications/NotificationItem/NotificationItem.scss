@@ -32,7 +32,7 @@
     }
   }
 
-  .chata-notificaiton-details-title {
+  .chata-notification-details-title {
     font-weight: 600;
     padding-top: 20px;
     padding-bottom: 5px;
@@ -88,10 +88,18 @@
   }
 
   .chata-notification-extra-content {
-    text-align: center;
     flex: 0;
+    flex-basis: 55px;
+
+    text-align: center;
     padding: 8px;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
+
+    .notification-deleted-text {
+      line-height: 40px;
+      opacity: 0.6;
+      font-style: italic;
+    }
   }
 
   .chata-notification-description {

@@ -23,12 +23,13 @@ export default class ChataStackedLineChart extends Component {
 
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number.isRequired,
-    rightMargin: PropTypes.number.isRequired,
-    topMargin: PropTypes.number.isRequired,
-    bottomMargin: PropTypes.number.isRequired,
+    leftMargin: PropTypes.number,
+    rightMargin: PropTypes.number,
+    topMargin: PropTypes.number,
+    bottomMargin: PropTypes.number,
     onLabelChange: PropTypes.func,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
@@ -39,6 +40,10 @@ export default class ChataStackedLineChart extends Component {
     themeConfig: themeConfigDefault,
     dataFormatting: dataFormattingDefault,
 
+    leftMargin: 0,
+    rightMargin: 0,
+    topMargin: 0,
+    bottomMargin: 0,
     numberColumnIndices: [],
     legendLocation: undefined,
     onXAxisClick: () => {},
@@ -71,6 +76,7 @@ export default class ChataStackedLineChart extends Component {
       dataFormatting,
       legendLocation,
       onLegendClick,
+      tableColumns,
       legendColumn,
       bottomMargin,
       onChartClick,
@@ -91,7 +97,7 @@ export default class ChataStackedLineChart extends Component {
     const { max, min } = calculateMinAndMaxSums(data)
 
     const xScale = this.xScale
-      .domain(data.map(d => d.label))
+      .domain(data.map((d) => d.label))
       .range([leftMargin, width - rightMargin])
       .paddingInner(1)
       .paddingOuter(0)
@@ -101,7 +107,7 @@ export default class ChataStackedLineChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const labelArray = data.map(element => element.label)
+    const labelArray = data.map((element) => element.label)
     const tickWidth = Math.abs(
       xScale(_get(data, '[0].label')) - xScale(_get(data, '[1].label'))
     )
@@ -109,12 +115,12 @@ export default class ChataStackedLineChart extends Component {
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
-      <g data-test="chata-stacked-column-chart">
+      <g data-test="chata-stacked-line-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           xCol={columns[0]}
-          yCol={columns[numberColumnIndex]}
+          yCol={_get(tableColumns, `[${numberColumnIndex}]`)}
           margins={{
             left: leftMargin,
             right: rightMargin,
@@ -153,7 +159,7 @@ export default class ChataStackedLineChart extends Component {
           height={height}
           onChartClick={onChartClick}
           activeKey={activeChartElementKey}
-          legendTitle={legendColumn.display_name}
+          legendTitle={_get(legendColumn, 'display_name')}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

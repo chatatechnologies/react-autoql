@@ -10,6 +10,8 @@ import {
   NotificationButton,
   NotificationList,
   NotificationSettings,
+  ExpressionBuilder,
+  ScheduleBuilder,
   Icon as ChataIcon,
 } from 'react-autoql'
 import uuid from 'uuid'
@@ -141,6 +143,7 @@ export default class App extends Component {
     title: 'Data Messenger',
     lightAccentColor: '#26a7df',
     // lightAccentColor: '#2466AE',
+    dashboardBackground: '#fafafa',
     darkAccentColor: '#525252',
     maxMessages: 12,
     isEditing: false,
@@ -160,7 +163,6 @@ export default class App extends Component {
     comparisonDisplay: true,
     chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
     monthFormat: 'MMM YYYY',
-    // dayFormat: 'MMM DD, YYYY',
     dayFormat: 'll',
     dashboardTiles: [],
     activeDashboardId: undefined,
@@ -233,6 +235,7 @@ export default class App extends Component {
     let darkAccentColor = this.state.darkAccentColor
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
+    let dashboardBackground = this.state.dashboardBackground
 
     if (this.state.isAuthenticated) {
       if (activeIntegrator === 'purefacts') {
@@ -258,6 +261,7 @@ export default class App extends Component {
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
       titleColor: dashboardTitleColor,
+      dashboardBackground: dashboardBackground,
     }
   }
 
@@ -276,14 +280,14 @@ export default class App extends Component {
     }
 
     if (!this.state.apiKey || !this.state.domain) {
-      return Promise.reject({ error: 'unauthenticated' })
+      return Promise.reject({ error: 'Unauthenticated' })
     }
 
     return axios
       .get(url, config)
       .then(response => {
         if (response.data && typeof response.data === 'string') {
-          return Promise.reject({ error: 'parse error' })
+          return Promise.reject({ error: 'Parse error' })
         }
         if (
           !response ||
@@ -1216,6 +1220,14 @@ export default class App extends Component {
           }}
           value={this.state.dashboardTitleColor}
         />
+        <h4>Dashboard Background Color</h4>
+        <Input
+          type="text"
+          onChange={e => {
+            this.setState({ dashboardBackground: e.target.value })
+          }}
+          value={this.state.dashboardBackground}
+        />
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
@@ -1433,7 +1445,7 @@ export default class App extends Component {
               className="dashboard-toolbar-container"
               style={{
                 textAlign: 'center',
-                background: '#fafafa',
+                background: this.state.dashboardBackground,
                 padding: '10px',
               }}
             >

@@ -7,12 +7,24 @@
   display: inline-block;
 }
 
+// State
 .chata-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
 
+// Size
+.chata-btn.small {
+  padding: 2px 8px;
+  margin: 2px 3px;
+}
+.chata-btn.large {
+  padding: 5px 16px;
+  margin: 2px 5px;
+}
+
+// Type
 .chata-btn.default {
   color: inherit;
   border: 1px solid #00000026;
@@ -22,7 +34,6 @@
     color: var(--chata-messenger-accent-color);
   }
 }
-
 .chata-btn.primary {
   background: var(--chata-messenger-accent-color);
   border: 1px solid var(--chata-messenger-accent-color);

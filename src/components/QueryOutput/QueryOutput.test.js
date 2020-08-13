@@ -4,7 +4,7 @@ import renderer from 'react-test-renderer'
 
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
-import testCases from './responseTestCases'
+import testCases from '../../../test/responseTestCases'
 
 const defaultProps = {
   supportedDisplayTypes: [],

@@ -34,30 +34,30 @@ export default class NotificationSettings extends React.Component {
 
   state = {
     isFetchingList: true,
-    ruleList: [],
     isEditModalVisible: false,
     activeRule: undefined,
+
+    userRuleList: undefined,
+    projectRuleList: undefined,
   }
 
   componentDidMount = () => {
-    this.getNotificationSettings()
+    this.getNotificationSettings('user')
+    this.getNotificationSettings('project')
   }
 
-  getNotificationSettings = () => {
+  getNotificationSettings = (type) => {
     fetchNotificationSettings({
       ...this.props.authentication,
+      type,
     })
-      .then(list => {
+      .then((list) => {
         this.setState({
-          ruleList: list,
-          isFetchingList: false,
+          [`${type}RuleList`]: list,
         })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
-        this.setState({
-          isFetchingList: false,
-        })
       })
   }
 
@@ -76,11 +76,11 @@ export default class NotificationSettings extends React.Component {
     })
   }
 
-  onRuleSave = ruleResponse => {
-    let newRuleList = [...this.state.ruleList]
+  onRuleSave = (ruleResponse) => {
+    let newRuleList = [...this.state.userRuleList]
     if (this.state.activeRule) {
       // Update existing rule data
-      newRuleList = this.state.ruleList.map(r => {
+      newRuleList = this.state.userRuleList.map((r) => {
         if (r.id === this.state.activeRule.id) {
           return _get(ruleResponse, 'data.data', this.state.activeRule)
         }
@@ -93,20 +93,22 @@ export default class NotificationSettings extends React.Component {
       }
     }
 
-    this.setState({ isEditModalVisible: false, ruleList: newRuleList })
+    this.setState({ isEditModalVisible: false, userRuleList: newRuleList })
   }
 
-  onRuleDelete = ruleId => {
-    const newList = this.state.ruleList.filter(rule => rule.id !== ruleId)
+  onRuleDelete = (ruleId) => {
+    const newList = this.state.userRuleList.filter((rule) => rule.id !== ruleId)
     this.setState({
-      ruleList: newList,
+      userRuleList: newList,
       isEditModalVisible: false,
     })
   }
 
   onEnableSwitchChange = (e, rule) => {
+    const type = _get(rule, 'type', '').toLowerCase()
+
     const newStatus = e.target.checked ? 'ACTIVE' : 'INACTIVE'
-    const newList = this.state.ruleList.map(n => {
+    const newList = this.state[`${type}RuleList`].map((n) => {
       if (rule.id === n.id) {
         return {
           ...n,
@@ -116,13 +118,14 @@ export default class NotificationSettings extends React.Component {
       return n
     })
 
-    this.setState({ ruleList: newList })
+    this.setState({ [`${type}RuleList`]: newList })
 
     updateNotificationRuleStatus({
       ruleId: rule.id,
+      type: rule.type,
       status: newStatus,
       ...this.props.authentication,
-    }).catch(error => {
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -135,7 +138,7 @@ export default class NotificationSettings extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentNotification={this.state.activeRule}
+        currentRule={this.state.activeRule}
         onSave={this.onRuleSave}
         onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onRuleDelete}
@@ -158,32 +161,37 @@ export default class NotificationSettings extends React.Component {
   )
 
   renderNotificationlist = (type, list) => {
-    if (type === 'custom' && !_get(list, 'length')) {
-      return this.renderEmptyListMessage()
-    } else if (type === 'default' && !_get(list, 'length')) {
+    if (type === 'project' && !_get(list, 'length')) {
       return null
     }
 
     return (
       <div className="notification-rules-list-container">
-        {type === 'custom' &&
+        {type === 'user' &&
           this.renderNotificationGroupTitle(
             'Custom Notifications',
-            'Description for custom notifications will go here',
+            'Create your own customized notifications tailored to your needs',
             true
           )}
-        {type === 'default' &&
+        {type === 'user' &&
+          !_get(list, 'length') &&
+          this.renderEmptyListMessage()}
+        {type === 'project' &&
           this.renderNotificationGroupTitle(
             'Default Notifications',
-            'Description for default notifications will go here'
+            'Choose from a predefined set of notifications'
           )}
         <div className="chata-notification-settings-container">
           {list.map((notification, i) => {
             return (
               <div
                 key={`chata-notification-setting-item-${i}`}
-                className="chata-notification-setting-item"
-                onClick={e => this.onEditClick(e, notification)}
+                className={`chata-notification-setting-item ${notification.type}`}
+                onClick={(e) => {
+                  if (notification.type === 'USER') {
+                    this.onEditClick(e, notification)
+                  }
+                }}
               >
                 <div className="chata-notification-setting-item-header">
                   <div className="chata-notification-setting-display-name">
@@ -204,7 +212,7 @@ export default class NotificationSettings extends React.Component {
                         notification.status === 'WAITING'
                       }
                       className="chata-notification-enable-checkbox"
-                      onClick={e => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                       data-tip={
                         notification.status === 'ACTIVE' ||
                         notification.status === 'WAITING'
@@ -212,7 +220,7 @@ export default class NotificationSettings extends React.Component {
                           : 'Turn on notification'
                       }
                       data-for="chata-notification-settings-tooltip"
-                      onChange={e => {
+                      onChange={(e) => {
                         this.onEnableSwitchChange(e, notification)
                         ReactTooltip.hide()
                         ReactTooltip.rebuild()
@@ -245,7 +253,7 @@ export default class NotificationSettings extends React.Component {
   )
 
   render = () => {
-    if (this.state.isFetchingList) {
+    if (!this.state.userRuleList) {
       return (
         <div
           data-test="notification-settings"
@@ -256,20 +264,16 @@ export default class NotificationSettings extends React.Component {
       )
     }
 
-    const customList = this.state.ruleList.filter(
-      rule => rule.type !== 'default'
-    )
-    const defaultList = this.state.ruleList.filter(
-      rule => rule.type === 'default'
-    )
+    const projectList = _get(this.state, 'projectRuleList', [])
+    const userList = _get(this.state, 'userRuleList', [])
 
     return (
       <div
         className="chata-notification-settings"
         data-test="notification-settings"
       >
-        {this.renderNotificationlist('default', defaultList)}
-        {this.renderNotificationlist('custom', customList)}
+        {this.renderNotificationlist('project', projectList)}
+        {this.renderNotificationlist('user', userList)}
         {this.renderNotificationEditModal()}
         <ReactTooltip
           className="chata-drawer-tooltip"
