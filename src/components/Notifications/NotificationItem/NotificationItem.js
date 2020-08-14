@@ -292,16 +292,12 @@ export default class NotificationItem extends React.Component {
   }
 
   renderEditNotificationButton = () => {
-    if (!this.state.ruleDetails) {
-      return null
+    if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
+      return <div />
     } else if (_isEmpty(this.state.ruleDetails)) {
       return (
         <div className="notification-deleted-text">
           This notification has been deleted.
-          {/* <Button onClick={() => this.props.onEditClick()} type="default">
-            <Icon type="plus" />
-            Create another one
-          </Button> */}
         </div>
       )
     }

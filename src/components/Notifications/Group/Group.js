@@ -188,7 +188,7 @@ export default class Group extends React.Component {
   }
 
   renderDeleteGroupBtn = () => {
-    if (this.props.readOnly) {
+    if (this.props.readOnly || this.props.onlyGroup) {
       return null
     }
 
@@ -261,7 +261,7 @@ export default class Group extends React.Component {
           </div>
         )}
         <div
-          className={`chata-notification-group-container-copy${
+          className={`chata-notification-group-container${
             hasOnlyOneRule ? ' disable-first-delete' : ''
           }`}
           data-test="rule-group"
