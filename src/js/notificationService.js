@@ -2,8 +2,37 @@ import axios from 'axios'
 import _get from 'lodash.get'
 
 // ----------------- GET --------------------
-export const fetchNotificationCount = ({ domain, apiKey, token }) => {
-  // If there is missing data, dont bother making the call
+export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
+  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
+
+  const data = {
+    text: query,
+    translation: 'exclude',
+  }
+
+  if (!query || !query.trim()) {
+    return Promise.reject({ error: 'No query supplied' })
+  }
+
+  if (!apiKey || !domain || !token) {
+    return Promise.reject({ error: 'Unauthenticated' })
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios.post(url, data, config)
+}
+
+export const fetchNotificationCount = ({
+  domain,
+  apiKey,
+  token,
+  unacknowledged = 0,
+}) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
@@ -14,15 +43,19 @@ export const fetchNotificationCount = ({ domain, apiKey, token }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications/state-count?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/rules/notifications/summary/poll?key=${apiKey}&unacknowledged=${unacknowledged}`
+
+  const config = {
+    timeout: 180000,
+  }
 
   return axiosInstance
-    .get(url)
+    .get(url, config)
     .then((response) => {
-      return Promise.resolve(_get(response, 'data.data.unacknowledged'))
+      return Promise.resolve(response)
     })
     .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(error)
     })
 }
 

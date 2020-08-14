@@ -4,6 +4,8 @@
   // width: calc(100% - 20px);
 
   .chata-rule-input {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     width: 100%;
   }
@@ -104,4 +106,9 @@
   pointer-events: none;
   opacity: 0.1;
   cursor: default;
+}
+
+.rule-term-validation-error {
+  padding: 0 10px;
+  color: #ffcc00;
 }
