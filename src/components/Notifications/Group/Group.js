@@ -114,6 +114,19 @@ export default class Group extends React.Component {
     return isComplete
   }
 
+  isValid = () => {
+    // If we can find one rule that is not valid, then the whole group is invalid
+    const isValid = this.state.rules.every((rule, i) => {
+      const ruleRef = this.ruleRefs[i]
+      if (ruleRef) {
+        return ruleRef.isValid()
+      }
+      return false
+    })
+
+    return isValid
+  }
+
   deleteRuleOrGroup = (id) => {
     const newRules = this.state.rules.filter((rule) => rule.id !== id)
     this.setState({ rules: newRules })
@@ -270,6 +283,7 @@ export default class Group extends React.Component {
             if (rule.type === 'rule') {
               return (
                 <Rule
+                  authentication={this.props.authentication}
                   ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   key={rule.id}
@@ -283,6 +297,7 @@ export default class Group extends React.Component {
             } else if (rule.type === 'group') {
               return (
                 <Group
+                  authentication={this.props.authentication}
                   groupId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
@@ -335,6 +350,7 @@ export default class Group extends React.Component {
             return (
               <div key={`group-${rule.id}`}>
                 <Group
+                  authentication={this.props.authentication}
                   groupId={rule.id}
                   initialData={rule.termValue}
                   readOnly

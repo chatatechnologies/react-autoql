@@ -9,7 +9,10 @@ import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
+import { authenticationType } from '../../../props/types'
+import { authenticationDefault } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
+import { isExpressionQueryValid } from '../../../js/notificationService'
 import { capitalizeFirstChar } from '../../../js/Util'
 
 import './Rule.scss'
@@ -60,6 +63,7 @@ export default class Rule extends React.Component {
   }
 
   static propTypes = {
+    authentication: authenticationType,
     ruleId: PropTypes.string,
     onAdd: PropTypes.func,
     onDelete: PropTypes.func,
@@ -69,6 +73,7 @@ export default class Rule extends React.Component {
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     ruleId: undefined,
     onAdd: () => {},
     onDelete: () => {},
@@ -82,16 +87,18 @@ export default class Rule extends React.Component {
     input2Value: '',
     conditionSelectValue: 'GREATER_THAN',
     secondTermType: 'query',
+    isFirstTermValid: true,
+    isSecondTermValid: true,
     ...getInitialStateData(this.props.initialData),
   }
 
   componentDidMount = () => {
-    this.props.onUpdate(this.props.ruleId, this.isComplete())
+    this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!isEqual(this.state, prevState)) {
-      this.props.onUpdate(this.props.ruleId, this.isComplete())
+      this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
   }
 
@@ -164,6 +171,81 @@ export default class Rule extends React.Component {
         !!_get(this.state.input1Value, 'length') &&
         !!_get(this.state.input2Value, 'length')
       )
+    }
+  }
+
+  isValid = () => {
+    if (this.state.conditionSelectValue === 'EXISTS') {
+      return this.state.isFirstTermValid
+    } else {
+      return this.state.isFirstTermValid && this.state.isSecondTermValid
+    }
+  }
+
+  validateFirstTerm = () => {
+    if (
+      this.state.input1Value &&
+      !this.state.isValidatingFirstTerm &&
+      this.state.lastCheckedFirstTermValue !== this.state.input1Value
+    ) {
+      this.setState({
+        isFirstTermValid: true,
+        lastCheckedFirstTermValue: this.state.input1Value,
+        isValidatingFirstTerm: true,
+      })
+      isExpressionQueryValid({
+        query: this.state.input1Value,
+        ...this.props.authentication,
+      })
+        .then(() => {
+          this.setState({
+            isFirstTermValid: true,
+            isValidatingFirstTerm: false,
+          })
+        })
+        .catch(() => {
+          this.setState({
+            isFirstTermValid: false,
+            isValidatingFirstTerm: false,
+          })
+        })
+    }
+  }
+
+  validateSecondTerm = () => {
+    if (
+      !this.state.input2Value ||
+      !Number.isNaN(Number(this.state.input2Value))
+    ) {
+      this.setState({
+        isSecondTermValid: true,
+        lastCheckedSecondTermValue: this.state.input2Value,
+      })
+    } else if (
+      !this.state.isValidatingSecondTerm &&
+      this.state.lastCheckedSecondTermValue !== this.state.input2Value
+    ) {
+      this.setState({
+        isSecondTermValid: true,
+        lastCheckedSecondTermValue: this.state.input2Value,
+        isValidatingSecondTerm: true,
+      })
+      isExpressionQueryValid({
+        query: this.state.input2Value,
+        ...this.props.authentication,
+      })
+        .then(() => {
+          this.setState({
+            isSecondTermValid: true,
+            isValidatingSecondTerm: false,
+          })
+        })
+        .catch(() => {
+          this.setState({
+            isSecondTermValid: false,
+            isValidatingSecondTerm: false,
+          })
+        })
     }
   }
 
@@ -266,46 +348,64 @@ export default class Rule extends React.Component {
     )
   }
 
+  renderValidationError = () => {
+    return (
+      <div className="rule-term-validation-error">
+        <Icon type="warning-triangle" /> This query is invalid. Try a different
+        query
+      </div>
+    )
+  }
+
   renderRule = () => {
     return (
       <div className="chata-notification-rule-container" data-test="rule">
-        <Input
-          className="chata-rule-input"
-          icon="chata-bubbles-outlined"
-          placeholder="Query"
-          value={this.state.input1Value}
-          onChange={(e) => this.setState({ input1Value: e.target.value })}
-        />
-        {
-          // <div className="chata-bar-container">
-          //   <Autosuggest
-          //   className="auto-complete-chata"
-          //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-          //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-          //   getSuggestionValue={this.userSelectedSuggestionHandler}
-          //   suggestions={this.state.suggestions}
-          //   ref={ref => {
-          //     this.autoSuggest = ref
-          //   }}
-          //   renderSuggestion={suggestion => (
-          //     <Fragment>{suggestion.name}</Fragment>
-          //   )}
-          //   inputProps={{
-          //     className: 'chata-rule-input chata-input',
-          //     // icon:"chata-bubbles-outlined"
-          //     placeholder: 'query',
-          //     value: this.state.input1Value,
-          //     onChange: e => this.setState({ input1Value: e.target.value })
-          //   }}
-          // />
-          // </div>
-        }
+        <div className="chata-rule-input">
+          <Input
+            icon="chata-bubbles-outlined"
+            placeholder="Query"
+            value={this.state.input1Value}
+            onChange={(e) => this.setState({ input1Value: e.target.value })}
+            onBlur={this.validateFirstTerm}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                this.validateFirstTerm()
+              }
+            }}
+          />
+          {!this.state.isFirstTermValid && this.renderValidationError()}
+          {
+            // Keep for implementing autocomplete later
+            // <div className="chata-bar-container">
+            //   <Autosuggest
+            //   className="auto-complete-chata"
+            //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+            //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+            //   getSuggestionValue={this.userSelectedSuggestionHandler}
+            //   suggestions={this.state.suggestions}
+            //   ref={ref => {
+            //     this.autoSuggest = ref
+            //   }}
+            //   renderSuggestion={suggestion => (
+            //     <Fragment>{suggestion.name}</Fragment>
+            //   )}
+            //   inputProps={{
+            //     className: 'chata-rule-input chata-input',
+            //     // icon:"chata-bubbles-outlined"
+            //     placeholder: 'query',
+            //     value: this.state.input1Value,
+            //     onChange: e => this.setState({ input1Value: e.target.value })
+            //   }}
+            // />
+            // </div>
+          }
+        </div>
         <Select
           options={[
             { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
             { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
             { value: 'EQUALS', label: '=', tooltip: 'Equals' },
-            { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'EXISTS' },
+            { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'Exists' },
           ]}
           value={this.state.conditionSelectValue}
           className="chata-rule-condition-select"
@@ -318,49 +418,58 @@ export default class Rule extends React.Component {
             this.state.conditionSelectValue === 'EXISTS' ? ' hidden' : ''
           }`}
         >
-          <Input
-            className="chata-rule-input"
-            icon="chata-bubbles-outlined"
-            placeholder="Query or Number"
-            value={this.state.input2Value}
-            onChange={(e) => this.setState({ input2Value: e.target.value })}
-          />
-          {
-            // <Input
-            //   className="chata-rule-input"
-            //   icon="chata-bubbles-outlined"
-            //   type={inputType}
-            //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
-            //   value={this.state.input2Value}
-            //   onChange={e => this.setState({ input2Value: e.target.value })}
-            // />
-            // <Select
-            //   options={[
-            //     {
-            //       value: 'query',
-            //       label: (
-            //         <Icon
-            //           type="chata-bubbles-outlined"
-            //           className="rule-input-select-bubbles-icon"
-            //         />
-            //       ),
-            //       tooltip: 'Query'
-            //     },
-            //     {
-            //       value: 'constant',
-            //       // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
-            //       label: <div style={{ fontSize: '9px' }}>123</div>,
-            //       tooltip: 'Constant'
-            //     }
-            //     // { value: 'equation', label: 'Eq' }
-            //   ]}
-            //   value={this.state.secondTermType}
-            //   className="chata-rule-term-type-selector"
-            //   onChange={value => {
-            //     this.setState({ secondTermType: value })
-            //   }}
-            // />
-          }
+          <div className="chata-rule-input">
+            <Input
+              icon="chata-bubbles-outlined"
+              placeholder="Query or Number"
+              value={this.state.input2Value}
+              onChange={(e) => this.setState({ input2Value: e.target.value })}
+              onBlur={this.validateSecondTerm}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  this.validateSecondTerm()
+                }
+              }}
+            />
+            {!this.state.isSecondTermValid && this.renderValidationError()}
+            {
+              // Keep for implementing autocomplete later
+              // <Input
+              //   className="chata-rule-input"
+              //   icon="chata-bubbles-outlined"
+              //   type={inputType}
+              //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
+              //   value={this.state.input2Value}
+              //   onChange={e => this.setState({ input2Value: e.target.value })}
+              // />
+              // <Select
+              //   options={[
+              //     {
+              //       value: 'query',
+              //       label: (
+              //         <Icon
+              //           type="chata-bubbles-outlined"
+              //           className="rule-input-select-bubbles-icon"
+              //         />
+              //       ),
+              //       tooltip: 'Query'
+              //     },
+              //     {
+              //       value: 'constant',
+              //       // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
+              //       label: <div style={{ fontSize: '9px' }}>123</div>,
+              //       tooltip: 'Constant'
+              //     }
+              //     // { value: 'equation', label: 'Eq' }
+              //   ]}
+              //   value={this.state.secondTermType}
+              //   className="chata-rule-term-type-selector"
+              //   onChange={value => {
+              //     this.setState({ secondTermType: value })
+              //   }}
+              // />
+            }
+          </div>
         </div>
         <Icon
           className="chata-rule-delete-btn"

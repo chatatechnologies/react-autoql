@@ -46,7 +46,7 @@ export default class Steps extends React.Component {
     this.onStepTitleClick(nextStep)
   }
 
-  getHeightOfStepContent = index => {
+  getHeightOfStepContent = (index) => {
     if (this.props.collapsible) {
       const content = document.querySelector(
         `#chata-step-content-${this.COMPONENT_KEY}-${index}`
@@ -113,6 +113,16 @@ export default class Steps extends React.Component {
     }
   }
 
+  getStepStatus = (step) => {
+    if (step.error) {
+      return 'error'
+    } else if (step.complete) {
+      return 'complete'
+    }
+
+    return ''
+  }
+
   render = () => {
     if (!this.props.steps || !this.props.steps.length) {
       return null
@@ -132,7 +142,7 @@ export default class Steps extends React.Component {
             >
               <div
                 className={`chata-step-container
-                ${step.complete ? ' complete' : ''}
+                ${this.getStepStatus(step)}
                 ${
                   this.props.collapsible && i === this.state.activeStep
                     ? ' active'
