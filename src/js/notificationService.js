@@ -2,6 +2,31 @@ import axios from 'axios'
 import _get from 'lodash.get'
 
 // ----------------- GET --------------------
+export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
+  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
+
+  const data = {
+    text: query,
+    translation: 'exclude',
+  }
+
+  if (!query || !query.trim()) {
+    return Promise.reject({ error: 'No query supplied' })
+  }
+
+  if (!apiKey || !domain || !token) {
+    return Promise.reject({ error: 'Unauthenticated' })
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios.post(url, data, config)
+}
+
 export const fetchNotificationCount = ({
   domain,
   apiKey,

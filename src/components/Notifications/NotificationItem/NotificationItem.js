@@ -384,6 +384,7 @@ export default class NotificationItem extends React.Component {
                 Conditions:
               </div>
               <ExpressionBuilder
+                authentication={this.props.authentication}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'rule_expression')}
                 readOnly

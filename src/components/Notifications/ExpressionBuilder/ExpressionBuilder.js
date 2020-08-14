@@ -63,7 +63,7 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   componentDidMount = () => {
-    this.props.onChange(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -72,7 +72,7 @@ export default class ExpressionBuilder extends React.Component {
       this.setState({ ...getInitialStateData(this.props.expression) })
     }
     if (!isEqual(prevState, this.state)) {
-      this.props.onChange(this.isComplete(), this.getJSON())
+      this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
     }
   }
 
@@ -86,6 +86,18 @@ export default class ExpressionBuilder extends React.Component {
     })
 
     return isComplete
+  }
+
+  isValid = () => {
+    const isValid = this.state.groups.every((group, i) => {
+      const groupRef = this.groupRefs[i]
+      if (groupRef) {
+        return groupRef.isValid()
+      }
+      return false
+    })
+
+    return isValid
   }
 
   getJSON = () => {
@@ -147,7 +159,7 @@ export default class ExpressionBuilder extends React.Component {
     })
 
     this.setState({ groups: newGroups })
-    this.props.onChange(this.isComplete(), this.getJSON())
+    this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
   }
 
   renderReadOnlyRules = () => {
@@ -230,6 +242,7 @@ export default class ExpressionBuilder extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
+                  authentication={this.props.authentication}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}

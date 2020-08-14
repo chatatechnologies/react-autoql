@@ -8,16 +8,16 @@ import './Input.scss'
 export default class Input extends React.Component {
   static propTypes = {
     icon: PropTypes.string,
-    type: PropTypes.string
+    type: PropTypes.string,
   }
 
   static defaultProps = {
     icon: undefined,
-    type: 'single'
+    type: 'single',
   }
 
   state = {
-    focused: false
+    focused: false,
   }
 
   onFocus = () => {
@@ -34,11 +34,17 @@ export default class Input extends React.Component {
     }
   }
 
+  focus = () => {
+    if (this.inputRef) {
+      this.inputRef.focus()
+    }
+  }
+
   render = () => {
     const { icon, className } = this.props
     const nativeProps = {
       ...this.props,
-      icon: undefined
+      icon: undefined,
     }
 
     return (
@@ -51,7 +57,7 @@ export default class Input extends React.Component {
         {this.props.type === 'multi' ? (
           <textarea
             {...nativeProps}
-            ref={r => (this.inputRef = r)}
+            ref={(r) => (this.inputRef = r)}
             className="chata-input area"
             onFocus={this.onFocus}
             onBlur={this.onBlur}
@@ -60,7 +66,7 @@ export default class Input extends React.Component {
           <Fragment>
             <input
               {...nativeProps}
-              ref={r => (this.inputRef = r)}
+              ref={(r) => (this.inputRef = r)}
               className={`chata-input ${icon ? 'with-icon' : ''}`}
               onFocus={this.onFocus}
               onBlur={this.onBlur}
