@@ -79,7 +79,7 @@ export default class NotificationButton extends React.Component {
           this.subscribeToNotificationCount(newCount)
         })
         .catch((error) => {
-          if (error.response.status == 504) {
+          if (_get(error, 'response.status') == 504) {
             // Timed out because there were no changes
             // Let's connect again
             this.subscribeToNotificationCount()

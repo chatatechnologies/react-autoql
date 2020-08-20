@@ -1467,7 +1467,7 @@ export default class App extends Component {
                   this.state.isEditing ? <StopOutlined /> : <EditOutlined />
                 }
               >
-                {this.state.isEditing ? 'Stop Editing' : 'Edit'}
+                {this.state.isEditing ? 'Cancel' : 'Edit'}
               </Button>
               <Button
                 onClick={() => executeDashboard(this.dashboardRef)}
