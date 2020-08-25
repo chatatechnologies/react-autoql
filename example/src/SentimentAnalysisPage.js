@@ -40,8 +40,6 @@ export default class SentimentAnalysisPage extends React.Component {
       const jwtResponse = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${loginToken}`,
-          // Authorization:
-          //   'Bearer eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJSUzI1NiIsICJraWQiOiAiNzUxZmYzY2YxMjA2ZGUwODJhNzM1MjY5OTI2ZDg0NTgzYjcyOTZmNCJ9.eyJpYXQiOiAxNTk4MzgxMzIwLCAiZXhwIjogMTU5ODQwMjkyMCwgImlzcyI6ICJkZW1vMy1qd3RhY2NvdW50QHN0YWdpbmctMjQ1NTE0LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwgImF1ZCI6ICJkZW1vMy1zdGFnaW5nLmNoYXRhLmlvIiwgInN1YiI6ICJkZW1vMy1qd3RhY2NvdW50QHN0YWdpbmctMjQ1NTE0LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwgImVtYWlsIjogImRlbW8zLWp3dGFjY291bnRAc3RhZ2luZy0yNDU1MTQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCAicHJvamVjdF9pZCI6ICIiLCAidXNlcl9pZCI6ICIiLCAiZGlzcGxheV9uYW1lIjogIiIsICJyZXNvdXJjZV9hY2Nlc3MiOiBudWxsfQ==.KNjeOsscV1A-FbdTkP6vHcRBC_xY6uNhaHxItlR14RrYICSH8Itc5IGNjOzvTq0z6VCQQjmEStVvruz-ZNJ8-wyHD4ysRc9fvcUex34YvtTNW9bzKpI_4GRamAZVxNy3cAh68I_sBDIkV9thA3QWY13Mu1Tjry-M2XFjAiz8XdK-EePGYHQIosjkoP0ChSUQOFP8mttaybkB4f7dwBhrP2Ml2MxotCm4fFteWhM0uzaktSUtnF97kpuyFxyQR47r07SC9cxTgJApvrpmnoDP1lmpugHpOqD978y5D54yes2fO4xlTklrv2Xjh0ccW6CWMb1wBA2h2sqKFRahwahl6w==',
         },
       })
 
@@ -241,7 +239,6 @@ export default class SentimentAnalysisPage extends React.Component {
             }}
             style={{ marginTop: '20px' }}
             onFinish={this.onLogin}
-            onFinishFailed={(errorInfo) => console.log('Failed:', errorInfo)}
           >
             <Form.Item
               label="API key"
