@@ -46,12 +46,14 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons'
 
+import SentimentAnalysisPage from './SentimentAnalysisPage'
+
 import topics from './topics.js'
 
-import locateLogo from './locate_logo.png'
-import purefactsLogo from './purefacts_logo.png'
-import spiraLogo from './spira-logo.png'
-import vitruviLogo from './vitruvi_logo.png'
+import locateLogo from './images/locate_logo.png'
+import purefactsLogo from './images/purefacts_logo.png'
+import spiraLogo from './images/spira-logo.png'
+import vitruviLogo from './images/vitruvi_logo.png'
 
 import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
@@ -1591,6 +1593,7 @@ export default class App extends Component {
         {this.state.isAuthenticated && (
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
         )}
+        <Menu.Item key="reviews">Reviews</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="settings">Notification Settings</Menu.Item>
         )}
@@ -1817,6 +1820,10 @@ export default class App extends Component {
       }
       case 'chatbar': {
         pageToRender = this.renderQueryInputPage()
+        break
+      }
+      case 'reviews': {
+        pageToRender = <SentimentAnalysisPage />
         break
       }
       case 'dashboard': {
