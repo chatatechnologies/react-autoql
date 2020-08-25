@@ -74,6 +74,7 @@
     "react-infinite-scroller": "^1.2.4",
     "react-modal": "^3.11.2",
     "react-paginate": "^6.3.2",
+    "react-ratings-declarative": "^3.4.1",
     "react-speech-recognition": "^2.0.7",
     "react-splitter-layout": "^4.0.0",
     "react-tabulator": "^0.10.3",
