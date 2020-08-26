@@ -215,6 +215,14 @@ export default class SentimentAnalysisPage extends React.Component {
             <Ratings.Widget />
             <Ratings.Widget />
           </Ratings>
+          <span
+            onClick={() => {
+              this.setState({ rating: undefined })
+            }}
+            style={{ cursor: 'pointer', opacity: '0.5', marginLeft: '23px' }}
+          >
+            clear
+          </span>
           <Input
             type="text"
             onChange={(e) => {
