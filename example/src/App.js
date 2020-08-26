@@ -1323,7 +1323,7 @@ export default class App extends Component {
         maxMessages={this.state.maxMessages}
         handleImage={handleImage}
         enableExploreQueriesTab={this.state.enableExploreQueriesTab}
-        enableNotificationsTab={!isProd() && this.state.enableNotificationsTab}
+        enableNotificationsTab={this.state.enableNotificationsTab}
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
