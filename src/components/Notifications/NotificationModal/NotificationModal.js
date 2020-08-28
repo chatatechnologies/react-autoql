@@ -7,6 +7,7 @@ import { Modal } from '../../Modal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
+import { Icon } from '../../Icon'
 import { ExpressionBuilder } from '../ExpressionBuilder'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 
@@ -14,6 +15,7 @@ import {
   createNotificationRule,
   updateNotificationRule,
   deleteNotificationRule,
+  isExpressionQueryValid,
 } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
@@ -61,6 +63,7 @@ export default class NotificationModal extends React.Component {
     expressionJSON: [],
     dataReturnQueryInput: '',
     isDataReturnDirty: false,
+    isDataReturnQueryValid: true,
     isScheduleSectionComplete: false,
   }
 
@@ -201,18 +204,24 @@ export default class NotificationModal extends React.Component {
     return newRule
   }
 
-  onExpressionChange = (isComplete, expressionJSON) => {
+  onExpressionChange = (isComplete, isValid, expressionJSON) => {
     let { dataReturnQueryInput } = this.state
     const firstQuery = this.getFirstQuery(expressionJSON[0])
     if (!this.state.isDataReturnDirty && firstQuery) {
       dataReturnQueryInput = firstQuery
     }
 
-    this.setState({
-      isExpressionSectionComplete: isComplete,
-      expressionJSON,
-      dataReturnQueryInput,
-    })
+    this.setState(
+      {
+        isExpressionSectionComplete: isComplete,
+        isExpressionSectionValid: isValid,
+        expressionJSON,
+        dataReturnQueryInput,
+      },
+      () => {
+        this.validateDataReturnQuery()
+      }
+    )
   }
 
   getFirstQuery = (term) => {
@@ -226,6 +235,35 @@ export default class NotificationModal extends React.Component {
       return term.term_value
     }
     return undefined
+  }
+
+  validateDataReturnQuery = () => {
+    if (
+      this.state.dataReturnQueryInput &&
+      !this.state.isValidatingDataReturnQuery &&
+      this.state.lastCheckedDataReturnQuery !== this.state.dataReturnQueryInput
+    ) {
+      this.setState({
+        isValidatingDataReturnQuery: true,
+        lastCheckedDataReturnQuery: this.state.dataReturnQueryInput,
+      })
+      isExpressionQueryValid({
+        query: this.state.dataReturnQueryInput,
+        ...this.props.authentication,
+      })
+        .then(() => {
+          this.setState({
+            isDataReturnQueryValid: true,
+            isValidatingDataReturnQuery: false,
+          })
+        })
+        .catch(() => {
+          this.setState({
+            isDataReturnQueryValid: false,
+            isValidatingDataReturnQuery: false,
+          })
+        })
+    }
   }
 
   onRuleSave = () => {
@@ -322,6 +360,7 @@ export default class NotificationModal extends React.Component {
     return (
       <div>
         <Input
+          ref={(r) => (this.dataReturnInputRef = r)}
           className="chata-notification-display-name-input"
           icon="chata-bubbles-outlined"
           placeholder="Query"
@@ -332,12 +371,20 @@ export default class NotificationModal extends React.Component {
             }
             if (e.key === 'Enter' && this.stepsRef) {
               this.stepsRef.nextStep()
+              this.validateDataReturnQuery()
             }
           }}
+          onBlur={this.validateDataReturnQuery}
           onChange={(e) =>
             this.setState({ dataReturnQueryInput: e.target.value })
           }
         />
+        {!this.state.isDataReturnQueryValid && (
+          <div className="rule-term-validation-error">
+            <Icon type="warning-triangle" /> This query is invalid. Try a
+            different query
+          </div>
+        )}
       </div>
     )
   }
@@ -377,6 +424,7 @@ export default class NotificationModal extends React.Component {
         subtitle: 'Notify me when the following conditions are met',
         content: (
           <ExpressionBuilder
+            authentication={this.props.authentication}
             ref={(r) => (this.expressionRef = r)}
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
@@ -388,6 +436,7 @@ export default class NotificationModal extends React.Component {
           />
         ),
         complete: this.state.isExpressionSectionComplete,
+        error: !this.state.isExpressionSectionValid,
       },
       {
         title: 'Frequency',
@@ -399,9 +448,20 @@ export default class NotificationModal extends React.Component {
         subtitle:
           'Return the data from this query when the notification is triggered',
         content: this.renderDataReturnStep(),
-        onClick: () => this.setState({ isDataReturnDirty: true }),
+        onClick: () => {
+          if (this.dataReturnInputRef) {
+            this.dataReturnInputRef.focus()
+          }
+          this.setState({ isDataReturnDirty: true })
+        },
         complete:
-          !!this.state.dataReturnQueryInput && this.state.isDataReturnDirty,
+          !!this.state.dataReturnQueryInput &&
+          this.state.isDataReturnDirty &&
+          this.state.isDataReturnQueryValid,
+        error:
+          !!this.state.dataReturnQueryInput &&
+          this.state.isDataReturnDirty &&
+          !this.state.isDataReturnQueryValid,
       },
       {
         title: 'Appearance',
@@ -410,6 +470,10 @@ export default class NotificationModal extends React.Component {
       },
     ]
     return steps
+  }
+
+  isSaveButtonDisabled = (steps) => {
+    return steps && !!steps.find((step) => !step.complete || step.error)
   }
 
   render = () => {
@@ -440,7 +504,7 @@ export default class NotificationModal extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
-                disabled={steps && !!steps.find((step) => !step.complete)}
+                disabled={this.isSaveButtonDisabled(steps)}
               >
                 Save
               </Button>

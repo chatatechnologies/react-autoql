@@ -356,13 +356,46 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
+  sortTableDataByDate = (data) => {
+    try {
+      if (!data || typeof data !== 'object') {
+        return undefined
+      }
+
+      const dateColumnIndex = this.tableColumns.findIndex(
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+
+      if (dateColumnIndex >= 0) {
+        const sortedData = data.sort((a, b) => {
+          const aDate = dayjs(a[dateColumnIndex]).unix()
+          const bDate = dayjs(b[dateColumnIndex]).unix()
+
+          if (!aDate || !bDate) {
+            return b - a
+          }
+
+          return bDate - aDate
+        })
+
+        return sortedData
+      }
+
+      return data
+    } catch (error) {
+      return undefined
+    }
+  }
+
   generateTableData = () => {
     this.tableColumns = this.formatColumnsForTable(
       this.props.queryResponse.data.data.columns
     )
 
-    const data = _get(this.props.queryResponse, 'data.data.rows')
-    this.tableData = data ? [...data] : undefined
+    const data = this.sortTableDataByDate(
+      _get(this.props.queryResponse, 'data.data.rows')
+    )
+    this.tableData = data
 
     this.numberOfTableRows = _get(data, 'length', 0)
     this.setColumnIndices()
@@ -841,9 +874,13 @@ export default class QueryOutput extends React.Component {
     }
 
     if (!(this.dataConfig.stringColumnIndex >= 0)) {
+      const dateColumnIndex = this.tableColumns.findIndex(
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
       this.dataConfig.stringColumnIndex = this.supportsPivot
         ? this.tableColumns.findIndex((col) => col.groupable)
-        : this.dataConfig.stringColumnIndices[1] ||
+        : dateColumnIndex ||
+          this.dataConfig.stringColumnIndices[1] ||
           this.dataConfig.stringColumnIndices[0]
     }
 
@@ -953,11 +990,19 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  isStringColumnDateType = () => {
+    const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
+    return (
+      _get(stringColumn, 'type') === 'DATE' ||
+      _get(stringColumn, 'type') === 'DATE_STRING'
+    )
+  }
+
   generateChartData = (newTableData) => {
     try {
       this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
       let columns = this.tableColumns
-      let tableData = newTableData || this.tableData
+      let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
 
       if (this.supportsPivot) {
         columns = this.pivotTableColumns
@@ -977,6 +1022,10 @@ export default class QueryOutput extends React.Component {
           (col, i) => i
         )
         this.dataConfig.seriesIndices.shift()
+      }
+
+      if (this.isStringColumnDateType()) {
+        tableData.reverse()
       }
 
       this.chartData = Object.values(

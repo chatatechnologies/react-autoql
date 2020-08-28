@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _get from 'lodash.get'
 
 import { Icon } from '../../Icon'
 
@@ -14,13 +15,7 @@ import { authenticationDefault } from '../../../props/defaults'
 import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
-  NOTIFICATION_POLLING_INTERVAL = 60000
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
-
-  // Open event source http connection here to receive SSE
-  // notificationEventSource = new EventSource(
-  //   'https://backend.chata.io/notifications'
-  // )
 
   static propTypes = {
     authentication: authenticationType,
@@ -48,41 +43,57 @@ export default class NotificationButton extends React.Component {
   }
 
   componentDidMount = async () => {
-    this.startPollingForNotifications()
-
-    // Listen for new notification SSE's and update real-time
-    // this.notificationEventSource.onmessage = e =>
-    //   this.updateNotificationsCountAndList(JSON.parse(e.data))
+    this._isMounted = true
+    this.subscribeToNotificationCount()
   }
 
   componentWillUnmount = () => {
-    if (this.pollForNotificationsInterval) {
-      clearInterval(this.pollForNotificationsInterval)
+    this._isMounted = false
+    this.unsubscribeFromNotificationCount()
+  }
+
+  getNotificationCount = (currentCount) => {
+    const count = currentCount || this.state.count
+    return fetchNotificationCount({
+      ...this.props.authentication,
+      unacknowledged: count,
+    })
+      .then((response) => {
+        const newCount = _get(response, 'data.data.unacknowledged')
+        if (newCount && newCount !== this.state.count) {
+          this.setState({ count: newCount })
+          this.props.onNewNotification()
+        }
+        return Promise.resolve(newCount)
+      })
+      .catch((error) => {
+        return Promise.reject(error)
+      })
+  }
+
+  subscribeToNotificationCount = (count) => {
+    if (this._isMounted) {
+      this.getNotificationCount(count)
+        .then((newCount) => {
+          // Got a new count, now we want to reconnect
+          this.subscribeToNotificationCount(newCount)
+        })
+        .catch((error) => {
+          if (_get(error, 'response.status') == 504) {
+            // Timed out because there were no changes
+            // Let's connect again
+            this.subscribeToNotificationCount()
+          } else {
+            // Something else went wrong, wait one second and reconnect
+            new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+              this.subscribeToNotificationCount()
+            })
+          }
+        })
     }
   }
 
-  startPollingForNotifications = () => {
-    // Fetch initial existing notifications from the BE
-    this.getNotificationCount()
-
-    // Continue fetching every minute
-    this.pollForNotificationsInterval = setInterval(() => {
-      this.getNotificationCount()
-    }, this.NOTIFICATION_POLLING_INTERVAL)
-  }
-
-  getNotificationCount = () => {
-    fetchNotificationCount({ ...this.props.authentication })
-      .then((count) => {
-        this.setState({ count })
-        if (count > 0) {
-          this.props.onNewNotification()
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-      })
-  }
+  unsubscribeFromNotificationCount = () => {}
 
   resetCount = () => {
     resetNotificationCount({ ...this.props.authentication })

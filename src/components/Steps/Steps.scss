@@ -19,6 +19,15 @@
     }
   }
 
+  &.error {
+    border-color: #ffcc00;
+    .chata-step-dot {
+      border-color: #ffcc00;
+      background: #ffcc00;
+      color: white;
+    }
+  }
+
   &:not(.active) .chata-step-content-container {
     pointer-events: none;
     height: 10px;
@@ -43,8 +52,10 @@
   text-align: center;
 }
 
-.chata-step-title-container {
+.chata-step-title-container:hover {
   cursor: pointer;
+  transition: color 0.2s ease;
+  color: var(--chata-messenger-accent-color, #26a7df);
 }
 
 .chata-step-title {
