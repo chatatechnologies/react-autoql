@@ -23,6 +23,9 @@ import {
   FiMoreHorizontal,
   FiMoreVertical,
   FiDownload,
+  FiSettings,
+  FiSend,
+  FiArrowLeft,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
@@ -38,7 +41,9 @@ import {
   AiFillCaretLeft,
   AiOutlineEdit,
   AiOutlineBulb,
+  AiOutlineQuestionCircle,
 } from 'react-icons/ai'
+import { FaMicrophoneAlt } from 'react-icons/fa'
 import { GoReport } from 'react-icons/go'
 import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
@@ -80,6 +85,10 @@ export default class Icon extends React.Component {
 
     let icon = null
     switch (this.props.type) {
+      case 'back': {
+        icon = <FiArrowLeft />
+        break
+      }
       case 'bar-chart': {
         icon = barChartIcon
         break
@@ -216,6 +225,10 @@ export default class Icon extends React.Component {
         )
         break
       }
+      case 'microphone': {
+        icon = <FaMicrophoneAlt />
+        break
+      }
       case 'more-vertical': {
         icon = <FiMoreVertical />
         break
@@ -252,12 +265,24 @@ export default class Icon extends React.Component {
         icon = <FiPlus />
         break
       }
+      case 'question': {
+        icon = <AiOutlineQuestionCircle />
+        break
+      }
       case 'report': {
         icon = <GoReport />
         break
       }
       case 'search': {
         icon = <IoIosSearch />
+        break
+      }
+      case 'send': {
+        icon = <FiSend />
+        break
+      }
+      case 'settings': {
+        icon = <FiSettings />
         break
       }
       case 'slack': {

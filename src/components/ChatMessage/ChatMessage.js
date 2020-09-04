@@ -223,7 +223,7 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-    return errorMessages.GENERAL
+    return errorMessages.GENERAL_QUERY
   }
 
   toggleTableFilter = () => {

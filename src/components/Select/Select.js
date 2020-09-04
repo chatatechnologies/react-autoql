@@ -26,6 +26,7 @@ export default class Select extends React.Component {
     value: undefined,
     label: undefined,
     size: 'large',
+    style: {},
   }
 
   state = {
@@ -55,6 +56,7 @@ export default class Select extends React.Component {
             <div
               className={`chata-select-popup-container ${this.props
                 .popupClassname || ''}`}
+              style={{ width: this.props.style.width }}
             >
               <ReactTooltip
                 id={`select-tooltip-${this.ID}`}
@@ -65,7 +67,7 @@ export default class Select extends React.Component {
               />
 
               <ul className="chata-select-popup">
-                {this.props.options.map(option => {
+                {this.props.options.map((option) => {
                   return (
                     <li
                       key={`select-option-${this.ID}-${option.value}`}
@@ -92,16 +94,17 @@ export default class Select extends React.Component {
           className={`chata-select ${this.props.className}`}
           data-test="chata-select"
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
+          style={this.props.style}
         >
           {_get(
             this.props.options.find(
-              option => option.value === this.props.value
+              (option) => option.value === this.props.value
             ),
             'label'
           ) ||
             _get(
               this.props.options.find(
-                option => option.value === this.props.value
+                (option) => option.value === this.props.value
               ),
               'value',
               <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>

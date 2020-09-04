@@ -536,7 +536,7 @@ export default class DataMessenger extends React.Component {
 
   createErrorMessage = (content) => {
     return {
-      content: content || errorMessages.GENERAL,
+      content: content || errorMessages.GENERAL_QUERY,
       id: uuid.v4(),
       type: 'error',
       isResponse: true,

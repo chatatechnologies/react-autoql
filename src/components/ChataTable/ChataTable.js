@@ -86,7 +86,7 @@ export default class ChataTable extends React.Component {
 
   setInitialHeaderFilters = () => {
     if (_get(this.props, 'headerFilters.length') && this.ref) {
-      this.props.headerFilters.forEach(filter => {
+      this.props.headerFilters.forEach((filter) => {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
     }
@@ -123,6 +123,24 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  getBase64Data = () => {
+    if (this.ref && this.ref.table) {
+      const data = this.ref.table.getData()
+      const columns = this.ref.table.getColumnDefinitions()
+      const columnNames = columns.map((col) => col.display_name)
+      data.unshift(columnNames)
+
+      const csvContent =
+        // We may want to specify this information in the future
+        // "data:text/csv;charset=utf-8," +
+        data.map((row) => row.join(',')).join('\n')
+      const encodedContent = btoa(csvContent)
+      return Promise.resolve(encodedContent)
+    }
+
+    return Promise.reject()
+  }
+
   render = () => {
     const options = {
       // layout: 'fitDataStretch',
@@ -137,14 +155,14 @@ export default class ChataTable extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
-      dataFiltering: filters => {
+      dataFiltering: (filters) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
         if (this.ref) {
           this.props.onFilterCallback(this.ref.table.getHeaderFilters())
         }
       },
-      downloadDataFormatter: data => data,
+      downloadDataFormatter: (data) => data,
       downloadReady: (fileContents, blob) => blob,
     }
 
@@ -157,7 +175,7 @@ export default class ChataTable extends React.Component {
       >
         {this.props.data && this.props.columns && (
           <ReactTabulator
-            ref={ref => (this.ref = ref)}
+            ref={(ref) => (this.ref = ref)}
             columns={this.state.columns}
             data={this.props.data}
             cellClick={this.cellClick}

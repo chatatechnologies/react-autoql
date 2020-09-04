@@ -99,6 +99,37 @@ export const fetchNotificationList = ({
     })
 }
 
+export const fetchNotificationChannels = ({
+  domain,
+  apiKey,
+  token,
+  channelType,
+}) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/notifications/channels?key=${apiKey}&type=${channelType}`
+  return axiosInstance
+    .get(url)
+    .then((response) => {
+      return Promise.resolve(_get(response, 'data'))
+    })
+    .catch((error) => {
+      if (_get(error, 'response.status') === 404) {
+        return Promise.resolve({ data: [] })
+      }
+
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
 export const fetchNotificationSettings = ({
   domain,
   apiKey,
@@ -371,6 +402,84 @@ export const addUserToProjectRule = ({ ruleId, token, domain, apiKey }) => {
     })
 }
 
+export const createNotificationChannel = ({
+  token,
+  domain,
+  apiKey,
+  channelType,
+  channelName,
+  channelEmail,
+  userName,
+  userEmail,
+}) => {
+  // If there is missing data, dont bother making the call
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {
+    channel_type: channelType,
+    channel_name: channelName,
+    channel_email: channelEmail,
+    sender_name: userName,
+    sender_email: userEmail,
+  }
+
+  const url = `${domain}/autoql/api/v1/notifications/channels?key=${apiKey}`
+
+  return axios
+    .post(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
+export const sendDataToChannel = ({
+  token,
+  domain,
+  apiKey,
+  channelId,
+  fileName,
+  base64Data,
+}) => {
+  // If there is missing data, dont bother making the call
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {
+    attachment_name: fileName,
+    attachment: base64Data,
+
+    // channel_type: 'Slack',
+    // sender_name: 'Nikki Test',
+    // sender_email: 'nmoore@chata.ai',
+    // channel_name: 'chata-slack-test',
+  }
+
+  const url = `${domain}/autoql/api/v1/notifications/channels/${channelId}/send?key=${apiKey}`
+
+  return axios
+    .post(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
 export const toggleProjectRuleStatus = ({
   ruleId,
   status,
@@ -474,6 +583,35 @@ export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
     .delete(url)
     .then((response) => {
       return Promise.resolve(response)
+    })
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
+
+export const removeNotificationChannel = ({
+  channelId,
+  domain,
+  apiKey,
+  token,
+}) => {
+  // If there is missing data, dont bother making the call
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const url = `${domain}/autoql/api/v1/notifications/channels/${channelId}?key=${apiKey}`
+
+  return axiosInstance
+    .delete(url)
+    .then(() => {
+      return Promise.resolve()
     })
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))

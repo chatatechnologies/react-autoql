@@ -510,6 +510,26 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  getBase64Data = () => {
+    if (this.chartRef && isChartType(this.state.displayType)) {
+      const data = this.chartRef.getBase64Data()
+      const trimmedData = data.split(',')[1]
+      return trimmedData
+    } else if (this.tableRef && this.state.displayType === 'table') {
+      const data = this.tableRef.getBase64Data()
+      return data
+    } else if (this.pivotTableRef && this.state.displayType === 'pivot_table') {
+      const data = this.pivotTableRef.getBase64Data()
+      return data
+    }
+
+    console.error(
+      'unable to determine display type, could not fetch base 64 data'
+    )
+
+    return undefined
+  }
+
   saveTableAsCSV = () => {
     if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.saveAsCSV()
@@ -1605,9 +1625,9 @@ export default class QueryOutput extends React.Component {
   }
 
   renderErrorMessage = (message) => {
-    const errorMessage = message || errorMessages.GENERAL
+    const errorMessage = message || errorMessages.GENERAL_QUERY
 
-    return <div style={{ padding: '20px' }}>{errorMessage}</div>
+    return <div>{errorMessage}</div>
   }
 
   renderResponse = (width, height) => {

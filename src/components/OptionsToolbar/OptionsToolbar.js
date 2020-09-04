@@ -10,6 +10,8 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { NotificationModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
+import { SendToSlackModal } from '../SendToSlackModal'
+import { SendToTeamsModal } from '../SendToTeamsModal'
 
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import { CHART_TYPES } from '../../js/Constants.js'
@@ -534,6 +536,38 @@ export default class Input extends React.Component {
     return !columns.find((col) => col.visible)
   }
 
+  renderSendToSlackModal = () => {
+    if (this.props.autoQLConfig.enableSlackSharing) {
+      return (
+        <SendToSlackModal
+          authentication={this.props.authentication}
+          isVisible={this.state.activeMenu === 'slack'}
+          responseRef={this.props.responseRef}
+          onErrorCallback={this.props.onErrorCallback}
+          onClose={() => {
+            this.setState({ activeMenu: undefined })
+          }}
+        />
+      )
+    }
+    return null
+  }
+
+  renderSendToTeamsModal = () => {
+    if (this.props.autoQLConfig.enableTeamsSharing) {
+      return (
+        <SendToTeamsModal
+          authentication={this.props.authentication}
+          isVisible={this.state.activeMenu === 'teams'}
+          onClose={() => {
+            this.setState({ activeMenu: undefined })
+          }}
+        />
+      )
+    }
+    return null
+  }
+
   renderToolbar = () => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     const response = _get(this.props.responseRef, 'props.queryResponse')
@@ -566,8 +600,8 @@ export default class Input extends React.Component {
         isDataResponse && this.props.autoQLConfig.enableNotifications,
       showShareToSlackButton:
         isDataResponse && this.props.autoQLConfig.enableSlackSharing,
-      showShareToTeamsButton:
-        isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
+      showShareToTeamsButton: false,
+      // isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -687,6 +721,8 @@ export default class Input extends React.Component {
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
         {this.renderNotificationModal()}
+        {this.renderSendToSlackModal()}
+        {this.renderSendToTeamsModal()}
       </Fragment>
     )
   }

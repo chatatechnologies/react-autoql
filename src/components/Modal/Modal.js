@@ -40,6 +40,30 @@ export default class Modal extends React.Component {
     onConfirm: () => {},
   }
 
+  renderFooter = () => {
+    if (this.props.footer) {
+      return this.props.footer
+    }
+
+    return (
+      <div>
+        {this.props.showCancelButton && (
+          <Button type="default" onClick={this.props.onClose}>
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="primary"
+          onClick={this.props.onConfirm}
+          loading={this.props.confirmLoading}
+          disabled={this.props.confirmDisabled}
+        >
+          {this.props.confirmText || 'Ok'}
+        </Button>
+      </div>
+    )
+  }
+
   render = () => {
     return (
       <ReactModal
@@ -54,6 +78,7 @@ export default class Modal extends React.Component {
             ...this.props.style,
             bottom: 'auto',
             width: this.props.width,
+            height: this.props.height,
           },
         }}
       >
@@ -74,25 +99,7 @@ export default class Modal extends React.Component {
           {this.props.children}
         </div>
         {this.props.showFooter && (
-          <div className="chata-modal-footer">
-            {this.props.footer || (
-              <div>
-                {this.props.showCancelButton && (
-                  <Button type="default" onClick={this.props.onClose}>
-                    Cancel
-                  </Button>
-                )}
-                <Button
-                  type="primary"
-                  onClick={this.props.onConfirm}
-                  loading={this.props.confirmLoading}
-                  disabled={this.props.confirmDisabled}
-                >
-                  {this.props.confirmText || 'Ok'}
-                </Button>
-              </div>
-            )}
-          </div>
+          <div className="chata-modal-footer">{this.renderFooter()}</div>
         )}
       </ReactModal>
     )

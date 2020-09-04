@@ -4,13 +4,13 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import SpeechRecognition from 'react-speech-recognition'
 
-import microphoneIconSVG from '../../images/microphone-voice-interface-symbol.svg'
+import { Icon } from '../Icon'
 
 import './SpeechToTextButton.scss'
 
 const options = {
   autoStart: false,
-  continuous: false
+  continuous: false,
 }
 
 class Dictaphone extends React.Component {
@@ -24,12 +24,12 @@ class Dictaphone extends React.Component {
     stopListening: PropTypes.func,
     listening: PropTypes.bool,
     onTranscriptChange: PropTypes.func,
-    onFinalTranscript: PropTypes.func
+    onFinalTranscript: PropTypes.func,
   }
 
   static defaultProps = {}
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (this.props.finalTranscript !== prevProps.finalTranscript) {
       this.props.onFinalTranscript(this.props.finalTranscript)
     } else if (this.props.transcript !== prevProps.transcript) {
@@ -52,7 +52,7 @@ class Dictaphone extends React.Component {
       browserSupportsSpeechRecognition,
       startListening,
       stopListening,
-      listening
+      listening,
     } = this.props
 
     if (!browserSupportsSpeechRecognition) {
@@ -72,14 +72,7 @@ class Dictaphone extends React.Component {
           data-for="chata-speech-to-text-tooltip"
           data-tip-disable={this.props.listening}
         >
-          <img
-            className="chat-voice-record-icon"
-            src={microphoneIconSVG}
-            alt="speech to text button"
-            height="22px"
-            width="22px"
-            draggable="false"
-          />
+          <Icon type="microphone" />
         </button>
         <ReactTooltip
           className="chata-tooltip"

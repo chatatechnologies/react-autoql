@@ -19,7 +19,7 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 
-import { svgToPng, formatElement } from '../../../js/Util.js'
+import { svgToPng, getPNGBase64 } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
@@ -278,6 +278,17 @@ export default class ChataChart extends Component {
       this.setState({ isLoading: false })
     }
   }
+
+  getBase64Data = () => {
+    const svgElement = this.chartRef
+    if (!svgElement) {
+      return
+    }
+    return svgToPng(svgElement, 20).then((data) => {
+      return Promise.resolve(data)
+    })
+  }
+
   saveAsPNG = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
