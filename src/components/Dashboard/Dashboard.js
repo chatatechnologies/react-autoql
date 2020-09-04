@@ -631,7 +631,7 @@ class Dashboard extends React.Component {
             processDrilldown={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
-            onSuccessCallback={this.props.onErrorCallback}
+            onSuccessCallback={this.props.onSuccessCallback}
           />
         ))}
       </ReactGridLayout>
