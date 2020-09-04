@@ -459,7 +459,7 @@ class Dashboard extends React.Component {
       let dataConfig
       if (tile && this.state.isDrilldownSecondHalf) {
         title = tile.secondQuery
-        queryResponse = tile.secondQueryResponse
+        queryResponse = tile.secondQueryResponse || tile.queryResponse
         displayType = tile.secondDisplayType
         dataConfig = tile.secondDataConfig
       } else if (tile && !this.state.isDrilldownSecondHalf) {
