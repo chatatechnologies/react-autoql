@@ -887,7 +887,6 @@ export default class QueryOutput extends React.Component {
         stringColumnIndex = this.dataConfig.stringColumnIndices[1]
       }
 
-      console.log('is there a string column index?', stringColumnIndex)
       this.dataConfig.stringColumnIndex = stringColumnIndex
     }
 
