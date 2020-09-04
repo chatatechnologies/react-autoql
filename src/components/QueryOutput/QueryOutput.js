@@ -877,11 +877,18 @@ export default class QueryOutput extends React.Component {
       const dateColumnIndex = this.tableColumns.findIndex(
         (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      this.dataConfig.stringColumnIndex = this.supportsPivot
-        ? this.tableColumns.findIndex((col) => col.groupable)
-        : dateColumnIndex ||
-          this.dataConfig.stringColumnIndices[1] ||
-          this.dataConfig.stringColumnIndices[0]
+
+      let stringColumnIndex = this.dataConfig.stringColumnIndices[0]
+      if (this.supportsPivot) {
+        stringColumnIndex = this.tableColumns.findIndex((col) => col.groupable)
+      } else if (dateColumnIndex >= 0) {
+        stringColumnIndex = dateColumnIndex
+      } else if (this.dataConfig.stringColumnIndices[1] >= 0) {
+        stringColumnIndex = this.dataConfig.stringColumnIndices[1]
+      }
+
+      console.log('is there a string column index?', stringColumnIndex)
+      this.dataConfig.stringColumnIndex = stringColumnIndex
     }
 
     if (!this.dataConfig.numberColumnIndices) {
@@ -968,12 +975,15 @@ export default class QueryOutput extends React.Component {
         supportedByAPI,
         data: [
           {
-            name: this.pivotTableColumns[0].name,
+            name: _get(this.pivotTableColumns, '[0].name'),
             value: `${row[0]}`,
           },
           {
-            name: this.tableColumns[this.dataConfig.legendColumnIndex].name,
-            value: `${this.pivotTableColumns[columnIndex].name}`,
+            name: _get(
+              this.tableColumns,
+              `[${this.dataConfig.legendColumnIndex}].name`
+            ),
+            value: `${_get(this.pivotTableColumns, `[${columnIndex}].name`)}`,
           },
         ],
       }
@@ -982,8 +992,11 @@ export default class QueryOutput extends React.Component {
         supportedByAPI,
         data: [
           {
-            name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
-            value: `${row[this.dataConfig.stringColumnIndex]}`,
+            name: _get(
+              this.tableColumns,
+              `[${this.dataConfig.stringColumnIndex}].name`
+            ),
+            value: `${_get(row, `[${this.dataConfig.stringColumnIndex}]`)}`,
           },
         ],
       }
