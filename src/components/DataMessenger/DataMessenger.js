@@ -950,7 +950,8 @@ export default class DataMessenger extends React.Component {
     this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
-  onQueryTipsSafetyNetSuggestionClick = (keywords) => {
+  onQueryTipsSafetyNetSuggestionClick = (safetyNetObj) => {
+    const keywords = safetyNetObj.query
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
   }
