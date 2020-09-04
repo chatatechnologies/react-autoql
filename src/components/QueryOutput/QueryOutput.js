@@ -512,20 +512,17 @@ export default class QueryOutput extends React.Component {
 
   getBase64Data = () => {
     if (this.chartRef && isChartType(this.state.displayType)) {
-      const data = this.chartRef.getBase64Data()
-      const trimmedData = data.split(',')[1]
-      return trimmedData
+      return this.chartRef.getBase64Data().then((data) => {
+        const trimmedData = data.split(',')[1]
+        return Promise.resolve(trimmedData)
+      })
     } else if (this.tableRef && this.state.displayType === 'table') {
       const data = this.tableRef.getBase64Data()
-      return data
+      return Promise.resolve(data)
     } else if (this.pivotTableRef && this.state.displayType === 'pivot_table') {
       const data = this.pivotTableRef.getBase64Data()
-      return data
+      return Promise.resolve(data)
     }
-
-    console.error(
-      'unable to determine display type, could not fetch base 64 data'
-    )
 
     return undefined
   }

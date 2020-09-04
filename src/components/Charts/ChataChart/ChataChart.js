@@ -282,11 +282,11 @@ export default class ChataChart extends Component {
   getBase64Data = () => {
     const svgElement = this.chartRef
     if (!svgElement) {
-      return
+      return Promise.reject()
     }
-    return svgToPng(svgElement, 20).then((data) => {
-      return Promise.resolve(data)
-    })
+    return svgToPng(svgElement, 20)
+      .then((data) => Promise.resolve(data))
+      .catch(() => Promise.reject())
   }
 
   saveAsPNG = () => {
