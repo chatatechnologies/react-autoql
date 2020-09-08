@@ -61,7 +61,7 @@ export default class SendToSlackModal extends React.Component {
     })
       .then((response) => {
         this.setState({
-          channels: response.data,
+          channels: response.data.items,
           isFetchingChannels: false,
           activePage: 'channel-list',
         })
@@ -92,12 +92,16 @@ export default class SendToSlackModal extends React.Component {
   getAttachmentToSend = () => {
     this.attachment = undefined
 
-    this.props.responseRef
-      .getBase64Data()
-      .then((data) => {
-        this.attachment = data
-      })
-      .catch(() => {})
+    try {
+      this.props.responseRef
+        .getBase64Data()
+        .then((data) => {
+          this.attachment = data
+        })
+        .catch(() => {})
+    } catch (error) {
+      this.props.onErrorCallback(error)
+    }
   }
 
   getVizType = () => {
@@ -273,13 +277,6 @@ export default class SendToSlackModal extends React.Component {
 
   connectChannel = () => {
     this.setState({ isConnectingChannel: true })
-    const newChannel = {
-      channel_type: 'slack',
-      channel_name: this.state.channelName,
-      channel_email: this.state.channelEmail,
-      sender_name: this.state.userName,
-      sender_email: this.state.userEmail,
-    }
     createNotificationChannel({
       ...this.props.authentication,
       channelType: 'slack',
@@ -288,7 +285,8 @@ export default class SendToSlackModal extends React.Component {
       userName: this.state.userName,
       userEmail: this.state.userEmail,
     })
-      .then(() => {
+      .then((response) => {
+        const newChannel = response.data.data
         const newChannels = [...this.state.channels, newChannel]
         this.setState({
           isConnectingChannel: false,

@@ -559,6 +559,8 @@ export default class Input extends React.Component {
         <SendToTeamsModal
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'teams'}
+          responseRef={this.props.responseRef}
+          onErrorCallback={this.props.onErrorCallback}
           onClose={() => {
             this.setState({ activeMenu: undefined })
           }}
@@ -600,8 +602,8 @@ export default class Input extends React.Component {
         isDataResponse && this.props.autoQLConfig.enableNotifications,
       showShareToSlackButton:
         isDataResponse && this.props.autoQLConfig.enableSlackSharing,
-      showShareToTeamsButton: false,
-      // isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
+      showShareToTeamsButton:
+        isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
