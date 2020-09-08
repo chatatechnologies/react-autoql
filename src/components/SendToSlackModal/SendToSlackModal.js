@@ -292,7 +292,6 @@ export default class SendToSlackModal extends React.Component {
           isConnectingChannel: false,
           channels: newChannels,
           activePage: 'channel-list',
-
           channelEmail: undefined,
           channelName: undefined,
           userEmail: undefined,
