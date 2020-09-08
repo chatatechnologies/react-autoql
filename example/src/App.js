@@ -1563,6 +1563,8 @@ export default class App extends Component {
               enableDynamicCharting={this.state.enableDynamicCharting}
               tiles={this.state.dashboardTiles}
               notExecutedText='Hit "Execute" to run this dashboard'
+              onErrorCallback={this.onError}
+              onSuccessCallback={this.onSuccess}
               onChange={(newTiles) => {
                 this.setState({ dashboardTiles: newTiles })
               }}
