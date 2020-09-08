@@ -90,8 +90,8 @@ class Item extends React.Component {
     return (
       <li
         style={{
-          width: '200px',
           margin: '0 auto',
+          width: '200px',
           listStyleType: 'none',
           padding: 0,
           cursor: 'pointer',
