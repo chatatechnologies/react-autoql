@@ -76,7 +76,7 @@
     "react-paginate": "^6.3.2",
     "react-speech-recognition": "^2.0.7",
     "react-splitter-layout": "^4.0.0",
-    "react-tabulator": "^0.10.3",
+    "react-tabulator": "^0.13.2",
     "react-tiny-popover": "^3.4.5",
     "react-tooltip": "^3.11.1",
     "tabulator-tables": "4.4.3",
