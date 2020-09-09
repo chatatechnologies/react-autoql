@@ -241,6 +241,7 @@ export default class NotificationModal extends React.Component {
   }
 
   validateDataReturnQuery = () => {
+    console.log('just attempting to validate query...')
     if (
       this.state.dataReturnQueryInput &&
       !this.state.isValidatingDataReturnQuery &&
@@ -266,6 +267,8 @@ export default class NotificationModal extends React.Component {
             isValidatingDataReturnQuery: false,
           })
         })
+    } else {
+      console.log('something went wrong validating the query')
     }
   }
 
@@ -481,6 +484,10 @@ export default class NotificationModal extends React.Component {
 
   render = () => {
     const steps = this.getModalContent()
+    console.log(
+      'THIS IS THE DATA IN THE RENDER',
+      this.getNotificationRuleData()
+    )
 
     return (
       <Modal
