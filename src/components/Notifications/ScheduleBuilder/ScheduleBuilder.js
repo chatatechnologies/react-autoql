@@ -76,11 +76,21 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getData = () => {
+    console.log(
+      'GETTING DATA FROM SCHEDULE BUILDER COMPONENT. THIS IS THE CURRENT STATE',
+      this.state
+    )
     const {
       frequencyCategorySelectValue,
       everyCheckboxValue,
       frequencySelectValue,
     } = this.state
+
+    console.log('THIS IS WHAT WAS RETURNED', {
+      frequencyCategorySelectValue,
+      everyCheckboxValue,
+      frequencySelectValue,
+    })
     return {
       frequencyCategorySelectValue,
       everyCheckboxValue,

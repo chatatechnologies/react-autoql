@@ -173,6 +173,9 @@ export default class NotificationModal extends React.Component {
     let scheduleData = {}
     if (this.scheduleBuilderRef) {
       scheduleData = this.scheduleBuilderRef.getData()
+      console.log('SCHEDULE DATA FROM SCHEDULE BUILDER REF')
+    } else {
+      console.log('COULDNT FIND SCHEDULE BUILDER REF')
     }
 
     const notificationRule = this.props.currentRule
