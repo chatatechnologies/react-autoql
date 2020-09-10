@@ -190,7 +190,11 @@ export default class Rule extends React.Component {
   }
 
   validateFirstTerm = () => {
-    if (
+    if (!this.props.enableQueryValidation) {
+      this.setState({
+        isFirstTermValid: true,
+      })
+    } else if (
       this.state.input1Value &&
       !this.state.isValidatingFirstTerm &&
       this.state.lastCheckedFirstTermValue !== this.state.input1Value
@@ -220,7 +224,11 @@ export default class Rule extends React.Component {
   }
 
   validateSecondTerm = () => {
-    if (
+    if (!this.props.enableQueryValidation) {
+      this.setState({
+        isSecondTermValid: true,
+      })
+    } else if (
       !this.state.input2Value ||
       !Number.isNaN(Number(this.state.input2Value))
     ) {

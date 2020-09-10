@@ -90,6 +90,7 @@ export default class ExpressionBuilder extends React.Component {
 
   isValid = () => {
     if (!this.props.enableQueryValidation) {
+      console.log('query validation is disabled. all is good')
       return true
     }
 
