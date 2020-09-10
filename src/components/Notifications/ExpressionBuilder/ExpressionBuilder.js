@@ -90,11 +90,9 @@ export default class ExpressionBuilder extends React.Component {
 
   isValid = () => {
     if (!this.props.enableQueryValidation) {
-      console.log('query validation is disabled. all is good')
       return true
     }
 
-    console.log('query validation enabled in EXPRESSIONBUILDER component')
     const isValid = this.state.groups.every((group, i) => {
       const groupRef = this.groupRefs[i]
       if (groupRef) {
