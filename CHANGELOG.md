@@ -1,3 +1,22 @@
+# [1.9.0](https://github.com/chatatechnologies/react-autoql/compare/v1.8.0...v1.9.0) (2020-08-11)
+
+
+### Bug Fixes
+
+* **charts:** fix axis labels for stacked charts ([7c2fd9b](https://github.com/chatatechnologies/react-autoql/commit/7c2fd9b2f6b90f8ad4643487f1f3948fcfd2708c))
+* **cosmetic:** fix flickering bug in modals (changed modal library) and improve transitions ([2745a81](https://github.com/chatatechnologies/react-autoql/commit/2745a81dcbcc6e3d4d9b3ceb62a5615708c2207e))
+* **dashboards:** fix query validation in second half of split view tiles ([6f290e6](https://github.com/chatatechnologies/react-autoql/commit/6f290e61c499b31ea67c984ad6fa6676d866229c))
+* **dashboards:** persist setting to skip query validation after picking a suggestion the first time ([72c84be](https://github.com/chatatechnologies/react-autoql/commit/72c84be506a0851c3150cdf6f9531dae54c22375))
+* **modals:** fix styling for new modal library ([16f7253](https://github.com/chatatechnologies/react-autoql/commit/16f725338e861c2c4871b4e15ece18e1e4ea9980))
+* **safari:** notification footer gets cut off when notification is expanded ([d9ed930](https://github.com/chatatechnologies/react-autoql/commit/d9ed930de464c2e01f23a910578f9692e253e7f9))
+* do not show table options if all columns are hidden ([89440b8](https://github.com/chatatechnologies/react-autoql/commit/89440b8feb0581be30cc48384daa2195b08019a8))
+
+
+### Features
+
+* **data messenger:**  Invert default colour for DM handle (blue background with white logo) ([08ba8cb](https://github.com/chatatechnologies/react-autoql/commit/08ba8cb65dc4fd3a86d0e9d8aa57b774c37184a8))
+* **safetynet:** add disambiguation params from failed validation to query call ([7f82972](https://github.com/chatatechnologies/react-autoql/commit/7f82972b89b71ccee14b8c55ca0c9d16025504c0))
+
 # [1.8.0](https://github.com/chatatechnologies/react-autoql/compare/v1.7.1...v1.8.0) (2020-07-08)
 
 
