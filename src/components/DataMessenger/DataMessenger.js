@@ -36,10 +36,7 @@ import { Cascader } from '../Cascader'
 import { NotificationModal } from '../Notifications/NotificationModal'
 import { NotificationButton } from '../Notifications/NotificationButton'
 import { NotificationList } from '../Notifications/NotificationList'
-import {
-  runDrilldown,
-  fetchQueryTips,
-} from '../../js/queryService'
+import { runDrilldown, fetchQueryTips } from '../../js/queryService'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -255,12 +252,10 @@ export default class DataMessenger extends React.Component {
               <Cascader
                 options={topics}
                 onFinalOptionClick={(option) => {
-                  this.onSuggestionClick(
-                    option.label,
-                    undefined,
-                    undefined,
-                    'welcome_prompt'
-                  )
+                  this.onSuggestionClick({
+                    query: option.label,
+                    source: 'welcome_prompt',
+                  })
                 }}
                 onSeeMoreClick={(label) => this.runTopicInExporeQueries(label)}
               />
@@ -335,7 +330,9 @@ export default class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
-          className={`drawer-handle${this.props.isVisible ? ' hide' : ''}`}
+          className={`drawer-handle
+            ${this.props.isVisible ? ' hide' : ''}
+            ${this.props.handleImage ? '' : ' default-logo'}`}
           style={this.props.handleStyles}
         >
           {this.props.handleImage ? (
@@ -421,13 +418,14 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
+  onSuggestionClick = ({ query, userSelection, skipSafetyNet, source }) => {
     if (this.queryInputRef) {
-      this.queryInputRef.animateInputTextAndSubmit(
-        suggestion,
+      this.queryInputRef.animateInputTextAndSubmit({
+        query,
+        userSelection,
         skipSafetyNet,
-        source
-      )
+        source,
+      })
     }
   }
 
@@ -713,9 +711,9 @@ export default class DataMessenger extends React.Component {
               <Button
                 type="default"
                 size="small"
-                // onClick={() =>
-                //   this.setState({ isClearMessageConfirmVisible: false })
-                // }
+                onClick={() =>
+                  this.setState({ isClearMessageConfirmVisible: false })
+                }
               >
                 Cancel
               </Button>
@@ -952,7 +950,8 @@ export default class DataMessenger extends React.Component {
     this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
-  onQueryTipsSafetyNetSuggestionClick = (keywords) => {
+  onQueryTipsSafetyNetSuggestionClick = (safetyNetObj) => {
+    const keywords = safetyNetObj.query
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
   }
@@ -994,7 +993,7 @@ export default class DataMessenger extends React.Component {
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
         setTimeout(() => {
-          this.onSuggestionClick(query, undefined, undefined, 'explore_queries')
+          this.onSuggestionClick({ query, source: 'explore_queries' })
         }, 500)
       }}
     />
@@ -1158,9 +1157,9 @@ export default class DataMessenger extends React.Component {
           {this.renderTooltips()}
           <Drawer
             data-test="chata-drawer-test"
-            className={`chata-drawer${
-              this.state.isResizing ? ' disable-selection' : ''
-            }`}
+            className={`chata-drawer
+              ${this.state.isResizing ? ' disable-selection' : ''}
+              ${this.props.isVisible ? ' open' : ' closed'}`}
             open={this.props.isVisible}
             showMask={this.props.showMask}
             placement={this.getPlacementProp()}

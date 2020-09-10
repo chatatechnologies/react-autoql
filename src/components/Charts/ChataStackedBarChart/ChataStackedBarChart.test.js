@@ -18,6 +18,7 @@ const defaultProps = {
     },
   ],
   columns: [{}, {}, {}],
+  tableColumns: [{}, {}, {}],
   height: 300,
   width: 300,
 }

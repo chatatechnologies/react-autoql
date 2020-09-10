@@ -5,7 +5,7 @@ export default class Line extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   getKey = (d, i) => {
@@ -17,7 +17,7 @@ export default class Line extends Component {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -68,7 +68,7 @@ export default class Line extends Component {
     const allDots = []
 
     for (let series = 0; series < numberOfSeries; series++) {
-      data.forEach(d => {
+      data.forEach((d) => {
         const xShift = xScale.bandwidth() / 2
         allDots.push(
           <circle
@@ -88,10 +88,11 @@ export default class Line extends Component {
               strokeWidth: 2,
               strokeOpacity: 0.7,
               fillOpacity: 1,
+              opacity: 0,
               fill:
                 this.state.activeKey === this.getKey(d, series)
                   ? d.cells[series].color
-                  : this.props.backgroundColor || '#fff'
+                  : this.props.backgroundColor || '#fff',
             }}
             // onHover={{}}
           />

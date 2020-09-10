@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-// import _reduce from 'lodash.reduce'
 import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
@@ -17,11 +16,7 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
 
-import {
-  runQuery,
-  runQueryOnly,
-  fetchAutocomplete,
-} from '../../../js/queryService'
+import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
 import {
   getSupportedDisplayTypes,
@@ -40,7 +35,6 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
-  dataConfigDefault,
 } from '../../../props/defaults'
 
 import './DashboardTile.scss'
@@ -158,7 +152,6 @@ export default class DashboardTile extends React.Component {
       {
         queryResponse: response,
         selectedSuggestion: undefined,
-        safetyNetSelection: undefined,
       },
       this.props.tile.i
     )
@@ -174,7 +167,6 @@ export default class DashboardTile extends React.Component {
       {
         secondQueryResponse: response,
         secondSelectedSuggestion: undefined,
-        secondSafetyNetSelection: undefined,
       },
       this.props.tile.i
     )
@@ -185,7 +177,7 @@ export default class DashboardTile extends React.Component {
     })
   }
 
-  processQuery = ({ query, skipSafetyNet, source }) => {
+  processQuery = ({ query, userSelection, skipSafetyNet, source }) => {
     if (this.isQueryValid(query)) {
       const finalSource = ['dashboards']
       if (source) {
@@ -194,45 +186,36 @@ export default class DashboardTile extends React.Component {
         finalSource.push('user')
       }
 
-      if (
-        skipSafetyNet ||
-        _get(this.props.queryResponse, 'data.full_suggestion')
-      ) {
-        return runQueryOnly({
-          query,
-          ...this.props.authentication,
-          ...this.props.autoQLConfig,
-          source: finalSource,
+      return runQuery({
+        query,
+        userSelection,
+        ...this.props.authentication,
+        ...this.props.autoQLConfig,
+        enableQueryValidation: !this.props.isEditing
+          ? false
+          : this.props.autoQLConfig.enableQueryValidation,
+        source: finalSource,
+        skipQueryValidation: skipSafetyNet,
+      })
+        .then((response) => {
+          return Promise.resolve(response)
         })
-          .then((response) => {
-            return Promise.resolve(response)
-          })
-          .catch((error) => Promise.reject(error))
-      } else {
-        return runQuery({
-          query,
-          ...this.props.authentication,
-          ...this.props.autoQLConfig,
-          enableQueryValidation: !this.props.isEditing
-            ? false
-            : this.props.autoQLConfig.enableQueryValidation,
-          source: finalSource,
-        })
-          .then((response) => {
-            return Promise.resolve(response)
-          })
-          .catch((error) => Promise.reject(error))
-      }
+        .catch((error) => Promise.reject(error))
     }
     return Promise.reject()
   }
 
-  processTileTop = ({ query, skipSafetyNet, source }) => {
+  processTileTop = ({ query, userSelection, skipSafetyNet, source }) => {
     this.setState({ isTopExecuting: true })
 
     const skipQueryValidation =
       !!skipSafetyNet ||
       !!(this.props.tile.query === query && this.props.tile.skipSafetyNet)
+
+    const queryValidationSelections =
+      userSelection ||
+      (this.props.tile.query === query &&
+        _get(this.props.tile, 'queryValidationSelections'))
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -245,13 +228,14 @@ export default class DashboardTile extends React.Component {
         skipSafetyNet: skipQueryValidation,
         queryResponse: null,
         selectedSuggestion: undefined,
-        safetyNetSelection: undefined,
+        queryValidationSelections,
       },
       this.props.tile.i
     )
 
     this.processQuery({
       query,
+      userSelection: queryValidationSelections,
       skipSafetyNet: skipQueryValidation,
       source,
     })
@@ -259,7 +243,7 @@ export default class DashboardTile extends React.Component {
       .catch((response) => this.endTopQuery({ response }))
   }
 
-  processTileBottom = ({ query, skipSafetyNet, source }) => {
+  processTileBottom = ({ query, userSelection, skipSafetyNet, source }) => {
     this.setState({ isBottomExecuting: true, isSecondQueryInputOpen: false })
 
     const skipQueryValidation =
@@ -268,6 +252,11 @@ export default class DashboardTile extends React.Component {
         this.props.tile.secondQuery === query &&
         this.props.tile.secondSkipSafetyNet
       )
+
+    const queryValidationSelections =
+      userSelection ||
+      (this.props.tile.secondQuery === query &&
+        _get(this.props.tile, 'secondQueryValidationSelections'))
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -280,13 +269,14 @@ export default class DashboardTile extends React.Component {
         secondSkipSafetyNet: skipQueryValidation,
         secondQueryResponse: null,
         secondSelectedSuggestion: undefined,
-        secondSafetyNetSelection: undefined,
+        secondQueryValidationSelections: queryValidationSelections,
       },
       this.props.tile.i
     )
 
     this.processQuery({
       query,
+      userSelection: queryValidationSelections,
       skipSafetyNet: skipQueryValidation,
       source,
     })
@@ -327,47 +317,45 @@ export default class DashboardTile extends React.Component {
 
   onSecondQueryTextKeyDown = (e) => {
     if (e.key === 'Enter') {
-      this.processTileBottom({ secondQuery: e.target.value })
+      this.processTileBottom({ query: e.target.value })
       e.target.blur()
     }
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    this.setState({ query: suggestion })
+  onSuggestionClick = ({ query, userSelection, isButtonClick, source }) => {
+    this.setState({ query })
 
     if (isButtonClick) {
-      this.processTileTop({ query: suggestion, skipSafetyNet: true, source })
+      this.processTileTop({ query, userSelection, skipSafetyNet: true, source })
     } else {
       this.props.setParamsForTile(
-        { selectedSuggestion: suggestion },
+        { selectedSuggestion: query },
         this.props.tile.i
       )
     }
   }
 
-  onSecondSuggestionClick = (
-    suggestion,
+  onSecondSuggestionClick = ({
+    query,
+    userSelection,
     isButtonClick,
-    skipSafetyNet,
-    source
-  ) => {
-    this.setState({ secondQuery: suggestion })
+    source,
+  }) => {
+    this.setState({ secondQuery: query })
 
     if (isButtonClick) {
       this.props.setParamsForTile(
-        { secondQuery: suggestion },
+        { secondQuery: query, secondQueryValidationSelections: userSelection },
         this.props.tile.i
       )
       this.processTileBottom({
-        query: suggestion,
+        query,
+        userSelection,
         skipSafetyNet: true,
         source,
       })
     } else {
-      this.props.setParamsForTile(
-        { secondSelectedSuggestion: suggestion, secondSkipSafetyNet: true },
-        this.props.tile.i
-      )
+      this.props.setParamsForTile({ secondQuery: query }, this.props.tile.i)
     }
   }
 
@@ -906,7 +894,7 @@ export default class DashboardTile extends React.Component {
         onDataConfigChange: this.onDataConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
-        selectedSuggestion: this.props.tile.selectedSuggestion,
+        selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,
@@ -952,6 +940,7 @@ export default class DashboardTile extends React.Component {
   renderBottomResponse = () => {
     const queryResponse =
       this.props.tile.secondQueryResponse || this.props.queryResponse
+
     const displayType = isDisplayTypeValid(
       queryResponse,
       this.props.secondDisplayType
@@ -971,7 +960,7 @@ export default class DashboardTile extends React.Component {
         queryValidationSelections: this.props.tile
           .secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
-        selectedSuggestion: this.props.tile.secondSelectedSuggestion,
+        selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,

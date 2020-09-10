@@ -4,17 +4,19 @@ import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEmpty from 'lodash.isempty'
 
 import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
-import { NotificationRulesCopy } from '../NotificationRulesCopy'
+import { ExpressionBuilder } from '../ExpressionBuilder'
 import { VizToolbar } from '../../VizToolbar'
 import {
   dismissNotification,
   deleteNotification,
   updateNotificationRuleStatus,
+  fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
 import {
@@ -45,6 +47,7 @@ export default class NotificationItem extends React.Component {
     notification: PropTypes.shape({}).isRequired,
     activeNotificationData: PropTypes.shape({}),
     showNotificationDetails: PropTypes.bool,
+    onRuleFetchCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
@@ -56,6 +59,7 @@ export default class NotificationItem extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
+    onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
@@ -63,11 +67,12 @@ export default class NotificationItem extends React.Component {
   }
 
   state = {
-    ruleStatus: _get(this.props.notification, 'rule_status'),
+    ruleStatus: undefined,
+    ruleDetails: undefined,
     fullyExpanded: false,
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (
       !prevProps.activeNotificationData &&
       this.props.activeNotificationData
@@ -83,15 +88,33 @@ export default class NotificationItem extends React.Component {
     }
   }
 
-  getIsTriggered = state => {
+  getIsTriggered = (state) => {
     return ['ACKNOWLEDGED', 'UNACKNOWLEDGED'].includes(state)
   }
 
-  onClick = notification => {
+  fetchRuleDetails = (notification) => {
+    this.setState({ ruleDetails: undefined, ruleStatus: undefined })
+    fetchRule({ ruleId: notification.rule_id, ...this.props.authentication })
+      .then((response) => {
+        this.props.onRuleFetchCallback(response)
+        this.setState({
+          ruleDetails: response,
+          ruleStatus: _get(response, 'status'),
+        })
+      })
+      .catch((error) => {
+        this.setState({
+          ruleDetails: {},
+        })
+      })
+  }
+
+  onClick = (notification) => {
     if (notification.expanded) {
       this.setState({ fullyExpanded: false })
       this.props.onCollapseCallback(notification)
     } else {
+      this.fetchRuleDetails(notification)
       this.props.onExpandCallback(notification)
       // wait for animation to complete before showing any scrollbars
       setTimeout(() => {
@@ -109,7 +132,7 @@ export default class NotificationItem extends React.Component {
     dismissNotification({
       ...this.props.authentication,
       notificationId: notification.id,
-    }).catch(error => {
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -122,7 +145,7 @@ export default class NotificationItem extends React.Component {
     deleteNotification({
       ...this.props.authentication,
       notificationId: notification.id,
-    }).catch(error => {
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -131,19 +154,20 @@ export default class NotificationItem extends React.Component {
   changeRuleStatus = (notification, status) => {
     updateNotificationRuleStatus({
       ruleId: notification.rule_id,
+      type: notification.rule_type,
       status,
       ...this.props.authentication,
     })
       .then(() => {
         this.setState({ ruleStatus: status })
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
       })
   }
 
-  formatTimestamp = timestamp => {
+  formatTimestamp = (timestamp) => {
     const time = dayjs.unix(timestamp).format('h:mma')
     const day = dayjs.unix(timestamp).format('MM-DD-YY')
     const today = dayjs().format('MM-DD-YY')
@@ -189,7 +213,7 @@ export default class NotificationItem extends React.Component {
     <div className="chata-notification-alert-strip" />
   )
 
-  renderNotificationHeader = notification => {
+  renderNotificationHeader = (notification) => {
     return (
       <div
         className="chata-notification-list-item-header"
@@ -216,7 +240,7 @@ export default class NotificationItem extends React.Component {
               className="chata-notification-dismiss-icon"
               data-tip="Dismiss"
               data-for="chata-notification-tooltip"
-              onClick={e => {
+              onClick={(e) => {
                 this.onDismissClick(e, notification)
                 ReactTooltip.hide()
               }}
@@ -229,7 +253,7 @@ export default class NotificationItem extends React.Component {
               className="chata-notification-delete-icon"
               data-tip="Delete"
               data-for="chata-notification-tooltip"
-              onClick={e => {
+              onClick={(e) => {
                 this.onDeleteClick(e, notification)
                 ReactTooltip.hide()
               }}
@@ -240,39 +264,67 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderNotificationFooter = notification => {
+  renderTurnOnNotificationButton = (notification) => {
+    const status = this.state.ruleStatus
+    if (!status) {
+      return <div />
+    }
+
+    if (status === 'ACTIVE' || status === 'WAITING') {
+      return (
+        <Button
+          onClick={() => this.changeRuleStatus(notification, 'INACTIVE')}
+          type="default"
+        >
+          <Icon type="notification-off" /> Turn off these notifications
+        </Button>
+      )
+    }
+
+    return (
+      <Button
+        onClick={() => this.changeRuleStatus(notification, 'ACTIVE')}
+        type="default"
+      >
+        <Icon type="notification" /> Turn these notifications back on
+      </Button>
+    )
+  }
+
+  renderEditNotificationButton = () => {
+    if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
+      return <div />
+    } else if (_isEmpty(this.state.ruleDetails)) {
+      return (
+        <div className="notification-deleted-text">
+          This notification has been deleted.
+        </div>
+      )
+    }
+
+    return (
+      <Button
+        onClick={() => this.props.onEditClick(this.state.ruleDetails)}
+        type="default"
+      >
+        <Icon type="edit" /> Edit notification
+      </Button>
+    )
+  }
+
+  renderNotificationFooter = (notification) => {
     return (
       <div
         className="chata-notification-extra-content"
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
-        {this.state.ruleStatus === 'ACTIVE' ||
-        this.state.ruleStatus === 'WAITING' ? (
-          <Button
-            onClick={() => this.changeRuleStatus(notification, 'INACTIVE')}
-            type="default"
-          >
-            <Icon type="notification-off" /> Turn off these notifications
-          </Button>
-        ) : (
-          <Button
-            onClick={() => this.changeRuleStatus(notification, 'ACTIVE')}
-            type="default"
-          >
-            <Icon type="notification" /> Turn these notifications back on
-          </Button>
-        )}
-        <Button
-          onClick={() => this.props.onEditClick(notification.id)}
-          type="default"
-        >
-          <Icon type="edit" /> Edit notification
-        </Button>
+        {this.renderTurnOnNotificationButton(notification)}
+        {this.renderEditNotificationButton()}
       </div>
     )
   }
 
-  renderNotificationContent = notification => {
+  renderNotificationContent = (notification) => {
     const queryTitle = notification.rule_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
@@ -289,19 +341,17 @@ export default class NotificationItem extends React.Component {
         <div className="chata-notification-details-container">
           <div
             className="chata-notification-data-container"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="chata-notificaton-chart-container">
-              {this.props.activeNotificationData ? (
+              {this.props.activeNotificationData && notification.expanded ? (
                 <Fragment>
                   <div className="chata-notification-query-title">
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
-                    ref={r => (this.OUTPUT_REF = r)}
-                    queryResponse={{
-                      data: this.props.activeNotificationData,
-                    }}
+                    ref={(r) => (this.OUTPUT_REF = r)}
+                    queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
                     themeConfig={this.props.themeConfig}
                     displayType={this.state.displayType}
@@ -320,7 +370,7 @@ export default class NotificationItem extends React.Component {
                   themeConfig={this.props.themeConfig}
                   supportedDisplayTypes={this.supportedDisplayTypes}
                   displayType={this.state.displayType}
-                  onDisplayTypeChange={displayType =>
+                  onDisplayTypeChange={(displayType) =>
                     this.setState({ displayType })
                   }
                   vertical
@@ -328,17 +378,18 @@ export default class NotificationItem extends React.Component {
               </div>
             )}
           </div>
-          {this.props.showNotificationDetails && (
+          {this.props.showNotificationDetails && notification.expanded && (
             <div className="chata-notification-details">
-              <div className="chata-notificaiton-details-title">
+              <div className="chata-notification-details-title">
                 Conditions:
               </div>
-              <NotificationRulesCopy
-                key={this.COMPONENT_KEY}
-                notificationData={_get(notification, 'rule_expression')}
+              <ExpressionBuilder
+                authentication={this.props.authentication}
+                key={`expression-builder-${this.COMPONENT_KEY}`}
+                expression={_get(notification, 'rule_expression')}
                 readOnly
               />
-              <div className="chata-notificaiton-details-title">
+              <div className="chata-notification-details-title">
                 Description:
               </div>
               <div>{this.getFrequencyDescription()}</div>
@@ -352,20 +403,20 @@ export default class NotificationItem extends React.Component {
 
   render = () => {
     const { notification } = this.props
+
     return (
-      <ErrorBoundary>
-        <div
-          key={`chata-notification-item-${this.COMPONENT_KEY}`}
-          className={`chata-notification-list-item
+      <div
+        id={`chata-notification-item-${this.COMPONENT_KEY}`}
+        key={`chata-notification-item-${this.COMPONENT_KEY}`}
+        className={`chata-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
-        >
-          {this.renderNotificationHeader(notification)}
-          {this.renderNotificationContent(notification)}
-          {this.renderAlertColorStrip()}
-        </div>
-      </ErrorBoundary>
+      >
+        {this.renderNotificationHeader(notification)}
+        {this.renderNotificationContent(notification)}
+        {this.renderAlertColorStrip()}
+      </div>
     )
   }
 }

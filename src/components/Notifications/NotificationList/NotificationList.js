@@ -25,6 +25,7 @@ import { Button } from '../../Button'
 
 export default class NotificationList extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
+  NOTIFICATION_LIST_KEY = uuid.v4()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
@@ -201,41 +202,14 @@ export default class NotificationList extends React.Component {
     })
   }
 
-  getActiveRuleData = () => {
-    if (!this.state.activeNotificationId) {
-      return undefined
-    }
-
-    const activeNotification = this.state.notificationList.find(
-      (n) => n.expanded
-    )
-    if (activeNotification) {
-      const ruleData = {
-        expression: activeNotification.rule_expression,
-        id: activeNotification.rule_id,
-        message: activeNotification.rule_message,
-        notification_type: activeNotification.notification_type,
-        query: activeNotification.rule_query,
-        status: activeNotification.rule_status,
-        title: activeNotification.rule_title,
-      }
-      return ruleData
-    }
-    return undefined
-  }
-
   onRuleSave = () => {
     // todo: show success alert
     this.setState({ isEditModalVisible: false })
     this.props.onSuccessCallback('Notification successfully updated.')
   }
 
-  onRuleError = () => {
-    this.props.onErrorCallback()
-  }
-
   renderDismissAllButton = () => (
-    <div className="chata-notification-dismiss-all">
+    <div key="dismiss-all-btn" className="chata-notification-dismiss-all">
       <span onClick={this.onDismissAllClick}>
         <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
         Dismiss All
@@ -254,10 +228,10 @@ export default class NotificationList extends React.Component {
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentNotification={this.getActiveRuleData()}
+        currentRule={this.state.activeRule}
         onSave={this.onRuleSave}
         onErrorCallback={this.onRuleError}
-        hideDeleteBtn
+        allowDelete={false}
         themeConfig={this.props.themeConfig}
       />
     )
@@ -341,6 +315,7 @@ export default class NotificationList extends React.Component {
                 {this.state.notificationList.map((notification, i) => {
                   return (
                     <NotificationItem
+                      key={`notification-item-${i}`}
                       authentication={this.props.authentication}
                       themeConfig={this.props.themeConfig}
                       notification={notification}
@@ -349,7 +324,9 @@ export default class NotificationList extends React.Component {
                       onDeleteCallback={this.onDeleteClick}
                       onExpandCallback={(notification) => {
                         this.props.onExpandCallback(notification)
-                        this.setState({ activeNotificationId: notification.id })
+                        this.setState({
+                          activeNotificationId: notification.id,
+                        })
                       }}
                       onCollapseCallback={this.props.onCollapseCallback}
                       activeNotificationData={this.props.activeNotificationData}
@@ -357,7 +334,10 @@ export default class NotificationList extends React.Component {
                         this.props.showNotificationDetails
                       }
                       onErrorCallback={this.props.onErrorCallback}
-                      onEditClick={(id) => this.showEditRuleModal(id)}
+                      onEditClick={(rule) => {
+                        this.setState({ activeRule: rule })
+                        this.showEditRuleModal()
+                      }}
                     />
                   )
                 })}

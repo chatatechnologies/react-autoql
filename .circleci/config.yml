@@ -5,6 +5,7 @@ jobs:
   build-and-test:
     executor:
       name: node/default
+    resource_class: xlarge
     steps:
       - checkout
       - node/with-cache:
@@ -13,11 +14,12 @@ jobs:
             - run: npm i react react-dom
             - run:
                 name: Run Tests
-                no_output_timeout: 30m
+                no_output_timeout: 60m
                 command: npm run test
   test-and-release:
     executor:
       name: node/default
+    resource_class: xlarge
     steps:
       - checkout
       - node/with-cache:
@@ -26,7 +28,7 @@ jobs:
             - run: npm i react react-dom
             - run:
                 name: Run Tests
-                no_output_timeout: 30m
+                no_output_timeout: 60m
                 command: npm run test
             - run: npx semantic-release
 workflows:

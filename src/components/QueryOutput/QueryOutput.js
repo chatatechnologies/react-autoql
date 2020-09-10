@@ -356,13 +356,46 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
+  sortTableDataByDate = (data) => {
+    try {
+      if (!data || typeof data !== 'object') {
+        return undefined
+      }
+
+      const dateColumnIndex = this.tableColumns.findIndex(
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+
+      if (dateColumnIndex >= 0) {
+        const sortedData = data.sort((a, b) => {
+          const aDate = dayjs(a[dateColumnIndex]).unix()
+          const bDate = dayjs(b[dateColumnIndex]).unix()
+
+          if (!aDate || !bDate) {
+            return b - a
+          }
+
+          return bDate - aDate
+        })
+
+        return sortedData
+      }
+
+      return data
+    } catch (error) {
+      return undefined
+    }
+  }
+
   generateTableData = () => {
     this.tableColumns = this.formatColumnsForTable(
       this.props.queryResponse.data.data.columns
     )
 
-    const data = _get(this.props.queryResponse, 'data.data.rows')
-    this.tableData = data ? [...data] : undefined
+    const data = this.sortTableDataByDate(
+      _get(this.props.queryResponse, 'data.data.rows')
+    )
+    this.tableData = data
 
     this.numberOfTableRows = _get(data, 'length', 0)
     this.setColumnIndices()
@@ -395,12 +428,10 @@ export default class QueryOutput extends React.Component {
                 key={uuid.v4()}
                 onChange={(e) => {
                   this.setState({ suggestionSelection: e.target.value })
-                  this.onSuggestionClick(
-                    e.target.value,
-                    undefined,
-                    undefined,
-                    'suggestion'
-                  )
+                  this.onSuggestionClick({
+                    query: e.target.value,
+                    source: 'suggestion',
+                  })
                 }}
                 value={this.state.suggestionSelection}
                 className="chata-suggestions-select"
@@ -419,12 +450,11 @@ export default class QueryOutput extends React.Component {
                   <div key={uuid.v4()}>
                     <button
                       onClick={() =>
-                        this.onSuggestionClick(
-                          suggestion,
-                          true,
-                          undefined,
-                          'suggestion'
-                        )
+                        this.onSuggestionClick({
+                          query: suggestion,
+                          isButtonClick: true,
+                          source: 'suggestion',
+                        })
                       }
                       className="chata-suggestion-btn"
                     >
@@ -844,10 +874,20 @@ export default class QueryOutput extends React.Component {
     }
 
     if (!(this.dataConfig.stringColumnIndex >= 0)) {
-      this.dataConfig.stringColumnIndex = this.supportsPivot
-        ? this.tableColumns.findIndex((col) => col.groupable)
-        : this.dataConfig.stringColumnIndices[1] ||
-          this.dataConfig.stringColumnIndices[0]
+      const dateColumnIndex = this.tableColumns.findIndex(
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      )
+
+      let stringColumnIndex = this.dataConfig.stringColumnIndices[0]
+      if (this.supportsPivot) {
+        stringColumnIndex = this.tableColumns.findIndex((col) => col.groupable)
+      } else if (dateColumnIndex >= 0) {
+        stringColumnIndex = dateColumnIndex
+      } else if (this.dataConfig.stringColumnIndices[1] >= 0) {
+        stringColumnIndex = this.dataConfig.stringColumnIndices[1]
+      }
+
+      this.dataConfig.stringColumnIndex = stringColumnIndex
     }
 
     if (!this.dataConfig.numberColumnIndices) {
@@ -934,12 +974,15 @@ export default class QueryOutput extends React.Component {
         supportedByAPI,
         data: [
           {
-            name: this.pivotTableColumns[0].name,
+            name: _get(this.pivotTableColumns, '[0].name'),
             value: `${row[0]}`,
           },
           {
-            name: this.tableColumns[this.dataConfig.legendColumnIndex].name,
-            value: `${this.pivotTableColumns[columnIndex].name}`,
+            name: _get(
+              this.tableColumns,
+              `[${this.dataConfig.legendColumnIndex}].name`
+            ),
+            value: `${_get(this.pivotTableColumns, `[${columnIndex}].name`)}`,
           },
         ],
       }
@@ -948,19 +991,30 @@ export default class QueryOutput extends React.Component {
         supportedByAPI,
         data: [
           {
-            name: this.tableColumns[this.dataConfig.stringColumnIndex].name,
-            value: `${row[this.dataConfig.stringColumnIndex]}`,
+            name: _get(
+              this.tableColumns,
+              `[${this.dataConfig.stringColumnIndex}].name`
+            ),
+            value: `${_get(row, `[${this.dataConfig.stringColumnIndex}]`)}`,
           },
         ],
       }
     }
   }
 
+  isStringColumnDateType = () => {
+    const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
+    return (
+      _get(stringColumn, 'type') === 'DATE' ||
+      _get(stringColumn, 'type') === 'DATE_STRING'
+    )
+  }
+
   generateChartData = (newTableData) => {
     try {
       this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
       let columns = this.tableColumns
-      let tableData = newTableData || this.tableData
+      let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
 
       if (this.supportsPivot) {
         columns = this.pivotTableColumns
@@ -980,6 +1034,10 @@ export default class QueryOutput extends React.Component {
           (col, i) => i
         )
         this.dataConfig.seriesIndices.shift()
+      }
+
+      if (this.isStringColumnDateType()) {
+        tableData.reverse()
       }
 
       this.chartData = Object.values(
@@ -1528,21 +1586,29 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  onSuggestionClick = (suggestion, isButtonClick, skipSafetyNet, source) => {
-    if (suggestion === 'None of these') {
+  onSuggestionClick = ({
+    query,
+    userSelection,
+    isButtonClick,
+    skipSafetyNet,
+    source,
+  }) => {
+    if (query === 'None of these') {
       this.setState({ customResponse: 'Thank you for your feedback.' })
     } else {
       if (this.props.onSuggestionClick) {
-        this.props.onSuggestionClick(
-          suggestion,
+        this.props.onSuggestionClick({
+          query,
+          userSelection,
           isButtonClick,
           skipSafetyNet,
-          source
-        )
+          source,
+        })
       }
       if (this.props.queryInputRef) {
         this.props.queryInputRef.submitQuery({
-          queryText: suggestion,
+          queryText: query,
+          userSelection,
           skipSafetyNet: true,
           source,
         })
@@ -1589,8 +1655,14 @@ export default class QueryOutput extends React.Component {
         <SafetyNetMessage
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
-          onSuggestionClick={(query) =>
-            this.onSuggestionClick(query, true, true, 'validation')
+          onSuggestionClick={({ query, userSelection }) =>
+            this.onSuggestionClick({
+              query,
+              userSelection,
+              isButtonClick: true,
+              skipSafetyNet: true,
+              source: 'validation',
+            })
           }
           onQueryValidationSelectOption={
             this.props.onQueryValidationSelectOption

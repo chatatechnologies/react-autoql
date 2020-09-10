@@ -34,7 +34,9 @@
   fill-opacity: 1 !important;
 }
 
-.chata-chart-container .vertex-dot:hover {
+.chata-chart-container .vertex-dot:hover,
+.chata-chart-container .line-dot:hover,
+.chata-chart-container .line-dot.active {
   opacity: 1 !important;
 }
 

@@ -8,7 +8,7 @@ import { Rule } from '../Rule'
 
 import './Group.scss'
 
-const isGroup = termValue => {
+const isGroup = (termValue) => {
   return (
     termValue[0] &&
     (termValue[0].condition === 'AND' ||
@@ -17,7 +17,7 @@ const isGroup = termValue => {
   )
 }
 
-const getInitialStateData = initialData => {
+const getInitialStateData = (initialData) => {
   let state = {}
   const rules = []
   if (!initialData || !initialData.length) {
@@ -28,7 +28,7 @@ const getInitialStateData = initialData => {
     })
     state = { rules }
   } else {
-    initialData.forEach(rule => {
+    initialData.forEach((rule) => {
       const id = rule.id || uuid.v4()
       rules.push({
         id,
@@ -58,6 +58,7 @@ export default class Group extends React.Component {
     disableAddGroupBtn: PropTypes.bool,
     hideTopCondition: PropTypes.bool,
     readOnly: PropTypes.bool,
+    enableQueryValidation: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -67,6 +68,7 @@ export default class Group extends React.Component {
     readOnly: false,
     onDelete: () => {},
     onUpdate: () => {},
+    enableQueryValidation: true,
   }
 
   state = {
@@ -114,13 +116,30 @@ export default class Group extends React.Component {
     return isComplete
   }
 
-  deleteRuleOrGroup = id => {
-    const newRules = this.state.rules.filter(rule => rule.id !== id)
+  isValid = () => {
+    if (!this.props.enableQueryValidation) {
+      return true
+    }
+
+    // If we can find one rule that is not valid, then the whole group is invalid
+    const isValid = this.state.rules.every((rule, i) => {
+      const ruleRef = this.ruleRefs[i]
+      if (ruleRef) {
+        return ruleRef.isValid()
+      }
+      return false
+    })
+
+    return isValid
+  }
+
+  deleteRuleOrGroup = (id) => {
+    const newRules = this.state.rules.filter((rule) => rule.id !== id)
     this.setState({ rules: newRules })
   }
 
   onRuleUpdate = (id, isComplete, termValue) => {
-    const newRules = this.state.rules.map(rule => {
+    const newRules = this.state.rules.map((rule) => {
       if (rule.id === id) {
         return {
           ...rule,
@@ -164,7 +183,7 @@ export default class Group extends React.Component {
   }
 
   shouldDisableRuleDeleteBtn = () => {
-    const rulesOnly = this.state.rules.filter(rule => rule.type === 'rule')
+    const rulesOnly = this.state.rules.filter((rule) => rule.type === 'rule')
     return rulesOnly.length <= 1
   }
 
@@ -179,7 +198,7 @@ export default class Group extends React.Component {
         <Radio
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
-          onChange={value => this.setState({ andOrSelectValue: value })}
+          onChange={(value) => this.setState({ andOrSelectValue: value })}
           // outlined
         />{' '}
         conditions
@@ -188,7 +207,7 @@ export default class Group extends React.Component {
   }
 
   renderDeleteGroupBtn = () => {
-    if (this.props.readOnly) {
+    if (this.props.readOnly || this.props.onlyGroup) {
       return null
     }
 
@@ -226,7 +245,7 @@ export default class Group extends React.Component {
 
   renderGroup = () => {
     const hasOnlyOneRule =
-      this.state.rules.filter(rule => rule.type === 'rule').length <= 1
+      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     return (
       <div
@@ -261,7 +280,7 @@ export default class Group extends React.Component {
           </div>
         )}
         <div
-          className={`chata-notification-group-container-copy${
+          className={`chata-notification-group-container${
             hasOnlyOneRule ? ' disable-first-delete' : ''
           }`}
           data-test="rule-group"
@@ -270,7 +289,8 @@ export default class Group extends React.Component {
             if (rule.type === 'rule') {
               return (
                 <Rule
-                  ref={r => (this.ruleRefs[i] = r)}
+                  authentication={this.props.authentication}
+                  ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
@@ -278,16 +298,19 @@ export default class Group extends React.Component {
                   onUpdate={this.onRuleUpdate}
                   onAdd={this.addRule}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             } else if (rule.type === 'group') {
               return (
                 <Group
+                  authentication={this.props.authentication}
                   groupId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
                   onDelete={() => this.deleteRuleOrGroup(rule.id)}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             }
@@ -302,7 +325,7 @@ export default class Group extends React.Component {
 
   renderReadOnlyGroup = () => {
     const hasOnlyOneRule =
-      this.state.rules.filter(rule => rule.type === 'rule').length <= 1
+      this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     let conditionText = null
     if (this.state.andOrSelectValue === 'ALL') {
@@ -320,26 +343,26 @@ export default class Group extends React.Component {
         {this.state.rules.map((rule, i) => {
           if (rule.type === 'rule') {
             return (
-              <Fragment>
-                <Rule
-                  ref={r => (this.ruleRefs[i] = r)}
-                  ruleId={rule.id}
-                  key={rule.id}
-                  initialData={rule.termValue}
-                  andOrValue={
-                    i !== this.state.rules.length - 1 ? conditionText : null
-                  }
-                  readOnly
-                />
-              </Fragment>
+              <Rule
+                key={`rule-readonly-${rule.id}`}
+                ref={(r) => (this.ruleRefs[i] = r)}
+                ruleId={rule.id}
+                initialData={rule.termValue}
+                andOrValue={
+                  i !== this.state.rules.length - 1 ? conditionText : null
+                }
+                enableQueryValidation={false}
+                readOnly
+              />
             )
           } else if (rule.type === 'group') {
             return (
-              <Fragment>
+              <div key={`group-${rule.id}`}>
                 <Group
+                  authentication={this.props.authentication}
                   groupId={rule.id}
-                  key={rule.id}
                   initialData={rule.termValue}
+                  enableQueryValidation={false}
                   readOnly
                 />
                 {i !== this.state.rules.length - 1 && (
@@ -347,7 +370,7 @@ export default class Group extends React.Component {
                     <span className="read-only-rule-term">{conditionText}</span>
                   </div>
                 )}
-              </Fragment>
+              </div>
             )
           }
         })}
