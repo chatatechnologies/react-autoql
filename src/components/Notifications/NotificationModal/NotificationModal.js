@@ -23,8 +23,11 @@ import {
   deleteNotificationRule,
 } from '../../../js/notificationService'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 import './NotificationModal.scss'
 
@@ -40,6 +43,7 @@ export default class NotificationModal extends React.Component {
     isVisible: PropTypes.bool,
     hideDeleteBtn: PropTypes.bool,
     onClose: PropTypes.func,
+    themeConfig: themeConfigType,
   }
 
   static defaultProps = {
@@ -51,6 +55,7 @@ export default class NotificationModal extends React.Component {
     isVisible: false,
     hideDeleteBtn: false,
     onClose: () => {},
+    themeConfig: themeConfigDefault,
   }
 
   state = {
@@ -138,7 +143,7 @@ export default class NotificationModal extends React.Component {
     })
   }
 
-  createRuleJSONFromQuery = query => {
+  createRuleJSONFromQuery = (query) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -224,7 +229,7 @@ export default class NotificationModal extends React.Component {
     })
   }
 
-  getFirstQuery = term => {
+  getFirstQuery = (term) => {
     if (!term) {
       return undefined
     }
@@ -253,7 +258,7 @@ export default class NotificationModal extends React.Component {
       updateNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
           // newRuleList = this.state.ruleList.map(r => {
           //   if (r.id === newRule.id) {
@@ -266,7 +271,7 @@ export default class NotificationModal extends React.Component {
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -277,13 +282,13 @@ export default class NotificationModal extends React.Component {
       createNotificationRule({
         ...requestParams,
       })
-        .then(ruleResponse => {
+        .then((ruleResponse) => {
           this.props.onSave(ruleResponse)
           this.setState({
             isSavingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -301,7 +306,7 @@ export default class NotificationModal extends React.Component {
         icon="title"
         maxLength="50"
         value={this.state.titleInput}
-        onChange={e => this.setState({ titleInput: e.target.value })}
+        onChange={(e) => this.setState({ titleInput: e.target.value })}
       />
       <Input
         className="chata-notification-message-input"
@@ -309,18 +314,18 @@ export default class NotificationModal extends React.Component {
         type="multi"
         maxLength="200"
         value={this.state.messageInput}
-        onChange={e => this.setState({ messageInput: e.target.value })}
+        onChange={(e) => this.setState({ messageInput: e.target.value })}
       />
     </div>
   )
 
-  renderFrequencySelector = options => {
+  renderFrequencySelector = (options) => {
     return (
       <Select
         options={options}
         className="notification-frequency-select"
         value={this.state.frequencySelectValue}
-        onChange={value => this.setState({ frequencySelectValue: value })}
+        onChange={(value) => this.setState({ frequencySelectValue: value })}
       />
     )
   }
@@ -329,7 +334,7 @@ export default class NotificationModal extends React.Component {
     <WeekSelect
       multiSelect
       value={this.state.weekSelectValue}
-      onChange={value => this.setState({ weekSelectValue: value })}
+      onChange={(value) => this.setState({ weekSelectValue: value })}
     />
   )
 
@@ -337,7 +342,7 @@ export default class NotificationModal extends React.Component {
     <MonthSelect
       multiSelect
       value={this.state.monthSelectValue}
-      onChange={value => this.setState({ monthSelectValue: value })}
+      onChange={(value) => this.setState({ monthSelectValue: value })}
     />
   )
 
@@ -345,11 +350,11 @@ export default class NotificationModal extends React.Component {
     <YearSelect
       multiSelect
       value={this.state.yearSelectValue}
-      onChange={value => this.setState({ yearSelectValue: value })}
+      onChange={(value) => this.setState({ yearSelectValue: value })}
     />
   )
 
-  renderDateSelector = type => {
+  renderDateSelector = (type) => {
     let selector
     switch (type) {
       case 'WEEK': {
@@ -372,13 +377,13 @@ export default class NotificationModal extends React.Component {
     return <div className="frequency-date-select-container">{selector}</div>
   }
 
-  renderRepeatCheckbox = label => {
+  renderRepeatCheckbox = (label) => {
     return (
       <Checkbox
         label={label}
         className="frequency-repeat-checkbox"
         checked={this.state.everyCheckboxValue}
-        onChange={e => {
+        onChange={(e) => {
           this.setState({ everyCheckboxValue: e.target.checked })
         }}
       />
@@ -428,7 +433,7 @@ export default class NotificationModal extends React.Component {
             ]}
             selectionPlaceholder="Select a frequency"
             value={this.state.frequencyCategorySelectValue}
-            onChange={value =>
+            onChange={(value) =>
               this.setState({ frequencyCategorySelectValue: value })
             }
           />
@@ -490,7 +495,7 @@ export default class NotificationModal extends React.Component {
           icon="chata-bubbles-outlined"
           placeholder="Query"
           value={this.state.dataReturnQueryInput}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (!this.state.isDataReturnDirty) {
               this.setState({ isDataReturnDirty: true })
             }
@@ -498,7 +503,7 @@ export default class NotificationModal extends React.Component {
               this.stepsRef.nextStep()
             }
           }}
-          onChange={e =>
+          onChange={(e) =>
             this.setState({ dataReturnQueryInput: e.target.value })
           }
         />
@@ -524,7 +529,7 @@ export default class NotificationModal extends React.Component {
             isDeletingRule: false,
           })
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
@@ -545,7 +550,7 @@ export default class NotificationModal extends React.Component {
         subtitle: 'Notify me when the following conditions are met',
         content: (
           <NotificationRulesCopy
-            ref={r => (this.rulesRef = r)}
+            ref={(r) => (this.rulesRef = r)}
             key={this.NEW_NOTIFICATION_MODAL_ID}
             onUpdate={this.onRulesUpdate}
             notificationData={_get(
@@ -610,7 +615,7 @@ export default class NotificationModal extends React.Component {
                 type="primary"
                 loading={this.state.isSavingRule}
                 onClick={this.onRuleSave}
-                disabled={steps && !!steps.find(step => !step.complete)}
+                disabled={steps && !!steps.find((step) => !step.complete)}
               >
                 Save
               </Button>
@@ -618,7 +623,7 @@ export default class NotificationModal extends React.Component {
           </div>
         }
       >
-        <Steps ref={r => (this.stepsRef = r)} steps={steps} />
+        <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
       </Modal>
     )
   }
