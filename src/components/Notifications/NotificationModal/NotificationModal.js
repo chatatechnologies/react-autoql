@@ -18,8 +18,11 @@ import {
   isExpressionQueryValid,
 } from '../../../js/notificationService'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 import './NotificationModal.scss'
 
@@ -35,6 +38,7 @@ export default class NotificationModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
+    themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
     onManagementCreateRule: PropTypes.func,
     onManagementDeleteRule: PropTypes.func,
@@ -51,6 +55,7 @@ export default class NotificationModal extends React.Component {
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
+    themeConfig: themeConfigDefault,
     isManagement: false,
     onManagementCreateRule: () => {},
     onManagementDeleteRule: () => {},

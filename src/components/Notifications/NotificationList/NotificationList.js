@@ -232,6 +232,7 @@ export default class NotificationList extends React.Component {
         onSave={this.onRuleSave}
         onErrorCallback={this.onRuleError}
         allowDelete={false}
+        themeConfig={this.props.themeConfig}
       />
     )
   }
