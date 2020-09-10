@@ -10,15 +10,11 @@ export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
     translation: 'exclude',
   }
 
-  console.log('IN VALIDATION CALL')
-
   if (!query || !query.trim()) {
-    console.log('NO QUERY SUPPLIED!', query)
     return Promise.reject({ error: 'No query supplied' })
   }
 
   if (!apiKey || !domain || !token) {
-    console.log('UNAUTHENTICATED', apiKey, domain, token)
     return Promise.reject({ error: 'Unauthenticated' })
   }
 
@@ -28,7 +24,6 @@ export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
     },
   }
 
-  console.log('MAKING THE CALL RIGHT NOW, IF IT DOESNT SHOW SOMETHING IS WRONG')
   return axios.post(url, data, config)
 }
 

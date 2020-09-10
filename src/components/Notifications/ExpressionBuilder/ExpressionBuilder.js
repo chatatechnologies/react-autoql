@@ -89,15 +89,18 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   isValid = () => {
-    const isValid = this.state.groups.every((group, i) => {
-      const groupRef = this.groupRefs[i]
-      if (groupRef) {
-        return groupRef.isValid()
-      }
-      return false
-    })
+    if (this.props.enableQueryValidation) {
+      const isValid = this.state.groups.every((group, i) => {
+        const groupRef = this.groupRefs[i]
+        if (groupRef) {
+          return groupRef.isValid()
+        }
+        return false
+      })
 
-    return isValid
+      return isValid
+    }
+    return true
   }
 
   getJSON = () => {
@@ -121,8 +124,6 @@ export default class ExpressionBuilder extends React.Component {
       }
     })
   }
-
-  validateLogic = () => {}
 
   addGroup = ({ initialData, isComplete, id }) => {
     const newId = id || uuid.v4()
