@@ -81,6 +81,7 @@ export default class ScheduleBuilder extends React.Component {
       everyCheckboxValue,
       frequencySelectValue,
     } = this.state
+
     return {
       frequencyCategorySelectValue,
       everyCheckboxValue,

@@ -89,6 +89,10 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   isValid = () => {
+    if (!this.props.enableQueryValidation) {
+      return true
+    }
+
     const isValid = this.state.groups.every((group, i) => {
       const groupRef = this.groupRefs[i]
       if (groupRef) {
@@ -121,8 +125,6 @@ export default class ExpressionBuilder extends React.Component {
       }
     })
   }
-
-  validateLogic = () => {}
 
   addGroup = ({ initialData, isComplete, id }) => {
     const newId = id || uuid.v4()
@@ -193,6 +195,7 @@ export default class ExpressionBuilder extends React.Component {
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={false}
                 />
                 {i !== this.state.groups.length - 1 && (
                   <div style={{ textAlign: 'center', margin: '2px' }}>
@@ -254,6 +257,7 @@ export default class ExpressionBuilder extends React.Component {
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             })}

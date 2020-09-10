@@ -70,6 +70,7 @@ export default class Rule extends React.Component {
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
     readOnly: PropTypes.bool,
+    enableQueryValidation: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -80,6 +81,7 @@ export default class Rule extends React.Component {
     onUpdate: () => {},
     initialData: undefined,
     readOnly: false,
+    enableQueryValidation: true,
   }
 
   state = {
@@ -175,6 +177,10 @@ export default class Rule extends React.Component {
   }
 
   isValid = () => {
+    if (!this.props.enableQueryValidation) {
+      return true
+    }
+
     if (this.state.conditionSelectValue === 'EXISTS') {
       return this.state.isFirstTermValid
     } else {
@@ -183,7 +189,11 @@ export default class Rule extends React.Component {
   }
 
   validateFirstTerm = () => {
-    if (
+    if (!this.props.enableQueryValidation) {
+      this.setState({
+        isFirstTermValid: true,
+      })
+    } else if (
       this.state.input1Value &&
       !this.state.isValidatingFirstTerm &&
       this.state.lastCheckedFirstTermValue !== this.state.input1Value
@@ -213,7 +223,11 @@ export default class Rule extends React.Component {
   }
 
   validateSecondTerm = () => {
-    if (
+    if (!this.props.enableQueryValidation) {
+      this.setState({
+        isSecondTermValid: true,
+      })
+    } else if (
       !this.state.input2Value ||
       !Number.isNaN(Number(this.state.input2Value))
     ) {

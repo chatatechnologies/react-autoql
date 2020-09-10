@@ -39,6 +39,7 @@ export default class NotificationModal extends React.Component {
     onManagementCreateRule: PropTypes.func,
     onManagementDeleteRule: PropTypes.func,
     title: PropTypes.string,
+    enableQueryValidation: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -54,6 +55,7 @@ export default class NotificationModal extends React.Component {
     onManagementCreateRule: () => {},
     onManagementDeleteRule: () => {},
     title: 'Custom Notification',
+    enableQueryValidation: true,
   }
 
   state = {
@@ -238,31 +240,34 @@ export default class NotificationModal extends React.Component {
   }
 
   validateDataReturnQuery = () => {
-    if (
-      this.state.dataReturnQueryInput &&
-      !this.state.isValidatingDataReturnQuery &&
-      this.state.lastCheckedDataReturnQuery !== this.state.dataReturnQueryInput
-    ) {
-      this.setState({
-        isValidatingDataReturnQuery: true,
-        lastCheckedDataReturnQuery: this.state.dataReturnQueryInput,
-      })
-      isExpressionQueryValid({
-        query: this.state.dataReturnQueryInput,
-        ...this.props.authentication,
-      })
-        .then(() => {
-          this.setState({
-            isDataReturnQueryValid: true,
-            isValidatingDataReturnQuery: false,
-          })
+    if (this.props.enableQueryValidation) {
+      if (
+        this.state.dataReturnQueryInput &&
+        !this.state.isValidatingDataReturnQuery &&
+        this.state.lastCheckedDataReturnQuery !==
+          this.state.dataReturnQueryInput
+      ) {
+        this.setState({
+          isValidatingDataReturnQuery: true,
+          lastCheckedDataReturnQuery: this.state.dataReturnQueryInput,
         })
-        .catch(() => {
-          this.setState({
-            isDataReturnQueryValid: false,
-            isValidatingDataReturnQuery: false,
-          })
+        isExpressionQueryValid({
+          query: this.state.dataReturnQueryInput,
+          ...this.props.authentication,
         })
+          .then(() => {
+            this.setState({
+              isDataReturnQueryValid: true,
+              isValidatingDataReturnQuery: false,
+            })
+          })
+          .catch(() => {
+            this.setState({
+              isDataReturnQueryValid: false,
+              isValidatingDataReturnQuery: false,
+            })
+          })
+      }
     }
   }
 
@@ -428,6 +433,7 @@ export default class NotificationModal extends React.Component {
             ref={(r) => (this.expressionRef = r)}
             key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
             onChange={this.onExpressionChange}
+            enableQueryValidation={this.props.enableQueryValidation}
             expression={_get(
               this.props.currentRule,
               'expression',
