@@ -89,18 +89,20 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   isValid = () => {
-    if (this.props.enableQueryValidation) {
-      const isValid = this.state.groups.every((group, i) => {
-        const groupRef = this.groupRefs[i]
-        if (groupRef) {
-          return groupRef.isValid()
-        }
-        return false
-      })
-
-      return isValid
+    if (!this.props.enableQueryValidation) {
+      return true
     }
-    return true
+
+    console.log('query validation enabled in EXPRESSIONBUILDER component')
+    const isValid = this.state.groups.every((group, i) => {
+      const groupRef = this.groupRefs[i]
+      if (groupRef) {
+        return groupRef.isValid()
+      }
+      return false
+    })
+
+    return isValid
   }
 
   getJSON = () => {

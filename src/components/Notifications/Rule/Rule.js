@@ -181,6 +181,7 @@ export default class Rule extends React.Component {
       return true
     }
 
+    console.log('query validation enabled in RULE component')
     if (this.state.conditionSelectValue === 'EXISTS') {
       return this.state.isFirstTermValid
     } else {

@@ -121,6 +121,7 @@ export default class Group extends React.Component {
       return true
     }
 
+    console.log('query validation enabled in GROUP component')
     // If we can find one rule that is not valid, then the whole group is invalid
     const isValid = this.state.rules.every((rule, i) => {
       const ruleRef = this.ruleRefs[i]
