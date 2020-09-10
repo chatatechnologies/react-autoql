@@ -194,6 +194,7 @@ export default class ExpressionBuilder extends React.Component {
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={false}
                 />
                 {i !== this.state.groups.length - 1 && (
                   <div style={{ textAlign: 'center', margin: '2px' }}>
@@ -255,6 +256,7 @@ export default class ExpressionBuilder extends React.Component {
                   onlyGroup={hasOnlyOneGroup}
                   initialData={group.initialData}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             })}
