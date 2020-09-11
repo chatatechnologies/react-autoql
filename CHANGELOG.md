@@ -1,3 +1,25 @@
+# [1.10.0](https://github.com/chatatechnologies/react-autoql/compare/v1.9.0...v1.10.0) (2020-09-11)
+
+
+### Bug Fixes
+
+* **dashboards:** fix "no data supplied" error in split view ([b68916f](https://github.com/chatatechnologies/react-autoql/commit/b68916f567ac9f06a027b48bd1ffae72c26d968f))
+* **dashboards:** fix onSuccessCallback for dashboards ([0394b32](https://github.com/chatatechnologies/react-autoql/commit/0394b327d3767f2b11f2c05bb29c7f95869c8a89))
+* **explore queries:** fix safetynet bug in explore queries ([287ea43](https://github.com/chatatechnologies/react-autoql/commit/287ea43d656d1549c3ae34c3382d7de1e800ee51))
+* **notifications:** fix various notifications bugs ([ad0dac8](https://github.com/chatatechnologies/react-autoql/commit/ad0dac86ce830dde868b67332734795941c7d4de))
+* **notifications:** various notification bug fixes ([3fa7d21](https://github.com/chatatechnologies/react-autoql/commit/3fa7d21311ef213d50287173177b578a78f0449e))
+
+
+### Features
+
+* **demo page:** add review page to test sentiment analysis ([dd7989b](https://github.com/chatatechnologies/react-autoql/commit/dd7989bbebcf8cb5dca7798fc7fb24c3e838383e))
+* **notifications:** add validation to all queries in notification modal ([249ce55](https://github.com/chatatechnologies/react-autoql/commit/249ce552a3f8d2533d31b785303accc0bfd7390e))
+* **notifications:** enable notifications on prod ([369f8e7](https://github.com/chatatechnologies/react-autoql/commit/369f8e771293a3451c4a805babab9b618c9defd1))
+* **notifications:** use long polling for new notification count ([c1fa96b](https://github.com/chatatechnologies/react-autoql/commit/c1fa96b043710dd84007225979b7e5dad67276ae))
+* **reviews:** add "clear" button beside star selection ([b8bb8b3](https://github.com/chatatechnologies/react-autoql/commit/b8bb8b336f56c8c0f840a70d2d5e4c94275d27a0))
+* **tables and charts:** sort tables by date descending, sort chart axis by date ascending (default) ([064b742](https://github.com/chatatechnologies/react-autoql/commit/064b7427eb2037b2ad35a1c820066fdf81315e02))
+* **test page:** enable notifications on heroku prod ([dc2e658](https://github.com/chatatechnologies/react-autoql/commit/dc2e6580e308bfa415a5c5c6eed64c93714d4a33))
+
 # [1.9.0](https://github.com/chatatechnologies/react-autoql/compare/v1.8.0...v1.9.0) (2020-08-11)
 
 
