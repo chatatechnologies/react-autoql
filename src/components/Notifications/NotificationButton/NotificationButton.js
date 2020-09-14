@@ -16,6 +16,7 @@ import './NotificationButton.scss'
 
 export default class NotificationButton extends React.Component {
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
+  FAILED_POLL_ATTEMPTS = 0
 
   static propTypes = {
     authentication: authenticationType,
@@ -77,9 +78,17 @@ export default class NotificationButton extends React.Component {
         .then((newCount) => {
           // Got a new count, now we want to reconnect
           this.subscribeToNotificationCount(newCount)
+          this.FAILED_POLL_ATTEMPTS = 0
         })
         .catch((error) => {
-          if (_get(error, 'response.status') == 504) {
+          if (this.FAILED_POLL_ATTEMPTS === 5) {
+            const error = new Error(
+              'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.'
+            )
+            console.error(error)
+            this.props.onErrorCallback(error)
+            return
+          } else if (_get(error, 'response.status') == 504) {
             // Timed out because there were no changes
             // Let's connect again
             this.subscribeToNotificationCount()
@@ -89,6 +98,7 @@ export default class NotificationButton extends React.Component {
               this.subscribeToNotificationCount()
             })
           }
+          this.FAILED_POLL_ATTEMPTS += 1
         })
     }
   }
