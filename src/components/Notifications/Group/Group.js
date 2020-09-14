@@ -58,6 +58,7 @@ export default class Group extends React.Component {
     disableAddGroupBtn: PropTypes.bool,
     hideTopCondition: PropTypes.bool,
     readOnly: PropTypes.bool,
+    enableQueryValidation: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -67,6 +68,7 @@ export default class Group extends React.Component {
     readOnly: false,
     onDelete: () => {},
     onUpdate: () => {},
+    enableQueryValidation: true,
   }
 
   state = {
@@ -115,6 +117,10 @@ export default class Group extends React.Component {
   }
 
   isValid = () => {
+    if (!this.props.enableQueryValidation) {
+      return true
+    }
+
     // If we can find one rule that is not valid, then the whole group is invalid
     const isValid = this.state.rules.every((rule, i) => {
       const ruleRef = this.ruleRefs[i]
@@ -292,6 +298,7 @@ export default class Group extends React.Component {
                   onUpdate={this.onRuleUpdate}
                   onAdd={this.addRule}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             } else if (rule.type === 'group') {
@@ -303,6 +310,7 @@ export default class Group extends React.Component {
                   initialData={rule.termValue}
                   onDelete={() => this.deleteRuleOrGroup(rule.id)}
                   readOnly={this.props.readOnly}
+                  enableQueryValidation={this.props.enableQueryValidation}
                 />
               )
             }
@@ -343,6 +351,7 @@ export default class Group extends React.Component {
                 andOrValue={
                   i !== this.state.rules.length - 1 ? conditionText : null
                 }
+                enableQueryValidation={false}
                 readOnly
               />
             )
@@ -353,6 +362,7 @@ export default class Group extends React.Component {
                   authentication={this.props.authentication}
                   groupId={rule.id}
                   initialData={rule.termValue}
+                  enableQueryValidation={false}
                   readOnly
                 />
                 {i !== this.state.rules.length - 1 && (
