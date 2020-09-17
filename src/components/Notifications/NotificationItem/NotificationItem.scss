@@ -13,7 +13,6 @@
   margin-bottom: 8px;
 
   color: rgba(0, 0, 0, 0.6);
-  // font-weight: 500;
   font-family: var(--chata-dashboard-font-family), sans-serif;
 
   transition: all 1s ease;
@@ -21,7 +20,12 @@
   animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
   animation-fill-mode: both;
   animation-delay: 0s;
-  // opacity: 0;
+
+  .single-value-response {
+    font-size: 32px;
+    margin-top: -6px;
+    opacity: 0.9;
+  }
 
   .viz-toolbar {
     position: relative;
@@ -284,7 +288,6 @@
     .chata-notification-display-name {
       font-size: 18px;
       color: rgba(0, 0, 0, 0.7);
-      // opacity: 0.9;
     }
     .chata-notification-timestamp {
       font-size: 12px;
