@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
+import ReactTooltip from 'react-tooltip'
+import uuid from 'uuid'
 
 import { Spinner } from '../Spinner'
 
@@ -9,12 +11,15 @@ const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
 
 export default class Button extends React.Component {
+  COMPONENT_KEY = `chata-btn-${uuid.v4()}`
+
   static propTypes = {
     type: PropTypes.oneOf(validTypes),
     size: PropTypes.oneOf(validSizes),
     onClick: PropTypes.func,
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
+    tooltip: PropTypes.string,
   }
 
   static defaultProps = {
@@ -22,6 +27,7 @@ export default class Button extends React.Component {
     loading: false,
     size: 'large',
     disabled: false,
+    tooltip: undefined,
     onClick: () => {},
   }
 
@@ -61,19 +67,30 @@ export default class Button extends React.Component {
     const isDisabled = this.props.loading || this.props.disabled
 
     return (
-      <button
-        className={`chata-btn
+      <Fragment>
+        <button
+          className={`chata-btn
           ${this.props.className || ''}
           ${type}
           ${size}
           ${isDisabled ? ' disabled' : ''}`}
-        data-test="chata-btn"
-        style={{ ...this.props.style }}
-        onClick={this.props.onClick}
-      >
-        {this.props.loading && <Spinner data-test="chata-button-loading" />}
-        {this.props.children}
-      </button>
+          data-test="chata-btn"
+          style={{ ...this.props.style }}
+          onClick={this.props.onClick}
+          data-tip={this.props.tooltip}
+          data-for={this.COMPONENT_KEY}
+        >
+          {this.props.loading && <Spinner data-test="chata-button-loading" />}
+          {this.props.children}
+        </button>
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id={this.COMPONENT_KEY}
+          effect="solid"
+          delayShow={500}
+          place="top"
+        />
+      </Fragment>
     )
   }
 }
