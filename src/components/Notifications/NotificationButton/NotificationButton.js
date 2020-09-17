@@ -50,7 +50,6 @@ export default class NotificationButton extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    this.unsubscribeFromNotificationCount()
   }
 
   getNotificationCount = (currentCount) => {
@@ -102,8 +101,6 @@ export default class NotificationButton extends React.Component {
         })
     }
   }
-
-  unsubscribeFromNotificationCount = () => {}
 
   resetCount = () => {
     resetNotificationCount({ ...this.props.authentication })

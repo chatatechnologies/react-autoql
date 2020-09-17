@@ -4,12 +4,14 @@ import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import ReactTooltip from 'react-tooltip'
+import sqlFormatter from 'sql-formatter'
 
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { NotificationModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
+import { Button } from '../Button'
 
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import { CHART_TYPES } from '../../js/Constants.js'
@@ -65,8 +67,12 @@ export default class Input extends React.Component {
     setCSSVars({ themeConfig, prefix })
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
+
+    if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
+      this.setState({ sqlCopySuccess: false })
+    }
   }
 
   onTableFilter = (newTableData) => {
@@ -209,6 +215,8 @@ export default class Input extends React.Component {
     this.props.onSuccessAlert(
       'Successfully copied generated query to clipboard!'
     )
+
+    this.setState({ sqlCopySuccess: true })
     ReactTooltip.hide()
   }
 
@@ -453,11 +461,10 @@ export default class Input extends React.Component {
           {shouldShowButton.showSQLButton && (
             <li
               onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.copySQL()
+                this.setState({ activeMenu: 'sql' })
               }}
             >
-              <Icon type="copy" /> Copy generated query to clipboard
+              <Icon type="database" /> View generated SQL
             </li>
           )}
           {shouldShowButton.showCreateNotificationButton && (
@@ -481,6 +488,56 @@ export default class Input extends React.Component {
   areAllColumnsHidden = () => {
     const columns = _get(this.props.responseRef, 'tableColumns', [])
     return !columns.find((col) => col.visible)
+  }
+
+  renderSQLModal = () => {
+    const sql = _get(
+      this.props.responseRef,
+      'props.queryResponse.data.data.sql[0]'
+    )
+    if (!sql) {
+      return null
+    }
+
+    return (
+      <Modal
+        isVisible={this.state.activeMenu === 'sql'}
+        footer={
+          <div>
+            <Button
+              type="primary"
+              onClick={() => this.setState({ activeMenu: undefined })}
+            >
+              Ok
+            </Button>
+          </div>
+        }
+        onClose={() => this.setState({ activeMenu: undefined })}
+        title="Generated SQL"
+        enableBodyScroll={false}
+        width="600px"
+      >
+        <div className="copy-sql-modal-content">
+          <textarea
+            className="copy-sql-formatted-text"
+            value={`${sqlFormatter.format(sql)}`}
+            disabled
+          />
+          <Button
+            className={`copy-sql-btn ${
+              this.state.sqlCopySuccess ? 'sql-copied' : ''
+            }`}
+            onClick={this.copySQL}
+            tooltip="Copy to Clipboard"
+          >
+            <Icon type="copy" />
+            {this.state.sqlCopySuccess && (
+              <Icon type="check" className="sql-copied" />
+            )}
+          </Button>
+        </div>
+      </Modal>
+    )
   }
 
   renderToolbar = () => {
@@ -632,6 +689,7 @@ export default class Input extends React.Component {
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
         {this.renderNotificationModal()}
+        {this.renderSQLModal()}
       </Fragment>
     )
   }

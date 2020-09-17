@@ -14,3 +14,33 @@
     color: var(--chata-options-toolbar-accent-color);
   }
 }
+
+.copy-sql-modal-content {
+  position: relative;
+  height: 60vh;
+
+  .copy-sql-formatted-text {
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    resize: none;
+  }
+
+  .copy-sql-btn {
+    color: var(--chata-options-toolbar-text-color);
+    background-color: var(--chata-options-toolbar-background-color);
+    position: absolute;
+    top: 3px;
+    right: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sql-copied {
+    color: #2aca4d !important;
+  }
+
+  &:hover .copy-sql-btn {
+    opacity: 1;
+  }
+}
