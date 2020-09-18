@@ -20,7 +20,7 @@ export const makeEmptyArray = (w, h) => {
   return arr
 }
 
-export const isDayJSDateValid = date => {
+export const isDayJSDateValid = (date) => {
   return date !== 'Invalid Date'
 }
 
@@ -83,8 +83,15 @@ export const formatStringDate = (value, config) => {
   if (value && typeof value === 'string') {
     const dateArray = value.split('-')
     const year = _get(dateArray, '[0]')
-    const month = _get(dateArray, '[1]')
     const day = _get(dateArray, '[2]')
+
+    let month
+    let week
+    if (_get(dateArray, '[1]', '').includes('W')) {
+      week = _get(dateArray, '[1]')
+    } else {
+      month = _get(dateArray, '[1]')
+    }
 
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || 'MMM YYYY'
@@ -100,6 +107,9 @@ export const formatStringDate = (value, config) => {
       if (isDayJSDateValid(date)) {
         return date
       }
+    } else if (week) {
+      // dayjs doesn't format this correctly
+      return value
     } else if (year) {
       return year
     }
@@ -109,7 +119,7 @@ export const formatStringDate = (value, config) => {
   return value
 }
 
-export const isColumnNumberType = col => {
+export const isColumnNumberType = (col) => {
   const { type } = col
   return (
     type === 'DOLLAR_AMT' ||
@@ -119,7 +129,7 @@ export const isColumnNumberType = col => {
   )
 }
 
-export const isColumnStringType = col => {
+export const isColumnStringType = (col) => {
   const { type } = col
   return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
 }
@@ -408,11 +418,11 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
   })
 }
 
-export const getColumnTypeAmounts = columns => {
+export const getColumnTypeAmounts = (columns) => {
   let amountOfStringColumns = 0
   let amountOfNumberColumns = 0
 
-  columns.forEach(col => {
+  columns.forEach((col) => {
     if (isColumnNumberType(col)) {
       amountOfNumberColumns += 1
     } else if (isColumnStringType(col)) {
@@ -423,10 +433,10 @@ export const getColumnTypeAmounts = columns => {
   return { amountOfNumberColumns, amountOfStringColumns }
 }
 
-export const getNumberOfGroupables = columns => {
+export const getNumberOfGroupables = (columns) => {
   let numberOfGroupables = 0
   if (columns) {
-    columns.forEach(col => {
+    columns.forEach((col) => {
       if (col.groupable) {
         numberOfGroupables += 1
       }
@@ -435,7 +445,7 @@ export const getNumberOfGroupables = columns => {
   return numberOfGroupables
 }
 
-export const getGroupableColumns = columns => {
+export const getGroupableColumns = (columns) => {
   const groupableColumns = []
   if (columns) {
     columns.forEach((col, index) => {
@@ -447,15 +457,15 @@ export const getGroupableColumns = columns => {
   return groupableColumns
 }
 
-export const isChartType = type => CHART_TYPES.includes(type)
-export const isTableType = type => TABLE_TYPES.includes(type)
+export const isChartType = (type) => CHART_TYPES.includes(type)
+export const isTableType = (type) => TABLE_TYPES.includes(type)
 
-export const supportsRegularPivotTable = columns => {
+export const supportsRegularPivotTable = (columns) => {
   const hasTwoGroupables = getNumberOfGroupables(columns) === 2
   return hasTwoGroupables && columns.length === 3
 }
 
-export const supports2DCharts = columns => {
+export const supports2DCharts = (columns) => {
   const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(
     columns
   )
@@ -463,7 +473,7 @@ export const supports2DCharts = columns => {
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
 }
 
-export const getSupportedDisplayTypes = response => {
+export const getSupportedDisplayTypes = (response) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -509,7 +519,7 @@ export const getSupportedDisplayTypes = response => {
 
       // create pivot based on month and year
       const dateColumnIndex = columns.findIndex(
-        col => col.type === 'DATE' || col.type === 'DATE_STRING'
+        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
       const dateColumn = columns[dateColumnIndex]
 
@@ -521,7 +531,7 @@ export const getSupportedDisplayTypes = response => {
       ) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []
-        data.forEach(row => {
+        data.forEach((row) => {
           const year = formatElement({
             element: row[dateColumnIndex],
             column: dateColumn,
@@ -560,7 +570,7 @@ export const isDisplayTypeValid = (response, displayType) => {
   return isValid
 }
 
-export const getDefaultDisplayType = response => {
+export const getDefaultDisplayType = (response) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
 
@@ -627,12 +637,12 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const isAggregation = response => {
+export const isAggregation = (response) => {
   try {
     let isAgg = false
     const columns = _get(response, 'data.data.columns')
     if (columns) {
-      isAgg = !!columns.find(col => col.groupable)
+      isAgg = !!columns.find((col) => col.groupable)
     }
     return isAgg
   } catch (error) {
@@ -651,7 +661,7 @@ export const getGroupBysFromTable = (row, tableColumns) => {
   const rowData = row.getData()
 
   const groupByArray = []
-  groupableColumns.forEach(colIndex => {
+  groupableColumns.forEach((colIndex) => {
     const groupByName = tableColumns[colIndex].name
     const groupByValue = `${rowData[colIndex]}`
     groupByArray.push(nameValueObject(groupByName, groupByValue))
@@ -660,7 +670,7 @@ export const getGroupBysFromTable = (row, tableColumns) => {
   return groupByArray
 }
 
-export const getObjSize = obj => {
+export const getObjSize = (obj) => {
   if (typeof obj !== 'object') {
     return undefined
   }
@@ -668,14 +678,14 @@ export const getObjSize = obj => {
   return Object.keys(obj).length
 }
 
-export const getMaxValueFromKeyValueObj = obj => {
+export const getMaxValueFromKeyValueObj = (obj) => {
   const size = getObjSize(obj)
 
   let maxValue = 0
   if (size === 1) {
     maxValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
-    const numberValues = [...Object.values(obj)].filter(value => {
+    const numberValues = [...Object.values(obj)].filter((value) => {
       return !Number.isNaN(Number(value))
     })
     maxValue = Math.max(...numberValues)
@@ -683,14 +693,14 @@ export const getMaxValueFromKeyValueObj = obj => {
   return maxValue
 }
 
-export const getMinValueFromKeyValueObj = obj => {
+export const getMinValueFromKeyValueObj = (obj) => {
   const size = getObjSize(obj)
 
   let minValue = 0
   if (size === 1) {
     minValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
-    const numberValues = [...Object.values(obj)].filter(value => {
+    const numberValues = [...Object.values(obj)].filter((value) => {
       return !Number.isNaN(Number(value))
     })
     minValue = Math.min(...numberValues)
@@ -698,15 +708,15 @@ export const getMinValueFromKeyValueObj = obj => {
   return minValue
 }
 
-export const calculateMinAndMaxSums = data => {
+export const calculateMinAndMaxSums = (data) => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
   // Loop through data array to get maximum and minimum sums of postive and negative values
   // These will be used to get the max and min values for the x Scale (data values)
-  data.forEach(d => {
+  data.forEach((d) => {
     const label = d.label
-    d.cells.forEach(cell => {
+    d.cells.forEach((cell) => {
       const cellConvertedToNumber = Number(cell.value)
       const value = !Number.isNaN(cellConvertedToNumber)
         ? cellConvertedToNumber
@@ -762,7 +772,7 @@ export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
   }
 }
 
-export const getChartLabelTextWidthInPx = text => {
+export const getChartLabelTextWidthInPx = (text) => {
   try {
     const tempDiv = document.createElement('DIV')
     tempDiv.innerHTML = text
@@ -783,7 +793,7 @@ export const getChartLabelTextWidthInPx = text => {
 
 export const getLongestLabelInPx = (labels, col, config) => {
   let max = getChartLabelTextWidthInPx(labels[0])
-  labels.forEach(label => {
+  labels.forEach((label) => {
     const formattedLabel = formatChartLabel({ d: label, col, config })
       .formattedLabel
     const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
@@ -838,7 +848,7 @@ export const setStyleVars = ({ themeStyles, prefix }) => {
   }
 }
 
-export const getQueryParams = url => {
+export const getQueryParams = (url) => {
   try {
     let queryParams = {}
     // create an anchor tag to use the property called search
@@ -859,7 +869,7 @@ export const getQueryParams = url => {
   }
 }
 
-export const getNumberColumnIndices = columns => {
+export const getNumberColumnIndices = (columns) => {
   const dollarAmtIndices = []
   const quantityIndices = []
   const ratioIndices = []
@@ -894,10 +904,10 @@ export const getNumberColumnIndices = columns => {
 export const filterDataForDrilldown = (response, drilldownData) => {
   const drilldownDataObject = drilldownData[0]
   const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
-    col => col.name === drilldownDataObject.name
+    (col) => col.name === drilldownDataObject.name
   )
 
-  const filteredRows = _get(response, 'data.data.rows', []).filter(row => {
+  const filteredRows = _get(response, 'data.data.rows', []).filter((row) => {
     return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
   })
 
@@ -915,7 +925,7 @@ export const filterDataForDrilldown = (response, drilldownData) => {
   return newResponseData
 }
 
-export const getPadding = element => {
+export const getPadding = (element) => {
   const padding = { left: 0, right: 0, top: 0, bottom: 0 }
   try {
     let left = parseInt(window.getComputedStyle(element)['padding-left'], 10)
@@ -937,7 +947,7 @@ export const getPadding = element => {
   return padding
 }
 
-export const capitalizeFirstChar = string => {
+export const capitalizeFirstChar = (string) => {
   let capitalized = string
   try {
     capitalized = string.charAt(0).toUpperCase() + string.slice(1)
@@ -948,7 +958,7 @@ export const capitalizeFirstChar = string => {
   return capitalized
 }
 
-export const isSingleValueResponse = response => {
+export const isSingleValueResponse = (response) => {
   if (!response) {
     return false
   }
