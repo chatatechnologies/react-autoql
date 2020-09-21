@@ -497,8 +497,8 @@ describe('getSupportedDisplayTypes', () => {
 
     expect(getSupportedDisplayTypes(response)).toEqual([
       'table',
-      'bar',
       'column',
+      'bar',
       'line',
       'pie',
     ])
@@ -507,8 +507,8 @@ describe('getSupportedDisplayTypes', () => {
   test('supports 3d charts', () => {
     expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
       'pivot_table',
-      'stacked_bar',
       'stacked_column',
+      'stacked_bar',
       'stacked_line',
       'bubble',
       'heatmap',
@@ -538,9 +538,9 @@ describe('getDefaultDisplayType', () => {
     expect(getDefaultDisplayType(sampleSingleValueResponse)).toEqual('table')
   })
 
-  test('returns "pivot_table" if available', () => {
+  test('returns "stacked_column" if available', () => {
     expect(getDefaultDisplayType(sampleDoubleGroupableResponse)).toEqual(
-      'pivot_table'
+      'stacked_column'
     )
   })
 

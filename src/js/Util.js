@@ -499,8 +499,8 @@ export const getSupportedDisplayTypes = (response) => {
       if (rows.length < 1000) {
         supportedDisplayTypes = [
           'pivot_table',
-          'stacked_bar',
           'stacked_column',
+          'stacked_bar',
           'stacked_line',
           'bubble',
           'heatmap',
@@ -511,7 +511,7 @@ export const getSupportedDisplayTypes = (response) => {
     } else if (supports2DCharts(columns)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
+      const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
       // if (rows.length < 11) {
       supportedDisplayTypes.push('pie')
@@ -570,6 +570,17 @@ export const isDisplayTypeValid = (response, displayType) => {
   return isValid
 }
 
+export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
+  const chartType = supportedDisplayTypes.find((displayType) =>
+    isChartType(displayType)
+  )
+  if (chartType) {
+    return chartType
+  }
+
+  return fallback
+}
+
 export const getDefaultDisplayType = (response) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
@@ -581,12 +592,24 @@ export const getDefaultDisplayType = (response) => {
 
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
-    return 'pivot_table'
+    const displayType = isAggregation(response)
+      ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
+      : 'pivot_table'
+
+    console.log('is aggregation?', isAggregation(response))
+    console.log(
+      'first chart display type:',
+      getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
+    )
+    return displayType
   }
 
   // If there is no display type in the response, default to regular table
   if (!responseDisplayType || responseDisplayType === 'data') {
-    return 'table'
+    const displayType = isAggregation(response)
+      ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
+      : 'table'
+    return displayType
   }
 
   // Default to table type
