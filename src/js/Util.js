@@ -595,12 +595,6 @@ export const getDefaultDisplayType = (response) => {
     const displayType = isAggregation(response)
       ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
       : 'pivot_table'
-
-    console.log('is aggregation?', isAggregation(response))
-    console.log(
-      'first chart display type:',
-      getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
-    )
     return displayType
   }
 
