@@ -463,11 +463,6 @@ export const sendDataToChannel = ({
   const data = {
     attachment_name: fileName,
     attachment: base64Data,
-
-    // channel_type: 'Slack',
-    // sender_name: 'Nikki Test',
-    // sender_email: 'nmoore@chata.ai',
-    // channel_name: 'chata-slack-test',
   }
 
   const url = `${domain}/autoql/api/v1/notifications/channels/${channelId}/send?key=${apiKey}`

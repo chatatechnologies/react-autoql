@@ -94,9 +94,6 @@
   }
 
   .channel-item {
-    // display: flex;
-    // flex-direction: row;
-    // justify-content: center;
     position: relative;
     text-align: center;
     padding: 10px 20px;
@@ -110,8 +107,6 @@
     }
 
     &:hover:not(.selected) {
-      // background-color: var(--chata-options-toolbar-highlight-color);
-      // color: var(--chata-options-toolbar-accent-color);
       background-color: rgba(0, 0, 0, 0.05);
     }
 
