@@ -510,6 +510,23 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  getBase64Data = () => {
+    if (this.chartRef && isChartType(this.state.displayType)) {
+      return this.chartRef.getBase64Data().then((data) => {
+        const trimmedData = data.split(',')[1]
+        return Promise.resolve(trimmedData)
+      })
+    } else if (this.tableRef && this.state.displayType === 'table') {
+      const data = this.tableRef.getBase64Data()
+      return Promise.resolve(data)
+    } else if (this.pivotTableRef && this.state.displayType === 'pivot_table') {
+      const data = this.pivotTableRef.getBase64Data()
+      return Promise.resolve(data)
+    }
+
+    return undefined
+  }
+
   saveTableAsCSV = () => {
     if (this.state.displayType === 'table' && this.tableRef) {
       this.tableRef.saveAsCSV()
@@ -1619,11 +1636,9 @@ export default class QueryOutput extends React.Component {
   }
 
   renderErrorMessage = (message) => {
-    if (message) {
-      return message
-    }
+    const errorMessage = message || errorMessages.GENERAL_QUERY
 
-    return errorMessages.GENERAL
+    return <div>{errorMessage}</div>
   }
 
   renderResponse = (width, height) => {

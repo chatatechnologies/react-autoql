@@ -11,6 +11,8 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { NotificationModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
+import { SendToSlackModal } from '../SendToSlackModal'
+import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
 
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
@@ -435,7 +437,13 @@ export default class Input extends React.Component {
                 this.saveTableAsCSV()
               }}
             >
-              <Icon type="download" /> Download as CSV
+              <Icon
+                type="download"
+                style={{
+                  marginRight: '7px',
+                }}
+              />
+              Download as CSV
             </li>
           )}
           {shouldShowButton.showSaveAsPNGButton && (
@@ -445,7 +453,13 @@ export default class Input extends React.Component {
                 this.saveChartAsPNG()
               }}
             >
-              <Icon type="download" /> Download as PNG
+              <Icon
+                type="download"
+                style={{
+                  marginRight: '7px',
+                }}
+              />
+              Download as PNG
             </li>
           )}
           {shouldShowButton.showCopyButton && (
@@ -455,7 +469,13 @@ export default class Input extends React.Component {
                 this.copyTableToClipboard()
               }}
             >
-              <Icon type="copy" /> Copy table to clipboard
+              <Icon
+                type="copy"
+                style={{
+                  marginRight: '7px',
+                }}
+              />
+              Copy table to clipboard
             </li>
           )}
           {shouldShowButton.showSQLButton && (
@@ -474,10 +494,37 @@ export default class Input extends React.Component {
               }}
             >
               <Icon
-                style={{ verticalAlign: 'middle', marginRight: '3px' }}
+                style={{ verticalAlign: 'middle', marginRight: '7px' }}
                 type="notification"
               />
-              Create a notification from this query
+              Create a notification from this query...
+            </li>
+          )}
+          {shouldShowButton.showShareToSlackButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: 'slack' })
+              }}
+            >
+              <Icon style={{ marginRight: '5px' }} type="slack" />
+              Send to Slack...
+            </li>
+          )}
+          {shouldShowButton.showShareToTeamsButton && (
+            <li
+              onClick={() => {
+                this.setState({ activeMenu: 'teams' })
+              }}
+            >
+              <Icon
+                style={{
+                  display: 'inline-block',
+                  marginRight: '5px',
+                  marginTop: '-2px',
+                }}
+                type="teams"
+              />
+              Send to Teams...
             </li>
           )}
         </ul>
@@ -488,6 +535,40 @@ export default class Input extends React.Component {
   areAllColumnsHidden = () => {
     const columns = _get(this.props.responseRef, 'tableColumns', [])
     return !columns.find((col) => col.visible)
+  }
+
+  renderSendToSlackModal = () => {
+    if (this.props.autoQLConfig.enableSlackSharing) {
+      return (
+        <SendToSlackModal
+          authentication={this.props.authentication}
+          isVisible={this.state.activeMenu === 'slack'}
+          responseRef={this.props.responseRef}
+          onErrorCallback={this.props.onErrorCallback}
+          onClose={() => {
+            this.setState({ activeMenu: undefined })
+          }}
+        />
+      )
+    }
+    return null
+  }
+
+  renderSendToTeamsModal = () => {
+    if (this.props.autoQLConfig.enableTeamsSharing) {
+      return (
+        <SendToTeamsModal
+          authentication={this.props.authentication}
+          isVisible={this.state.activeMenu === 'teams'}
+          responseRef={this.props.responseRef}
+          onErrorCallback={this.props.onErrorCallback}
+          onClose={() => {
+            this.setState({ activeMenu: undefined })
+          }}
+        />
+      )
+    }
+    return null
   }
 
   renderSQLModal = () => {
@@ -543,6 +624,7 @@ export default class Input extends React.Component {
   renderToolbar = () => {
     const displayType = _get(this.props.responseRef, 'state.displayType')
     const response = _get(this.props.responseRef, 'props.queryResponse')
+    const isDataResponse = _get(response, 'data.data.display_type') === 'data'
 
     const shouldShowButton = {
       showFilterButton:
@@ -564,14 +646,15 @@ export default class Input extends React.Component {
         isTableResponse(response, displayType) &&
         displayType !== 'pivot_table' &&
         _get(response, 'data.data.columns.length') > 0,
-      showSQLButton:
-        this.props.autoQLConfig.debug &&
-        _get(response, 'data.data.display_type') === 'data',
+      showSQLButton: isDataResponse && this.props.autoQLConfig.debug,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationButton:
-        _get(response, 'data.data.display_type') === 'data' &&
-        this.props.autoQLConfig.enableNotifications,
+        isDataResponse && this.props.autoQLConfig.enableNotifications,
+      showShareToSlackButton:
+        isDataResponse && this.props.autoQLConfig.enableSlackSharing,
+      showShareToTeamsButton:
+        isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -579,7 +662,9 @@ export default class Input extends React.Component {
       shouldShowButton.showSQLButton ||
       shouldShowButton.showCreateNotificationButton ||
       shouldShowButton.showSaveAsCSVButton ||
-      shouldShowButton.showSaveAsPNGButton
+      shouldShowButton.showSaveAsPNGButton ||
+      shouldShowButton.showShareToSlackButton ||
+      shouldShowButton.showShareToTeamsButton
 
     // If there is nothing to put in the toolbar, don't render it
     if (
@@ -689,6 +774,8 @@ export default class Input extends React.Component {
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
         {this.renderNotificationModal()}
+        {this.renderSendToSlackModal()}
+        {this.renderSendToTeamsModal()}
         {this.renderSQLModal()}
       </Fragment>
     )

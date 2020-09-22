@@ -343,6 +343,28 @@ export const formatElement = ({
   }
 }
 
+export const getPNGBase64 = (svgElement) => {
+  try {
+    const domUrl = window.URL || window.webkitURL || window
+    if (!domUrl) {
+      throw new Error('(browser doesnt support this)')
+    } else if (!svgElement) {
+      throw new Error('(svg element does not exist)')
+    }
+
+    // get svg data
+    var xml = new XMLSerializer().serializeToString(svgElement)
+    // make it base64
+    var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
+    var b64Start = 'data:image/svg+xml;base64,'
+    // prepend a "header"
+    var image64 = b64Start + svg64
+    return image64
+  } catch (error) {
+    return undefined
+  }
+}
+
 /**
  * converts an svg string to base64 png using the domUrl
  * @param {string} svgElement the svgElement
@@ -353,21 +375,7 @@ export const formatElement = ({
 export const svgToPng = (svgElement, margin = 0, fill) => {
   return new Promise(function(resolve, reject) {
     try {
-      const domUrl = window.URL || window.webkitURL || window
-      if (!domUrl) {
-        throw new Error('(browser doesnt support this)')
-      } else if (!svgElement) {
-        throw new Error('(svg element does not exist)')
-      }
-
-      // get svg data
-      var xml = new XMLSerializer().serializeToString(svgElement)
-      // make it base64
-      var svg64 = btoa(unescape(encodeURIComponent(xml))) // we added non-Latin1 chars for the axis selector
-      // var svg64 = btoa(xml)
-      var b64Start = 'data:image/svg+xml;base64,'
-      // prepend a "header"
-      var image64 = b64Start + svg64
+      const image64 = getPNGBase64(svgElement)
 
       const bbox = svgElement.getBoundingClientRect()
       const width = bbox.width * 2

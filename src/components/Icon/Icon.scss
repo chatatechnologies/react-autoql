@@ -7,3 +7,15 @@
     margin-bottom: -0.1em;
   }
 }
+
+.slack-logo {
+  display: inline-block;
+  height: 100%;
+  margin-bottom: 3px;
+
+  img {
+    vertical-align: middle;
+    height: 1em;
+    width: 1em;
+  }
+}
