@@ -83,8 +83,15 @@ export const formatStringDate = (value, config) => {
   if (value && typeof value === 'string') {
     const dateArray = value.split('-')
     const year = _get(dateArray, '[0]')
-    const month = _get(dateArray, '[1]')
     const day = _get(dateArray, '[2]')
+
+    let month
+    let week
+    if (_get(dateArray, '[1]', '').includes('W')) {
+      week = _get(dateArray, '[1]')
+    } else {
+      month = _get(dateArray, '[1]')
+    }
 
     const { monthYearFormat, dayMonthYearFormat } = config
     const monthYear = monthYearFormat || 'MMM YYYY'
@@ -100,6 +107,9 @@ export const formatStringDate = (value, config) => {
       if (isDayJSDateValid(date)) {
         return date
       }
+    } else if (week) {
+      // dayjs doesn't format this correctly
+      return value
     } else if (year) {
       return year
     }
@@ -498,8 +508,8 @@ export const getSupportedDisplayTypes = (response) => {
       if (rows.length < 1000) {
         supportedDisplayTypes = [
           'pivot_table',
-          'stacked_bar',
           'stacked_column',
+          'stacked_bar',
           'stacked_line',
           'bubble',
           'heatmap',
@@ -510,7 +520,7 @@ export const getSupportedDisplayTypes = (response) => {
     } else if (supports2DCharts(columns)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
-      const supportedDisplayTypes = ['table', 'bar', 'column', 'line']
+      const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
       // if (rows.length < 11) {
       supportedDisplayTypes.push('pie')
@@ -569,6 +579,17 @@ export const isDisplayTypeValid = (response, displayType) => {
   return isValid
 }
 
+export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
+  const chartType = supportedDisplayTypes.find((displayType) =>
+    isChartType(displayType)
+  )
+  if (chartType) {
+    return chartType
+  }
+
+  return fallback
+}
+
 export const getDefaultDisplayType = (response) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
@@ -580,12 +601,18 @@ export const getDefaultDisplayType = (response) => {
 
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
-    return 'pivot_table'
+    const displayType = isAggregation(response)
+      ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
+      : 'pivot_table'
+    return displayType
   }
 
   // If there is no display type in the response, default to regular table
   if (!responseDisplayType || responseDisplayType === 'data') {
-    return 'table'
+    const displayType = isAggregation(response)
+      ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
+      : 'table'
+    return displayType
   }
 
   // Default to table type

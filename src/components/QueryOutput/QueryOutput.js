@@ -1444,11 +1444,13 @@ export default class QueryOutput extends React.Component {
         const yearNumber = uniqueYears[year]
         const monthNumber = uniqueMonths[month]
 
-        pivotTableData[monthNumber][yearNumber] =
-          row[this.dataConfig.numberColumnIndex]
-        pivotOriginalColumnData[year] = {
-          ...pivotOriginalColumnData[year],
-          [month]: row[dateColumnIndex],
+        if (monthNumber && yearNumber) {
+          pivotTableData[monthNumber][yearNumber] =
+            row[this.dataConfig.numberColumnIndex]
+          pivotOriginalColumnData[year] = {
+            ...pivotOriginalColumnData[year],
+            [month]: row[dateColumnIndex],
+          }
         }
       })
 
