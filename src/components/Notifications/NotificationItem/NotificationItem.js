@@ -264,7 +264,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderTurnOnNotificationButton = (notification) => {
+  renderTurnOnNotificationsIcon = (notification) => {
     const status = this.state.ruleStatus
     if (!status) {
       return <div />
@@ -276,7 +276,7 @@ export default class NotificationItem extends React.Component {
           onClick={() => this.changeRuleStatus(notification, 'INACTIVE')}
           type="default"
         >
-          <Icon type="notification-off" /> Turn off these notifications
+          <Icon type="notification-off" /> Turn Data Alert Off
         </Button>
       )
     }
@@ -286,18 +286,18 @@ export default class NotificationItem extends React.Component {
         onClick={() => this.changeRuleStatus(notification, 'ACTIVE')}
         type="default"
       >
-        <Icon type="notification" /> Turn these notifications back on
+        <Icon type="notification" /> Turn Data Alert On
       </Button>
     )
   }
 
-  renderEditNotificationButton = () => {
+  renderEditNotificationsIcon = () => {
     if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
       return <div />
     } else if (_isEmpty(this.state.ruleDetails)) {
       return (
         <div className="notification-deleted-text">
-          This notification has been deleted.
+          This Data Alert no longer exists.
         </div>
       )
     }
@@ -307,7 +307,7 @@ export default class NotificationItem extends React.Component {
         onClick={() => this.props.onEditClick(this.state.ruleDetails)}
         type="default"
       >
-        <Icon type="edit" /> Edit notification
+        <Icon type="edit" /> Edit Data Alert
       </Button>
     )
   }
@@ -318,8 +318,8 @@ export default class NotificationItem extends React.Component {
         className="chata-notification-extra-content"
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
-        {this.renderTurnOnNotificationButton(notification)}
-        {this.renderEditNotificationButton()}
+        {this.renderTurnOnNotificationsIcon(notification)}
+        {this.renderEditNotificationsIcon()}
       </div>
     )
   }

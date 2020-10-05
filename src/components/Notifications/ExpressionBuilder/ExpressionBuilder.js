@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
+import ReactTooltip from 'react-tooltip'
 
 import { Group } from '../Group'
 import { Button } from '../../Button'
@@ -67,6 +68,8 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    ReactTooltip.rebuild()
+
     if (!isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
       this.setState({ ...getInitialStateData(this.props.expression) })
@@ -228,13 +231,14 @@ export default class ExpressionBuilder extends React.Component {
             className="notification-rule-and-or-select"
             style={{ marginBottom: '10px' }}
           >
-            Match{' '}
+            Notify me when{' '}
             <Radio
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
+              type="button"
               onChange={(value) => this.setState({ andOrValue: value })}
             />{' '}
-            of the following:
+            of the following conditions are met:
           </div>
         )}
         <div
@@ -262,13 +266,22 @@ export default class ExpressionBuilder extends React.Component {
               )
             })}
           {!this.props.readOnly && (
-            <div className="notification-first-group-btn-container">
-              <Button
-                className="notification-rule-add-btn-outer"
-                onClick={this.addGroup}
-              >
-                <Icon type="plus" /> Add Condition Group
-              </Button>
+            // <div className="notification-first-group-btn-container">
+            //   <Button
+            //     className="notification-rule-add-btn-outer"
+            //     onClick={this.addGroup}
+            //   >
+            //     <Icon type="plus" /> Add Condition Group
+            //   </Button>
+            // </div>
+
+            <div
+              className="notification-rule-add-group-btn"
+              onClick={this.addGroup}
+              data-tip="Add Condition Group"
+              data-for="notification-expression-tooltip"
+            >
+              <Icon type="plus" className="chata-notification-add-icon" />
             </div>
           )}
         </div>
@@ -277,9 +290,17 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   render = () => {
-    if (this.props.readOnly) {
-      return this.renderReadOnlyRules()
-    }
-    return this.renderRules()
+    return (
+      <Fragment>
+        {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
+        <ReactTooltip
+          className="chata-drawer-tooltip"
+          id="notification-expression-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
+      </Fragment>
+    )
   }
 }

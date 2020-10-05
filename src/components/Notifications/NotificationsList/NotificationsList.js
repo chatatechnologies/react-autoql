@@ -9,7 +9,7 @@ import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 import { NotificationModal } from '../NotificationModal'
 import {
-  fetchNotificationList,
+  fetchNotificationsList,
   dismissAllNotifications,
 } from '../../../js/notificationService'
 
@@ -19,11 +19,11 @@ import {
   themeConfigDefault,
 } from '../../../props/defaults'
 
-import './NotificationList.scss'
+import './NotificationsList.scss'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { Button } from '../../Button'
 
-export default class NotificationList extends React.Component {
+export default class NotificationsList extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
   NOTIFICATION_LIST_KEY = uuid.v4()
   NOTIFICATION_FETCH_LIMIT = 10
@@ -66,7 +66,7 @@ export default class NotificationList extends React.Component {
   }
 
   getInitialNotifications = () => {
-    fetchNotificationList({
+    fetchNotificationsList({
       ...this.props.authentication,
       offset: 0,
       limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -91,7 +91,7 @@ export default class NotificationList extends React.Component {
 
   refreshNotifications = () => {
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
-    fetchNotificationList({
+    fetchNotificationsList({
       ...this.props.authentication,
       offset: 0,
       limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
@@ -282,7 +282,7 @@ export default class NotificationList extends React.Component {
                 initialLoad={false}
                 pageStart={0}
                 loadMore={() => {
-                  fetchNotificationList({
+                  fetchNotificationsList({
                     ...this.props.authentication,
                     offset: this.state.nextOffset,
                     limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -354,7 +354,7 @@ export default class NotificationList extends React.Component {
                 type="primary"
                 onClick={this.showEditRuleModal}
               >
-                Create a New Notification
+                Create Data Alert
               </Button>
             </div>
           )}

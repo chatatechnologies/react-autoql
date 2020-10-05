@@ -12,9 +12,9 @@ import {
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
 
-import './NotificationButton.scss'
+import './NotificationsIcon.scss'
 
-export default class NotificationButton extends React.Component {
+export default class NotificationsIcon extends React.Component {
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
   FAILED_POLL_ATTEMPTS = 0
 

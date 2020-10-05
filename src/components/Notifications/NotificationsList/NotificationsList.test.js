@@ -3,15 +3,16 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
-import NotificationButton from './NotificationButton'
+import NotificationsList from './NotificationsList'
 
 const defaultProps = {
   authentication: testAuthentication,
+  notifications: [],
 }
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationButton {...setupProps} />)
+  const wrapper = shallow(<NotificationsList {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -21,10 +22,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const notificationButtonComponent = findByTestAttr(
+    const notificationListComponent = findByTestAttr(
       wrapper,
-      'notification-button'
+      'notification-list'
     )
-    expect(notificationButtonComponent.exists()).toBe(true)
+    expect(notificationListComponent.exists()).toBe(true)
   })
 })

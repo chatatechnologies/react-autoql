@@ -3,10 +3,10 @@ export * from './components/QueryInput'
 export * from './components/Dashboard'
 export * from './components/QueryOutput'
 export {
-  NotificationButton,
-  NotificationList,
+  NotificationsIcon,
+  NotificationsList,
   NotificationItem,
-  NotificationSettings,
+  DataAlerts,
   ExpressionBuilder,
   ScheduleBuilder,
   NotificationModal,

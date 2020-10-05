@@ -7,9 +7,9 @@ import {
   QueryInput,
   Dashboard,
   executeDashboard,
-  NotificationButton,
-  NotificationList,
-  NotificationSettings,
+  NotificationsIcon,
+  NotificationsList,
+  DataAlerts,
   ExpressionBuilder,
   ScheduleBuilder,
   Icon as ChataIcon,
@@ -1611,11 +1611,11 @@ export default class App extends Component {
         )}
         <Menu.Item key="reviews">Reviews</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="settings">Notification Settings</Menu.Item>
+          <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
         )}
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="notifications">
-            <NotificationButton
+            <NotificationsIcon
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
               themeConfig={this.getThemeConfigProp()}
@@ -1729,7 +1729,7 @@ export default class App extends Component {
           overflow: 'auto',
         }}
       >
-        <NotificationList
+        <NotificationsList
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
@@ -1754,7 +1754,7 @@ export default class App extends Component {
           overflow: 'auto',
         }}
       >
-        <NotificationSettings
+        <DataAlerts
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}

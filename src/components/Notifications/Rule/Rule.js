@@ -365,8 +365,8 @@ export default class Rule extends React.Component {
   renderValidationError = () => {
     return (
       <div className="rule-term-validation-error">
-        <Icon type="warning-triangle" /> This query is invalid. Try a different
-        query
+        <Icon type="warning-triangle" /> That query is invalid. Try entering a
+        different query.
       </div>
     )
   }
@@ -376,8 +376,7 @@ export default class Rule extends React.Component {
       <div className="chata-notification-rule-container" data-test="rule">
         <div className="chata-rule-input">
           <Input
-            icon="chata-bubbles-outlined"
-            placeholder="Query"
+            placeholder="Type a query"
             value={this.state.input1Value}
             onChange={(e) => this.setState({ input1Value: e.target.value })}
             onBlur={this.validateFirstTerm}
@@ -434,8 +433,7 @@ export default class Rule extends React.Component {
         >
           <div className="chata-rule-input">
             <Input
-              icon="chata-bubbles-outlined"
-              placeholder="Query or Number"
+              placeholder="Type a query or number"
               value={this.state.input2Value}
               onChange={(e) => this.setState({ input2Value: e.target.value })}
               onBlur={this.validateSecondTerm}
@@ -488,6 +486,8 @@ export default class Rule extends React.Component {
         <Icon
           className="chata-rule-delete-btn"
           type="close"
+          data-tip="Remove Condition"
+          data-for="notification-expression-tooltip"
           onClick={() => {
             this.props.onDelete(this.props.ruleId)
           }}

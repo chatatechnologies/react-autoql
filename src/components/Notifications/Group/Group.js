@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 
@@ -188,20 +188,16 @@ export default class Group extends React.Component {
   }
 
   renderAllAnySelect = () => {
-    // if (this.props.readOnly) {
-    //   return null
-    // }
-
     return (
       <div className="notification-rule-and-or-select">
-        Match{' '}
+        Notify me when{' '}
         <Radio
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
+          type="button"
           onChange={(value) => this.setState({ andOrSelectValue: value })}
-          // outlined
         />{' '}
-        conditions
+        of the following conditions are met:
       </div>
     )
   }
@@ -216,18 +212,14 @@ export default class Group extends React.Component {
         className="chata-notification-group-delete-btn"
         onClick={() => this.props.onDelete(this.props.groupId)}
       >
-        <Icon type="close" />
+        <Icon
+          type="close"
+          data-tip="Remove Condition Group"
+          data-for="notification-expression-tooltip"
+        />
       </div>
     )
   }
-
-  // renderAddBtn = () => {
-  //   return (
-  //     <div className="chata-notification-group-add-btn" onClick={this.addRule}>
-  //       <Icon type="plus" />
-  //     </div>
-  //   )
-  // }
 
   renderAddBtn = () => {
     if (this.props.readOnly) {
@@ -237,7 +229,12 @@ export default class Group extends React.Component {
     return (
       <div className="notification-rule-btn-container">
         <div className="chata-notification-rule-add-btn" onClick={this.addRule}>
-          <Icon type="plus" className="chata-notification-add-icon" />
+          <Icon
+            type="plus"
+            className="chata-notification-add-icon"
+            data-tip="Add Condition"
+            data-for="notification-expression-tooltip"
+          />
         </div>
       </div>
     )
