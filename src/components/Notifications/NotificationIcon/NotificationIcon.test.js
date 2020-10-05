@@ -3,7 +3,7 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
-import NotificationsIcon from './NotificationsIcon'
+import NotificationIcon from './NotificationIcon'
 
 const defaultProps = {
   authentication: testAuthentication,
@@ -11,7 +11,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationsIcon {...setupProps} />)
+  const wrapper = shallow(<NotificationIcon {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }

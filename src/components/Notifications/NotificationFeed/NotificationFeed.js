@@ -9,7 +9,7 @@ import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 import { NotificationModal } from '../NotificationModal'
 import {
-  fetchNotificationsList,
+  fetchNotificationFeed,
   dismissAllNotifications,
 } from '../../../js/notificationService'
 
@@ -19,11 +19,11 @@ import {
   themeConfigDefault,
 } from '../../../props/defaults'
 
-import './NotificationsList.scss'
+import './NotificationFeed.scss'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { Button } from '../../Button'
 
-export default class NotificationsList extends React.Component {
+export default class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
   NOTIFICATION_LIST_KEY = uuid.v4()
   NOTIFICATION_FETCH_LIMIT = 10
@@ -66,7 +66,7 @@ export default class NotificationsList extends React.Component {
   }
 
   getInitialNotifications = () => {
-    fetchNotificationsList({
+    fetchNotificationFeed({
       ...this.props.authentication,
       offset: 0,
       limit: this.NOTIFICATION_FETCH_LIMIT,
@@ -91,7 +91,7 @@ export default class NotificationsList extends React.Component {
 
   refreshNotifications = () => {
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
-    fetchNotificationsList({
+    fetchNotificationFeed({
       ...this.props.authentication,
       offset: 0,
       limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
@@ -282,7 +282,7 @@ export default class NotificationsList extends React.Component {
                 initialLoad={false}
                 pageStart={0}
                 loadMore={() => {
-                  fetchNotificationsList({
+                  fetchNotificationFeed({
                     ...this.props.authentication,
                     offset: this.state.nextOffset,
                     limit: this.NOTIFICATION_FETCH_LIMIT,

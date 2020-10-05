@@ -59,7 +59,7 @@ export const fetchNotificationCount = ({
     })
 }
 
-export const fetchNotificationsList = ({
+export const fetchNotificationFeed = ({
   domain,
   apiKey,
   token,

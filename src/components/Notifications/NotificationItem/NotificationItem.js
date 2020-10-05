@@ -264,7 +264,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderTurnOnNotificationsIcon = (notification) => {
+  renderTurnOnNotificationIcon = (notification) => {
     const status = this.state.ruleStatus
     if (!status) {
       return <div />
@@ -291,7 +291,7 @@ export default class NotificationItem extends React.Component {
     )
   }
 
-  renderEditNotificationsIcon = () => {
+  renderEditNotificationIcon = () => {
     if (!this.state.ruleDetails || this.state.ruleDetails.type === 'PROJECT') {
       return <div />
     } else if (_isEmpty(this.state.ruleDetails)) {
@@ -318,8 +318,8 @@ export default class NotificationItem extends React.Component {
         className="chata-notification-extra-content"
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
-        {this.renderTurnOnNotificationsIcon(notification)}
-        {this.renderEditNotificationsIcon()}
+        {this.renderTurnOnNotificationIcon(notification)}
+        {this.renderEditNotificationIcon()}
       </div>
     )
   }

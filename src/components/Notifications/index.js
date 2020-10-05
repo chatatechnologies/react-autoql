@@ -1,5 +1,5 @@
-export { NotificationsIcon } from './NotificationsIcon'
-export { NotificationsList } from './NotificationsList'
+export { NotificationIcon } from './NotificationIcon'
+export { NotificationFeed } from './NotificationFeed'
 export { NotificationItem } from './NotificationItem'
 export { DataAlerts } from './DataAlerts'
 export { ExpressionBuilder } from './ExpressionBuilder'

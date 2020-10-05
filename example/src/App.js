@@ -7,8 +7,8 @@ import {
   QueryInput,
   Dashboard,
   executeDashboard,
-  NotificationsIcon,
-  NotificationsList,
+  NotificationIcon,
+  NotificationFeed,
   DataAlerts,
   ExpressionBuilder,
   ScheduleBuilder,
@@ -1615,7 +1615,7 @@ export default class App extends Component {
         )}
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="notifications">
-            <NotificationsIcon
+            <NotificationIcon
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
               themeConfig={this.getThemeConfigProp()}
@@ -1729,7 +1729,7 @@ export default class App extends Component {
           overflow: 'auto',
         }}
       >
-        <NotificationsList
+        <NotificationFeed
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
