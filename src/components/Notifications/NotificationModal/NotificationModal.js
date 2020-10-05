@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Modal } from '../../Modal'
+import { ConfirmModal } from '../../ConfirmModal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
@@ -14,6 +15,7 @@ import { ScheduleBuilder } from '../ScheduleBuilder'
 import {
   createNotificationRule,
   updateNotificationRule,
+  deleteNotificationRule,
   isExpressionQueryValid,
 } from '../../../js/notificationService'
 
@@ -35,6 +37,7 @@ export default class NotificationModal extends React.Component {
     initialQuery: PropTypes.string,
     currentRule: PropTypes.shape({}),
     isVisible: PropTypes.bool,
+    allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
     themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
@@ -51,6 +54,7 @@ export default class NotificationModal extends React.Component {
     initialQuery: undefined,
     currentRule: undefined,
     isVisible: false,
+    allowDelete: true,
     onClose: () => {},
     themeConfig: themeConfigDefault,
     isManagement: false,
@@ -70,6 +74,7 @@ export default class NotificationModal extends React.Component {
     isDataReturnDirty: false,
     isDataReturnQueryValid: true,
     isDataReturnValidated: false,
+    isConfirmDeleteModalVisible: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -483,6 +488,31 @@ export default class NotificationModal extends React.Component {
     )
   }
 
+  onRuleDelete = () => {
+    const ruleId = _get(this.props.currentRule, 'id')
+    if (ruleId) {
+      this.setState({
+        isDeletingRule: true,
+      })
+
+      deleteNotificationRule({ ruleId, ...this.props.authentication })
+        .then(() => {
+          this.props.onDelete(ruleId)
+          this.setState({
+            isDeletingRule: false,
+            isConfirmDeleteModalVisible: false,
+          })
+        })
+        .catch((error) => {
+          console.error(error)
+          this.props.onErrorCallback(error)
+          this.setState({
+            isDeletingRule: false,
+          })
+        })
+    }
+  }
+
   getModalContent = () => {
     if (!this.props.isVisible) {
       return null
@@ -533,21 +563,75 @@ export default class NotificationModal extends React.Component {
     const steps = this.getModalContent()
 
     return (
-      <Modal
-        title={this.props.title}
-        isVisible={this.props.isVisible}
-        onClose={this.props.onClose}
-        confirmOnClose={true}
-        enableBodyScroll
-        confirmText="Save"
-        onConfirm={this.onRuleSave}
-        confirmLoading={this.state.isSavingRule}
-        confirmDisabled={this.isSaveButtonDisabled(steps)}
-      >
-        <div className="notification-modal-content">
-          <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
-        </div>
-      </Modal>
+      <Fragment>
+        <Modal
+          title={this.props.title}
+          ref={(r) => (this.modalRef = r)}
+          isVisible={this.props.isVisible}
+          onClose={this.props.onClose}
+          confirmOnClose={true}
+          enableBodyScroll
+          // confirmText="Save"
+          // onConfirm={this.onRuleSave}
+          // confirmLoading={this.state.isSavingRule}
+          // confirmDisabled={this.isSaveButtonDisabled(steps)}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div>
+                {this.props.currentRule && this.props.allowDelete && (
+                  <Button
+                    type="danger"
+                    onClick={() => {
+                      this.setState({ isConfirmDeleteModalVisible: true })
+                    }}
+                    loading={this.state.isDeletingRule}
+                  >
+                    Delete Data Alert
+                  </Button>
+                )}
+              </div>
+              <div>
+                <Button
+                  onClick={() => {
+                    if (this.modalRef) {
+                      this.modalRef.onClose()
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  loading={this.state.isSavingRule}
+                  onClick={this.onRuleSave}
+                  disabled={this.isSaveButtonDisabled(steps)}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          }
+        >
+          <div className="notification-modal-content">
+            <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
+          </div>
+        </Modal>
+        <ConfirmModal
+          isVisible={this.state.isConfirmDeleteModalVisible}
+          onConfirm={this.onRuleDelete}
+          confirmLoading={this.state.isDeletingRule}
+          onClose={() => {
+            this.setState({ isConfirmDeleteModalVisible: false })
+          }}
+          confirmText="Delete"
+          width="450px"
+        >
+          <h3>Are you sure you want to delete this Data Alert?</h3>
+          <p>
+            You will no longer be notified about these changes in your data.
+          </p>
+        </ConfirmModal>
+      </Fragment>
     )
   }
 }

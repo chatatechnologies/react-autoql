@@ -210,6 +210,12 @@ export default class DataAlerts extends React.Component {
                     </span>
                   </div>
                   <div className="chata-notification-setting-actions">
+                    {notification.type === 'USER' && (
+                      <Icon
+                        className="chata-notification-action-btn"
+                        type="edit"
+                      />
+                    )}
                     <Checkbox
                       type="switch"
                       checked={
