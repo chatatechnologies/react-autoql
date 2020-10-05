@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
+import { ConfirmModal } from '../ConfirmModal'
 
 import './Modal.scss'
 
@@ -22,6 +23,7 @@ export default class Modal extends React.Component {
     confirmText: PropTypes.string,
     confirmDisabled: PropTypes.bool,
     footer: PropTypes.element,
+    confirmOnClose: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -36,8 +38,21 @@ export default class Modal extends React.Component {
     confirmText: undefined,
     footer: undefined,
     confirmDisabled: false,
+    confirmOnClose: false,
     onClose: () => {},
     onConfirm: () => {},
+  }
+
+  state = {
+    isConfirmCloseModalVisible: false,
+  }
+
+  onClose = () => {
+    if (this.props.confirmOnClose) {
+      this.setState({ isConfirmCloseModalVisible: true })
+    } else {
+      this.props.onClose()
+    }
   }
 
   renderFooter = () => {
@@ -48,7 +63,7 @@ export default class Modal extends React.Component {
     return (
       <div>
         {this.props.showCancelButton && (
-          <Button type="default" onClick={this.props.onClose}>
+          <Button type="default" onClick={this.onClose}>
             Cancel
           </Button>
         )}
@@ -66,42 +81,58 @@ export default class Modal extends React.Component {
 
   render = () => {
     return (
-      <ReactModal
-        isOpen={this.props.isVisible}
-        bodyOpenClassName="chata-modal-container"
-        ariaHideApp={false}
-        contentLocation={{ top: 0, left: 0 }}
-        closeTimeoutMS={200}
-        data-test="chata-modal"
-        style={{
-          content: {
-            ...this.props.style,
-            bottom: 'auto',
-            width: this.props.width,
-            height: this.props.height,
-          },
-        }}
-      >
-        <div className="chata-modal-header">
-          {this.props.title}
-          <Icon
-            type="close"
-            className="chata-modal-close-btn"
-            onClick={this.props.onClose}
-          />
-        </div>
-        <div
-          className="chata-modal-body"
+      <Fragment>
+        <ReactModal
+          isOpen={this.props.isVisible}
+          bodyOpenClassName="chata-modal-container"
+          ariaHideApp={false}
+          contentLocation={{ top: 0, left: 0 }}
+          closeTimeoutMS={200}
+          data-test="chata-modal"
           style={{
-            overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+            content: {
+              ...this.props.style,
+              bottom: 'auto',
+              width: this.props.width,
+              height: this.props.height,
+            },
           }}
         >
-          {this.props.children}
-        </div>
-        {this.props.showFooter && (
-          <div className="chata-modal-footer">{this.renderFooter()}</div>
-        )}
-      </ReactModal>
+          <div className="chata-modal-header">
+            {this.props.title}
+            <Icon
+              type="close"
+              className="chata-modal-close-btn"
+              onClick={this.onClose}
+            />
+          </div>
+          <div
+            className="chata-modal-body"
+            style={{
+              overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
+            }}
+          >
+            {this.props.children}
+          </div>
+          {this.props.showFooter && (
+            <div className="chata-modal-footer">{this.renderFooter()}</div>
+          )}
+        </ReactModal>
+        <ConfirmModal
+          isVisible={this.state.isConfirmCloseModalVisible}
+          onClose={() => {
+            this.setState({ isConfirmCloseModalVisible: false })
+          }}
+          confirmText="Discard Changes"
+          onConfirm={() => {
+            this.setState({ isConfirmCloseModalVisible: false })
+            this.props.onClose()
+          }}
+        >
+          <h3>Are you sure you want to leave this page?</h3>
+          <p>All unsaved changes will be lost.</p>
+        </ConfirmModal>
+      </Fragment>
     )
   }
 }

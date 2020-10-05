@@ -10,16 +10,16 @@ import { Checkbox } from '../../Checkbox'
 import { NotificationModal } from '../NotificationModal'
 
 import {
-  fetchNotificationSettings,
+  fetchDataAlerts,
   updateNotificationRuleStatus,
 } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
 import { authenticationDefault } from '../../../props/defaults'
 
-import './NotificationSettings.scss'
+import './DataAlerts.scss'
 
-export default class NotificationSettings extends React.Component {
+export default class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
@@ -42,12 +42,12 @@ export default class NotificationSettings extends React.Component {
   }
 
   componentDidMount = () => {
-    this.getNotificationSettings('user')
-    this.getNotificationSettings('project')
+    this.getDataAlerts('user')
+    this.getDataAlerts('project')
   }
 
-  getNotificationSettings = (type) => {
-    fetchNotificationSettings({
+  getDataAlerts = (type) => {
+    fetchDataAlerts({
       ...this.props.authentication,
       type,
     })
@@ -153,7 +153,12 @@ export default class NotificationSettings extends React.Component {
         <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
       {includeAddBtn && (
-        <div className="chata-notification-add-btn" onClick={this.onAddClick}>
+        <div
+          className="chata-notification-add-btn"
+          onClick={this.onAddClick}
+          data-tip="Create Data Alert"
+          data-for="chata-notification-settings-tooltip"
+        >
           <Icon type="plus" className="chata-notification-add-icon" />
         </div>
       )}
@@ -169,8 +174,8 @@ export default class NotificationSettings extends React.Component {
       <div className="notification-rules-list-container">
         {type === 'user' &&
           this.renderNotificationGroupTitle(
-            'Custom Notifications',
-            'Create your own customized notifications tailored to your needs',
+            'Set up a custom Data Alert',
+            'Create customized Alerts tailored to your unique data needs',
             true
           )}
         {type === 'user' &&
@@ -178,8 +183,8 @@ export default class NotificationSettings extends React.Component {
           this.renderEmptyListMessage()}
         {type === 'project' &&
           this.renderNotificationGroupTitle(
-            'Default Notifications',
-            'Choose from a predefined set of notifications'
+            'Subscribe to a Data Alert',
+            'Choose from a range of ready-to-use Alerts that have been set up for you'
           )}
         <div className="chata-notification-settings-container">
           {list.map((notification, i) => {
@@ -238,16 +243,14 @@ export default class NotificationSettings extends React.Component {
 
   renderEmptyListMessage = () => (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
-      <span style={{ opacity: 0.6 }}>
-        You don't have any notifications yet.
-      </span>
+      <span style={{ opacity: 0.6 }}>No Alerts are set up yet.</span>
       <br />
       <Button
         type="primary"
         onClick={this.onAddClick}
         style={{ marginTop: '10px' }}
       >
-        Create a New Notification
+        Create Data Alert
       </Button>
     </div>
   )

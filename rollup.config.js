@@ -18,12 +18,12 @@ const external = [
   ...Object.keys(pkg.dependencies || {}),
 ]
 
-const makeExternalPredicate = externalArr => {
+const makeExternalPredicate = (externalArr) => {
   if (externalArr.length === 0) {
     return () => false
   }
   const pattern = new RegExp(`^(${externalArr.join('|')})($|/)`)
-  return id => pattern.test(id)
+  return (id) => pattern.test(id)
 }
 
 const common = {
@@ -42,7 +42,7 @@ const common = {
       plugins: ['external-helpers'],
       exclude: 'node_modules/**',
     }),
-    production && terser(),
+    // production && terser(),
   ],
   external: makeExternalPredicate(external),
 }
@@ -109,7 +109,7 @@ const outputs = [
   // }
 ]
 
-export default outputs.map(output => ({
+export default outputs.map((output) => ({
   ...common,
   output,
 }))

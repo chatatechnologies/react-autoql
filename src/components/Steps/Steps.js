@@ -39,6 +39,12 @@ export default class Steps extends React.Component {
     }
   }
 
+  prevStep = () => {
+    if (this.state.activeStep >= 1) {
+      this.onStepTitleClick(this.state.activeStep - 1)
+    }
+  }
+
   nextStep = () => {
     const nextStep = Number.isNaN(this.state.activeStep)
       ? 0

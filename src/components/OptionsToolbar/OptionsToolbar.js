@@ -487,7 +487,7 @@ export default class Input extends React.Component {
               <Icon type="database" /> View generated SQL
             </li>
           )}
-          {shouldShowButton.showCreateNotificationButton && (
+          {shouldShowButton.showCreateNotificationsIcon && (
             <li
               onClick={() => {
                 this.setState({ activeMenu: 'notification' })
@@ -497,7 +497,7 @@ export default class Input extends React.Component {
                 style={{ verticalAlign: 'middle', marginRight: '7px' }}
                 type="notification"
               />
-              Create a notification from this query...
+              Create a Data Alert...
             </li>
           )}
           {shouldShowButton.showShareToSlackButton && (
@@ -649,7 +649,7 @@ export default class Input extends React.Component {
       showSQLButton: isDataResponse && this.props.autoQLConfig.debug,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
-      showCreateNotificationButton:
+      showCreateNotificationsIcon:
         isDataResponse && this.props.autoQLConfig.enableNotifications,
       showShareToSlackButton:
         isDataResponse && this.props.autoQLConfig.enableSlackSharing,
@@ -660,7 +660,7 @@ export default class Input extends React.Component {
     shouldShowButton.showMoreOptionsButton =
       shouldShowButton.showCopyButton ||
       shouldShowButton.showSQLButton ||
-      shouldShowButton.showCreateNotificationButton ||
+      shouldShowButton.showCreateNotificationsIcon ||
       shouldShowButton.showSaveAsCSVButton ||
       shouldShowButton.showSaveAsPNGButton ||
       shouldShowButton.showShareToSlackButton ||

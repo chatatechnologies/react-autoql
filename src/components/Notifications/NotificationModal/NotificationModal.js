@@ -14,7 +14,6 @@ import { ScheduleBuilder } from '../ScheduleBuilder'
 import {
   createNotificationRule,
   updateNotificationRule,
-  deleteNotificationRule,
   isExpressionQueryValid,
 } from '../../../js/notificationService'
 
@@ -36,7 +35,6 @@ export default class NotificationModal extends React.Component {
     initialQuery: PropTypes.string,
     currentRule: PropTypes.shape({}),
     isVisible: PropTypes.bool,
-    allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
     themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
@@ -53,13 +51,12 @@ export default class NotificationModal extends React.Component {
     initialQuery: undefined,
     currentRule: undefined,
     isVisible: false,
-    allowDelete: true,
     onClose: () => {},
     themeConfig: themeConfigDefault,
     isManagement: false,
     onManagementCreateRule: () => {},
     onManagementDeleteRule: () => {},
-    title: 'Custom Notification',
+    title: 'Create New Data Alert',
     enableQueryValidation: true,
   }
 
@@ -68,10 +65,11 @@ export default class NotificationModal extends React.Component {
     messageInput: '',
     isExpressionSectionComplete: false,
     expressionJSON: [],
+    isScheduleSectionComplete: false,
     dataReturnQueryInput: '',
     isDataReturnDirty: false,
     isDataReturnQueryValid: true,
-    isScheduleSectionComplete: false,
+    isDataReturnValidated: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -79,7 +77,6 @@ export default class NotificationModal extends React.Component {
       setTimeout(this.resetFields, 500)
     }
     if (this.props.isVisible && !prevProps.isVisible) {
-      // this.NEW_NOTIFICATION_MODAL_ID = uuid.v4()
       // If we are editing an existing notification
       // Fill the fields with the current settings
       if (this.props.currentRule) {
@@ -221,6 +218,7 @@ export default class NotificationModal extends React.Component {
     this.setState(
       {
         isExpressionSectionComplete: isComplete,
+        isFirstSectionComplete: isComplete && !!this.state.titleInput,
         isExpressionSectionValid: isValid,
         expressionJSON,
         dataReturnQueryInput,
@@ -264,16 +262,20 @@ export default class NotificationModal extends React.Component {
             this.setState({
               isDataReturnQueryValid: true,
               isValidatingDataReturnQuery: false,
+              isDataReturnValidated: true,
             })
           })
           .catch(() => {
             this.setState({
               isDataReturnQueryValid: false,
               isValidatingDataReturnQuery: false,
+              isDataReturnValidated: true,
             })
           })
       }
     }
+
+    this.setState({ isDataReturnValidated: true })
   }
 
   onRuleSave = () => {
@@ -331,50 +333,120 @@ export default class NotificationModal extends React.Component {
     }
   }
 
-  rendertitleStep = () => (
-    <div>
-      <Input
-        className="chata-notification-display-name-input"
-        placeholder="Title (max 50 characters)"
-        icon="title"
-        maxLength="50"
-        value={this.state.titleInput}
-        onChange={(e) => this.setState({ titleInput: e.target.value })}
-      />
-      <Input
-        className="chata-notification-message-input"
-        placeholder="Notification Message (max 200 characters)"
-        type="multi"
-        maxLength="200"
-        value={this.state.messageInput}
-        onChange={(e) => this.setState({ messageInput: e.target.value })}
-      />
-    </div>
-  )
-
-  renderFrequencyStep = () => {
+  renderNextBtn = (className, disabled, onclick = () => {}) => {
     return (
-      <ScheduleBuilder
-        ref={(r) => (this.scheduleBuilderRef = r)}
-        key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
-        rule={this.props.currentRule}
-        onCompletedChange={(isComplete) => {
-          this.setState({ isScheduleSectionComplete: isComplete })
+      <Button
+        className={className}
+        onClick={() => {
+          onclick()
+          if (this.stepsRef) {
+            this.stepsRef.nextStep()
+          }
         }}
-        onErrorCallback={this.props.onErrorCallback}
-      />
+        disabled={disabled}
+        type="primary"
+      >
+        Next
+      </Button>
     )
   }
 
-  renderDataReturnStep = () => {
+  renderBackBtn = (className) => {
+    return (
+      <Button
+        className={className}
+        onClick={() => {
+          if (this.stepsRef) {
+            this.stepsRef.prevStep()
+          }
+        }}
+      >
+        Back
+      </Button>
+    )
+  }
+
+  renderSetUpDataAlertStep = () => {
     return (
       <div>
+        <p>Name:</p>
+        <Input
+          className="chata-notification-display-name-input"
+          placeholder="Add an Alert Name"
+          icon="title"
+          maxLength="50"
+          value={this.state.titleInput}
+          onChange={(e) => {
+            const isFirstSectionComplete =
+              this.state.isExpressionSectionComplete && !!e.target.value
+            this.setState({
+              titleInput: e.target.value,
+              isFirstSectionComplete,
+            })
+          }}
+        />
+        <p>Conditions:</p>
+        <ExpressionBuilder
+          authentication={this.props.authentication}
+          ref={(r) => (this.expressionRef = r)}
+          key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
+          onChange={this.onExpressionChange}
+          enableQueryValidation={this.props.enableQueryValidation}
+          expression={_get(
+            this.props.currentRule,
+            'expression',
+            this.state.expressionJSON
+          )}
+        />
+        {this.renderNextBtn(
+          'first-step-next-btn',
+          !this.state.isFirstSectionComplete
+        )}
+      </div>
+    )
+  }
+
+  renderFrequencyStep = () => {
+    return (
+      <div>
+        <ScheduleBuilder
+          ref={(r) => (this.scheduleBuilderRef = r)}
+          key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
+          rule={this.props.currentRule}
+          onCompletedChange={(isComplete) => {
+            this.setState({ isScheduleSectionComplete: isComplete })
+          }}
+          onErrorCallback={this.props.onErrorCallback}
+        />
+        <div className="step-btn-container">
+          {this.renderBackBtn('second-step-back-btn')}
+          {this.renderNextBtn(
+            'second-step-next-btn',
+            !this.state.isScheduleSectionComplete,
+            () => {
+              if (this.state.dataReturnQueryInput) {
+                this.setState({ isDataReturnDirty: true })
+              }
+            }
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  renderAlertPreferencesStep = () => {
+    return (
+      <div>
+        <p>Return the data from this query:</p>
         <Input
           ref={(r) => (this.dataReturnInputRef = r)}
           className="chata-notification-display-name-input"
           icon="chata-bubbles-outlined"
-          placeholder="Query"
+          placeholder="Type query here"
           value={this.state.dataReturnQueryInput}
+          onFocus={() => {
+            this.setState({ isDataReturnDirty: true })
+          }}
           onKeyDown={(e) => {
             if (!this.state.isDataReturnDirty) {
               this.setState({ isDataReturnDirty: true })
@@ -391,36 +463,24 @@ export default class NotificationModal extends React.Component {
         />
         {!this.state.isDataReturnQueryValid && (
           <div className="rule-term-validation-error">
-            <Icon type="warning-triangle" /> This query is invalid. Try a
-            different query
+            <Icon type="warning-triangle" /> That query is invalid. Try entering
+            a different query.
           </div>
         )}
+        <p>Send the following message:</p>
+        <Input
+          className="chata-notification-message-input"
+          placeholder="Compose a short message to accompany your triggered Alert"
+          type="multi"
+          maxLength="200"
+          value={this.state.messageInput}
+          onChange={(e) => this.setState({ messageInput: e.target.value })}
+        />
+        <div className="step-btn-container">
+          {this.renderBackBtn('second-step-back-btn')}
+        </div>
       </div>
     )
-  }
-
-  onRuleDelete = () => {
-    const ruleId = _get(this.props.currentRule, 'id')
-    if (ruleId) {
-      this.setState({
-        isDeletingRule: true,
-      })
-
-      deleteNotificationRule({ ruleId, ...this.props.authentication })
-        .then(() => {
-          this.props.onDelete(ruleId)
-          this.setState({
-            isDeletingRule: false,
-          })
-        })
-        .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          this.setState({
-            isDeletingRule: false,
-          })
-        })
-    }
   }
 
   getModalContent = () => {
@@ -430,54 +490,36 @@ export default class NotificationModal extends React.Component {
 
     const steps = [
       {
-        title: 'Notification Conditions',
-        subtitle: 'Notify me when the following conditions are met',
-        content: (
-          <ExpressionBuilder
-            authentication={this.props.authentication}
-            ref={(r) => (this.expressionRef = r)}
-            key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
-            onChange={this.onExpressionChange}
-            enableQueryValidation={this.props.enableQueryValidation}
-            expression={_get(
-              this.props.currentRule,
-              'expression',
-              this.state.expressionJSON
-            )}
-          />
-        ),
-        complete: this.state.isExpressionSectionComplete,
-        error: !this.state.isExpressionSectionValid,
+        title: 'Set up your Alert',
+        content: this.renderSetUpDataAlertStep(),
+        complete: this.state.isFirstSectionComplete,
+        error:
+          this.state.isExpressionSectionComplete &&
+          !this.state.isExpressionSectionValid,
       },
       {
-        title: 'Frequency',
+        title: 'Schedule Frequency',
         content: this.renderFrequencyStep(),
         complete: this.state.isScheduleSectionComplete,
       },
       {
-        title: 'Data Return',
-        subtitle:
-          'Return the data from this query when the notification is triggered',
-        content: this.renderDataReturnStep(),
+        title: 'Manage Alert Preferences',
+        subtitle: 'When this Alert is triggered:',
+        content: this.renderAlertPreferencesStep(),
         onClick: () => {
-          if (this.dataReturnInputRef) {
-            this.dataReturnInputRef.focus()
+          if (this.state.dataReturnQueryInput) {
+            this.setState({ isDataReturnDirty: true })
           }
-          this.setState({ isDataReturnDirty: true })
         },
         complete:
           !!this.state.dataReturnQueryInput &&
           this.state.isDataReturnDirty &&
           this.state.isDataReturnQueryValid,
         error:
+          this.state.isDataReturnValidated &&
           !!this.state.dataReturnQueryInput &&
           this.state.isDataReturnDirty &&
           !this.state.isDataReturnQueryValid,
-      },
-      {
-        title: 'Appearance',
-        content: this.rendertitleStep(),
-        complete: !!this.state.titleInput,
       },
     ]
     return steps
@@ -492,38 +534,19 @@ export default class NotificationModal extends React.Component {
 
     return (
       <Modal
-        title={this.props.title} // "Custom Notification"
+        title={this.props.title}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
+        confirmOnClose={true}
         enableBodyScroll
-        footer={
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div>
-              {this.props.currentRule && this.props.allowDelete && (
-                <Button
-                  type="danger"
-                  onClick={this.onRuleDelete}
-                  loading={this.state.isDeletingRule}
-                >
-                  Delete Notification
-                </Button>
-              )}
-            </div>
-            <div>
-              <Button onClick={this.props.onClose}>Cancel</Button>
-              <Button
-                type="primary"
-                loading={this.state.isSavingRule}
-                onClick={this.onRuleSave}
-                disabled={this.isSaveButtonDisabled(steps)}
-              >
-                Save
-              </Button>
-            </div>
-          </div>
-        }
+        confirmText="Save"
+        onConfirm={this.onRuleSave}
+        confirmLoading={this.state.isSavingRule}
+        confirmDisabled={this.isSaveButtonDisabled(steps)}
       >
-        <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
+        <div className="notification-modal-content">
+          <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
+        </div>
       </Modal>
     )
   }

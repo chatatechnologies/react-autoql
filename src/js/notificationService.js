@@ -59,7 +59,7 @@ export const fetchNotificationCount = ({
     })
 }
 
-export const fetchNotificationList = ({
+export const fetchNotificationsList = ({
   domain,
   apiKey,
   token,
@@ -130,12 +130,7 @@ export const fetchNotificationChannels = ({
     })
 }
 
-export const fetchNotificationSettings = ({
-  domain,
-  apiKey,
-  token,
-  type = 'user',
-}) => {
+export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))

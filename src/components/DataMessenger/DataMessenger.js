@@ -34,8 +34,8 @@ import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
 import { NotificationModal } from '../Notifications/NotificationModal'
-import { NotificationButton } from '../Notifications/NotificationButton'
-import { NotificationList } from '../Notifications/NotificationList'
+import { NotificationsIcon } from '../Notifications/NotificationsIcon'
+import { NotificationsList } from '../Notifications/NotificationsList'
 import { runDrilldown, fetchQueryTips } from '../../js/queryService'
 
 // Styles
@@ -664,7 +664,7 @@ export default class DataMessenger extends React.Component {
                     style={{ paddingBottom: '5px', paddingLeft: '2px' }}
                   >
                     <div className="data-messenger-notification-btn">
-                      <NotificationButton
+                      <NotificationsIcon
                         ref={(r) => (this.notificationBadgeRef = r)}
                         authentication={this.props.authentication}
                         themeConfig={this.props.themeConfig}
@@ -1001,7 +1001,7 @@ export default class DataMessenger extends React.Component {
 
   renderNotificationsContent = () => {
     return (
-      <NotificationList
+      <NotificationsList
         ref={(ref) => (this.notificationListRef = ref)}
         authentication={this.props.authentication}
         themeConfig={this.props.themeConfig}

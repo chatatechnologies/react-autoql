@@ -2,16 +2,13 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
-import Radio from './Radio'
+import ConfirmModal from './ConfirmModal'
 
-const defaultProps = {
-  options: ['1', '2', '3'],
-  type: 'button',
-}
+const defaultProps = {}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<Radio {...setupProps} />)
+  const wrapper = shallow(<ConfirmModal {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -21,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const radioComponent = findByTestAttr(wrapper, 'chata-radio')
-    expect(radioComponent.exists()).toBe(true)
+    const ConfirmModalComponent = findByTestAttr(wrapper, 'chata-confirm-modal')
+    expect(ConfirmModalComponent.exists()).toBe(true)
   })
 })

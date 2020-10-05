@@ -127,21 +127,22 @@ export const getScheduleDescription = (
   let categoryDescription = null
   let frequencyDescription = null
   if (category === 'SINGLE_EVENT') {
-    categoryDescription = 'Notify me as soon as this happens'
+    categoryDescription = 'You will be notified as soon as this happens. '
     // Commenting out for MVP
     // if (repeat) {
     if (frequency === 'DAY') {
-      frequencyDescription = ", but don't notify me again until the next day."
+      frequencyDescription =
+        'If the Alert is triggered multiple times, you will only be notified a maximum of once per day.'
     } else if (frequency === 'WEEK') {
       // Commenting out for MVP
       // frequencyDescription = getSingleEventWeekDescription(selection)
       frequencyDescription =
-        ", but don't notify me again until the next Monday."
+        'If the Alert is triggered multiple times, you will only be notified on a weekly basis.'
     } else if (frequency === 'MONTH') {
       // Commenting out for MVP
       // frequencyDescription = getSingleEventMonthDescription(selection)
       frequencyDescription =
-        ", but don't notify me again until the first of the next month."
+        'If the Alert is triggered multiple times, you will only be notified on a monthly basis.'
     } else if (frequency === 'YEAR') {
       frequencyDescription = getSingleEventYearDescription(selection)
     }
@@ -150,7 +151,8 @@ export const getScheduleDescription = (
     //   frequencyDescription = ", then don't notify me again."
     // }
   } else if (category === 'REPEAT_EVENT') {
-    categoryDescription = 'Notify me every time this happens'
+    categoryDescription =
+      'You will be notified as soon as this happens, any time this happens'
 
     // Commenting out for MVP
     // if (repeat) {

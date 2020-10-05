@@ -2,6 +2,52 @@
   display: inline-block;
   border-radius: 4px;
 
+  [type='radio']:checked,
+  [type='radio']:not(:checked) {
+    position: absolute;
+    left: -9999px;
+  }
+  [type='radio']:checked + label,
+  [type='radio']:not(:checked) + label {
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    line-height: 20px;
+    display: inline-block;
+  }
+  [type='radio']:checked + label:before,
+  [type='radio']:not(:checked) + label:before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #ddd;
+    border-radius: 100%;
+    background: #fff;
+  }
+  [type='radio']:checked + label:after,
+  [type='radio']:not(:checked) + label:after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: var(--chata-messenger-accent-color, #26a7df);
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    border-radius: 100%;
+    transition: all 0.2s ease;
+  }
+  [type='radio']:not(:checked) + label:after {
+    opacity: 0;
+    transform: scale(0);
+  }
+  [type='radio']:checked + label:after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
   .chata-radio-btn {
     position: relative;
     display: inline-block;
@@ -20,7 +66,6 @@
     &.active.outlined {
       background-color: inherit;
       color: var(--chata-messenger-accent-color, #26a7df);
-      // font-weight: 600;
       z-index: 3;
     }
 
