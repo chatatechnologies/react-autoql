@@ -20,6 +20,22 @@
         background: rgba(0, 0, 0, 0.01);
       }
     }
+
+    .chata-notification-action-btn {
+      opacity: 0;
+      padding-right: 20px;
+      font-size: 16px;
+      color: rgba(0, 0, 0, 0.5);
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        color: var(--chata-messenger-accent-color);
+      }
+    }
+
+    &:hover .chata-notification-action-btn {
+      opacity: 1;
+    }
   }
 
   .chata-notification-setting-item-header {
@@ -35,28 +51,6 @@
     margin-bottom: 4px;
     margin-right: 8px;
   }
-
-  .chata-notification-edit-icon {
-    margin-top: 9px;
-    margin-right: 3px;
-    font-size: 18px;
-    height: 50px;
-    width: 36px;
-    height: 36px;
-    padding: 9px;
-    border-radius: 20px;
-
-    background-color: transparent;
-    transition: background-color 0.2s ease;
-    cursor: pointer;
-
-    &:hover {
-      background-color: #ececec;
-    }
-  }
-
-  // .chata-notification-setting-actions {
-  // }
 }
 
 .chata-notification-settings {
