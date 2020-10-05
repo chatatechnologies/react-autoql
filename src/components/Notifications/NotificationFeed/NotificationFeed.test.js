@@ -3,7 +3,7 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
-import NotificationsList from './NotificationsList'
+import NotificationFeed from './NotificationFeed'
 
 const defaultProps = {
   authentication: testAuthentication,
@@ -12,7 +12,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationsList {...setupProps} />)
+  const wrapper = shallow(<NotificationFeed {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
