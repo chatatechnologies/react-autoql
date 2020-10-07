@@ -71,6 +71,7 @@ export default class QueryInput extends React.Component {
 
   state = {
     inputValue: '',
+    lastQuery: '',
     suggestions: [],
     isQueryRunning: false,
   }
@@ -126,7 +127,11 @@ export default class QueryInput extends React.Component {
   }
 
   submitQuery = ({ queryText, userSelection, skipSafetyNet, source } = {}) => {
-    this.setState({ isQueryRunning: true })
+    // Cancel subscription to autocomplete since query was already submitted
+    if (this.autoCompleteTimer) {
+      clearTimeout(this.autoCompleteTimer)
+    }
+    this.setState({ isQueryRunning: true, suggestions: [] })
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
 
@@ -175,8 +180,15 @@ export default class QueryInput extends React.Component {
     this.setState({ inputValue: '' })
   }
 
+  onKeyDown = (e) => {
+    if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
+      this.setState({ inputValue: this.state.lastQuery })
+    }
+  }
+
   onKeyPress = (e) => {
     if (e.key == 'Enter') {
+      this.setState({ lastQuery: this.state.inputValue })
       this.submitQuery()
     }
   }
@@ -318,6 +330,7 @@ export default class QueryInput extends React.Component {
               disabled: this.props.isDisabled,
               onChange: this.onInputChange,
               onKeyPress: this.onKeyPress,
+              onKeyDown: this.onKeyDown,
               value: this.state.inputValue,
               onFocus: this.moveCaretAtEnd,
               autoFocus: true,
@@ -333,6 +346,7 @@ export default class QueryInput extends React.Component {
               value={this.state.inputValue}
               onChange={(e) => this.setState({ inputValue: e.target.value })}
               onKeyPress={this.onKeyPress}
+              onKeyDown={this.onKeyDown}
               disabled={this.props.isDisabled}
               ref={this.setInputRef}
               onFocus={this.moveCaretAtEnd}
