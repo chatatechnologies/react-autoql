@@ -345,6 +345,7 @@ export default class QueryInput extends React.Component {
               placeholder={this.props.placeholder || 'Type your queries here'}
               value={this.state.inputValue}
               onChange={(e) => this.setState({ inputValue: e.target.value })}
+              data-test="chat-bar-input"
               onKeyPress={this.onKeyPress}
               onKeyDown={this.onKeyDown}
               disabled={this.props.isDisabled}
