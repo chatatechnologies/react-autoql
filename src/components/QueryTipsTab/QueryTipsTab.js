@@ -121,22 +121,22 @@ export default class QueryTipsTab extends React.Component {
   render = () => {
     return (
       <Scrollbars
-        ref={c => {
+        ref={(c) => {
           this.queryTipsScrollComponent = c
         }}
       >
         <div className="query-tips-page-container" data-test="query-tips-tab">
           <div
-            className="chata-chatbar-input-container"
+            className="react-autoql-chatbar-input-container"
             style={{ animation: 'slideDown 0.5s ease' }}
           >
             <input
-              className="chata-chatbar-input left-padding"
+              className="react-autoql-chatbar-input left-padding"
               placeholder="Search relevant queries by topic"
               value={this.props.queryTipsInputValue}
               onChange={this.props.onQueryTipsInputKeyPress}
               onKeyPress={this.props.onQueryTipsInputKeyPress}
-              ref={ref => (this.queryTipsInputRef = ref)}
+              ref={(ref) => (this.queryTipsInputRef = ref)}
               autoFocus
             />
             <div className="chat-bar-input-icon">

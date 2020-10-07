@@ -1,4 +1,4 @@
-.chata-radio-btn-container {
+.react-autoql-radio-btn-container {
   display: inline-block;
   border-radius: 4px;
 
@@ -32,7 +32,7 @@
     content: '';
     width: 12px;
     height: 12px;
-    background: var(--chata-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-messenger-accent-color, #26a7df);
     position: absolute;
     top: 4px;
     left: 4px;
@@ -48,7 +48,7 @@
     transform: scale(1);
   }
 
-  .chata-radio-btn {
+  .react-autoql-radio-btn {
     position: relative;
     display: inline-block;
     padding: 3px 12px;
@@ -58,20 +58,20 @@
     cursor: pointer;
 
     &.active {
-      background-color: var(--chata-messenger-accent-color, #26a7df);
-      border-color: var(--chata-messenger-accent-color, #26a7df);
+      background-color: var(--react-autoql-messenger-accent-color, #26a7df);
+      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
       color: #fff;
       z-index: 3;
     }
     &.active.outlined {
       background-color: inherit;
-      color: var(--chata-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
       z-index: 3;
     }
 
     &:hover:not(.active) {
-      border-color: var(--chata-messenger-accent-color, #26a7df);
-      color: var(--chata-messenger-accent-color, #26a7df);
+      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
       z-index: 2;
     }
 

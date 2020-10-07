@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const modalComponent = findByTestAttr(wrapper, 'chata-modal')
+    const modalComponent = findByTestAttr(wrapper, 'react-autoql-modal')
     expect(modalComponent.exists()).toBe(true)
   })
 })

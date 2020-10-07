@@ -6,12 +6,12 @@
     top: 20px;
     left: 26px;
   }
-  .chata-chatbar-input.left-padding {
+  .react-autoql-chatbar-input.left-padding {
     padding-left: 46px;
   }
 }
 .query-tips-result-container {
-  color: var(--chata-messenger-text-color-primary);
+  color: var(--react-autoql-messenger-text-color-primary);
   padding: 0px 20px;
   text-align: center;
   max-width: 550px;
@@ -47,7 +47,7 @@
 
     &:hover {
       font-weight: bold;
-      color: var(--chata-messenger-accent-color);
+      color: var(--react-autoql-messenger-accent-color);
       .execute-btn {
         visibility: visible;
         opacity: 1;
@@ -71,7 +71,7 @@
   position: relative;
   background: transparent;
   padding: 8px;
-  // box-shadow: 0px 12px 12px -17px var(--chata-messenger-accent-color);
+  // box-shadow: 0px 12px 12px -17px var(--react-autoql-messenger-accent-color);
 
   ul {
     display: inline-block;
@@ -81,7 +81,7 @@
 
   li {
     display: inline-block;
-    color: var(--chata-messenger-text-color-primary);
+    color: var(--react-autoql-messenger-text-color-primary);
     cursor: pointer;
     margin-right: 3px;
     border-radius: 5px;
@@ -98,7 +98,7 @@
 
   li a {
     display: inline-block;
-    color: var(--chata-messenger-text-color-primary);
+    color: var(--react-autoql-messenger-text-color-primary);
     outline: none;
     width: 28px;
     height: 28px;
@@ -106,7 +106,7 @@
   }
 
   li.selected {
-    background: var(--chata-messenger-accent-color);
+    background: var(--react-autoql-messenger-accent-color);
     border-radius: 50%;
     outline: none;
     a {
@@ -128,7 +128,7 @@
     position: absolute;
     font-size: 18px;
     a {
-      color: var(--chata-messenger-accent-color);
+      color: var(--react-autoql-messenger-accent-color);
     }
   }
   .pagination-previous {

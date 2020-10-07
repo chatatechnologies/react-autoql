@@ -1,9 +1,9 @@
-.chata-input-container {
+.react-autoql-input-container {
   position: relative;
   margin: 2px 5px;
   display: inline-block;
 
-  .chata-input {
+  .react-autoql-input {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     background: white;
@@ -27,26 +27,26 @@
     }
   }
 
-  .chata-input-icon {
+  .react-autoql-input-icon {
     position: absolute;
     left: 12px;
     top: 8px;
     opacity: 0.4;
     transition: all 0.2s ease;
 
-    svg {
+    span.react-autoql-icon svg {
       height: 17px;
       width: 17px;
     }
   }
 
-  &:hover .chata-input,
-  .chata-input:focus {
-    border-color: var(--chata-messenger-accent-color, #26a7df);
+  &:hover .react-autoql-input,
+  .react-autoql-input:focus {
+    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
   }
-  &:hover .chata-input-icon,
-  .chata-input-icon.focus {
+  &:hover .react-autoql-input-icon,
+  .react-autoql-input-icon.focus {
     opacity: 1;
-    color: var(--chata-messenger-accent-color, #26a7df);
+    color: var(--react-autoql-messenger-accent-color, #26a7df);
   }
 }

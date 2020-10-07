@@ -24,7 +24,7 @@ const setup = (props = {}, state = null) => {
 
 const getComponent = (props = {}) => {
   const wrapper = setup({ ...props })
-  return findByTestAttr(wrapper, 'chata-cascader')
+  return findByTestAttr(wrapper, 'react-autoql-cascader')
 }
 
 describe('renders without crashing', () => {
@@ -36,7 +36,7 @@ describe('renders without crashing', () => {
 
 describe('renders correctly with 1 set of children', () => {
   const wrapper = setup({ options: testOptions })
-  const cascaderComponent = findByTestAttr(wrapper, 'chata-cascader')
+  const cascaderComponent = findByTestAttr(wrapper, 'react-autoql-cascader')
   const firstChild = findByTestAttr(cascaderComponent, 'options-list-0')
 
   test('has no active item after mounting', () => {

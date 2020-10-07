@@ -55,7 +55,7 @@ export default class Steps extends React.Component {
   getHeightOfStepContent = (index) => {
     if (this.props.collapsible) {
       const content = document.querySelector(
-        `#chata-step-content-${this.COMPONENT_KEY}-${index}`
+        `#react-autoql-step-content-${this.COMPONENT_KEY}-${index}`
       )
       if (content) {
         return content.scrollHeight
@@ -79,7 +79,7 @@ export default class Steps extends React.Component {
       // If there is an active step, explicitly set the height
       // at the moment of the click then back to 0
       const activeContentContainer = document.querySelector(
-        `#chata-step-content-${this.COMPONENT_KEY}-${this.state.activeStep}`
+        `#react-autoql-step-content-${this.COMPONENT_KEY}-${this.state.activeStep}`
       )
       if (activeContentContainer) {
         activeContentContainer.style.height = `${this.getHeightOfStepContent(
@@ -94,7 +94,7 @@ export default class Steps extends React.Component {
       // set height back to 0 for the previous active container
       if (i !== this.state.activeStep) {
         const contentContainer = document.querySelector(
-          `#chata-step-content-${this.COMPONENT_KEY}-${i}`
+          `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
         )
         if (contentContainer) {
           contentContainer.style.height = `${this.getHeightOfStepContent(i)}px`
@@ -102,7 +102,7 @@ export default class Steps extends React.Component {
           // be dynamically adjusted when the content changes
           this.autoHideTimeout = setTimeout(() => {
             const activeContentContainerAfterTransition = document.querySelector(
-              `#chata-step-content-${this.COMPONENT_KEY}-${i}`
+              `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
             )
             if (activeContentContainerAfterTransition) {
               activeContentContainerAfterTransition.style.height = 'auto'
@@ -136,48 +136,48 @@ export default class Steps extends React.Component {
 
     return (
       <div
-        id={`chata-steps-${this.COMPONENT_KEY}`}
-        className="chata-steps-container"
-        data-test="chata-steps"
+        id={`react-autoql-steps-${this.COMPONENT_KEY}`}
+        className="react-autoql-steps-container"
+        data-test="react-autoql-steps"
       >
         {this.props.steps.map((step, i) => {
           return (
             <div
-              key={`chata-steps-${this.COMPONENT_KEY}-${i}`}
+              key={`react-autoql-steps-${this.COMPONENT_KEY}-${i}`}
               style={{ overflow: 'hidden' }}
             >
               <div
-                className={`chata-step-container
+                className={`react-autoql-step-container
                 ${this.getStepStatus(step)}
                 ${
                   this.props.collapsible && i === this.state.activeStep
                     ? ' active'
                     : ''
                 }`}
-                data-test={`chata-step-container-${i}`}
+                data-test={`react-autoql-step-container-${i}`}
               >
                 <div
-                  className="chata-step-title-container"
-                  data-test={`chata-step-title-${i}`}
+                  className="react-autoql-step-title-container"
+                  data-test={`react-autoql-step-title-${i}`}
                   onClick={() => this.onStepTitleClick(i, step)}
                 >
-                  <div className="chata-step-title">{step.title}</div>
+                  <div className="react-autoql-step-title">{step.title}</div>
                 </div>
                 <div
-                  id={`chata-step-content-${this.COMPONENT_KEY}-${i}`}
-                  className="chata-step-content-container"
+                  id={`react-autoql-step-content-${this.COMPONENT_KEY}-${i}`}
+                  className="react-autoql-step-content-container"
                 >
-                  <div className="chata-step-subtitle">
+                  <div className="react-autoql-step-subtitle">
                     {step.subtitle || null}
                   </div>
                   <div
-                    className="chata-step-content"
-                    data-test={`chata-step-content-${i}`}
+                    className="react-autoql-step-content"
+                    data-test={`react-autoql-step-content-${i}`}
                   >
                     {step.content}
                   </div>
                 </div>
-                <div className="chata-step-dot">{i + 1}</div>
+                <div className="react-autoql-step-dot">{i + 1}</div>
               </div>
             </div>
           )

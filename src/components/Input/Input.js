@@ -49,16 +49,16 @@ export default class Input extends React.Component {
 
     return (
       <div
-        className={`chata-input-container${
+        className={`react-autoql-input-container${
           this.state.focused ? ' focus' : ''
         } ${className} `}
-        data-test="chata-input"
+        data-test="react-autoql-input"
       >
         {this.props.type === 'multi' ? (
           <textarea
             {...nativeProps}
             ref={(r) => (this.inputRef = r)}
-            className="chata-input area"
+            className="react-autoql-input area"
             onFocus={this.onFocus}
             onBlur={this.onBlur}
           />
@@ -67,13 +67,13 @@ export default class Input extends React.Component {
             <input
               {...nativeProps}
               ref={(r) => (this.inputRef = r)}
-              className={`chata-input ${icon ? 'with-icon' : ''}`}
+              className={`react-autoql-input ${icon ? 'with-icon' : ''}`}
               onFocus={this.onFocus}
               onBlur={this.onBlur}
             />
             {icon && (
               <Icon
-                className={`chata-input-icon ${
+                className={`react-autoql-input-icon ${
                   this.state.focused ? ' focus' : ''
                 }`}
                 type={icon}

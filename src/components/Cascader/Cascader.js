@@ -31,7 +31,7 @@ export default class Cascader extends React.Component {
     const isLastGroup = index === _get(this.state.optionsArray, 'length', 0) - 1
     const isFirstGroup = index === 0
     const mostRecentOptionLabel = _get(this.state.mostRecentOption, 'label')
-    const hasNoChildren = options.every(option => !option.children)
+    const hasNoChildren = options.every((option) => !option.children)
 
     return (
       <div
@@ -118,9 +118,9 @@ export default class Cascader extends React.Component {
   render = () => {
     return (
       <div
-        id={`chata-cascader-${this.COMPONENT_ID}`}
-        className="chata-cascader"
-        data-test="chata-cascader"
+        id={`react-autoql-cascader-${this.COMPONENT_ID}`}
+        className="react-autoql-cascader"
+        data-test="react-autoql-cascader"
       >
         {this.state.optionsArray.map((optionsObject, index) => {
           return this.renderOptionsList({

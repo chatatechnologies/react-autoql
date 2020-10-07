@@ -34,7 +34,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const bubbleChartComponent = findByTestAttr(wrapper, 'chata-bubble-chart')
+    const bubbleChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-bubble-chart'
+    )
     expect(bubbleChartComponent.exists()).toBe(true)
   })
 })

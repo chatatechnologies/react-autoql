@@ -18,7 +18,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const ConfirmModalComponent = findByTestAttr(wrapper, 'chata-confirm-modal')
+    const ConfirmModalComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-confirm-modal'
+    )
     expect(ConfirmModalComponent.exists()).toBe(true)
   })
 })

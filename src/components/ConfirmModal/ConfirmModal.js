@@ -60,11 +60,11 @@ export default class ConfirmModal extends React.Component {
     return (
       <ReactModal
         isOpen={this.props.isVisible}
-        bodyOpenClassName="chata-modal-container"
+        bodyOpenClassName="react-autoql-modal-container"
         ariaHideApp={false}
         contentLocation={{ top: 0, left: 0 }}
         closeTimeoutMS={200}
-        data-test="chata-confirm-modal"
+        data-test="react-autoql-confirm-modal"
         style={{
           content: {
             ...this.props.style,
@@ -74,8 +74,8 @@ export default class ConfirmModal extends React.Component {
           },
         }}
       >
-        <div className="chata-modal-body">{this.props.children}</div>
-        <div className="chata-modal-footer">{this.renderFooter()}</div>
+        <div className="react-autoql-modal-body">{this.props.children}</div>
+        <div className="react-autoql-modal-footer">{this.renderFooter()}</div>
       </ReactModal>
     )
   }

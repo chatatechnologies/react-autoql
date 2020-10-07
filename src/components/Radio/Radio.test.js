@@ -21,7 +21,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const radioComponent = findByTestAttr(wrapper, 'chata-radio')
+    const radioComponent = findByTestAttr(wrapper, 'react-autoql-radio')
     expect(radioComponent.exists()).toBe(true)
   })
 })

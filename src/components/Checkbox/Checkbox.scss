@@ -2,30 +2,30 @@
   margin: 2rem;
 }
 
-.chata-checkbox-container {
+.react-autoql-checkbox-container {
   display: inline-block;
   vertical-align: middle;
 }
 
-.chata-checkbox {
+.react-autoql-checkbox {
   display: flex;
   align-items: center;
   position: relative;
   cursor: pointer;
 
-  .chata-checkbox--switch__input:checked,
-  .chata-checkbox__input:checked {
-    border-color: var(--chata-messenger-accent-color, #26a7df);
-    background: var(--chata-messenger-accent-color, #26a7df);
+  .react-autoql-checkbox--switch__input:checked,
+  .react-autoql-checkbox__input:checked {
+    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-messenger-accent-color, #26a7df);
   }
 }
-.chata-checkbox__label {
+.react-autoql-checkbox__label {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
   color: #fff;
   cursor: pointer;
 }
-.chata-checkbox__input {
+.react-autoql-checkbox__input {
   position: relative;
   flex-shrink: 0;
   width: 20px;
@@ -36,12 +36,12 @@
   outline: none;
   background: transparent;
   border: 1px solid;
-  border-color: var(--chata-messenger-accent-color, #26a7df);
+  border-color: var(--react-autoql-messenger-accent-color, #26a7df);
   border-radius: 2px;
 
   cursor: pointer;
 }
-.chata-checkbox__input::before {
+.react-autoql-checkbox__input::before {
   content: ' ';
   position: absolute;
   top: 50%;
@@ -49,10 +49,10 @@
   bottom: 50%;
   left: 50%;
   transition: all 0.2s;
-  background: var(--chata-messenger-accent-color, #26a7df);
+  background: var(--react-autoql-messenger-accent-color, #26a7df);
 }
 
-.chata-checkbox-tick {
+.react-autoql-checkbox-tick {
   position: absolute;
   color: white;
   left: 3px;
@@ -60,44 +60,44 @@
   pointer-events: none;
 }
 
-.chata-checkbox--switch__input::before {
+.react-autoql-checkbox--switch__input::before {
   box-shadow: 0 0 2px 1px #00000030;
 }
 
-.chata-checkbox__input:checked::before,
-.chata-checkbox__input:indeterminate::before {
+.react-autoql-checkbox__input:checked::before,
+.react-autoql-checkbox__input:indeterminate::before {
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
 }
-.chata-checkbox__input:indeterminate::before {
+.react-autoql-checkbox__input:indeterminate::before {
   top: 7px;
   bottom: 7px;
 }
-.chata-checkbox__input:disabled {
+.react-autoql-checkbox__input:disabled {
   border-color: #5a5358;
   cursor: default;
 }
-.chata-checkbox__input:disabled::before {
+.react-autoql-checkbox__input:disabled::before {
   background-color: #5a5358;
 }
-.chata-checkbox__input:disabled + .chata-checkbox__label {
+.react-autoql-checkbox__input:disabled + .react-autoql-checkbox__label {
   color: gray;
   cursor: default;
 }
-.chata-checkbox--has-error__input {
+.react-autoql-checkbox--has-error__input {
   border-color: red;
   background-color: rgba(255, 0, 0, 0.2);
 }
-.chata-checkbox--has-error__input::before {
+.react-autoql-checkbox--has-error__input::before {
   background-color: red;
 }
-.chata-checkbox--switch__label::after {
+.react-autoql-checkbox--switch__label::after {
   content: 'off';
   margin-left: 0.25rem;
 }
-.chata-checkbox--switch__input {
+.react-autoql-checkbox--switch__input {
   width: 36px;
   height: 20px;
   // border: 2px solid #5a5358;
@@ -105,7 +105,7 @@
   background: #cccccc;
   border: 1px solid #cccccc;
 }
-.chata-checkbox--switch__input::before {
+.react-autoql-checkbox--switch__input::before {
   top: 2px;
   right: 18px;
   bottom: 2px;
@@ -113,17 +113,18 @@
   border-radius: 50%;
   background: #fff;
 }
-.chata-checkbox--switch__input:checked + .chata-checkbox--switch__label::after {
+.react-autoql-checkbox--switch__input:checked
+  + .react-autoql-checkbox--switch__label::after {
   content: 'on';
 }
-.chata-checkbox--switch__input:checked::before {
+.react-autoql-checkbox--switch__input:checked::before {
   right: 2px;
   left: 18px;
   top: 2px;
   bottom: 2px;
 }
 
-.chata-checkbox-label {
+.react-autoql-checkbox-label {
   padding-left: 6px;
   line-height: 100%;
 }

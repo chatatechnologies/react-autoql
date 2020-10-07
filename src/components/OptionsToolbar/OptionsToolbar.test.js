@@ -60,7 +60,7 @@ const setup = (props = {}, state = null) => {
   // then pass that into the toolbar component
   const queryOutputComponent = mount(
     <QueryOutput
-      ref={r => {
+      ref={(r) => {
         responseRef = r
       }}
       queryResponse={sampleResponse}
@@ -169,7 +169,7 @@ describe('more options button', () => {
     const wrapper = setup()
     const moreOptionsBtn = findByTestAttr(
       wrapper,
-      'chata-toolbar-more-options-btn'
+      'react-autoql-toolbar-more-options-btn'
     )
     expect(moreOptionsBtn.exists()).toBe(true)
   })

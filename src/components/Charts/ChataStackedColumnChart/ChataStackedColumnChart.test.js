@@ -37,7 +37,7 @@ describe('renders correctly', () => {
     const wrapper = setup()
     const stackedColumnChartComponent = findByTestAttr(
       wrapper,
-      'chata-stacked-column-chart'
+      'react-autoql-stacked-column-chart'
     )
     expect(stackedColumnChartComponent.exists()).toBe(true)
   })

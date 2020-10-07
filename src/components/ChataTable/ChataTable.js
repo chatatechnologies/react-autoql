@@ -94,11 +94,11 @@ export default class ChataTable extends React.Component {
 
   setStyles = () => {
     document.documentElement.style.setProperty(
-      '--chata-table-border-color',
+      '--react-autoql-table-border-color',
       this.props.borderColor
     )
     document.documentElement.style.setProperty(
-      '--chata-table-hover-color',
+      '--react-autoql-table-hover-color',
       this.props.hoverColor
     )
   }
@@ -168,9 +168,9 @@ export default class ChataTable extends React.Component {
 
     return (
       <div
-        id={`chata-table-container-${this.TABLE_CONTAINER_ID}`}
-        data-test="chata-table"
-        className="chata-table-container"
+        id={`react-autoql-table-container-${this.TABLE_CONTAINER_ID}`}
+        data-test="react-autoql-table"
+        className="react-autoql-table-container"
         style={this.props.style}
       >
         {this.props.data && this.props.columns && (
@@ -181,7 +181,7 @@ export default class ChataTable extends React.Component {
             cellClick={this.cellClick}
             options={options}
             data-custom-attr="test-custom-attribute"
-            className="chata-table"
+            className="react-autoql-table"
             height="100%"
             clipboard
             download

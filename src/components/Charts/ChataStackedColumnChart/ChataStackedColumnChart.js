@@ -120,7 +120,7 @@ export default class ChataStackedColumnChart extends Component {
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
-      <g data-test="chata-stacked-column-chart">
+      <g data-test="react-autoql-stacked-column-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}

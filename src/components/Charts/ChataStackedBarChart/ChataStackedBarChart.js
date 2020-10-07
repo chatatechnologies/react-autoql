@@ -119,7 +119,7 @@ export default class ChataStackedBarChart extends Component {
     this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (
-      <g data-test="chata-stacked-bar-chart">
+      <g data-test="react-autoql-stacked-bar-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}

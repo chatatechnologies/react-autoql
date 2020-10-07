@@ -11,7 +11,7 @@ const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
 
 export default class Button extends React.Component {
-  COMPONENT_KEY = `chata-btn-${uuid.v4()}`
+  COMPONENT_KEY = `react-autoql-btn-${uuid.v4()}`
 
   static propTypes = {
     type: PropTypes.oneOf(validTypes),
@@ -69,22 +69,24 @@ export default class Button extends React.Component {
     return (
       <Fragment>
         <button
-          className={`chata-btn
+          className={`react-autoql-btn
           ${this.props.className || ''}
           ${type}
           ${size}
           ${isDisabled ? ' disabled' : ''}`}
-          data-test="chata-btn"
+          data-test="react-autoql-btn"
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
           data-for={this.COMPONENT_KEY}
         >
-          {this.props.loading && <Spinner data-test="chata-button-loading" />}
+          {this.props.loading && (
+            <Spinner data-test="react-autoql-btn-loading" />
+          )}
           {this.props.children}
         </button>
         <ReactTooltip
-          className="chata-drawer-tooltip"
+          className="react-autoql-drawer-tooltip"
           id={this.COMPONENT_KEY}
           effect="solid"
           delayShow={500}

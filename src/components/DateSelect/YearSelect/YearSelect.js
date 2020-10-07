@@ -9,63 +9,63 @@ const days = [
   {
     description: 'January',
     value: 1,
-    label: 'Jan'
+    label: 'Jan',
   },
   {
     description: 'February',
     value: 2,
-    label: 'Feb'
+    label: 'Feb',
   },
   {
     description: 'March',
     value: 3,
-    label: 'Mar'
+    label: 'Mar',
   },
   {
     description: 'April',
     value: 4,
-    label: 'Apr'
+    label: 'Apr',
   },
   {
     description: 'May',
     value: 5,
-    label: 'May'
+    label: 'May',
   },
   {
     description: 'June',
     value: 6,
-    label: 'Jun'
+    label: 'Jun',
   },
   {
     description: 'July',
     value: 7,
-    label: 'Jul'
+    label: 'Jul',
   },
   {
     description: 'August',
     value: 8,
-    label: 'Aug'
+    label: 'Aug',
   },
   {
     description: 'September',
     value: 9,
-    label: 'Sep'
+    label: 'Sep',
   },
   {
     description: 'October',
     value: 10,
-    label: 'Oct'
+    label: 'Oct',
   },
   {
     description: 'November',
     value: 11,
-    label: 'Nov'
+    label: 'Nov',
   },
   {
     description: 'December',
     value: 12,
-    label: 'Dec'
-  }
+    label: 'Dec',
+  },
 ]
 
 export default class YearSelect extends React.Component {
@@ -75,14 +75,14 @@ export default class YearSelect extends React.Component {
     value: PropTypes.arrayOf(PropTypes.number),
     onChange: PropTypes.func,
     multiSelect: PropTypes.bool,
-    allowNullValue: PropTypes.bool
+    allowNullValue: PropTypes.bool,
   }
 
   static defaultProps = {
     value: [],
     multiSelect: false,
     onChange: () => {},
-    allowNullValue: false
+    allowNullValue: false,
   }
 
   sortFunction = (a, b) => {
@@ -100,7 +100,7 @@ export default class YearSelect extends React.Component {
     }
   }
 
-  onChange = selectedValue => {
+  onChange = (selectedValue) => {
     let finalOption = [selectedValue]
     if (this.props.multiSelect) {
       if (this.props.value.includes(selectedValue)) {
@@ -109,7 +109,9 @@ export default class YearSelect extends React.Component {
           // Do not allow to deselect last value if allowNullValue is false
           return this.props.value
         }
-        finalOption = this.props.value.filter(value => value !== selectedValue)
+        finalOption = this.props.value.filter(
+          (value) => value !== selectedValue
+        )
       } else {
         // Select it
         finalOption = [...this.props.value, selectedValue]
@@ -121,8 +123,8 @@ export default class YearSelect extends React.Component {
   render = () => {
     return (
       <div
-        className="chata-radio-btn-container year-select"
-        data-test="chata-year-select"
+        className="react-autoql-radio-btn-container year-select"
+        data-test="react-autoql-year-select"
       >
         {days.map((option, i) => {
           let isActive = this.props.value === option.value
@@ -131,9 +133,9 @@ export default class YearSelect extends React.Component {
           }
 
           return (
-            <Fragment key={`chata-radio-${this.COMPONENT_KEY}-${i}`}>
+            <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
               <div
-                className={`chata-radio-btn
+                className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}
                   ${this.props.outlined ? ' outlined' : ''}
                   ${i === 2 ? ' top-right' : ''}

@@ -168,7 +168,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--chata-output-',
+        prefix: '--react-autoql-output-',
       })
 
       // Determine the supported visualization types based on the response data
@@ -224,7 +224,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--chata-output-',
+        prefix: '--react-autoql-output-',
       })
     }
 
@@ -421,8 +421,8 @@ export default class QueryOutput extends React.Component {
 
     try {
       suggestionListMessage = (
-        <div className="chata-suggestion-message">
-          <div className="chata-suggestions-container">
+        <div className="react-autoql-suggestion-message">
+          <div className="react-autoql-suggestions-container">
             {this.props.renderSuggestionsAsDropdown ? (
               <select
                 key={uuid.v4()}
@@ -434,7 +434,7 @@ export default class QueryOutput extends React.Component {
                   })
                 }}
                 value={this.state.suggestionSelection}
-                className="chata-suggestions-select"
+                className="react-autoql-suggestions-select"
               >
                 {suggestions.map((suggestion, i) => {
                   return (
@@ -456,7 +456,7 @@ export default class QueryOutput extends React.Component {
                           source: 'suggestion',
                         })
                       }
-                      className="chata-suggestion-btn"
+                      className="react-autoql-suggestion-btn"
                     >
                       {suggestion}
                     </button>
@@ -470,7 +470,7 @@ export default class QueryOutput extends React.Component {
       )
     } catch (error) {
       suggestionListMessage = (
-        <div className="chata-suggestion-message">
+        <div className="react-autoql-suggestion-message">
           Sorry something went wrong, I have no suggestions for you.
         </div>
       )
@@ -714,13 +714,13 @@ export default class QueryOutput extends React.Component {
 
     const tableBorderColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--chata-messenger-border-color']
-        : DARK_THEME['--chata-messenger-border-color']
+        ? LIGHT_THEME['--react-autoql-messenger-border-color']
+        : DARK_THEME['--react-autoql-messenger-border-color']
 
     const tableHoverColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--chata-messenger-hover-color']
-        : DARK_THEME['--chata-messenger-hover-color']
+        ? LIGHT_THEME['--react-autoql-messenger-hover-color']
+        : DARK_THEME['--react-autoql-messenger-hover-color']
 
     if (this.state.displayType === 'pivot_table') {
       return (
@@ -855,11 +855,11 @@ export default class QueryOutput extends React.Component {
         <br />
         {
           <button
-            className="chata-help-link-btn"
+            className="react-autoql-help-link-btn"
             target="_blank"
             onClick={() => window.open(url, '_blank')}
           >
-            <Icon type="globe" className="chata-help-link-icon" />
+            <Icon type="globe" className="react-autoql-help-link-icon" />
             {linkText}
           </button>
         }
@@ -1766,7 +1766,7 @@ export default class QueryOutput extends React.Component {
 
   render = () => {
     const responseContainer = document.getElementById(
-      `chata-response-content-container-${this.COMPONENT_KEY}`
+      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
     )
 
     let height = 0
@@ -1795,9 +1795,9 @@ export default class QueryOutput extends React.Component {
       <Fragment>
         <div
           key={this.COMPONENT_KEY}
-          id={`chata-response-content-container-${this.COMPONENT_KEY}`}
+          id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
-          className={`chata-response-content-container ${
+          className={`react-autoql-response-content-container ${
             isTableType(this.state.displayType) ? 'table' : ''
           }`}
         >

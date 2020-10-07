@@ -105,20 +105,20 @@ export default class ChataBarChart extends Component {
       .nice()
 
     const yScale = this.yScale
-      .domain(data.map(d => d[labelValue]))
+      .domain(data.map((d) => d[labelValue]))
       .range([height - bottomMargin, topMargin])
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const yLabelArray = data.map(element => element[labelValue])
-    const xLabelArray = data.map(element => element.cells[numberColumnIndex])
+    const yLabelArray = data.map((element) => element[labelValue])
+    const xLabelArray = data.map((element) => element.cells[numberColumnIndex])
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
     const barHeight = height / data.length
     const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
     this.handleLabelRotation(tickWidth, xLabelArray)
 
     return (
-      <g data-test="chata-bar-chart">
+      <g data-test="react-autoql-bar-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}

@@ -67,7 +67,7 @@ export default class Axis extends Component {
     this.renderAxis()
   }
 
-  styleLegendTitle = svg => {
+  styleLegendTitle = (svg) => {
     svg
       .select('.legendTitle')
       .style('font-weight', 'bold')
@@ -77,7 +77,7 @@ export default class Axis extends Component {
       .text('  ▼')
       .style('font-size', '8px')
       .style('opacity', 0)
-      .attr('class', 'chata-axis-selector-arrow')
+      .attr('class', 'react-autoql-axis-selector-arrow')
 
     // Add border that shows on hover
     let titleBBox = {}
@@ -219,19 +219,19 @@ export default class Axis extends Component {
   applyStylesForHiddenSeries = () => {
     try {
       const legendLabelTexts = this.props.legendLabels
-        .filter(l => {
+        .filter((l) => {
           return l.hidden
         })
-        .map(l => l.label)
+        .map((l) => l.label)
 
       const legendSwatchElements = document.querySelectorAll(
         `#${this.LEGEND_ID} .label`
       )
 
       if (legendSwatchElements) {
-        legendSwatchElements.forEach(el => {
+        legendSwatchElements.forEach((el) => {
           let textStrings = []
-          el.querySelectorAll('tspan').forEach(tspan => {
+          el.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
           })
 
@@ -251,13 +251,13 @@ export default class Axis extends Component {
   }
 
   getLegendScale = () => {
-    const colorRange = this.props.legendLabels.map(obj => {
+    const colorRange = this.props.legendLabels.map((obj) => {
       return obj.color
     })
 
     return scaleOrdinal()
       .domain(
-        this.props.legendLabels.map(obj => {
+        this.props.legendLabels.map((obj) => {
           return obj.label
         })
       )
@@ -350,7 +350,7 @@ export default class Axis extends Component {
     // Make tick line at 0 darker
     select(this.axisElement)
       .selectAll('g.tick')
-      .filter(d => d == 0)
+      .filter((d) => d == 0)
       .select('line')
       .style('opacity', 0.4)
   }
@@ -366,14 +366,14 @@ export default class Axis extends Component {
         <g
           className={`axis axis-${this.props.orient}
         ${this.props.rotateLabels ? ' rotated' : ''}`}
-          ref={el => {
+          ref={(el) => {
             this.axisElement = el
           }}
           transform={this.props.translate}
         />
         {this.props.hasRightLegend && (
           <g
-            ref={el => {
+            ref={(el) => {
               this.rightLegendElement = el
             }}
             id={this.LEGEND_ID}
@@ -385,7 +385,7 @@ export default class Axis extends Component {
           >
             <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
               <rect
-                ref={el => {
+                ref={(el) => {
                   this.legendClippingContainer = el
                 }}
                 id={`legend-bounding-box-${this.LEGEND_ID}`}
@@ -402,7 +402,7 @@ export default class Axis extends Component {
               />
             </clipPath>
             <rect
-              ref={el => {
+              ref={(el) => {
                 this.legendBorder = el
               }}
               onClick={this.props.onLegendTitleClick}
@@ -411,7 +411,7 @@ export default class Axis extends Component {
         )}
         {this.props.hasBottomLegend && (
           <g
-            ref={el => {
+            ref={(el) => {
               this.bottomLegendElement = el
             }}
             data-test="bottom-legend"

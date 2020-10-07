@@ -281,7 +281,10 @@ export default class ExpressionBuilder extends React.Component {
               data-tip="Add Condition Group"
               data-for="notification-expression-tooltip"
             >
-              <Icon type="plus" className="chata-notification-add-icon" />
+              <Icon
+                type="plus"
+                className="react-autoql-notification-add-icon"
+              />
             </div>
           )}
         </div>
@@ -294,7 +297,7 @@ export default class ExpressionBuilder extends React.Component {
       <Fragment>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
         <ReactTooltip
-          className="chata-drawer-tooltip"
+          className="react-autoql-drawer-tooltip"
           id="notification-expression-tooltip"
           effect="solid"
           delayShow={500}

@@ -1598,7 +1598,7 @@ export default class App extends Component {
         mode="horizontal"
       >
         <Menu.Item key="drawer">
-          <ChataIcon type="chata-bubbles-outlined" />
+          <ChataIcon type="react-autoql-bubbles-outlined" />
           Data Messenger
         </Menu.Item>
         {this.state.isAuthenticated && (

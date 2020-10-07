@@ -52,7 +52,7 @@ export default class ChataBubbleChart extends Component {
     onLabelChange: () => {},
   }
 
-  handleLabelRotation = labelArray => {
+  handleLabelRotation = (labelArray) => {
     const prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       this.squareWidth,
@@ -66,7 +66,7 @@ export default class ChataBubbleChart extends Component {
     }
   }
 
-  getXTickValues = labelArray => {
+  getXTickValues = (labelArray) => {
     try {
       const interval = Math.ceil(
         (this.props.data.length * 16) / this.props.width
@@ -89,7 +89,7 @@ export default class ChataBubbleChart extends Component {
     }
   }
 
-  getYTickValues = uniqueYLabels => {
+  getYTickValues = (uniqueYLabels) => {
     this.squareHeight = this.props.height / uniqueYLabels.length
     const intervalHeight = Math.ceil(
       (uniqueYLabels.length * 16) / this.props.height
@@ -135,16 +135,16 @@ export default class ChataBubbleChart extends Component {
       data,
     } = this.props
 
-    const maxValue = max(data, d => max(d.cells, cell => cell.value))
-    const minValue = min(data, d => min(d.cells, cell => cell.value))
+    const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
+    const minValue = min(data, (d) => min(d.cells, (cell) => cell.value))
 
-    const uniqueYLabels = data.map(d => d.label)
+    const uniqueYLabels = data.map((d) => d.label)
     const yScale = this.xScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
       .paddingOuter(0.5)
 
-    const uniqueXLabels = data[0].cells.map(cell => cell.label)
+    const uniqueXLabels = data[0].cells.map((cell) => cell.label)
     const xScale = this.yScale
       .domain(uniqueXLabels)
       .range([leftMargin, width - rightMargin])
@@ -155,7 +155,10 @@ export default class ChataBubbleChart extends Component {
     this.handleLabelRotation(uniqueXLabels)
 
     return (
-      <g className="chata-bubble-chart" data-test="chata-bubble-chart">
+      <g
+        className="react-autoql-bubble-chart"
+        data-test="react-autoql-bubble-chart"
+      >
         <Axes
           themeConfig={this.props.themeConfig}
           scales={{ xScale, yScale }}

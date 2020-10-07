@@ -15,7 +15,7 @@ export default class Checkbox extends React.Component {
     label: PropTypes.string,
     type: PropTypes.oneOf(['default', 'switch']),
     checked: PropTypes.bool,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -24,7 +24,7 @@ export default class Checkbox extends React.Component {
     type: 'default',
     label: '',
     checked: false,
-    onChange: () => {}
+    onChange: () => {},
   }
 
   componentDidMount = () => {
@@ -34,13 +34,13 @@ export default class Checkbox extends React.Component {
     }
   }
 
-  componentDidUpdate = prevProps => {
+  componentDidUpdate = (prevProps) => {
     if (prevProps.indeterminate !== this.props.indeterminate) {
       this.selector.indeterminate = this.props.indeterminate
     }
   }
 
-  onCheckedChange = e => {
+  onCheckedChange = (e) => {
     this.props.onChange(e)
   }
 
@@ -49,24 +49,27 @@ export default class Checkbox extends React.Component {
     const nativeProps = { ...inputProps, style: undefined }
 
     const checkboxClassname = `
-      chata-checkbox
-      ${type === 'switch' && 'chata-checkbox--switch'}
-      ${hasError && 'chata-checkbox--has-error'}
+      react-autoql-checkbox
+      ${type === 'switch' && 'react-autoql-checkbox--switch'}
+      ${hasError && 'react-autoql-checkbox--has-error'}
     `
 
     const inputClassname = `
-      chata-checkbox__input
-      ${type === 'switch' ? 'chata-checkbox--switch__input' : ''}
-      ${hasError ? 'chata-checkbox--has-error__input' : ''}
+      react-autoql-checkbox__input
+      ${type === 'switch' ? 'react-autoql-checkbox--switch__input' : ''}
+      ${hasError ? 'react-autoql-checkbox--has-error__input' : ''}
     `
 
     const labelClassname = `
-      chata-checkbox__label
-      ${type === 'switch' && 'chata-checkbox--switch__label'}
+      react-autoql-checkbox__label
+      ${type === 'switch' && 'react-autoql-checkbox--switch__label'}
     `
 
     return (
-      <div className="chata-checkbox-container" data-test="chata-checkbox">
+      <div
+        className="react-autoql-checkbox-container"
+        data-test="react-autoql-checkbox"
+      >
         <div
           className={`${checkboxClassname} ${this.props.className}`}
           style={this.props.style}
@@ -75,20 +78,20 @@ export default class Checkbox extends React.Component {
             {...nativeProps}
             type="checkbox"
             className={inputClassname}
-            ref={el => (this.selector = el)}
+            ref={(el) => (this.selector = el)}
             id={this.ID}
             checked={this.props.checked}
             onChange={this.onCheckedChange}
           />
           {this.props.checked && this.props.type === 'default' && (
-            <div className="chata-checkbox-tick">
+            <div className="react-autoql-checkbox-tick">
               <Icon type="check" />
             </div>
           )}
           {label && (
             <div
-              className="chata-checkbox-label"
-              onClick={e => {
+              className="react-autoql-checkbox-label"
+              onClick={(e) => {
                 this.selector.click()
               }}
             >

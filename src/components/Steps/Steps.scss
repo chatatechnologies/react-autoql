@@ -1,8 +1,8 @@
-.chata-steps-container {
+.react-autoql-steps-container {
   margin: 10px;
 }
 
-.chata-step-container {
+.react-autoql-step-container {
   position: relative;
   border-left: 1px solid lightgray;
   margin-left: 12px;
@@ -11,24 +11,24 @@
   transition: all 0.5s ease;
 
   &.complete {
-    border-color: var(--chata-messenger-accent-color, #26a7df);
-    .chata-step-dot {
-      border-color: var(--chata-messenger-accent-color, #26a7df);
-      background: var(--chata-messenger-accent-color, #26a7df);
+    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+    .react-autoql-step-dot {
+      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+      background: var(--react-autoql-messenger-accent-color, #26a7df);
       color: white;
     }
   }
 
   &.error {
     border-color: #ffcc00;
-    .chata-step-dot {
+    .react-autoql-step-dot {
       border-color: #ffcc00;
       background: #ffcc00;
       color: white;
     }
   }
 
-  &:not(.active) .chata-step-content-container {
+  &:not(.active) .react-autoql-step-content-container {
     pointer-events: none;
     height: 10px;
     opacity: 0;
@@ -36,7 +36,7 @@
   }
 }
 
-.chata-step-dot {
+.react-autoql-step-dot {
   position: absolute;
   top: 0;
   left: -10px;
@@ -52,30 +52,30 @@
   text-align: center;
 }
 
-.chata-step-title-container:hover {
+.react-autoql-step-title-container:hover {
   cursor: pointer;
   transition: color 0.2s ease;
-  color: var(--chata-messenger-accent-color, #26a7df);
+  color: var(--react-autoql-messenger-accent-color, #26a7df);
 }
 
-.chata-step-title {
+.react-autoql-step-title {
   font-weight: 500;
   font-size: 15px;
   line-height: 15px;
   padding-top: 2px;
 }
 
-.chata-step-subtitle {
+.react-autoql-step-subtitle {
   font-size: 13px;
   padding-top: 6px;
   padding-bottom: 6px;
   color: rgba(0, 0, 0, 0.4);
 }
-.chata-step-content {
+.react-autoql-step-content {
   margin: 15px;
   margin-top: 0;
 }
-.chata-step-content-container {
+.react-autoql-step-content-container {
   transition-timing-function: ease;
   transition-property: height, opacity, margin;
   transition-duration: 0.5s;

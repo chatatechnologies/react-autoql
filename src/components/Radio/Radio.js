@@ -26,7 +26,10 @@ export default class Radio extends React.Component {
 
   renderButtonType = () => {
     return (
-      <div className="chata-radio-btn-container" data-test="chata-radio">
+      <div
+        className="react-autoql-radio-btn-container"
+        data-test="react-autoql-radio"
+      >
         {this.props.options.map((option, i) => {
           let isActive = this.props.value === option
           if (this.props.multiSelect) {
@@ -34,8 +37,8 @@ export default class Radio extends React.Component {
           }
           return (
             <div
-              key={`chata-radio-${this.COMPONENT_KEY}-${i}`}
-              className={`chata-radio-btn
+              key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+              className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}`}
               onClick={() => this.props.onChange(option)}
             >
@@ -49,7 +52,10 @@ export default class Radio extends React.Component {
 
   renderOriginalType = () => {
     return (
-      <div className="chata-radio-btn-container" data-test="chata-radio">
+      <div
+        className="react-autoql-radio-btn-container"
+        data-test="react-autoql-radio"
+      >
         {this.props.options.map((option, i) => {
           let isActive = this.props.value === option
           if (this.props.multiSelect) {
@@ -59,12 +65,12 @@ export default class Radio extends React.Component {
             <p>
               <input
                 type="radio"
-                id={`chata-radio-${this.COMPONENT_KEY}-${i}`}
-                name={`chata-radio-${this.COMPONENT_KEY}`}
+                id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+                name={`react-autoql-radio-${this.COMPONENT_KEY}`}
                 checked={isActive}
               />
               <label
-                for={`chata-radio-${this.COMPONENT_KEY}-${i}`}
+                for={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 onClick={() => this.props.onChange(option)}
               >
                 {option}

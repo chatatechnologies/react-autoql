@@ -54,24 +54,24 @@ export default class Select extends React.Component {
         }) => {
           return (
             <div
-              className={`chata-select-popup-container ${this.props
+              className={`react-autoql-select-popup-container ${this.props
                 .popupClassname || ''}`}
               style={{ width: this.props.style.width }}
             >
               <ReactTooltip
                 id={`select-tooltip-${this.ID}`}
-                className="chata-drawer-tooltip"
+                className="react-autoql-drawer-tooltip"
                 effect="solid"
                 // place="right"
                 delayShow={500}
               />
 
-              <ul className="chata-select-popup">
+              <ul className="react-autoql-select-popup">
                 {this.props.options.map((option) => {
                   return (
                     <li
                       key={`select-option-${this.ID}-${option.value}`}
-                      className={`chata-select-option${
+                      className={`react-autoql-select-option${
                         option.value === this.props.value ? ' active' : ''
                       }`}
                       onClick={() => {
@@ -91,8 +91,8 @@ export default class Select extends React.Component {
         }}
       >
         <div
-          className={`chata-select ${this.props.className}`}
-          data-test="chata-select"
+          className={`react-autoql-select ${this.props.className}`}
+          data-test="react-autoql-select"
           onClick={() => this.setState({ isOpen: !this.state.isOpen })}
           style={this.props.style}
         >

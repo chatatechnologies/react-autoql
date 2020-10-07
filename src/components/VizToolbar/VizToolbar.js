@@ -33,7 +33,7 @@ class VizToolbar extends React.Component {
 
   componentDidMount = () => {
     const { themeConfig } = this.props
-    const prefix = '--chata-viz-toolbar-'
+    const prefix = '--react-autoql-viz-toolbar-'
     setCSSVars({ themeConfig, prefix })
   }
 
@@ -41,7 +41,7 @@ class VizToolbar extends React.Component {
     ReactTooltip.rebuild()
   }
 
-  showDisplayTypeButton = displayType => {
+  showDisplayTypeButton = (displayType) => {
     if (this.props.disableCharts && CHART_TYPES.includes(displayType)) {
       return false
     }
@@ -58,9 +58,9 @@ class VizToolbar extends React.Component {
       return (
         <button
           onClick={() => this.props.onDisplayTypeChange(displayType)}
-          className="chata-toolbar-btn"
+          className="react-autoql-toolbar-btn"
           data-tip={name}
-          data-for="chata-toolbar-btn-tooltip"
+          data-for="react-autoql-toolbar-btn-tooltip"
           data-test="viz-toolbar-button"
         >
           {icon}

@@ -15,7 +15,7 @@ export default class MonthSelect extends React.Component {
     multiSelect: PropTypes.bool,
     showLastDaySelector: PropTypes.bool,
     onChange: PropTypes.func,
-    allowNullValue: PropTypes.bool
+    allowNullValue: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -23,7 +23,7 @@ export default class MonthSelect extends React.Component {
     multiSelect: false,
     showLastDaySelector: true,
     onChange: () => {},
-    allowNullValue: false
+    allowNullValue: false,
   }
 
   sortFunction = (a, b) => {
@@ -47,7 +47,7 @@ export default class MonthSelect extends React.Component {
     }
   }
 
-  onChange = selectedValue => {
+  onChange = (selectedValue) => {
     let finalOption = [selectedValue]
     if (this.props.multiSelect) {
       if (this.props.value.includes(selectedValue)) {
@@ -56,7 +56,9 @@ export default class MonthSelect extends React.Component {
           // Do not allow to deselect last value if allowNullValue is false
           return this.props.value
         }
-        finalOption = this.props.value.filter(value => value !== selectedValue)
+        finalOption = this.props.value.filter(
+          (value) => value !== selectedValue
+        )
       } else {
         // Select it
         finalOption = [...this.props.value, selectedValue]
@@ -78,8 +80,8 @@ export default class MonthSelect extends React.Component {
 
     return (
       <div
-        key={`chata-radio-${this.COMPONENT_KEY}-last-day`}
-        className={`chata-radio-btn last-day
+        key={`react-autoql-radio-${this.COMPONENT_KEY}-last-day`}
+        className={`react-autoql-radio-btn last-day
           ${isActive ? ' active' : ''}
           ${this.props.outlined ? ' outlined' : ''}`}
         onClick={() => this.onChange(-1)}
@@ -105,14 +107,14 @@ export default class MonthSelect extends React.Component {
   render = () => {
     return (
       <div
-        className="chata-radio-btn-container month-select"
-        data-test="chata-month-select"
+        className="react-autoql-radio-btn-container month-select"
+        data-test="react-autoql-month-select"
       >
         {days.map((option, i) => {
           return (
-            <Fragment key={`chata-radio-${this.COMPONENT_KEY}-${i}`}>
+            <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
               <div
-                className={`chata-radio-btn
+                className={`react-autoql-radio-btn
                   ${this.getButtonClassNames(option, i)}`}
                 onClick={() => this.onChange(option)}
               >

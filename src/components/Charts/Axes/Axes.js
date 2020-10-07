@@ -85,7 +85,7 @@ export default class Axes extends React.Component {
         {title}{' '}
         {hasDropdown && (
           <tspan
-            className="chata-axis-selector-arrow"
+            className="react-autoql-axis-selector-arrow"
             data-test="dropdown-arrow"
             opacity="0" // use css to style so it isnt exported in the png
             fontSize="8px"
@@ -202,7 +202,7 @@ export default class Axes extends React.Component {
     const yLabelHeight = _get(this.getBBoxFromRef(this.yLabelRef), 'height', 0)
 
     return (
-      <g className="chata-axes" data-test="chata-axes">
+      <g className="react-autoql-axes" data-test="react-autoql-axes">
         <g>
           <text
             ref={(r) => (this.yLabelRef = r)}

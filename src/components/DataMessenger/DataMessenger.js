@@ -321,7 +321,7 @@ export default class DataMessenger extends React.Component {
       themeStyles['font-family'] = fontFamily
     }
 
-    setStyleVars({ themeStyles, prefix: '--chata-messenger-' })
+    setStyleVars({ themeStyles, prefix: '--react-autoql-messenger-' })
   }
 
   getHandlerProp = () => {
@@ -343,7 +343,7 @@ export default class DataMessenger extends React.Component {
               draggable="false"
             />
           ) : (
-            <Icon type="chata-bubbles-outlined" size={26} />
+            <Icon type="react-autoql-bubbles-outlined" size={26} />
           )}
         </div>
       )
@@ -626,10 +626,10 @@ export default class DataMessenger extends React.Component {
                 className={`tab${page === 'data-messenger' ? ' active' : ''}`}
                 onClick={() => this.setState({ activePage: 'data-messenger' })}
                 data-tip="Data Messenger"
-                data-for="chata-header-tooltip"
+                data-for="react-autoql-header-tooltip"
                 data-delay-show={1000}
               >
-                <Icon type="chata-bubbles-outlined" />
+                <Icon type="react-autoql-bubbles-outlined" />
               </div>
               {this.props.enableExploreQueriesTab && (
                 <div
@@ -640,7 +640,7 @@ export default class DataMessenger extends React.Component {
                     this.setState({ activePage: 'explore-queries' })
                   }
                   data-tip="Explore Queries"
-                  data-for="chata-header-tooltip"
+                  data-for="react-autoql-header-tooltip"
                   data-delay-show={1000}
                 >
                   <Icon type="light-bulb" size={22} />
@@ -659,7 +659,7 @@ export default class DataMessenger extends React.Component {
                       this.setState({ activePage: 'notifications' })
                     }}
                     data-tip="Notifications"
-                    data-for="chata-header-tooltip"
+                    data-for="react-autoql-header-tooltip"
                     data-delay-show={1000}
                     style={{ paddingBottom: '5px', paddingLeft: '2px' }}
                   >
@@ -704,8 +704,8 @@ export default class DataMessenger extends React.Component {
           position="bottom" // preferred position
           content={
             <div className="clear-messages-confirm-popover">
-              <div className="chata-confirm-text">
-                <Icon className="chata-confirm-icon" type="warning" />
+              <div className="react-autoql-confirm-text">
+                <Icon className="react-autoql-confirm-icon" type="warning" />
                 Clear all queries & responses?
               </div>
               <Button
@@ -731,9 +731,9 @@ export default class DataMessenger extends React.Component {
             onClick={() =>
               this.setState({ isClearMessageConfirmVisible: true })
             }
-            className="chata-button clear-all"
+            className="react-autoql-drawer-header-btn clear-all"
             data-tip="Clear data responses"
-            data-for="chata-header-tooltip"
+            data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
           </button>
@@ -759,20 +759,20 @@ export default class DataMessenger extends React.Component {
   renderHeaderContent = () => {
     return (
       <Fragment>
-        <div className="chata-header-left-container">
+        <div className="react-autoql-header-left-container">
           <button
             onClick={this.props.onHandleClick}
-            className="chata-button close"
+            className="react-autoql-drawer-header-btn close"
             data-tip="Close Data Messenger"
-            data-for="chata-header-tooltip"
+            data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
           </button>
         </div>
-        <div className="chata-header-center-container">
+        <div className="react-autoql-header-center-container">
           {this.renderHeaderTitle()}
         </div>
-        <div className="chata-header-right-container">
+        <div className="react-autoql-header-right-container">
           {this.renderClearMessagesButton()}
         </div>
       </Fragment>
@@ -856,7 +856,7 @@ export default class DataMessenger extends React.Component {
         )}
         <div className="chat-bar-container">
           <div className="watermark">
-            <Icon type="chata-bubbles-outlined" />
+            <Icon type="react-autoql-bubbles-outlined" />
             We run on AutoQL by Chata
           </div>
           <QueryInput
@@ -1078,7 +1078,7 @@ export default class DataMessenger extends React.Component {
       const placement = this.getPlacementProp()
       return (
         <div
-          className={`chata-drawer-resize-handle ${placement}`}
+          className={`react-autoql-drawer-resize-handle ${placement}`}
           onMouseDown={(e) => {
             this.setState({
               isResizing: true,
@@ -1102,22 +1102,22 @@ export default class DataMessenger extends React.Component {
     return (
       <Fragment>
         <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-header-tooltip"
+          className="react-autoql-drawer-tooltip"
+          id="react-autoql-header-tooltip"
           effect="solid"
           delayShow={500}
           place="top"
         />
         <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-toolbar-btn-tooltip"
+          className="react-autoql-drawer-tooltip"
+          id="react-autoql-toolbar-btn-tooltip"
           effect="solid"
           delayShow={500}
           place="top"
           html
         />
         <ReactTooltip
-          className="chata-chart-tooltip"
+          className="react-autoql-chart-tooltip"
           id="chart-element-tooltip"
           effect="solid"
           html
@@ -1156,8 +1156,8 @@ export default class DataMessenger extends React.Component {
         <Fragment>
           {this.renderTooltips()}
           <Drawer
-            data-test="chata-drawer-test"
-            className={`chata-drawer
+            data-test="react-autoql-drawer-test"
+            className={`react-autoql-drawer
               ${this.state.isResizing ? ' disable-selection' : ''}
               ${this.props.isVisible ? ' open' : ' closed'}`}
             open={this.props.isVisible}
@@ -1176,7 +1176,7 @@ export default class DataMessenger extends React.Component {
             {(this.props.enableExploreQueriesTab ||
               this.props.enableNotificationsTab) &&
               this.renderTabs()}
-            <div className="chata-drawer-content-container">
+            <div className="react-autoql-drawer-content-container">
               <div className="chat-header-container">
                 {this.renderHeaderContent()}
               </div>

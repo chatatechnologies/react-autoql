@@ -1,4 +1,4 @@
-.chata-chart-container {
+.react-autoql-chart-container {
   position: relative;
   height: 100%;
   width: 100%;
@@ -14,35 +14,35 @@
 }
 
 /* These are not inline styles since they do not apply to saved PNG charts */
-.chata-chart-container .square {
+.react-autoql-chart-container .square {
   transition: fill-opacity 0.3s ease;
 }
 
-.chata-chart-container .bar,
-/* .chata-chart-container .line-dot, */
-.chata-chart-container .stacked-bar,
-.chata-chart-container .circle {
+.react-autoql-chart-container .bar,
+/* .react-autoql-chart-container .line-dot, */
+.react-autoql-chart-container .stacked-bar,
+.react-autoql-chart-container .circle {
   transition: fill-opacity 0.3s ease;
   fill-opacity: 0.7 !important;
 }
 
-.chata-chart-container .bar:hover,
-/* .chata-chart-container .line-dot:hover, */
-.chata-chart-container .stacked-bar:hover,
-.chata-chart-container .circle:hover,
-.chata-chart-container .square:hover {
+.react-autoql-chart-container .bar:hover,
+/* .react-autoql-chart-container .line-dot:hover, */
+.react-autoql-chart-container .stacked-bar:hover,
+.react-autoql-chart-container .circle:hover,
+.react-autoql-chart-container .square:hover {
   fill-opacity: 1 !important;
 }
 
-.chata-chart-container .vertex-dot:hover,
-.chata-chart-container .line-dot:hover,
-.chata-chart-container .line-dot.active {
+.react-autoql-chart-container .vertex-dot:hover,
+.react-autoql-chart-container .line-dot:hover,
+.react-autoql-chart-container .line-dot.active {
   opacity: 1 !important;
 }
 
-.chata-chart-container .bar.active,
-/* .chata-chart-container .line-dot.active, */
-.chata-chart-container .stacked-bar.active {
+.react-autoql-chart-container .bar.active,
+/* .react-autoql-chart-container .line-dot.active, */
+.react-autoql-chart-container .stacked-bar.active {
   fill-opacity: 1 !important;
 }
 
@@ -55,18 +55,18 @@
   font-weight: 600;
 }
 
-.chata-chart-container g.tick {
+.react-autoql-chart-container g.tick {
   transition: all 0.3s ease;
 }
 
-.chata-chart-container .chata-heatmap-chart g.tick line,
-.chata-chart-container .chata-bubble-chart g.tick line {
+.react-autoql-chart-container .react-autoql-heatmap-chart g.tick line,
+.react-autoql-chart-container .react-autoql-bubble-chart g.tick line {
   opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
 }
 
 .axis-selector-container {
   z-index: 9999;
-  background: var(--chata-output-background-color);
+  background: var(--react-autoql-output-background-color);
   padding: 5px 0;
   max-height: 300px;
   min-width: 150px;
@@ -75,15 +75,15 @@
   .axis-select-option.active {
     background: rgba(0, 0, 0, 0.04);
   }
-  .chata-checkbox {
+  .react-autoql-checkbox {
     margin-left: 20px;
 
-    .chata-checkbox__input {
+    .react-autoql-checkbox__input {
       width: 18px;
       height: 18px;
     }
   }
-  .chata-list-item {
+  .react-autoql-list-item {
     padding-left: 25px;
     padding-right: 15px;
     font-size: 12px;
@@ -114,7 +114,7 @@
     margin: 0;
     padding: 0;
     li {
-      color: var(--chata-output-text-color-primary);
+      color: var(--react-autoql-output-text-color-primary);
       width: 100%;
       height: 30px;
       line-height: 30px;

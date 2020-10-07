@@ -32,7 +32,7 @@
   transform: scale(0);
 }
 
-.chata-modal-header {
+.react-autoql-modal-header {
   position: relative;
   text-align: center;
   flex: 0 0 52px;
@@ -40,14 +40,14 @@
   padding: 14px 60px;
   font-size: 16px;
 }
-.chata-modal-footer {
+.react-autoql-modal-footer {
   position: relative;
   flex: 0 0 52px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   text-align: right;
   padding: 8px 10px;
 }
-.chata-modal-body {
+.react-autoql-modal-body {
   display: flex;
   flex-direction: column;
 
@@ -55,7 +55,7 @@
   flex: 1;
   overflow: hidden;
 }
-.chata-modal-close-btn {
+.react-autoql-modal-close-btn {
   position: absolute;
   top: 16px;
   right: 18px;
@@ -63,6 +63,6 @@
   opacity: 0.6;
   cursor: pointer;
 }
-.chata-modal-close-btn:hover {
+.react-autoql-modal-close-btn:hover {
   opacity: 1;
 }

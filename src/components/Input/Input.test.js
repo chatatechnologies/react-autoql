@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const inputComponent = findByTestAttr(wrapper, 'chata-input')
+    const inputComponent = findByTestAttr(wrapper, 'react-autoql-input')
     expect(inputComponent.exists()).toBe(true)
   })
 })

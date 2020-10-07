@@ -147,19 +147,19 @@ export default class DataAlerts extends React.Component {
   }
 
   renderNotificationGroupTitle = (title, description, includeAddBtn) => (
-    <div className="chata-notification-title-container">
+    <div className="react-autoql-notification-title-container">
       <div style={{ paddingLeft: '10px', opacity: 0.8 }}>
         <div style={{ fontSize: '17px' }}>{title}</div>
         <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
       {includeAddBtn && (
         <div
-          className="chata-notification-add-btn"
+          className="react-autoql-notification-add-btn"
           onClick={this.onAddClick}
           data-tip="Create Data Alert"
-          data-for="chata-notification-settings-tooltip"
+          data-for="react-autoql-notification-settings-tooltip"
         >
-          <Icon type="plus" className="chata-notification-add-icon" />
+          <Icon type="plus" className="react-autoql-notification-add-icon" />
         </div>
       )}
     </div>
@@ -186,33 +186,33 @@ export default class DataAlerts extends React.Component {
             'Subscribe to a Data Alert',
             'Choose from a range of ready-to-use Alerts that have been set up for you'
           )}
-        <div className="chata-notification-settings-container">
+        <div className="react-autoql-notification-settings-container">
           {list.map((notification, i) => {
             return (
               <div
-                key={`chata-notification-setting-item-${i}`}
-                className={`chata-notification-setting-item ${notification.type}`}
+                key={`react-autoql-notification-setting-item-${i}`}
+                className={`react-autoql-notification-setting-item ${notification.type}`}
                 onClick={(e) => {
                   if (notification.type === 'USER') {
                     this.onEditClick(e, notification)
                   }
                 }}
               >
-                <div className="chata-notification-setting-item-header">
-                  <div className="chata-notification-setting-display-name">
-                    <span className="chata-notification-setting-display-name-title">
+                <div className="react-autoql-notification-setting-item-header">
+                  <div className="react-autoql-notification-setting-display-name">
+                    <span className="react-autoql-notification-setting-display-name-title">
                       {notification.title}
                     </span>
-                    <span className="chata-notification-setting-display-name-message">
+                    <span className="react-autoql-notification-setting-display-name-message">
                       {notification.message && (
                         <span> - {notification.message}</span>
                       )}
                     </span>
                   </div>
-                  <div className="chata-notification-setting-actions">
+                  <div className="react-autoql-notification-setting-actions">
                     {notification.type === 'USER' && (
                       <Icon
-                        className="chata-notification-action-btn"
+                        className="react-autoql-notification-action-btn"
                         type="edit"
                       />
                     )}
@@ -222,7 +222,7 @@ export default class DataAlerts extends React.Component {
                         notification.status === 'ACTIVE' ||
                         notification.status === 'WAITING'
                       }
-                      className="chata-notification-enable-checkbox"
+                      className="react-autoql-notification-enable-checkbox"
                       onClick={(e) => e.stopPropagation()}
                       data-tip={
                         notification.status === 'ACTIVE' ||
@@ -230,7 +230,7 @@ export default class DataAlerts extends React.Component {
                           ? 'Turn off notification'
                           : 'Turn on notification'
                       }
-                      data-for="chata-notification-settings-tooltip"
+                      data-for="react-autoql-notification-settings-tooltip"
                       onChange={(e) => {
                         this.onEnableSwitchChange(e, notification)
                         ReactTooltip.hide()
@@ -278,15 +278,15 @@ export default class DataAlerts extends React.Component {
 
     return (
       <div
-        className="chata-notification-settings"
+        className="react-autoql-notification-settings"
         data-test="notification-settings"
       >
         {this.renderNotificationlist('project', projectList)}
         {this.renderNotificationlist('user', userList)}
         {this.renderNotificationEditModal()}
         <ReactTooltip
-          className="chata-drawer-tooltip"
-          id="chata-notification-settings-tooltip"
+          className="react-autoql-drawer-tooltip"
+          id="react-autoql-notification-settings-tooltip"
           effect="solid"
           delayShow={500}
           html

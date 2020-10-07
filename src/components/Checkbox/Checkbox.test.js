@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const checkboxComponent = findByTestAttr(wrapper, 'chata-checkbox')
+    const checkboxComponent = findByTestAttr(wrapper, 'react-autoql-checkbox')
     expect(checkboxComponent.exists()).toBe(true)
   })
 })

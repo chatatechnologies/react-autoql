@@ -1,4 +1,4 @@
-.chata-btn {
+.react-autoql-btn {
   border-radius: 4px;
   cursor: pointer;
   outline: none !important;
@@ -8,41 +8,41 @@
 }
 
 // State
-.chata-btn.disabled {
+.react-autoql-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
 
 // Size
-.chata-btn.small {
+.react-autoql-btn.small {
   padding: 2px 8px;
   margin: 2px 3px;
 }
-.chata-btn.large {
+.react-autoql-btn.large {
   padding: 5px 16px;
   margin: 2px 5px;
 }
 
 // Type
-.chata-btn.default {
+.react-autoql-btn.default {
   color: inherit;
   border: 1px solid #00000026;
   background: inherit;
   &:hover {
-    border-color: var(--chata-messenger-accent-color);
-    color: var(--chata-messenger-accent-color);
+    border-color: var(--react-autoql-messenger-accent-color);
+    color: var(--react-autoql-messenger-accent-color);
   }
 }
-.chata-btn.primary {
-  background: var(--chata-messenger-accent-color);
-  border: 1px solid var(--chata-messenger-accent-color);
+.react-autoql-btn.primary {
+  background: var(--react-autoql-messenger-accent-color);
+  border: 1px solid var(--react-autoql-messenger-accent-color);
   color: white;
   &:hover {
     opacity: 0.8;
   }
 }
-.chata-btn.danger {
+.react-autoql-btn.danger {
   color: #ca0b00;
   border: 1px solid #ca0b00;
   background: inherit;

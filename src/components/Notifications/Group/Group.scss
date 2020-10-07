@@ -9,7 +9,7 @@
   height: 35px;
   width: 35px;
   border-radius: 20px;
-  background: var(--chata-messenger-accent-color, #26a7df);
+  background: var(--react-autoql-messenger-accent-color, #26a7df);
   color: white;
   line-height: 38px;
   text-align: center;
@@ -56,7 +56,7 @@
     font-size: 12px;
   }
 
-  .chata-notification-group-container {
+  .react-autoql-notification-group-container {
     position: relative;
     padding: 20px;
     padding-top: 55px;
@@ -65,8 +65,8 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 4px;
 
-    .chata-notification-group-add-btn,
-    .chata-notification-group-delete-btn {
+    .react-autoql-notification-group-add-btn,
+    .react-autoql-notification-group-delete-btn {
       position: absolute;
       height: 21px;
       width: 21px;
@@ -79,7 +79,7 @@
       transition: all 0.3s ease;
       cursor: pointer;
 
-      svg {
+      span.react-autoql-icon svg {
         width: 15px;
         height: 15px;
       }
@@ -89,12 +89,12 @@
       }
     }
 
-    .chata-notification-group-add-btn {
+    .react-autoql-notification-group-add-btn {
       bottom: -11px;
       left: calc(50% - 10px);
     }
 
-    .chata-notification-group-delete-btn {
+    .react-autoql-notification-group-delete-btn {
       top: -10px;
       right: -10px;
     }
@@ -128,7 +128,7 @@
       }
     }
 
-    .chata-notification-rule-add-btn {
+    .react-autoql-notification-rule-add-btn {
       display: inline-block;
       height: 20px;
       width: 20px;

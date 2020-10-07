@@ -121,7 +121,7 @@ export default class NotificationIcon extends React.Component {
     }
 
     if (this.props.useDot) {
-      return <div className="chata-notifications-badge-dot" />
+      return <div className="react-autoql-notifications-badge-dot" />
     }
 
     let finalCount = count
@@ -129,13 +129,13 @@ export default class NotificationIcon extends React.Component {
       finalCount = `${overflowCount}+`
     }
 
-    return <div className="chata-notifications-badge">{finalCount}</div>
+    return <div className="react-autoql-notifications-badge">{finalCount}</div>
   }
 
   render = () => {
     return (
       <div
-        className={`chata-notifications-button-container ${
+        className={`react-autoql-notifications-button-container ${
           this.props.useDot ? 'dot' : ''
         }
         ${!this.state.count ? 'no-badge' : ''}`}
@@ -147,7 +147,10 @@ export default class NotificationIcon extends React.Component {
           }
         }}
       >
-        <Icon type="notification" className="chata-notifications-button" />
+        <Icon
+          type="notification"
+          className="react-autoql-notifications-button"
+        />
         {this.renderBadge()}
       </div>
     )

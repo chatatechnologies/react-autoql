@@ -52,7 +52,7 @@ export default class ChataHeatmapChart extends Component {
     onLabelChange: () => {},
   }
 
-  handleLabelRotation = labelArray => {
+  handleLabelRotation = (labelArray) => {
     const prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       this.squareWidth,
@@ -66,7 +66,7 @@ export default class ChataHeatmapChart extends Component {
     }
   }
 
-  getXTickValues = labelArray => {
+  getXTickValues = (labelArray) => {
     try {
       const interval = Math.ceil(
         (this.props.data.length * 16) / this.props.width
@@ -89,7 +89,7 @@ export default class ChataHeatmapChart extends Component {
     }
   }
 
-  getYTickValues = uniqueYLabels => {
+  getYTickValues = (uniqueYLabels) => {
     this.squareHeight = this.props.height / uniqueYLabels.length
     const intervalHeight = Math.ceil(
       (uniqueYLabels.length * 16) / this.props.height
@@ -134,15 +134,15 @@ export default class ChataHeatmapChart extends Component {
       data,
     } = this.props
 
-    const maxValue = max(data, d => max(d.cells, cell => cell.value))
+    const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
 
-    const uniqueYLabels = data.map(d => d.label)
+    const uniqueYLabels = data.map((d) => d.label)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
       .paddingInner(0.01)
 
-    const uniqueXLabels = data[0].cells.map(cell => cell.label)
+    const uniqueXLabels = data[0].cells.map((cell) => cell.label)
     const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([leftMargin + 10, width - rightMargin])
@@ -154,7 +154,10 @@ export default class ChataHeatmapChart extends Component {
     this.handleLabelRotation(uniqueXLabels)
 
     return (
-      <g data-test="chata-heatmap-chart" className="chata-heatmap-chart">
+      <g
+        data-test="react-autoql-heatmap-chart"
+        className="react-autoql-heatmap-chart"
+      >
         <Axes
           themeConfig={this.props.themeConfig}
           scales={{ xScale, yScale }}

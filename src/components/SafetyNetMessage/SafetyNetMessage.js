@@ -261,14 +261,14 @@ export default class SafetyNetMessage extends React.Component {
 
     return (
       <div
-        className="chata-safety-net-selector-container"
+        className="react-autoql-safety-net-selector-container"
         key={`query-element-${suggestion.id}`}
       >
         <Select
           options={options}
           key={uuid.v4()}
           value={suggestion.id}
-          className="chata-safetynet-select"
+          className="react-autoql-safetynet-select"
           popupClassname="safetynet-select"
           // style={{ width: selectWidth }}
           onChange={(value) =>
@@ -281,7 +281,7 @@ export default class SafetyNetMessage extends React.Component {
 
   renderSafetyNetQuery = () => {
     return (
-      <div className="chata-safety-net-query">
+      <div className="react-autoql-safety-net-query">
         {this.plainTextList.map((textValue, index) => {
           const textElement = (
             <span key={`query-element-${index}`}>{textValue}</span>
@@ -321,15 +321,15 @@ export default class SafetyNetMessage extends React.Component {
     }
 
     return (
-      <div className="chata-safety-net-container">
-        <div className="chata-safety-net-description">
+      <div className="react-autoql-safety-net-container">
+        <div className="react-autoql-safety-net-description">
           {this.props.message ||
             `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
         </div>
         <span>
           {this.renderSafetyNetQuery()}
           <button
-            className="chata-safety-net-execute-btn"
+            className="react-autoql-safety-net-execute-btn"
             onClick={() => {
               this.props.onSuggestionClick({
                 query: this.getSafetyNetQueryText(
@@ -341,7 +341,7 @@ export default class SafetyNetMessage extends React.Component {
           >
             <Icon
               type={this.props.submitIcon || 'play'}
-              className="chata-execute-query-icon"
+              className="react-autoql-execute-query-icon"
             />
             {this.props.submitText || 'Run Query'}
           </button>
@@ -352,7 +352,7 @@ export default class SafetyNetMessage extends React.Component {
 
   render = () => {
     return (
-      <div className="chata-response-content-container">
+      <div className="react-autoql-response-content-container">
         {this.renderResponse()}
       </div>
     )

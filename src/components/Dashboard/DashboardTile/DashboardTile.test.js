@@ -28,7 +28,7 @@ describe('renders correctly', () => {
     const wrapper = setup()
     const dashboardTileComponent = findByTestAttr(
       wrapper,
-      'chata-dashboard-tile'
+      'react-autoql-dashboard-tile'
     )
     expect(dashboardTileComponent.exists()).toBe(true)
   })

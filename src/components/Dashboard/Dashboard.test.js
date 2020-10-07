@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const dashboardComponent = findByTestAttr(wrapper, 'chata-dashboard')
+    const dashboardComponent = findByTestAttr(wrapper, 'react-autoql-dashboard')
     expect(dashboardComponent.exists()).toBe(true)
   })
 })

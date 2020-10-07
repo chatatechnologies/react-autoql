@@ -157,9 +157,9 @@ export default class ChataChart extends Component {
 
   getNewLeftMargin = () => {
     // todo
-    // get left part of #chata-chart-95c56ed0-8345-4af4-bc76-805cbaf2a0ed
-    // get left part of .chata-axes
-    // see if .chata-axes is further left, and move that much to the right
+    // get left part of #react-autoql-chart-95c56ed0-8345-4af4-bc76-805cbaf2a0ed
+    // get left part of .react-autoql-axes
+    // see if .react-autoql-axes is further left, and move that much to the right
     // then there is no need to calculate text lengths
 
     const xAxis = select(this.chartRef)
@@ -191,7 +191,7 @@ export default class ChataChart extends Component {
 
     // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
     const chartElement = select(this.chartRef)
-      .select('.chata-axes')
+      .select('.react-autoql-axes')
       .node()
 
     const chartBBox = chartElement ? chartElement.getBBox() : undefined
@@ -890,11 +890,11 @@ export default class ChataChart extends Component {
 
     return (
       <div
-        id={`chata-chart-${this.CHART_ID}`}
-        className={`chata-chart-container ${
+        id={`react-autoql-chart-${this.CHART_ID}`}
+        className={`react-autoql-chart-container ${
           this.state.isLoading ? 'loading' : ''
         }`}
-        data-test="chata-chart"
+        data-test="react-autoql-chart"
       >
         <svg
           ref={(r) => (this.chartRef = r)}
@@ -919,7 +919,7 @@ export default class ChataChart extends Component {
             ),
           }}
         >
-          <g className="chata-chart-content-container">{chart}</g>
+          <g className="react-autoql-chart-content-container">{chart}</g>
         </svg>
         {this.renderAxisSelectors()}
       </div>

@@ -34,7 +34,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const heatmapChartComponent = findByTestAttr(wrapper, 'chata-heatmap-chart')
+    const heatmapChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-heatmap-chart'
+    )
     expect(heatmapChartComponent.exists()).toBe(true)
   })
 })

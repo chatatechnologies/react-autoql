@@ -84,11 +84,11 @@ export default class Modal extends React.Component {
       <Fragment>
         <ReactModal
           isOpen={this.props.isVisible}
-          bodyOpenClassName="chata-modal-container"
+          bodyOpenClassName="react-autoql-modal-container"
           ariaHideApp={false}
           contentLocation={{ top: 0, left: 0 }}
           closeTimeoutMS={200}
-          data-test="chata-modal"
+          data-test="react-autoql-modal"
           style={{
             content: {
               ...this.props.style,
@@ -98,16 +98,16 @@ export default class Modal extends React.Component {
             },
           }}
         >
-          <div className="chata-modal-header">
+          <div className="react-autoql-modal-header">
             {this.props.title}
             <Icon
               type="close"
-              className="chata-modal-close-btn"
+              className="react-autoql-modal-close-btn"
               onClick={this.onClose}
             />
           </div>
           <div
-            className="chata-modal-body"
+            className="react-autoql-modal-body"
             style={{
               overflow: this.props.enableBodyScroll ? 'auto' : 'hidden',
             }}
@@ -115,7 +115,9 @@ export default class Modal extends React.Component {
             {this.props.children}
           </div>
           {this.props.showFooter && (
-            <div className="chata-modal-footer">{this.renderFooter()}</div>
+            <div className="react-autoql-modal-footer">
+              {this.renderFooter()}
+            </div>
           )}
         </ReactModal>
         <ConfirmModal

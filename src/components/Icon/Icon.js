@@ -73,7 +73,7 @@ import './Icon.scss'
 export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
-    size: PropTypes.number, // used for the image icons ie. chata-bubbles
+    size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
   }
 
   static defaultProps = {
@@ -113,10 +113,10 @@ export default class Icon extends React.Component {
         icon = <AiFillCaretLeft />
         break
       }
-      case 'chata-bubbles': {
+      case 'react-autoql-bubbles': {
         icon = (
           <img
-            className="chata-bubbles-icon"
+            className="react-autoql-bubbles-icon"
             src={chataBubblesSVG}
             alt="chata.ai"
             style={{ ...this.props.style, height: '1em', width: '1em' }}
@@ -125,15 +125,15 @@ export default class Icon extends React.Component {
         )
         break
       }
-      case 'chata-bubbles-outlined': {
+      case 'react-autoql-bubbles-outlined': {
         icon = bubblesIcon
         break
       }
-      case 'chata-bubbles-filled': {
+      case 'react-autoql-bubbles-filled': {
         icon = bubblesIconFilled
         break
       }
-      case 'chata-bubbles-filled-alt': {
+      case 'react-autoql-bubbles-filled-alt': {
         icon = bubblesIconFilledAlt
         break
       }
@@ -332,8 +332,8 @@ export default class Icon extends React.Component {
     return (
       <span
         {...nativeProps}
-        data-test="chata-icon"
-        className={`chata-icon ${this.props.className || ''} ${
+        data-test="react-autoql-icon"
+        className={`react-autoql-icon ${this.props.className || ''} ${
           this.props.type
         }`}
         style={{ ...this.props.style, fontSize: `${this.props.size}px` }}

@@ -1,4 +1,4 @@
-.chata-response-content-container {
+.react-autoql-response-content-container {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -11,11 +11,11 @@
   overflow: hidden;
 }
 
-.chata-response-content-container.table {
+.react-autoql-response-content-container.table {
   max-height: 100vh !important; // this safetynet forces progressive rendering
 }
 
-.chata-suggestion-btn {
+.react-autoql-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
   border-radius: 4px;
@@ -30,12 +30,12 @@
   border-color: #e2e2e26e;
   color: inherit;
 }
-.chata-suggestion-btn:hover {
+.react-autoql-suggestion-btn:hover {
   border-color: transparent;
   color: white;
-  background: var(--chata-output-accent-color);
+  background: var(--react-autoql-output-accent-color);
 }
-.chata-help-link-btn {
+.react-autoql-help-link-btn {
   padding: 6px 14px;
   background: transparent;
   border-radius: 5px;
@@ -49,22 +49,22 @@
   border-color: #e2e2e26e;
   color: inherit;
 }
-.chata-help-link-btn:hover {
+.react-autoql-help-link-btn:hover {
   opacity: 0.7;
 }
-.chata-help-link-icon {
+.react-autoql-help-link-icon {
   width: 15px;
   height: 15px;
   margin-bottom: -3px;
   margin-right: 3px;
 }
 
-.chata-suggestion-message {
+.react-autoql-suggestion-message {
   height: 100%;
   width: 100%;
   word-break: break-word;
 }
-.chata-suggestions-select {
+.react-autoql-suggestions-select {
   position: relative;
   display: inline-block;
   height: 30px;
@@ -100,30 +100,30 @@
 }
 
 /* safetynet */
-.chata-safety-net-selector-container {
+.react-autoql-safety-net-selector-container {
   display: inline-block;
   position: relative;
   margin-left: -5px;
 }
-.chata-select-popup-container.safetynet-select {
+.react-autoql-select-popup-container.safetynet-select {
   padding: 5px 0;
   letter-spacing: 0.03em;
-  font-family: var(--chata-output-font-family), sans-serif;
+  font-family: var(--react-autoql-output-font-family), sans-serif;
 
-  .chata-select-option {
+  .react-autoql-select-option {
     height: unset;
     font-size: 14px;
     line-height: 24px;
     padding: 0 15px;
   }
-  .chata-select-option:last-of-type {
+  .react-autoql-select-option:last-of-type {
     color: #d84830;
   }
 }
-.chata-safety-net-query {
+.react-autoql-safety-net-query {
   text-align: center;
 }
-.chata-safety-net-execute-btn {
+.react-autoql-safety-net-execute-btn {
   height: 38px;
   background: none;
   border-radius: 4px;
@@ -135,24 +135,24 @@
   border-color: #e2e2e26e;
   transition: all 0.2s ease;
 }
-.chata-safety-net-execute-btn:hover {
+.react-autoql-safety-net-execute-btn:hover {
   border-color: #28a8e0;
 }
-.chata-execute-query-icon {
+.react-autoql-execute-query-icon {
   font-size: 23px;
   vertical-align: bottom;
   line-height: 24px;
 
-  svg {
+  span.react-autoql-icon svg {
     height: 19px;
     width: 19px;
     margin-top: 3px;
     margin-right: 4px;
     vertical-align: top;
-    fill: var(--chata-output-accent-color);
+    fill: var(--react-autoql-output-accent-color);
   }
 }
-.chata-safetynet-select {
+.react-autoql-safetynet-select {
   position: relative;
   display: inline-block;
   height: 2em;
@@ -166,15 +166,15 @@
   padding: 0;
   border-radius: 0;
   border-bottom: 1px dashed;
-  color: var(--chata-output-accent-color);
+  color: var(--react-autoql-output-accent-color);
 }
-.chata-safety-net-delete-button {
+.react-autoql-safety-net-delete-button {
   position: relative;
   cursor: pointer;
   margin-bottom: -2px;
 }
-.chata-chart-tooltip {
-  font-family: var(--chata-output-font-family), sans-serif;
+.react-autoql-chart-tooltip {
+  font-family: var(--react-autoql-output-font-family), sans-serif;
   letter-spacing: 0.04em;
   line-height: 22px;
   font-size: 13px;
@@ -197,15 +197,15 @@
   font-weight: 600;
   cursor: pointer;
 }
-.chata-safety-net-container {
+.react-autoql-safety-net-container {
   width: 100%;
 }
-.chata-safety-net-description {
+.react-autoql-safety-net-description {
   margin-bottom: 14px;
 }
 
 .context-menu {
-  background: var(--chata-output-background-color);
+  background: var(--react-autoql-output-background-color);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -217,7 +217,7 @@
   padding: 0;
 }
 .context-menu-list li {
-  color: var(--chata-output-text-color-primary);
+  color: var(--react-autoql-output-text-color-primary);
   width: 100%;
   height: 35px;
   line-height: 35px;
