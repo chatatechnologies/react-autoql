@@ -571,10 +571,6 @@ export default class NotificationModal extends React.Component {
           onClose={this.props.onClose}
           confirmOnClose={true}
           enableBodyScroll
-          // confirmText="Save"
-          // onConfirm={this.onRuleSave}
-          // confirmLoading={this.state.isSavingRule}
-          // confirmDisabled={this.isSaveButtonDisabled(steps)}
           footer={
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>

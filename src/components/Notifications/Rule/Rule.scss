@@ -1,7 +1,6 @@
 .react-autoql-notification-rule-container {
   display: flex;
   align-items: baseline;
-  // width: calc(100% - 20px);
 
   .react-autoql-rule-input {
     display: flex;
@@ -40,8 +39,6 @@
     flex: 1;
 
     &.hidden {
-      // pointer-events: none;
-      // visibility: hidden;
       display: none;
     }
 

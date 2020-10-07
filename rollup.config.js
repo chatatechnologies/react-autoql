@@ -42,7 +42,7 @@ const common = {
       plugins: ['external-helpers'],
       exclude: 'node_modules/**',
     }),
-    // production && terser(),
+    production && terser(),
   ],
   external: makeExternalPredicate(external),
 }

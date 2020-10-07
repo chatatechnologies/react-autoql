@@ -266,15 +266,6 @@ export default class ExpressionBuilder extends React.Component {
               )
             })}
           {!this.props.readOnly && (
-            // <div className="notification-first-group-btn-container">
-            //   <Button
-            //     className="notification-rule-add-btn-outer"
-            //     onClick={this.addGroup}
-            //   >
-            //     <Icon type="plus" /> Add Condition Group
-            //   </Button>
-            // </div>
-
             <div
               className="notification-rule-add-group-btn"
               onClick={this.addGroup}
