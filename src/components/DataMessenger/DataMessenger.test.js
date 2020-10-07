@@ -116,13 +116,6 @@ describe('props', () => {
       expect(drawerProps.height).toBe(300)
     })
   })
-  describe('showHandle', () => {
-    test('handle is not rendered when showHandle is false', () => {
-      // const wrapper = setup({ placement: 'bottom', height: 300 })
-      // const drawerProps = wrapper.find('.react-autoql-drawer').props()
-      // expect(drawerProps.height).toBe(300)
-    })
-  })
 
   // If empty string is passed as userDisplayName, we should render 'there'
   // If userDisplayName is not provided, we should render 'there'
