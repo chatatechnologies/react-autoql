@@ -39,7 +39,7 @@ export default class SelectableList extends React.Component {
     return array
   }
 
-  handleShiftSelect = index => {
+  handleShiftSelect = (index) => {
     if (this.state.selected.length) {
       const currentFirstSelected = Math.min(...this.state.selected)
       let newSelected = [index]
@@ -58,10 +58,10 @@ export default class SelectableList extends React.Component {
     }
   }
 
-  handleCtrlSelect = index => {
+  handleCtrlSelect = (index) => {
     let newSelected = []
     if (this.state.selected.includes(index)) {
-      newSelected = this.state.selected.filter(i => i !== index)
+      newSelected = this.state.selected.filter((i) => i !== index)
     } else {
       newSelected = [...this.state.selected, index]
     }
@@ -69,17 +69,17 @@ export default class SelectableList extends React.Component {
     this.setState({ selected: newSelected })
   }
 
-  handleMultipleCheck = items => {
+  handleMultipleCheck = (items) => {
     const allItemsChecked = this.state.selected.every(
-      index => items[index].checked
+      (index) => items[index].checked
     )
 
     if (allItemsChecked) {
-      this.state.selected.forEach(index => {
+      this.state.selected.forEach((index) => {
         items[index].checked = false
       })
     } else {
-      this.state.selected.forEach(index => {
+      this.state.selected.forEach((index) => {
         items[index].checked = true
       })
     }
@@ -92,9 +92,9 @@ export default class SelectableList extends React.Component {
 
     return (
       <div
-        className="chata-selectable-list"
+        className="react-autoql-selectable-list"
         data-test="selectable-list"
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation()
         }}
       >
@@ -102,7 +102,7 @@ export default class SelectableList extends React.Component {
           <div className="col-visibility-header">
             {this.props.columns.map((col, index) => {
               if (index === this.props.columns.length - 1) {
-                const allItemsChecked = items.every(col => col.checked)
+                const allItemsChecked = items.every((col) => col.checked)
                 return (
                   <div key={`list-header-${uuid.v4()}`}>
                     {col.name}
@@ -111,11 +111,11 @@ export default class SelectableList extends React.Component {
                       style={{ marginLeft: '10px' }}
                       onChange={() => {
                         if (allItemsChecked) {
-                          items.forEach(item => {
+                          items.forEach((item) => {
                             item.checked = false
                           })
                         } else {
-                          items.forEach(item => {
+                          items.forEach((item) => {
                             item.checked = true
                           })
                         }
@@ -133,10 +133,10 @@ export default class SelectableList extends React.Component {
           return (
             <div
               key={`list-item-${uuid.v4()}`}
-              className={`chata-list-item${
+              className={`react-autoql-list-item${
                 this.state.selected.includes(index) ? ' selected' : ''
               }`}
-              onClick={e => {
+              onClick={(e) => {
                 if (e.shiftKey) {
                   this.handleShiftSelect(index)
                 } else if (e.ctrlKey || e.metaKey) {

@@ -37,7 +37,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const barChartComponent = findByTestAttr(wrapper, 'chata-bar-chart')
+    const barChartComponent = findByTestAttr(wrapper, 'react-autoql-bar-chart')
     expect(barChartComponent.exists()).toBe(true)
   })
 })

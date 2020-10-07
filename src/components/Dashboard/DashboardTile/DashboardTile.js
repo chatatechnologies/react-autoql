@@ -466,7 +466,7 @@ export default class DashboardTile extends React.Component {
             <div className="dashboard-tile-left-input-container">
               <Icon
                 className="query-input-icon"
-                type="chata-bubbles-outlined"
+                type="react-autoql-bubbles-outlined"
               />
               {this.props.autoQLConfig.enableAutocomplete ? (
                 <Autosuggest
@@ -485,7 +485,7 @@ export default class DashboardTile extends React.Component {
                     placeholder: 'Type a query in your own words',
                     value: this.state.query,
                     'data-tip': 'Query',
-                    'data-for': 'chata-dashboard-toolbar-btn-tooltip',
+                    'data-for': 'react-autoql-dashboard-toolbar-btn-tooltip',
                     onFocus: () => this.setState({ isQueryInputFocused: true }),
                     onChange: this.onQueryInputChange,
                     onKeyDown: this.onQueryTextKeyDown,
@@ -509,7 +509,7 @@ export default class DashboardTile extends React.Component {
                   placeholder="Type a query in your own words"
                   value={this.state.query}
                   data-tip="Query"
-                  data-for="chata-dashboard-toolbar-btn-tooltip"
+                  data-for="react-autoql-dashboard-toolbar-btn-tooltip"
                   onChange={(e) => this.setState({ query: e.target.value })}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
@@ -536,7 +536,7 @@ export default class DashboardTile extends React.Component {
                 placeholder="Add descriptive title (optional)"
                 value={this.state.title}
                 data-tip="Title"
-                data-for="chata-dashboard-toolbar-btn-tooltip"
+                data-for="react-autoql-dashboard-toolbar-btn-tooltip"
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={(e) => {
@@ -587,9 +587,9 @@ export default class DashboardTile extends React.Component {
 
   renderDraggingPlaceholder = () => {
     return (
-      <div className="chata-db-dragging-placeholder-container">
-        <div className="chata-db-dragging-placeholder-title"></div>
-        <div className="chata-db-dragging-placeholder-content"></div>
+      <div className="react-autoql-db-dragging-placeholder-container">
+        <div className="react-autoql-db-dragging-placeholder-title"></div>
+        <div className="react-autoql-db-dragging-placeholder-content"></div>
       </div>
     )
   }
@@ -674,7 +674,7 @@ export default class DashboardTile extends React.Component {
 
   renderSplitResponse = () => {
     const innerTileDiv = document.querySelector(
-      `#chata-dashboard-tile-inner-div-${this.COMPONENT_KEY}`
+      `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`
     )
 
     const secondQueryInputWidth = _get(innerTileDiv, 'clientWidth')
@@ -690,7 +690,7 @@ export default class DashboardTile extends React.Component {
         onDragEnd={() => {
           setTimeout(() => {
             const secondaryContainer = document.querySelector(
-              `#chata-dashboard-tile-inner-div-${this.COMPONENT_KEY} .layout-pane:not(.layout-pane-primary)`
+              `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY} .layout-pane:not(.layout-pane-primary)`
             )
 
             const percentString = _get(secondaryContainer, 'style.height', '')
@@ -724,12 +724,12 @@ export default class DashboardTile extends React.Component {
                   this.toggleSecondQueryInput()
                   ReactTooltip.hide()
                 }}
-                className="chata-toolbar-btn"
+                className="react-autoql-toolbar-btn"
                 data-tip="Query"
-                data-for="chata-dashboard-toolbar-btn-tooltip"
+                data-for="react-autoql-dashboard-toolbar-btn-tooltip"
                 style={{ paddingLeft: '3px', marginRight: '10px' }}
               >
-                <Icon type="chata-bubbles-outlined" />
+                <Icon type="react-autoql-bubbles-outlined" />
                 <Icon
                   type={
                     this.state.isSecondQueryInputOpen
@@ -789,9 +789,9 @@ export default class DashboardTile extends React.Component {
             )
             ReactTooltip.hide()
           }}
-          className="chata-toolbar-btn"
+          className="react-autoql-toolbar-btn"
           data-tip={this.props.tile.splitView ? 'Single View' : 'Split View'}
-          data-for="chata-dashboard-toolbar-btn-tooltip"
+          data-for="react-autoql-dashboard-toolbar-btn-tooltip"
           data-test="viz-toolbar-button"
         >
           <Icon
@@ -841,7 +841,7 @@ export default class DashboardTile extends React.Component {
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
-              '--chata-dashboard-background-color'
+              '--react-autoql-dashboard-background-color'
             )}
             onDisplayTypeUpdate={() => {
               // This is necessary to update the toolbar with the newly rendered QueryOutput
@@ -1025,10 +1025,10 @@ export default class DashboardTile extends React.Component {
   renderDragHandles = () => {
     return (
       <Fragment>
-        <div className="chata-dashboard-tile-drag-handle top" />
-        <div className="chata-dashboard-tile-drag-handle bottom" />
-        <div className="chata-dashboard-tile-drag-handle left" />
-        <div className="chata-dashboard-tile-drag-handle right" />
+        <div className="react-autoql-dashboard-tile-drag-handle top" />
+        <div className="react-autoql-dashboard-tile-drag-handle bottom" />
+        <div className="react-autoql-dashboard-tile-drag-handle left" />
+        <div className="react-autoql-dashboard-tile-drag-handle right" />
       </Fragment>
     )
   }
@@ -1048,13 +1048,13 @@ export default class DashboardTile extends React.Component {
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
-          data-test="chata-dashboard-tile"
+          data-test="react-autoql-dashboard-tile"
           {...propsToPassToDragHandle}
         >
           {this.props.children}
           <div
-            id={`chata-dashboard-tile-inner-div-${this.COMPONENT_KEY}`}
-            className={`chata-dashboard-tile-inner-div ${
+            id={`react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`}
+            className={`react-autoql-dashboard-tile-inner-div ${
               this.getIsSplitView() ? 'split' : ''
             }`}
           >

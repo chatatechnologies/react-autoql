@@ -376,7 +376,7 @@ export default class NotificationModal extends React.Component {
       <div>
         <p>Name:</p>
         <Input
-          className="chata-notification-display-name-input"
+          className="react-autoql-notification-display-name-input"
           placeholder="Add an Alert Name"
           icon="title"
           maxLength="50"
@@ -445,8 +445,8 @@ export default class NotificationModal extends React.Component {
         <p>Return the data from this query:</p>
         <Input
           ref={(r) => (this.dataReturnInputRef = r)}
-          className="chata-notification-display-name-input"
-          icon="chata-bubbles-outlined"
+          className="react-autoql-notification-display-name-input"
+          icon="react-autoql-bubbles-outlined"
           placeholder="Type query here"
           value={this.state.dataReturnQueryInput}
           onFocus={() => {
@@ -474,7 +474,7 @@ export default class NotificationModal extends React.Component {
         )}
         <p>Send the following message:</p>
         <Input
-          className="chata-notification-message-input"
+          className="react-autoql-notification-message-input"
           placeholder="Compose a short message to accompany your triggered Alert"
           type="multi"
           maxLength="200"

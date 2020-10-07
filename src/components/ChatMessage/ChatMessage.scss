@@ -61,17 +61,17 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: var(--chata-messenger-background-color);
-  color: var(--chata-messenger-text-color-primary);
+  background: var(--react-autoql-messenger-background-color);
+  color: var(--react-autoql-messenger-text-color-primary);
   border: 1px solid #d3d3d352;
 }
 .chat-single-message-container.response .chat-message-bubble:not(.text) {
   min-width: 125px;
 }
 .chat-single-message-container.request .chat-message-bubble {
-  background: var(--chata-messenger-accent-color);
+  background: var(--react-autoql-messenger-accent-color);
   color: white;
-  border: 1px solid var(--chata-messenger-accent-color);
+  border: 1px solid var(--react-autoql-messenger-accent-color);
 }
 /* Increase height of message to include table filters,
 so we dont have to redraw the whole table */
@@ -87,8 +87,8 @@ so we dont have to redraw the whole table */
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  border: 1px solid var(--chata-messenger-border-color);
-  color: var(--chata-messenger-accent-color);
+  border: 1px solid var(--react-autoql-messenger-border-color);
+  color: var(--react-autoql-messenger-accent-color);
 }
 .chat-message-toolbar.right {
   right: -9px;
@@ -117,10 +117,10 @@ so we dont have to redraw the whole table */
 
 .more-options-menu,
 .report-problem-menu {
-  background: var(--chata-messenger-background-color);
+  background: var(--react-autoql-messenger-background-color);
   padding: 10px 0;
 
-  svg {
+  span.react-autoql-icon svg {
     margin-right: 3px;
   }
 }
@@ -134,7 +134,7 @@ so we dont have to redraw the whole table */
 
 /* Chart icon styles */
 .chart-icon-svg-0,
-.chata-icon-svg-0 {
+.react-autoql-icon-svg-0 {
   fill: currentColor;
 }
 .hm0 {

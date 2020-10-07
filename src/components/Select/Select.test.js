@@ -5,7 +5,7 @@ import { findByTestAttr } from '../../../test/testUtils'
 import Select from './Select'
 
 const defaultProps = {
-  options: [{ option: '1' }, { option: '2' }, { option: '3' }]
+  options: [{ option: '1' }, { option: '2' }, { option: '3' }],
 }
 
 const setup = (props = {}, state = null) => {
@@ -20,7 +20,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const selectComponent = findByTestAttr(wrapper, 'chata-select')
+    const selectComponent = findByTestAttr(wrapper, 'react-autoql-select')
     expect(selectComponent.exists()).toBe(true)
   })
 })

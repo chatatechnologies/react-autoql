@@ -49,7 +49,7 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
-    this.LEGEND_ID = `chata-pie-legend-${uuid.v4()}`
+    this.LEGEND_ID = `react-autoql-pie-legend-${uuid.v4()}`
     this.renderPie()
   }
 
@@ -102,17 +102,17 @@ export default class Axis extends Component {
 
     this.color = scaleOrdinal()
       .domain(
-        self.sortedData.map(d => {
+        self.sortedData.map((d) => {
           return d[self.props.labelValue]
         })
       )
       .range(chartColors)
 
-    const pieChart = pie().value(d => {
+    const pieChart = pie().value((d) => {
       return d.value.cells[0].value
     })
 
-    this.dataReady = pieChart(entries(self.sortedData.filter(d => !d.hidden)))
+    this.dataReady = pieChart(entries(self.sortedData.filter((d) => !d.hidden)))
   }
 
   renderPieSlices = () => {
@@ -131,7 +131,7 @@ export default class Axis extends Component {
           .innerRadius(self.innerRadius)
           .outerRadius(self.outerRadius)
       )
-      .attr('fill', d => {
+      .attr('fill', (d) => {
         return self.color(d.data.value[self.props.labelValue])
       })
       .attr('data-for', 'chart-element-tooltip')
@@ -213,7 +213,7 @@ export default class Axis extends Component {
     } = this.props
     const { chartColors } = this.props.themeConfig
 
-    this.legendLabels = this.sortedData.map(d => {
+    this.legendLabels = this.sortedData.map((d) => {
       const legendString = `${formatElement({
         element: d[labelValue] || 'Untitled Category',
         column: _get(this.props, `columns[${stringColumnIndex}]`),
@@ -231,7 +231,7 @@ export default class Axis extends Component {
     let legendScale
     if (this.legendLabels) {
       legendScale = scaleOrdinal()
-        .domain(self.legendLabels.map(item => item.label))
+        .domain(self.legendLabels.map((item) => item.label))
         .range(chartColors)
     } else {
       return
@@ -262,7 +262,7 @@ export default class Axis extends Component {
       .labelWrap(legendWrapLength)
       .scale(legendScale)
       .on('cellclick', function(d) {
-        const dataIndex = self.legendLabels.findIndex(legendObj => {
+        const dataIndex = self.legendLabels.findIndex((legendObj) => {
           return legendObj.label === d
         })
 
@@ -294,15 +294,15 @@ export default class Axis extends Component {
 
   applyStylesForHiddenSeries = () => {
     const legendLabelTexts = this.legendLabels
-      .filter(l => l.hidden)
-      .map(l => l.label)
+      .filter((l) => l.hidden)
+      .map((l) => l.label)
 
     const legendSwatchElements = document.querySelectorAll(
       `#${this.LEGEND_ID} .label tspan`
     )
 
     if (legendSwatchElements) {
-      legendSwatchElements.forEach(el => {
+      legendSwatchElements.forEach((el) => {
         const swatchElement = el.parentElement.parentElement.querySelector(
           '.swatch'
         )
@@ -362,18 +362,18 @@ export default class Axis extends Component {
     return (
       <g
         id={`pie-chart-container-${this.CHART_ID}`}
-        data-test="chata-pie-chart"
+        data-test="react-autoql-pie-chart"
       >
         <svg
           className="pie-chart"
-          ref={el => {
+          ref={(el) => {
             this.chartElement = el
           }}
           width={this.props.width}
           height={this.props.height}
         />
         <g
-          ref={el => {
+          ref={(el) => {
             this.legendElement = el
           }}
           id={this.LEGEND_ID}

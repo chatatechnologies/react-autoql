@@ -39,7 +39,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const chartComponent = findByTestAttr(wrapper, 'chata-chart')
+    const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
     expect(chartComponent.exists()).toBe(true)
   })
 })

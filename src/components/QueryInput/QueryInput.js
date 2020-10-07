@@ -78,7 +78,7 @@ export default class QueryInput extends React.Component {
   componentDidMount = () => {
     const { theme } = this.props.themeConfig
     const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-    setStyleVars({ themeStyles, prefix: '--chata-input-' })
+    setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
   }
 
   componentDidUpdate = (prevProps) => {
@@ -88,7 +88,7 @@ export default class QueryInput extends React.Component {
     ) {
       const { theme } = this.props.themeConfig
       const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--chata-input-' })
+      setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
     }
   }
 
@@ -290,7 +290,7 @@ export default class QueryInput extends React.Component {
   render = () => {
     return (
       <div
-        className={`chata-bar-container ${this.props.className} ${
+        className={`react-autoql-bar-container ${this.props.className} ${
           this.props.autoCompletePlacement === 'below'
             ? 'autosuggest-bottom'
             : 'autosuggest-top'
@@ -311,7 +311,7 @@ export default class QueryInput extends React.Component {
               <Fragment>{suggestion.name}</Fragment>
             )}
             inputProps={{
-              className: `${this.UNIQUE_ID} chata-chatbar-input${
+              className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`,
               placeholder: this.props.placeholder || 'Type your queries here',
@@ -324,9 +324,9 @@ export default class QueryInput extends React.Component {
             }}
           />
         ) : (
-          <div className="chata-chatbar-input-container">
+          <div className="react-autoql-chatbar-input-container">
             <input
-              className={`chata-chatbar-input${
+              className={`react-autoql-chatbar-input${
                 this.props.showChataIcon ? ' left-padding' : ''
               }`}
               placeholder={this.props.placeholder || 'Type your queries here'}
@@ -342,7 +342,7 @@ export default class QueryInput extends React.Component {
         )}
         {this.props.showChataIcon && (
           <div className="chat-bar-input-icon">
-            <Icon type="chata-bubbles-outlined" />
+            <Icon type="react-autoql-bubbles-outlined" />
           </div>
         )}
         {this.props.showLoadingDots && this.state.isQueryRunning && (

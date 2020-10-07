@@ -1,14 +1,14 @@
-.chata-dashboard .react-grid-item {
+.react-autoql-dashboard .react-grid-item {
   background: #fff;
   color: rgb(64, 64, 64);
-  font-family: var(--chata-dashboard-font-family), sans-serif;
+  font-family: var(--react-autoql-dashboard-font-family), sans-serif;
   overflow: hidden;
 
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 
-.chata-dashboard-tile-inner-div {
+.react-autoql-dashboard-tile-inner-div {
   height: 100%;
   width: 100%;
   background: inherit;
@@ -21,7 +21,7 @@
 }
 
 // Drag handles
-.chata-dashboard-tile-drag-handle {
+.react-autoql-dashboard-tile-drag-handle {
   transition: opacity 0.3s ease;
   position: absolute;
   background-color: #f7f7f7;
@@ -53,12 +53,12 @@
     height: 100%;
   }
 }
-.chata-dashboard-tile:hover .chata-dashboard-tile-drag-handle {
+.react-autoql-dashboard-tile:hover .react-autoql-dashboard-tile-drag-handle {
   opacity: 1;
 }
 
 // Toolbars
-.chata-dashboard-tile .autoql-options-toolbar {
+.react-autoql-dashboard-tile .autoql-options-toolbar {
   transition: opacity 0.3s ease, color 0.3s ease;
   visibility: hidden;
   opacity: 0;
@@ -69,7 +69,7 @@
 
 .dashboard-tile-viz-toolbar-container {
   transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--chata-dashboard-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -82,12 +82,12 @@
   .split-view-btn {
     position: relative;
     display: inline-block;
-    background: var(--chata-dashboard-background-color);
+    background: var(--react-autoql-dashboard-background-color);
   }
 
   .split-view-btn {
     margin-right: 7px;
-    .chata-icon {
+    .react-autoql-icon {
       font-size: 14px;
     }
   }
@@ -99,7 +99,7 @@
 
 .split-view-query-btn {
   transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--chata-dashboard-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
   position: absolute;
   top: 7px;
   left: 7px;
@@ -109,20 +109,20 @@
   opacity: 0;
 }
 
-.chata-dashboard-tile:hover .dashboard-tile-viz-toolbar-container,
-.chata-dashboard-tile:hover .split-view-query-btn,
-.chata-dashboard-tile:hover .autoql-options-toolbar {
+.react-autoql-dashboard-tile:hover .dashboard-tile-viz-toolbar-container,
+.react-autoql-dashboard-tile:hover .split-view-query-btn,
+.react-autoql-dashboard-tile:hover .autoql-options-toolbar {
   visibility: visible;
   opacity: 1;
 }
 
-.chata-dashboard-tile-inner-div .single-value-response {
+.react-autoql-dashboard-tile-inner-div .single-value-response {
   font-size: 32px;
   margin-top: -6px;
   opacity: 0.9;
 }
 
-.chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
+.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
   height: calc(100% - 47px);
   width: 100%;
   padding-top: 0;
@@ -130,43 +130,46 @@
 
   .layout-splitter {
     height: 1px !important;
-    color: var(--chata-dashboard-text-color-primary);
+    color: var(--react-autoql-dashboard-text-color-primary);
     opacity: 0.3;
     pointer-events: none;
   }
 
-  .chata-table {
+  .react-autoql-table {
     opacity: 0.9;
-    color: var(--chata-dashboard-text-color-primary);
+    color: var(--react-autoql-dashboard-text-color-primary);
     font-size: 11px;
   }
 }
-.chata-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
+.react-autoql-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
   padding: 0;
 }
-.chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
+.react-autoql-dashboard-tile-inner-div
+  .dashboard-tile-response-wrapper.editing {
   .layout-splitter {
     display: block;
     pointer-events: unset;
     height: 4px !important;
-    color: var(--chata-dashboard-text-color-primary);
+    color: var(--react-autoql-dashboard-text-color-primary);
     opacity: 0.8;
   }
 }
 
 /* Safetynet styles specific to dashboard tiles */
-.chata-dashboard-tile-inner-div .dashboard-tile-response-wrapper.editing {
+.react-autoql-dashboard-tile-inner-div
+  .dashboard-tile-response-wrapper.editing {
   height: 100%;
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
 }
-.chata-dashboard-tile-inner-div .chata-safety-net-query {
+.react-autoql-dashboard-tile-inner-div .react-autoql-safety-net-query {
   white-space: nowrap;
 }
-.dashboard-tile-response-wrapper.small .chata-safety-net-description,
-.dashboard-tile-response-wrapper.small .chata-suggestion-message-description,
-.dashboard-tile-response-wrapper.small .chata-safety-net-execute-btn {
+.dashboard-tile-response-wrapper.small .react-autoql-safety-net-description,
+.dashboard-tile-response-wrapper.small
+  .react-autoql-suggestion-message-description,
+.dashboard-tile-response-wrapper.small .react-autoql-safety-net-execute-btn {
   display: none;
 }
 
@@ -178,13 +181,13 @@
 
   cursor: default;
 
-  .chata-table-container {
+  .react-autoql-table-container {
     padding: 20px;
     padding-top: 15px;
     width: 100%;
   }
 
-  .chata-response-content-container {
+  .react-autoql-response-content-container {
     padding: 7px;
   }
 }
@@ -220,7 +223,7 @@
   flex-grow: 0;
   flex-shrink: 0;
 }
-.dashboard-tile-play-button svg {
+.dashboard-tile-play-button span.react-autoql-icon svg {
   cursor: pointer;
   width: 25px;
   height: 33px;
@@ -285,7 +288,6 @@
     outline: none !important;
     color: #356f90;
   }
-
 }
 
 .query-focused .dashboard-tile-left-input-container,
@@ -349,7 +351,7 @@
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
   border: 1px solid rgb(38, 167, 233) !important;
-  border-color: var(--chata-dashboard-accent-color) !important;
+  border-color: var(--react-autoql-dashboard-accent-color) !important;
 }
 .dashboard-tile-input-container .dashboard-tile-input.query,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input {
@@ -381,17 +383,17 @@
 }
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
-  background-color: var(--chata-dashboard-background-color);
-  border: 1px solid var(--chata-dashboard-border-color);
-  color: var(--chata-dashboard-text-color-primary);
+  background-color: var(--react-autoql-dashboard-background-color);
+  border: 1px solid var(--react-autoql-dashboard-border-color);
+  color: var(--react-autoql-dashboard-text-color-primary);
 }
 .dashboard-tile-input-container .react-autosuggest__suggestion {
-  color: var(--chata-dashboard-text-color-primary);
+  color: var(--react-autoql-dashboard-text-color-primary);
 }
 .dashboard-tile-input-container input::placeholder {
   opacity: 0.5;
 }
-.chata-dashboard .edit-mode-placeholder-icon {
+.react-autoql-dashboard .edit-mode-placeholder-icon {
   display: inline-block;
   line-height: 22px;
   vertical-align: middle;
@@ -440,7 +442,7 @@
 }
 
 /* Dragging placeholder styles */
-.chata-db-dragging-placeholder-container {
+.react-autoql-db-dragging-placeholder-container {
   height: 100%;
   width: 100%;
   padding: 20px 30px;
@@ -448,7 +450,7 @@
   flex-direction: column;
 }
 
-.chata-db-dragging-placeholder-title {
+.react-autoql-db-dragging-placeholder-title {
   width: 100%;
   height: 35px;
   background: #f3f3f3;
@@ -458,7 +460,7 @@
   flex-grow: 0;
 }
 
-.chata-db-dragging-placeholder-content {
+.react-autoql-db-dragging-placeholder-content {
   width: 100%;
   height: 100%;
   background: #f9f9f9;

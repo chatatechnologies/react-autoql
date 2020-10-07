@@ -1,4 +1,4 @@
-.chata-notification-settings-container {
+.react-autoql-notification-settings-container {
   margin: 20px;
   margin-top: 10px;
   border-radius: 4px;
@@ -6,7 +6,7 @@
   background-color: #fff;
   overflow: hidden;
 
-  .chata-notification-setting-item {
+  .react-autoql-notification-setting-item {
     height: 55px;
     line-height: 55px;
     // border-bottom: 1px solid #0000000a;
@@ -21,7 +21,7 @@
       }
     }
 
-    .chata-notification-action-btn {
+    .react-autoql-notification-action-btn {
       opacity: 0;
       padding-right: 20px;
       font-size: 16px;
@@ -29,16 +29,16 @@
       transition: opacity 0.2s ease;
 
       &:hover {
-        color: var(--chata-messenger-accent-color);
+        color: var(--react-autoql-messenger-accent-color);
       }
     }
 
-    &:hover .chata-notification-action-btn {
+    &:hover .react-autoql-notification-action-btn {
       opacity: 1;
     }
   }
 
-  .chata-notification-setting-item-header {
+  .react-autoql-notification-setting-item-header {
     display: flex;
     justify-content: space-between;
     height: 56px;
@@ -47,29 +47,29 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   }
 
-  .chata-notification-enable-checkbox {
+  .react-autoql-notification-enable-checkbox {
     margin-bottom: 4px;
     margin-right: 8px;
   }
 }
 
-.chata-notification-settings {
+.react-autoql-notification-settings {
   margin-top: 20px;
 }
 
-.chata-notification-title-container {
+.react-autoql-notification-title-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px 20px;
   padding-bottom: 0;
 
-  .chata-notification-add-btn {
+  .react-autoql-notification-add-btn {
     display: inline-block;
     height: 35px;
     width: 35px;
     border-radius: 20px;
-    background: var(--chata-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-messenger-accent-color, #26a7df);
     color: white;
     line-height: 38px;
     text-align: center;
@@ -85,14 +85,14 @@
   }
 }
 
-.chata-notification-setting-display-name {
+.react-autoql-notification-setting-display-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-right: 10px;
-  .chata-notification-setting-display-name-title {
+  .react-autoql-notification-setting-display-name-title {
   }
-  .chata-notification-setting-display-name-message {
+  .react-autoql-notification-setting-display-name-message {
     opacity: 0.5;
   }
 }

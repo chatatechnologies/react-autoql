@@ -1,4 +1,4 @@
-.chata-notification-list-item {
+.react-autoql-notification-list-item {
   display: flex;
   flex-direction: column;
   flex-basis: auto;
@@ -13,7 +13,7 @@
   margin-bottom: 8px;
 
   color: rgba(0, 0, 0, 0.6);
-  font-family: var(--chata-dashboard-font-family), sans-serif;
+  font-family: var(--react-autoql-dashboard-font-family), sans-serif;
 
   transition: all 1s ease;
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
@@ -31,25 +31,25 @@
     position: relative;
     border: none;
 
-    .chata-toolbar-btn {
+    .react-autoql-toolbar-btn {
       height: 33px;
     }
   }
 
-  .chata-notification-details-title {
+  .react-autoql-notification-details-title {
     font-weight: 600;
     padding-top: 20px;
     padding-bottom: 5px;
   }
 
-  &.expanded .chata-notification-list-item-header {
+  &.expanded .react-autoql-notification-list-item-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   }
 
-  .chata-notification-details {
+  .react-autoql-notification-details {
     overflow: hidden;
   }
-  &.animation-complete .chata-notification-details {
+  &.animation-complete .react-autoql-notification-details {
     overflow: auto;
   }
 
@@ -58,27 +58,27 @@
       background-color: rgba(0, 0, 0, 0.01);
     }
 
-    .chata-notification-delete-icon {
+    .react-autoql-notification-delete-icon {
       opacity: 1;
     }
   }
 
   &.triggered {
-    .chata-notification-display-name {
-      color: var(--chata-messenger-accent-color, #26a7df) !important;
+    .react-autoql-notification-display-name {
+      color: var(--react-autoql-messenger-accent-color, #26a7df) !important;
     }
 
-    .chata-notification-dismiss-btn {
+    .react-autoql-notification-dismiss-btn {
       margin-top: 3px;
-      color: var(--chata-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
     }
 
-    .chata-notification-alert-strip {
+    .react-autoql-notification-alert-strip {
       opacity: 1;
     }
   }
 
-  .chata-notification-expanded-content {
+  .react-autoql-notification-expanded-content {
     display: flex;
     flex-direction: column;
     justify-content: stretch;
@@ -91,7 +91,7 @@
     }
   }
 
-  .chata-notification-extra-content {
+  .react-autoql-notification-extra-content {
     flex: 0;
     flex-basis: 55px;
 
@@ -106,12 +106,12 @@
     }
   }
 
-  .chata-notification-description {
+  .react-autoql-notification-description {
     color: rgba(0, 0, 0, 0.6);
     font-size: 14px;
   }
 
-  .chata-notification-list-item-header {
+  .react-autoql-notification-list-item-header {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -119,7 +119,7 @@
     cursor: pointer;
   }
 
-  .chata-notification-query-title {
+  .react-autoql-notification-query-title {
     flex: 0 0 auto;
     font-size: 14px;
     font-family: inherit;
@@ -132,7 +132,7 @@
     padding-top: 20px;
     padding-bottom: 7px;
   }
-  .chata-notification-details-container {
+  .react-autoql-notification-details-container {
     flex: 1;
     display: flex;
     flex-direction: row;
@@ -140,7 +140,7 @@
     justify-content: stretch;
     overflow: hidden;
 
-    .chata-notification-details {
+    .react-autoql-notification-details {
       flex: 1 1;
       padding: 20px;
       padding-top: 0;
@@ -149,14 +149,14 @@
     }
   }
 
-  .chata-notification-data-container {
+  .react-autoql-notification-data-container {
     display: flex;
     flex-direction: row;
     justify-content: stretch;
     flex: 3 3 0px;
     overflow: hidden;
 
-    .chata-notificaton-chart-container {
+    .react-autoql-notificaton-chart-container {
       flex: 1;
       height: 100%;
       width: 0;
@@ -165,31 +165,31 @@
       padding: 0px 20px 10px 20px;
     }
 
-    .chata-table-container {
+    .react-autoql-table-container {
       width: 100%;
       padding: 0 10px;
     }
-    .chata-table {
+    .react-autoql-table {
       opacity: 0.9;
       color: currentColor;
       font-size: 11px;
     }
   }
 
-  .chata-notification-data-title {
+  .react-autoql-notification-data-title {
     line-height: 22px;
     font-size: 12px;
     text-align: right;
     color: rgba(0, 0, 0, 0.3);
     padding: 8px 20px;
 
-    svg {
+    span.react-autoql-icon svg {
       margin-top: -3px;
       vertical-align: middle;
     }
   }
 
-  .chata-notification-dismiss-icon {
+  .react-autoql-notification-dismiss-icon {
     font-size: 21px;
     margin: 11px;
     width: 40px;
@@ -208,7 +208,7 @@
     }
   }
 
-  .chata-notification-delete-icon {
+  .react-autoql-notification-delete-icon {
     font-size: 18px;
     margin-top: 3px;
     margin-right: 3px;
@@ -230,18 +230,18 @@
     }
   }
 
-  .chata-notification-alert-icon {
+  .react-autoql-notification-alert-icon {
     position: absolute;
     top: -7px;
     left: -7px;
-    color: var(--chata-messenger-accent-color, #26a7df);
+    color: var(--react-autoql-messenger-accent-color, #26a7df);
     line-height: 10px;
     background: #fff;
     border-radius: 10px;
     font-size: 17px;
   }
 
-  .chata-notification-alert-strip {
+  .react-autoql-notification-alert-strip {
     height: 100%;
     opacity: 0;
     position: absolute;
@@ -249,51 +249,51 @@
     top: 0;
     width: 4px;
 
-    background: var(--chata-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-messenger-accent-color, #26a7df);
 
     transition-property: opacity;
     transition-duration: 0.2s;
     transition-timing-function: ease;
   }
 
-  .chata-notification-viz-switcher {
+  .react-autoql-notification-viz-switcher {
     flex: 0 0 50px;
     padding: 10px;
     border-left: 1px solid rgba(0, 0, 0, 0.05);
   }
 
-  .chata-notification-img-container {
+  .react-autoql-notification-img-container {
     flex: 0 0 60px;
 
-    .chata-notification-img {
+    .react-autoql-notification-img {
       border-radius: 50px;
       height: 45px;
       width: 45px;
       line-height: 45px;
       font-size: 22px;
       color: white;
-      background-color: var(--chata-messenger-accent-color, #26a7df);
+      background-color: var(--react-autoql-messenger-accent-color, #26a7df);
       text-align: center;
       margin-top: 13px;
       margin-right: 17px;
     }
   }
 
-  .chata-notification-display-name-container {
+  .react-autoql-notification-display-name-container {
     flex: 1;
     line-height: 23px;
     padding: 13px 0px;
     transition: color 0.2s ease;
 
-    .chata-notification-display-name {
+    .react-autoql-notification-display-name {
       font-size: 18px;
       color: rgba(0, 0, 0, 0.7);
     }
-    .chata-notification-timestamp {
+    .react-autoql-notification-timestamp {
       font-size: 12px;
       opacity: 0.5;
 
-      svg {
+      span.react-autoql-icon svg {
         margin-bottom: -1px;
       }
     }

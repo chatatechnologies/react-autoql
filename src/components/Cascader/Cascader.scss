@@ -1,4 +1,4 @@
-.chata-cascader {
+.react-autoql-cascader {
   position: relative;
   white-space: nowrap;
   overflow: hidden;
@@ -65,7 +65,7 @@
 
       &:hover,
       &.active {
-        background-color: var(--chata-messenger-accent-color, #26a7df);
+        background-color: var(--react-autoql-messenger-accent-color, #26a7df);
         color: #fff;
 
         .option-execute-icon {

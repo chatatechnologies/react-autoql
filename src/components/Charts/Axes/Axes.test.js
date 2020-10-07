@@ -40,7 +40,7 @@ describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     ignoreConsoleErrors(() => {
       const wrapper = setup()
-      const axesComponent = findByTestAttr(wrapper, 'chata-axes')
+      const axesComponent = findByTestAttr(wrapper, 'react-autoql-axes')
       expect(axesComponent.exists()).toBe(true)
     })
   })
@@ -104,7 +104,7 @@ describe('after mount', () => {
         ignoreConsoleErrors(() => {
           const yLabel = mount(
             <text
-              ref={r => {
+              ref={(r) => {
                 yLabelRef = r
               }}
             >

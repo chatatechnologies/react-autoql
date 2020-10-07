@@ -209,7 +209,10 @@ export default class NotificationFeed extends React.Component {
   }
 
   renderDismissAllButton = () => (
-    <div key="dismiss-all-btn" className="chata-notification-dismiss-all">
+    <div
+      key="dismiss-all-btn"
+      className="react-autoql-notification-dismiss-all"
+    >
       <span onClick={this.onDismissAllClick}>
         <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
         Dismiss All
@@ -264,12 +267,12 @@ export default class NotificationFeed extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className="chata-notification-list-container"
+          className="react-autoql-notification-list-container"
           data-test="notification-list"
         >
           <ReactTooltip
-            className="chata-drawer-tooltip"
-            id="chata-notification-tooltip"
+            className="react-autoql-drawer-tooltip"
+            id="react-autoql-notification-tooltip"
             effect="solid"
             delayShow={500}
             html

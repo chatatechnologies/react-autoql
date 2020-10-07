@@ -1,10 +1,10 @@
-.chata-bar-container {
+.react-autoql-bar-container {
   position: relative;
   display: flex;
   flex-direction: row;
 }
 
-.chata-chatbar-input {
+.react-autoql-chatbar-input {
   padding: 10px;
   padding-left: 20px;
   margin: 10px;
@@ -23,36 +23,36 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   color: #5d5d5d;
 }
-.chata-chatbar-input.left-padding {
+.react-autoql-chatbar-input.left-padding {
   padding-left: 54px;
 }
-.chata-chatbar-input:disabled {
+.react-autoql-chatbar-input:disabled {
   background: rgba(0, 0, 0, 0.03);
 }
-.chata-chatbar-input:not(:disabled):hover {
+.react-autoql-chatbar-input:not(:disabled):hover {
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
-.chata-chatbar-input::placeholder {
+.react-autoql-chatbar-input::placeholder {
   /* Default color outside of data messenger */
   color: #999 !important;
 }
 
 /* autosuggest */
-.chata-bar-container .react-autosuggest__container,
-.chata-chatbar-input-container {
+.react-autoql-bar-container .react-autosuggest__container,
+.react-autoql-chatbar-input-container {
   position: relative;
   flex: 1;
 }
-.chata-bar-container .react-autosuggest__input--focused {
+.react-autoql-bar-container .react-autosuggest__input--focused {
   outline: none;
 }
-.chata-bar-container .react-autosuggest__input::-ms-clear {
+.react-autoql-bar-container .react-autosuggest__input::-ms-clear {
   display: none;
 }
-.chata-bar-container .react-autosuggest__suggestions-container {
+.react-autoql-bar-container .react-autosuggest__suggestions-container {
   display: none;
 }
-.chata-bar-container .react-autosuggest__suggestions-container--open {
+.react-autoql-bar-container .react-autosuggest__suggestions-container--open {
   position: absolute;
   top: 45px;
   bottom: unset;
@@ -75,54 +75,54 @@
   color: #5d5d5d;
 }
 
-.chata-bar-container.autosuggest-top
+.react-autoql-bar-container.autosuggest-top
   .react-autosuggest__suggestions-container--open {
   top: unset;
   bottom: 45px;
 }
 
-.chata-bar-container.autosuggest-bottom
+.react-autoql-bar-container.autosuggest-bottom
   .react-autosuggest__suggestions-container--open {
   top: 45px;
   bottom: unset;
 }
 
-.chata-bar-container .react-autosuggest__suggestions-list {
+.react-autoql-bar-container .react-autosuggest__suggestions-list {
   margin: 0;
   padding: 0;
   list-style-type: none;
 }
 
 /* Autocomplete styles */
-.chata-bar-container .react-autosuggest__suggestions-container--open {
-  background-color: var(--chata-input-background-color);
-  border: 1px solid var(--chata-input-border-color);
-  color: var(--chata-input-text-color-primary);
+.react-autoql-bar-container .react-autosuggest__suggestions-container--open {
+  background-color: var(--react-autoql-input-background-color);
+  border: 1px solid var(--react-autoql-input-border-color);
+  color: var(--react-autoql-input-text-color-primary);
 }
-.chata-bar-container .react-autosuggest__suggestion {
-  color: var(--chata-input-text-color-primary);
+.react-autoql-bar-container .react-autosuggest__suggestion {
+  color: var(--react-autoql-input-text-color-primary);
 }
-.chata-chatbar-input {
-  border: 1px solid var(--chata-input-border-color);
-  color: var(--chata-input-text-color-primary);
+.react-autoql-chatbar-input {
+  border: 1px solid var(--react-autoql-input-border-color);
+  color: var(--react-autoql-input-text-color-primary);
 }
-.chata-chatbar-input::placeholder {
-  color: var(--chata-input-text-color-placeholder);
+.react-autoql-chatbar-input::placeholder {
+  color: var(--react-autoql-input-text-color-placeholder);
 }
-.chata-bar-container .react-autosuggest__suggestion {
+.react-autoql-bar-container .react-autosuggest__suggestion {
   cursor: pointer;
   padding: 2px;
   padding-left: 18px;
   letter-spacing: 0.05em;
   line-height: 22.5px;
-  /* color: var(--chata-messenger-text-color-primary); */
+  /* color: var(--react-autoql-messenger-text-color-primary); */
 }
 
-.chata-bar-container .react-autosuggest__suggestion--highlighted {
+.react-autoql-bar-container .react-autosuggest__suggestion--highlighted {
   background-color: rgba(0, 0, 0, 0.1) !important;
 }
 
-.chata-bar-container .react-autosuggest__section-title {
+.react-autoql-bar-container .react-autosuggest__section-title {
   padding: 10px 0 0 10px;
   font-size: 12px;
   color: #777;

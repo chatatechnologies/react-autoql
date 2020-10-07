@@ -75,51 +75,51 @@ describe('props', () => {
   describe('width', () => {
     test('nullify width if placement is top', () => {
       const wrapper = setup({ placement: 'top', width: '200px' })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.width).toBe(null)
     })
     test('nullify width if placement is bottom', () => {
       const wrapper = setup({ placement: 'bottom', width: 600 })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.width).toBe(null)
     })
     test('width is applied if placement is right', () => {
       const wrapper = setup({ placement: 'right', width: '500px' })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.width).toBe('500px')
     })
     test('width is applied if placement is left', () => {
       const wrapper = setup({ placement: 'left', width: 300 })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.width).toBe(300)
     })
   })
   describe('height', () => {
     test('nullify height if placement is left', () => {
       const wrapper = setup({ placement: 'left', height: '200px' })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.height).toBe(null)
     })
     test('nullify height if placement is right', () => {
       const wrapper = setup({ placement: 'right', height: 600 })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.height).toBe(null)
     })
     test('height is applied if placement is top', () => {
       const wrapper = setup({ placement: 'top', height: '500px' })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.height).toBe('500px')
     })
     test('height is applied if placement is bottom', () => {
       const wrapper = setup({ placement: 'bottom', height: 300 })
-      const drawerProps = wrapper.find('.chata-drawer').props()
+      const drawerProps = wrapper.find('.react-autoql-drawer').props()
       expect(drawerProps.height).toBe(300)
     })
   })
   describe('showHandle', () => {
     test('handle is not rendered when showHandle is false', () => {
       // const wrapper = setup({ placement: 'bottom', height: 300 })
-      // const drawerProps = wrapper.find('.chata-drawer').props()
+      // const drawerProps = wrapper.find('.react-autoql-drawer').props()
       // expect(drawerProps.height).toBe(300)
     })
   })

@@ -34,7 +34,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const columnChartComponent = findByTestAttr(wrapper, 'chata-column-chart')
+    const columnChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-column-chart'
+    )
     expect(columnChartComponent.exists()).toBe(true)
   })
 })

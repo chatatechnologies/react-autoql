@@ -104,7 +104,7 @@ export default class ChataLineChart extends Component {
     const { minValue, maxValue } = getMinAndMaxValues(data)
 
     const xScale = this.xScale
-      .domain(data.map(d => d[labelValue]))
+      .domain(data.map((d) => d[labelValue]))
       .range([leftMargin, width - rightMargin])
       .paddingInner(innerPadding)
       .paddingOuter(0.1)
@@ -114,13 +114,13 @@ export default class ChataLineChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const labelArray = data.map(element => element[labelValue])
+    const labelArray = data.map((element) => element[labelValue])
     const tickWidth = getTickWidth(xScale, innerPadding)
     const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
 
     return (
-      <g data-test="chata-line-chart">
+      <g data-test="react-autoql-line-chart">
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}

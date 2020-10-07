@@ -209,7 +209,7 @@ export default class Group extends React.Component {
 
     return (
       <div
-        className="chata-notification-group-delete-btn"
+        className="react-autoql-notification-group-delete-btn"
         onClick={() => this.props.onDelete(this.props.groupId)}
       >
         <Icon
@@ -228,10 +228,13 @@ export default class Group extends React.Component {
 
     return (
       <div className="notification-rule-btn-container">
-        <div className="chata-notification-rule-add-btn" onClick={this.addRule}>
+        <div
+          className="react-autoql-notification-rule-add-btn"
+          onClick={this.addRule}
+        >
           <Icon
             type="plus"
-            className="chata-notification-add-icon"
+            className="react-autoql-notification-add-icon"
             data-tip="Add Condition"
             data-for="notification-expression-tooltip"
           />
@@ -277,7 +280,7 @@ export default class Group extends React.Component {
           </div>
         )}
         <div
-          className={`chata-notification-group-container${
+          className={`react-autoql-notification-group-container${
             hasOnlyOneRule ? ' disable-first-delete' : ''
           }`}
           data-test="rule-group"

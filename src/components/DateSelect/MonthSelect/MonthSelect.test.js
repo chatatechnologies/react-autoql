@@ -20,7 +20,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const monthSelectComponent = findByTestAttr(wrapper, 'chata-month-select')
+    const monthSelectComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-month-select'
+    )
     expect(monthSelectComponent.exists()).toBe(true)
   })
 })

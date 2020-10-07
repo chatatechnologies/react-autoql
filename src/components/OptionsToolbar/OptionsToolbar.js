@@ -65,7 +65,7 @@ export default class Input extends React.Component {
 
   componentDidMount = () => {
     const { themeConfig } = this.props
-    const prefix = '--chata-options-toolbar-'
+    const prefix = '--react-autoql-options-toolbar-'
     setCSSVars({ themeConfig, prefix })
   }
 
@@ -109,12 +109,12 @@ export default class Input extends React.Component {
             filterTagEl.setAttribute('class', 'filter-tag')
 
             const columnTitleEl = document.querySelector(
-              `#chata-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+              `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
             )
             columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
           } else if (isFilteringTable) {
             var filterTagEl = document.querySelector(
-              `#chata-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+              `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
             )
             if (filterTagEl) {
               filterTagEl.parentNode.removeChild(filterTagEl)
@@ -136,10 +136,10 @@ export default class Input extends React.Component {
 
     try {
       const filterHeaderElements = document.querySelectorAll(
-        `#chata-response-content-container-${queryOutputId} .chata-table .tabulator-header-filter`
+        `#react-autoql-response-content-container-${queryOutputId} .react-autoql-table .tabulator-header-filter`
       )
       const colHeaderElements = document.querySelectorAll(
-        `#chata-response-content-container-${queryOutputId} .chata-table .tabulator-col`
+        `#react-autoql-response-content-container-${queryOutputId} .react-autoql-table .tabulator-col`
       )
 
       if (this.filtering) {
@@ -428,7 +428,10 @@ export default class Input extends React.Component {
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
     return (
-      <div className="more-options-menu" data-test="chata-toolbar-more-options">
+      <div
+        className="more-options-menu"
+        data-test="react-autoql-toolbar-more-options"
+      >
         <ul className="context-menu-list">
           {shouldShowButton.showSaveAsCSVButton && (
             <li
@@ -684,9 +687,9 @@ export default class Input extends React.Component {
         {shouldShowButton.showFilterButton && (
           <button
             onClick={this.toggleTableFilter}
-            className="chata-toolbar-btn"
+            className="react-autoql-toolbar-btn"
             data-tip="Filter table"
-            data-for="chata-toolbar-btn-tooltip"
+            data-for="react-autoql-toolbar-btn-tooltip"
           >
             <Icon type="filter" />
           </button>
@@ -694,9 +697,9 @@ export default class Input extends React.Component {
         {shouldShowButton.showHideColumnsButton && (
           <button
             onClick={this.showHideColumnsModal}
-            className="chata-toolbar-btn"
+            className="react-autoql-toolbar-btn"
             data-tip="Show/hide columns"
-            data-for="chata-toolbar-btn-tooltip"
+            data-for="react-autoql-toolbar-btn-tooltip"
             data-test="options-toolbar-col-vis"
           >
             <Icon type="eye" />
@@ -717,9 +720,9 @@ export default class Input extends React.Component {
               onClick={() => {
                 this.setState({ activeMenu: 'report-problem' })
               }}
-              className="chata-toolbar-btn"
+              className="react-autoql-toolbar-btn"
               data-tip="Report a problem"
-              data-for="chata-toolbar-btn-tooltip"
+              data-for="react-autoql-toolbar-btn-tooltip"
             >
               <Icon type="warning-triangle" />
             </button>
@@ -728,9 +731,9 @@ export default class Input extends React.Component {
         {shouldShowButton.showDeleteButton && (
           <button
             onClick={this.deleteMessage}
-            className="chata-toolbar-btn"
+            className="react-autoql-toolbar-btn"
             data-tip="Delete data response"
-            data-for="chata-toolbar-btn-tooltip"
+            data-for="react-autoql-toolbar-btn-tooltip"
             data-test="options-toolbar-trash-btn"
           >
             <Icon type="trash" />
@@ -754,10 +757,10 @@ export default class Input extends React.Component {
                 ReactTooltip.hide()
                 this.setState({ activeMenu: 'more-options' })
               }}
-              className="chata-toolbar-btn"
+              className="react-autoql-toolbar-btn"
               data-tip="More options"
-              data-for="chata-toolbar-btn-tooltip"
-              data-test="chata-toolbar-more-options-btn"
+              data-for="react-autoql-toolbar-btn-tooltip"
+              data-test="react-autoql-toolbar-more-options-btn"
             >
               <Icon type="more-vertical" />
             </button>

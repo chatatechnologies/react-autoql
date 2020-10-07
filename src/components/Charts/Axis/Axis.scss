@@ -15,11 +15,11 @@ g.legendOrdinal tspan {
   transition: stroke 0.3s ease;
 
   &:hover {
-    stroke: var(--chata-output-accent-color) !important;
+    stroke: var(--react-autoql-output-accent-color) !important;
   }
 }
 
-.chata-axis-selector-arrow {
+.react-autoql-axis-selector-arrow {
   opacity: 1 !important;
 }
 

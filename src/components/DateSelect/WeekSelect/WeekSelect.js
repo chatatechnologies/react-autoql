@@ -9,38 +9,38 @@ const days = [
   {
     description: 'Sunday',
     value: 1,
-    label: 'S'
+    label: 'S',
   },
   {
     description: 'Monday',
     value: 2,
-    label: 'M'
+    label: 'M',
   },
   {
     description: 'Tuesday',
     value: 3,
-    label: 'T'
+    label: 'T',
   },
   {
     description: 'Wednesday',
     value: 4,
-    label: 'W'
+    label: 'W',
   },
   {
     description: 'Thursday',
     value: 5,
-    label: 'T'
+    label: 'T',
   },
   {
     description: 'Friday',
     value: 6,
-    label: 'F'
+    label: 'F',
   },
   {
     description: 'Saturday',
     value: 7,
-    label: 'S'
-  }
+    label: 'S',
+  },
 ]
 
 export default class WeekSelect extends React.Component {
@@ -50,17 +50,17 @@ export default class WeekSelect extends React.Component {
     value: PropTypes.arrayOf(PropTypes.number),
     onChange: PropTypes.func,
     multiSelect: PropTypes.bool,
-    allowNullValue: PropTypes.bool
+    allowNullValue: PropTypes.bool,
   }
 
   static defaultProps = {
     value: [],
     multiSelect: false,
     onChange: () => {},
-    allowNullValue: false
+    allowNullValue: false,
   }
 
-  onChange = selectedValue => {
+  onChange = (selectedValue) => {
     let finalOption = [selectedValue]
     if (this.props.multiSelect) {
       if (this.props.value.includes(selectedValue)) {
@@ -69,7 +69,9 @@ export default class WeekSelect extends React.Component {
           // Do not allow to deselect last value if allowNullValue is false
           return this.props.value
         }
-        finalOption = this.props.value.filter(value => value !== selectedValue)
+        finalOption = this.props.value.filter(
+          (value) => value !== selectedValue
+        )
       } else {
         // Select it
         finalOption = [...this.props.value, selectedValue]
@@ -80,7 +82,10 @@ export default class WeekSelect extends React.Component {
 
   render = () => {
     return (
-      <div className="chata-radio-btn-container" data-test="chata-week-select">
+      <div
+        className="react-autoql-radio-btn-container"
+        data-test="react-autoql-week-select"
+      >
         {days.map((option, i) => {
           let isActive = this.props.value === option.value
           if (this.props.multiSelect) {
@@ -89,8 +94,8 @@ export default class WeekSelect extends React.Component {
 
           return (
             <div
-              key={`chata-radio-${this.COMPONENT_KEY}-${i}`}
-              className={`chata-radio-btn
+              key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+              className={`react-autoql-radio-btn
                 ${isActive ? ' active' : ''}
                 ${this.props.outlined ? ' outlined' : ''}`}
               onClick={() => this.onChange(option.value)}

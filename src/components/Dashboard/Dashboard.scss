@@ -1,26 +1,26 @@
-.chata-dashboard-container {
-  background: var(--chata-dashboard-background-color);
+.react-autoql-dashboard-container {
+  background: var(--react-autoql-dashboard-background-color);
   height: 100%;
   width: 100%;
   overflow: hidden;
 }
-.chata-dashboard-container.edit-mode {
+.react-autoql-dashboard-container.edit-mode {
   padding-bottom: 200px;
 }
 
-.chata-dashboard-drilldown-original {
+.react-autoql-dashboard-drilldown-original {
   flex: 0 0 47vh;
   height: 47vh;
   padding-bottom: 20px;
 }
-.chata-dashboard-drilldown-table {
+.react-autoql-dashboard-drilldown-table {
   flex: 1;
   height: 30vh;
   overflow: hidden;
 }
 
 .empty-dashboard-message-container {
-  font-family: var(--chata-dashboard-font-family);
+  font-family: var(--react-autoql-dashboard-font-family);
   letter-spacing: 0.02em;
   text-align: center;
   padding: 100px;
@@ -29,7 +29,7 @@
 }
 
 .empty-dashboard-new-tile-btn {
-  color: var(--chata-dashboard-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
   font-weight: bold;
   cursor: pointer;
 }

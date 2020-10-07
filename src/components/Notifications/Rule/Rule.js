@@ -373,8 +373,11 @@ export default class Rule extends React.Component {
 
   renderRule = () => {
     return (
-      <div className="chata-notification-rule-container" data-test="rule">
-        <div className="chata-rule-input">
+      <div
+        className="react-autoql-notification-rule-container"
+        data-test="rule"
+      >
+        <div className="react-autoql-rule-input">
           <Input
             placeholder="Type a query"
             value={this.state.input1Value}
@@ -389,7 +392,7 @@ export default class Rule extends React.Component {
           {!this.state.isFirstTermValid && this.renderValidationError()}
           {
             // Keep for implementing autocomplete later
-            // <div className="chata-bar-container">
+            // <div className="react-autoql-bar-container">
             //   <Autosuggest
             //   className="auto-complete-chata"
             //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -403,8 +406,8 @@ export default class Rule extends React.Component {
             //     <Fragment>{suggestion.name}</Fragment>
             //   )}
             //   inputProps={{
-            //     className: 'chata-rule-input chata-input',
-            //     // icon:"chata-bubbles-outlined"
+            //     className: 'react-autoql-rule-input react-autoql-input',
+            //     // icon:"react-autoql-bubbles-outlined"
             //     placeholder: 'query',
             //     value: this.state.input1Value,
             //     onChange: e => this.setState({ input1Value: e.target.value })
@@ -421,17 +424,17 @@ export default class Rule extends React.Component {
             { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'Exists' },
           ]}
           value={this.state.conditionSelectValue}
-          className="chata-rule-condition-select"
+          className="react-autoql-rule-condition-select"
           onChange={(value) => {
             this.setState({ conditionSelectValue: value })
           }}
         />
         <div
-          className={`chata-rule-second-input-container${
+          className={`react-autoql-rule-second-input-container${
             this.state.conditionSelectValue === 'EXISTS' ? ' hidden' : ''
           }`}
         >
-          <div className="chata-rule-input">
+          <div className="react-autoql-rule-input">
             <Input
               placeholder="Type a query or number"
               value={this.state.input2Value}
@@ -447,8 +450,8 @@ export default class Rule extends React.Component {
             {
               // Keep for implementing autocomplete later
               // <Input
-              //   className="chata-rule-input"
-              //   icon="chata-bubbles-outlined"
+              //   className="react-autoql-rule-input"
+              //   icon="react-autoql-bubbles-outlined"
               //   type={inputType}
               //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
               //   value={this.state.input2Value}
@@ -460,7 +463,7 @@ export default class Rule extends React.Component {
               //       value: 'query',
               //       label: (
               //         <Icon
-              //           type="chata-bubbles-outlined"
+              //           type="react-autoql-bubbles-outlined"
               //           className="rule-input-select-bubbles-icon"
               //         />
               //       ),
@@ -475,7 +478,7 @@ export default class Rule extends React.Component {
               //     // { value: 'equation', label: 'Eq' }
               //   ]}
               //   value={this.state.secondTermType}
-              //   className="chata-rule-term-type-selector"
+              //   className="react-autoql-rule-term-type-selector"
               //   onChange={value => {
               //     this.setState({ secondTermType: value })
               //   }}
@@ -484,7 +487,7 @@ export default class Rule extends React.Component {
           </div>
         </div>
         <Icon
-          className="chata-rule-delete-btn"
+          className="react-autoql-rule-delete-btn"
           type="close"
           data-tip="Remove Condition"
           data-for="notification-expression-tooltip"

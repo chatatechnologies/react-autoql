@@ -21,7 +21,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const tableComponent = findByTestAttr(wrapper, 'chata-table')
+    const tableComponent = findByTestAttr(wrapper, 'react-autoql-table')
     expect(tableComponent.exists()).toBe(true)
   })
 })

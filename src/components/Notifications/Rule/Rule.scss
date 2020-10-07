@@ -1,22 +1,22 @@
-.chata-notification-rule-container {
+.react-autoql-notification-rule-container {
   display: flex;
   align-items: baseline;
   // width: calc(100% - 20px);
 
-  .chata-rule-input {
+  .react-autoql-rule-input {
     display: flex;
     flex-direction: column;
     flex: 1;
     width: 100%;
   }
 
-  .chata-rule-condition-select {
+  .react-autoql-rule-condition-select {
     flex: 0;
     flex-basis: 33px;
   }
 
-  .chata-rule-delete-btn,
-  .chata-rule-add-btn {
+  .react-autoql-rule-delete-btn,
+  .react-autoql-rule-add-btn {
     opacity: 0.4;
     transition: all 0.2s ease;
     cursor: pointer;
@@ -26,15 +26,15 @@
     }
   }
 
-  .chata-rule-delete-btn {
+  .react-autoql-rule-delete-btn {
     margin-left: 5px;
   }
 
-  .chata-rule-add-btn {
+  .react-autoql-rule-add-btn {
     margin-left: 10px;
   }
 
-  .chata-rule-second-input-container {
+  .react-autoql-rule-second-input-container {
     position: relative;
     margin: 2px 5px;
     flex: 1;
@@ -45,17 +45,18 @@
       display: none;
     }
 
-    .chata-input-container {
+    .react-autoql-input-container {
       margin: 0;
     }
-    .chata-input-container:hover + .chata-rule-term-type-selector,
-    .chata-input-container.focus + .chata-rule-term-type-selector {
-      color: var(--chata-messenger-accent-color, #26a7df);
-      border-color: var(--chata-messenger-accent-color, #26a7df);
+    .react-autoql-input-container:hover + .react-autoql-rule-term-type-selector,
+    .react-autoql-input-container.focus
+      + .react-autoql-rule-term-type-selector {
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
+      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
     }
   }
 
-  .chata-rule-term-type-selector {
+  .react-autoql-rule-term-type-selector {
     position: absolute;
     margin: 0;
     top: 1px;
@@ -71,10 +72,10 @@
     width: 40px;
 
     &:hover {
-      color: var(--chata-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
     }
 
-    svg {
+    span.react-autoql-icon svg {
       height: 17px;
       width: 17px;
       margin-top: 7px;
@@ -95,14 +96,14 @@
 }
 
 .rule-input-select-bubbles-icon {
-  svg {
+  span.react-autoql-icon svg {
     height: 17px;
     width: 17px;
   }
 }
 
-.chata-notification-group-container.disable-first-delete
-  .chata-rule-delete-btn {
+.react-autoql-notification-group-container.disable-first-delete
+  .react-autoql-rule-delete-btn {
   pointer-events: none;
   opacity: 0.1;
   cursor: default;

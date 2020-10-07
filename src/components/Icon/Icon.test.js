@@ -20,7 +20,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const iconComponent = findByTestAttr(wrapper, 'chata-icon')
+    const iconComponent = findByTestAttr(wrapper, 'react-autoql-icon')
     expect(iconComponent.exists()).toBe(true)
   })
 })

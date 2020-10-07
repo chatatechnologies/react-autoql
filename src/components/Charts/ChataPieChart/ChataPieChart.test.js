@@ -36,7 +36,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const pieChartComponent = findByTestAttr(wrapper, 'chata-pie-chart')
+    const pieChartComponent = findByTestAttr(wrapper, 'react-autoql-pie-chart')
     expect(pieChartComponent.exists()).toBe(true)
   })
 })

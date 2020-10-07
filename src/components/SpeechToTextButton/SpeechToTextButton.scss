@@ -11,7 +11,7 @@
   cursor: pointer;
   overflow: hidden;
 
-  background: var(--chata-messenger-accent-color);
+  background: var(--react-autoql-messenger-accent-color);
   color: white;
   border: none;
   /* transition: box-shadow 0.2s ease; */
@@ -28,7 +28,7 @@
 .chat-voice-record-icon {
   vertical-align: top;
 }
-.chata-tooltip {
+.react-autoql-tooltip {
   font-family: inherit;
   letter-spacing: 0.04em;
   padding: 7px 15px;

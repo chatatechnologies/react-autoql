@@ -179,7 +179,7 @@ class Dashboard extends React.Component {
       themeStyles['background-color'] = dashboardBackground
     }
 
-    setStyleVars({ themeStyles, prefix: '--chata-dashboard-' })
+    setStyleVars({ themeStyles, prefix: '--react-autoql-dashboard-' })
   }
 
   setPreviousTileState = (tiles) => {
@@ -488,7 +488,7 @@ class Dashboard extends React.Component {
         >
           <Fragment>
             {tile && this.shouldShowOriginalQuery(tile) && (
-              <div className="chata-dashboard-drilldown-original">
+              <div className="react-autoql-dashboard-drilldown-original">
                 <QueryOutput
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
@@ -503,12 +503,12 @@ class Dashboard extends React.Component {
                     this.state.activeDrilldownChartElementKey
                   }
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--chata-dashboard-background-color'
+                    '--react-autoql-dashboard-background-color'
                   )}
                 />
               </div>
             )}
-            <div className="chata-dashboard-drilldown-table">
+            <div className="react-autoql-dashboard-drilldown-table">
               {this.state.isDrilldownRunning ? (
                 <div className="dashboard-tile-loading-container">
                   <LoadingDots />
@@ -522,7 +522,7 @@ class Dashboard extends React.Component {
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--chata-dashboard-background-color'
+                    '--react-autoql-dashboard-background-color'
                   )}
                 />
               )}
@@ -597,18 +597,18 @@ class Dashboard extends React.Component {
         onResizeStart={this.onMoveStart}
         onDragStop={this.onMoveEnd}
         onResizeStop={this.onMoveEnd}
-        className="chata-dashboard"
+        className="react-autoql-dashboard"
         rowHeight={60}
         cols={12}
         isDraggable={this.props.isEditing}
         isResizable={this.props.isEditing}
-        draggableHandle=".chata-dashboard-tile-drag-handle"
+        draggableHandle=".react-autoql-dashboard-tile-drag-handle"
         layout={tileLayout}
         margin={[20, 20]}
       >
         {tileLayout.map((tile) => (
           <DashboardTile
-            className={`chata-dashboard-tile${
+            className={`react-autoql-dashboard-tile${
               this.state.isDragging ? ' dragging' : ''
             } ${tile.i}`}
             ref={(ref) => (this.tileRefs[tile.key] = ref)}
@@ -644,10 +644,10 @@ class Dashboard extends React.Component {
         <Fragment>
           <div
             ref={(ref) => (this.ref = ref)}
-            className={`chata-dashboard-container${
+            className={`react-autoql-dashboard-container${
               this.props.isEditing ? ' edit-mode' : ''
             }`}
-            data-test="chata-dashboard"
+            data-test="react-autoql-dashboard"
           >
             {this.props.tiles.length
               ? this.renderTiles()
@@ -655,8 +655,8 @@ class Dashboard extends React.Component {
           </div>
           {this.renderDrilldownModal()}
           <ReactTooltip
-            className="chata-dashboard-tooltip"
-            id="chata-dashboard-toolbar-btn-tooltip"
+            className="react-autoql-dashboard-tooltip"
+            id="react-autoql-dashboard-toolbar-btn-tooltip"
             effect="solid"
             delayShow={500}
             html

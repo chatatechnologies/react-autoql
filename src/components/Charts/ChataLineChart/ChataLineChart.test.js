@@ -34,7 +34,10 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const lineChartComponent = findByTestAttr(wrapper, 'chata-line-chart')
+    const lineChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-line-chart'
+    )
     expect(lineChartComponent.exists()).toBe(true)
   })
 })

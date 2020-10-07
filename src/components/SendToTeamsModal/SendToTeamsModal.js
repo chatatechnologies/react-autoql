@@ -165,8 +165,8 @@ export default class SendToTeamsModal extends React.Component {
         position="bottom"
         content={
           <div className="remove-channel-popover">
-            <div className="chata-confirm-text">
-              <Icon className="chata-confirm-icon" type="warning" />
+            <div className="react-autoql-confirm-text">
+              <Icon className="react-autoql-confirm-icon" type="warning" />
               Are you sure you want to disconnect this channel?
             </div>
             <Button
@@ -465,7 +465,7 @@ export default class SendToTeamsModal extends React.Component {
       >
         {this.renderActivePage()}
         <ReactTooltip
-          className="chata-drawer-tooltip"
+          className="react-autoql-drawer-tooltip"
           id="connect-to-slack-tooltips"
           effect="solid"
           place="top"

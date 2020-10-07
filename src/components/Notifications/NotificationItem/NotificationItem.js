@@ -210,36 +210,36 @@ export default class NotificationItem extends React.Component {
   }
 
   renderAlertColorStrip = () => (
-    <div className="chata-notification-alert-strip" />
+    <div className="react-autoql-notification-alert-strip" />
   )
 
   renderNotificationHeader = (notification) => {
     return (
       <div
-        className="chata-notification-list-item-header"
+        className="react-autoql-notification-list-item-header"
         onClick={() => {
           this.onClick(notification)
         }}
       >
-        <div className="chata-notification-display-name-container">
-          <div className="chata-notification-display-name">
+        <div className="react-autoql-notification-display-name-container">
+          <div className="react-autoql-notification-display-name">
             {notification.rule_title}
           </div>
-          <div className="chata-notification-description">
+          <div className="react-autoql-notification-description">
             {notification.rule_message}
           </div>
-          <div className="chata-notification-timestamp">
+          <div className="react-autoql-notification-timestamp">
             <Icon type="calendar" />{' '}
             {this.formatTimestamp(notification.created_at)}
           </div>
         </div>
         {this.getIsTriggered(notification.state) ? (
-          <div className="chata-notification-dismiss-btn">
+          <div className="react-autoql-notification-dismiss-btn">
             <Icon
               type="notification-off"
-              className="chata-notification-dismiss-icon"
+              className="react-autoql-notification-dismiss-icon"
               data-tip="Dismiss"
-              data-for="chata-notification-tooltip"
+              data-for="react-autoql-notification-tooltip"
               onClick={(e) => {
                 this.onDismissClick(e, notification)
                 ReactTooltip.hide()
@@ -247,12 +247,12 @@ export default class NotificationItem extends React.Component {
             />
           </div>
         ) : (
-          <div className="chata-notification-dismiss-btn">
+          <div className="react-autoql-notification-dismiss-btn">
             <Icon
               type="close"
-              className="chata-notification-delete-icon"
+              className="react-autoql-notification-delete-icon"
               data-tip="Delete"
-              data-for="chata-notification-tooltip"
+              data-for="react-autoql-notification-tooltip"
               onClick={(e) => {
                 this.onDeleteClick(e, notification)
                 ReactTooltip.hide()
@@ -315,7 +315,7 @@ export default class NotificationItem extends React.Component {
   renderNotificationFooter = (notification) => {
     return (
       <div
-        className="chata-notification-extra-content"
+        className="react-autoql-notification-extra-content"
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
         {this.renderTurnOnNotificationIcon(notification)}
@@ -334,19 +334,19 @@ export default class NotificationItem extends React.Component {
 
     return (
       <div
-        className={`chata-notification-expanded-content ${
+        className={`react-autoql-notification-expanded-content ${
           notification.expanded ? ' visible' : ''
         }`}
       >
-        <div className="chata-notification-details-container">
+        <div className="react-autoql-notification-details-container">
           <div
-            className="chata-notification-data-container"
+            className="react-autoql-notification-data-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="chata-notificaton-chart-container">
+            <div className="react-autoql-notificaton-chart-container">
               {this.props.activeNotificationData && notification.expanded ? (
                 <Fragment>
-                  <div className="chata-notification-query-title">
+                  <div className="react-autoql-notification-query-title">
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
@@ -365,7 +365,7 @@ export default class NotificationItem extends React.Component {
               )}
             </div>
             {_get(this.supportedDisplayTypes, 'length') > 1 && (
-              <div className="chata-notification-viz-switcher">
+              <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
                   themeConfig={this.props.themeConfig}
                   supportedDisplayTypes={this.supportedDisplayTypes}
@@ -379,8 +379,8 @@ export default class NotificationItem extends React.Component {
             )}
           </div>
           {this.props.showNotificationDetails && notification.expanded && (
-            <div className="chata-notification-details">
-              <div className="chata-notification-details-title">
+            <div className="react-autoql-notification-details">
+              <div className="react-autoql-notification-details-title">
                 Conditions:
               </div>
               <ExpressionBuilder
@@ -389,7 +389,7 @@ export default class NotificationItem extends React.Component {
                 expression={_get(notification, 'rule_expression')}
                 readOnly
               />
-              <div className="chata-notification-details-title">
+              <div className="react-autoql-notification-details-title">
                 Description:
               </div>
               <div>{this.getFrequencyDescription()}</div>
@@ -406,9 +406,9 @@ export default class NotificationItem extends React.Component {
 
     return (
       <div
-        id={`chata-notification-item-${this.COMPONENT_KEY}`}
-        key={`chata-notification-item-${this.COMPONENT_KEY}`}
-        className={`chata-notification-list-item
+        id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+        key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+        className={`react-autoql-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}

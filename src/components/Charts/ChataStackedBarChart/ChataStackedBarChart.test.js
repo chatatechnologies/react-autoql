@@ -37,7 +37,7 @@ describe('renders correctly', () => {
     const wrapper = setup()
     const stackedBarChartComponent = findByTestAttr(
       wrapper,
-      'chata-stacked-bar-chart'
+      'react-autoql-stacked-bar-chart'
     )
     expect(stackedBarChartComponent.exists()).toBe(true)
   })

@@ -62,21 +62,21 @@ class Dictaphone extends React.Component {
     return (
       <Fragment>
         <button
-          id="chata-voice-record-button"
+          id="react-autoql-voice-record-button"
           data-test="speech-to-text-btn"
           className={`chat-voice-record-button${listening ? ' listening' : ''}`}
           onMouseDown={this.onMouseDown}
           onMouseUp={stopListening}
           onMouseLeave={this.props.listening ? stopListening : undefined}
           data-tip="Hold for voice-to-text"
-          data-for="chata-speech-to-text-tooltip"
+          data-for="react-autoql-speech-to-text-tooltip"
           data-tip-disable={this.props.listening}
         >
           <Icon type="microphone" />
         </button>
         <ReactTooltip
-          className="chata-tooltip"
-          id="chata-speech-to-text-tooltip"
+          className="react-autoql-tooltip"
+          id="react-autoql-speech-to-text-tooltip"
           effect="solid"
           delayShow={800}
         />
