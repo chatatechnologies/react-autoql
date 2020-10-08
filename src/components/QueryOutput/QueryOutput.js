@@ -54,9 +54,7 @@ import {
   isTableType,
   isChartType,
   setStyleVars,
-  getQueryParams,
   supportsRegularPivotTable,
-  supports2DCharts,
   isColumnNumberType,
   isColumnStringType,
   getNumberColumnIndices,
@@ -1635,8 +1633,28 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderErrorMessage = (message) => {
-    const errorMessage = message || errorMessages.GENERAL_QUERY
+  renderErrorMessage = (error) => {
+    if (typeof error === 'object') {
+      const errorMessage = error.message || errorMessages.GENERAL_QUERY
+      const newErrorMessage = errorMessage.replace(
+        'support@chata.ai',
+        '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
+      )
+
+      return (
+        <div>
+          <div
+            dangerouslySetInnerHTML={{
+              __html: `<span>${newErrorMessage}</span>`,
+            }}
+          />
+          <br />
+          <div>Error ID: {error.reference_id}</div>
+        </div>
+      )
+    }
+
+    const errorMessage = error || errorMessages.GENERAL_QUERY
 
     return <div>{errorMessage}</div>
   }
@@ -1695,7 +1713,7 @@ export default class QueryOutput extends React.Component {
     const responseData = responseBody.data
     if (!responseData) {
       console.warn('Warning: No response data supplied')
-      return this.renderErrorMessage(_get(queryResponse, 'message'))
+      return this.renderErrorMessage(queryResponse)
     }
 
     const isSuggestionList = !!responseData.items
@@ -1705,9 +1723,7 @@ export default class QueryOutput extends React.Component {
 
     // This is not an error. There is just no data in the DB
     if (!_get(data, 'length')) {
-      return this.renderErrorMessage(
-        _get(responseBody, 'message', 'No Data Found')
-      )
+      return this.renderErrorMessage(responseBody)
     }
 
     if (displayType && data) {
