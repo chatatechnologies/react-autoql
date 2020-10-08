@@ -1678,7 +1678,7 @@ export default class App extends Component {
       .catch((error) => {
         this.setState({
           activeNotificationContent: {
-            error: 'Something went wrong with this query.',
+            error: 'Unable to find data.',
           },
           isFetchingNotificationContent: false,
         })

@@ -20,6 +20,10 @@ export default {
       . We’ll look into this issue and be in touch shortly.
     </span>
   ),
-  UNAUTHENTICATED:
-    "Uh oh.. It looks like you don't have access to this resource. Please double check that all required authentication fields are correct.",
+  UNAUTHENTICATED: (
+    <span>
+      Uh oh.. It looks like you don't have access to this resource. Please
+      double check that all required authentication fields are correct.
+    </span>
+  ),
 }
