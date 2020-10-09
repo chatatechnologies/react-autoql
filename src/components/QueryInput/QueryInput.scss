@@ -16,11 +16,11 @@
   letter-spacing: 0.04em;
   outline: none !important;
   width: calc(100% - 20px);
-  background: transparent;
   font-family: inherit;
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-input-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-input-background-color-primary);
   color: #5d5d5d;
 }
 .react-autoql-chatbar-input.left-padding {

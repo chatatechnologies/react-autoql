@@ -63,7 +63,7 @@
 .chat-single-message-container.response .chat-message-bubble {
   background: var(--react-autoql-messenger-background-color-primary);
   color: var(--react-autoql-messenger-text-color-primary);
-  border: 1px solid #d3d3d352;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 .chat-single-message-container.response .chat-message-bubble:not(.text) {
   min-width: 125px;
@@ -71,7 +71,7 @@
 .chat-single-message-container.request .chat-message-bubble {
   background: var(--react-autoql-messenger-accent-color);
   color: white;
-  border: 1px solid var(--react-autoql-messenger-accent-color);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 /* Increase height of message to include table filters,
 so we dont have to redraw the whole table */
