@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 
 import { themeConfigType } from '../../props/types'
@@ -34,6 +35,14 @@ export default class Radio extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-radio-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-radio-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   renderButtonType = () => {

@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
 
@@ -47,6 +48,12 @@ export default class Checkbox extends React.Component {
   componentDidUpdate = (prevProps) => {
     if (prevProps.indeterminate !== this.props.indeterminate) {
       this.selector.indeterminate = this.props.indeterminate
+    }
+
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-checkbox-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 

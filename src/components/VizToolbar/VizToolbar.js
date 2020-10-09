@@ -1,7 +1,7 @@
 import React from 'react'
-
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
+import _isEqual from 'lodash.isequal'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault } from '../../props/defaults'
@@ -39,6 +39,12 @@ class VizToolbar extends React.Component {
 
   componentDidUpdate = () => {
     ReactTooltip.rebuild()
+
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-viz-toolbar-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   showDisplayTypeButton = (displayType) => {

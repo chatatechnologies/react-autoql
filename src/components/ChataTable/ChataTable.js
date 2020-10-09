@@ -83,6 +83,14 @@ export default class ChataTable extends React.Component {
     return false
   }
 
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-table-'
+      setCSSVars({ themeConfig, prefix })
+    }
+  }
+
   setInitialHeaderFilters = () => {
     if (_get(this.props, 'headerFilters.length') && this.ref) {
       this.props.headerFilters.forEach((filter) => {

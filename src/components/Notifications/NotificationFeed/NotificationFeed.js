@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import InfiniteScroll from 'react-infinite-scroller'
 import uuid from 'uuid'
 
@@ -67,6 +68,14 @@ export default class NotificationFeed extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-notifications-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-notifications-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   getInitialNotifications = () => {

@@ -99,19 +99,8 @@ class Dashboard extends React.Component {
     window.addEventListener('resize', this.onWindowResize)
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (
-      this.props.themeConfig.fontFamily &&
-      this.props.themeConfig.fontFamily !== prevProps.themeConfig.fontFamily
-    ) {
-      this.setStyles()
-    }
-
-    if (
-      this.props.themeConfig.dashboardBackground &&
-      this.props.themeConfig.dashboardBackground !==
-        prevProps.themeConfig.dashboardBackground
-    ) {
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
       this.setStyles()
     }
 

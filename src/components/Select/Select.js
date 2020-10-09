@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
 import { themeConfigType } from '../../props/types'
@@ -43,6 +44,14 @@ export default class Select extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-select-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-select-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   render = () => {

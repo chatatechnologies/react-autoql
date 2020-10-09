@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault } from '../../props/defaults'
@@ -47,6 +48,14 @@ export default class Steps extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-steps-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-steps-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   prevStep = () => {

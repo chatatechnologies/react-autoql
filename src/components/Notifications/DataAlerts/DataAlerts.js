@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
@@ -54,6 +55,14 @@ export default class DataAlerts extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-data-alerts-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-data-alerts-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   getDataAlerts = (type) => {

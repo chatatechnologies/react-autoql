@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import sqlFormatter from 'sql-formatter'
 
@@ -74,6 +75,12 @@ export default class Input extends React.Component {
 
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
+    }
+
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-options-toolbar-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 

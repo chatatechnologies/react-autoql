@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
+import _isEqual from 'lodash.isequal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -57,6 +58,14 @@ export default class Modal extends React.Component {
     const { themeConfig } = this.props
     const prefix = '--react-autoql-modal-'
     setCSSVars({ themeConfig, prefix })
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-modal-'
+      setCSSVars({ themeConfig, prefix })
+    }
   }
 
   onClose = () => {
