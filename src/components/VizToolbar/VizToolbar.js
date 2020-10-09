@@ -37,7 +37,7 @@ class VizToolbar extends React.Component {
     setCSSVars({ themeConfig, prefix })
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     ReactTooltip.rebuild()
 
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
