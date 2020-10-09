@@ -9,7 +9,6 @@
 .ReactModal__Overlay--before-close {
   background-color: transparent !important;
 }
-
 .ReactModal__Content {
   display: flex;
   flex-direction: column;
@@ -17,13 +16,27 @@
   transform: scale(0);
   transition: all 0.2s ease-in-out;
 
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: var(--react-autoql-modal-text-color-primary);
+  border: 1px solid var(--react-autoql-modal-border-color) !important;
+  background: var(--react-autoql-modal-background-color-primary) !important;
   box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
   padding: 0 !important;
 
   margin: auto auto;
   max-width: 90vw;
   max-height: calc(100vh - 90px);
+
+  input.react-autoql-input,
+  textarea.react-autoql-input,
+  textarea {
+    border-color: var(--react-autoql-modal-border-color);
+    color: var(--react-autoql-modal-text-color-primary);
+    background: var(--react-autoql-modal-background-color-primary, white);
+
+    &::placeholder {
+      color: var(--react-autoql-modal-text-color-placeholder);
+    }
+  }
 }
 .ReactModal__Overlay--after-open .ReactModal__Content {
   transform: scale(1);
@@ -36,7 +49,8 @@
   position: relative;
   text-align: center;
   flex: 0 0 52px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid
+    var(--react-autoql-modal-border-color, rgba(0, 0, 0, 0.05));
   padding: 14px 60px;
   font-size: 16px;
 }
@@ -48,6 +62,9 @@
   padding: 8px 10px;
 }
 .react-autoql-modal-body {
+  h3 {
+    color: var(--react-autoql-modal-text-color-primary);
+  }
   display: flex;
   flex-direction: column;
 

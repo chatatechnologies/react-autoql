@@ -205,7 +205,7 @@
 }
 
 .context-menu {
-  background: var(--react-autoql-output-background-color);
+  background: var(--react-autoql-output-background-color-primary);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -225,5 +225,5 @@
   cursor: pointer;
 }
 .context-menu-list li:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--react-autoql-output-hover-color, rgba(0, 0, 0, 0.05));
 }

@@ -7,11 +7,15 @@ import _cloneDeep from 'lodash.clonedeep'
 import { Icon } from '../Icon'
 import { Select } from '../Select'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+
 export default class SafetyNetMessage extends React.Component {
   originalReplaceWords = []
   suggestionLists = []
 
   static propTypes = {
+    themeConfig: themeConfigType,
     response: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
     autoSelectSuggestion: PropTypes.bool,
@@ -22,6 +26,7 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     response: undefined,
     autoSelectSuggestion: true,
     initialSelections: undefined,
@@ -265,6 +270,7 @@ export default class SafetyNetMessage extends React.Component {
         key={`query-element-${suggestion.id}`}
       >
         <Select
+          themeConfig={this.props.themeConfig}
           options={options}
           key={uuid.v4()}
           value={suggestion.id}

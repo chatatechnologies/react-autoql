@@ -43,11 +43,12 @@
   }
 }
 .react-autoql-btn.danger {
-  color: #ca0b00;
-  border: 1px solid #ca0b00;
+  color: var(--react-autoql-modal-danger-color, #ca0b00);
+  border: 1px solid var(--react-autoql-modal-danger-color, #ca0b00);
   background: inherit;
+
   &:hover {
-    background-color: #ca0b00;
+    background-color: var(--react-autoql-modal-danger-color, #ca0b00);
     color: #fff;
   }
 }

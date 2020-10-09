@@ -6,10 +6,15 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
+
 import './Modal.scss'
 
 export default class Modal extends React.Component {
   static propTypes = {
+    themeConfig: themeConfigType,
     title: PropTypes.string,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
@@ -27,6 +32,7 @@ export default class Modal extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     title: '',
     isVisible: false,
     width: '80vw',
@@ -45,6 +51,12 @@ export default class Modal extends React.Component {
 
   state = {
     isConfirmCloseModalVisible: false,
+  }
+
+  componentDidMount = () => {
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-modal-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   onClose = () => {

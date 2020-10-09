@@ -61,7 +61,7 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: var(--react-autoql-messenger-background-color);
+  background: var(--react-autoql-messenger-background-color-primary);
   color: var(--react-autoql-messenger-text-color-primary);
   border: 1px solid #d3d3d352;
 }
@@ -117,7 +117,7 @@ so we dont have to redraw the whole table */
 
 .more-options-menu,
 .report-problem-menu {
-  background: var(--react-autoql-messenger-background-color);
+  background: var(--react-autoql-messenger-background-color-primary);
   padding: 10px 0;
 
   span.react-autoql-icon svg {

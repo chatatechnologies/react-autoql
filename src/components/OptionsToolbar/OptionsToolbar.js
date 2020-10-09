@@ -321,6 +321,7 @@ export default class Input extends React.Component {
 
     return (
       <ColumnVisibilityModal
+        themeConfig={this.props.themeConfig}
         columns={columns}
         isVisible={this.state.isHideColumnsModalVisible}
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -339,6 +340,7 @@ export default class Input extends React.Component {
     return (
       <NotificationModal
         authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'notification'}
         initialQuery={initialQuery}
         onClose={() => this.setState({ activeMenu: undefined })}
@@ -354,6 +356,7 @@ export default class Input extends React.Component {
   renderReportProblemModal = () => {
     return (
       <Modal
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'other-problem'}
         onClose={() => {
           this.setState({ activeMenu: undefined })
@@ -544,6 +547,7 @@ export default class Input extends React.Component {
     if (this.props.autoQLConfig.enableSlackSharing) {
       return (
         <SendToSlackModal
+          themeConfig={this.props.themeConfig}
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'slack'}
           responseRef={this.props.responseRef}
@@ -562,6 +566,7 @@ export default class Input extends React.Component {
       return (
         <SendToTeamsModal
           authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'teams'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -585,6 +590,7 @@ export default class Input extends React.Component {
 
     return (
       <Modal
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'sql'}
         footer={
           <div>

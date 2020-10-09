@@ -121,7 +121,7 @@ export default class App extends Component {
     isVisible: false,
     placement: 'right',
     showHandle: true,
-    theme: 'light',
+    theme: 'dark',
     response: null,
     showMask: true,
     shiftScreen: false,
@@ -144,9 +144,9 @@ export default class App extends Component {
     width: 550,
     title: 'Data Messenger',
     lightAccentColor: '#26a7df',
+    darkAccentColor: '#26a7df',
     // lightAccentColor: '#2466AE',
     dashboardBackground: '#fafafa',
-    darkAccentColor: '#525252',
     maxMessages: 12,
     isEditing: false,
     debug: true,
@@ -163,7 +163,7 @@ export default class App extends Component {
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
     comparisonDisplay: true,
-    chartColors: ['#355C7D', '#6C5B7B', '#C06C84', '#f67280', '#F8B195'],
+    chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     monthFormat: 'MMM YYYY',
     dayFormat: 'll',
     dashboardTiles: [],
@@ -1641,6 +1641,7 @@ export default class App extends Component {
   renderNewDashboardModal = () => {
     return (
       <Modal
+        themeConfig={this.getThemeConfigProp()}
         visible={this.state.isNewDashboardModalOpen}
         confirmLoading={this.state.isSavingDashboard}
         onOk={this.createDashboard}
@@ -1724,7 +1725,7 @@ export default class App extends Component {
     return (
       <div
         style={{
-          height: 'calc(100vh - 50px)',
+          height: 'calc(100vh - 48px)',
           background: 'rgb(250,250,250)',
           overflow: 'auto',
         }}
@@ -1749,7 +1750,7 @@ export default class App extends Component {
     return (
       <div
         style={{
-          height: 'calc(100vh - 50px)',
+          height: 'calc(100vh - 48px)',
           background: 'rgb(250,250,250)',
           overflow: 'auto',
         }}

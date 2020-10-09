@@ -4,12 +4,17 @@ import uuid from 'uuid'
 
 import { Icon } from '../Icon'
 
+import { setCSSVars } from '../../js/Util'
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+
 import './Checkbox.scss'
 
 export default class Checkbox extends React.Component {
   ID = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     hasError: PropTypes.bool,
     indeterminate: PropTypes.bool,
     label: PropTypes.string,
@@ -19,6 +24,7 @@ export default class Checkbox extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     hasError: false,
     indeterminate: undefined,
     type: 'default',
@@ -32,6 +38,10 @@ export default class Checkbox extends React.Component {
     if (this.selector) {
       this.selector.indeterminate = this.props.indeterminate
     }
+
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-checkbox-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = (prevProps) => {

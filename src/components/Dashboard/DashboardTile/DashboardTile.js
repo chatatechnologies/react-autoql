@@ -574,10 +574,7 @@ export default class DashboardTile extends React.Component {
 
     return (
       <div className="dashboard-tile-title-container">
-        <span
-          className="dashboard-tile-title"
-          style={{ color: this.props.themeConfig.titleColor }}
-        >
+        <span className="dashboard-tile-title">
           {this.props.tile.title || this.props.tile.query || 'Untitled'}
         </span>
         <div className="dashboard-tile-title-divider"></div>
@@ -841,7 +838,7 @@ export default class DashboardTile extends React.Component {
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-dashboard-background-color'
+              '--react-autoql-dashboard-background-color-primary'
             )}
             onDisplayTypeUpdate={() => {
               // This is necessary to update the toolbar with the newly rendered QueryOutput

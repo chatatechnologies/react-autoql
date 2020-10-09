@@ -980,6 +980,7 @@ export default class DataMessenger extends React.Component {
 
   renderQueryTipsContent = () => (
     <QueryTipsTab
+      themeConfig={this.props.themeConfig}
       onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
       queryTipsSafetyNetResponse={this.state.queryTipsSafetyNetResponse}
       onSafetyNetSuggestionClick={this.onQueryTipsSafetyNetSuggestionClick}
@@ -1130,6 +1131,7 @@ export default class DataMessenger extends React.Component {
     return (
       <NotificationModal
         authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.isNotificationModalVisible}
         onClose={() => this.setState({ isNotificationModalVisible: false })}
         onSave={() => {

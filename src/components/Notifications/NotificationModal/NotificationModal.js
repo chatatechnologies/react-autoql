@@ -393,6 +393,7 @@ export default class NotificationModal extends React.Component {
         <p>Conditions:</p>
         <ExpressionBuilder
           authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
           ref={(r) => (this.expressionRef = r)}
           key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
           onChange={this.onExpressionChange}
@@ -415,6 +416,7 @@ export default class NotificationModal extends React.Component {
     return (
       <div>
         <ScheduleBuilder
+          themeConfig={this.props.themeConfig}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           rule={this.props.currentRule}
@@ -565,6 +567,7 @@ export default class NotificationModal extends React.Component {
     return (
       <Fragment>
         <Modal
+          themeConfig={this.props.themeConfig}
           title={this.props.title}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
@@ -609,7 +612,11 @@ export default class NotificationModal extends React.Component {
           }
         >
           <div className="notification-modal-content">
-            <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
+            <Steps
+              themeConfig={this.props.themeConfig}
+              ref={(r) => (this.stepsRef = r)}
+              steps={steps}
+            />
           </div>
         </Modal>
         <ConfirmModal

@@ -20,7 +20,7 @@
   font-family: inherit;
 
   /* Default styles outside of data messenger */
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--react-autoql-input-border-color, rgba(0, 0, 0, 0.1));
   color: #5d5d5d;
 }
 .react-autoql-chatbar-input.left-padding {
@@ -95,7 +95,7 @@
 
 /* Autocomplete styles */
 .react-autoql-bar-container .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-input-background-color);
+  background-color: var(--react-autoql-input-background-color-primary);
   border: 1px solid var(--react-autoql-input-border-color);
   color: var(--react-autoql-input-text-color-primary);
 }

@@ -723,6 +723,7 @@ export default class QueryOutput extends React.Component {
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
+          themeConfig={this.props.themeConfig}
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
@@ -744,6 +745,7 @@ export default class QueryOutput extends React.Component {
       <Fragment>
         {this.renderAllColumnsHiddenMessage()}
         <ChataTable
+          themeConfig={this.props.themeConfig}
           key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
@@ -1634,29 +1636,33 @@ export default class QueryOutput extends React.Component {
   }
 
   renderErrorMessage = (error) => {
-    if (typeof error === 'object') {
-      const errorMessage = error.message || errorMessages.GENERAL_QUERY
-      const newErrorMessage = errorMessage.replace(
-        'support@chata.ai',
-        '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
-      )
+    try {
+      if (typeof error === 'object') {
+        const errorMessage = error.message || errorMessages.GENERAL_QUERY
+        const newErrorMessage = errorMessage.replace(
+          'support@chata.ai',
+          '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
+        )
 
-      return (
-        <div>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: `<span>${newErrorMessage}</span>`,
-            }}
-          />
-          <br />
-          <div>Error ID: {error.reference_id}</div>
-        </div>
-      )
+        return (
+          <div className="query-output-error-message">
+            <div
+              dangerouslySetInnerHTML={{
+                __html: `<span>${newErrorMessage}</span>`,
+              }}
+            />
+            <br />
+            <div>Error ID: {error.reference_id}</div>
+          </div>
+        )
+      }
+
+      const errorMessage = error || errorMessages.GENERAL_QUERY
+
+      return <div>{errorMessage}</div>
+    } catch (error) {
+      return <div>{errorMessages.GENERAL_QUERY}</div>
     }
-
-    const errorMessage = error || errorMessages.GENERAL_QUERY
-
-    return <div>{errorMessage}</div>
   }
 
   renderResponse = (width, height) => {
@@ -1688,6 +1694,7 @@ export default class QueryOutput extends React.Component {
     if (responseBody.full_suggestion) {
       return (
         <SafetyNetMessage
+          themeConfig={this.props.themeConfig}
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>

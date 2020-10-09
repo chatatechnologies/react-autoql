@@ -3,12 +3,17 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
+
 import './Radio.scss'
 
 export default class Radio extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     options: PropTypes.arrayOf(PropTypes.string),
     onChange: PropTypes.func,
     value: PropTypes.string,
@@ -17,11 +22,18 @@ export default class Radio extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     options: [],
     multiSelect: false,
     value: undefined,
     type: 'original',
     onChange: () => {},
+  }
+
+  componentDidMount = () => {
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-radio-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   renderButtonType = () => {

@@ -23,7 +23,7 @@
 
 .slack-email-instructions-popover {
   color: var(--react-autoql-options-toolbar-text-color-primary);
-  background: var(--react-autoql-options-toolbar-background-color);
+  background: var(--react-autoql-options-toolbar-background-color-primary);
   padding: 18px;
   max-width: 500px;
 }
@@ -34,7 +34,7 @@
 
 .remove-channel-popover {
   color: var(--react-autoql-options-toolbar-text-color-primary);
-  background: var(--react-autoql-options-toolbar-background-color);
+  background: var(--react-autoql-options-toolbar-background-color-primary);
   text-align: right;
   padding: 18px;
   width: 226px;

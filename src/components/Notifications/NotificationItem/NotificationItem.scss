@@ -6,14 +6,17 @@
 
   position: relative;
   overflow: hidden;
-  background: #fff;
+  background: var(--react-autoql-notifications-background-color-primary, #fff);
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 
   margin-bottom: 8px;
 
-  color: rgba(0, 0, 0, 0.6);
-  font-family: var(--react-autoql-dashboard-font-family), sans-serif;
+  color: var(
+    --react-autoql-notifications-text-color-primary,
+    rgba(0, 0, 0, 0.6)
+  );
+  font-family: var(--react-autoql-notifications-font-family), sans-serif;
 
   transition: all 1s ease;
   transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
@@ -43,7 +46,8 @@
   }
 
   &.expanded .react-autoql-notification-list-item-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid
+      var(--react-autoql-notifications-border-color, rgba(0, 0, 0, 0.04));
   }
 
   .react-autoql-notification-details {
@@ -55,7 +59,10 @@
 
   &:hover {
     &:not(.expanded) {
-      background-color: rgba(0, 0, 0, 0.01);
+      background-color: var(
+        --react-autoql-notifications-hover-color,
+        rgba(0, 0, 0, 0.01)
+      );
     }
 
     .react-autoql-notification-delete-icon {
@@ -65,12 +72,12 @@
 
   &.triggered {
     .react-autoql-notification-display-name {
-      color: var(--react-autoql-messenger-accent-color, #26a7df) !important;
+      color: var(--react-autoql-notifications-accent-color, #26a7df) !important;
     }
 
     .react-autoql-notification-dismiss-btn {
       margin-top: 3px;
-      color: var(--react-autoql-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-notifications-accent-color, #26a7df);
     }
 
     .react-autoql-notification-alert-strip {
@@ -97,7 +104,8 @@
 
     text-align: center;
     padding: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid
+      var(--react-autoql-notifications-border-color, rgba(0, 0, 0, 0.05));
 
     .notification-deleted-text {
       line-height: 40px;
@@ -107,7 +115,11 @@
   }
 
   .react-autoql-notification-description {
-    color: rgba(0, 0, 0, 0.6);
+    color: var(
+      --react-autoql-notifications-text-color-primary,
+      rgba(0, 0, 0, 0.6)
+    );
+    opacity: 0.8;
     font-size: 14px;
   }
 
@@ -126,7 +138,8 @@
     color: currentcolor;
     opacity: 0.9;
     font-weight: 600;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid
+      var(--react-autoql-notifications-border-color, rgba(0, 0, 0, 0.1));
     text-align: center;
     margin: 0 10px;
     padding-top: 20px;
@@ -145,7 +158,8 @@
       padding: 20px;
       padding-top: 0;
       opacity: 0.9;
-      border-left: 1px solid rgba(0, 0, 0, 0.05);
+      border-left: 1px solid
+        var(--react-autoql-notifications-border-color, rgba(0, 0, 0, 0.05));
     }
   }
 
@@ -180,7 +194,8 @@
     line-height: 22px;
     font-size: 12px;
     text-align: right;
-    color: rgba(0, 0, 0, 0.3);
+    color: var(--react-autoql-notifications-text-color-primary);
+    opacity: 0.5;
     padding: 8px 20px;
 
     span.react-autoql-icon svg {
@@ -204,7 +219,10 @@
     cursor: pointer;
 
     &:hover {
-      background-color: #ececec;
+      background-color: var(
+        --react-autoql-notifications-background-color-secondary,
+        #ececec
+      );
     }
   }
 
@@ -226,7 +244,10 @@
     cursor: pointer;
 
     &:hover {
-      background-color: #ececec;
+      background-color: var(
+        --react-autoql-notifications-background-color-secondary,
+        #ececec
+      );
     }
   }
 
@@ -234,9 +255,12 @@
     position: absolute;
     top: -7px;
     left: -7px;
-    color: var(--react-autoql-messenger-accent-color, #26a7df);
+    color: var(--react-autoql-notifications-accent-color, #26a7df);
     line-height: 10px;
-    background: #fff;
+    background: var(
+      --react-autoql-notifications-background-color-primary,
+      #fff
+    );
     border-radius: 10px;
     font-size: 17px;
   }
@@ -249,7 +273,7 @@
     top: 0;
     width: 4px;
 
-    background: var(--react-autoql-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-notifications-accent-color, #26a7df);
 
     transition-property: opacity;
     transition-duration: 0.2s;
@@ -259,7 +283,8 @@
   .react-autoql-notification-viz-switcher {
     flex: 0 0 50px;
     padding: 10px;
-    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    border-left: 1px solid
+      var(--react-autoql-notifications-border-color, rgba(0, 0, 0, 0.05));
   }
 
   .react-autoql-notification-img-container {
@@ -272,7 +297,7 @@
       line-height: 45px;
       font-size: 22px;
       color: white;
-      background-color: var(--react-autoql-messenger-accent-color, #26a7df);
+      background-color: var(--react-autoql-notifications-accent-color, #26a7df);
       text-align: center;
       margin-top: 13px;
       margin-right: 17px;
@@ -287,7 +312,10 @@
 
     .react-autoql-notification-display-name {
       font-size: 18px;
-      color: rgba(0, 0, 0, 0.7);
+      color: var(
+        --react-autoql-notifications-text-color-primary,
+        rgba(0, 0, 0, 0.7)
+      );
     }
     .react-autoql-notification-timestamp {
       font-size: 12px;

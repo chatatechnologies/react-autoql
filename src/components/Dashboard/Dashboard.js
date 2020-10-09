@@ -15,8 +15,7 @@ import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { CHART_TYPES } from '../../js/Constants'
-import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
+import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
 
 import {
   authenticationType,
@@ -93,12 +92,10 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
-    this.setStyles()
-
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
-
+    this.setStyles()
     window.addEventListener('resize', this.onWindowResize)
   }
 
@@ -150,6 +147,12 @@ class Dashboard extends React.Component {
     window.removeEventListener('resize', this.onWindowResize)
   }
 
+  setStyles = () => {
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-dashboard-'
+    setCSSVars({ themeConfig, prefix })
+  }
+
   onWindowResize = (e) => {
     if (!this.state.isWindowResizing) {
       this.setState({ isWindowResizing: true })
@@ -159,27 +162,6 @@ class Dashboard extends React.Component {
     this.windowResizeTimer = setTimeout(() => {
       this.setState({ isWindowResizing: false })
     }, 300)
-  }
-
-  setStyles = () => {
-    const {
-      theme,
-      accentColor,
-      fontFamily,
-      dashboardBackground,
-    } = this.props.themeConfig
-    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-    if (accentColor) {
-      themeStyles['accent-color'] = accentColor
-    }
-    if (fontFamily) {
-      themeStyles['font-family'] = fontFamily
-    }
-    if (dashboardBackground) {
-      themeStyles['background-color'] = dashboardBackground
-    }
-
-    setStyleVars({ themeStyles, prefix: '--react-autoql-dashboard-' })
   }
 
   setPreviousTileState = (tiles) => {
@@ -471,6 +453,7 @@ class Dashboard extends React.Component {
 
       return (
         <Modal
+          themeConfig={this.props.themeConfig}
           className=""
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
@@ -503,7 +486,7 @@ class Dashboard extends React.Component {
                     this.state.activeDrilldownChartElementKey
                   }
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--react-autoql-dashboard-background-color'
+                    '--react-autoql-dashboard-background-color-primary'
                   )}
                 />
               </div>
@@ -522,7 +505,7 @@ class Dashboard extends React.Component {
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--react-autoql-dashboard-background-color'
+                    '--react-autoql-dashboard-background-color-primary'
                   )}
                 />
               )}

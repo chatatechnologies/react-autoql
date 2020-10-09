@@ -9,8 +9,11 @@ import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
 import { isExpressionQueryValid } from '../../../js/notificationService'
 import { capitalizeFirstChar } from '../../../js/Util'
@@ -64,6 +67,7 @@ export default class Rule extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    themeConfig: themeConfigType,
     ruleId: PropTypes.string,
     onAdd: PropTypes.func,
     onDelete: PropTypes.func,
@@ -75,6 +79,7 @@ export default class Rule extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
+    themeConfig: themeConfigDefault,
     ruleId: undefined,
     onAdd: () => {},
     onDelete: () => {},
@@ -417,6 +422,7 @@ export default class Rule extends React.Component {
           }
         </div>
         <Select
+          themeConfig={this.props.themeConfig}
           options={[
             { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
             { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

@@ -3,18 +3,24 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
+
 import './Steps.scss'
 
 export default class Steps extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
@@ -37,6 +43,10 @@ export default class Steps extends React.Component {
         activeStep: 0,
       })
     }
+
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-steps-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   prevStep = () => {

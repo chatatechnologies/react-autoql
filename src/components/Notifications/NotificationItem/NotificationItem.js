@@ -328,8 +328,13 @@ export default class NotificationItem extends React.Component {
     const queryTitle = notification.rule_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
-    const queryResponse = {
-      data: this.props.activeNotificationData,
+    let queryResponse
+    if (_get(this.props.activeNotificationData, 'error')) {
+      queryResponse = this.props.activeNotificationData.error
+    } else {
+      queryResponse = {
+        data: this.props.activeNotificationData,
+      }
     }
 
     return (
@@ -385,6 +390,7 @@ export default class NotificationItem extends React.Component {
               </div>
               <ExpressionBuilder
                 authentication={this.props.authentication}
+                themeConfig={this.props.themeConfig}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'rule_expression')}
                 readOnly

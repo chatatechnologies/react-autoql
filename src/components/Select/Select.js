@@ -5,12 +5,17 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 import ReactTooltip from 'react-tooltip'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
+
 import './Select.scss'
 
 export default class Select extends React.Component {
   ID = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
@@ -20,6 +25,7 @@ export default class Select extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     onChange: () => {},
     options: [],
     popupClassname: undefined,
@@ -31,6 +37,12 @@ export default class Select extends React.Component {
 
   state = {
     isOpen: false,
+  }
+
+  componentDidMount = () => {
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-select-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   render = () => {
