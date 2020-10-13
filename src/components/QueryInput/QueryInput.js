@@ -131,6 +131,7 @@ export default class QueryInput extends React.Component {
 
     if (query.trim()) {
       this.props.onSubmit(query)
+      this.setState({ lastQuery: query })
 
       if (skipSafetyNet) {
         runQueryOnly({
@@ -182,7 +183,6 @@ export default class QueryInput extends React.Component {
 
   onKeyPress = (e) => {
     if (e.key == 'Enter') {
-      this.setState({ lastQuery: this.state.inputValue })
       this.submitQuery()
     }
   }
