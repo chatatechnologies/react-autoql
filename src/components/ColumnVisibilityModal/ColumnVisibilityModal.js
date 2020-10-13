@@ -72,6 +72,7 @@ export default class ColumnVisibilityModal extends React.Component {
       >
         <div data-test="column-visibility-modal" style={{ padding: '0 15px' }}>
           <SelectableList
+            themeConfig={this.props.themeConfig}
             columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}
             onChange={(columns) => {

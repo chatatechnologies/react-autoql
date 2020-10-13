@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import isEqual from 'lodash.isequal'
+import _isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
 import uuid from 'uuid'
 import _get from 'lodash.get'
@@ -104,7 +104,7 @@ export default class Rule extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (!isEqual(this.state, prevState)) {
+    if (!_isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
   }

@@ -132,12 +132,12 @@
   .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input),
 .react-autoql-drawer
   .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input) {
-  border-color: var(--react-autoql-checkbox-accent-color);
+  border-color: var(--react-autoql-accent-color);
 }
 
 .react-autoql-modal-container
   .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input),
 .react-autoql-drawer
   .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input) {
-  background: var(--react-autoql-checkbox-accent-color);
+  background: var(--react-autoql-accent-color);
 }

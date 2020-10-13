@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import isEqual from 'lodash.isequal'
+import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import ReactTooltip from 'react-tooltip'
 
@@ -74,11 +74,11 @@ export default class ExpressionBuilder extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
 
-    if (!isEqual(prevProps.expression, this.props.expression)) {
+    if (!_isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
       this.setState({ ...getInitialStateData(this.props.expression) })
     }
-    if (!isEqual(prevState, this.state)) {
+    if (!_isEqual(prevState, this.state)) {
       this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
     }
   }

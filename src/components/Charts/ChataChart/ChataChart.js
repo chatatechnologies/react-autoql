@@ -34,7 +34,7 @@ import {
   themeConfigDefault,
   dataFormattingDefault,
 } from '../../../props/defaults'
-import isEqual from 'lodash.isequal'
+import _isEqual from 'lodash.isequal'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -105,7 +105,7 @@ export default class ChataChart extends Component {
       this.updateMargins(350)
     }
 
-    if (!isEqual(this.props.dataConfig, prevProps.dataConfig)) {
+    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
       this.updateMargins()
     }
 
@@ -529,6 +529,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Currency</div>
               <SelectableList
+                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.currencySelectRef = r)}
                 items={currencySelectorState}
                 onSelect={() => {
@@ -562,6 +563,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Quantity</div>
               <SelectableList
+                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.quantitySelectRef = r)}
                 items={quantitySelectorState}
                 onSelect={() => {
@@ -594,6 +596,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Ratio</div>
               <SelectableList
+                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioSelectorState}
                 onSelect={() => {
@@ -622,7 +625,7 @@ export default class ChataChart extends Component {
             </Fragment>
           )}
         </div>
-        <div style={{ background: '#fff', padding: '5px' }}>
+        <div className="axis-selector-apply-btn">
           <Button
             style={{ width: 'calc(100% - 10px)' }}
             type="primary"
