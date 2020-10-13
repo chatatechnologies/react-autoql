@@ -838,7 +838,7 @@ export default class DashboardTile extends React.Component {
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-dashboard-background-color-primary'
+              '--react-autoql-background-color-primary'
             )}
             onDisplayTypeUpdate={() => {
               // This is necessary to update the toolbar with the newly rendered QueryOutput

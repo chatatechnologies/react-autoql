@@ -22,8 +22,8 @@
 }
 
 .slack-email-instructions-popover {
-  color: var(--react-autoql-options-toolbar-text-color-primary);
-  background: var(--react-autoql-options-toolbar-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-primary);
   padding: 18px;
   max-width: 500px;
 }
@@ -33,8 +33,8 @@
 }
 
 .remove-channel-popover {
-  color: var(--react-autoql-options-toolbar-text-color-primary);
-  background: var(--react-autoql-options-toolbar-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-primary);
   text-align: right;
   padding: 18px;
   width: 226px;
@@ -102,7 +102,7 @@
     cursor: pointer;
 
     &.selected {
-      background-color: var(--react-autoql-options-toolbar-accent-color);
+      background-color: var(--react-autoql-accent-color);
       color: #fff;
     }
 
@@ -134,7 +134,7 @@
     width: 200px;
   }
 
-  .react-autoql-checkbox-container {
+  .react-autoql-container {
     margin-left: 10px;
   }
 

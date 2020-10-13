@@ -321,7 +321,7 @@ export default class DataMessenger extends React.Component {
       themeStyles['font-family'] = fontFamily
     }
 
-    setStyleVars({ themeStyles, prefix: '--react-autoql-messenger-' })
+    setStyleVars({ themeStyles, prefix: '--react-autoql-' })
   }
 
   getHandlerProp = () => {

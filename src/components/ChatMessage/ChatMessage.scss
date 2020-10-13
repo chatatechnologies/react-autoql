@@ -61,15 +61,15 @@
   border: 1px solid #c3c3c3;
 }
 .chat-single-message-container.response .chat-message-bubble {
-  background: var(--react-autoql-messenger-background-color-primary);
-  color: var(--react-autoql-messenger-text-color-primary);
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 .chat-single-message-container.response .chat-message-bubble:not(.text) {
   min-width: 125px;
 }
 .chat-single-message-container.request .chat-message-bubble {
-  background: var(--react-autoql-messenger-accent-color);
+  background: var(--react-autoql-accent-color);
   color: white;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
@@ -87,8 +87,8 @@ so we dont have to redraw the whole table */
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  border: 1px solid var(--react-autoql-messenger-border-color);
-  color: var(--react-autoql-messenger-accent-color);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-accent-color);
 }
 .chat-message-toolbar.right {
   right: -9px;
@@ -117,7 +117,7 @@ so we dont have to redraw the whole table */
 
 .more-options-menu,
 .report-problem-menu {
-  background: var(--react-autoql-messenger-background-color-primary);
+  background: var(--react-autoql-background-color-primary);
   padding: 10px 0;
 
   span.react-autoql-icon svg {

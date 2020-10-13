@@ -30,25 +30,25 @@
   border: 1px solid #00000026;
   background: inherit;
   &:hover {
-    border-color: var(--react-autoql-messenger-accent-color);
-    color: var(--react-autoql-messenger-accent-color);
+    border-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-accent-color);
   }
 }
 .react-autoql-btn.primary {
-  background: var(--react-autoql-messenger-accent-color);
-  border: 1px solid var(--react-autoql-messenger-accent-color);
+  background: var(--react-autoql-accent-color);
+  border: 1px solid var(--react-autoql-accent-color);
   color: white;
   &:hover {
     opacity: 0.8;
   }
 }
 .react-autoql-btn.danger {
-  color: var(--react-autoql-modal-danger-color, #ca0b00);
-  border: 1px solid var(--react-autoql-modal-danger-color, #ca0b00);
+  color: var(--react-autoql-danger-color, #ca0b00);
+  border: 1px solid var(--react-autoql-danger-color, #ca0b00);
   background: inherit;
 
   &:hover {
-    background-color: var(--react-autoql-modal-danger-color, #ca0b00);
+    background-color: var(--react-autoql-danger-color, #ca0b00);
     color: #fff;
   }
 }

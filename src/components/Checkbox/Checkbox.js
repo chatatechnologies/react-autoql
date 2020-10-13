@@ -40,9 +40,7 @@ export default class Checkbox extends React.Component {
       this.selector.indeterminate = this.props.indeterminate
     }
 
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-checkbox-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -51,9 +49,7 @@ export default class Checkbox extends React.Component {
     }
 
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-checkbox-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -67,26 +63,23 @@ export default class Checkbox extends React.Component {
 
     const checkboxClassname = `
       react-autoql-checkbox
-      ${type === 'switch' && 'react-autoql-checkbox--switch'}
-      ${hasError && 'react-autoql-checkbox--has-error'}
+      ${type === 'switch' && 'react-autoql--switch'}
+      ${hasError && 'react-autoql--has-error'}
     `
 
     const inputClassname = `
       react-autoql-checkbox__input
-      ${type === 'switch' ? 'react-autoql-checkbox--switch__input' : ''}
-      ${hasError ? 'react-autoql-checkbox--has-error__input' : ''}
+      ${type === 'switch' ? 'react-autoql--switch__input' : ''}
+      ${hasError ? 'react-autoql--has-error__input' : ''}
     `
 
     const labelClassname = `
       react-autoql-checkbox__label
-      ${type === 'switch' && 'react-autoql-checkbox--switch__label'}
+      ${type === 'switch' && 'react-autoql--switch__label'}
     `
 
     return (
-      <div
-        className="react-autoql-checkbox-container"
-        data-test="react-autoql-checkbox"
-      >
+      <div className="react-autoql-container" data-test="react-autoql-checkbox">
         <div
           className={`${checkboxClassname} ${this.props.className}`}
           style={this.props.style}
@@ -101,13 +94,13 @@ export default class Checkbox extends React.Component {
             onChange={this.onCheckedChange}
           />
           {this.props.checked && this.props.type === 'default' && (
-            <div className="react-autoql-checkbox-tick">
+            <div className="react-autoql-tick">
               <Icon type="check" />
             </div>
           )}
           {label && (
             <div
-              className="react-autoql-checkbox-label"
+              className="react-autoql-label"
               onClick={(e) => {
                 this.selector.click()
               }}

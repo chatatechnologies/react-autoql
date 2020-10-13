@@ -79,7 +79,7 @@ export default class QueryInput extends React.Component {
   componentDidMount = () => {
     const { theme } = this.props.themeConfig
     const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-    setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
+    setStyleVars({ themeStyles, prefix: '--react-autoql-' })
   }
 
   componentDidUpdate = (prevProps) => {
@@ -89,7 +89,7 @@ export default class QueryInput extends React.Component {
     ) {
       const { theme } = this.props.themeConfig
       const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
+      setStyleVars({ themeStyles, prefix: '--react-autoql-' })
     }
   }
 

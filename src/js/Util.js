@@ -846,7 +846,7 @@ export const getTickWidth = (scale, innerPadding) => {
   }
 }
 
-export const setCSSVars = ({ themeConfig, prefix }) => {
+export const setCSSVars = (themeConfig) => {
   const { theme, accentColor, fontFamily } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
@@ -858,7 +858,7 @@ export const setCSSVars = ({ themeConfig, prefix }) => {
 
   for (let property in themeStyles) {
     document.documentElement.style.setProperty(
-      `${prefix}${property}`,
+      `--react-autoql-${property}`,
       themeStyles[property]
     )
   }

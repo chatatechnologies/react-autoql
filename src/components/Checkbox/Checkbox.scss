@@ -2,7 +2,7 @@
   margin: 2rem;
 }
 
-.react-autoql-checkbox-container {
+.react-autoql-container {
   display: inline-block;
   vertical-align: middle;
 }
@@ -13,10 +13,10 @@
   position: relative;
   cursor: pointer;
 
-  .react-autoql-checkbox--switch__input:checked,
+  .react-autoql--switch__input:checked,
   .react-autoql-checkbox__input:checked {
-    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
-    background: var(--react-autoql-messenger-accent-color, #26a7df);
+    border-color: var(--react-autoql-accent-color, #26a7df);
+    background: var(--react-autoql-accent-color, #26a7df);
   }
 }
 .react-autoql-checkbox__label {
@@ -36,7 +36,7 @@
   outline: none;
   background: transparent;
   border: 1px solid;
-  border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+  border-color: var(--react-autoql-accent-color, #26a7df);
   border-radius: 2px;
 
   cursor: pointer;
@@ -49,10 +49,10 @@
   bottom: 50%;
   left: 50%;
   transition: all 0.2s;
-  background: var(--react-autoql-messenger-accent-color, #26a7df);
+  background: var(--react-autoql-accent-color, #26a7df);
 }
 
-.react-autoql-checkbox-tick {
+.react-autoql-tick {
   position: absolute;
   color: white;
   left: 3px;
@@ -60,7 +60,7 @@
   pointer-events: none;
 }
 
-.react-autoql-checkbox--switch__input::before {
+.react-autoql--switch__input::before {
   box-shadow: 0 0 2px 1px #00000030;
 }
 
@@ -86,25 +86,25 @@
   color: gray;
   cursor: default;
 }
-.react-autoql-checkbox--has-error__input {
+.react-autoql--has-error__input {
   border-color: red;
   background-color: rgba(255, 0, 0, 0.2);
 }
-.react-autoql-checkbox--has-error__input::before {
+.react-autoql--has-error__input::before {
   background-color: red;
 }
-.react-autoql-checkbox--switch__label::after {
+.react-autoql--switch__label::after {
   content: 'off';
   margin-left: 0.25rem;
 }
-.react-autoql-checkbox--switch__input {
+.react-autoql--switch__input {
   width: 36px;
   height: 20px;
   border-radius: 16px;
-  background: var(--react-autoql-checkbox-background-color-tertiary);
-  border: 1px solid var(--react-autoql-checkbox-background-color-tertiary);
+  background: var(--react-autoql-background-color-tertiary);
+  border: 1px solid var(--react-autoql-background-color-tertiary);
 }
-.react-autoql-checkbox--switch__input::before {
+.react-autoql--switch__input::before {
   top: 2px;
   right: 18px;
   bottom: 2px;
@@ -112,32 +112,31 @@
   border-radius: 50%;
   background: #fff;
 }
-.react-autoql-checkbox--switch__input:checked
-  + .react-autoql-checkbox--switch__label::after {
+.react-autoql--switch__input:checked + .react-autoql--switch__label::after {
   content: 'on';
 }
-.react-autoql-checkbox--switch__input:checked::before {
+.react-autoql--switch__input:checked::before {
   right: 2px;
   left: 18px;
   top: 2px;
   bottom: 2px;
 }
 
-.react-autoql-checkbox-label {
+.react-autoql-label {
   padding-left: 6px;
   line-height: 100%;
 }
 
 .react-autoql-modal-container
-  .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input),
+  .react-autoql-checkbox__input:not(.react-autoql--switch__input),
 .react-autoql-drawer
-  .react-autoql-checkbox__input:not(.react-autoql-checkbox--switch__input) {
-  border-color: var(--react-autoql-checkbox-accent-color);
+  .react-autoql-checkbox__input:not(.react-autoql--switch__input) {
+  border-color: var(--react-autoql-accent-color);
 }
 
 .react-autoql-modal-container
-  .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input),
+  .react-autoql-checkbox__input::before:not(.react-autoql--switch__input),
 .react-autoql-drawer
-  .react-autoql-checkbox__input::before:not(.react-autoql-checkbox--switch__input) {
-  background: var(--react-autoql-checkbox-accent-color);
+  .react-autoql-checkbox__input::before:not(.react-autoql--switch__input) {
+  background: var(--react-autoql-accent-color);
 }

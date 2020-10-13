@@ -166,7 +166,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
+        prefix: '--react-autoql-',
       })
 
       // Determine the supported visualization types based on the response data
@@ -222,7 +222,7 @@ export default class QueryOutput extends React.Component {
       this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
       setStyleVars({
         themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
+        prefix: '--react-autoql-',
       })
     }
 
@@ -712,13 +712,13 @@ export default class QueryOutput extends React.Component {
 
     const tableBorderColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-border-color']
-        : DARK_THEME['--react-autoql-messenger-border-color']
+        ? LIGHT_THEME['--react-autoql-border-color']
+        : DARK_THEME['--react-autoql-border-color']
 
     const tableHoverColor =
       this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-hover-color']
-        : DARK_THEME['--react-autoql-messenger-hover-color']
+        ? LIGHT_THEME['--react-autoql-hover-color']
+        : DARK_THEME['--react-autoql-hover-color']
 
     if (this.state.displayType === 'pivot_table') {
       return (

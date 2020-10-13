@@ -1,4 +1,4 @@
-.react-autoql-table-container {
+.react-autoql-container {
   height: 100%;
   max-width: 100%;
   background-color: inherit;
@@ -19,10 +19,10 @@
 }
 .react-autoql-table.tabulator .tabulator-header .tabulator-col,
 .react-autoql-table.tabulator .tabulator-cell {
-  border-color: var(--react-autoql-table-border-color);
+  border-color: var(--react-autoql-border-color);
 }
 .react-autoql-table.tabulator .tabulator-header {
-  border-bottom: 2px solid var(--react-autoql-table-border-color);
+  border-bottom: 2px solid var(--react-autoql-border-color);
 }
 .react-autoql-table.tabulator {
   background-color: inherit;
@@ -30,7 +30,7 @@
 }
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
-  border-bottom: 1px solid var(--react-autoql-table-border-color);
+  border-bottom: 1px solid var(--react-autoql-border-color);
 }
 .tabulator-cell:not(:first-child) {
   // .tabulator-col:not(:first-child) {
@@ -46,7 +46,7 @@
   .tabulator-header
   .tabulator-col.tabulator-sortable:hover {
   /* background-color: rgba(0, 0, 0, 0.1) !important; */
-  background-color: var(--react-autoql-table-hover-color) !important;
+  background-color: var(--react-autoql-hover-color) !important;
 }
 .react-autoql-table.tabulator
   .tabulator-header
@@ -110,7 +110,7 @@
   border: 0px;
 }
 .react-autoql-table .tabulator-header-filter input {
-  border: 1px solid var(--react-autoql-table-border-color);
+  border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
   background: transparent;
   padding: 4px 9px !important;
@@ -122,14 +122,12 @@
 /* These are necessary because we are always rendering the
 filter (just display: none when not used) instead of re-rendering
 the whole table when the filter button is clicked */
-.react-autoql-table-container:not(.filtering)
+.react-autoql-container:not(.filtering)
   .react-autoql-table
   .tabulator-header-filter {
   display: none;
 }
-.react-autoql-table-container:not(.filtering)
-  .react-autoql-table
-  .tabulator-col {
+.react-autoql-container:not(.filtering) .react-autoql-table .tabulator-col {
   height: auto !important;
 }
 

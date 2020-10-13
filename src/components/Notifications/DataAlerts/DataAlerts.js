@@ -51,17 +51,12 @@ export default class DataAlerts extends React.Component {
   componentDidMount = () => {
     this.getDataAlerts('user')
     this.getDataAlerts('project')
-
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-data-alerts-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-data-alerts-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 
