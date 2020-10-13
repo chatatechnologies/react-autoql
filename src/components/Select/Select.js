@@ -41,16 +41,12 @@ export default class Select extends React.Component {
   }
 
   componentDidMount = () => {
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-select-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-select-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 

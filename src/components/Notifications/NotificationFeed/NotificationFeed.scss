@@ -1,27 +1,24 @@
 .notification-list-loading-container {
   text-align: center;
   padding-top: 100px;
-  color: var(--react-autoql-notifications-text-color-primary);
+  color: var(--react-autoql-text-color-primary);
   height: 100%;
   overflow: hidden;
-  background: var(--react-autoql-notifications-background-color-secondary);
+  background: var(--react-autoql-background-color-secondary);
 }
 
 .react-autoql-notification-list-container {
   height: 100%;
   padding: 20px;
   overflow-y: auto;
-  background: var(--react-autoql-notifications-background-color-secondary);
+  background: var(--react-autoql-background-color-secondary);
 }
 
 .react-autoql-notification-dismiss-all {
   text-align: right;
   margin-bottom: 12px;
   padding-right: 10px;
-  color: var(
-    --react-autoql-notifications-text-color-primary,
-    rgba(0, 0, 0, 0.4)
-  );
+  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
   transition: color 0.1s ease;
 
   span {

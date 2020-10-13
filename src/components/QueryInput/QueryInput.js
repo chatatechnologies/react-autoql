@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import { bool, string, func } from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import {
   authenticationType,
@@ -16,8 +17,7 @@ import {
   themeConfigDefault,
 } from '../../props/defaults'
 
-import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars } from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
 import {
@@ -31,6 +31,7 @@ import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
 import './QueryInput.scss'
+import isEqual from 'lodash.isequal'
 
 let autoCompleteArray = []
 
@@ -77,19 +78,12 @@ export default class QueryInput extends React.Component {
   }
 
   componentDidMount = () => {
-    const { theme } = this.props.themeConfig
-    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-    setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      _get(prevProps, 'themeConfig.theme') !==
-      _get(this.props, 'themeConfig.theme')
-    ) {
-      const { theme } = this.props.themeConfig
-      const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({ themeStyles, prefix: '--react-autoql-input-' })
+    if (!isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
   }
 

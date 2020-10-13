@@ -45,16 +45,12 @@ export default class Steps extends React.Component {
       })
     }
 
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-steps-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-steps-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 

@@ -40,9 +40,7 @@ export default class Checkbox extends React.Component {
       this.selector.indeterminate = this.props.indeterminate
     }
 
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-checkbox-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -51,9 +49,7 @@ export default class Checkbox extends React.Component {
     }
 
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-checkbox-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -63,7 +59,11 @@ export default class Checkbox extends React.Component {
 
   render = () => {
     const { label, type, indeterminate, hasError, ...inputProps } = this.props
-    const nativeProps = { ...inputProps, style: undefined }
+    const nativeProps = {
+      ...inputProps,
+      style: undefined,
+      themeConfig: undefined,
+    }
 
     const checkboxClassname = `
       react-autoql-checkbox
@@ -101,13 +101,13 @@ export default class Checkbox extends React.Component {
             onChange={this.onCheckedChange}
           />
           {this.props.checked && this.props.type === 'default' && (
-            <div className="react-autoql-checkbox-tick">
+            <div className="react-autoql-tick">
               <Icon type="check" />
             </div>
           )}
           {label && (
             <div
-              className="react-autoql-checkbox-label"
+              className="react-autoql-label"
               onClick={(e) => {
                 this.selector.click()
               }}

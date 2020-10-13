@@ -23,7 +23,7 @@ import {
 } from '../../props/defaults'
 
 import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
-import { setStyleVars, filterDataForDrilldown } from '../../js/Util'
+import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 // Components
@@ -140,7 +140,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     try {
-      this.setStyles()
+      setCSSVars(this.props.themeConfig)
       this.setintroMessages()
 
       // Listen for esc press to cancel queries while they are running
@@ -185,7 +185,7 @@ export default class DataMessenger extends React.Component {
       const thisTheme = this.props.themeConfig.theme
       const prevTheme = prevProps.themeConfig.theme
       if (thisTheme && thisTheme !== prevTheme) {
-        this.setStyles()
+        setCSSVars(this.props.themeConfig)
       }
     } catch (error) {
       console.error(error)
@@ -309,19 +309,6 @@ export default class DataMessenger extends React.Component {
       lastMessageId: introMessages[introMessages.length - 1].id,
       isClearMessageConfirmVisible: false,
     })
-  }
-
-  setStyles = () => {
-    const { theme, accentColor, fontFamily } = this.props.themeConfig
-    const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-    if (accentColor) {
-      themeStyles['accent-color'] = accentColor
-    }
-    if (fontFamily) {
-      themeStyles['font-family'] = fontFamily
-    }
-
-    setStyleVars({ themeStyles, prefix: '--react-autoql-messenger-' })
   }
 
   getHandlerProp = () => {

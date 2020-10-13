@@ -1,5 +1,5 @@
 .react-autoql-drawer {
-  font-family: var(--react-autoql-messenger-font-family), sans-serif;
+  font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
 }
 
@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   display: flex;
-  background: var(--react-autoql-messenger-background-color-secondary);
+  background: var(--react-autoql-background-color-secondary);
   overflow: hidden;
   border-radius: 4px;
   flex-direction: column;
@@ -23,7 +23,7 @@
   justify-content: space-between;
   width: 100%;
   height: 60px;
-  background: var(--react-autoql-messenger-accent-color);
+  background: var(--react-autoql-accent-color);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
   flex-grow: 0;
   flex-shrink: 0;
@@ -104,7 +104,7 @@
 
 .react-autoql-drawer .watermark {
   position: absolute;
-  color: var(--react-autoql-messenger-text-color-primary);
+  color: var(--react-autoql-text-color-primary);
   text-align: center;
   opacity: 0.2;
   top: 6px;
@@ -139,7 +139,7 @@
 }
 .intro-qi-link {
   cursor: pointer;
-  color: var(--react-autoql-messenger-accent-color);
+  color: var(--react-autoql-accent-color);
 }
 
 /* custom scrollbar */
@@ -213,7 +213,7 @@
 .react-autoql-drawer .drawer-handle-icon,
 .react-autoql-drawer .drawer-handle-icon::before,
 .react-autoql-drawer .drawer-handle-icon::after {
-  background: var(--react-autoql-messenger-text-color-primary);
+  background: var(--react-autoql-text-color-primary);
 }
 .react-autoql-drawer .drawer-bottom .drawer-content-wrapper,
 .react-autoql-drawer .drawer-top .drawer-content-wrapper {
@@ -277,7 +277,7 @@
 
 /* Tooltips */
 .react-autoql-drawer-tooltip {
-  font-family: var(--react-autoql-messenger-font-family), sans-serif;
+  font-family: var(--react-autoql-font-family), sans-serif;
   letter-spacing: 0.04em;
   padding: 7px 15px;
   transition: none;
@@ -285,7 +285,7 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 .interpretation-tooltip {
-  font-family: var(--react-autoql-messenger-font-family), sans-serif;
+  font-family: var(--react-autoql-font-family), sans-serif;
   font-size: 12px;
   text-align: left;
   letter-spacing: 0.04em;
@@ -305,8 +305,8 @@
 }
 
 .clear-messages-confirm-popover {
-  color: var(--react-autoql-messenger-text-color-primary);
-  background: var(--react-autoql-messenger-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   text-align: right;
   padding: 18px;
   width: 266px;
@@ -378,7 +378,7 @@
     position: relative;
     z-index: 1;
 
-    background: var(--react-autoql-messenger-accent-color);
+    background: var(--react-autoql-accent-color);
     color: #fff;
     opacity: 1;
 
@@ -477,19 +477,19 @@
 }
 
 .page-switcher-container.bottom .tab {
-  background: var(--react-autoql-messenger-background-color-secondary);
-  color: var(--react-autoql-messenger-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
 }
 .page-switcher-container .tab.active {
-  background: var(--react-autoql-messenger-background-color-secondary);
-  color: var(--react-autoql-messenger-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
   box-shadow: -2px 0px 8px 2px rgba(0, 0, 0, 0.2);
   font-weight: bold;
   position: relative;
   z-index: 2;
 }
 .page-switcher-container.bottom .tab.active {
-  background: var(--react-autoql-messenger-accent-color);
+  background: var(--react-autoql-accent-color);
   color: #fff;
   font-weight: bold;
 }

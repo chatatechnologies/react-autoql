@@ -1,6 +1,6 @@
 .react-autoql-notification-settings {
-  background-color: var(--react-autoql-data-alerts-background-color-secondary);
-  color: var(--react-autoql-data-alerts-text-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
   padding-top: 20px;
   height: 100%;
 
@@ -9,7 +9,7 @@
     margin-top: 10px;
     border-radius: 4px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-    background-color: var(--react-autoql-data-alerts-background-color-primary);
+    background-color: var(--react-autoql-background-color-primary);
     overflow: hidden;
 
     .react-autoql-notification-setting-item {
@@ -32,10 +32,10 @@
         padding-right: 20px;
         font-size: 16px;
         transition: all 0.2s ease;
-        color: var(--react-autoql-data-alerts-text-color-primary);
+        color: var(--react-autoql-text-color-primary);
 
         &:hover {
-          color: var(--react-autoql-data-alerts-accent-color);
+          color: var(--react-autoql-accent-color);
           opacity: 1 !important;
         }
       }
@@ -52,7 +52,7 @@
       padding-left: 25px;
       padding-right: 8px;
       border-bottom: 1px solid
-        var(--react-autoql-data-alerts-border-color, rgba(0, 0, 0, 0.05));
+        var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
     }
 
     .react-autoql-notification-enable-checkbox {
@@ -67,14 +67,14 @@
     align-items: center;
     padding: 5px 20px;
     padding-bottom: 0;
-    color: var(--react-autoql-data-alerts-text-color-primary);
+    color: var(--react-autoql-text-color-primary);
 
     .react-autoql-notification-add-btn {
       display: inline-block;
       height: 35px;
       width: 35px;
       border-radius: 20px;
-      background: var(--react-autoql-data-alerts-accent-color, #26a7df);
+      background: var(--react-autoql-accent-color, #26a7df);
       color: white;
       line-height: 38px;
       text-align: center;

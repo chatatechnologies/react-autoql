@@ -53,7 +53,7 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  setStyleVars,
+  setCSSVars,
   supportsRegularPivotTable,
   isColumnNumberType,
   isColumnStringType,
@@ -160,14 +160,10 @@ export default class QueryOutput extends React.Component {
         this.dataConfig = _cloneDeep(this.props.dataConfig)
       }
 
-      const { theme, chartColors } = this.props.themeConfig
+      const { chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
-      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({
-        themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
-      })
+      setCSSVars(this.props.themeConfig)
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(
@@ -214,16 +210,8 @@ export default class QueryOutput extends React.Component {
       this.props.onDataConfigChange({})
     }
 
-    if (
-      _get(prevProps, 'themeConfig.theme') !==
-      _get(this.props, 'themeConfig.theme')
-    ) {
-      const { theme } = this.props.themeConfig
-      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({
-        themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
-      })
+    if (_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
 
     if (this.props.queryResponse && !prevProps.queryResponse) {
@@ -710,16 +698,6 @@ export default class QueryOutput extends React.Component {
       return this.renderSingleValueResponse()
     }
 
-    const tableBorderColor =
-      this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-border-color']
-        : DARK_THEME['--react-autoql-messenger-border-color']
-
-    const tableHoverColor =
-      this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-hover-color']
-        : DARK_THEME['--react-autoql-messenger-hover-color']
-
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
@@ -728,8 +706,6 @@ export default class QueryOutput extends React.Component {
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
-          borderColor={tableBorderColor}
-          hoverColor={tableHoverColor}
           onCellClick={this.processCellClick}
           headerFilters={this.pivotHeaderFilters}
           onFilterCallback={this.onTableFilter}
@@ -750,8 +726,6 @@ export default class QueryOutput extends React.Component {
           ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
           data={this.tableData}
-          borderColor={tableBorderColor}
-          hoverColor={tableHoverColor}
           onCellClick={this.processCellClick}
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
@@ -772,11 +746,6 @@ export default class QueryOutput extends React.Component {
       return 'Error: There was no data supplied for this chart'
     }
 
-    const chartThemeConfig = {
-      ...this.props.themeConfig,
-      ...this.themeStyles,
-    }
-
     return (
       <ErrorBoundary>
         <ChataChart
@@ -795,7 +764,7 @@ export default class QueryOutput extends React.Component {
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={chartThemeConfig}
+          themeConfig={this.props.themeConfig}
           changeStringColumnIndex={(index) => {
             if (this.dataConfig.legendColumnIndex === index) {
               this.dataConfig.legendColumnIndex = undefined

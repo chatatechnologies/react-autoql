@@ -29,8 +29,6 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onRowClick: PropTypes.func,
-    borderColor: PropTypes.string,
-    hoverColor: PropTypes.string,
     onFilterCallback: PropTypes.func,
     setFilterTagsCallback: PropTypes.func,
   }
@@ -39,8 +37,6 @@ export default class ChataTable extends React.Component {
     themeConfig: themeConfigDefault,
     data: undefined,
     columns: undefined,
-    borderColor: '#ddd',
-    hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
     onRowClick: () => {},
@@ -54,9 +50,7 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this.TABLE_CONTAINER_ID = uuid.v4()
     this.setInitialHeaderFilters()
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-table-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
 
     setTimeout(this.props.setFilterTagsCallback, 100)
   }
@@ -85,9 +79,7 @@ export default class ChataTable extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      const { themeConfig } = this.props
-      const prefix = '--react-autoql-table-'
-      setCSSVars({ themeConfig, prefix })
+      setCSSVars(this.props.themeConfig)
     }
   }
 
