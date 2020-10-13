@@ -1613,6 +1613,13 @@ export default class QueryOutput extends React.Component {
           '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
         )
 
+        let isSuccess
+        try {
+          isSuccess = error.reference_id.split('.')[2][0] == 2
+        } catch (error) {
+          isSuccess = false
+        }
+
         return (
           <div className="query-output-error-message">
             <div
@@ -1620,8 +1627,12 @@ export default class QueryOutput extends React.Component {
                 __html: `<span>${newErrorMessage}</span>`,
               }}
             />
-            <br />
-            <div>Error ID: {error.reference_id}</div>
+            {!isSuccess && error.reference_id && (
+              <Fragment>
+                <br />
+                <div>Error ID: {error.reference_id}</div>
+              </Fragment>
+            )}
           </div>
         )
       }
