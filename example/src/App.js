@@ -121,7 +121,7 @@ export default class App extends Component {
     isVisible: false,
     placement: 'right',
     showHandle: true,
-    theme: 'dark',
+    theme: 'light',
     response: null,
     showMask: true,
     shiftScreen: false,
