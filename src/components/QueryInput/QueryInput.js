@@ -31,7 +31,6 @@ import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
 import './QueryInput.scss'
-import isEqual from 'lodash.isequal'
 
 let autoCompleteArray = []
 
@@ -82,7 +81,7 @@ export default class QueryInput extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
       setCSSVars(this.props.themeConfig)
     }
   }

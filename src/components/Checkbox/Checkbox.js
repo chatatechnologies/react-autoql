@@ -101,13 +101,13 @@ export default class Checkbox extends React.Component {
             onChange={this.onCheckedChange}
           />
           {this.props.checked && this.props.type === 'default' && (
-            <div className="react-autoql-tick">
+            <div className="react-autoql-checkbox-tick">
               <Icon type="check" />
             </div>
           )}
           {label && (
             <div
-              className="react-autoql-label"
+              className="react-autoql-checkbox-label"
               onClick={(e) => {
                 this.selector.click()
               }}
