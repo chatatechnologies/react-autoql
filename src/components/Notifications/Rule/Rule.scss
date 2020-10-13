@@ -48,8 +48,8 @@
     .react-autoql-input-container:hover + .react-autoql-rule-term-type-selector,
     .react-autoql-input-container.focus
       + .react-autoql-rule-term-type-selector {
-      color: var(--react-autoql-accent-color, #26a7df);
-      border-color: var(--react-autoql-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
+      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
     }
   }
 
@@ -69,7 +69,7 @@
     width: 40px;
 
     &:hover {
-      color: var(--react-autoql-accent-color, #26a7df);
+      color: var(--react-autoql-messenger-accent-color, #26a7df);
     }
 
     span.react-autoql-icon svg {

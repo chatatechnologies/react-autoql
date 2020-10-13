@@ -54,7 +54,9 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this.TABLE_CONTAINER_ID = uuid.v4()
     this.setInitialHeaderFilters()
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-table-'
+    setCSSVars({ themeConfig, prefix })
 
     setTimeout(this.props.setFilterTagsCallback, 100)
   }
@@ -83,7 +85,9 @@ export default class ChataTable extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-table-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 
@@ -160,9 +164,9 @@ export default class ChataTable extends React.Component {
 
     return (
       <div
-        id={`react-autoql-container-${this.TABLE_CONTAINER_ID}`}
+        id={`react-autoql-table-container-${this.TABLE_CONTAINER_ID}`}
         data-test="react-autoql-table"
-        className="react-autoql-container"
+        className="react-autoql-table-container"
         style={this.props.style}
       >
         {this.props.data && this.props.columns && (

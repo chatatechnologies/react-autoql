@@ -65,12 +65,16 @@ export default class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this.getInitialNotifications()
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-notifications-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-notifications-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 

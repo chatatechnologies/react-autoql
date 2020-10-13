@@ -41,11 +41,11 @@
 
   &:hover .react-autoql-input,
   .react-autoql-input:focus {
-    border-color: var(--react-autoql-accent-color, #26a7df);
+    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
   }
   &:hover .react-autoql-input-icon,
   .react-autoql-input-icon.focus {
     opacity: 1;
-    color: var(--react-autoql-accent-color, #26a7df);
+    color: var(--react-autoql-messenger-accent-color, #26a7df);
   }
 }

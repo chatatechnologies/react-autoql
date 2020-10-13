@@ -11,7 +11,7 @@
   }
 
   .react-autoql-toolbar-btn {
-    color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-options-toolbar-accent-color);
   }
 }
 
@@ -24,12 +24,14 @@
     width: 100%;
     padding: 10px;
     resize: none;
-    background: var(--react-autoql-background-color-secondary);
+    background: var(--react-autoql-modal-background-color-secondary);
   }
 
   .copy-sql-btn {
-    color: var(--react-autoql-text-color);
-    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-options-toolbar-text-color);
+    background-color: var(
+      --react-autoql-options-toolbar-background-color-primary
+    );
     position: absolute;
     top: 3px;
     right: 0;

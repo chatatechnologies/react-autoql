@@ -32,14 +32,18 @@ class VizToolbar extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-viz-toolbar-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = (prevProps) => {
     ReactTooltip.rebuild()
 
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-viz-toolbar-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 

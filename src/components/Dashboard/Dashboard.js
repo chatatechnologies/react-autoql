@@ -137,7 +137,9 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-dashboard-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   onWindowResize = (e) => {
@@ -473,7 +475,7 @@ class Dashboard extends React.Component {
                     this.state.activeDrilldownChartElementKey
                   }
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--react-autoql-background-color-primary'
+                    '--react-autoql-dashboard-background-color-primary'
                   )}
                 />
               </div>
@@ -492,7 +494,7 @@ class Dashboard extends React.Component {
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
                   backgroundColor={document.documentElement.style.getPropertyValue(
-                    '--react-autoql-background-color-primary'
+                    '--react-autoql-dashboard-background-color-primary'
                   )}
                 />
               )}

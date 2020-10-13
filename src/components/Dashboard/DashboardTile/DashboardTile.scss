@@ -1,7 +1,7 @@
 .react-autoql-dashboard .react-grid-item {
-  background: var(--react-autoql-background-color-primary, #fff);
-  color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
-  font-family: var(--react-autoql-font-family), sans-serif;
+  background: var(--react-autoql-dashboard-background-color-primary, #fff);
+  color: var(--react-autoql-dashboard-text-color-primary, rgb(64, 64, 64));
+  font-family: var(--react-autoql-dashboard-font-family), sans-serif;
   overflow: hidden;
 
   border-radius: 4px;
@@ -24,7 +24,7 @@
 .react-autoql-dashboard-tile-drag-handle {
   transition: opacity 0.3s ease;
   position: absolute;
-  background-color: var(--react-autoql-border-color, #f7f7f7);
+  background-color: var(--react-autoql-dashboard-border-color, #f7f7f7);
   cursor: move;
   opacity: 0;
 
@@ -69,7 +69,7 @@
 
 .dashboard-tile-viz-toolbar-container {
   transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -82,7 +82,7 @@
   .split-view-btn {
     position: relative;
     display: inline-block;
-    background: var(--react-autoql-background-color-primary);
+    background: var(--react-autoql-dashboard-background-color-primary);
   }
 
   .split-view-btn {
@@ -99,7 +99,7 @@
 
 .split-view-query-btn {
   transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
   position: absolute;
   top: 7px;
   left: 7px;
@@ -134,14 +134,14 @@
 
   .layout-splitter {
     height: 1px !important;
-    color: var(--react-autoql-border-color);
+    color: var(--react-autoql-dashboard-border-color);
     opacity: 0.3;
     pointer-events: none;
   }
 
   .react-autoql-table {
     opacity: 0.9;
-    color: var(--react-autoql-text-color-primary);
+    color: var(--react-autoql-dashboard-text-color-primary);
     font-size: 11px;
   }
 }
@@ -154,7 +154,7 @@
     display: block;
     pointer-events: unset;
     height: 4px !important;
-    color: var(--react-autoql-text-color-primary);
+    color: var(--react-autoql-dashboard-text-color-primary);
     opacity: 0.8;
   }
 }
@@ -185,7 +185,7 @@
 
   cursor: default;
 
-  .react-autoql-container {
+  .react-autoql-table-container {
     padding: 20px;
     padding-top: 15px;
     width: 100%;
@@ -208,7 +208,7 @@
   flex-grow: 0;
 
   .dashboard-tile-title {
-    color: var(--react-autoql-accent-color, #26a7df);
+    color: var(--react-autoql-messenger-accent-color, #26a7df);
   }
 }
 
@@ -236,7 +236,7 @@
   width: 25px;
   height: 33px;
   margin-left: 10px;
-  color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-dashboard-accent-color);
 }
 .dashboard-tile-play-button.disabled svg {
   opacity: 0.5;
@@ -249,7 +249,7 @@
 .dashboard-tile-delete-button {
   opacity: 0;
   font-size: 17px;
-  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+  color: var(--react-autoql-dashboard-text-color-primary, rgba(0, 0, 0, 0.4));
   position: absolute;
   top: 0px;
   right: 2px;
@@ -292,10 +292,11 @@
     padding: 12px;
     padding-left: 33px;
 
-    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border: 1px solid
+      var(--react-autoql-dashboard-border-color, rgba(0, 0, 0, 0.1));
     outline: none !important;
-    color: var(--react-autoql-text-color-primary, #356f90);
-    background: var(--react-autoql-background-color-primary, #fff);
+    color: var(--react-autoql-dashboard-text-color-primary, #356f90);
+    background: var(--react-autoql-dashboard-background-color-primary, #fff);
   }
 }
 
@@ -317,7 +318,7 @@
 
   .query-input-icon,
   .title-input-icon {
-    color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-dashboard-accent-color);
     position: absolute;
     pointer-events: none;
     z-index: 1;
@@ -339,8 +340,8 @@
   transition: all 0.3s ease;
   border: 1px solid transparent;
   outline: none !important;
-  color: var(--react-autoql-text-color-primary, #356f90);
-  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-dashboard-text-color-primary, #356f90);
+  background: var(--react-autoql-dashboard-background-color-primary);
   margin: 0px;
   padding: 0px;
   width: 0px;
@@ -351,7 +352,8 @@
     width: 200px;
     padding: 12px;
     margin-left: 5px;
-    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border: 1px solid
+      var(--react-autoql-dashboard-border-color, rgba(0, 0, 0, 0.1));
     pointer-events: unset;
   }
 }
@@ -361,7 +363,7 @@
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
   border: 1px solid rgb(38, 167, 233) !important;
-  border-color: var(--react-autoql-accent-color) !important;
+  border-color: var(--react-autoql-dashboard-accent-color) !important;
 }
 .dashboard-tile-input-container .dashboard-tile-input.query,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input {
@@ -393,12 +395,12 @@
 }
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-background-color-primary);
-  border: 1px solid var(--react-autoql-border-color);
-  color: var(--react-autoql-text-color-primary);
+  background-color: var(--react-autoql-dashboard-background-color-primary);
+  border: 1px solid var(--react-autoql-dashboard-border-color);
+  color: var(--react-autoql-dashboard-text-color-primary);
 }
 .dashboard-tile-input-container .react-autosuggest__suggestion {
-  color: var(--react-autoql-text-color-primary);
+  color: var(--react-autoql-dashboard-text-color-primary);
 }
 .dashboard-tile-input-container input::placeholder {
   opacity: 0.5;
@@ -480,7 +482,10 @@
 
 .dashboard-tile-placeholder-text {
   font-size: 15px;
-  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
+  color: var(
+    --react-autoql-dashboard-text-color-placeholder,
+    rgba(0, 0, 0, 0.3)
+  );
 
   .play-icon {
     vertical-align: bottom;
@@ -504,9 +509,9 @@
   right: 4px;
   opacity: 0;
   border-right: 1px solid
-    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+    var(--react-autoql-dashboard-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
   border-bottom: 1px solid
-    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+    var(--react-autoql-dashboard-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
   transition: opacity 0.3s ease;
 }
 

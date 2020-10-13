@@ -65,7 +65,9 @@ export default class Input extends React.Component {
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-options-toolbar-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -76,7 +78,9 @@ export default class Input extends React.Component {
     }
 
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-options-toolbar-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 

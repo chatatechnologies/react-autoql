@@ -11,7 +11,7 @@
   }
 }
 .query-tips-result-container {
-  color: var(--react-autoql-text-color-primary);
+  color: var(--react-autoql-messenger-text-color-primary);
   padding: 0px 20px;
   text-align: center;
   max-width: 550px;
@@ -47,7 +47,7 @@
 
     &:hover {
       font-weight: bold;
-      color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-messenger-accent-color);
       .execute-btn {
         visibility: visible;
         opacity: 1;
@@ -80,7 +80,7 @@
 
   li {
     display: inline-block;
-    color: var(--react-autoql-text-color-primary);
+    color: var(--react-autoql-messenger-text-color-primary);
     cursor: pointer;
     margin-right: 3px;
     border-radius: 5px;
@@ -97,7 +97,7 @@
 
   li a {
     display: inline-block;
-    color: var(--react-autoql-text-color-primary);
+    color: var(--react-autoql-messenger-text-color-primary);
     outline: none;
     width: 28px;
     height: 28px;
@@ -105,7 +105,7 @@
   }
 
   li.selected {
-    background: var(--react-autoql-accent-color);
+    background: var(--react-autoql-messenger-accent-color);
     border-radius: 50%;
     outline: none;
     a {
@@ -127,7 +127,7 @@
     position: absolute;
     font-size: 18px;
     a {
-      color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-messenger-accent-color);
     }
   }
   .pagination-previous {

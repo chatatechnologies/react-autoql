@@ -32,12 +32,16 @@ export default class Radio extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    const { themeConfig } = this.props
+    const prefix = '--react-autoql-radio-'
+    setCSSVars({ themeConfig, prefix })
   }
 
   componentDidUpdate = (prevProps) => {
     if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+      const { themeConfig } = this.props
+      const prefix = '--react-autoql-radio-'
+      setCSSVars({ themeConfig, prefix })
     }
   }
 
