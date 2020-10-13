@@ -145,7 +145,6 @@ export default class App extends Component {
     title: 'Data Messenger',
     lightAccentColor: '#26a7df',
     darkAccentColor: '#26a7df',
-    // lightAccentColor: '#2466AE',
     dashboardBackground: '#fafafa',
     maxMessages: 12,
     isEditing: false,
