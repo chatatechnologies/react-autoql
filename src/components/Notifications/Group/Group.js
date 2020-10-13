@@ -6,6 +6,9 @@ import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
 
+import { themeConfigType } from '../../../props/types'
+import { themeConfigDefault } from '../../../props/defaults'
+
 import './Group.scss'
 
 const isGroup = (termValue) => {
@@ -52,6 +55,7 @@ export default class Group extends React.Component {
   ruleRefs = []
 
   static propTypes = {
+    themeConfig: themeConfigType,
     groupId: PropTypes.string,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
@@ -62,6 +66,7 @@ export default class Group extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     groupId: undefined,
     disableAddGroupBtn: false,
     hideTopCondition: false,
@@ -192,6 +197,7 @@ export default class Group extends React.Component {
       <div className="notification-rule-and-or-select">
         Notify me when{' '}
         <Radio
+          themeConfig={this.props.themeConfig}
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           type="button"
@@ -290,6 +296,7 @@ export default class Group extends React.Component {
               return (
                 <Rule
                   authentication={this.props.authentication}
+                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   key={rule.id}
@@ -305,6 +312,7 @@ export default class Group extends React.Component {
               return (
                 <Group
                   authentication={this.props.authentication}
+                  themeConfig={this.props.themeConfig}
                   groupId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
@@ -360,6 +368,7 @@ export default class Group extends React.Component {
               <div key={`group-${rule.id}`}>
                 <Group
                   authentication={this.props.authentication}
+                  themeConfig={this.props.themeConfig}
                   groupId={rule.id}
                   initialData={rule.termValue}
                   enableQueryValidation={false}

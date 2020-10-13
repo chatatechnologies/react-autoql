@@ -1,8 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
+import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+
+import { setCSSVars } from '../../js/Util'
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './Checkbox.scss'
 
@@ -10,6 +15,7 @@ export default class Checkbox extends React.Component {
   ID = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     hasError: PropTypes.bool,
     indeterminate: PropTypes.bool,
     label: PropTypes.string,
@@ -19,6 +25,7 @@ export default class Checkbox extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     hasError: false,
     indeterminate: undefined,
     type: 'default',
@@ -32,11 +39,17 @@ export default class Checkbox extends React.Component {
     if (this.selector) {
       this.selector.indeterminate = this.props.indeterminate
     }
+
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
     if (prevProps.indeterminate !== this.props.indeterminate) {
       this.selector.indeterminate = this.props.indeterminate
+    }
+
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -46,7 +59,11 @@ export default class Checkbox extends React.Component {
 
   render = () => {
     const { label, type, indeterminate, hasError, ...inputProps } = this.props
-    const nativeProps = { ...inputProps, style: undefined }
+    const nativeProps = {
+      ...inputProps,
+      style: undefined,
+      themeConfig: undefined,
+    }
 
     const checkboxClassname = `
       react-autoql-checkbox

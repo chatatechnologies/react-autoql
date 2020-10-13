@@ -3,7 +3,12 @@ import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
+
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 
 import './Select.scss'
 
@@ -11,6 +16,7 @@ export default class Select extends React.Component {
   ID = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
@@ -20,6 +26,7 @@ export default class Select extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     onChange: () => {},
     options: [],
     popupClassname: undefined,
@@ -31,6 +38,16 @@ export default class Select extends React.Component {
 
   state = {
     isOpen: false,
+  }
+
+  componentDidMount = () => {
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
+    }
   }
 
   render = () => {

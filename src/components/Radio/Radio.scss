@@ -32,7 +32,7 @@
     content: '';
     width: 12px;
     height: 12px;
-    background: var(--react-autoql-messenger-accent-color, #26a7df);
+    background: var(--react-autoql-accent-color, #26a7df);
     position: absolute;
     top: 4px;
     left: 4px;
@@ -52,26 +52,26 @@
     position: relative;
     display: inline-block;
     padding: 3px 12px;
-    border: 1px solid #dcdcdc;
+    border: 1px solid var(--react-autoql-border-color, #dcdcdc);
     margin-left: -1px;
     transition: all 0.2s ease;
     cursor: pointer;
 
     &.active {
-      background-color: var(--react-autoql-messenger-accent-color, #26a7df);
-      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+      background-color: var(--react-autoql-accent-color, #26a7df);
+      border-color: var(--react-autoql-accent-color, #26a7df);
       color: #fff;
       z-index: 3;
     }
     &.active.outlined {
       background-color: inherit;
-      color: var(--react-autoql-messenger-accent-color, #26a7df);
+      color: var(--react-autoql-accent-color, #26a7df);
       z-index: 3;
     }
 
     &:hover:not(.active) {
-      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
-      color: var(--react-autoql-messenger-accent-color, #26a7df);
+      border-color: var(--react-autoql-accent-color, #26a7df);
+      color: var(--react-autoql-accent-color, #26a7df);
       z-index: 2;
     }
 

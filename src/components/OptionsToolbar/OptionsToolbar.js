@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import sqlFormatter from 'sql-formatter'
 
@@ -64,9 +65,7 @@ export default class Input extends React.Component {
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
 
   componentDidMount = () => {
-    const { themeConfig } = this.props
-    const prefix = '--react-autoql-options-toolbar-'
-    setCSSVars({ themeConfig, prefix })
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -74,6 +73,10 @@ export default class Input extends React.Component {
 
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
+    }
+
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -321,6 +324,7 @@ export default class Input extends React.Component {
 
     return (
       <ColumnVisibilityModal
+        themeConfig={this.props.themeConfig}
         columns={columns}
         isVisible={this.state.isHideColumnsModalVisible}
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -339,6 +343,7 @@ export default class Input extends React.Component {
     return (
       <NotificationModal
         authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'notification'}
         initialQuery={initialQuery}
         onClose={() => this.setState({ activeMenu: undefined })}
@@ -354,6 +359,7 @@ export default class Input extends React.Component {
   renderReportProblemModal = () => {
     return (
       <Modal
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'other-problem'}
         onClose={() => {
           this.setState({ activeMenu: undefined })
@@ -544,6 +550,7 @@ export default class Input extends React.Component {
     if (this.props.autoQLConfig.enableSlackSharing) {
       return (
         <SendToSlackModal
+          themeConfig={this.props.themeConfig}
           authentication={this.props.authentication}
           isVisible={this.state.activeMenu === 'slack'}
           responseRef={this.props.responseRef}
@@ -562,6 +569,7 @@ export default class Input extends React.Component {
       return (
         <SendToTeamsModal
           authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'teams'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -585,6 +593,7 @@ export default class Input extends React.Component {
 
     return (
       <Modal
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.activeMenu === 'sql'}
         footer={
           <div>

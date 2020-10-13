@@ -11,6 +11,8 @@ import { MonthSelect } from '../../DateSelect/MonthSelect'
 import { YearSelect } from '../../DateSelect/YearSelect'
 
 import { getScheduleDescription } from '../helpers'
+import { themeConfigType } from '../../../props/types'
+import { themeConfigDefault } from '../../../props/defaults'
 
 import './ScheduleBuilder.scss'
 
@@ -18,6 +20,7 @@ export default class ScheduleBuilder extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     rule: PropTypes.shape({}),
     onChange: PropTypes.func,
     onCompletedChange: PropTypes.func,
@@ -25,6 +28,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     rule: undefined,
     onChange: () => {},
     onCompletedChange: () => {},
@@ -93,6 +97,7 @@ export default class ScheduleBuilder extends React.Component {
   renderRepeatCheckbox = (label) => {
     return (
       <Checkbox
+        themeConfig={this.props.themeConfig}
         label={label}
         className="frequency-repeat-checkbox"
         checked={this.state.everyCheckboxValue}
@@ -134,6 +139,7 @@ export default class ScheduleBuilder extends React.Component {
   renderFrequencySelector = (options) => {
     return (
       <Radio
+        themeConfig={this.props.themeConfig}
         options={[
           'Daily',
           'Weekly',
@@ -250,6 +256,7 @@ export default class ScheduleBuilder extends React.Component {
         <div className="frequency-settings-container">
           <p>Trigger Data Alert:</p>
           <Radio
+            themeConfig={this.props.themeConfig}
             options={[
               'Once, when this happens',
               'Every time this happens',

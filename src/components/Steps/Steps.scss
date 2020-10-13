@@ -4,18 +4,18 @@
 
 .react-autoql-step-container {
   position: relative;
-  border-left: 1px solid lightgray;
+  border-left: 1px solid var(--react-autoql-text-color-placeholder, lightgray);
   margin-left: 12px;
   padding-left: 20px;
   padding-bottom: 5px;
   transition: all 0.5s ease;
 
   &.complete {
-    border-color: var(--react-autoql-messenger-accent-color, #26a7df);
+    border-color: var(--react-autoql-accent-color, #26a7df);
     .react-autoql-step-dot {
-      border-color: var(--react-autoql-messenger-accent-color, #26a7df);
-      background: var(--react-autoql-messenger-accent-color, #26a7df);
-      color: white;
+      border-color: var(--react-autoql-accent-color, #26a7df);
+      background: var(--react-autoql-accent-color, #26a7df);
+      color: #fff;
     }
   }
 
@@ -43,19 +43,19 @@
   height: 20px;
   width: 20px;
   border-radius: 15px;
-  background: white;
-  border: 1px solid lightgray;
+  background: var(--react-autoql-background-color-primary, #fff);
+  border: 1px solid var(--react-autoql-text-color-placeholder, lightgray);
   transition: all 0.5s ease;
 
   font-size: 10.5px;
-  color: lightgray;
+  color: var(--react-autoql-text-color-placeholder, lightgray);
   text-align: center;
 }
 
 .react-autoql-step-title-container:hover {
   cursor: pointer;
   transition: color 0.2s ease;
-  color: var(--react-autoql-messenger-accent-color, #26a7df);
+  color: var(--react-autoql-accent-color, #26a7df);
 }
 
 .react-autoql-step-title {
@@ -69,7 +69,7 @@
   font-size: 13px;
   padding-top: 6px;
   padding-bottom: 6px;
-  color: rgba(0, 0, 0, 0.4);
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.4));
 }
 .react-autoql-step-content {
   margin: 15px;

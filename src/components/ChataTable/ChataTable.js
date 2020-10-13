@@ -9,6 +9,8 @@ import {
   // reactFormatter
 } from 'react-tabulator'
 
+import { setCSSVars } from '../../js/Util'
+
 // import DateEditor from 'react-tabulator/lib/editors/DateEditor'
 // import MultiValueFormatter from 'react-tabulator/lib/formatters/MultiValueFormatter'
 // import MultiSelectEditor from 'react-tabulator/lib/editors/MultiSelectEditor'
@@ -16,25 +18,25 @@ import {
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
 
 export default class ChataTable extends React.Component {
   ref = null
 
   static propTypes = {
+    themeConfig: themeConfigType,
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onRowClick: PropTypes.func,
-    borderColor: PropTypes.string,
-    hoverColor: PropTypes.string,
     onFilterCallback: PropTypes.func,
     setFilterTagsCallback: PropTypes.func,
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     data: undefined,
     columns: undefined,
-    borderColor: '#ddd',
-    hoverColor: '#ececec',
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
     onRowClick: () => {},
@@ -48,7 +50,7 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this.TABLE_CONTAINER_ID = uuid.v4()
     this.setInitialHeaderFilters()
-    this.setStyles()
+    setCSSVars(this.props.themeConfig)
 
     setTimeout(this.props.setFilterTagsCallback, 100)
   }
@@ -75,12 +77,9 @@ export default class ChataTable extends React.Component {
     return false
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (
-      this.props.borderColor &&
-      this.props.borderColor !== prevProps.borderColor
-    ) {
-      this.setStyles()
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -90,17 +89,6 @@ export default class ChataTable extends React.Component {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
     }
-  }
-
-  setStyles = () => {
-    document.documentElement.style.setProperty(
-      '--react-autoql-table-border-color',
-      this.props.borderColor
-    )
-    document.documentElement.style.setProperty(
-      '--react-autoql-table-hover-color',
-      this.props.hoverColor
-    )
   }
 
   cellClick = (e, cell) => {

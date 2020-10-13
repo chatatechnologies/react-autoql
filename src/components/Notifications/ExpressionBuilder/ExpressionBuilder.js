@@ -1,14 +1,16 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import isEqual from 'lodash.isequal'
+import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import ReactTooltip from 'react-tooltip'
 
 import { Group } from '../Group'
-import { Button } from '../../Button'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
+
+import { themeConfigType } from '../../../props/types'
+import { themeConfigDefault } from '../../../props/defaults'
 
 import './ExpressionBuilder.scss'
 
@@ -46,12 +48,14 @@ export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
+    themeConfig: themeConfigType,
     expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     expression: undefined,
     readOnly: false,
     onChange: () => {},
@@ -70,11 +74,11 @@ export default class ExpressionBuilder extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.rebuild()
 
-    if (!isEqual(prevProps.expression, this.props.expression)) {
+    if (!_isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
       this.setState({ ...getInitialStateData(this.props.expression) })
     }
-    if (!isEqual(prevState, this.state)) {
+    if (!_isEqual(prevState, this.state)) {
       this.props.onChange(this.isComplete(), this.isValid(), this.getJSON())
     }
   }
@@ -188,6 +192,7 @@ export default class ExpressionBuilder extends React.Component {
             return (
               <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
+                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   groupId={group.id}
                   disableAddGroupBtn={true}
@@ -233,6 +238,7 @@ export default class ExpressionBuilder extends React.Component {
           >
             Notify me when{' '}
             <Radio
+              themeConfig={this.props.themeConfig}
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
               type="button"
@@ -250,6 +256,7 @@ export default class ExpressionBuilder extends React.Component {
               return (
                 <Group
                   authentication={this.props.authentication}
+                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}

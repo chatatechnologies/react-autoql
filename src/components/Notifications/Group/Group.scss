@@ -1,5 +1,5 @@
 .notification-read-only-group {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
   border-radius: 4px;
   padding: 10px;
 }
@@ -9,8 +9,8 @@
   height: 35px;
   width: 35px;
   border-radius: 20px;
-  background: var(--react-autoql-messenger-accent-color, #26a7df);
-  color: white;
+  background: var(--react-autoql-accent-color, #26a7df);
+  color: #fff;
   line-height: 38px;
   text-align: center;
   font-size: 20px;
@@ -41,7 +41,8 @@
     position: absolute;
     color: rgba(0, 0, 0, 0.4);
     left: -35px;
-    border-left: 1px dashed rgba(0, 0, 0, 0.15);
+    border-left: 1px dashed
+      var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
   }
 
   .notification-and-or-text {
@@ -62,7 +63,7 @@
     padding-top: 55px;
     padding-bottom: 20px;
 
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
     border-radius: 4px;
 
     .react-autoql-notification-group-add-btn,
@@ -74,8 +75,8 @@
       border: 1px solid;
       line-height: 22px;
       text-align: center;
-      background: white;
-      color: rgba(0, 0, 0, 0.2);
+      background: var(--react-autoql-background-color-primary, white);
+      color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.2));
       transition: all 0.3s ease;
       cursor: pointer;
 
@@ -85,7 +86,7 @@
       }
 
       &:hover {
-        color: rgba(0, 0, 0, 0.6);
+        color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
       }
     }
 
@@ -104,11 +105,9 @@
       position: absolute;
       margin: 0 auto;
       padding: 0 10px;
-      background: white;
-      // text-align: left;
+      background: inherit;
       top: 16px;
-      // left: calc(50% - 126px);
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.5));
     }
 
     .notification-rule-btn-container {
@@ -123,7 +122,7 @@
         height: 42px;
         line-height: 29px;
         margin-right: 0 !important;
-        background: white;
+        background: inherit;
         overflow: hidden;
       }
     }
@@ -137,13 +136,15 @@
       line-height: 20px;
       text-align: center;
       font-size: 14px;
-      color: rgba(0, 0, 0, 0.2);
+      color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.2));
+      opacity: 0.5;
       border: 1px solid;
       transition: all 0.2s ease;
       cursor: pointer;
 
       &:hover {
-        color: rgba(0, 0, 0, 0.5);
+        opacity: 1;
+        color: var(--react-autoql-accent-color);
       }
     }
   }

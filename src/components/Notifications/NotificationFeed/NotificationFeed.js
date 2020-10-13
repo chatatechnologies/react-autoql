@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import InfiniteScroll from 'react-infinite-scroller'
 import uuid from 'uuid'
 
@@ -18,6 +19,7 @@ import {
   authenticationDefault,
   themeConfigDefault,
 } from '../../../props/defaults'
+import { setCSSVars } from '../../../js/Util'
 
 import './NotificationFeed.scss'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -63,6 +65,13 @@ export default class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this.getInitialNotifications()
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
+    }
   }
 
   getInitialNotifications = () => {
@@ -229,6 +238,7 @@ export default class NotificationFeed extends React.Component {
       <NotificationModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentRule={this.state.activeRule}
@@ -236,6 +246,9 @@ export default class NotificationFeed extends React.Component {
         onErrorCallback={this.onRuleError}
         allowDelete={false}
         themeConfig={this.props.themeConfig}
+        title={
+          this.state.activeRule ? 'Edit Data Alert' : 'Create New Data Alert'
+        }
       />
     )
   }
@@ -244,8 +257,8 @@ export default class NotificationFeed extends React.Component {
     if (this.state.isFetchingFirstNotifications) {
       return (
         <div
+          className="notification-list-loading-container"
           data-test="notification-list"
-          style={{ textAlign: 'center', marginTop: '100px' }}
         >
           Loading...
         </div>
@@ -253,8 +266,8 @@ export default class NotificationFeed extends React.Component {
     } else if (this.state.fetchNotificationsError) {
       return (
         <div
+          className="notification-list-loading-container"
           data-test="notification-list"
-          style={{ textAlign: 'center', marginTop: '100px' }}
         >
           Oh no! Something went wrong while accessing your notifications.
           <div style={{ textAlign: 'center', marginTop: '10px' }}>

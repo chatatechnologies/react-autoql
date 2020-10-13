@@ -53,7 +53,7 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  setStyleVars,
+  setCSSVars,
   supportsRegularPivotTable,
   isColumnNumberType,
   isColumnStringType,
@@ -160,14 +160,10 @@ export default class QueryOutput extends React.Component {
         this.dataConfig = _cloneDeep(this.props.dataConfig)
       }
 
-      const { theme, chartColors } = this.props.themeConfig
+      const { chartColors } = this.props.themeConfig
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
-      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({
-        themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
-      })
+      setCSSVars(this.props.themeConfig)
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(
@@ -214,16 +210,8 @@ export default class QueryOutput extends React.Component {
       this.props.onDataConfigChange({})
     }
 
-    if (
-      _get(prevProps, 'themeConfig.theme') !==
-      _get(this.props, 'themeConfig.theme')
-    ) {
-      const { theme } = this.props.themeConfig
-      this.themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-      setStyleVars({
-        themeStyles: this.themeStyles,
-        prefix: '--react-autoql-output-',
-      })
+    if (_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
 
     if (this.props.queryResponse && !prevProps.queryResponse) {
@@ -710,25 +698,14 @@ export default class QueryOutput extends React.Component {
       return this.renderSingleValueResponse()
     }
 
-    const tableBorderColor =
-      this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-border-color']
-        : DARK_THEME['--react-autoql-messenger-border-color']
-
-    const tableHoverColor =
-      this.props.themeConfig.theme === 'light'
-        ? LIGHT_THEME['--react-autoql-messenger-hover-color']
-        : DARK_THEME['--react-autoql-messenger-hover-color']
-
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
+          themeConfig={this.props.themeConfig}
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
           data={this.pivotTableData}
-          borderColor={tableBorderColor}
-          hoverColor={tableHoverColor}
           onCellClick={this.processCellClick}
           headerFilters={this.pivotHeaderFilters}
           onFilterCallback={this.onTableFilter}
@@ -744,12 +721,11 @@ export default class QueryOutput extends React.Component {
       <Fragment>
         {this.renderAllColumnsHiddenMessage()}
         <ChataTable
+          themeConfig={this.props.themeConfig}
           key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
           data={this.tableData}
-          borderColor={tableBorderColor}
-          hoverColor={tableHoverColor}
           onCellClick={this.processCellClick}
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
@@ -770,11 +746,6 @@ export default class QueryOutput extends React.Component {
       return 'Error: There was no data supplied for this chart'
     }
 
-    const chartThemeConfig = {
-      ...this.props.themeConfig,
-      ...this.themeStyles,
-    }
-
     return (
       <ErrorBoundary>
         <ChataChart
@@ -793,7 +764,7 @@ export default class QueryOutput extends React.Component {
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={chartThemeConfig}
+          themeConfig={this.props.themeConfig}
           changeStringColumnIndex={(index) => {
             if (this.dataConfig.legendColumnIndex === index) {
               this.dataConfig.legendColumnIndex = undefined
@@ -1634,29 +1605,44 @@ export default class QueryOutput extends React.Component {
   }
 
   renderErrorMessage = (error) => {
-    if (typeof error === 'object') {
-      const errorMessage = error.message || errorMessages.GENERAL_QUERY
-      const newErrorMessage = errorMessage.replace(
-        'support@chata.ai',
-        '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
-      )
+    try {
+      if (typeof error === 'object') {
+        const errorMessage = error.message || errorMessages.GENERAL_QUERY
+        const newErrorMessage = errorMessage.replace(
+          'support@chata.ai',
+          '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
+        )
 
-      return (
-        <div>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: `<span>${newErrorMessage}</span>`,
-            }}
-          />
-          <br />
-          <div>Error ID: {error.reference_id}</div>
-        </div>
-      )
+        let isSuccess
+        try {
+          isSuccess = error.reference_id.split('.')[2][0] == 2
+        } catch (error) {
+          isSuccess = false
+        }
+
+        return (
+          <div className="query-output-error-message">
+            <div
+              dangerouslySetInnerHTML={{
+                __html: `<span>${newErrorMessage}</span>`,
+              }}
+            />
+            {!isSuccess && error.reference_id && (
+              <Fragment>
+                <br />
+                <div>Error ID: {error.reference_id}</div>
+              </Fragment>
+            )}
+          </div>
+        )
+      }
+
+      const errorMessage = error || errorMessages.GENERAL_QUERY
+
+      return <div>{errorMessage}</div>
+    } catch (error) {
+      return <div>{errorMessages.GENERAL_QUERY}</div>
     }
-
-    const errorMessage = error || errorMessages.GENERAL_QUERY
-
-    return <div>{errorMessage}</div>
   }
 
   renderResponse = (width, height) => {
@@ -1688,6 +1674,7 @@ export default class QueryOutput extends React.Component {
     if (responseBody.full_suggestion) {
       return (
         <SafetyNetMessage
+          themeConfig={this.props.themeConfig}
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>

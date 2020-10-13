@@ -6,11 +6,11 @@
   user-select: none;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--react-autoql-hover-color);
   }
 
   &.selected {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--react-autoql-hover-color);
   }
 }
 

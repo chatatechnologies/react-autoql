@@ -208,7 +208,7 @@ export default class ChatMessage extends React.Component {
           width={chartWidth}
           demo={this.props.authentication.demo}
           backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-messenger-background-color'
+            '--react-autoql-background-color-primary'
           )}
           // We want to render our own in the parent component
           // so the tooltip doesn't get clipped by the drawer

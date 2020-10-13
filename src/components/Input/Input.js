@@ -45,6 +45,7 @@ export default class Input extends React.Component {
     const nativeProps = {
       ...this.props,
       icon: undefined,
+      themeConfig: undefined,
     }
 
     return (

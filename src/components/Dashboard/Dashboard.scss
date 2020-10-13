@@ -1,5 +1,5 @@
 .react-autoql-dashboard-container {
-  background: var(--react-autoql-dashboard-background-color);
+  background: var(--react-autoql-background-color-secondary);
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -20,7 +20,7 @@
 }
 
 .empty-dashboard-message-container {
-  font-family: var(--react-autoql-dashboard-font-family);
+  font-family: var(--react-autoql-font-family);
   letter-spacing: 0.02em;
   text-align: center;
   padding: 100px;
@@ -29,7 +29,7 @@
 }
 
 .empty-dashboard-new-tile-btn {
-  color: var(--react-autoql-dashboard-accent-color);
+  color: var(--react-autoql-accent-color);
   font-weight: bold;
   cursor: pointer;
 }

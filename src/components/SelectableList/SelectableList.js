@@ -107,6 +107,7 @@ export default class SelectableList extends React.Component {
                   <div key={`list-header-${uuid.v4()}`}>
                     {col.name}
                     <Checkbox
+                      themeConfig={this.props.themeConfig}
                       checked={allItemsChecked}
                       style={{ marginLeft: '10px' }}
                       onChange={() => {
@@ -150,6 +151,7 @@ export default class SelectableList extends React.Component {
               <div>{item.content} </div>
               <div>
                 <Checkbox
+                  themeConfig={this.props.themeConfig}
                   checked={item.checked}
                   onChange={() => {
                     if (

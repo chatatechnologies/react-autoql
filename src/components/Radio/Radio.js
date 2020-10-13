@@ -1,7 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
+
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 
 import './Radio.scss'
 
@@ -9,6 +14,7 @@ export default class Radio extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     options: PropTypes.arrayOf(PropTypes.string),
     onChange: PropTypes.func,
     value: PropTypes.string,
@@ -17,11 +23,22 @@ export default class Radio extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     options: [],
     multiSelect: false,
     value: undefined,
     type: 'original',
     onChange: () => {},
+  }
+
+  componentDidMount = () => {
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
+    }
   }
 
   renderButtonType = () => {

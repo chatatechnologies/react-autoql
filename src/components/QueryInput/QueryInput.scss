@@ -16,11 +16,11 @@
   letter-spacing: 0.04em;
   outline: none !important;
   width: calc(100% - 20px);
-  background: transparent;
   font-family: inherit;
 
   /* Default styles outside of data messenger */
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-background-color-primary);
   color: #5d5d5d;
 }
 .react-autoql-chatbar-input.left-padding {
@@ -95,19 +95,19 @@
 
 /* Autocomplete styles */
 .react-autoql-bar-container .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-input-background-color);
-  border: 1px solid var(--react-autoql-input-border-color);
-  color: var(--react-autoql-input-text-color-primary);
+  background-color: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
 }
 .react-autoql-bar-container .react-autosuggest__suggestion {
-  color: var(--react-autoql-input-text-color-primary);
+  color: var(--react-autoql-text-color-primary);
 }
 .react-autoql-chatbar-input {
-  border: 1px solid var(--react-autoql-input-border-color);
-  color: var(--react-autoql-input-text-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
 }
 .react-autoql-chatbar-input::placeholder {
-  color: var(--react-autoql-input-text-color-placeholder);
+  color: var(--react-autoql-text-color-placeholder);
 }
 .react-autoql-bar-container .react-autosuggest__suggestion {
   cursor: pointer;
@@ -115,7 +115,6 @@
   padding-left: 18px;
   letter-spacing: 0.05em;
   line-height: 22.5px;
-  /* color: var(--react-autoql-messenger-text-color-primary); */
 }
 
 .react-autoql-bar-container .react-autosuggest__suggestion--highlighted {

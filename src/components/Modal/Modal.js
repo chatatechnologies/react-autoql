@@ -1,15 +1,21 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
+import _isEqual from 'lodash.isequal'
 
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
 
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
+
 import './Modal.scss'
 
 export default class Modal extends React.Component {
   static propTypes = {
+    themeConfig: themeConfigType,
     title: PropTypes.string,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
@@ -27,6 +33,7 @@ export default class Modal extends React.Component {
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     title: '',
     isVisible: false,
     width: '80vw',
@@ -45,6 +52,16 @@ export default class Modal extends React.Component {
 
   state = {
     isConfirmCloseModalVisible: false,
+  }
+
+  componentDidMount = () => {
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
+    }
   }
 
   onClose = () => {

@@ -2,6 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
+
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 
 import './Steps.scss'
 
@@ -9,12 +14,14 @@ export default class Steps extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
+    themeConfig: themeConfigType,
     steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
@@ -36,6 +43,14 @@ export default class Steps extends React.Component {
       this.setState({
         activeStep: 0,
       })
+    }
+
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
     }
   }
 

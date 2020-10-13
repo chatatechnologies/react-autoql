@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
@@ -13,9 +14,13 @@ import {
   fetchDataAlerts,
   updateNotificationRuleStatus,
 } from '../../../js/notificationService'
+import { setCSSVars } from '../../../js/Util'
 
-import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+} from '../../../props/defaults'
 
 import './DataAlerts.scss'
 
@@ -24,11 +29,13 @@ export default class DataAlerts extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    themeConfig: themeConfigType,
     onErrorCallback: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
+    themeConfig: themeConfigDefault,
     onErrorCallback: () => {},
   }
 
@@ -44,6 +51,13 @@ export default class DataAlerts extends React.Component {
   componentDidMount = () => {
     this.getDataAlerts('user')
     this.getDataAlerts('project')
+    setCSSVars(this.props.themeConfig)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+      setCSSVars(this.props.themeConfig)
+    }
   }
 
   getDataAlerts = (type) => {
@@ -134,6 +148,7 @@ export default class DataAlerts extends React.Component {
   renderNotificationEditModal = () => {
     return (
       <NotificationModal
+        themeConfig={this.props.themeConfig}
         key={this.COMPONENT_KEY}
         authentication={this.props.authentication}
         isVisible={this.state.isEditModalVisible}
@@ -142,13 +157,16 @@ export default class DataAlerts extends React.Component {
         onSave={this.onRuleSave}
         onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onRuleDelete}
+        title={
+          this.state.activeRule ? 'Edit Data Alert' : 'Create New Data Alert'
+        }
       />
     )
   }
 
   renderNotificationGroupTitle = (title, description, includeAddBtn) => (
     <div className="react-autoql-notification-title-container">
-      <div style={{ paddingLeft: '10px', opacity: 0.8 }}>
+      <div style={{ paddingLeft: '10px' }}>
         <div style={{ fontSize: '17px' }}>{title}</div>
         <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
@@ -217,6 +235,7 @@ export default class DataAlerts extends React.Component {
                       />
                     )}
                     <Checkbox
+                      themeConfig={this.props.themeConfig}
                       type="switch"
                       checked={
                         notification.status === 'ACTIVE' ||
