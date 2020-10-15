@@ -246,8 +246,8 @@ export default class DataAlerts extends React.Component {
                       data-tip={
                         notification.status === 'ACTIVE' ||
                         notification.status === 'WAITING'
-                          ? 'Turn off notification'
-                          : 'Turn on notification'
+                          ? 'Turn Data Alert off'
+                          : 'Turn Data Alert on'
                       }
                       data-for="react-autoql-notification-settings-tooltip"
                       onChange={(e) => {
