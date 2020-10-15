@@ -45,8 +45,6 @@ import {
 
 import SentimentAnalysisPage from './SentimentAnalysisPage'
 
-import topics from './topics.js'
-
 import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
 import './index.css'
@@ -728,10 +726,6 @@ export default class App extends Component {
     } catch (error) {
       console.error(error)
     }
-  }
-
-  getQueryQuickStartTopics = () => {
-    return topics[this.state.activeIntegrator]
   }
 
   renderChartColorsList = () => {
