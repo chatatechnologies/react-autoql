@@ -93,7 +93,7 @@ const allRelatedQueriesParams = {
 }
 
 describe('runQuery', () => {
-  const data = responseTestCases[8]
+  const data = responseTestCases[7]
 
   test('fetches query data successfully with all params provided except safetynet', async () => {
     axios.post.mockImplementationOnce(() => Promise.resolve(data))
@@ -204,7 +204,7 @@ describe('runQuery', () => {
 })
 
 describe('runQueryOnly', () => {
-  const data = responseTestCases[8]
+  const data = responseTestCases[7]
 
   test('fetches query data successfully with all params provided', async () => {
     axios.post.mockImplementationOnce(() => Promise.resolve(data))

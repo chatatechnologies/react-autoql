@@ -10,8 +10,6 @@ import {
   NotificationIcon,
   NotificationFeed,
   DataAlerts,
-  ExpressionBuilder,
-  ScheduleBuilder,
   Icon as ChataIcon,
 } from 'react-autoql'
 import uuid from 'uuid'
@@ -42,18 +40,12 @@ import {
   PlusOutlined,
   RollbackOutlined,
   SaveOutlined,
-  DeleteOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons'
 
 import SentimentAnalysisPage from './SentimentAnalysisPage'
 
 import topics from './topics.js'
-
-import locateLogo from './images/locate_logo.png'
-import purefactsLogo from './images/purefacts_logo.png'
-import spiraLogo from './images/spira-logo.png'
-import vitruviLogo from './images/vitruvi_logo.png'
 
 import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
@@ -182,13 +174,6 @@ export default class App extends Component {
       })
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    const handleImage = document.querySelector('.drawer-handle img')
-    if (handleImage) {
-      handleImage.classList.add(`${this.state.activeIntegrator}`)
-    }
-  }
-
   componentWillUnmount = () => {
     if (this.authTimer) {
       clearTimeout(this.authTimer)
@@ -231,29 +216,11 @@ export default class App extends Component {
   }
 
   getThemeConfigProp = () => {
-    const { activeIntegrator } = this.state
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
-
-    if (this.state.isAuthenticated) {
-      if (activeIntegrator === 'purefacts') {
-        lightAccentColor = '#253340'
-        darkAccentColor = '#253340'
-      }
-
-      if (activeIntegrator === 'spira') {
-        lightAccentColor = '#508bb8'
-        darkAccentColor = '#508bb8'
-      }
-
-      if (activeIntegrator === 'vitruvi') {
-        lightAccentColor = 'rgb(109, 163, 186)'
-        darkAccentColor = 'rgb(109, 163, 186)'
-      }
-    }
 
     return {
       theme: this.state.theme,
@@ -536,23 +503,11 @@ export default class App extends Component {
   getActiveIntegrator = () => {
     const { domain } = this.state
 
-    if (domain.includes('spira')) {
-      return 'spira'
-    } else if (domain.includes('locate')) {
-      return 'locate'
-    } else if (domain.includes('purefacts')) {
-      return 'purefacts'
-    } else if (domain.includes('bluelink')) {
-      return 'bluelink'
-    } else if (domain.includes('lefort')) {
-      return 'lefort'
-    } else if (domain.includes('nbccontest')) {
-      return 'nbcomp'
-    } else if (domain.includes('vitruvi')) {
-      return 'vitruvi'
-    } else if (domain.includes('accounting-demo')) {
+    if (domain.includes('accounting-demo')) {
       return 'demo'
     }
+
+    return undefined
   }
 
   createRadioInputGroup = (title, propName, propValues = [], reload) => {
@@ -1290,20 +1245,6 @@ export default class App extends Component {
   }
 
   renderDataMessenger = () => {
-    let handleImage
-    if (this.state.isAuthenticated) {
-      const { activeIntegrator } = this.state
-      if (activeIntegrator === 'purefacts') {
-        handleImage = purefactsLogo
-      } else if (activeIntegrator === 'locate') {
-        handleImage = locateLogo
-      } else if (activeIntegrator === 'spira') {
-        handleImage = spiraLogo
-      } else if (activeIntegrator === 'vitruvi') {
-        handleImage = vitruviLogo
-      }
-    }
-
     return (
       <DataMessenger
         className={`${this.state.activeIntegrator}`}
@@ -1334,7 +1275,6 @@ export default class App extends Component {
         height={this.state.height}
         title={this.state.title}
         maxMessages={this.state.maxMessages}
-        handleImage={handleImage}
         enableExploreQueriesTab={this.state.enableExploreQueriesTab}
         enableNotificationsTab={this.state.enableNotificationsTab}
         onErrorCallback={this.onError}
@@ -1773,27 +1713,7 @@ export default class App extends Component {
       return null
     }
 
-    // Locate
-    if (this.state.activeIntegrator === 'locate') {
-      return <div className="ui-overlay locate" />
-    }
-
-    // Purefacts
-    if (this.state.activeIntegrator === 'purefacts') {
-      return <div className="ui-overlay purefacts" />
-    }
-
-    // Spira
-    if (this.state.activeIntegrator === 'spira') {
-      return <div className="ui-overlay spira" />
-    }
-
-    // Vitruvi
-    if (this.state.activeIntegrator === 'vitruvi') {
-      return <div className="ui-overlay vitruvi" />
-    }
-
-    // Xero demo
+    // Accounting demo
     if (this.state.activeIntegrator === 'demo') {
       return <div className="ui-overlay demo" />
     }
