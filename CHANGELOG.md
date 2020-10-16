@@ -1,3 +1,31 @@
+# [2.0.0](https://github.com/chatatechnologies/react-autoql/compare/v1.10.0...v2.0.0) (2020-10-16)
+
+
+### Bug Fixes
+
+* **css:** fix css conflicts with integrator portal ([6a758be](https://github.com/chatatechnologies/react-autoql/commit/6a758be89047b3af5aee671261a4fb3f1b75b16a))
+* **date formatting:** display weeks as a string, dayjs formatted wrong after update ([5acc8bc](https://github.com/chatatechnologies/react-autoql/commit/5acc8bc01e1bc8e1317c542e0af57082f4cad525))
+* **notifications:** update remaining copy changes to Data Alerts ([225f96b](https://github.com/chatatechnologies/react-autoql/commit/225f96b72377f92aee4a19894abb94413bd4ecae))
+* **pivot tables:** fix pivot table error when there are null date values ([359e6d9](https://github.com/chatatechnologies/react-autoql/commit/359e6d9d89acb322e104fb0ac732fea5d175aad2))
+
+
+### Features
+
+* **error messages:** add reference ID and email anchor tag to error messages from API ([f734b5f](https://github.com/chatatechnologies/react-autoql/commit/f734b5f4224f39bda3d5065f80cd149f067c0aaf))
+* **notifications:** limit failed poll attempts to 5 ([9978612](https://github.com/chatatechnologies/react-autoql/commit/9978612a564c65d4c20bf55e0345ecc8ffddd252))
+* **notifications:** update all copy and some design based on change requests for notifications ([f312037](https://github.com/chatatechnologies/react-autoql/commit/f31203792d193f77ae8da0975610ea0e3ebf185c))
+* **options toolbar:** view sql in modal instead of copy to clipboard option ([6704459](https://github.com/chatatechnologies/react-autoql/commit/67044594404910dbb86de40a46b4da0682b08254))
+* **query input:** show last query on "up" press ([805514f](https://github.com/chatatechnologies/react-autoql/commit/805514fb8533e7fec5b54f21117a9f2c65c0dc78))
+* **styling:** style single value responses in notifications more like dashboards ([7030b1c](https://github.com/chatatechnologies/react-autoql/commit/7030b1ca36862218319fe994e3937cfde427fa37))
+* **theme:** update light and dark theme to match integrator portal ([4680a8f](https://github.com/chatatechnologies/react-autoql/commit/4680a8fe4871158c12fc68e06444954850e748c6))
+* **themes:** add dark theme for dashboards and notification widgets ([32f9d72](https://github.com/chatatechnologies/react-autoql/commit/32f9d72a1d189d99946c2853517d7519a87d5545))
+* **visualizations:** default to chart for agg queries and table for list queries ([12f5f80](https://github.com/chatatechnologies/react-autoql/commit/12f5f80bdcb265211beba6d2a02831df6d38d56a))
+
+
+### BREAKING CHANGES
+
+* **theme:** Major change in the look of Data Messenger in light mode
+
 # [1.10.0](https://github.com/chatatechnologies/react-autoql/compare/v1.9.0...v1.10.0) (2020-09-11)
 
 
