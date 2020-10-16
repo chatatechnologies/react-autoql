@@ -30,17 +30,17 @@ import {
 } from 'antd'
 
 import {
-  ToolOutlined,
   CloseOutlined,
-  MenuFoldOutlined,
-  ReloadOutlined,
-  StopOutlined,
   EditOutlined,
+  ExclamationCircleOutlined,
+  MenuFoldOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  ReloadOutlined,
   RollbackOutlined,
   SaveOutlined,
-  ExclamationCircleOutlined,
+  StopOutlined,
+  ToolOutlined,
 } from '@ant-design/icons'
 
 import SentimentAnalysisPage from './SentimentAnalysisPage'
