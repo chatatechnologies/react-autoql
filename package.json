@@ -81,6 +81,7 @@
     "react-tabulator": "^0.13.2",
     "react-tiny-popover": "^3.4.5",
     "react-tooltip": "^3.11.1",
+    "recorder-js": "^1.0.7",
     "sql-formatter": "^2.3.3",
     "tabulator-tables": "4.7.2",
     "throttle-debounce": "^2.1.0",

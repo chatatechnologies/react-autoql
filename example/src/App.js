@@ -44,6 +44,7 @@ import {
 } from '@ant-design/icons'
 
 import SentimentAnalysisPage from './SentimentAnalysisPage'
+import SpeechToTextPage from './SpeechToTextPage'
 
 import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
@@ -1539,10 +1540,12 @@ export default class App extends Component {
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
         )}
+        {/* Comment out for now
         {this.state.isAuthenticated && (
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
-        )}
+        )} */}
         <Menu.Item key="reviews">Reviews</Menu.Item>
+        <Menu.Item key="speech">Speech Training</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
         )}
@@ -1754,6 +1757,10 @@ export default class App extends Component {
       }
       case 'reviews': {
         pageToRender = <SentimentAnalysisPage />
+        break
+      }
+      case 'speech': {
+        pageToRender = <SpeechToTextPage />
         break
       }
       case 'dashboard': {

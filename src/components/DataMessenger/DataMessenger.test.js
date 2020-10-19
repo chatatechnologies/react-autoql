@@ -16,7 +16,9 @@ const defaultProps = {
   handleStyles: {},
   shiftScreen: false,
   showMask: true,
-  apiKey: 'test-apikey',
+  authentication: {
+    apiKey: 'test-apikey',
+  },
   projectId: 500,
   onHandleClick: () => {},
   onVisibleChange: () => {},
@@ -33,7 +35,9 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with only token prop', () => {
-    const wrapper = shallow(<DataMessenger apiKey="apiKey" />)
+    const wrapper = shallow(
+      <DataMessenger authentication={{ token: 'token' }} />
+    )
     expect(wrapper.exists()).toBe(true)
   })
   test('renders correctly with default props', () => {
@@ -48,14 +52,9 @@ describe('props', () => {
   })
   describe('showMask', () => {
     test('showMask false does not show mask on drawer open', () => {
-      const html = mount(<DataMessenger token="token" showMask={false} />)
+      const html = mount(<DataMessenger showMask={false} />)
       const mask = html.find('.drawer-mask')
       expect(mask.exists()).toBe(false)
-    })
-    test('showMask true shows mask on drawer open', () => {
-      const html = mount(<DataMessenger token="token" showMask={true} />)
-      const mask = html.find('.drawer-mask')
-      expect(mask.exists()).toBe(true)
     })
   })
   describe('placement', () => {
