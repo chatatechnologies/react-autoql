@@ -2,35 +2,40 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import Recorder from 'recorder-js'
+import _cloneDeep from 'lodash.clonedeep'
+// import linear16 from 'linear16'
 
 import { Icon } from '../Icon'
 
+import { setCSSVars } from '../../js/Util'
+import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
+import { authenticationType, themeConfigType } from '../../props/types'
+
 import './SpeechToTextButton.scss'
 
-export default class SppechToTextBtn extends React.Component {
-  static propTypes = {}
+export default class SpeechToTextBtn extends React.Component {
+  static propTypes = {
+    authentication: authenticationType,
+    themeConfig: themeConfigType,
+  }
 
-  static defaultProps = {}
+  static defaultProps = {
+    authentication: authenticationDefault,
+    themeConfig: themeConfigDefault,
+  }
 
   state = {
     isRecording: false,
   }
 
   componentDidMount = () => {
+    setCSSVars(this.props.themeConfig)
     this.initializeRecorder()
-    // navigator.mediaDevices
-    //   .getUserMedia({ audio: true })
-    //   .then((stream) => this.recorder.init(stream))
-    //   .catch((err) => console.error('Uh oh... unable to get stream...', err))
   }
 
-  componentDidUpdate = (prevProps) => {
-    // if (this.props.finalTranscript !== prevProps.finalTranscript) {
-    //   this.props.onFinalTranscript(this.props.finalTranscript)
-    // } else if (this.props.transcript !== prevProps.transcript) {
-    //   this.props.onTranscriptChange(this.props.transcript)
-    // } else if (this.props.interimTranscript !== prevProps.interimTranscript) {
-    //   this.props.onTranscriptChange(this.props.interimTranscript)
+  componentWillUnmount = () => {
+    // if (this.timer) {
+    //   clearTimeout(this.timer)
     // }
   }
 
@@ -43,18 +48,45 @@ export default class SppechToTextBtn extends React.Component {
 
     if (!this.recorder) {
       this.recorder = new Recorder(this.audioContext, {
+        numChannels: 1,
+        mimeType: 'audio/webm',
         // An array of 255 Numbers
         // You can use this to visualize the audio stream
         // If you use react, check out react-wave-stream
         // onAnalysed: (data) => console.log(data),
       })
+
+      // this.recorder.microphoneConfig.numChannels = 1
+      console.log('recorder object', this.recorder)
     } else {
       this.recorder.audioContext = this.audioContext
     }
   }
 
+  convertoFloat32ToInt16 = (buffer) => {
+    let length = buffer.length //Buffer
+    const buf = new Int16Array(length / 3)
+
+    while (length--) {
+      if (length == -1) break
+
+      if (buffer[length] * 0xffff > 32767) buf[length] = 32767
+      else if (buffer[length] * 0xffff < -32768) buf[length] = -32768
+      else buf[length] = buffer[length] * 0xffff
+    }
+    return buf.buffer
+  }
+
+  // encodeLinear16 = (blob) => {
+  //   linear16(blob, './output.wav')
+  // }
+
   startRecording = () => {
+    this.setState({ isRecording: true })
     const self = this
+    // this.timer = setTimeout(() => {
+    //   this.stopRecording()
+    // }, 10000)
 
     console.log('recorder object', this.recorder)
     console.log('media devices', navigator.mediaDevices)
@@ -79,7 +111,7 @@ export default class SppechToTextBtn extends React.Component {
             .catch(function(err) {
               console.log('getusermedia exception caught:', err)
             })
-        }, 1000)
+        })
       } else {
         console.error('User denied microphone permission')
         alert(
@@ -98,13 +130,33 @@ export default class SppechToTextBtn extends React.Component {
     // })
   }
 
+  blobToFile = (theBlob) => {
+    //A Blob() is almost a File() - it's just missing the two properties below which we will add
+    theBlob.lastModifiedDate = new Date()
+    theBlob.name = 'speech.wav'
+    return theBlob
+  }
+
   stopRecording = () => {
+    // if (this.timer) {
+    //   clearTimeout(this.timer)
+    // }
+
     this.setState({ isRecording: false })
     if (this.recorder.audioRecorder) {
       this.recorder
         .stop()
         .then(({ blob, buffer }) => {
           this.download(blob)
+          // const linear16Buffer = this.convertoFloat32ToInt16(buffer)
+          // console.log('linear 16 buffer', linear16Buffer)
+          console.log('original buffer', _cloneDeep(buffer))
+
+          // const downsampledBuffer = this.downSample(buffer, 16000)
+
+          console.log('downsampled buffer', downsampledBuffer)
+
+          this.props.onRecordStop(this.blobToFile(blob))
         })
         .catch((error) => console.error(error))
     } else {
@@ -138,6 +190,41 @@ export default class SppechToTextBtn extends React.Component {
 
   download = (blob) => {
     Recorder.download(blob, 'my-audio-file') // downloads a .wav file
+  }
+
+  downSample = (buffer, rate) => {
+    const sampleRate = this.audioContext.sampleRate
+    if (rate == sampleRate) {
+      return buffer
+    }
+    if (rate > sampleRate) {
+      throw 'downsampling rate show be smaller than original sample rate'
+    }
+    var sampleRateRatio = sampleRate / rate
+    var newLength = Math.round(buffer.length / sampleRateRatio)
+    var result = new Float32Array(newLength)
+    var offsetResult = 0
+    var offsetBuffer = 0
+    while (offsetResult < result.length) {
+      var nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio)
+      // Use average value of skipped samples
+      var accum = 0,
+        count = 0
+      for (
+        var i = offsetBuffer;
+        i < nextOffsetBuffer && i < buffer.length;
+        i++
+      ) {
+        accum += buffer[i]
+        count++
+      }
+      result[offsetResult] = accum / count
+      // Or you can simply get rid of the skipped samples:
+      // result[offsetResult] = buffer[nextOffsetBuffer];
+      offsetResult++
+      offsetBuffer = nextOffsetBuffer
+    }
+    return result
   }
 
   onMouseDown = () => {

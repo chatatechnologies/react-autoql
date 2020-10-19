@@ -1545,7 +1545,9 @@ export default class App extends Component {
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
         )} */}
         <Menu.Item key="reviews">Reviews</Menu.Item>
-        <Menu.Item key="speech">Speech Training</Menu.Item>
+        {this.state.isAuthenticated && (
+          <Menu.Item key="speech">Speech Training</Menu.Item>
+        )}
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
         )}
@@ -1760,7 +1762,12 @@ export default class App extends Component {
         break
       }
       case 'speech': {
-        pageToRender = <SpeechToTextPage />
+        pageToRender = (
+          <SpeechToTextPage
+            authentication={this.getAuthProp()}
+            themeConfig={this.getThemeConfigProp()}
+          />
+        )
         break
       }
       case 'dashboard': {

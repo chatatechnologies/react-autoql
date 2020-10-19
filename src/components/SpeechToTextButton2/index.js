@@ -1,1 +1,1 @@
-export { default as SpeechToTextButton } from './SpeechToTextButton'
+export { default as SpeechToTextBtn } from './SpeechToTextButton'
