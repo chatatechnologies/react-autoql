@@ -52,12 +52,9 @@ export default class SpeechToTextPage extends React.Component {
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
     data.append('file', blob, 'speech.wav')
-    console.log(data)
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
-        // 'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
-        // 'Referrer-Policy': 'unsafe-url',
       },
       timeout: 30000,
     }
