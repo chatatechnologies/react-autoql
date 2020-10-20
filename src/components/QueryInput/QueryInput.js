@@ -27,7 +27,7 @@ import {
 } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
-import SpeechToTextButton from '../SpeechToTextButton2/SpeechToTextButton.js'
+import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 
 import './QueryInput.scss'
