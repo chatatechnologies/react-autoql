@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
 import _ from 'lodash'
-import { Input, Button, Form } from 'antd'
+import { Input, Button, Form, Table } from 'antd'
 import { SpeechToTextBtn, fetchQueryTips } from 'react-autoql'
 
 export default class SpeechToTextPage extends React.Component {
@@ -13,6 +13,7 @@ export default class SpeechToTextPage extends React.Component {
     token: undefined,
     queryList: [],
     currentQuery: 0,
+    resultHistory: [],
   }
 
   componentDidMount = () => {
@@ -61,8 +62,26 @@ export default class SpeechToTextPage extends React.Component {
       timeout: 30000,
     }
     axios.post(url, data, config).then((response) => {
+      const newResultHistory = [
+        ...this.state.resultHistory,
+        {
+          query: this.state.queryList[this.state.currentQuery],
+          an4:
+            response.data[
+              'translated text from checkpoint an4_pretrained_model.pth'
+            ],
+          librispeech:
+            response.data[
+              'translated text from checkpoint librispeech_pretrained_model.pth'
+            ],
+          ted:
+            response.data[
+              'translated text from checkpoint ted_pretrained_model.pth'
+            ],
+        },
+      ]
       this.setState({
-        lastResult: response.data['translated text'],
+        resultHistory: newResultHistory,
         currentQuery: this.state.currentQuery + 1,
       })
     })
@@ -72,6 +91,29 @@ export default class SpeechToTextPage extends React.Component {
     const tailLayout = {
       wrapperCol: { offset: 8, span: 16 },
     }
+
+    const columns = [
+      {
+        title: 'Query Text',
+        dataIndex: 'query',
+        key: 'query',
+      },
+      {
+        title: 'an4 pretrained model',
+        dataIndex: 'an4',
+        key: 'an4',
+      },
+      {
+        title: 'librispeech pretrained model',
+        dataIndex: 'librispeech',
+        key: 'librispeech',
+      },
+      {
+        title: 'ted pretrained model',
+        dataIndex: 'ted',
+        key: 'ted',
+      },
+    ]
 
     return (
       <div style={{ padding: '20px' }}>
@@ -84,6 +126,7 @@ export default class SpeechToTextPage extends React.Component {
               />
               <div>{this.state.queryList[this.state.currentQuery]}</div>
               <Button
+                style={{ marginTop: '20px' }}
                 onClick={() => {
                   this.setState({ currentQuery: this.state.currentQuery + 1 })
                 }}
@@ -91,14 +134,15 @@ export default class SpeechToTextPage extends React.Component {
                 Skip
               </Button>
             </div>
-            {this.state.currentQuery > 0 && (
-              <div>
-                <div>
-                  Query: {this.state.queryList[this.state.currentQuery - 1]}
-                </div>
-                <div>Result: {this.state.lastResult}</div>
+            {
+              <div style={{ marginTop: '50px' }}>
+                <Table
+                  dataSource={this.state.resultHistory}
+                  columns={columns}
+                  pagination={false}
+                />
               </div>
-            )}
+            }
           </Fragment>
         ) : (
           <Form
