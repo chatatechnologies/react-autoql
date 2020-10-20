@@ -1256,7 +1256,8 @@ export default class App extends Component {
         showHandle={this.state.showHandle}
         placement={
           this.state.currentPage === 'drawer' ||
-          this.state.currentPage === 'dashboard'
+          this.state.currentPage === 'dashboard' ||
+          this.state.currentPage === 'speech'
             ? this.state.placement
             : 'bottom'
         }

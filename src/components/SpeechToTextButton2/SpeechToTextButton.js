@@ -58,7 +58,7 @@ export default class SpeechToTextBtn extends React.Component {
     this.setState({ isRecording: false })
     this.recordAudio.stopRecording(() => {
       let blob = this.recordAudio.getBlob()
-      this.props.onRecordStop(this.blobToFile(blob))
+      this.props.onRecordStop(this.blobToFile(blob), blob)
     })
   }
 

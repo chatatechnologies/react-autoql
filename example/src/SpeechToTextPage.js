@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import axios from 'axios'
 import _ from 'lodash'
 import { Input, Button, Form, Table } from 'antd'
+import { PlayCircleOutlined } from '@ant-design/icons'
 import { SpeechToTextBtn, fetchQueryTips } from 'react-autoql'
 
 export default class SpeechToTextPage extends React.Component {
@@ -48,10 +49,16 @@ export default class SpeechToTextPage extends React.Component {
     }
   }
 
-  sendWavFile = (blob) => {
+  replayBlob = (blob) => {
+    const blobURL = window.URL.createObjectURL(blob)
+    const audio0 = new Audio(blobURL)
+    audio0.play()
+  }
+
+  sendWavFile = (file, blob) => {
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
-    data.append('file', blob, 'speech.wav')
+    data.append('file', file, 'speech.wav')
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
@@ -63,6 +70,16 @@ export default class SpeechToTextPage extends React.Component {
         ...this.state.resultHistory,
         {
           query: this.state.queryList[this.state.currentQuery],
+          audio: (
+            <Button
+              shape="circle"
+              type="primary"
+              onClick={() => {
+                this.replayBlob(blob)
+              }}
+              icon={<PlayCircleOutlined />}
+            ></Button>
+          ),
           an4:
             response.data[
               'translated text from checkpoint an4_pretrained_model.pth'
@@ -94,6 +111,11 @@ export default class SpeechToTextPage extends React.Component {
         title: 'Query Text',
         dataIndex: 'query',
         key: 'query',
+      },
+      {
+        title: 'WAV',
+        dataIndex: 'audio',
+        key: 'audio',
       },
       {
         title: 'an4 pretrained model',
