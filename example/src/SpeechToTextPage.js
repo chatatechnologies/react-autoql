@@ -24,8 +24,8 @@ export default class SpeechToTextPage extends React.Component {
       pageNumber: 1,
     }).then((response) => {
       if (_.get(response, 'data.data.items.length')) {
-        const random10 = _.shuffle(response.data.data.items).slice(0, 10)
-        this.setState({ queryList: random10 })
+        const randomized = _.shuffle(response.data.data.items)
+        this.setState({ queryList: randomized })
       }
     })
   }
@@ -114,22 +114,27 @@ export default class SpeechToTextPage extends React.Component {
 
     return (
       <div style={{ padding: '20px' }}>
-        {this.state.isAuthenticated && this.state.queryList.length ? (
+        {this.state.isAuthenticated ? (
           <Fragment>
             <div style={{ padding: '5px', textAlign: 'center' }}>
               <SpeechToTextBtn
                 themeConfig={this.props.themeConfig}
                 onRecordStop={this.sendWavFile}
               />
-              <div>{this.state.queryList[this.state.currentQuery]}</div>
-              <Button
-                style={{ marginTop: '20px' }}
-                onClick={() => {
-                  this.setState({ currentQuery: this.state.currentQuery + 1 })
-                }}
-              >
-                Skip
-              </Button>
+              <div>
+                {this.state.queryList[this.state.currentQuery] ||
+                  'Say anything!'}
+              </div>
+              {!!this.state.queryList.length && (
+                <Button
+                  style={{ marginTop: '20px' }}
+                  onClick={() => {
+                    this.setState({ currentQuery: this.state.currentQuery + 1 })
+                  }}
+                >
+                  Skip
+                </Button>
+              )}
             </div>
             {
               <div style={{ marginTop: '50px' }}>

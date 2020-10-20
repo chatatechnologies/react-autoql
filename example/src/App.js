@@ -1545,9 +1545,7 @@ export default class App extends Component {
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
         )} */}
         <Menu.Item key="reviews">Reviews</Menu.Item>
-        {this.state.isAuthenticated && (
-          <Menu.Item key="speech">Speech Training</Menu.Item>
-        )}
+        <Menu.Item key="speech">Speech Training</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
         )}
