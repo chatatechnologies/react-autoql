@@ -31,6 +31,6 @@
   "engines": {
     "node": ">=10.15.1",
     "npm": "^6.0.1"
-  },
+   },
   "cacheDirectories": []
 }
