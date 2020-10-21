@@ -24,14 +24,12 @@ import {
   getDefaultDisplayType,
   capitalizeFirstChar,
 } from '../../../js/Util'
-import { getScheduleDescription } from '../helpers'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
 } from '../../../props/defaults'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import './NotificationItem.scss'
 
@@ -183,30 +181,6 @@ export default class NotificationItem extends React.Component {
       return `${dayjs.unix(timestamp).format('MMMM Do')} at ${time}`
     }
     return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
-  }
-
-  getFrequencyDescription = () => {
-    const { notification } = this.props
-    // category, "SINGLE_EVENT" or "REPEAT_EVENT"
-    // frequency, "DAY" "WEEK" "MONTH" or "YEAR"
-    // repeat, TRUE or FALSE
-    // selection, "LIST OF MONTH NUMBERS OR WEEK NUMBERS"
-
-    const category = notification.notification_type
-    const frequency = notification.reset_period
-    const repeat = !!notification.reset_period
-    const selection =
-      category === 'REPEAT_EVENT'
-        ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP, we will probably get rid of this
-        : null
-
-    const description = getScheduleDescription(
-      category,
-      frequency,
-      repeat,
-      selection
-    )
-    return description
   }
 
   renderAlertColorStrip = () => (
@@ -395,10 +369,6 @@ export default class NotificationItem extends React.Component {
                 expression={_get(notification, 'rule_expression')}
                 readOnly
               />
-              <div className="react-autoql-notification-details-title">
-                Description:
-              </div>
-              <div>{this.getFrequencyDescription()}</div>
             </div>
           )}
         </div>
