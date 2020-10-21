@@ -30,7 +30,7 @@ import {
   autoQLConfigDefault,
   authenticationDefault,
 } from '../../props/defaults'
-import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
@@ -62,6 +62,8 @@ import {
   getPadding,
 } from '../../js/Util.js'
 
+import { sendSuggestion } from '../../js/queryService'
+
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 
@@ -85,6 +87,7 @@ export default class QueryOutput extends React.Component {
   static propTypes = {
     queryResponse: shape({}),
     queryInputRef: instanceOf(QueryInput),
+    authentication: authenticationType,
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     authentication: authenticationType,
@@ -109,9 +112,11 @@ export default class QueryOutput extends React.Component {
     onDataConfigChange: func,
     onDisplayTypeUpdate: func,
     onColumnsUpdate: func,
+    onNoneOfTheseClick: func,
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
@@ -141,6 +146,7 @@ export default class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
+    onNoneOfTheseClick: undefined,
   }
 
   state = {
@@ -402,7 +408,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderSuggestionMessage = (suggestions) => {
+  renderSuggestionMessage = (suggestions, queryId) => {
     let suggestionListMessage
 
     try {
@@ -417,6 +423,7 @@ export default class QueryOutput extends React.Component {
                   this.onSuggestionClick({
                     query: e.target.value,
                     source: 'suggestion',
+                    queryId,
                   })
                 }}
                 value={this.state.suggestionSelection}
@@ -440,6 +447,7 @@ export default class QueryOutput extends React.Component {
                           query: suggestion,
                           isButtonClick: true,
                           source: 'suggestion',
+                          queryId,
                         })
                       }
                       className="react-autoql-suggestion-btn"
@@ -1576,13 +1584,23 @@ export default class QueryOutput extends React.Component {
 
   onSuggestionClick = ({
     query,
+    queryId,
     userSelection,
     isButtonClick,
     skipSafetyNet,
     source,
   }) => {
+    sendSuggestion({
+      ...this.props.authentication,
+      queryId,
+      suggestion: query,
+    })
     if (query === 'None of these') {
-      this.setState({ customResponse: 'Thank you for your feedback.' })
+      if (this.props.onNoneOfTheseClick) {
+        this.props.onNoneOfTheseClick()
+      } else {
+        this.setState({ customResponse: 'Thank you for your feedback.' })
+      }
     } else {
       if (this.props.onSuggestionClick) {
         this.props.onSuggestionClick({
@@ -1705,7 +1723,10 @@ export default class QueryOutput extends React.Component {
 
     const isSuggestionList = !!responseData.items
     if (isSuggestionList) {
-      return this.renderSuggestionMessage(responseData.items)
+      return this.renderSuggestionMessage(
+        responseData.items,
+        responseData.query_id
+      )
     }
 
     // This is not an error. There is just no data in the DB

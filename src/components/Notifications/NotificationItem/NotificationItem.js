@@ -355,6 +355,7 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
+                    authentication={this.props.authentication}
                     ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}

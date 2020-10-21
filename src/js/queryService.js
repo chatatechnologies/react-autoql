@@ -335,6 +335,32 @@ export const setColumnVisibility = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
+export const sendSuggestion = ({
+  queryId,
+  suggestion,
+  apiKey,
+  domain,
+  token,
+}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
+  const data = { suggestion }
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
 export const fetchQueryTips = ({
   keywords,
   pageSize,

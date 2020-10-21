@@ -780,6 +780,14 @@ export default class DataMessenger extends React.Component {
     }
   }
 
+  onNoneOfTheseClick = () => {
+    this.setState({ isChataThinking: true })
+    setTimeout(() => {
+      this.setState({ isChataThinking: false })
+      this.addResponseMessage({ content: 'Thank you for your feedback' })
+    }, 1000)
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -827,6 +835,7 @@ export default class DataMessenger extends React.Component {
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
                 />
               )
             })}

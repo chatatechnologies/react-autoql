@@ -830,6 +830,7 @@ export default class DashboardTile extends React.Component {
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <QueryOutput
+            authentication={this.props.authentication}
             themeConfig={this.props.themeConfig}
             autoQLConfig={this.props.autoQLConfig}
             dataFormatting={this.props.dataFormatting}
