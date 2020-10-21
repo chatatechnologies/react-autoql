@@ -191,23 +191,9 @@ export default class NotificationModal extends React.Component {
       title: titleInput,
       query: dataReturnQueryInput,
       message: messageInput,
-      notification_type: scheduleData.frequencyCategorySelectValue,
       expression: expressionJSON,
-      reset_period:
-        scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
-          ? null
-          : scheduleData.frequencySelectValue,
-      // Commenting out for MVP
-      // day_numbers:
-      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
-      //     ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP
-      //     : null,
-      // month_number: [],
-      // run_times: [],
-      // cycle:
-      //   scheduleData.frequencyCategorySelectValue === 'REPEAT_EVENT'
-      //     ? 'WEEK'
-      //     : null,
+      notification_type: scheduleData.notificationType,
+      reset_period: scheduleData.resetPeriod,
     }
 
     return newRule

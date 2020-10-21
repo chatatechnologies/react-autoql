@@ -3,14 +3,8 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import uuid from 'uuid'
 
-import { Select } from '../../Select'
 import { Radio } from '../../Radio'
-import { Checkbox } from '../../Checkbox'
-import { WeekSelect } from '../../DateSelect/WeekSelect'
-import { MonthSelect } from '../../DateSelect/MonthSelect'
-import { YearSelect } from '../../DateSelect/YearSelect'
 
-import { getScheduleDescription } from '../helpers'
 import { themeConfigType } from '../../../props/types'
 import { themeConfigDefault } from '../../../props/defaults'
 
@@ -36,15 +30,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   state = {
-    frequencyCategorySelectValue: _get(this.props.rule, 'notification_type'),
-    frequencySelectValue: _get(this.props.rule, 'reset_period', 'MONTH'),
-
-    // Commenting out for MVP
-    // everyCheckboxValue:
-    //   rule.notification_type === 'SINGLE_EVENT' && !!rule.reset_period,
-    // weekSelectValue: [2],
-    // monthSelectValue: [1],
-    // yearSelectValue: [1],
+    frequencySelectValue: undefined,
   }
 
   componentDidMount = () => {
@@ -55,154 +41,35 @@ export default class ScheduleBuilder extends React.Component {
     if (this.isComplete() !== this.isComplete(prevState)) {
       this.props.onCompletedChange(this.isComplete())
     }
-
-    if (
-      this.state.frequencyCategorySelectValue !==
-      prevState.frequencyCategorySelectValue
-    ) {
-      // Reset checkbox and frequency select values
-      this.setState({
-        frequencySelectValue: 'MONTH',
-
-        // Commenting out for MVP
-        // everyCheckboxValue: false,
-        // weekSelectValue: [2],
-        // monthSelectValue: [1],
-        // yearSelectValue: [1],
-      })
-    }
   }
 
   isComplete = (state) => {
-    if (!state) {
-      return !!this.state.frequencyCategorySelectValue
+    if (state) {
+      return !!state.frequencySelectValue
     }
-    return !!state.frequencyCategorySelectValue
+
+    return !!this.state.frequencySelectValue
   }
 
   getData = () => {
-    const {
-      frequencyCategorySelectValue,
-      everyCheckboxValue,
-      frequencySelectValue,
-    } = this.state
+    const { frequencySelectValue } = this.state
+    let notificationType = 'SINGLE_EVENT'
+    let resetPeriod = null
+
+    if (frequencySelectValue === 'Immediately') {
+      notificationType = 'REPEAT_EVENT'
+    } else if (frequencySelectValue === 'Daily') {
+      resetPeriod = 'DAY'
+    } else if (frequencySelectValue === 'Weekly') {
+      resetPeriod = 'WEEK'
+    } else if (frequencySelectValue === 'Monthly') {
+      resetPeriod = 'MONTH'
+    }
 
     return {
-      frequencyCategorySelectValue,
-      everyCheckboxValue,
-      frequencySelectValue,
+      notificationType,
+      resetPeriod,
     }
-  }
-
-  renderRepeatCheckbox = (label) => {
-    return (
-      <Checkbox
-        themeConfig={this.props.themeConfig}
-        label={label}
-        className="frequency-repeat-checkbox"
-        checked={this.state.everyCheckboxValue}
-        onChange={(e) => {
-          this.setState({ everyCheckboxValue: e.target.checked })
-        }}
-      />
-    )
-  }
-
-  getRepeatTextFromValue = (value) => {
-    if (value === 'DAY') {
-      return 'Daily'
-    } else if (value === 'WEEK') {
-      return 'Weekly'
-    } else if (value === 'MONTH') {
-      return 'Monthly'
-    } else if (value === 'YEAR') {
-      return 'Yearly'
-    }
-
-    return undefined
-  }
-
-  getRepeatValueFromText = (text) => {
-    if (text === 'Daily') {
-      return 'DAY'
-    } else if (text === 'Weekly') {
-      return 'WEEK'
-    } else if (text === 'Monthly') {
-      return 'MONTH'
-    } else if (text === 'Yeary') {
-      return 'YEAR'
-    }
-
-    return undefined
-  }
-
-  renderFrequencySelector = (options) => {
-    return (
-      <Radio
-        themeConfig={this.props.themeConfig}
-        options={[
-          'Daily',
-          'Weekly',
-          'Monthly',
-          // Commenting out for MVP
-          // Yearly
-        ]}
-        value={this.getRepeatTextFromValue(this.state.frequencySelectValue)}
-        type="original"
-        onChange={(option) =>
-          this.setState({
-            frequencySelectValue: this.getRepeatValueFromText(option),
-          })
-        }
-      />
-    )
-  }
-
-  renderWeekSelector = () => (
-    <WeekSelect
-      multiSelect
-      value={this.state.weekSelectValue}
-      onChange={(value) => this.setState({ weekSelectValue: value })}
-    />
-  )
-
-  renderMonthSelector = () => (
-    <MonthSelect
-      multiSelect
-      value={this.state.monthSelectValue}
-      onChange={(value) => this.setState({ monthSelectValue: value })}
-    />
-  )
-
-  renderYearSelector = () => (
-    <YearSelect
-      multiSelect
-      value={this.state.yearSelectValue}
-      onChange={(value) => this.setState({ yearSelectValue: value })}
-    />
-  )
-
-  renderDateSelector = (type) => {
-    let selector
-    switch (type) {
-      case 'WEEK': {
-        selector = this.renderWeekSelector()
-        break
-      }
-      case 'MONTH': {
-        selector = this.renderMonthSelector()
-        break
-      }
-      case 'YEAR': {
-        selector = this.renderYearSelector()
-        break
-      }
-      default: {
-        return null
-      }
-    }
-
-    return <div className="frequency-date-select-container">{selector}</div>
   }
 
   renderFrequencyDescription = () => {
@@ -210,104 +77,42 @@ export default class ScheduleBuilder extends React.Component {
       return null
     }
 
-    let selection
-    if (this.state.frequencySelectValue === 'WEEK') {
-      selection = this.state.weekSelectValue
-    } else if (this.state.frequencySelectValue === 'MONTH') {
-      selection = this.state.monthSelectValue
-    } else if (this.state.frequencySelectValue === 'YEAR') {
-      selection = this.state.yearSelectValue
-    }
+    const selection = this.state.frequencySelectValue
 
-    const description = getScheduleDescription(
-      this.state.frequencyCategorySelectValue,
-      this.state.frequencySelectValue,
-      // Commenting out for MVP
-      // this.state.everyCheckboxValue,
-      selection
-    )
+    let description = null
+    if (selection === 'Daily') {
+      description =
+        'You will be notified as soon as this happens. If the Alert is triggered multiple times, you will only be notified a maximum of once per day.'
+    } else if (selection === 'Monthly') {
+      description =
+        'You will be notified as soon as this happens. If the Alert is triggered multiple times, you will only be notified on a monthly basis.'
+    } else if (selection === 'Weekly') {
+      description =
+        'You will be notified as soon as this happens. If the Alert is triggered multiple times, you will only be notified on a weekly basis.'
+    } else if (selection === 'Immediately') {
+      description =
+        'You will be notified as soon as this happens, any time this happens.'
+    }
 
     return <div className="frequency-description-box">{description}</div>
-  }
-
-  getFrequencyValueFromText = (text) => {
-    if (text === 'Once, when this happens') {
-      return 'SINGLE_EVENT'
-    } else if (text === 'Every time this happens') {
-      return 'REPEAT_EVENT'
-    }
-
-    return undefined
-  }
-
-  getFrequencyTextFromValue = (value) => {
-    if (value === 'SINGLE_EVENT') {
-      return 'Once, when this happens'
-    } else if (value === 'REPEAT_EVENT') {
-      return 'Every time this happens'
-    }
-
-    return undefined
   }
 
   render = () => {
     return (
       <div className="notification-frequency-step" data-test="schedule-builder">
         <div className="frequency-settings-container">
-          <p>Trigger Data Alert:</p>
+          <p>You will be notified as soon as the Alert conditions are met.</p>
+          <p>Reset Alert to run:</p>
           <Radio
             themeConfig={this.props.themeConfig}
-            options={[
-              'Once, when this happens',
-              'Every time this happens',
-              // Commenting out for MVP
-              // 'On a schedule'
-            ]}
+            options={['Immediately', 'Daily', 'Weekly', 'Monthly']}
             selectionPlaceholder="Select a frequency"
-            value={this.getFrequencyTextFromValue(
-              this.state.frequencyCategorySelectValue
-            )}
+            value={this.state.frequencySelectValue}
             type="original"
             onChange={(option) =>
-              this.setState({
-                frequencyCategorySelectValue: this.getFrequencyValueFromText(
-                  option
-                ),
-              })
+              this.setState({ frequencySelectValue: option })
             }
           />
-          {this.state.frequencyCategorySelectValue === 'SINGLE_EVENT' && (
-            <div className="frequency-category-select">
-              <p>Repeat</p>
-              {this.renderFrequencySelector()}
-              {
-                // Commenting out for MVP
-                // {this.state.frequencySelectValue !== 'DAY' && (
-                //   <span className="frequency-repeat-follow-text"> on:</span>
-                // )}
-                // {this.renderDateSelector(this.state.frequencySelectValue)}
-              }
-            </div>
-          )}
-          {
-            // Commenting out for MVP
-            //   this.state.frequencyCategorySelectValue === 'REPEAT_EVENT' && (
-            //   <div className="frequency-category-select">
-            //     {this.renderRepeatCheckbox('Only on')}
-            //     {this.state.everyCheckboxValue && (
-            //       <Fragment>
-            //         {this.renderFrequencySelector([
-            //           { value: 'WEEK', label: 'Certain days of the week' },
-            //           { value: 'MONTH', label: 'Certain days of the month' },
-            //           { value: 'YEAR', label: 'Certain months of the year' }
-            //         ])}
-            //         {this.state.frequencySelectValue !== 'DAY' &&
-            //           this.renderDateSelector(this.state.frequencySelectValue)}
-            //       </Fragment>
-            //     )}
-            //   </div>
-            // )
-          }
         </div>
         <div className="frequency-description-box-container">
           {this.renderFrequencyDescription()}
