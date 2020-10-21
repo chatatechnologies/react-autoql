@@ -34,6 +34,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   componentDidMount = () => {
+    this.setInitialFrequencyValue()
     this.props.onCompletedChange(this.isComplete())
   }
 
@@ -49,6 +50,28 @@ export default class ScheduleBuilder extends React.Component {
     }
 
     return !!this.state.frequencySelectValue
+  }
+
+  setInitialFrequencyValue = () => {
+    if (!this.props.rule) {
+      return
+    }
+
+    const notificationType = this.props.rule.notification_type
+    const resetPeriod = this.props.rule.reset_period
+    let frequencySelectValue = undefined
+
+    if (notificationType === 'REPEAT_EVENT') {
+      frequencySelectValue = 'Immediately'
+    } else if (resetPeriod === 'DAY') {
+      frequencySelectValue = 'Daily'
+    } else if (resetPeriod === 'WEEK') {
+      frequencySelectValue = 'Weekly'
+    } else if (resetPeriod === 'MONTH') {
+      frequencySelectValue = 'Monthly'
+    }
+
+    this.setState({ frequencySelectValue })
   }
 
   getData = () => {
