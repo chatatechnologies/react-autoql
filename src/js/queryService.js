@@ -68,7 +68,13 @@ const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
 
-export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
+export const fetchSuggestions = ({
+  query,
+  queryId,
+  domain,
+  apiKey,
+  token,
+} = {}) => {
   if (!query) {
     return Promise.reject(new Error('No query supplied'))
   }
@@ -79,7 +85,7 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 
   const commaSeparatedKeywords =
     typeof query === 'string' ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow&query_id=${queryId}`
 
   const config = {
     headers: {
@@ -153,7 +159,8 @@ export const runQueryOnly = ({
         _get(error, 'response.data.reference_id') === '1.1.430' ||
         _get(error, 'response.data.reference_id') === '1.1.431'
       ) {
-        return fetchSuggestions({ query, domain, apiKey, token })
+        const queryId = _get(error, 'response.data.data.query_id')
+        return fetchSuggestions({ query, queryId, domain, apiKey, token })
       }
       return Promise.reject(_get(error, 'response.data'))
     })

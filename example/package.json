@@ -30,6 +30,6 @@
   ],
   "engines": {
     "node": ">=10.15.1"
-   },
+  },
   "cacheDirectories": []
 }
