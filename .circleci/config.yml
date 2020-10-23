@@ -1,15 +1,16 @@
 version: 2.1
 orbs:
-  node: circleci/node@1.1.6
+  node: circleci/node@4.1.0
 jobs:
   build-and-test:
     executor:
       name: node/default
-    resource_class: xlarge
+    resource_class: large
     steps:
       - checkout
-      - node:
+      - node/with-cache:
           steps:
+            - run: npm rebuild node-sass
             - run: npm i
             - run: npm i react react-dom
             - run:
