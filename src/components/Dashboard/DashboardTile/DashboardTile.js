@@ -216,8 +216,9 @@ export default class DashboardTile extends React.Component {
 
     const queryValidationSelections =
       userSelection ||
-      (this.props.tile.query === query &&
-        _get(this.props.tile, 'queryValidationSelections'))
+      (this.props.tile.query === query
+        ? _get(this.props.tile, 'queryValidationSelections')
+        : undefined)
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -257,8 +258,9 @@ export default class DashboardTile extends React.Component {
 
     const queryValidationSelections =
       userSelection ||
-      (this.props.tile.secondQuery === query &&
-        _get(this.props.tile, 'secondQueryValidationSelections'))
+      (this.props.tile.secondQuery === query
+        ? _get(this.props.tile, 'secondQueryValidationSelections')
+        : undefined)
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -497,6 +499,7 @@ export default class DashboardTile extends React.Component {
                           {
                             query: e.target.value,
                             dataConfig: undefined,
+                            queryValidationSelections: undefined,
                           },
                           this.props.tile.i
                         )
@@ -521,6 +524,7 @@ export default class DashboardTile extends React.Component {
                         {
                           query: e.target.value,
                           dataConfig: undefined,
+                          queryValidationSelections: undefined,
                         },
                         this.props.tile.i
                       )
@@ -756,6 +760,7 @@ export default class DashboardTile extends React.Component {
                       {
                         secondQuery: e.target.value,
                         secondDataConfig: undefined,
+                        secondQueryValidationSelections: undefined,
                       },
                       this.props.tile.i
                     )
