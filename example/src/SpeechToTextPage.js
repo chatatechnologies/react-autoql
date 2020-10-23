@@ -68,7 +68,6 @@ export default class SpeechToTextPage extends React.Component {
     }
     axios.post(url, data, config).then((response) => {
       const newResultHistory = [
-        ...this.state.resultHistory,
         {
           query: this.state.queryList[this.state.currentQuery],
           audio: (
@@ -94,6 +93,7 @@ export default class SpeechToTextPage extends React.Component {
               'translated text from checkpoint ted_pretrained_model.pth'
             ],
         },
+        ...this.state.resultHistory,
       ]
       this.setState({
         resultHistory: newResultHistory,
