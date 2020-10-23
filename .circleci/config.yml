@@ -8,9 +8,8 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
-      - node/with-cache:
+      - node:
           steps:
-            - run: npm rebuild node-sass
             - run: npm i
             - run: npm i react react-dom
             - run:
