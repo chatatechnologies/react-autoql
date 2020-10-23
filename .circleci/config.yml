@@ -10,6 +10,7 @@ jobs:
       - checkout
       - node/with-cache:
           steps:
+            - run: npm rebuild node-sass
             - run: npm i
             - run: npm i react react-dom
             - run:
