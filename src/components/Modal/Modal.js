@@ -16,7 +16,7 @@ import './Modal.scss'
 export default class Modal extends React.Component {
   static propTypes = {
     themeConfig: themeConfigType,
-    title: PropTypes.string,
+    title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,

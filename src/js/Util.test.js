@@ -531,21 +531,31 @@ describe('isDisplayTypeValid', () => {
 
 describe('getDefaultDisplayType', () => {
   test('returns "table" for non-pivot data', () => {
-    expect(getDefaultDisplayType(sampleListResponse)).toEqual('table')
+    expect(getDefaultDisplayType(sampleListResponse, true)).toEqual('table')
   })
 
   test('returns "table" for single value response', () => {
-    expect(getDefaultDisplayType(sampleSingleValueResponse)).toEqual('table')
+    expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual(
+      'table'
+    )
   })
 
-  test('returns "stacked_column" if available', () => {
-    expect(getDefaultDisplayType(sampleDoubleGroupableResponse)).toEqual(
+  test('returns "stacked_column" if available and charts are preferred', () => {
+    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, true)).toEqual(
       'stacked_column'
     )
   })
 
+  test('returns "pivot_table" if available and tables are preferred', () => {
+    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, false)).toEqual(
+      'pivot_table'
+    )
+  })
+
   test('returns "suggestion" for suggestion response', () => {
-    expect(getDefaultDisplayType(responseTestCases[5])).toEqual('suggestion')
+    expect(getDefaultDisplayType(responseTestCases[5], true)).toEqual(
+      'suggestion'
+    )
   })
 })
 

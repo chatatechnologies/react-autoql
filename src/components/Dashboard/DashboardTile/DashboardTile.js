@@ -59,6 +59,7 @@ export default class DashboardTile extends React.Component {
     notExecutedText: PropTypes.string,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class DashboardTile extends React.Component {
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
+    autoChartAggregations: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
   }
@@ -836,6 +838,7 @@ export default class DashboardTile extends React.Component {
             dataFormatting={this.props.dataFormatting}
             renderTooltips={false}
             autoSelectQueryValidationSuggestion={false}
+            autoChartAggregations={this.props.autoChartAggregations}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -879,7 +882,10 @@ export default class DashboardTile extends React.Component {
       this.props.displayType
     )
       ? this.props.displayType
-      : getDefaultDisplayType(this.props.queryResponse)
+      : getDefaultDisplayType(
+          this.props.queryResponse,
+          this.props.autoChartAggregations
+        )
 
     return this.renderQueryOutput({
       queryOutputProps: {
@@ -944,7 +950,7 @@ export default class DashboardTile extends React.Component {
       this.props.secondDisplayType
     )
       ? this.props.secondDisplayType
-      : getDefaultDisplayType(queryResponse)
+      : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
 
     return this.renderQueryOutput({
       queryOutputProps: {

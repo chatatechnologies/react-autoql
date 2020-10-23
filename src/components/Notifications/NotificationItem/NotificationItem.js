@@ -50,6 +50,7 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ export default class NotificationItem extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
+    autoChartAggregations: true,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
     onDismissCallback: () => {},
@@ -81,7 +83,7 @@ export default class NotificationItem extends React.Component {
       this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse)
       const displayType = this.supportedDisplayTypes.includes('column')
         ? 'column'
-        : getDefaultDisplayType(queryResponse)
+        : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
       this.setState({ displayType })
     }
   }
@@ -335,6 +337,7 @@ export default class NotificationItem extends React.Component {
                     autoQLConfig={{ enableDrilldowns: false }}
                     themeConfig={this.props.themeConfig}
                     displayType={this.state.displayType}
+                    autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
                   />
                 </Fragment>
