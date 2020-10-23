@@ -64,6 +64,7 @@ export default class ChatMessage extends React.Component {
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
+    onNoneOfTheseClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -88,6 +89,7 @@ export default class ChatMessage extends React.Component {
     isResizing: false,
     enableDynamicCharting: true,
     scrollToBottom: () => {},
+    onNoneOfTheseClick: () => {},
   }
 
   state = {
@@ -191,6 +193,7 @@ export default class ChatMessage extends React.Component {
       return (
         <QueryOutput
           ref={(ref) => (this.responseRef = ref)}
+          authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           onDataClick={this.props.processDrilldown}
           queryResponse={response}
@@ -220,6 +223,7 @@ export default class ChatMessage extends React.Component {
           dataConfig={this.state.dataConfig}
           onDataConfigChange={this.updateDataConfig}
           optionsToolbarRef={this.optionsToolbarRef}
+          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
         />
       )
     }

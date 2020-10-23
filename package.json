@@ -148,7 +148,7 @@
   },
   "peerDependencies": {
     "react": ">=16.2",
-    "react-dom": "^16.13.1"
+    "react-dom": ">=16.13.1"
   },
   "resolutions": {
     "**/**/fsevents": "^1.2.9"

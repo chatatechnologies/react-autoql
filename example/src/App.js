@@ -1325,6 +1325,8 @@ export default class App extends Component {
             }}
           >
             <QueryOutput
+              authentication={this.getAuthProp()}
+              themeConfig={this.getThemeConfigProp()}
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
             />
@@ -1652,6 +1654,8 @@ export default class App extends Component {
 
     return (
       <QueryOutput
+        authentication={this.getAuthProp()}
+        themeConfig={this.getThemeConfigProp()}
         queryResponse={this.state.activeNotificationContent}
         displayType="table"
       />

@@ -59,6 +59,7 @@ export default class SpeechToTextPage extends React.Component {
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
     data.append('file', file, 'speech.wav')
+    data.append('eng', this.state.queryList[this.state.currentQuery])
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
@@ -67,7 +68,6 @@ export default class SpeechToTextPage extends React.Component {
     }
     axios.post(url, data, config).then((response) => {
       const newResultHistory = [
-        ...this.state.resultHistory,
         {
           query: this.state.queryList[this.state.currentQuery],
           audio: (
@@ -80,10 +80,6 @@ export default class SpeechToTextPage extends React.Component {
               icon={<PlayCircleOutlined />}
             ></Button>
           ),
-          an4:
-            response.data[
-              'translated text from checkpoint an4_pretrained_model.pth'
-            ],
           librispeech:
             response.data[
               'translated text from checkpoint librispeech_pretrained_model.pth'
@@ -93,6 +89,7 @@ export default class SpeechToTextPage extends React.Component {
               'translated text from checkpoint ted_pretrained_model.pth'
             ],
         },
+        ...this.state.resultHistory,
       ]
       this.setState({
         resultHistory: newResultHistory,
@@ -116,11 +113,6 @@ export default class SpeechToTextPage extends React.Component {
         title: 'WAV',
         dataIndex: 'audio',
         key: 'audio',
-      },
-      {
-        title: 'an4 pretrained model',
-        dataIndex: 'an4',
-        key: 'an4',
       },
       {
         title: 'librispeech pretrained model',

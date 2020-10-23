@@ -460,6 +460,7 @@ class Dashboard extends React.Component {
             {tile && this.shouldShowOriginalQuery(tile) && (
               <div className="react-autoql-dashboard-drilldown-original">
                 <QueryOutput
+                  authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
                   dataFormatting={this.props.dataFormatting}
