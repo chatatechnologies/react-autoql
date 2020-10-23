@@ -160,6 +160,7 @@ export default class App extends Component {
     activeDashboardId: undefined,
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
+    autoChartAggregations: true
   }
 
   componentDidMount = () => {
@@ -1023,6 +1024,11 @@ export default class App extends Component {
           ['data-messenger', 'explore-queries'],
           true
         )}
+        {this.createBooleanRadioGroup(
+          'Auto-Chart Aggregation queries',
+          'autoChartAggregations',
+          [true, false]
+        )}
         <h4>Currency Code</h4>
         <Input
           type="text"
@@ -1286,6 +1292,7 @@ export default class App extends Component {
         }}
         activeNotificationData={this.state.activeNotificationContent}
         defaultTab={this.state.defaultTab}
+        autoChartAggregations={this.state.autoChartAggregations}
       />
     )
   }
@@ -1502,6 +1509,7 @@ export default class App extends Component {
               notExecutedText='Hit "Execute" to run this dashboard'
               onErrorCallback={this.onError}
               onSuccessCallback={this.onSuccess}
+              autoChartAggregations={this.state.autoChartAggregations}
               onChange={(newTiles) => {
                 this.setState({ dashboardTiles: newTiles })
               }}
@@ -1676,6 +1684,7 @@ export default class App extends Component {
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
           onExpandCallback={this.fetchNotificationContent}
+          autoChartAggregations={this.state.autoChartAggregations}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}

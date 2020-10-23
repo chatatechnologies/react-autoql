@@ -43,6 +43,7 @@ export default class NotificationFeed extends React.Component {
     showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -50,6 +51,7 @@ export default class NotificationFeed extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
+    autoChartAggregations: true,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -346,6 +348,7 @@ export default class NotificationFeed extends React.Component {
                       }}
                       onCollapseCallback={this.props.onCollapseCallback}
                       activeNotificationData={this.props.activeNotificationData}
+                      autoChartAggregations={this.props.autoChartAggregations}
                       showNotificationDetails={
                         this.props.showNotificationDetails
                       }

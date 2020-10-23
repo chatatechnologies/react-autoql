@@ -73,6 +73,7 @@ export default class DataMessenger extends React.Component {
     queryQuickStartTopics: array,
     enableDynamicCharting: bool,
     defaultTab: string,
+    autoChartAggregations: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -111,6 +112,7 @@ export default class DataMessenger extends React.Component {
     queryQuickStartTopics: undefined,
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
+    autoChartAggregations: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -836,6 +838,7 @@ export default class DataMessenger extends React.Component {
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
                 />
               )
             })}

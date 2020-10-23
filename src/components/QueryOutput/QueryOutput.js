@@ -113,6 +113,7 @@ export default class QueryOutput extends React.Component {
     onDisplayTypeUpdate: func,
     onColumnsUpdate: func,
     onNoneOfTheseClick: func,
+    autoChartAggregations: bool,
   }
 
   static defaultProps = {
@@ -147,6 +148,7 @@ export default class QueryOutput extends React.Component {
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
     onNoneOfTheseClick: undefined,
+    autoChartAggregations: true,
   }
 
   state = {
@@ -183,7 +185,10 @@ export default class QueryOutput extends React.Component {
           this.props.displayType
         )
           ? this.props.displayType
-          : getDefaultDisplayType(this.props.queryResponse),
+          : getDefaultDisplayType(
+              this.props.queryResponse,
+              this.props.autoChartAggregations
+            ),
       })
 
       if (this.props.optionsToolbarRef) {
@@ -267,7 +272,6 @@ export default class QueryOutput extends React.Component {
   hasError = (response) => {
     try {
       const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
-      console.log('reference ID number:', referenceIdNumber)
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1709,14 +1713,12 @@ export default class QueryOutput extends React.Component {
     const data = _get(queryResponse, 'data.data.rows')
 
     if (this.hasError(queryResponse)) {
-      console.log('HAS ERROR, RENDERING ERROR MESSAGE')
       return this.renderError(queryResponse)
     }
 
     // If "items" are returned in response it is a list of suggestions
     const isSuggestionList = !!_get(queryResponse, 'data.data.items')
     if (isSuggestionList) {
-      console.log('RENDERING SUGGESTION MESSAGE')
       return this.renderSuggestionMessage(
         queryResponse.data.data.items,
         queryResponse.data.data.query_id
@@ -1731,7 +1733,6 @@ export default class QueryOutput extends React.Component {
 
     // Safetynet was triggered, display safetynet message
     if (_get(queryResponse, 'data.data.replacements')) {
-      console.log('rendering safetynet message')
       return (
         <SafetyNetMessage
           themeConfig={this.props.themeConfig}
