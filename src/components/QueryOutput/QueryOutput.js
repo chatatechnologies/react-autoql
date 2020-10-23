@@ -1773,7 +1773,6 @@ export default class QueryOutput extends React.Component {
         `display type not recognized: ${this.state.displayType}`
       )
     }
-    // return this.renderMessage('Error: No Display Type')
     return null
   }
 
