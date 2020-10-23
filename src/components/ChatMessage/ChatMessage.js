@@ -224,6 +224,11 @@ export default class ChatMessage extends React.Component {
           onDataConfigChange={this.updateDataConfig}
           optionsToolbarRef={this.optionsToolbarRef}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          reportProblemCallback={() => {
+            if (this.optionsToolbarRef) {
+              this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+            }
+          }}
         />
       )
     }
