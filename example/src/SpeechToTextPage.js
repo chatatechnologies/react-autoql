@@ -80,10 +80,6 @@ export default class SpeechToTextPage extends React.Component {
               icon={<PlayCircleOutlined />}
             ></Button>
           ),
-          an4:
-            response.data[
-              'translated text from checkpoint an4_pretrained_model.pth'
-            ],
           librispeech:
             response.data[
               'translated text from checkpoint librispeech_pretrained_model.pth'
@@ -117,11 +113,6 @@ export default class SpeechToTextPage extends React.Component {
         title: 'WAV',
         dataIndex: 'audio',
         key: 'audio',
-      },
-      {
-        title: 'an4 pretrained model',
-        dataIndex: 'an4',
-        key: 'an4',
       },
       {
         title: 'librispeech pretrained model',
