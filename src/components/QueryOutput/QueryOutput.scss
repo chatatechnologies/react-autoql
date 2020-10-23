@@ -138,9 +138,9 @@
   border-color: #28a8e0;
 }
 .react-autoql-execute-query-icon {
-  font-size: 23px;
-  vertical-align: bottom;
-  line-height: 24px;
+  font-size: 16px;
+  vertical-align: middle !important;
+  padding-right: 3px !important;
 
   span.react-autoql-icon svg {
     height: 19px;
