@@ -32,13 +32,13 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   startRecording = () => {
-    const self = this
     this.setState({ isRecording: true })
 
     navigator.getUserMedia(
       { audio: true },
       (stream) => {
-        this.recordAudio = RecordRTC(stream, {
+        this.stream = stream
+        this.recordAudio = RecordRTC(this.stream, {
           type: 'audio',
           mimeType: 'audio/webm',
           desiredSampRate: 16000,
@@ -59,6 +59,11 @@ export default class SpeechToTextBtn extends React.Component {
     this.recordAudio.stopRecording(() => {
       let blob = this.recordAudio.getBlob()
       this.props.onRecordStop(this.blobToFile(blob), blob)
+      try {
+        this.stream.getTracks().forEach((track) => track.stop())
+      } catch (error) {
+        console.error(error)
+      }
     })
   }
 
@@ -67,17 +72,6 @@ export default class SpeechToTextBtn extends React.Component {
     theBlob.lastModifiedDate = new Date()
     theBlob.name = 'speech.wav'
     return theBlob
-  }
-
-  checkMicrophonePermission = () => {
-    return navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        return Promise.resolve(true)
-      })
-      .catch(function(err) {
-        return Promise.resolve(false)
-      })
   }
 
   getMediaPermissionStatus = () => {

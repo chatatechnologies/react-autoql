@@ -12,36 +12,6 @@ const formatSourceString = (sourceArray) => {
   }
 }
 
-const transformSafetyNetResponse = (response) => {
-  let newResponse = response
-  if (_get(response, 'data.data.replacements')) {
-    newResponse = {
-      ...newResponse,
-      data: {
-        ...newResponse.data,
-        full_suggestion: response.data.data.replacements.map((suggs) => {
-          let newSuggestionList = suggs.suggestions
-          if (newSuggestionList) {
-            newSuggestionList = suggs.suggestions.map((sugg) => {
-              return {
-                ...sugg,
-                value_label: sugg.value_label,
-              }
-            })
-          }
-          return {
-            ...suggs,
-            suggestion_list: newSuggestionList,
-          }
-        }),
-        query: response.data.data.query || response.data.data.text,
-      },
-    }
-  }
-
-  return newResponse
-}
-
 const transformUserSelection = (userSelection) => {
   if (!userSelection || !userSelection.length) {
     return undefined
@@ -96,7 +66,7 @@ export const fetchSuggestions = ({
   return axios
     .get(relatedQueriesUrl, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runQueryOnly = ({
@@ -162,7 +132,7 @@ export const runQueryOnly = ({
         const queryId = _get(error, 'response.data.data.query_id')
         return fetchSuggestions({ query, queryId, domain, apiKey, token })
       }
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(_get(error, 'response'))
     })
 }
 
@@ -187,8 +157,7 @@ export const runQuery = ({
     })
       .then((response) => {
         if (failedValidation(response)) {
-          const newResponse = transformSafetyNetResponse(response)
-          return Promise.resolve(newResponse)
+          return Promise.resolve(response)
         }
         return runQueryOnly({
           query,
@@ -391,12 +360,8 @@ export const fetchQueryTips = ({
       token,
     })
       .then((safetyNetResponse) => {
-        if (
-          _get(safetyNetResponse, 'data.full_suggestion.length') > 0 ||
-          _get(safetyNetResponse, 'data.data.replacements.length') > 0
-        ) {
-          const newResponse = transformSafetyNetResponse(safetyNetResponse)
-          return Promise.resolve(newResponse)
+        if (_get(safetyNetResponse, 'data.data.replacements.length') > 0) {
+          return Promise.resolve(safetyNetResponse)
         }
         return axios
           .get(queryTipsUrl, config)

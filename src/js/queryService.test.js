@@ -150,34 +150,7 @@ describe('runQuery', () => {
             },
           ],
         },
-        full_suggestion: [
-          {
-            end: 13,
-            start: 10,
-            suggestions: [
-              {
-                text: 'billy joe',
-                value_label: 'Customer',
-              },
-              {
-                text: 'tommy joe',
-                value_label: 'Customer',
-              },
-            ],
-            suggestion_list: [
-              {
-                text: 'billy joe',
-                value_label: 'Customer',
-              },
-              {
-                text: 'tommy joe',
-                value_label: 'Customer',
-              },
-            ],
-          },
-        ],
         message: 'Success',
-        query: 'sales for jou',
         reference_id: '1.1.240',
       },
     }
@@ -311,8 +284,10 @@ describe('runQueryOnly', () => {
     )
 
     await expect(runQueryOnly(allQueryParams)).rejects.toEqual({
-      message: 'there was an error',
-      reference_id: '1.1.1',
+      data: {
+        message: 'there was an error',
+        reference_id: '1.1.1',
+      },
     })
   })
 
@@ -578,64 +553,11 @@ describe('fetchQueryTips', () => {
       ...allRelatedQueriesParams,
       skipSafetyNet: false,
     }
-    const restructuredSafetynetResponse = {
-      data: {
-        data: {
-          text: 'sales for jou',
-          replacements: [
-            {
-              end: 13,
-              start: 10,
-              suggestions: [
-                {
-                  text: 'billy joe',
-                  value_label: 'Customer',
-                },
-                {
-                  text: 'tommy joe',
-                  value_label: 'Customer',
-                },
-              ],
-            },
-          ],
-        },
-        full_suggestion: [
-          {
-            end: 13,
-            start: 10,
-            suggestions: [
-              {
-                text: 'billy joe',
-                value_label: 'Customer',
-              },
-              {
-                text: 'tommy joe',
-                value_label: 'Customer',
-              },
-            ],
-            suggestion_list: [
-              {
-                text: 'billy joe',
-                value_label: 'Customer',
-              },
-              {
-                text: 'tommy joe',
-                value_label: 'Customer',
-              },
-            ],
-          },
-        ],
-        message: 'Success',
-        query: 'sales for jou',
-        reference_id: '1.1.240',
-      },
-    }
+
     axios.get.mockImplementationOnce(() =>
       Promise.resolve(validationTestCases[0])
     )
-    await expect(fetchQueryTips(input)).resolves.toEqual(
-      restructuredSafetynetResponse
-    )
+    await expect(fetchQueryTips(input)).resolves.toEqual(validationTestCases[0])
   })
 
   test('fetches correctly when validation suggestions are empty', async () => {

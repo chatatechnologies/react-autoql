@@ -47,17 +47,17 @@ export default class SafetyNetMessage extends React.Component {
     }
   }
 
-  getSuggestionLists = (query, fullSuggestions) => {
+  getSuggestionLists = (query, replacements) => {
     const suggestionLists = []
-    if (fullSuggestions.length) {
-      fullSuggestions.forEach((suggestionInfo) => {
+    if (replacements.length) {
+      replacements.forEach((suggestionInfo) => {
         const originalWord = query.slice(
           suggestionInfo.start,
           suggestionInfo.end
         )
 
         // Add ID to each original suggestion
-        const originalSuggestionList = suggestionInfo.suggestion_list.map(
+        const originalSuggestionList = suggestionInfo.suggestions.map(
           (suggestion) => {
             return {
               id: uuid.v4(),
@@ -164,17 +164,17 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   initializeSafetyNetOptions = (responseBody) => {
-    const { full_suggestion: fullSuggestions, query } = responseBody
-    if (!fullSuggestions || !query) {
+    const { replacements, query } = responseBody.data
+    if (!replacements || !query) {
       return []
     }
 
     // Gets list of suggestions with value labels for each "dropdown"
     // and also includes the original query at the end of this list
-    this.suggestionLists = this.getSuggestionLists(query, fullSuggestions)
+    this.suggestionLists = this.getSuggestionLists(query, replacements)
 
     // Gets list of text from the query that are not part of the suggestions
-    this.plainTextList = this.getPlainTextList(query, fullSuggestions)
+    this.plainTextList = this.getPlainTextList(query, replacements)
 
     // Set initial safetynet selection values based on props
     this.setInitialSelections()
