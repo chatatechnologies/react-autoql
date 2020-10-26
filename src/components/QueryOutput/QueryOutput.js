@@ -1725,6 +1725,12 @@ export default class QueryOutput extends React.Component {
       return this.renderError(queryResponse)
     }
 
+    // This is used for "Thank you for your feedback" response
+    // when user clicks on "None of these" in the suggestion list
+    if (this.state.customResponse) {
+      return this.state.customResponse
+    }
+
     // If "items" are returned in response it is a list of suggestions
     const isSuggestionList = !!_get(queryResponse, 'data.data.items')
     if (isSuggestionList) {
@@ -1732,12 +1738,6 @@ export default class QueryOutput extends React.Component {
         queryResponse.data.data.items,
         queryResponse.data.data.query_id
       )
-    }
-
-    // This is used for "Thank you for your feedback" response
-    // when user clicks on "None of these" in the suggestion list
-    if (this.state.customResponse) {
-      return this.state.customResponse
     }
 
     // Safetynet was triggered, display safetynet message

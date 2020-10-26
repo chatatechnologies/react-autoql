@@ -208,7 +208,7 @@ export default class DashboardTile extends React.Component {
   }
 
   processTileTop = ({ query, userSelection, skipSafetyNet, source }) => {
-    this.setState({ isTopExecuting: true })
+    this.setState({ isTopExecuting: true, customMessage: undefined })
 
     const skipQueryValidation =
       !!skipSafetyNet ||
@@ -247,7 +247,11 @@ export default class DashboardTile extends React.Component {
   }
 
   processTileBottom = ({ query, userSelection, skipSafetyNet, source }) => {
-    this.setState({ isBottomExecuting: true, isSecondQueryInputOpen: false })
+    this.setState({
+      isBottomExecuting: true,
+      isSecondQueryInputOpen: false,
+      secondCustomMessage: undefined,
+    })
 
     const skipQueryValidation =
       skipSafetyNet ||
@@ -683,6 +687,14 @@ export default class DashboardTile extends React.Component {
     }
   }
 
+  onNoneOfTheseClick = () => {
+    this.setState({ customMessage: 'Thank you for your feedback' })
+  }
+
+  secondOnNoneOfTheseClick = () => {
+    this.setState({ secondCustomMessage: 'Thank you for your feedback' })
+  }
+
   renderSuggestionPrefix = () => {
     return <div>I want to make sure I understood your query. Did you mean:</div>
   }
@@ -823,6 +835,16 @@ export default class DashboardTile extends React.Component {
     )
   }
 
+  renderSuggestionMessage = (customMessage) => {
+    if (customMessage) {
+      return customMessage
+    }
+
+    return (
+      <div style={{ paddingTop: '20px' }}>{this.renderSuggestionPrefix()}</div>
+    )
+  }
+
   renderQueryOutput = ({
     queryOutputProps = {},
     vizToolbarProps = {},
@@ -841,34 +863,43 @@ export default class DashboardTile extends React.Component {
       ? this.state.isBottomExecuted
       : this.state.isTopExecuted
 
+    let customMessage = this.state.customMessage
+    if (isSecondHalf) {
+      customMessage = this.state.secondCustomMessage
+    }
+
     return (
-      <Fragment>
-        {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
-          this.renderSuggestionPrefix()}
+      <div className="loading-container-centered">
         {!queryOutputProps.queryResponse || isExecuting ? (
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
-          <QueryOutput
-            authentication={this.props.authentication}
-            themeConfig={this.props.themeConfig}
-            autoQLConfig={this.props.autoQLConfig}
-            dataFormatting={this.props.dataFormatting}
-            renderTooltips={false}
-            autoSelectQueryValidationSuggestion={false}
-            autoChartAggregations={this.props.autoChartAggregations}
-            renderSuggestionsAsDropdown={this.props.tile.h < 4}
-            enableDynamicCharting={this.props.enableDynamicCharting}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
+          <Fragment>
+            {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
+              this.renderSuggestionMessage(customMessage)}
+            {!customMessage && (
+              <QueryOutput
+                authentication={this.props.authentication}
+                themeConfig={this.props.themeConfig}
+                autoQLConfig={this.props.autoQLConfig}
+                dataFormatting={this.props.dataFormatting}
+                renderTooltips={false}
+                autoSelectQueryValidationSuggestion={false}
+                autoChartAggregations={this.props.autoChartAggregations}
+                renderSuggestionsAsDropdown={this.props.tile.h < 4}
+                enableDynamicCharting={this.props.enableDynamicCharting}
+                backgroundColor={document.documentElement.style.getPropertyValue(
+                  '--react-autoql-background-color-primary'
+                )}
+                onDisplayTypeUpdate={() => {
+                  // This is necessary to update the toolbar with the newly rendered QueryOutput
+                  setTimeout(() => {
+                    this.forceUpdate()
+                  }, 0)
+                }}
+                {...queryOutputProps}
+              />
             )}
-            onDisplayTypeUpdate={() => {
-              // This is necessary to update the toolbar with the newly rendered QueryOutput
-              setTimeout(() => {
-                this.forceUpdate()
-              }, 0)
-            }}
-            {...queryOutputProps}
-          />
+          </Fragment>
         )}
         {this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
@@ -889,7 +920,7 @@ export default class DashboardTile extends React.Component {
           onSuccessAlert={this.props.onSuccessCallback}
           {...optionsToolbarProps}
         />
-      </Fragment>
+      </div>
     )
   }
 
@@ -916,6 +947,7 @@ export default class DashboardTile extends React.Component {
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
+        onNoneOfTheseClick: this.onNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,
@@ -984,6 +1016,7 @@ export default class DashboardTile extends React.Component {
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
+        onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,
