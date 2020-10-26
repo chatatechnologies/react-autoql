@@ -16,7 +16,7 @@ jobs:
             - run:
                 name: Run Tests
                 no_output_timeout: 60m
-                command: npm run test
+                command: npm run test --silent=false
   test-and-release:
     executor:
       name: node/default
@@ -31,7 +31,7 @@ jobs:
             - run:
                 name: Run Tests
                 no_output_timeout: 60m
-                command: npm run test
+                command: npm run test --silent=false
             - run: npx semantic-release
 workflows:
   build-and-test:
