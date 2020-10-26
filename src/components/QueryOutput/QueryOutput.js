@@ -1657,6 +1657,29 @@ export default class QueryOutput extends React.Component {
     return this.renderMessage()
   }
 
+  replaceErrorTextWithLinks = (errorMessage) => {
+    try {
+      const splitErrorMessage = errorMessage.split('<report>')
+      const newErrorMessage = (
+        <div>
+          {splitErrorMessage.map((str, index) => {
+            return (
+              <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
+                <span>{str}</span>
+                {index !== splitErrorMessage.length - 1 && (
+                  <a onClick={this.props.reportProblemCallback}>report</a>
+                )}
+              </span>
+            )
+          })}
+        </div>
+      )
+      return newErrorMessage
+    } catch (error) {
+      return <span>{errorMessage}</span>
+    }
+  }
+
   renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
@@ -1666,21 +1689,7 @@ export default class QueryOutput extends React.Component {
           // Replace the "<report>" text with link
           errorMessage = error.message
           if (this.props.reportProblemCallback) {
-            const splitErrorMessage = errorMessage.split('<report>')
-            errorMessage = (
-              <div>
-                {splitErrorMessage.map((str, index) => {
-                  return (
-                    <Fragment>
-                      <span>{str}</span>
-                      {index !== splitErrorMessage.length - 1 && (
-                        <a onClick={this.props.reportProblemCallback}>report</a>
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </div>
-            )
+            errorMessage = this.replaceErrorTextWithLinks(error.message)
           } else {
             errorMessage = errorMessage.replace('<report>', 'report')
           }
@@ -1716,6 +1725,12 @@ export default class QueryOutput extends React.Component {
       return this.renderError(queryResponse)
     }
 
+    // This is used for "Thank you for your feedback" response
+    // when user clicks on "None of these" in the suggestion list
+    if (this.state.customResponse) {
+      return this.state.customResponse
+    }
+
     // If "items" are returned in response it is a list of suggestions
     const isSuggestionList = !!_get(queryResponse, 'data.data.items')
     if (isSuggestionList) {
@@ -1723,12 +1738,6 @@ export default class QueryOutput extends React.Component {
         queryResponse.data.data.items,
         queryResponse.data.data.query_id
       )
-    }
-
-    // This is used for "Thank you for your feedback" response
-    // when user clicks on "None of these" in the suggestion list
-    if (this.state.customResponse) {
-      return this.state.customResponse
     }
 
     // Safetynet was triggered, display safetynet message
@@ -1758,7 +1767,7 @@ export default class QueryOutput extends React.Component {
 
     // This is not technically an error. There is just no data in the DB
     if (!_get(data, 'length')) {
-      return this.renderMessage(queryResponse.data.message)
+      return this.replaceErrorTextWithLinks(queryResponse.data.message)
     }
 
     if (displayType && data) {
