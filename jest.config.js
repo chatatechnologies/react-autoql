@@ -1,5 +1,5 @@
 module.exports = {
-  setupFilesAfterEnv: '<rootDir>/test/setupTests.js',
+  setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
   setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
   verbose: false,
   transform: {
