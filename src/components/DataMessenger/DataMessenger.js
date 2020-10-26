@@ -73,6 +73,7 @@ export default class DataMessenger extends React.Component {
     queryQuickStartTopics: array,
     enableDynamicCharting: bool,
     defaultTab: string,
+    autoChartAggregations: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -111,6 +112,7 @@ export default class DataMessenger extends React.Component {
     queryQuickStartTopics: undefined,
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
+    autoChartAggregations: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -780,6 +782,14 @@ export default class DataMessenger extends React.Component {
     }
   }
 
+  onNoneOfTheseClick = () => {
+    this.setState({ isChataThinking: true })
+    setTimeout(() => {
+      this.setState({ isChataThinking: false })
+      this.addResponseMessage({ content: 'Thank you for your feedback' })
+    }, 1000)
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -827,6 +837,8 @@ export default class DataMessenger extends React.Component {
                   scrollContainerRef={this.messengerScrollComponent}
                   isResizing={this.state.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
                 />
               )
             })}

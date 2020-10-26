@@ -30,7 +30,7 @@ import {
   autoQLConfigDefault,
   authenticationDefault,
 } from '../../props/defaults'
-import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
+
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
@@ -62,6 +62,8 @@ import {
   getPadding,
 } from '../../js/Util.js'
 
+import { sendSuggestion } from '../../js/queryService'
+
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 
@@ -85,6 +87,7 @@ export default class QueryOutput extends React.Component {
   static propTypes = {
     queryResponse: shape({}),
     queryInputRef: instanceOf(QueryInput),
+    authentication: authenticationType,
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     authentication: authenticationType,
@@ -109,9 +112,12 @@ export default class QueryOutput extends React.Component {
     onDataConfigChange: func,
     onDisplayTypeUpdate: func,
     onColumnsUpdate: func,
+    onNoneOfTheseClick: func,
+    autoChartAggregations: bool,
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     autoQLConfig: autoQLConfigDefault,
     authentication: authenticationDefault,
@@ -141,6 +147,8 @@ export default class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
+    onNoneOfTheseClick: undefined,
+    autoChartAggregations: true,
   }
 
   state = {
@@ -177,7 +185,10 @@ export default class QueryOutput extends React.Component {
           this.props.displayType
         )
           ? this.props.displayType
-          : getDefaultDisplayType(this.props.queryResponse),
+          : getDefaultDisplayType(
+              this.props.queryResponse,
+              this.props.autoChartAggregations
+            ),
       })
 
       if (this.props.optionsToolbarRef) {
@@ -256,6 +267,18 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+  }
+
+  hasError = (response) => {
+    try {
+      const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
+      if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
+        return false
+      }
+    } catch (error) {
+      console.warn('Invalid reference ID provided for error')
+    }
+    return true
   }
 
   isDataConfigValid = (dataConfig) => {
@@ -402,7 +425,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderSuggestionMessage = (suggestions) => {
+  renderSuggestionMessage = (suggestions, queryId) => {
     let suggestionListMessage
 
     try {
@@ -417,6 +440,7 @@ export default class QueryOutput extends React.Component {
                   this.onSuggestionClick({
                     query: e.target.value,
                     source: 'suggestion',
+                    queryId,
                   })
                 }}
                 value={this.state.suggestionSelection}
@@ -440,6 +464,7 @@ export default class QueryOutput extends React.Component {
                           query: suggestion,
                           isButtonClick: true,
                           source: 'suggestion',
+                          queryId,
                         })
                       }
                       className="react-autoql-suggestion-btn"
@@ -669,7 +694,7 @@ export default class QueryOutput extends React.Component {
     if (this.areAllColumnsHidden()) {
       return (
         <div className="no-columns-error-message">
-          {this.renderErrorMessage(
+          {this.renderMessage(
             <div>
               <Icon className="warning-icon" type="warning-triangle" />
               <br /> All columns in this table are currently hidden. You can
@@ -1576,13 +1601,23 @@ export default class QueryOutput extends React.Component {
 
   onSuggestionClick = ({
     query,
+    queryId,
     userSelection,
     isButtonClick,
     skipSafetyNet,
     source,
   }) => {
+    sendSuggestion({
+      ...this.props.authentication,
+      queryId,
+      suggestion: query,
+    })
     if (query === 'None of these') {
-      this.setState({ customResponse: 'Thank you for your feedback.' })
+      if (this.props.onNoneOfTheseClick) {
+        this.props.onNoneOfTheseClick()
+      } else {
+        this.setState({ customResponse: 'Thank you for your feedback.' })
+      }
     } else {
       if (this.props.onSuggestionClick) {
         this.props.onSuggestionClick({
@@ -1604,30 +1639,57 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderErrorMessage = (error) => {
+  renderError = (queryResponse) => {
+    // No response prop was provided to <QueryOutput />
+    if (!queryResponse) {
+      console.warn('Warning: No response object supplied')
+      return this.renderMessage('No response supplied')
+    }
+
+    if (_get(queryResponse, 'data.message')) {
+      // Response is not a suggestion list, but no query data object was provided
+      // There is no valid query data. This is an error. Return message from UMS
+      console.warn('Warning: No response data supplied')
+      return this.renderMessage(queryResponse.data)
+    }
+
+    // There is no error message in the response, display default error message
+    return this.renderMessage()
+  }
+
+  renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
-        const errorMessage = error.message || errorMessages.GENERAL_QUERY
-        const newErrorMessage = errorMessage.replace(
-          'support@chata.ai',
-          '<a target="_blank" href="mailto:support@chata.ai">support@chata.ai</a>'
-        )
+        let errorMessage = errorMessages.GENERAL_QUERY
 
-        let isSuccess
-        try {
-          isSuccess = error.reference_id.split('.')[2][0] == 2
-        } catch (error) {
-          isSuccess = false
+        if (error.message) {
+          // Replace the "<report>" text with link
+          errorMessage = error.message
+          if (this.props.reportProblemCallback) {
+            const splitErrorMessage = errorMessage.split('<report>')
+            errorMessage = (
+              <div>
+                {splitErrorMessage.map((str, index) => {
+                  return (
+                    <Fragment>
+                      <span>{str}</span>
+                      {index !== splitErrorMessage.length - 1 && (
+                        <a onClick={this.props.reportProblemCallback}>report</a>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </div>
+            )
+          } else {
+            errorMessage = errorMessage.replace('<report>', 'report')
+          }
         }
 
         return (
           <div className="query-output-error-message">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: `<span>${newErrorMessage}</span>`,
-              }}
-            />
-            {!isSuccess && error.reference_id && (
+            <div>{errorMessage}</div>
+            {error.reference_id && (
               <Fragment>
                 <br />
                 <div>Error ID: {error.reference_id}</div>
@@ -1650,28 +1712,27 @@ export default class QueryOutput extends React.Component {
     const { queryResponse } = this.props
     const data = _get(queryResponse, 'data.data.rows')
 
+    if (this.hasError(queryResponse)) {
+      return this.renderError(queryResponse)
+    }
+
+    // If "items" are returned in response it is a list of suggestions
+    const isSuggestionList = !!_get(queryResponse, 'data.data.items')
+    if (isSuggestionList) {
+      return this.renderSuggestionMessage(
+        queryResponse.data.data.items,
+        queryResponse.data.data.query_id
+      )
+    }
+
     // This is used for "Thank you for your feedback" response
     // when user clicks on "None of these" in the suggestion list
-    // Eventually we will want to send this info to the BE
     if (this.state.customResponse) {
       return this.state.customResponse
     }
 
-    // No response prop was provided to <QueryOutput />
-    if (!queryResponse) {
-      console.warn('Warning: No response object supplied')
-      return this.renderErrorMessage('No response supplied')
-    }
-
-    // Response prop was provided, but it has no response data
-    const responseBody = { ...queryResponse.data }
-    if (!responseBody) {
-      console.warn('Warning: No response body supplied')
-      return this.renderErrorMessage()
-    }
-
     // Safetynet was triggered, display safetynet message
-    if (responseBody.full_suggestion) {
+    if (_get(queryResponse, 'data.data.replacements')) {
       return (
         <SafetyNetMessage
           themeConfig={this.props.themeConfig}
@@ -1695,22 +1756,9 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    // Response is not a suggestion list, but no query data object was provided
-    // There is no valid query data. This is an error. Return message from UMS
-    const responseData = responseBody.data
-    if (!responseData) {
-      console.warn('Warning: No response data supplied')
-      return this.renderErrorMessage(queryResponse)
-    }
-
-    const isSuggestionList = !!responseData.items
-    if (isSuggestionList) {
-      return this.renderSuggestionMessage(responseData.items)
-    }
-
-    // This is not an error. There is just no data in the DB
+    // This is not technically an error. There is just no data in the DB
     if (!_get(data, 'length')) {
-      return this.renderErrorMessage(responseBody)
+      return this.renderMessage(queryResponse.data.message)
     }
 
     if (displayType && data) {
@@ -1721,11 +1769,10 @@ export default class QueryOutput extends React.Component {
       } else if (isChartType(displayType)) {
         return this.renderChart(width, height)
       }
-      return this.renderErrorMessage(
+      return this.renderMessage(
         `display type not recognized: ${this.state.displayType}`
       )
     }
-    // return this.renderErrorMessage('Error: No Display Type')
     return null
   }
 

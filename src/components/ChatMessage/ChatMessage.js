@@ -64,6 +64,8 @@ export default class ChatMessage extends React.Component {
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
+    onNoneOfTheseClick: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -87,11 +89,16 @@ export default class ChatMessage extends React.Component {
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
+    autoChartAggregations: true,
     scrollToBottom: () => {},
+    onNoneOfTheseClick: () => {},
   }
 
   state = {
-    displayType: getDefaultDisplayType(this.props.response),
+    displayType: getDefaultDisplayType(
+      this.props.response,
+      this.props.autoChartAggregations
+    ),
     isSettingColumnVisibility: false,
     activeMenu: undefined,
   }
@@ -191,6 +198,7 @@ export default class ChatMessage extends React.Component {
       return (
         <QueryOutput
           ref={(ref) => (this.responseRef = ref)}
+          authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           onDataClick={this.props.processDrilldown}
           queryResponse={response}
@@ -220,6 +228,13 @@ export default class ChatMessage extends React.Component {
           dataConfig={this.state.dataConfig}
           onDataConfigChange={this.updateDataConfig}
           optionsToolbarRef={this.optionsToolbarRef}
+          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          autoChartAggregations={this.props.autoChartAggregations}
+          reportProblemCallback={() => {
+            if (this.optionsToolbarRef) {
+              this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+            }
+          }}
         />
       )
     }

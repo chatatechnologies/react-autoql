@@ -59,6 +59,7 @@ export default class DashboardTile extends React.Component {
     notExecutedText: PropTypes.string,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class DashboardTile extends React.Component {
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
+    autoChartAggregations: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
   }
@@ -214,8 +216,9 @@ export default class DashboardTile extends React.Component {
 
     const queryValidationSelections =
       userSelection ||
-      (this.props.tile.query === query &&
-        _get(this.props.tile, 'queryValidationSelections'))
+      (this.props.tile.query === query
+        ? _get(this.props.tile, 'queryValidationSelections')
+        : undefined)
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -255,8 +258,9 @@ export default class DashboardTile extends React.Component {
 
     const queryValidationSelections =
       userSelection ||
-      (this.props.tile.secondQuery === query &&
-        _get(this.props.tile, 'secondQueryValidationSelections'))
+      (this.props.tile.secondQuery === query
+        ? _get(this.props.tile, 'secondQueryValidationSelections')
+        : undefined)
 
     // New query is running, reset temporary state fields
     this.props.setParamsForTile(
@@ -495,6 +499,7 @@ export default class DashboardTile extends React.Component {
                           {
                             query: e.target.value,
                             dataConfig: undefined,
+                            queryValidationSelections: undefined,
                           },
                           this.props.tile.i
                         )
@@ -519,6 +524,7 @@ export default class DashboardTile extends React.Component {
                         {
                           query: e.target.value,
                           dataConfig: undefined,
+                          queryValidationSelections: undefined,
                         },
                         this.props.tile.i
                       )
@@ -754,6 +760,7 @@ export default class DashboardTile extends React.Component {
                       {
                         secondQuery: e.target.value,
                         secondDataConfig: undefined,
+                        secondQueryValidationSelections: undefined,
                       },
                       this.props.tile.i
                     )
@@ -830,11 +837,13 @@ export default class DashboardTile extends React.Component {
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <QueryOutput
+            authentication={this.props.authentication}
             themeConfig={this.props.themeConfig}
             autoQLConfig={this.props.autoQLConfig}
             dataFormatting={this.props.dataFormatting}
             renderTooltips={false}
             autoSelectQueryValidationSuggestion={false}
+            autoChartAggregations={this.props.autoChartAggregations}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -878,7 +887,10 @@ export default class DashboardTile extends React.Component {
       this.props.displayType
     )
       ? this.props.displayType
-      : getDefaultDisplayType(this.props.queryResponse)
+      : getDefaultDisplayType(
+          this.props.queryResponse,
+          this.props.autoChartAggregations
+        )
 
     return this.renderQueryOutput({
       queryOutputProps: {
@@ -943,7 +955,7 @@ export default class DashboardTile extends React.Component {
       this.props.secondDisplayType
     )
       ? this.props.secondDisplayType
-      : getDefaultDisplayType(queryResponse)
+      : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
 
     return this.renderQueryOutput({
       queryOutputProps: {

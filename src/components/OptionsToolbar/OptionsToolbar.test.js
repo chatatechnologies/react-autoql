@@ -60,6 +60,7 @@ const setup = (props = {}, state = null) => {
   // then pass that into the toolbar component
   const queryOutputComponent = mount(
     <QueryOutput
+      authentication={defaultProps.authentication}
       ref={(r) => {
         responseRef = r
       }}

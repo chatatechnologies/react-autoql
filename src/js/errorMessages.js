@@ -3,21 +3,14 @@ import React from 'react'
 export default {
   GENERAL_QUERY: (
     <span>
-      Oops! It looks like our system is experiencing an issue. Try querying
-      again. If the problem persists, please{' '}
-      <a target="_blank" href="mailto:support@chata.ai">
-        contact our team directly
-      </a>
-      . We'll look into this issue right away and be in touch with you shortly.
+      Internal Service Error: Our system is experiencing an unexpected error.
+      We're aware of this issue and are working to fix it as soon as possible.
     </span>
   ),
   GENERAL_HTML: (
     <span>
-      Oops! Something went wrong. Please try again. If the problem persists,{' '}
-      <a target="_blank" href="mailto:support@chata.ai">
-        contact our team directly
-      </a>
-      . We’ll look into this issue and be in touch shortly.
+      Internal Service Error: Our system is experiencing an unexpected error.
+      We're aware of this issue and are working to fix it as soon as possible.
     </span>
   ),
   UNAUTHENTICATED: (

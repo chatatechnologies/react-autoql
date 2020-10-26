@@ -65,6 +65,7 @@ class Dashboard extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -81,6 +82,7 @@ class Dashboard extends React.Component {
     isEditable: true,
     notExecutedText: undefined,
     enableDynamicCharting: true,
+    autoChartAggregations: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -460,12 +462,14 @@ class Dashboard extends React.Component {
             {tile && this.shouldShowOriginalQuery(tile) && (
               <div className="react-autoql-dashboard-drilldown-original">
                 <QueryOutput
+                  authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
                   themeConfig={this.props.themeConfig}
                   dataFormatting={this.props.dataFormatting}
                   queryResponse={queryResponse}
                   displayType={displayType}
                   dataConfig={dataConfig}
+                  autoChartAggregations={this.props.autoChartAggregations}
                   onDataClick={(drilldownData, queryID) => {
                     this.startDrilldown(drilldownData, queryID, tile.i)
                   }}
@@ -491,6 +495,7 @@ class Dashboard extends React.Component {
                   dataFormatting={this.props.dataFormatting}
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
+                  autoChartAggregations={this.props.autoChartAggregations}
                   backgroundColor={document.documentElement.style.getPropertyValue(
                     '--react-autoql-background-color-primary'
                   )}
@@ -602,6 +607,7 @@ class Dashboard extends React.Component {
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
+            autoChartAggregations={this.props.autoChartAggregations}
           />
         ))}
       </ReactGridLayout>

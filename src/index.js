@@ -2,6 +2,7 @@ export * from './components/DataMessenger'
 export * from './components/QueryInput'
 export * from './components/Dashboard'
 export * from './components/QueryOutput'
+export * from './components/SpeechToTextButton2'
 export {
   NotificationIcon,
   NotificationFeed,
@@ -17,3 +18,4 @@ export {
   getDefaultDisplayType,
   isDisplayTypeValid,
 } from './js/Util.js'
+export { fetchQueryTips } from './js/queryService'

@@ -24,14 +24,12 @@ import {
   getDefaultDisplayType,
   capitalizeFirstChar,
 } from '../../../js/Util'
-import { getScheduleDescription } from '../helpers'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
 } from '../../../props/defaults'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import './NotificationItem.scss'
 
@@ -52,6 +50,7 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -59,6 +58,7 @@ export default class NotificationItem extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
+    autoChartAggregations: true,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
     onDismissCallback: () => {},
@@ -83,7 +83,7 @@ export default class NotificationItem extends React.Component {
       this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse)
       const displayType = this.supportedDisplayTypes.includes('column')
         ? 'column'
-        : getDefaultDisplayType(queryResponse)
+        : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
       this.setState({ displayType })
     }
   }
@@ -183,30 +183,6 @@ export default class NotificationItem extends React.Component {
       return `${dayjs.unix(timestamp).format('MMMM Do')} at ${time}`
     }
     return `${dayjs.unix(timestamp).format('MMMM Do, YYYY')} at ${time}`
-  }
-
-  getFrequencyDescription = () => {
-    const { notification } = this.props
-    // category, "SINGLE_EVENT" or "REPEAT_EVENT"
-    // frequency, "DAY" "WEEK" "MONTH" or "YEAR"
-    // repeat, TRUE or FALSE
-    // selection, "LIST OF MONTH NUMBERS OR WEEK NUMBERS"
-
-    const category = notification.notification_type
-    const frequency = notification.reset_period
-    const repeat = !!notification.reset_period
-    const selection =
-      category === 'REPEAT_EVENT'
-        ? [1, 2, 3, 4, 5, 6, 7] // Hardcoded for MVP, we will probably get rid of this
-        : null
-
-    const description = getScheduleDescription(
-      category,
-      frequency,
-      repeat,
-      selection
-    )
-    return description
   }
 
   renderAlertColorStrip = () => (
@@ -355,11 +331,13 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
+                    authentication={this.props.authentication}
                     ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
                     themeConfig={this.props.themeConfig}
                     displayType={this.state.displayType}
+                    autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
                   />
                 </Fragment>
@@ -395,10 +373,6 @@ export default class NotificationItem extends React.Component {
                 expression={_get(notification, 'rule_expression')}
                 readOnly
               />
-              <div className="react-autoql-notification-details-title">
-                Description:
-              </div>
-              <div>{this.getFrequencyDescription()}</div>
             </div>
           )}
         </div>

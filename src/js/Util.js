@@ -589,7 +589,7 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
   return fallback
 }
 
-export const getDefaultDisplayType = (response) => {
+export const getDefaultDisplayType = (response, defaultToChart) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const responseDisplayType = _get(response, 'data.data.display_type')
 
@@ -600,17 +600,27 @@ export const getDefaultDisplayType = (response) => {
 
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
-    const displayType = isAggregation(response)
-      ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
-      : 'pivot_table'
+    let displayType = 'pivot_table'
+
+    if (defaultToChart) {
+      displayType = isAggregation(response)
+        ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
+        : 'pivot_table'
+    }
+
     return displayType
   }
 
   // If there is no display type in the response, default to regular table
   if (!responseDisplayType || responseDisplayType === 'data') {
-    const displayType = isAggregation(response)
-      ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
-      : 'table'
+    let displayType = 'table'
+
+    if (defaultToChart) {
+      displayType = isAggregation(response)
+        ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
+        : 'table'
+    }
+
     return displayType
   }
 

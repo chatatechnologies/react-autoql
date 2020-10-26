@@ -12,36 +12,6 @@ const formatSourceString = (sourceArray) => {
   }
 }
 
-const transformSafetyNetResponse = (response) => {
-  let newResponse = response
-  if (_get(response, 'data.data.replacements')) {
-    newResponse = {
-      ...newResponse,
-      data: {
-        ...newResponse.data,
-        full_suggestion: response.data.data.replacements.map((suggs) => {
-          let newSuggestionList = suggs.suggestions
-          if (newSuggestionList) {
-            newSuggestionList = suggs.suggestions.map((sugg) => {
-              return {
-                ...sugg,
-                value_label: sugg.value_label,
-              }
-            })
-          }
-          return {
-            ...suggs,
-            suggestion_list: newSuggestionList,
-          }
-        }),
-        query: response.data.data.query || response.data.data.text,
-      },
-    }
-  }
-
-  return newResponse
-}
-
 const transformUserSelection = (userSelection) => {
   if (!userSelection || !userSelection.length) {
     return undefined
@@ -68,7 +38,13 @@ const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
 
-export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
+export const fetchSuggestions = ({
+  query,
+  queryId,
+  domain,
+  apiKey,
+  token,
+} = {}) => {
   if (!query) {
     return Promise.reject(new Error('No query supplied'))
   }
@@ -79,7 +55,7 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
 
   const commaSeparatedKeywords =
     typeof query === 'string' ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow&query_id=${queryId}`
 
   const config = {
     headers: {
@@ -90,7 +66,7 @@ export const fetchSuggestions = ({ query, domain, apiKey, token } = {}) => {
   return axios
     .get(relatedQueriesUrl, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runQueryOnly = ({
@@ -153,9 +129,10 @@ export const runQueryOnly = ({
         _get(error, 'response.data.reference_id') === '1.1.430' ||
         _get(error, 'response.data.reference_id') === '1.1.431'
       ) {
-        return fetchSuggestions({ query, domain, apiKey, token })
+        const queryId = _get(error, 'response.data.data.query_id')
+        return fetchSuggestions({ query, queryId, domain, apiKey, token })
       }
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(_get(error, 'response'))
     })
 }
 
@@ -180,8 +157,7 @@ export const runQuery = ({
     })
       .then((response) => {
         if (failedValidation(response)) {
-          const newResponse = transformSafetyNetResponse(response)
-          return Promise.resolve(newResponse)
+          return Promise.resolve(response)
         }
         return runQueryOnly({
           query,
@@ -328,6 +304,32 @@ export const setColumnVisibility = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
+export const sendSuggestion = ({
+  queryId,
+  suggestion,
+  apiKey,
+  domain,
+  token,
+}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
+  const data = { suggestion }
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
 export const fetchQueryTips = ({
   keywords,
   pageSize,
@@ -358,12 +360,8 @@ export const fetchQueryTips = ({
       token,
     })
       .then((safetyNetResponse) => {
-        if (
-          _get(safetyNetResponse, 'data.full_suggestion.length') > 0 ||
-          _get(safetyNetResponse, 'data.data.replacements.length') > 0
-        ) {
-          const newResponse = transformSafetyNetResponse(safetyNetResponse)
-          return Promise.resolve(newResponse)
+        if (_get(safetyNetResponse, 'data.data.replacements.length') > 0) {
+          return Promise.resolve(safetyNetResponse)
         }
         return axios
           .get(queryTipsUrl, config)

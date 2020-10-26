@@ -103,7 +103,6 @@
 .react-autoql-safety-net-selector-container {
   display: inline-block;
   position: relative;
-  margin-left: -5px;
 }
 .react-autoql-select-popup-container.safetynet-select {
   padding: 5px 0;
@@ -139,9 +138,9 @@
   border-color: #28a8e0;
 }
 .react-autoql-execute-query-icon {
-  font-size: 23px;
-  vertical-align: bottom;
-  line-height: 24px;
+  font-size: 16px;
+  vertical-align: middle !important;
+  padding-right: 3px !important;
 
   span.react-autoql-icon svg {
     height: 19px;
@@ -162,7 +161,7 @@
   letter-spacing: 0.05em;
   font-family: inherit;
   font-size: inherit;
-  margin: 0 0.4em;
+  margin: 0;
   padding: 0;
   border-radius: 0;
   border-bottom: 1px dashed;
