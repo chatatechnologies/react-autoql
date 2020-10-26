@@ -160,8 +160,5 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "cacheDirectories": [],
-  "jtest": {
-    "testEnvironment": "node"
-  }
+  "cacheDirectories": []
 }
