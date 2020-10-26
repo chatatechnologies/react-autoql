@@ -5,6 +5,7 @@ jobs:
   build-and-test:
     executor:
       name: node/default
+      tag: "14.5.0"
     resource_class: xlarge
     steps:
       - checkout
@@ -19,6 +20,7 @@ jobs:
   test-and-release:
     executor:
       name: node/default
+      tag: "14.5.0"
     resource_class: xlarge
     steps:
       - checkout
