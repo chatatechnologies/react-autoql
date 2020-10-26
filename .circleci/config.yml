@@ -16,7 +16,7 @@ jobs:
             - run:
                 name: Run Tests
                 no_output_timeout: 60m
-                command: npm run test -- --silent=false
+                command: npm run test -- --silent=false --runInBand
   test-and-release:
     executor:
       name: node/default
@@ -31,7 +31,7 @@ jobs:
             - run:
                 name: Run Tests
                 no_output_timeout: 60m
-                command: npm run test -- --silent=false
+                command: npm run test -- --silent=false --runInBand
             - run: npx semantic-release
 workflows:
   build-and-test:
