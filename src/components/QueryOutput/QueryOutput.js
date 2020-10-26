@@ -1657,6 +1657,29 @@ export default class QueryOutput extends React.Component {
     return this.renderMessage()
   }
 
+  replaceErrorTextWithLinks = (errorMessage) => {
+    try {
+      const splitErrorMessage = errorMessage.split('<report>')
+      const newErrorMessage = (
+        <div>
+          {splitErrorMessage.map((str, index) => {
+            return (
+              <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
+                <span>{str}</span>
+                {index !== splitErrorMessage.length - 1 && (
+                  <a onClick={this.props.reportProblemCallback}>report</a>
+                )}
+              </span>
+            )
+          })}
+        </div>
+      )
+      return newErrorMessage
+    } catch (error) {
+      return <span>{errorMessage}</span>
+    }
+  }
+
   renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
@@ -1666,21 +1689,7 @@ export default class QueryOutput extends React.Component {
           // Replace the "<report>" text with link
           errorMessage = error.message
           if (this.props.reportProblemCallback) {
-            const splitErrorMessage = errorMessage.split('<report>')
-            errorMessage = (
-              <div>
-                {splitErrorMessage.map((str, index) => {
-                  return (
-                    <Fragment>
-                      <span>{str}</span>
-                      {index !== splitErrorMessage.length - 1 && (
-                        <a onClick={this.props.reportProblemCallback}>report</a>
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </div>
-            )
+            errorMessage = this.replaceErrorTextWithLinks(error.message)
           } else {
             errorMessage = errorMessage.replace('<report>', 'report')
           }
@@ -1758,7 +1767,7 @@ export default class QueryOutput extends React.Component {
 
     // This is not technically an error. There is just no data in the DB
     if (!_get(data, 'length')) {
-      return this.renderMessage(queryResponse.data.message)
+      return this.replaceErrorTextWithLinks(queryResponse.data.message)
     }
 
     if (displayType && data) {

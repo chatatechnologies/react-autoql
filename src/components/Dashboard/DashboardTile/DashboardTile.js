@@ -671,6 +671,18 @@ export default class DashboardTile extends React.Component {
     this.props.setParamsForTile({ secondDataConfig: config }, this.props.tile.i)
   }
 
+  reportProblemCallback = () => {
+    if (this.optionsToolbarRef) {
+      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    }
+  }
+
+  secondReportProblemCallback = () => {
+    if (this.secondOptionsToolbarRef) {
+      this.secondOptionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    }
+  }
+
   renderSuggestionPrefix = () => {
     return <div>I want to make sure I understood your query. Did you mean:</div>
   }
@@ -914,6 +926,7 @@ export default class DashboardTile extends React.Component {
           })
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
+        reportProblemCallback: this.reportProblemCallback,
         onColumnsUpdate: (columns) => {
           const newResponse = {
             ...this.props.queryResponse,
@@ -970,6 +983,7 @@ export default class DashboardTile extends React.Component {
           .secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
+        reportProblemCallback: this.secondReportProblemCallback,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,
