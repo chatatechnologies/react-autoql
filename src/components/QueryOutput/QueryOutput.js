@@ -1607,11 +1607,15 @@ export default class QueryOutput extends React.Component {
     skipSafetyNet,
     source,
   }) => {
-    sendSuggestion({
-      ...this.props.authentication,
-      queryId,
-      suggestion: query,
-    })
+    // Only call suggestion endpoint if clicked from suggestion list, not query validation
+    if (!userSelection) {
+      sendSuggestion({
+        ...this.props.authentication,
+        queryId,
+        suggestion: query,
+      })
+    }
+
     if (query === 'None of these') {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
