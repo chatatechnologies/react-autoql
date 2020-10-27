@@ -371,14 +371,18 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
+  isDateType = (col) => {
+    return col.type === 'DATE' || col.type === 'DATE_STRING'
+  }
+
   sortTableDataByDate = (data) => {
     try {
       if (!data || typeof data !== 'object') {
         return undefined
       }
 
-      const dateColumnIndex = this.tableColumns.findIndex(
-        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      const dateColumnIndex = this.tableColumns.findIndex((col) =>
+        this.isDateType(col)
       )
 
       if (dateColumnIndex >= 0) {
@@ -1472,6 +1476,13 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  getColumnFromIndexString = (colIndexString) => {
+    return _get(
+      this.tableColumns,
+      `[${_get(this.dataConfig, `[${colIndexString}]`)}]`
+    )
+  }
+
   generatePivotTableData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
       const tableData =
@@ -1523,11 +1534,13 @@ export default class QueryOutput extends React.Component {
           return map
         }, {})
 
-      // Make sure the longer list is on the side, not the top
+      // Make sure the longer list is in the legend, UNLESS its a date type
+      // DATE types should always go in the axis if possible
       if (
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        !dataConfigWasPersisted
+        !dataConfigWasPersisted &&
+        !this.isDateType(this.getColumnFromIndexString('stringColumnIndex'))
       ) {
         const tempCol = this.dataConfig.legendColumnIndex
         this.dataConfig.legendColumnIndex = this.dataConfig.stringColumnIndex

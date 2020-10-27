@@ -65,7 +65,10 @@ export default class ChataLineChart extends Component {
       getDataFormatting(this.props.dataFormatting)
     )
 
-    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
+    if (
+      typeof prevRotateLabels !== 'undefined' &&
+      prevRotateLabels !== this.rotateLabels
+    ) {
       this.props.onLabelChange()
     }
   }

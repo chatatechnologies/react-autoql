@@ -1019,3 +1019,12 @@ export const isTableResponse = (response, displayType) => {
     isTableType(displayType)
   )
 }
+
+export const awaitTimeout = (delay, cb = () => {}) => {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      cb()
+      resolve()
+    }, delay)
+  )
+}

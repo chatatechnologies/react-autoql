@@ -224,12 +224,12 @@ export default class App extends Component {
 
     return {
       theme: this.state.theme,
-      // accentColor:
-      //   this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
-      // fontFamily: this.state.fontFamily,
-      // chartColors: chartColors,
-      // titleColor: dashboardTitleColor,
-      // dashboardBackground: dashboardBackground,
+      accentColor:
+        this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
+      fontFamily: this.state.fontFamily,
+      chartColors: chartColors,
+      titleColor: dashboardTitleColor,
+      dashboardBackground: dashboardBackground,
     }
   }
 

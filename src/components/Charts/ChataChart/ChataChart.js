@@ -19,7 +19,7 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 
-import { svgToPng, getPNGBase64 } from '../../../js/Util.js'
+import { svgToPng, awaitTimeout } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
@@ -104,7 +104,7 @@ export default class ChataChart extends Component {
 
   componentDidUpdate = (prevProps) => {
     if (!this.props.isResizing && prevProps.isResizing) {
-      this.updateMargins(350)
+      this.updateMargins()
     }
 
     if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
@@ -255,25 +255,27 @@ export default class ChataChart extends Component {
   updateMargins = (delay = 0) => {
     this.setState({ isLoading: true })
     try {
-      setTimeout(() => {
+      awaitTimeout(delay, () => {
         const newLeftMargin = this.getNewLeftMargin()
         const newTopMargin = this.getNewTopMargin()
         this.setState({
           ...newLeftMargin,
           ...newTopMargin,
         })
-        setTimeout(() => {
+      }).then(() => {
+        awaitTimeout(delay, () => {
           const newRightMargin = this.getNewRightMargin()
           const newBottomMargin = this.getNewBottomMargin()
           this.setState({
             ...newRightMargin,
             ...newBottomMargin,
           })
+        }).then(() => {
           setTimeout(() => {
             this.setState({ isLoading: false })
-          })
-        }, delay)
-      }, delay)
+          }, 0)
+        })
+      })
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
@@ -421,7 +423,7 @@ export default class ChataChart extends Component {
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
-      onLabelChange: () => {},
+      onLabelChange: this.updateMargins,
       height,
       width,
       columns,
