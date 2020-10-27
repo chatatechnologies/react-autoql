@@ -16,6 +16,8 @@ import { themeConfigType, dataFormattingType } from '../../../props/types.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults.js'
 
 export default class Axis extends Component {

@@ -17,6 +17,8 @@ import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class Axis extends Component {
@@ -98,7 +100,7 @@ export default class Axis extends Component {
 
   setColorScale = () => {
     const self = this
-    const { chartColors } = this.props.themeConfig
+    const { chartColors } = getThemeConfig(this.props.themeConfig)
 
     this.color = scaleOrdinal()
       .domain(
@@ -211,7 +213,7 @@ export default class Axis extends Component {
       stringColumnIndex,
       numberColumnIndex,
     } = this.props
-    const { chartColors } = this.props.themeConfig
+    const { chartColors } = getThemeConfig(this.props.themeConfig)
 
     this.legendLabels = this.sortedData.map((d) => {
       const legendString = `${formatElement({
@@ -220,7 +222,7 @@ export default class Axis extends Component {
       })}: ${formatElement({
         element: d.cells[0].value || 0,
         column: _get(this.props, `columns[${numberColumnIndex}]`),
-        config: this.props.dataFormatting,
+        config: getDataFormatting(this.props.dataFormatting),
       })}`
       return {
         hidden: d.hidden,

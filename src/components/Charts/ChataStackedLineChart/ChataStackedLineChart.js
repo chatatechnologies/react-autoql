@@ -11,6 +11,8 @@ import { dataFormattingType, themeConfigType } from '../../../props/types'
 import {
   dataFormattingDefault,
   themeConfigDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataStackedLineChart extends Component {
@@ -57,7 +59,7 @@ export default class ChataStackedLineChart extends Component {
       tickWidth,
       labelArray,
       this.props.columns[0],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
     if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {

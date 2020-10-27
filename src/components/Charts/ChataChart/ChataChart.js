@@ -33,6 +33,8 @@ import {
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 import _isEqual from 'lodash.isequal'
 
@@ -529,7 +531,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Currency</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.currencySelectRef = r)}
                 items={currencySelectorState}
                 onSelect={() => {
@@ -563,7 +565,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Quantity</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.quantitySelectRef = r)}
                 items={quantitySelectorState}
                 onSelect={() => {
@@ -596,7 +598,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Ratio</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioSelectorState}
                 onSelect={() => {
@@ -906,17 +908,17 @@ export default class ChataChart extends Component {
           height={this.props.height}
           style={{
             fontFamily: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'font-family',
               'sans-serif'
             ),
             color: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'text-color-primary',
               'inherit'
             ),
             background: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'background-color',
               'inherit'
             ),

@@ -6,7 +6,7 @@ import uuid from 'uuid'
 import { Radio } from '../../Radio'
 
 import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault } from '../../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
 
 import './ScheduleBuilder.scss'
 
@@ -127,7 +127,7 @@ export default class ScheduleBuilder extends React.Component {
           <p>You will be notified as soon as the Alert conditions are met.</p>
           <p>Reset Alert to run:</p>
           <Radio
-            themeConfig={this.props.themeConfig}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             options={['Immediately', 'Daily', 'Weekly', 'Monthly']}
             selectionPlaceholder="Select a frequency"
             value={this.state.frequencySelectValue}

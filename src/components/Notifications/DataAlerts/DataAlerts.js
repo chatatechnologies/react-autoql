@@ -20,6 +20,8 @@ import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlerts.scss'
@@ -51,18 +53,20 @@ export default class DataAlerts extends React.Component {
   componentDidMount = () => {
     this.getDataAlerts('user')
     this.getDataAlerts('project')
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
   getDataAlerts = (type) => {
     fetchDataAlerts({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       type,
     })
       .then((list) => {
@@ -138,7 +142,7 @@ export default class DataAlerts extends React.Component {
       ruleId: rule.id,
       type: rule.type,
       status: newStatus,
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
     }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -148,9 +152,9 @@ export default class DataAlerts extends React.Component {
   renderNotificationEditModal = () => {
     return (
       <NotificationModal
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         key={this.COMPONENT_KEY}
-        authentication={this.props.authentication}
+        authentication={getAuthentication(this.props.authentication)}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentRule={this.state.activeRule}
@@ -235,7 +239,7 @@ export default class DataAlerts extends React.Component {
                       />
                     )}
                     <Checkbox
-                      themeConfig={this.props.themeConfig}
+                      themeConfig={getThemeConfig(this.props.themeConfig)}
                       type="switch"
                       checked={
                         notification.status === 'ACTIVE' ||

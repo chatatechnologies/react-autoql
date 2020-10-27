@@ -29,6 +29,10 @@ import {
   themeConfigDefault,
   autoQLConfigDefault,
   authenticationDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
 import dayjs from '../../js/dayjsWithPlugins'
@@ -168,10 +172,10 @@ export default class QueryOutput extends React.Component {
         this.dataConfig = _cloneDeep(this.props.dataConfig)
       }
 
-      const { chartColors } = this.props.themeConfig
+      const { chartColors } = getThemeConfig(this.props.themeConfig)
       this.COMPONENT_KEY = uuid.v4()
       this.colorScale = scaleOrdinal().range(chartColors)
-      setCSSVars(this.props.themeConfig)
+      setCSSVars(getThemeConfig(this.props.themeConfig))
 
       // Determine the supported visualization types based on the response data
       this.supportedDisplayTypes = getSupportedDisplayTypes(
@@ -221,8 +225,10 @@ export default class QueryOutput extends React.Component {
       this.props.onDataConfigChange({})
     }
 
-    if (_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      _isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
 
     if (this.props.queryResponse && !prevProps.queryResponse) {
@@ -494,7 +500,9 @@ export default class QueryOutput extends React.Component {
     return (
       <a
         className={`single-value-response ${
-          this.props.autoQLConfig.enableDrilldowns ? ' with-drilldown' : ''
+          getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
+            ? ' with-drilldown'
+            : ''
         }`}
         onClick={() => {
           this.props.onDataClick(
@@ -507,7 +515,7 @@ export default class QueryOutput extends React.Component {
         {formatElement({
           element: this.tableData[0],
           column: this.tableColumns[0],
-          config: this.props.dataFormatting,
+          config: getDataFormatting(this.props.dataFormatting),
         })}
       </a>
     )
@@ -726,7 +734,7 @@ export default class QueryOutput extends React.Component {
     if (this.state.displayType === 'pivot_table') {
       return (
         <ChataTable
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           key={this.pivotTableID}
           ref={(ref) => (this.pivotTableRef = ref)}
           columns={this.pivotTableColumns}
@@ -746,7 +754,7 @@ export default class QueryOutput extends React.Component {
       <Fragment>
         {this.renderAllColumnsHiddenMessage()}
         <ChataTable
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
@@ -774,7 +782,7 @@ export default class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.state.displayType}
           data={this.chartData}
@@ -784,12 +792,12 @@ export default class QueryOutput extends React.Component {
           }
           height={height}
           width={width}
-          dataFormatting={this.props.dataFormatting}
+          dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           changeStringColumnIndex={(index) => {
             if (this.dataConfig.legendColumnIndex === index) {
               this.dataConfig.legendColumnIndex = undefined
@@ -928,7 +936,7 @@ export default class QueryOutput extends React.Component {
               }:</strong> ${formatElement({
           element: row[0],
           column: this.pivotTableColumns[0],
-          config: this.props.dataFormatting,
+          config: getDataFormatting(this.props.dataFormatting),
         })}
             </div>
             <div><strong>${
@@ -940,7 +948,7 @@ export default class QueryOutput extends React.Component {
           {
             element: row[columnIndex] || 0,
             column: numberColumn,
-            config: this.props.dataFormatting,
+            config: getDataFormatting(this.props.dataFormatting),
           }
         )}
             </div>
@@ -956,7 +964,7 @@ export default class QueryOutput extends React.Component {
               <strong>${stringColumn.display_name}:</strong> ${formatElement({
           element: row[this.dataConfig.stringColumnIndex],
           column: stringColumn,
-          config: this.props.dataFormatting,
+          config: getDataFormatting(this.props.dataFormatting),
         })}
             </div>
             <div>
@@ -964,7 +972,7 @@ export default class QueryOutput extends React.Component {
           {
             element: numberValue || row[columnIndex] || 0,
             column: numberColumn,
-            config: this.props.dataFormatting,
+            config: getDataFormatting(this.props.dataFormatting),
           }
         )}
             </div>
@@ -1086,7 +1094,7 @@ export default class QueryOutput extends React.Component {
                 return formatElement({
                   element: value,
                   column,
-                  config: this.props.dataFormatting,
+                  config: getDataFormatting(this.props.dataFormatting),
                 })
               },
             }
@@ -1264,7 +1272,10 @@ export default class QueryOutput extends React.Component {
       // Regardless of the BE response, we want to default to percent
       if (
         (col.type === 'RATIO' || col.type === 'NUMBER') &&
-        _get(this.props.dataFormatting, 'comparisonDisplay') === 'PERCENT'
+        _get(
+          getDataFormatting(this.props.dataFormatting),
+          'comparisonDisplay'
+        ) === 'PERCENT'
       ) {
         col.type = 'PERCENT'
       }
@@ -1294,7 +1305,7 @@ export default class QueryOutput extends React.Component {
         return formatElement({
           element: cell.getValue(),
           column: col,
-          config: this.props.dataFormatting,
+          config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
       }
@@ -1550,7 +1561,7 @@ export default class QueryOutput extends React.Component {
         const formattedColumnName = formatElement({
           element: columnName,
           column: this.tableColumns[this.dataConfig.legendColumnIndex],
-          config: this.props.dataFormatting,
+          config: getDataFormatting(this.props.dataFormatting),
         })
         pivotTableColumns.push({
           ...this.tableColumns[this.dataConfig.numberColumnIndex],
@@ -1610,7 +1621,7 @@ export default class QueryOutput extends React.Component {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
     if (!userSelection) {
       sendSuggestion({
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
         queryId,
         suggestion: query,
       })
@@ -1748,7 +1759,7 @@ export default class QueryOutput extends React.Component {
     if (_get(queryResponse, 'data.data.replacements')) {
       return (
         <SafetyNetMessage
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>

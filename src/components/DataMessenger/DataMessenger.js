@@ -20,9 +20,12 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
-import { LIGHT_THEME, DARK_THEME } from '../../js/Themes'
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -142,7 +145,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     try {
-      setCSSVars(this.props.themeConfig)
+      setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       this.setintroMessages()
 
       // Listen for esc press to cancel queries while they are running
@@ -184,10 +187,11 @@ export default class DataMessenger extends React.Component {
         this.clearMessages()
       }
 
-      const thisTheme = this.props.themeConfig.theme
+      const thisTheme = getThemeConfig(getThemeConfig(this.props.themeConfig))
+        .theme
       const prevTheme = prevProps.themeConfig.theme
       if (thisTheme && thisTheme !== prevTheme) {
-        setCSSVars(this.props.themeConfig)
+        setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       }
     } catch (error) {
       console.error(error)
@@ -438,8 +442,8 @@ export default class DataMessenger extends React.Component {
 
   runDrilldownFromAPI = (data, queryID) => {
     runDrilldown({
-      ...this.props.authentication,
-      ...this.props.autoQLConfig,
+      ...getAuthentication(getAuthentication(this.props.authentication)),
+      ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
       queryID,
       data,
     })
@@ -478,7 +482,9 @@ export default class DataMessenger extends React.Component {
   }
 
   processDrilldown = (drilldownData, queryID, messageId) => {
-    if (this.props.autoQLConfig.enableDrilldowns) {
+    if (
+      getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableDrilldowns
+    ) {
       if (!drilldownData || !drilldownData.data) {
         return
       }
@@ -636,7 +642,8 @@ export default class DataMessenger extends React.Component {
                 </div>
               )}
               {this.props.enableNotificationsTab &&
-                this.props.autoQLConfig.enableNotifications && (
+                getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
+                  .enableNotifications && (
                   <div
                     className={`tab${
                       page === 'notifications' ? ' active' : ''
@@ -655,8 +662,12 @@ export default class DataMessenger extends React.Component {
                     <div className="data-messenger-notification-btn">
                       <NotificationIcon
                         ref={(r) => (this.notificationBadgeRef = r)}
-                        authentication={this.props.authentication}
-                        themeConfig={this.props.themeConfig}
+                        authentication={getAuthentication(
+                          getAuthentication(this.props.authentication)
+                        )}
+                        themeConfig={getThemeConfig(
+                          getThemeConfig(this.props.themeConfig)
+                        )}
                         clearCountOnClick={false}
                         style={{ fontSize: '19px' }}
                         overflowCount={9}
@@ -808,9 +819,15 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
+                  authentication={getAuthentication(
+                    getAuthentication(this.props.authentication)
+                  )}
+                  autoQLConfig={getAutoQLConfig(
+                    getAutoQLConfig(this.props.autoQLConfig)
+                  )}
+                  themeConfig={getThemeConfig(
+                    getThemeConfig(this.props.themeConfig)
+                  )}
                   scrollRef={this.messengerScrollComponent}
                   isDataMessengerOpen={this.props.isVisible}
                   setActiveMessage={this.setActiveMessage}
@@ -824,7 +841,9 @@ export default class DataMessenger extends React.Component {
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
-                  dataFormatting={this.props.dataFormatting}
+                  dataFormatting={getDataFormatting(
+                    getDataFormatting(this.props.dataFormatting)
+                  )}
                   displayType={
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
@@ -859,9 +878,13 @@ export default class DataMessenger extends React.Component {
             We run on AutoQL by Chata
           </div>
           <QueryInput
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
+            authentication={getAuthentication(
+              getAuthentication(this.props.authentication)
+            )}
+            autoQLConfig={getAutoQLConfig(
+              getAutoQLConfig(this.props.autoQLConfig)
+            )}
+            themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
             ref={this.setQueryInputRef}
             className="chat-drawer-chat-bar"
             onSubmit={this.onInputSubmit}
@@ -890,7 +913,7 @@ export default class DataMessenger extends React.Component {
     const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
-      ...this.props.authentication,
+      ...getAuthentication(getAuthentication(this.props.authentication)),
       keywords,
       pageSize,
       pageNumber,
@@ -979,7 +1002,7 @@ export default class DataMessenger extends React.Component {
 
   renderQueryTipsContent = () => (
     <QueryTipsTab
-      themeConfig={this.props.themeConfig}
+      themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
       onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
       queryTipsSafetyNetResponse={this.state.queryTipsSafetyNetResponse}
       onSafetyNetSuggestionClick={this.onQueryTipsSafetyNetSuggestionClick}
@@ -1003,8 +1026,10 @@ export default class DataMessenger extends React.Component {
     return (
       <NotificationFeed
         ref={(ref) => (this.notificationListRef = ref)}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
+        authentication={getAuthentication(
+          getAuthentication(this.props.authentication)
+        )}
+        themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         onExpandCallback={this.props.onNotificationExpandCallback}
         onCollapseCallback={this.props.onNotificationCollapseCallback}
         activeNotificationData={this.props.activeNotificationData}
@@ -1129,8 +1154,10 @@ export default class DataMessenger extends React.Component {
   renderNotificationModal = () => {
     return (
       <NotificationModal
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
+        authentication={getAuthentication(
+          getAuthentication(this.props.authentication)
+        )}
+        themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         isVisible={this.state.isNotificationModalVisible}
         onClose={() => this.setState({ isNotificationModalVisible: false })}
         onSave={() => {

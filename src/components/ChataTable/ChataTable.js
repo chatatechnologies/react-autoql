@@ -19,7 +19,7 @@ import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 export default class ChataTable extends React.Component {
   ref = null
@@ -50,7 +50,7 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this.TABLE_CONTAINER_ID = uuid.v4()
     this.setInitialHeaderFilters()
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
 
     setTimeout(this.props.setFilterTagsCallback, 100)
   }
@@ -78,8 +78,10 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 

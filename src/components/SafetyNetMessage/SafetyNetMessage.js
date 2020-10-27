@@ -8,7 +8,7 @@ import { Icon } from '../Icon'
 import { Select } from '../Select'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 export default class SafetyNetMessage extends React.Component {
   originalReplaceWords = []
@@ -270,7 +270,7 @@ export default class SafetyNetMessage extends React.Component {
         key={`query-element-${suggestion.id}`}
       >
         <Select
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           options={options}
           key={uuid.v4()}
           value={suggestion.id}

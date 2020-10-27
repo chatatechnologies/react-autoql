@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import { scaleLinear } from 'd3-scale'
-import { themeConfigDefault } from '../../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
 import { themeConfigType } from '../../../props/types'
 
 export default class Circles extends Component {
@@ -33,8 +33,8 @@ export default class Circles extends Component {
       .range([0, Math.min(xScale.bandwidth(), yScale.bandwidth())])
 
     const circles = []
-    data.forEach(d => {
-      d.cells.forEach(cell => {
+    data.forEach((d) => {
+      d.cells.forEach((cell) => {
         circles.push(
           <circle
             key={`${cell.label}-${d.label}`}
@@ -63,8 +63,14 @@ export default class Circles extends Component {
               strokeWidth: 10,
               fill:
                 this.state.activeKey === `${cell.label}-${d.label}`
-                  ? _get(this.props.themeConfig, 'chartColors[1]')
-                  : _get(this.props.themeConfig, 'chartColors[0]'),
+                  ? _get(
+                      getThemeConfig(this.props.themeConfig),
+                      'chartColors[1]'
+                    )
+                  : _get(
+                      getThemeConfig(this.props.themeConfig),
+                      'chartColors[0]'
+                    ),
               fillOpacity: 0.7,
             }}
           />

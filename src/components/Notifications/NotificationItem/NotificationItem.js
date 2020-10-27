@@ -29,6 +29,8 @@ import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 import './NotificationItem.scss'
@@ -94,7 +96,10 @@ export default class NotificationItem extends React.Component {
 
   fetchRuleDetails = (notification) => {
     this.setState({ ruleDetails: undefined, ruleStatus: undefined })
-    fetchRule({ ruleId: notification.rule_id, ...this.props.authentication })
+    fetchRule({
+      ruleId: notification.rule_id,
+      ...getAuthentication(this.props.authentication),
+    })
       .then((response) => {
         this.props.onRuleFetchCallback(response)
         this.setState({
@@ -130,7 +135,7 @@ export default class NotificationItem extends React.Component {
     this.props.onDismissCallback(notification)
 
     dismissNotification({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
     }).catch((error) => {
       console.error(error)
@@ -143,7 +148,7 @@ export default class NotificationItem extends React.Component {
     this.props.onDeleteCallback(notification)
 
     deleteNotification({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
     }).catch((error) => {
       console.error(error)
@@ -156,7 +161,7 @@ export default class NotificationItem extends React.Component {
       ruleId: notification.rule_id,
       type: notification.rule_type,
       status,
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
     })
       .then(() => {
         this.setState({ ruleStatus: status })
@@ -331,11 +336,13 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
-                    authentication={this.props.authentication}
+                    authentication={getAuthentication(
+                      this.props.authentication
+                    )}
                     ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
-                    themeConfig={this.props.themeConfig}
+                    themeConfig={getThemeConfig(this.props.themeConfig)}
                     displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
@@ -350,7 +357,7 @@ export default class NotificationItem extends React.Component {
             {_get(this.supportedDisplayTypes, 'length') > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
-                  themeConfig={this.props.themeConfig}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   supportedDisplayTypes={this.supportedDisplayTypes}
                   displayType={this.state.displayType}
                   onDisplayTypeChange={(displayType) =>
@@ -367,8 +374,8 @@ export default class NotificationItem extends React.Component {
                 Conditions:
               </div>
               <ExpressionBuilder
-                authentication={this.props.authentication}
-                themeConfig={this.props.themeConfig}
+                authentication={getAuthentication(this.props.authentication)}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'rule_expression')}
                 readOnly

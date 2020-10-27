@@ -9,7 +9,7 @@ import { Icon } from '../Icon'
 import { SafetyNetMessage } from '../SafetyNetMessage'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 import './QueryTipsTab.scss'
 
@@ -41,7 +41,7 @@ export default class QueryTipsTab extends React.Component {
     if (this.props.queryTipsSafetyNetResponse) {
       return (
         <SafetyNetMessage
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           response={this.props.queryTipsSafetyNetResponse}
           onSuggestionClick={this.props.onSafetyNetSuggestionClick}
           autoSelectSuggestion={true}

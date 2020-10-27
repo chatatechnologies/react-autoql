@@ -6,8 +6,13 @@ import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
 
-import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
+} from '../../../props/defaults'
 
 import './Group.scss'
 
@@ -55,6 +60,7 @@ export default class Group extends React.Component {
   ruleRefs = []
 
   static propTypes = {
+    authentication: authenticationType,
     themeConfig: themeConfigType,
     groupId: PropTypes.string,
     onDelete: PropTypes.func,
@@ -66,6 +72,7 @@ export default class Group extends React.Component {
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     groupId: undefined,
     disableAddGroupBtn: false,
@@ -197,7 +204,7 @@ export default class Group extends React.Component {
       <div className="notification-rule-and-or-select">
         Notify me when{' '}
         <Radio
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           type="button"
@@ -295,8 +302,8 @@ export default class Group extends React.Component {
             if (rule.type === 'rule') {
               return (
                 <Rule
-                  authentication={this.props.authentication}
-                  themeConfig={this.props.themeConfig}
+                  authentication={getAuthentication(this.props.authentication)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   ref={(r) => (this.ruleRefs[i] = r)}
                   ruleId={rule.id}
                   key={rule.id}
@@ -311,8 +318,8 @@ export default class Group extends React.Component {
             } else if (rule.type === 'group') {
               return (
                 <Group
-                  authentication={this.props.authentication}
-                  themeConfig={this.props.themeConfig}
+                  authentication={getAuthentication(this.props.authentication)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   groupId={rule.id}
                   key={rule.id}
                   initialData={rule.termValue}
@@ -367,8 +374,8 @@ export default class Group extends React.Component {
             return (
               <div key={`group-${rule.id}`}>
                 <Group
-                  authentication={this.props.authentication}
-                  themeConfig={this.props.themeConfig}
+                  authentication={getAuthentication(this.props.authentication)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   groupId={rule.id}
                   initialData={rule.termValue}
                   enableQueryValidation={false}

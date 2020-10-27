@@ -17,6 +17,10 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
@@ -198,23 +202,23 @@ export default class ChatMessage extends React.Component {
       return (
         <QueryOutput
           ref={(ref) => (this.responseRef = ref)}
-          authentication={this.props.authentication}
-          autoQLConfig={this.props.autoQLConfig}
+          authentication={getAuthentication(this.props.authentication)}
+          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           onDataClick={this.props.processDrilldown}
           queryResponse={response}
           displayType={this.state.displayType}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           copyToClipboard={this.copyToClipboard}
           tableOptions={this.props.tableOptions}
-          dataFormatting={this.props.dataFormatting}
+          dataFormatting={getDataFormatting(this.props.dataFormatting)}
           setFilterTagsCallback={this.setFilterTags}
           hideColumnCallback={this.hideColumnCallback}
           onTableFilterCallback={this.onTableFilter}
           height={chartHeight}
           width={chartWidth}
-          demo={this.props.authentication.demo}
+          demo={getAuthentication(this.props.authentication).demo}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
           )}
@@ -293,9 +297,9 @@ export default class ChatMessage extends React.Component {
         <OptionsToolbar
           ref={(r) => (this.optionsToolbarRef = r)}
           className={`chat-message-toolbar right`}
-          authentication={this.props.authentication}
-          autoQLConfig={this.props.autoQLConfig}
-          themeConfig={this.props.themeConfig}
+          authentication={getAuthentication(this.props.authentication)}
+          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           responseRef={this.responseRef}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
@@ -333,7 +337,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.isResponse && this.props.type !== 'text') {
       return (
         <VizToolbar
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           className="chat-message-toolbar left"
           supportedDisplayTypes={supportedDisplayTypes || []}
           displayType={displayType}

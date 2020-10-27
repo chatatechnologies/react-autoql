@@ -9,8 +9,13 @@ import { Group } from '../Group'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 
-import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault } from '../../../props/defaults'
+import { authenticationType, themeConfigType } from '../../../props/types'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
+} from '../../../props/defaults'
 
 import './ExpressionBuilder.scss'
 
@@ -48,6 +53,7 @@ export default class ExpressionBuilder extends React.Component {
   groupRefs = []
 
   static propTypes = {
+    authentication: authenticationType,
     themeConfig: themeConfigType,
     expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
@@ -55,6 +61,7 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   static defaultProps = {
+    authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     expression: undefined,
     readOnly: false,
@@ -192,7 +199,7 @@ export default class ExpressionBuilder extends React.Component {
             return (
               <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
-                  themeConfig={this.props.themeConfig}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   ref={(r) => (this.groupRefs[i] = r)}
                   groupId={group.id}
                   disableAddGroupBtn={true}
@@ -238,7 +245,7 @@ export default class ExpressionBuilder extends React.Component {
           >
             Notify me when{' '}
             <Radio
-              themeConfig={this.props.themeConfig}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
               type="button"
@@ -255,8 +262,8 @@ export default class ExpressionBuilder extends React.Component {
             this.state.groups.map((group, i) => {
               return (
                 <Group
-                  authentication={this.props.authentication}
-                  themeConfig={this.props.themeConfig}
+                  authentication={getAuthentication(this.props.authentication)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}

@@ -11,6 +11,8 @@ import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataBarChart extends Component {
@@ -57,7 +59,7 @@ export default class ChataBarChart extends Component {
       tickWidth,
       labelArray,
       this.props.columns[this.props.numberColumnIndex],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
     if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
@@ -149,7 +151,7 @@ export default class ChataBarChart extends Component {
         />
         {
           <Bars
-            themeConfig={this.props.themeConfig}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,

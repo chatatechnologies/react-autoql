@@ -9,6 +9,8 @@ import { shouldRotateLabels } from '../../../js/Util.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 
@@ -58,7 +60,7 @@ export default class ChataHeatmapChart extends Component {
       this.squareWidth,
       labelArray,
       this.props.columns[0],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
     if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
@@ -159,7 +161,7 @@ export default class ChataHeatmapChart extends Component {
         className="react-autoql-heatmap-chart"
       >
         <Axes
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           scales={{ xScale, yScale }}
           xCol={legendColumn}
           yCol={columns[0]}
@@ -182,7 +184,7 @@ export default class ChataHeatmapChart extends Component {
         />
         {
           <Squares
-            themeConfig={this.props.themeConfig}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,
