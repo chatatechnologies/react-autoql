@@ -1,0 +1,84 @@
+.react-autoql-steps-container {
+  margin: 10px;
+}
+
+.react-autoql-step-container {
+  position: relative;
+  border-left: 1px solid var(--react-autoql-text-color-placeholder, lightgray);
+  margin-left: 12px;
+  padding-left: 20px;
+  padding-bottom: 5px;
+  transition: all 0.5s ease;
+
+  &.complete {
+    border-color: var(--react-autoql-accent-color, #26a7df);
+    .react-autoql-step-dot {
+      border-color: var(--react-autoql-accent-color, #26a7df);
+      background: var(--react-autoql-accent-color, #26a7df);
+      color: #fff;
+    }
+  }
+
+  &.error {
+    border-color: #ffcc00;
+    .react-autoql-step-dot {
+      border-color: #ffcc00;
+      background: #ffcc00;
+      color: white;
+    }
+  }
+
+  &:not(.active) .react-autoql-step-content-container {
+    pointer-events: none;
+    height: 10px;
+    opacity: 0;
+    margin: 0;
+  }
+}
+
+.react-autoql-step-dot {
+  position: absolute;
+  top: 0;
+  left: -10px;
+  height: 20px;
+  width: 20px;
+  border-radius: 15px;
+  background: var(--react-autoql-background-color-primary, #fff);
+  border: 1px solid var(--react-autoql-text-color-placeholder, lightgray);
+  transition: all 0.5s ease;
+
+  font-size: 10.5px;
+  color: var(--react-autoql-text-color-placeholder, lightgray);
+  text-align: center;
+}
+
+.react-autoql-step-title-container:hover {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  color: var(--react-autoql-accent-color, #26a7df);
+}
+
+.react-autoql-step-title {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 15px;
+  padding-top: 2px;
+}
+
+.react-autoql-step-subtitle {
+  font-size: 13px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.4));
+}
+.react-autoql-step-content {
+  margin: 15px;
+  margin-top: 0;
+}
+.react-autoql-step-content-container {
+  transition-timing-function: ease;
+  transition-property: height, opacity, margin;
+  transition-duration: 0.5s;
+
+  opacity: 1;
+}

@@ -1,0 +1,142 @@
+.react-autoql-bar-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+}
+
+.react-autoql-chatbar-input {
+  padding: 10px;
+  padding-left: 20px;
+  margin: 10px;
+  height: 42px;
+  box-sizing: border-box;
+  border-radius: 24px;
+  font-size: 16px;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  outline: none !important;
+  width: calc(100% - 20px);
+  font-family: inherit;
+
+  /* Default styles outside of data messenger */
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-background-color-primary);
+  color: #5d5d5d;
+}
+.react-autoql-chatbar-input.left-padding {
+  padding-left: 54px;
+}
+.react-autoql-chatbar-input:disabled {
+  background: rgba(0, 0, 0, 0.03);
+}
+.react-autoql-chatbar-input:not(:disabled):hover {
+  box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+}
+.react-autoql-chatbar-input::placeholder {
+  /* Default color outside of data messenger */
+  color: #999 !important;
+}
+
+/* autosuggest */
+.react-autoql-bar-container .react-autosuggest__container,
+.react-autoql-chatbar-input-container {
+  position: relative;
+  flex: 1;
+}
+.react-autoql-bar-container .react-autosuggest__input--focused {
+  outline: none;
+}
+.react-autoql-bar-container .react-autosuggest__input::-ms-clear {
+  display: none;
+}
+.react-autoql-bar-container .react-autosuggest__suggestions-container {
+  display: none;
+}
+.react-autoql-bar-container .react-autosuggest__suggestions-container--open {
+  position: absolute;
+  top: 45px;
+  bottom: unset;
+  margin: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  display: block;
+  width: calc(100% - 20px);
+  height: unset;
+  border-radius: 24px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: normal;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+
+  /* Default styles outside of data messenger */
+  background-color: white;
+  color: #5d5d5d;
+}
+
+.react-autoql-bar-container.autosuggest-top
+  .react-autosuggest__suggestions-container--open {
+  top: unset;
+  bottom: 45px;
+}
+
+.react-autoql-bar-container.autosuggest-bottom
+  .react-autosuggest__suggestions-container--open {
+  top: 45px;
+  bottom: unset;
+}
+
+.react-autoql-bar-container .react-autosuggest__suggestions-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+/* Autocomplete styles */
+.react-autoql-bar-container .react-autosuggest__suggestions-container--open {
+  background-color: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
+}
+.react-autoql-bar-container .react-autosuggest__suggestion {
+  color: var(--react-autoql-text-color-primary);
+}
+.react-autoql-chatbar-input {
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
+}
+.react-autoql-chatbar-input::placeholder {
+  color: var(--react-autoql-text-color-placeholder);
+}
+.react-autoql-bar-container .react-autosuggest__suggestion {
+  cursor: pointer;
+  padding: 2px;
+  padding-left: 18px;
+  letter-spacing: 0.05em;
+  line-height: 22.5px;
+}
+
+.react-autoql-bar-container .react-autosuggest__suggestion--highlighted {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-autoql-bar-container .react-autosuggest__section-title {
+  padding: 10px 0 0 10px;
+  font-size: 12px;
+  color: #777;
+}
+
+.input-response-loading-container {
+  position: absolute;
+  right: 23px;
+  top: -2px;
+}
+
+.chat-bar-input-icon {
+  position: absolute;
+  color: #28a8e0; // For chata logo
+  font-size: 20px;
+  left: 30px;
+  top: 15px;
+}

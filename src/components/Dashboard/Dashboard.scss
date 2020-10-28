@@ -1,0 +1,35 @@
+.react-autoql-dashboard-container {
+  background: var(--react-autoql-background-color-secondary);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.react-autoql-dashboard-container.edit-mode {
+  padding-bottom: 200px;
+}
+
+.react-autoql-dashboard-drilldown-original {
+  flex: 0 0 47vh;
+  height: 47vh;
+  padding-bottom: 20px;
+}
+.react-autoql-dashboard-drilldown-table {
+  flex: 1;
+  height: 30vh;
+  overflow: hidden;
+}
+
+.empty-dashboard-message-container {
+  font-family: var(--react-autoql-font-family);
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 100px;
+  height: 100%;
+  width: 100%;
+}
+
+.empty-dashboard-new-tile-btn {
+  color: var(--react-autoql-accent-color);
+  font-weight: bold;
+  cursor: pointer;
+}

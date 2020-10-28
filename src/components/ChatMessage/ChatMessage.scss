@@ -1,0 +1,192 @@
+.chat-single-message-container {
+  transition: background-color 0.2s ease;
+  padding-top: 6px;
+
+  &:first-of-type {
+    margin-top: 10px;
+  }
+
+  .query-more-btn {
+    transition: all 0.3s ease;
+    font-size: 22px;
+    padding: 13px;
+    margin-bottom: 6px;
+    height: 42px;
+    opacity: 0;
+    visibility: hidden;
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+.chat-single-message-container.response {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 20px;
+
+  animation: scale-up-bl 0.6s ease;
+}
+.chat-single-message-container.request {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 20px;
+
+  animation: scale-up-br 0.6s ease;
+}
+.chat-single-message-container .chat-message-bubble {
+  position: relative;
+  padding: 13px;
+  border-radius: 10px;
+  max-width: calc(100% - 20px);
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  box-sizing: border-box;
+  /* make small margin on bottom because sometimes react
+  custom scrollbar cuts off a pixel or 2 at the bottom */
+  margin-bottom: 6px;
+}
+.chat-single-message-container .chat-message-bubble.text {
+  max-width: 85%;
+}
+
+.chat-single-message-container .chat-message-bubble.full-width {
+  width: calc(100% - 20px) !important;
+  min-width: calc(100% - 20px) !important;
+  max-width: calc(100% - 20px) !important;
+}
+.chat-single-message-container.response .chat-message-bubble.active {
+  border: 1px solid #c3c3c3;
+}
+.chat-single-message-container.response .chat-message-bubble {
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+}
+.chat-single-message-container.response .chat-message-bubble:not(.text) {
+  min-width: 125px;
+}
+.chat-single-message-container.request .chat-message-bubble {
+  background: var(--react-autoql-accent-color);
+  color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+}
+/* Increase height of message to include table filters,
+so we dont have to redraw the whole table */
+.chat-single-message-container.response.filtering-table {
+  max-height: calc(85% + 35px) !important;
+}
+.chat-message-toolbar,
+.chat-message-toolbar.autoql-options-toolbar {
+  display: none;
+  position: absolute;
+  background: inherit;
+  top: -31px;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  background: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-accent-color);
+}
+.chat-message-toolbar.right {
+  right: -9px;
+}
+.chat-message-toolbar.left {
+  left: -9px;
+}
+.chat-message-bubble:hover .chat-message-toolbar,
+.chat-message-bubble .chat-message-toolbar.active {
+  display: block;
+}
+.report-problem-text-area {
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-top: 10px;
+  padding: 5px 10px;
+  outline: none !important;
+}
+.data-limit-warning-icon {
+  color: #ffcc00;
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 20px;
+}
+
+.more-options-menu,
+.report-problem-menu {
+  background: var(--react-autoql-background-color-primary);
+  padding: 10px 0;
+
+  span.react-autoql-icon svg {
+    margin-right: 3px;
+  }
+}
+
+.interpretation-icon {
+  vertical-align: top;
+  height: 26px;
+  margin: 0 3px;
+  font-size: 18px;
+}
+
+/* Chart icon styles */
+.chart-icon-svg-0,
+.react-autoql-icon-svg-0 {
+  fill: currentColor;
+}
+.hm0 {
+  opacity: 0.5;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm1 {
+  fill: currentColor;
+}
+.hm2 {
+  opacity: 0.15;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm3 {
+  opacity: 0.6;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm4 {
+  opacity: 0.65;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm5 {
+  fill: currentColor;
+}
+.hm6 {
+  fill: currentColor;
+}
+
+/* animations */
+@keyframes scale-up-br {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 100% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 100% 100%;
+  }
+}
+
+@keyframes scale-up-bl {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 0% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 0% 100%;
+  }
+}
