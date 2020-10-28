@@ -1,0 +1,30 @@
+g.legendOrdinal,
+g.legendOrdinal tspan {
+  stroke-width: 10px;
+  stroke: transparent;
+  letter-spacing: 0; // not clickable if larger than 0
+  cursor: pointer;
+}
+
+.x-axis-label-border,
+.y-axis-label-border,
+.legend-title-border {
+  cursor: pointer;
+  stroke: transparent;
+  opacity: 0.5;
+  transition: stroke 0.3s ease;
+
+  &:hover {
+    stroke: var(--react-autoql-accent-color) !important;
+  }
+}
+
+.react-autoql-axis-selector-arrow {
+  opacity: 1 !important;
+}
+
+.legendTitle tspan {
+  letter-spacing: 0.04em !important;
+  font-size: 12px;
+  cursor: default;
+}

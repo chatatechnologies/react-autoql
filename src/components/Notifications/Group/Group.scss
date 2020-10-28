@@ -1,0 +1,151 @@
+.notification-read-only-group {
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.notification-rule-add-group-btn {
+  display: inline-block;
+  height: 35px;
+  width: 35px;
+  border-radius: 20px;
+  background: var(--react-autoql-accent-color, #26a7df);
+  color: #fff;
+  line-height: 38px;
+  text-align: center;
+  font-size: 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  transition: all 0.2s ease;
+  margin-right: 5px;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 1px 3px 0px rgba(0, 0, 0, 0.32);
+  }
+}
+
+.notification-group-wrapper {
+  position: relative;
+  margin-right: 0px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .notification-and-or-break {
+    position: absolute;
+    color: rgba(0, 0, 0, 0.4);
+    left: -35px;
+    border-left: 1px dashed
+      var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
+  }
+
+  .notification-and-or-text {
+    width: 41px;
+    z-index: 999999;
+    position: absolute;
+    left: -21px;
+    top: -5px;
+    padding: 4px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .react-autoql-notification-group-container {
+    position: relative;
+    padding: 20px;
+    padding-top: 55px;
+    padding-bottom: 20px;
+
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 4px;
+
+    .react-autoql-notification-group-add-btn,
+    .react-autoql-notification-group-delete-btn {
+      position: absolute;
+      height: 21px;
+      width: 21px;
+      border-radius: 10px;
+      border: 1px solid;
+      line-height: 22px;
+      text-align: center;
+      background: var(--react-autoql-background-color-primary, white);
+      color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.2));
+      transition: all 0.3s ease;
+      cursor: pointer;
+
+      span.react-autoql-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      &:hover {
+        color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
+      }
+    }
+
+    .react-autoql-notification-group-add-btn {
+      bottom: -11px;
+      left: calc(50% - 10px);
+    }
+
+    .react-autoql-notification-group-delete-btn {
+      top: -10px;
+      right: -10px;
+    }
+
+    .notification-rule-and-or-select {
+      display: block;
+      position: absolute;
+      margin: 0 auto;
+      padding: 0 10px;
+      background: inherit;
+      top: 16px;
+      color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.5));
+    }
+
+    .notification-rule-btn-container {
+      display: flex;
+      margin-top: 5px;
+      width: calc(100% - 25px);
+
+      .notification-rule-add-btn {
+        flex: 1;
+        text-align: center;
+        border-style: dashed;
+        height: 42px;
+        line-height: 29px;
+        margin-right: 0 !important;
+        background: inherit;
+        overflow: hidden;
+      }
+    }
+
+    .react-autoql-notification-rule-add-btn {
+      display: inline-block;
+      height: 20px;
+      width: 20px;
+      border-radius: 20px;
+      margin-left: 5px;
+      line-height: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.2));
+      opacity: 0.5;
+      border: 1px solid;
+      transition: all 0.2s ease;
+      cursor: pointer;
+
+      &:hover {
+        opacity: 1;
+        color: var(--react-autoql-accent-color);
+      }
+    }
+  }
+}

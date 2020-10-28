@@ -1,0 +1,161 @@
+.react-autoql-table-container {
+  height: 100%;
+  max-width: 100%;
+  background-color: inherit;
+}
+
+.react-autoql-table {
+  margin-bottom: 0;
+}
+
+/* tabulator */
+.react-autoql-table.tabulator,
+.react-autoql-table.tabulator .tabulator-row,
+.react-autoql-table.tabulator .tabulator-header,
+.react-autoql-table.tabulator .tabulator-headers,
+.react-autoql-table.tabulator .tabulator-header .tabulator-col,
+.react-autoql-table.tabulator .tabulator-tableHolder .tabulator-table {
+  background-color: inherit;
+}
+.react-autoql-table.tabulator .tabulator-header .tabulator-col,
+.react-autoql-table.tabulator .tabulator-cell {
+  border-color: var(--react-autoql-border-color);
+}
+.react-autoql-table.tabulator .tabulator-header {
+  border-bottom: 2px solid var(--react-autoql-border-color);
+}
+.react-autoql-table.tabulator {
+  background-color: inherit;
+  height: 100%;
+}
+.react-autoql-table .tabulator-row {
+  /* user-select: none; This breaks copy/paste */
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+.tabulator-cell:not(:first-child) {
+  // .tabulator-col:not(:first-child) {
+  border-left: 1px solid !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.react-autoql-table .tabulator-tableHolder {
+  max-height: calc(100% - 38px) !important;
+  background-color: inherit;
+}
+.react-autoql-table.tabulator .tabulator-row.tabulator-selectable:hover,
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable:hover {
+  /* background-color: rgba(0, 0, 0, 0.1) !important; */
+  background-color: var(--react-autoql-hover-color) !important;
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-content {
+  padding: 8px 5px;
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-content
+  .tabulator-arrow {
+  opacity: 0;
+  border-left: 4px solid transparent !important;
+  border-right: 4px solid transparent !important;
+  right: 4px;
+  top: calc(50% - 3px);
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col:hover
+  .tabulator-col-content
+  .tabulator-arrow {
+  opacity: 1 !important;
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable[aria-sort='desc']
+  .tabulator-col-content
+  .tabulator-arrow {
+  border-top: 4px solid rgba(0, 0, 0, 0.2) !important;
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable[aria-sort='asc']
+  .tabulator-col-content
+  .tabulator-arrow,
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable[aria-sort='none']
+  .tabulator-col-content
+  .tabulator-arrow {
+  border-bottom: 4px solid rgba(0, 0, 0, 0.2) !important;
+}
+.react-autoql-table .tabulator-tableHolder::-webkit-scrollbar {
+  display: unset;
+  opacity: 0;
+  background-color: transparent;
+  width: 7px;
+  height: 7px;
+  transition: all 0.3s ease;
+}
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 7px;
+  border: 0px;
+}
+.react-autoql-table .tabulator-header-filter input {
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  background: transparent;
+  padding: 4px 9px !important;
+  outline: none !important;
+}
+.react-autoql-table .tabulator-header-filter input:focus {
+  border: 1px solid #28a8e0;
+}
+/* These are necessary because we are always rendering the
+filter (just display: none when not used) instead of re-rendering
+the whole table when the filter button is clicked */
+.react-autoql-table-container:not(.filtering)
+  .react-autoql-table
+  .tabulator-header-filter {
+  display: none;
+}
+.react-autoql-table-container:not(.filtering)
+  .react-autoql-table
+  .tabulator-col {
+  height: auto !important;
+}
+
+/* Center header titles */
+.react-autoql-table .tabulator-header .tabulator-col {
+  text-align: center !important;
+}
+.react-autoql-table .tabulator-header .tabulator-col-title {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.filter-tag {
+  color: #2ecc40;
+  border: 1px solid;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 400;
+  font-size: 10px;
+  margin-right: 5px;
+  vertical-align: top;
+  line-height: 21px;
+}
+.comparison-value-positive {
+  color: #2ecc40;
+}
+.comparison-value-negative {
+  color: #e80000;
+}

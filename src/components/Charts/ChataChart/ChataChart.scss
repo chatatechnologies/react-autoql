@@ -1,0 +1,135 @@
+.react-autoql-chart-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+
+  svg {
+    // set transparent in css but keep background in inline style for exporting to png
+    background: transparent !important;
+  }
+
+  &.loading {
+    opacity: 0;
+  }
+}
+
+/* These are not inline styles since they do not apply to saved PNG charts */
+.react-autoql-chart-container .square {
+  transition: fill-opacity 0.3s ease;
+}
+
+.react-autoql-chart-container .bar,
+/* .react-autoql-chart-container .line-dot, */
+.react-autoql-chart-container .stacked-bar,
+.react-autoql-chart-container .circle {
+  transition: fill-opacity 0.3s ease;
+  fill-opacity: 0.7 !important;
+}
+
+.react-autoql-chart-container .bar:hover,
+/* .react-autoql-chart-container .line-dot:hover, */
+.react-autoql-chart-container .stacked-bar:hover,
+.react-autoql-chart-container .circle:hover,
+.react-autoql-chart-container .square:hover {
+  fill-opacity: 1 !important;
+}
+
+.react-autoql-chart-container .vertex-dot:hover,
+.react-autoql-chart-container .line-dot:hover,
+.react-autoql-chart-container .line-dot.active {
+  opacity: 1 !important;
+}
+
+.react-autoql-chart-container .bar.active,
+/* .react-autoql-chart-container .line-dot.active, */
+.react-autoql-chart-container .stacked-bar.active {
+  fill-opacity: 1 !important;
+}
+
+.axis {
+  font-family: inherit;
+}
+
+.pie-chart .labels {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.react-autoql-chart-container g.tick {
+  transition: all 0.3s ease;
+}
+
+.react-autoql-chart-container .react-autoql-heatmap-chart g.tick line,
+.react-autoql-chart-container .react-autoql-bubble-chart g.tick line {
+  opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
+}
+
+.axis-selector-container {
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  z-index: 9999;
+  padding: 5px 0;
+  max-height: 300px;
+  min-width: 150px;
+  overflow-y: auto;
+
+  .axis-select-option.active {
+    background: var(--react-autoql-hover-color);
+  }
+  .react-autoql-checkbox {
+    margin-left: 20px;
+
+    .react-autoql-checkbox__input {
+      width: 18px;
+      height: 18px;
+    }
+  }
+  .react-autoql-list-item {
+    padding-left: 25px;
+    padding-right: 15px;
+    font-size: 12px;
+    line-height: 28px;
+  }
+
+  .string-select-list-item {
+    font-size: 12px;
+    line-height: 28px;
+
+    &.active {
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  .number-selector-header {
+    margin-top: 10px;
+    padding: 0px 18px;
+    font-size: 12px;
+    padding-bottom: 7px;
+    font-weight: 500;
+    opacity: 0.6;
+  }
+
+  .axis-selector-content {
+    list-style-type: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    li {
+      color: var(--react-autoql-text-color-primary);
+      width: 100%;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 15px;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+}
+
+.axis-selector-apply-btn {
+  background: var(--react-autoql-background-color-primary);
+  padding: 5px;
+}
