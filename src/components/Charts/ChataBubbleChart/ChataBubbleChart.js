@@ -10,6 +10,8 @@ import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataBubbleChart extends Component {
@@ -58,10 +60,13 @@ export default class ChataBubbleChart extends Component {
       this.squareWidth,
       labelArray,
       this.props.columns[0],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
-    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
+    if (
+      typeof prevRotateLabels !== 'undefined' &&
+      prevRotateLabels !== this.rotateLabels
+    ) {
       this.props.onLabelChange()
     }
   }
@@ -160,7 +165,7 @@ export default class ChataBubbleChart extends Component {
         data-test="react-autoql-bubble-chart"
       >
         <Axes
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           scales={{ xScale, yScale }}
           xCol={legendColumn}
           yCol={columns[0]}
@@ -183,7 +188,7 @@ export default class ChataBubbleChart extends Component {
         />
         {
           <Circles
-            themeConfig={this.props.themeConfig}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             scales={{ xScale, yScale }}
             margins={{
               left: leftMargin,

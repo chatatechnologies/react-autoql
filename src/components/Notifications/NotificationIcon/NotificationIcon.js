@@ -10,7 +10,10 @@ import {
 } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
-import { authenticationDefault } from '../../../props/defaults'
+import {
+  authenticationDefault,
+  getAuthentication,
+} from '../../../props/defaults'
 
 import './NotificationIcon.scss'
 
@@ -55,7 +58,7 @@ export default class NotificationIcon extends React.Component {
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
     return fetchNotificationCount({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       unacknowledged: count,
     })
       .then((response) => {
@@ -103,7 +106,7 @@ export default class NotificationIcon extends React.Component {
   }
 
   resetCount = () => {
-    resetNotificationCount({ ...this.props.authentication })
+    resetNotificationCount({ ...getAuthentication(this.props.authentication) })
       .catch((error) => {
         console.error(error)
       })

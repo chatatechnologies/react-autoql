@@ -18,6 +18,8 @@ import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 import { setCSSVars } from '../../../js/Util'
 
@@ -67,18 +69,20 @@ export default class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this.getInitialNotifications()
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
   getInitialNotifications = () => {
     fetchNotificationFeed({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       offset: 0,
       limit: this.NOTIFICATION_FETCH_LIMIT,
     })
@@ -103,7 +107,7 @@ export default class NotificationFeed extends React.Component {
   refreshNotifications = () => {
     // Regardless of how many notifications are loaded, we only want to add the new ones to the top
     fetchNotificationFeed({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       offset: 0,
       limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
     }).then((response) => {
@@ -184,7 +188,9 @@ export default class NotificationFeed extends React.Component {
 
     this.setState({ notificationList: newList })
 
-    dismissAllNotifications({ ...this.props.authentication }).catch((error) => {
+    dismissAllNotifications({
+      ...getAuthentication(this.props.authentication),
+    }).catch((error) => {
       console.error(error)
       this.props.onErrorCallback(error)
     })
@@ -239,15 +245,15 @@ export default class NotificationFeed extends React.Component {
     return (
       <NotificationModal
         key={this.MODAL_COMPONENT_KEY}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
+        authentication={getAuthentication(this.props.authentication)}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentRule={this.state.activeRule}
         onSave={this.onRuleSave}
         onErrorCallback={this.onRuleError}
         allowDelete={false}
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         title={
           this.state.activeRule ? 'Edit Data Alert' : 'Create New Data Alert'
         }
@@ -301,7 +307,7 @@ export default class NotificationFeed extends React.Component {
                 pageStart={0}
                 loadMore={() => {
                   fetchNotificationFeed({
-                    ...this.props.authentication,
+                    ...getAuthentication(this.props.authentication),
                     offset: this.state.nextOffset,
                     limit: this.NOTIFICATION_FETCH_LIMIT,
                   }).then((response) => {
@@ -334,8 +340,10 @@ export default class NotificationFeed extends React.Component {
                   return (
                     <NotificationItem
                       key={`notification-item-${i}`}
-                      authentication={this.props.authentication}
-                      themeConfig={this.props.themeConfig}
+                      authentication={getAuthentication(
+                        this.props.authentication
+                      )}
+                      themeConfig={getThemeConfig(this.props.themeConfig)}
                       notification={notification}
                       onClick={this.onItemClick}
                       onDismissCallback={this.onDismissClick}

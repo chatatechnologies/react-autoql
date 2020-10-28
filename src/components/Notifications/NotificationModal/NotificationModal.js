@@ -23,6 +23,8 @@ import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 import './NotificationModal.scss'
@@ -247,7 +249,7 @@ export default class NotificationModal extends React.Component {
         })
         isExpressionQueryValid({
           query: this.state.dataReturnQueryInput,
-          ...this.props.authentication,
+          ...getAuthentication(this.props.authentication),
         })
           .then(() => {
             this.setState({
@@ -278,7 +280,7 @@ export default class NotificationModal extends React.Component {
 
     const requestParams = {
       rule: newRule,
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
     }
 
     if (this.props.isManagement) {
@@ -378,8 +380,8 @@ export default class NotificationModal extends React.Component {
         />
         <p>Conditions:</p>
         <ExpressionBuilder
-          authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
+          authentication={getAuthentication(this.props.authentication)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.expressionRef = r)}
           key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
           onChange={this.onExpressionChange}
@@ -402,7 +404,7 @@ export default class NotificationModal extends React.Component {
     return (
       <div>
         <ScheduleBuilder
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           rule={this.props.currentRule}
@@ -483,7 +485,10 @@ export default class NotificationModal extends React.Component {
         isDeletingRule: true,
       })
 
-      deleteNotificationRule({ ruleId, ...this.props.authentication })
+      deleteNotificationRule({
+        ruleId,
+        ...getAuthentication(this.props.authentication),
+      })
         .then(() => {
           this.props.onDelete(ruleId)
           this.setState({
@@ -553,7 +558,7 @@ export default class NotificationModal extends React.Component {
     return (
       <Fragment>
         <Modal
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
@@ -599,7 +604,7 @@ export default class NotificationModal extends React.Component {
         >
           <div className="notification-modal-content">
             <Steps
-              themeConfig={this.props.themeConfig}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
               ref={(r) => (this.stepsRef = r)}
               steps={steps}
             />

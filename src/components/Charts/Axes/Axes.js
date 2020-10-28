@@ -8,6 +8,8 @@ import { dataFormattingType, themeConfigType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class Axes extends React.Component {

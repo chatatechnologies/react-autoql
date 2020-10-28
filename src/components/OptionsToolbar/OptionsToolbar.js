@@ -28,6 +28,9 @@ import {
   autoQLConfigDefault,
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
@@ -65,7 +68,7 @@ export default class Input extends React.Component {
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -75,8 +78,10 @@ export default class Input extends React.Component {
       this.setState({ sqlCopySuccess: false })
     }
 
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
@@ -236,7 +241,7 @@ export default class Input extends React.Component {
 
     const columnDefinition = column.getDefinition()
     setColumnVisibility({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       columns: [
         {
           name: columnDefinition.name,
@@ -324,7 +329,7 @@ export default class Input extends React.Component {
 
     return (
       <ColumnVisibilityModal
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         columns={columns}
         isVisible={this.state.isHideColumnsModalVisible}
         onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -342,8 +347,8 @@ export default class Input extends React.Component {
 
     return (
       <NotificationModal
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
+        authentication={getAuthentication(this.props.authentication)}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.activeMenu === 'notification'}
         initialQuery={initialQuery}
         onClose={() => this.setState({ activeMenu: undefined })}
@@ -359,7 +364,7 @@ export default class Input extends React.Component {
   renderReportProblemModal = () => {
     return (
       <Modal
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.activeMenu === 'other-problem'}
         onClose={() => {
           this.setState({ activeMenu: undefined })
@@ -392,7 +397,7 @@ export default class Input extends React.Component {
     reportProblem({
       message: reason,
       queryId,
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
     })
       .then(() => {
         this.props.onSuccessAlert('Thank you for your feedback.')
@@ -547,11 +552,11 @@ export default class Input extends React.Component {
   }
 
   renderSendToSlackModal = () => {
-    if (this.props.autoQLConfig.enableSlackSharing) {
+    if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
       return (
         <SendToSlackModal
-          themeConfig={this.props.themeConfig}
-          authentication={this.props.authentication}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          authentication={getAuthentication(this.props.authentication)}
           isVisible={this.state.activeMenu === 'slack'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -565,11 +570,11 @@ export default class Input extends React.Component {
   }
 
   renderSendToTeamsModal = () => {
-    if (this.props.autoQLConfig.enableTeamsSharing) {
+    if (getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing) {
       return (
         <SendToTeamsModal
-          authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
+          authentication={getAuthentication(this.props.authentication)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           isVisible={this.state.activeMenu === 'teams'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -593,7 +598,7 @@ export default class Input extends React.Component {
 
     return (
       <Modal
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.activeMenu === 'sql'}
         footer={
           <div>
@@ -653,20 +658,25 @@ export default class Input extends React.Component {
         !!_get(response, 'data.data.rows.length'),
       showSaveAsPNGButton: CHART_TYPES.includes(displayType),
       showHideColumnsButton:
-        this.props.autoQLConfig.enableColumnVisibilityManager &&
+        getAutoQLConfig(this.props.autoQLConfig)
+          .enableColumnVisibilityManager &&
         // !isAggregation(response) &&
         isTableResponse(response, displayType) &&
         displayType !== 'pivot_table' &&
         _get(response, 'data.data.columns.length') > 0,
-      showSQLButton: isDataResponse && this.props.autoQLConfig.debug,
+      showSQLButton:
+        isDataResponse && getAutoQLConfig(this.props.autoQLConfig).debug,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:
-        isDataResponse && this.props.autoQLConfig.enableNotifications,
+        isDataResponse &&
+        getAutoQLConfig(this.props.autoQLConfig).enableNotifications,
       showShareToSlackButton:
-        isDataResponse && this.props.autoQLConfig.enableSlackSharing,
+        isDataResponse &&
+        getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
       showShareToTeamsButton:
-        isDataResponse && this.props.autoQLConfig.enableTeamsSharing,
+        isDataResponse &&
+        getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =

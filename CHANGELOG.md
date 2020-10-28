@@ -1,3 +1,23 @@
+# [2.1.0](https://github.com/chatatechnologies/react-autoql/compare/v2.0.0...v2.1.0) (2020-10-27)
+
+
+### Bug Fixes
+
+* fix transparent background colour for options toolbar ([20df784](https://github.com/chatatechnologies/react-autoql/commit/20df784973d80e21eba06bee2ad915ca38dd2625))
+* only call suggestion endpoint from suggestion list not query validation ([3bcfb6e](https://github.com/chatatechnologies/react-autoql/commit/3bcfb6ed5908025d7ef89817f598fe3d7798fe35))
+* **dashboards:** do not persist user selection (query validation) if query changes in dashboard ([4cbad24](https://github.com/chatatechnologies/react-autoql/commit/4cbad24b58553f8e30e92dce02024daef794bffa))
+* fix icon alignment in "run query" button for query validation message ([7d34121](https://github.com/chatatechnologies/react-autoql/commit/7d34121bde3e69358fabfec8782027fe3d1f41af))
+* fix spacing around suggestions in query validation message ([de754d8](https://github.com/chatatechnologies/react-autoql/commit/de754d81e6ff8b8a41e5006c880fb1a5d7b25769))
+
+
+### Features
+
+* **props:** add autoChartAggregations prop ([89fd71b](https://github.com/chatatechnologies/react-autoql/commit/89fd71bed1d5f8c1e1569d6c829bd27f549906a5))
+* add "none of these" option to list of query suggestions ([ec907bf](https://github.com/chatatechnologies/react-autoql/commit/ec907bf8070037fba21ca8e7e47cbc2a08d270ca))
+* improve error handling and replace "report" with hyperlink to report problem ([6c883aa](https://github.com/chatatechnologies/react-autoql/commit/6c883aacc92fdf50d8bdafcd3bae23bf55f76b07))
+* **demo page:** add speech training to demo page ([f6b10d4](https://github.com/chatatechnologies/react-autoql/commit/f6b10d439ba048f81ba0f7d64046154c2f0500fb))
+* **notifications:** streamline schedule step in notifications modal ([6601229](https://github.com/chatatechnologies/react-autoql/commit/6601229902c7766b4ac01c5ffe2c34e1f4694920))
+
 # [2.0.0](https://github.com/chatatechnologies/react-autoql/compare/v1.10.0...v2.0.0) (2020-10-16)
 
 

@@ -44,3 +44,38 @@ export const dataConfigDefault = {
   legendColumnIndex: undefined,
   numberColumnIndex: 1,
 }
+
+export const getAuthentication = (prop = {}) => {
+  return {
+    ...authenticationDefault,
+    ...prop,
+  }
+}
+
+export const getDataFormatting = (prop = {}) => {
+  return {
+    ...dataFormattingDefault,
+    ...prop,
+  }
+}
+
+export const getAutoQLConfig = (prop = {}) => {
+  return {
+    ...autoQLConfigDefault,
+    ...prop,
+  }
+}
+
+export const getThemeConfig = (prop = {}) => {
+  return {
+    ...themeConfigDefault,
+    ...prop,
+  }
+}
+
+export const getDataConfig = (prop = {}) => {
+  return {
+    ...dataConfigDefault,
+    ...prop,
+  }
+}

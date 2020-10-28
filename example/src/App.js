@@ -118,7 +118,7 @@ export default class App extends Component {
     shiftScreen: false,
     userDisplayName: 'Nikki',
     introMessage: undefined,
-    enableAutocomplete: false,
+    enableAutocomplete: true,
     enableQueryValidation: true,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
@@ -160,7 +160,7 @@ export default class App extends Component {
     activeDashboardId: undefined,
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
-    autoChartAggregations: true
+    autoChartAggregations: true,
   }
 
   componentDidMount = () => {

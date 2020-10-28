@@ -13,6 +13,8 @@ import { authenticationType, themeConfigType } from '../../../props/types'
 import {
   authenticationDefault,
   themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
 import { isExpressionQueryValid } from '../../../js/notificationService'
@@ -210,7 +212,7 @@ export default class Rule extends React.Component {
       })
       isExpressionQueryValid({
         query: this.state.input1Value,
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
       })
         .then(() => {
           this.setState({
@@ -251,7 +253,7 @@ export default class Rule extends React.Component {
       })
       isExpressionQueryValid({
         query: this.state.input2Value,
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
       })
         .then(() => {
           this.setState({
@@ -286,8 +288,8 @@ export default class Rule extends React.Component {
 
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
-        ...this.props.authentication,
-        ...this.props.autoQLConfig,
+        ...getAuthentication(this.props.authentication),
+        ...getAutoQLConfig(this.props.autoQLConfig),
         suggestion: value,
       })
         .then((response) => {
@@ -422,7 +424,7 @@ export default class Rule extends React.Component {
           }
         </div>
         <Select
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           options={[
             { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
             { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

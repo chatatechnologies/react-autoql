@@ -15,6 +15,8 @@ import { getTickValues } from '../helpers'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 
@@ -62,11 +64,15 @@ export default class ChataStackedColumnChart extends Component {
       tickWidth,
       labelArray,
       this.props.columns[0],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
-    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
+    if (
+      typeof prevRotateLabels !== 'undefined' &&
+      prevRotateLabels !== this.rotateLabels
+    ) {
       this.props.onLabelChange()
+    } else {
     }
   }
 

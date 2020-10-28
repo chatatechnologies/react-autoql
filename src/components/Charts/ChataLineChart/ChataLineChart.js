@@ -11,6 +11,8 @@ import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataLineChart extends Component {
@@ -60,10 +62,13 @@ export default class ChataLineChart extends Component {
       tickWidth,
       labelArray,
       this.props.columns[this.props.stringColumnIndex],
-      this.props.dataFormatting
+      getDataFormatting(this.props.dataFormatting)
     )
 
-    if (prevRotateLabels && prevRotateLabels !== this.rotateLabels) {
+    if (
+      typeof prevRotateLabels !== 'undefined' &&
+      prevRotateLabels !== this.rotateLabels
+    ) {
       this.props.onLabelChange()
     }
   }

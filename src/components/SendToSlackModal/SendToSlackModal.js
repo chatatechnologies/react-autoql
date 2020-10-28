@@ -14,7 +14,12 @@ import { Select } from '../Select'
 
 import errorMessages from '../../js/errorMessages'
 import { authenticationType, themeConfigType } from '../../props/types'
-import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
+} from '../../props/defaults'
 import {
   fetchNotificationChannels,
   createNotificationChannel,
@@ -58,7 +63,7 @@ export default class SendToSlackModal extends React.Component {
   fetchChannels = () => {
     this.setState({ isFetchingChannels: true })
     fetchNotificationChannels({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       channelType: 'slack',
     })
       .then((response) => {
@@ -119,7 +124,7 @@ export default class SendToSlackModal extends React.Component {
 
     if (this.props.responseRef && this.attachment) {
       sendDataToChannel({
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
         channelId: selectedChannel.id,
         fileName: this.getVizType() === 'chart' ? 'chart.png' : 'table.csv',
         base64Data: this.attachment,
@@ -140,7 +145,7 @@ export default class SendToSlackModal extends React.Component {
   removeSelectedChannel = () => {
     const selectedChannel = this.state.channels[this.state.selectedChannel]
     removeNotificationChannel({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       channelId: selectedChannel.id,
     })
       .then(() => {
@@ -242,7 +247,7 @@ export default class SendToSlackModal extends React.Component {
           <div className="select-channel-titles">
             Post to:{' '}
             <Select
-              themeConfig={this.props.themeConfig}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
               options={options}
               value={this.state.selectedChannel}
               style={{ width: '300px' }}
@@ -281,7 +286,7 @@ export default class SendToSlackModal extends React.Component {
   connectChannel = () => {
     this.setState({ isConnectingChannel: true })
     createNotificationChannel({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       channelType: 'slack',
       channelName: this.state.channelName,
       channelEmail: this.state.channelEmail,
@@ -452,7 +457,7 @@ export default class SendToSlackModal extends React.Component {
   render() {
     return (
       <Modal
-        themeConfig={this.props.themeConfig}
+        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         title={

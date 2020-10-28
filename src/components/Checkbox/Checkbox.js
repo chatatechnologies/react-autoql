@@ -7,7 +7,7 @@ import { Icon } from '../Icon'
 
 import { setCSSVars } from '../../js/Util'
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 import './Checkbox.scss'
 
@@ -40,7 +40,7 @@ export default class Checkbox extends React.Component {
       this.selector.indeterminate = this.props.indeterminate
     }
 
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
@@ -48,8 +48,10 @@ export default class Checkbox extends React.Component {
       this.selector.indeterminate = this.props.indeterminate
     }
 
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 

@@ -28,6 +28,10 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
 import './Dashboard.scss'
@@ -102,7 +106,9 @@ class Dashboard extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
       this.setStyles()
     }
 
@@ -139,7 +145,7 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   onWindowResize = (e) => {
@@ -334,8 +340,8 @@ class Dashboard extends React.Component {
     runDrilldown({
       queryID,
       data,
-      ...this.props.authentication,
-      ...this.props.autoQLConfig,
+      ...getAuthentication(this.props.authentication),
+      ...getAutoQLConfig(this.props.autoQLConfig),
     })
       .then((drilldownResponse) => {
         this.setState({
@@ -394,7 +400,7 @@ class Dashboard extends React.Component {
     activeKey,
     isSecondHalf,
   }) => {
-    if (this.props.autoQLConfig.enableDrilldowns) {
+    if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       if (!drilldownData || !drilldownData.data) {
         return
       }
@@ -442,7 +448,7 @@ class Dashboard extends React.Component {
 
       return (
         <Modal
-          themeConfig={this.props.themeConfig}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           className=""
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
@@ -462,10 +468,10 @@ class Dashboard extends React.Component {
             {tile && this.shouldShowOriginalQuery(tile) && (
               <div className="react-autoql-dashboard-drilldown-original">
                 <QueryOutput
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
-                  dataFormatting={this.props.dataFormatting}
+                  authentication={getAuthentication(this.props.authentication)}
+                  autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
+                  dataFormatting={getDataFormatting(this.props.dataFormatting)}
                   queryResponse={queryResponse}
                   displayType={displayType}
                   dataConfig={dataConfig}
@@ -489,10 +495,10 @@ class Dashboard extends React.Component {
                 </div>
               ) : (
                 <QueryOutput
-                  authentication={this.props.authentication}
-                  autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
-                  dataFormatting={this.props.dataFormatting}
+                  authentication={getAuthentication(this.props.authentication)}
+                  autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                  themeConfig={getThemeConfig(this.props.themeConfig)}
+                  dataFormatting={getDataFormatting(this.props.dataFormatting)}
                   queryResponse={this.state.activeDrilldownResponse}
                   renderTooltips={false}
                   autoChartAggregations={this.props.autoChartAggregations}
@@ -588,9 +594,9 @@ class Dashboard extends React.Component {
             } ${tile.i}`}
             ref={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -601,7 +607,7 @@ class Dashboard extends React.Component {
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
             deleteTile={this.deleteTile}
-            dataFormatting={this.props.dataFormatting}
+            dataFormatting={getDataFormatting(this.props.dataFormatting)}
             notExecutedText={this.props.notExecutedText}
             processDrilldown={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}

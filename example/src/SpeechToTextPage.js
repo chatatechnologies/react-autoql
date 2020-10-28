@@ -4,6 +4,7 @@ import _ from 'lodash'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
 import { SpeechToTextBtn, fetchQueryTips } from 'react-autoql'
+import { getAuthentication, getThemeConfig } from '../../src/props/defaults'
 
 export default class SpeechToTextPage extends React.Component {
   state = {
@@ -19,7 +20,7 @@ export default class SpeechToTextPage extends React.Component {
 
   componentDidMount = () => {
     fetchQueryTips({
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
       keywords: '',
       pageSize: 200,
       pageNumber: 1,
@@ -132,7 +133,7 @@ export default class SpeechToTextPage extends React.Component {
           <Fragment>
             <div style={{ padding: '5px', textAlign: 'center' }}>
               <SpeechToTextBtn
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 onRecordStop={this.sendWavFile}
               />
               <div>

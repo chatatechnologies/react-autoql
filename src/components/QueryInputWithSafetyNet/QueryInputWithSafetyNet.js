@@ -12,7 +12,11 @@ import { throttle } from 'throttle-debounce'
 import { Select } from '../Select'
 
 import { setCSSVars, setCaretPosition } from '../../js/Util'
-import { themeConfigDefault, authenticationDefault } from '../../props/defaults'
+import {
+  themeConfigDefault,
+  authenticationDefault,
+  getAuthentication,
+} from '../../props/defaults'
 import { themeConfigType, authenticationType } from '../../props/types'
 
 import { runSafetyNet } from '../../js/queryService'
@@ -410,7 +414,7 @@ export default class SafetyNetMessage extends React.Component {
   runQueryValidation = throttle(300, ({ text }) => {
     runSafetyNet({
       text,
-      ...this.props.authentication,
+      ...getAuthentication(this.props.authentication),
     })
       .then((response) => {
         const currentQuery = this.getPlainTextFromHTML(this.state.html)

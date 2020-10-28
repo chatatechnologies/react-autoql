@@ -15,6 +15,10 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../props/defaults'
 
 import { setCSSVars } from '../../js/Util'
@@ -26,7 +30,6 @@ import {
   fetchAutocomplete,
   runSafetyNet,
 } from '../../js/queryService'
-import Autosuggest from 'react-autosuggest'
 
 import { SpeechToTextButton } from '../SpeechToTextButton'
 import { QueryInputWithSafetyNet } from '../QueryInputWithSafetyNet'
@@ -79,12 +82,14 @@ export default class QueryInput extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
@@ -149,8 +154,8 @@ export default class QueryInput extends React.Component {
         runQueryOnly({
           query,
           userSelection,
-          ...this.props.authentication,
-          ...this.props.autoQLConfig,
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
         })
           .then((response) => {
@@ -165,8 +170,8 @@ export default class QueryInput extends React.Component {
       } else {
         runQuery({
           query,
-          ...this.props.authentication,
-          ...this.props.autoQLConfig,
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
         })
           .then((response) => {
@@ -254,7 +259,7 @@ export default class QueryInput extends React.Component {
     this.safetyNetTimer = setTimeout(() => {
       runSafetyNet({
         text,
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
           if (this.state.inputValue === _get(response, 'data.data.query')) {
@@ -277,7 +282,7 @@ export default class QueryInput extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
           const body = _get(response, 'data.data')
@@ -370,7 +375,7 @@ export default class QueryInput extends React.Component {
         }`}
         data-test="chat-bar"
       >
-        {this.props.autoQLConfig.enableAutocomplete ? (
+        {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
           // <Autosuggest
           //   className="auto-complete-chata"
           //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -398,8 +403,8 @@ export default class QueryInput extends React.Component {
           //   }}
           // />
           <QueryInputWithSafetyNet
-            authentication={this.props.authentication}
-            themeConfig={this.props.themeConfig}
+            authentication={getAuthentication(this.props.authentication)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
             ref={(ref) => (this.safetyNetInputRef = ref)}
             key={this.state.safetyNetComponentId}
             response={this.state.safetyNetResponse}

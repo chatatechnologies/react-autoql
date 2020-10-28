@@ -19,7 +19,7 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 
-import { svgToPng, getPNGBase64 } from '../../../js/Util.js'
+import { svgToPng, awaitTimeout } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
@@ -33,6 +33,8 @@ import {
 import {
   themeConfigDefault,
   dataFormattingDefault,
+  getDataFormatting,
+  getThemeConfig,
 } from '../../../props/defaults'
 import _isEqual from 'lodash.isequal'
 
@@ -102,7 +104,7 @@ export default class ChataChart extends Component {
 
   componentDidUpdate = (prevProps) => {
     if (!this.props.isResizing && prevProps.isResizing) {
-      this.updateMargins(350)
+      this.updateMargins()
     }
 
     if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
@@ -253,25 +255,27 @@ export default class ChataChart extends Component {
   updateMargins = (delay = 0) => {
     this.setState({ isLoading: true })
     try {
-      setTimeout(() => {
+      awaitTimeout(delay, () => {
         const newLeftMargin = this.getNewLeftMargin()
         const newTopMargin = this.getNewTopMargin()
         this.setState({
           ...newLeftMargin,
           ...newTopMargin,
         })
-        setTimeout(() => {
+      }).then(() => {
+        awaitTimeout(delay, () => {
           const newRightMargin = this.getNewRightMargin()
           const newBottomMargin = this.getNewBottomMargin()
           this.setState({
             ...newRightMargin,
             ...newBottomMargin,
           })
+        }).then(() => {
           setTimeout(() => {
             this.setState({ isLoading: false })
-          })
-        }, delay)
-      }, delay)
+          }, 0)
+        })
+      })
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
@@ -419,7 +423,7 @@ export default class ChataChart extends Component {
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
-      onLabelChange: () => {},
+      onLabelChange: this.updateMargins,
       height,
       width,
       columns,
@@ -529,7 +533,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Currency</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.currencySelectRef = r)}
                 items={currencySelectorState}
                 onSelect={() => {
@@ -563,7 +567,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Quantity</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.quantitySelectRef = r)}
                 items={quantitySelectorState}
                 onSelect={() => {
@@ -596,7 +600,7 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">Ratio</div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioSelectorState}
                 onSelect={() => {
@@ -906,17 +910,17 @@ export default class ChataChart extends Component {
           height={this.props.height}
           style={{
             fontFamily: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'font-family',
               'sans-serif'
             ),
             color: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'text-color-primary',
               'inherit'
             ),
             background: _get(
-              this.props.themeConfig,
+              getThemeConfig(this.props.themeConfig),
               'background-color',
               'inherit'
             ),

@@ -7,7 +7,12 @@ import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 import { Icon } from '../Icon'
 
 import { setCSSVars } from '../../js/Util'
-import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
+import {
+  authenticationDefault,
+  themeConfigDefault,
+  getAuthentication,
+  getThemeConfig,
+} from '../../props/defaults'
 import { authenticationType, themeConfigType } from '../../props/types'
 
 import './SpeechToTextButton.scss'
@@ -28,7 +33,7 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   startRecording = () => {

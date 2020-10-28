@@ -35,6 +35,10 @@ import {
   autoQLConfigDefault,
   dataFormattingDefault,
   themeConfigDefault,
+  getAuthentication,
+  getDataFormatting,
+  getAutoQLConfig,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DashboardTile.scss'
@@ -191,11 +195,11 @@ export default class DashboardTile extends React.Component {
       return runQuery({
         query,
         userSelection,
-        ...this.props.authentication,
-        ...this.props.autoQLConfig,
+        ...getAuthentication(this.props.authentication),
+        ...getAutoQLConfig(this.props.autoQLConfig),
         enableQueryValidation: !this.props.isEditing
           ? false
-          : this.props.autoQLConfig.enableQueryValidation,
+          : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         source: finalSource,
         skipQueryValidation: skipSafetyNet,
       })
@@ -374,7 +378,7 @@ export default class DashboardTile extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...this.props.authentication,
+        ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
           const body = _get(response, 'data.data')
@@ -476,7 +480,7 @@ export default class DashboardTile extends React.Component {
                 className="query-input-icon"
                 type="react-autoql-bubbles-outlined"
               />
-              {this.props.autoQLConfig.enableAutocomplete ? (
+              {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                 <Autosuggest
                   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
                   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
@@ -826,7 +830,7 @@ export default class DashboardTile extends React.Component {
             type={this.getIsSplitView() ? 'single-view' : 'split-view'}
             style={{
               color: this.props.tile.splitView
-                ? this.props.themeConfig.accentColor
+                ? getThemeConfig(this.props.themeConfig).accentColor
                 : 'inherit',
             }}
           />
@@ -878,10 +882,10 @@ export default class DashboardTile extends React.Component {
               this.renderSuggestionMessage(customMessage)}
             {!customMessage && (
               <QueryOutput
-                authentication={this.props.authentication}
-                themeConfig={this.props.themeConfig}
-                autoQLConfig={this.props.autoQLConfig}
-                dataFormatting={this.props.dataFormatting}
+                authentication={getAuthentication(this.props.authentication)}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                dataFormatting={getDataFormatting(this.props.dataFormatting)}
                 renderTooltips={false}
                 autoSelectQueryValidationSuggestion={false}
                 autoChartAggregations={this.props.autoChartAggregations}
@@ -907,15 +911,15 @@ export default class DashboardTile extends React.Component {
               showSplitViewBtn &&
               this.renderSplitViewBtn()}
             <VizToolbar
-              themeConfig={this.props.themeConfig}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
               {...vizToolbarProps}
             />
           </div>
         )}
         <OptionsToolbar
-          authentication={this.props.authentication}
-          autoQLConfig={this.props.autoQLConfig}
-          themeConfig={this.props.themeConfig}
+          authentication={getAuthentication(this.props.authentication)}
+          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessAlert={this.props.onSuccessCallback}
           {...optionsToolbarProps}

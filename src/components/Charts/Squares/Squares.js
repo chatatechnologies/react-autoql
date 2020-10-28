@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault } from '../../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
 
 export default class Squares extends Component {
   constructor(props) {
@@ -32,13 +32,16 @@ export default class Squares extends Component {
 
     const squares = []
 
-    data.forEach(d => {
+    data.forEach((d) => {
       d.cells.forEach((cell, i) => {
         const fillColor =
           cell.value >= 0
-            ? _get(this.props.themeConfig, 'chartColors[0]')
+            ? _get(getThemeConfig(this.props.themeConfig), 'chartColors[0]')
             : 'rgba(221, 106, 106)'
-        const activeFillColor = _get(this.props.themeConfig, 'chartColors[1]')
+        const activeFillColor = _get(
+          getThemeConfig(this.props.themeConfig),
+          'chartColors[1]'
+        )
 
         squares.push(
           <rect

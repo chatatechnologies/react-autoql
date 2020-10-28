@@ -87,6 +87,7 @@ so we dont have to redraw the whole table */
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
+  background: var(--react-autoql-background-color-primary);
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-accent-color);
 }

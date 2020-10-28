@@ -5,7 +5,7 @@ import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
 
 import './Radio.scss'
@@ -32,12 +32,14 @@ export default class Radio extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 

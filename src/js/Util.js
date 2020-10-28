@@ -1020,6 +1020,15 @@ export const isTableResponse = (response, displayType) => {
   )
 }
 
+export const awaitTimeout = (delay, cb = () => {}) => {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      cb()
+      resolve()
+    }, delay)
+  )
+}
+
 export const setCaretPosition = (elemId, caretPos) => {
   const elem = document.getElementById(elemId)
 

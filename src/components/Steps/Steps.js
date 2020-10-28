@@ -5,7 +5,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
 
 import './Steps.scss'
@@ -45,12 +45,14 @@ export default class Steps extends React.Component {
       })
     }
 
-    setCSSVars(this.props.themeConfig)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
-    if (!_isEqual(this.props.themeConfig, prevProps.themeConfig)) {
-      setCSSVars(this.props.themeConfig)
+    if (
+      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
