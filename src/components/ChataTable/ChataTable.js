@@ -79,7 +79,10 @@ export default class ChataTable extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (
-      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }

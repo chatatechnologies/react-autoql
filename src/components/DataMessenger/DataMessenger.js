@@ -189,7 +189,7 @@ export default class DataMessenger extends React.Component {
 
       const thisTheme = getThemeConfig(getThemeConfig(this.props.themeConfig))
         .theme
-      const prevTheme = prevProps.themeConfig.theme
+      const prevTheme = getThemeConfig(prevProps.themeConfig).theme
       if (thisTheme && thisTheme !== prevTheme) {
         setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       }
