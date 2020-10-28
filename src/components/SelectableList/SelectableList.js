@@ -6,15 +6,20 @@ import uuid from 'uuid'
 
 import { Checkbox } from '../Checkbox'
 
+import { themeConfigType } from '../../props/types'
+import { getThemeConfig, themeConfigDefault } from '../../props/defaults'
+
 import './SelectableList.scss'
 
 export default class SelectableList extends React.Component {
   static propTypes = {
+    themeConfig: themeConfigType,
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     items: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
+    themeConfig: themeConfigDefault,
     onChange: () => {},
     onSelect: () => {},
     columns: [],
