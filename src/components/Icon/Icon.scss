@@ -1,0 +1,33 @@
+span.react-autoql-icon {
+  vertical-align: unset;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  float: none !important;
+  color: inherit;
+  opacity: 1;
+
+  svg {
+    float: none !important;
+    color: inherit;
+    vertical-align: unset;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+    height: 1em;
+    margin-bottom: -0.1em;
+  }
+}
+
+.slack-logo {
+  display: inline-block;
+  height: 100%;
+  margin-bottom: 3px;
+
+  img {
+    vertical-align: middle;
+    height: 1em;
+    width: 1em;
+  }
+}

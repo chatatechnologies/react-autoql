@@ -1,0 +1,40 @@
+.notification-rule-add-btn-outer,
+.notification-rule-validate-btn-outer {
+  text-align: center;
+  border-style: dashed !important;
+  height: 38px;
+  line-height: 25px;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.notification-rule-outer-container {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 4px;
+
+  &.outlined {
+    border-color: rgba(0, 0, 0, 0.15);
+    padding: 0 20px;
+    padding-bottom: 12px;
+  }
+}
+
+.notification-outer-all-any {
+  position: absolute;
+  left: 0;
+  top: 50%;
+}
+
+.notification-first-group-btn-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+// Read only styles
+.notification-rules-container.read-only {
+  // pointer-events: none;
+  .react-autoql-notification-group-container {
+    border: none;
+  }
+}

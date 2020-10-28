@@ -1,0 +1,33 @@
+{
+  "presets": [
+    [
+      "env",
+      {
+        // use rollup to transpile, not babel
+        "modules": false,
+        "targets": {
+          // https://browserl.ist/?q=%3E+0.25%25%2C+ie+11%2C+not+op_mini+all%2C+not+dead
+          "browsers": "> 0.25%, ie 11, not op_mini all",
+          "node": 8
+        }
+      }
+    ],
+    "react"
+  ],
+  "plugins": [
+    "babel-plugin-transform-class-properties",
+    "babel-plugin-syntax-object-rest-spread",
+    "babel-plugin-transform-object-rest-spread"
+  ],
+  // required for transpilation to work with jest
+  "env": {
+    "test": {
+      "presets": ["env", "react"],
+      "plugins": [
+        "babel-plugin-transform-class-properties",
+        "babel-plugin-syntax-object-rest-spread",
+        "babel-plugin-transform-object-rest-spread"
+      ]
+    }
+  }
+}

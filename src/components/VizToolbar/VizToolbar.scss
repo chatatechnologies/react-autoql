@@ -1,0 +1,34 @@
+.viz-toolbar {
+  position: absolute;
+  background: inherit;
+  padding: 5px;
+  border-radius: 6px;
+  line-height: 28px;
+  border: 1px solid #d3d3d352;
+
+  &.vertical .react-autoql-toolbar-btn {
+    display: block;
+  }
+}
+
+.react-autoql-toolbar-btn {
+  height: 28px;
+  width: 28px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 28px;
+  vertical-align: top;
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
+  outline: none !important;
+}
+.react-autoql-toolbar-btn.green {
+  color: #2ecc40;
+}
+.react-autoql-toolbar-btn.red {
+  color: #e80000;
+}
+.react-autoql-toolbar-btn:hover {
+  opacity: 0.7;
+}

@@ -1,0 +1,81 @@
+.react-autoql-cascader {
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  // overflow-x: auto;
+
+  .options-container {
+    transition: max-width 0.3s ease;
+    display: inline-block;
+    vertical-align: top;
+    padding: 0 10px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: calc(100% - 20px);
+    white-space: pre-wrap;
+
+    &.hidden {
+      // width: 0;
+      max-width: 0;
+
+      span {
+        // display: none;
+        white-space: nowrap;
+      }
+
+      .option {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .options-title {
+      padding: 4px;
+      padding-left: 10px;
+      font-weight: 600;
+    }
+
+    .cascader-back-arrow {
+      position: absolute;
+      cursor: pointer;
+      top: 15px;
+      left: 0;
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    .option {
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      justify-content: space-between;
+      border-radius: 2px;
+      padding-left: 10px;
+
+      .option-arrow {
+        opacity: 0.7;
+      }
+      .option-execute-icon {
+        opacity: 0;
+        color: #fff;
+        font-size: 16px;
+        vertical-align: middle;
+      }
+
+      &:hover,
+      &.active {
+        background-color: var(--react-autoql-accent-color, #26a7df);
+        color: #fff;
+
+        .option-execute-icon {
+          opacity: 1;
+        }
+      }
+    }
+
+    &:not(:last-child) {
+      border-right: 1px solid #d3d3d352;
+    }
+  }
+}

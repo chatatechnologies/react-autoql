@@ -1,0 +1,64 @@
+.chat-voice-record-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 24px;
+  margin: 10px;
+  margin-left: 0;
+  font-size: 18px;
+  line-height: 24px;
+  outline: none !important;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+
+  background: var(--react-autoql-accent-color);
+  color: white;
+  border: none;
+
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+.chat-voice-record-button:hover {
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.15);
+}
+.chat-voice-record-button.listening {
+  background: #ff471a;
+}
+.chat-voice-record-icon {
+  vertical-align: top;
+}
+.react-autoql-tooltip {
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  padding: 7px 15px;
+  opacity: 1 !important;
+  z-index: 99999 !important;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes move {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  5% {
+    opacity: 0;
+  }
+  48% {
+    opacity: 0.2;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    left: 82%;
+  }
+}
