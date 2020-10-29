@@ -72,13 +72,13 @@
   overflow: hidden;
 }
 .react-autoql-modal-close-btn {
-  position: absolute;
-  top: 16px;
+  position: absolute !important;
+  top: 10px;
   right: 18px;
   font-size: 22px;
-  opacity: 0.6;
+  opacity: 0.6 !important;
   cursor: pointer;
 }
 .react-autoql-modal-close-btn:hover {
-  opacity: 1;
+  opacity: 1 !important;
 }

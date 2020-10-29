@@ -549,6 +549,11 @@ export default class Input extends React.Component {
     )
   }
 
+  areColumnsHidden = () => {
+    const columns = _get(this.props.responseRef, 'tableColumns', [])
+    return columns.find((col) => !col.visible)
+  }
+
   areAllColumnsHidden = () => {
     const columns = _get(this.props.responseRef, 'tableColumns', [])
     return !columns.find((col) => col.visible)
@@ -724,7 +729,7 @@ export default class Input extends React.Component {
             data-for="react-autoql-toolbar-btn-tooltip"
             data-test="options-toolbar-col-vis"
           >
-            <Icon type="eye" />
+            <Icon type="eye" badge={this.areColumnsHidden()} />
           </button>
         )}
         {shouldShowButton.showReportProblemButton && (

@@ -74,10 +74,12 @@ export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
+    badge: PropTypes.bool,
   }
 
   static defaultProps = {
     size: undefined,
+    badge: false,
   }
 
   render = () => {
@@ -339,6 +341,7 @@ export default class Icon extends React.Component {
         style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
       >
         {icon}
+        {this.props.badge && <div className="react-autoql-badge" />}
       </span>
     )
   }
