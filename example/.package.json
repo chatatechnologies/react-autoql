@@ -24,7 +24,8 @@
   },
   "browserslist": [">0.2%", "not dead", "not ie < 11", "not op_mini all"],
   "engines": {
-    "node": ">=10.15.1"
+    "node": ">=10.15.1",
+    "npm": "^6.0.1"
   },
   "cacheDirectories": []
 }

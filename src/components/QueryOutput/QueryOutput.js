@@ -709,15 +709,13 @@ export default class QueryOutput extends React.Component {
     if (this.areAllColumnsHidden()) {
       return (
         <div className="no-columns-error-message">
-          {this.renderMessage(
-            <div>
-              <Icon className="warning-icon" type="warning-triangle" />
-              <br /> All columns in this table are currently hidden. You can
-              adjust your column visibility preferences using the Column
-              Visibility Manager (
-              <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
-            </div>
-          )}
+          <div>
+            <Icon className="warning-icon" type="warning-triangle" />
+            <br /> All columns in this table are currently hidden. You can
+            adjust your column visibility preferences using the Column
+            Visibility Manager (
+            <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
+          </div>
         </div>
       )
     }
