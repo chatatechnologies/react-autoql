@@ -10,7 +10,22 @@
 .empty-notifications-message {
   color: var(--react-autoql-text-color-primary);
   text-align: center;
-  margin-top: 100px;
+  margin-top: 75px;
+
+  div {
+    opacity: 0.6;
+  }
+
+  .empty-notifications-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .empty-notifications-img {
+    width: 250px;
+    height: 250px;
+  }
 }
 
 .react-autoql-notification-list-container {
