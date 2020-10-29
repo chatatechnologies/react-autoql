@@ -374,7 +374,7 @@ export default class NotificationFeed extends React.Component {
               </InfiniteScroll>
             </Fragment>
           ) : (
-            <div style={{ textAlign: 'center', marginTop: '100px' }}>
+            <div className="empty-notifications-message">
               <span style={{ opacity: 0.6 }}>
                 You don't have any notifications yet.
               </span>
