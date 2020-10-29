@@ -9,6 +9,10 @@ import uuid from 'uuid'
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 import { NotificationModal } from '../NotificationModal'
+import { Button } from '../../Button'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
+
 import {
   fetchNotificationFeed,
   dismissAllNotifications,
@@ -24,8 +28,6 @@ import {
 import { setCSSVars } from '../../../js/Util'
 
 import './NotificationFeed.scss'
-import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { Button } from '../../Button'
 
 export default class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid.v4()
@@ -375,9 +377,11 @@ export default class NotificationFeed extends React.Component {
             </Fragment>
           ) : (
             <div className="empty-notifications-message">
-              <span style={{ opacity: 0.6 }}>
-                You don't have any notifications yet.
-              </span>
+              <img className="empty-notifications-img" src={emptyStateImg} />
+              <div className="empty-notifications-title">
+                No notifications yet.
+              </div>
+              <div>Stay tuned!</div>
               <br />
               <Button
                 style={{ marginTop: '10px' }}
