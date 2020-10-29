@@ -389,7 +389,7 @@ export default class QueryOutput extends React.Component {
       )
 
       if (dateColumnIndex >= 0) {
-        const sortedData = data.sort((a, b) => {
+        let sortedData = [...data].sort((a, b) => {
           const aDate = dayjs(a[dateColumnIndex]).unix()
           const bDate = dayjs(b[dateColumnIndex]).unix()
 
@@ -1042,7 +1042,7 @@ export default class QueryOutput extends React.Component {
 
       if (this.supportsPivot) {
         columns = this.pivotTableColumns
-        tableData = this.pivotTableData
+        tableData = _cloneDeep(this.pivotTableData)
       }
 
       if (!this.dataConfig) {
@@ -1401,7 +1401,7 @@ export default class QueryOutput extends React.Component {
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
 
-      const uniqueYears = allYears
+      const uniqueYears = [...allYears]
         .filter(onlyUnique)
         .sort()
         .reduce((map, title, i) => {
@@ -1517,19 +1517,17 @@ export default class QueryOutput extends React.Component {
         )
       }
 
-      let uniqueValues0 = tableData
+      let uniqueValues0 = this.sortTableDataByDate(tableData)
         .map((d) => d[this.dataConfig.stringColumnIndex])
         .filter(onlyUnique)
-        .sort()
         .reduce((map, title, i) => {
           map[title] = i
           return map
         }, {})
 
-      let uniqueValues1 = tableData
+      let uniqueValues1 = this.sortTableDataByDate(tableData)
         .map((d) => d[this.dataConfig.legendColumnIndex])
         .filter(onlyUnique)
-        .sort()
         .reduce((map, title, i) => {
           map[title] = i
           return map
@@ -1603,6 +1601,7 @@ export default class QueryOutput extends React.Component {
         Object.keys(uniqueValues1).length + 1, // Add one for the frozen first column
         Object.keys(uniqueValues0).length
       )
+
       tableData.forEach((row) => {
         // Populate first column
         pivotTableData[
