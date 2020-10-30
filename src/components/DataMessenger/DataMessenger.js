@@ -233,6 +233,7 @@ export default class DataMessenger extends React.Component {
       isResponse: true,
       type: type || 'text',
       content: content || '',
+      isIntroMessage: true,
     }
   }
 
@@ -819,6 +820,7 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
+                  isIntroMessage={message.isIntroMessage}
                   authentication={getAuthentication(
                     getAuthentication(this.props.authentication)
                   )}

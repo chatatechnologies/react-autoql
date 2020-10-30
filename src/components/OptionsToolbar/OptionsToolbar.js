@@ -679,12 +679,14 @@ export default class Input extends React.Component {
       showCreateNotificationIcon:
         isDataResponse &&
         getAutoQLConfig(this.props.autoQLConfig).enableNotifications,
-      showShareToSlackButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
-      showShareToTeamsButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
+      showShareToSlackButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
+      showShareToTeamsButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -698,7 +700,6 @@ export default class Input extends React.Component {
 
     // If there is nothing to put in the toolbar, don't render it
     if (
-      !this.props.responseRef ||
       !Object.values(shouldShowButton).find((showButton) => showButton === true)
     ) {
       return null
