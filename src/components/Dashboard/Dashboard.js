@@ -325,13 +325,13 @@ class Dashboard extends React.Component {
         params.query !== this.props.tiles[tileIndex].query
       ) {
         tiles[tileIndex].dataConfig = undefined
-        tiles[tileIndex].skipSafetyNet = false
+        tiles[tileIndex].skipQueryValidation = false
       } else if (
         Object.keys(params).includes('secondQuery') &&
         params.secondQuery !== this.props.tiles[tileIndex].secondQuery
       ) {
         tiles[tileIndex].secondDataConfig = undefined
-        tiles[tileIndex].secondSkipSafetyNet = false
+        tiles[tileIndex].secondskipQueryValidation = false
       }
 
       this.props.onChange(tiles)

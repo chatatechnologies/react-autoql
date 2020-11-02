@@ -2,7 +2,7 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
-import SafetyNetMessage from './SafetyNetMessage'
+import QueryValidationMessage from './QueryValidationMessage'
 
 // const propTypes = {
 //   response: {},
@@ -13,12 +13,12 @@ import SafetyNetMessage from './SafetyNetMessage'
 
 const defaultProps = {
   initialSelections: undefined,
-  isQueryRunning: false
+  isQueryRunning: false,
 }
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<SafetyNetMessage {...setupProps} />)
+  const wrapper = shallow(<QueryValidationMessage {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }

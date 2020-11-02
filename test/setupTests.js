@@ -9,7 +9,7 @@ Enzyme.configure({ adapter: new EnzymeAdapter() })
 //   () =>
 //     new Promise(resolve =>
 //       resolve({
-//         runSafetyNet: () => Promise.resolve(),
+//         runQueryValidation: () => Promise.resolve(),
 //         runQueryOnly: () => Promise.resolve(),
 //       })
 //     )

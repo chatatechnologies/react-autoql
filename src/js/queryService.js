@@ -149,7 +149,7 @@ export const runQuery = ({
   skipQueryValidation,
 } = {}) => {
   if (enableQueryValidation && !skipQueryValidation) {
-    return runSafetyNet({
+    return runQueryValidation({
       text: query,
       domain,
       apiKey,
@@ -187,7 +187,7 @@ export const runQuery = ({
   })
 }
 
-export const runSafetyNet = ({ text, domain, apiKey, token } = {}) => {
+export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
   if (!text) {
     return Promise.reject(new Error('No text supplied'))
   }
@@ -337,7 +337,7 @@ export const fetchQueryTips = ({
   domain,
   apiKey,
   token,
-  skipSafetyNet,
+  skipQueryValidation,
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
   const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
@@ -352,16 +352,18 @@ export const fetchQueryTips = ({
     },
   }
 
-  if (!skipSafetyNet) {
-    return runSafetyNet({
+  if (!skipQueryValidation) {
+    return runQueryValidation({
       text: keywords,
       domain,
       apiKey,
       token,
     })
-      .then((safetyNetResponse) => {
-        if (_get(safetyNetResponse, 'data.data.replacements.length') > 0) {
-          return Promise.resolve(safetyNetResponse)
+      .then((queryValidationResponse) => {
+        if (
+          _get(queryValidationResponse, 'data.data.replacements.length') > 0
+        ) {
+          return Promise.resolve(queryValidationResponse)
         }
         return axios
           .get(queryTipsUrl, config)

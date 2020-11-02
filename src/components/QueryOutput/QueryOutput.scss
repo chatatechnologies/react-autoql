@@ -12,7 +12,7 @@
 }
 
 .react-autoql-response-content-container.table {
-  max-height: 100vh !important; // this safetynet forces progressive rendering
+  max-height: 100vh !important; // this safety net forces progressive rendering
 }
 
 .react-autoql-suggestion-btn {
@@ -100,12 +100,12 @@
   }
 }
 
-/* safetynet */
-.react-autoql-safety-net-selector-container {
+/* query validation */
+.react-autoql-query-validation-selector-container {
   display: inline-block;
   position: relative;
 }
-.react-autoql-select-popup-container.safetynet-select {
+.react-autoql-select-popup-container.query-validation-select {
   padding: 5px 0;
   letter-spacing: 0.03em;
   font-family: var(--react-autoql-font-family), sans-serif;
@@ -120,10 +120,10 @@
     color: #d84830;
   }
 }
-.react-autoql-safety-net-query {
+.react-autoql-query-validation-query {
   text-align: center;
 }
-.react-autoql-safety-net-execute-btn {
+.react-autoql-query-validation-execute-btn {
   height: 38px;
   background: none;
   border-radius: 4px;
@@ -135,7 +135,7 @@
   border-color: #e2e2e26e;
   transition: all 0.2s ease;
 }
-.react-autoql-safety-net-execute-btn:hover {
+.react-autoql-query-validation-execute-btn:hover {
   border-color: #28a8e0;
 }
 .react-autoql-execute-query-icon {
@@ -152,7 +152,7 @@
     fill: var(--react-autoql-accent-color);
   }
 }
-.react-autoql-safetynet-select {
+.react-autoql-query-validation-select {
   position: relative;
   display: inline-block;
   height: 2em;
@@ -168,7 +168,7 @@
   border-bottom: 1px dashed;
   color: var(--react-autoql-accent-color);
 }
-.react-autoql-safety-net-delete-button {
+.react-autoql-query-validation-delete-button {
   position: relative;
   cursor: pointer;
   margin-bottom: -2px;
@@ -197,10 +197,10 @@
   font-weight: 600;
   cursor: pointer;
 }
-.react-autoql-safety-net-container {
+.react-autoql-query-validation-container {
   width: 100%;
 }
-.react-autoql-safety-net-description {
+.react-autoql-query-validation-description {
   margin-bottom: 14px;
 }
 
