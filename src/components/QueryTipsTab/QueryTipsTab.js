@@ -6,7 +6,7 @@ import _get from 'lodash.get'
 
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
-import { SafetyNetMessage } from '../SafetyNetMessage'
+import { QueryValidationMessage } from '../QueryValidationMessage'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
@@ -38,14 +38,13 @@ export default class QueryTipsTab extends React.Component {
   // }
 
   renderQueryTipsContent = () => {
-    if (this.props.queryTipsSafetyNetResponse) {
+    if (this.props.queryTipsQueryValidationResponse) {
       return (
-        <SafetyNetMessage
+        <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          response={this.props.queryTipsSafetyNetResponse}
-          onSuggestionClick={this.props.onSafetyNetSuggestionClick}
+          response={this.props.queryTipsQueryValidationResponse}
+          onSuggestionClick={this.props.onQueryValidationSuggestionClick}
           autoSelectSuggestion={true}
-          // message="Did you mean"
           submitText="Search"
           submitIcon="search"
         />

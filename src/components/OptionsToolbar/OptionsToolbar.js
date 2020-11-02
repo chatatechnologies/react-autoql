@@ -549,6 +549,11 @@ export default class Input extends React.Component {
     )
   }
 
+  areColumnsHidden = () => {
+    const columns = _get(this.props.responseRef, 'tableColumns', [])
+    return columns.find((col) => !col.visible)
+  }
+
   areAllColumnsHidden = () => {
     const columns = _get(this.props.responseRef, 'tableColumns', [])
     return !columns.find((col) => col.visible)
@@ -674,12 +679,14 @@ export default class Input extends React.Component {
       showCreateNotificationIcon:
         isDataResponse &&
         getAutoQLConfig(this.props.autoQLConfig).enableNotifications,
-      showShareToSlackButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
-      showShareToTeamsButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
+      showShareToSlackButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
+      showShareToTeamsButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -693,7 +700,6 @@ export default class Input extends React.Component {
 
     // If there is nothing to put in the toolbar, don't render it
     if (
-      !this.props.responseRef ||
       !Object.values(shouldShowButton).find((showButton) => showButton === true)
     ) {
       return null
@@ -724,7 +730,7 @@ export default class Input extends React.Component {
             data-for="react-autoql-toolbar-btn-tooltip"
             data-test="options-toolbar-col-vis"
           >
-            <Icon type="eye" />
+            <Icon type="eye" badge={this.areColumnsHidden()} />
           </button>
         )}
         {shouldShowButton.showReportProblemButton && (

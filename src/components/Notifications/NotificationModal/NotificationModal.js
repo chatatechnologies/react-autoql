@@ -513,7 +513,7 @@ export default class NotificationModal extends React.Component {
 
     const steps = [
       {
-        title: 'Set up your Alert',
+        title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
         complete: this.state.isFirstSectionComplete,
         error:
@@ -521,7 +521,7 @@ export default class NotificationModal extends React.Component {
           !this.state.isExpressionSectionValid,
       },
       {
-        title: 'Schedule Frequency',
+        title: 'Select Alert Interval',
         content: this.renderFrequencyStep(),
         complete: this.state.isScheduleSectionComplete,
       },

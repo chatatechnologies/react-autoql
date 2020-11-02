@@ -10,7 +10,7 @@ import { Select } from '../Select'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
-export default class SafetyNetMessage extends React.Component {
+export default class QueryValidationMessage extends React.Component {
   originalReplaceWords = []
   suggestionLists = []
 
@@ -37,13 +37,13 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   state = {
-    safetyNetQueryArray: [],
+    queryValidationQueryArray: [],
     selectedSuggestions: undefined,
   }
 
   componentDidMount = () => {
     if (_get(this.props, 'response.data')) {
-      this.initializeSafetyNetOptions(this.props.response.data)
+      this.initializeQueryValidationOptions(this.props.response.data)
     }
   }
 
@@ -120,16 +120,18 @@ export default class SafetyNetMessage extends React.Component {
       return
     }
 
-    let safetyNetQueryString = ''
+    let queryValidationQueryString = ''
     this.plainTextList.forEach((word, dropdownIndex) => {
-      safetyNetQueryString = safetyNetQueryString.concat(word)
+      queryValidationQueryString = queryValidationQueryString.concat(word)
       const suggestion = selectedSuggestions[dropdownIndex]
 
       if (suggestion && !suggestion.hidden) {
-        const startIndex = safetyNetQueryString.length
+        const startIndex = queryValidationQueryString.length
         suggestion.start = startIndex
         suggestion.end = startIndex + suggestion.text.length
-        safetyNetQueryString = safetyNetQueryString.concat(suggestion.text)
+        queryValidationQueryString = queryValidationQueryString.concat(
+          suggestion.text
+        )
       }
     })
   }
@@ -163,7 +165,7 @@ export default class SafetyNetMessage extends React.Component {
     this.setState({ selectedSuggestions: _cloneDeep(selectedSuggestions) })
   }
 
-  initializeSafetyNetOptions = (responseBody) => {
+  initializeQueryValidationOptions = (responseBody) => {
     const { replacements, query } = responseBody.data
     if (!replacements || !query) {
       return []
@@ -176,13 +178,13 @@ export default class SafetyNetMessage extends React.Component {
     // Gets list of text from the query that are not part of the suggestions
     this.plainTextList = this.getPlainTextList(query, replacements)
 
-    // Set initial safetynet selection values based on props
+    // Set initial validation selection values based on props
     this.setInitialSelections()
   }
 
-  onChangeSafetyNetSelectOption = (suggestionId, index) => {
+  onChangeQueryValidationSelectOption = (suggestionId, index) => {
     if (suggestionId === 'remove-word') {
-      this.deleteSafetyNetSuggestion(index)
+      this.deleteQueryValidationSuggestion(index)
       return
     }
 
@@ -192,9 +194,9 @@ export default class SafetyNetMessage extends React.Component {
     const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
-    // If user provided callback for safetynet selection
+    // If user provided callback for validation selection
     this.props.onQueryValidationSelectOption(
-      this.getSafetyNetQueryText(newSelectedSuggestions),
+      this.getQueryValidationQueryText(newSelectedSuggestions),
       newSelectedSuggestions
     )
 
@@ -202,7 +204,7 @@ export default class SafetyNetMessage extends React.Component {
     this.setState({ selectedSuggestions: _cloneDeep(newSelectedSuggestions) })
   }
 
-  deleteSafetyNetSuggestion = (suggestionIndex) => {
+  deleteQueryValidationSuggestion = (suggestionIndex) => {
     const newSelectedSuggestions = _cloneDeep(
       this.state.selectedSuggestions.map((suggestion, index) => {
         if (index === suggestionIndex) {
@@ -217,7 +219,7 @@ export default class SafetyNetMessage extends React.Component {
 
     // Update list in callback
     this.props.onQueryValidationSelectOption(
-      this.getSafetyNetQueryText(newSelectedSuggestions),
+      this.getQueryValidationQueryText(newSelectedSuggestions),
       newSelectedSuggestions
     )
 
@@ -266,7 +268,7 @@ export default class SafetyNetMessage extends React.Component {
 
     return (
       <div
-        className="react-autoql-safety-net-selector-container"
+        className="react-autoql-query-validation-selector-container"
         key={`query-element-${suggestion.id}`}
       >
         <Select
@@ -274,20 +276,22 @@ export default class SafetyNetMessage extends React.Component {
           options={options}
           key={uuid.v4()}
           value={suggestion.id}
-          className="react-autoql-safetynet-select"
-          popupClassname="safetynet-select"
-          // style={{ width: selectWidth }}
+          className="react-autoql-query-validation-select"
+          popupClassname="query-validation-select"
           onChange={(value) =>
-            this.onChangeSafetyNetSelectOption(value, suggestionDropdownIndex)
+            this.onChangeQueryValidationSelectOption(
+              value,
+              suggestionDropdownIndex
+            )
           }
         />
       </div>
     )
   }
 
-  renderSafetyNetQuery = () => {
+  renderQueryValidationQuery = () => {
     return (
-      <div className="react-autoql-safety-net-query">
+      <div className="react-autoql-query-validation-query">
         {this.plainTextList.map((textValue, index) => {
           const textElement = (
             <span key={`query-element-${index}`}>{textValue}</span>
@@ -305,17 +309,19 @@ export default class SafetyNetMessage extends React.Component {
     )
   }
 
-  getSafetyNetQueryText = (newSelectedSuggestions) => {
-    let safetyNetQueryText = ''
+  getQueryValidationQueryText = (newSelectedSuggestions) => {
+    let queryValidationQueryText = ''
     this.plainTextList.forEach((word, dropdownIndex) => {
-      safetyNetQueryText = safetyNetQueryText.concat(word)
+      queryValidationQueryText = queryValidationQueryText.concat(word)
       const suggestion = newSelectedSuggestions[dropdownIndex]
       if (suggestion && !suggestion.hidden) {
-        safetyNetQueryText = safetyNetQueryText.concat(suggestion.text)
+        queryValidationQueryText = queryValidationQueryText.concat(
+          suggestion.text
+        )
       }
     })
 
-    return safetyNetQueryText
+    return queryValidationQueryText
   }
 
   renderResponse = () => {
@@ -327,18 +333,18 @@ export default class SafetyNetMessage extends React.Component {
     }
 
     return (
-      <div className="react-autoql-safety-net-container">
-        <div className="react-autoql-safety-net-description">
+      <div className="react-autoql-query-validation-container">
+        <div className="react-autoql-query-validation-description">
           {this.props.message ||
             `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
         </div>
         <span>
-          {this.renderSafetyNetQuery()}
+          {this.renderQueryValidationQuery()}
           <button
-            className="react-autoql-safety-net-execute-btn"
+            className="react-autoql-query-validation-execute-btn"
             onClick={() => {
               this.props.onSuggestionClick({
-                query: this.getSafetyNetQueryText(
+                query: this.getQueryValidationQueryText(
                   this.state.selectedSuggestions
                 ),
                 userSelection: this.state.selectedSuggestions,

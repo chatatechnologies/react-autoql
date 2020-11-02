@@ -50,6 +50,7 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
+    isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
@@ -83,6 +84,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     isDataMessengerOpen: false,
+    isIntroMessage: false,
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -303,7 +305,7 @@ export default class ChatMessage extends React.Component {
           responseRef={this.responseRef}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
-          enableDeleteBtn
+          enableDeleteBtn={!this.props.isIntroMessage}
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
           }
