@@ -412,12 +412,17 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = ({ query, userSelection, skipSafetyNet, source }) => {
+  onSuggestionClick = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+  }) => {
     if (this.queryInputRef) {
       this.queryInputRef.animateInputTextAndSubmit({
         query,
         userSelection,
-        skipSafetyNet,
+        skipQueryValidation,
         source,
       })
     }
@@ -906,7 +911,7 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  fetchQueryTipsList = (keywords, pageNumber, skipSafetyNet) => {
+  fetchQueryTipsList = (keywords, pageNumber, skipQueryValidation) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
     const containerElement = document.querySelector(
@@ -919,14 +924,14 @@ export default class DataMessenger extends React.Component {
       keywords,
       pageSize,
       pageNumber,
-      skipSafetyNet,
+      skipQueryValidation,
     })
       .then((response) => {
-        // if caught by safetynet...
+        // if caught by validation...
         if (_get(response, 'data.full_suggestion')) {
           this.setState({
             queryTipsLoading: false,
-            queryTipsSafetyNetResponse: response,
+            queryTipsQueryValidationResponse: response,
           })
         } else {
           const totalQueries = Number(
@@ -946,7 +951,7 @@ export default class DataMessenger extends React.Component {
             queryTipsTotalPages: totalPages,
             queryTipsCurrentPage: pageNumber,
             queryTipsTotalQueries: totalQueries,
-            queryTipsSafetyNetResponse: undefined,
+            queryTipsQueryValidationResponse: undefined,
           })
         }
       })
@@ -956,7 +961,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
-          queryTipsSafetyNetResponse: undefined,
+          queryTipsQueryValidationResponse: undefined,
         })
       })
   }
@@ -974,8 +979,8 @@ export default class DataMessenger extends React.Component {
     this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
-  onQueryTipsSafetyNetSuggestionClick = (safetyNetObj) => {
-    const keywords = safetyNetObj.query
+  onQueryTipsQueryValidationSuggestionClick = (queryValidationObj) => {
+    const keywords = queryValidationObj.query
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
   }
@@ -1006,8 +1011,12 @@ export default class DataMessenger extends React.Component {
     <QueryTipsTab
       themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
       onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
-      queryTipsSafetyNetResponse={this.state.queryTipsSafetyNetResponse}
-      onSafetyNetSuggestionClick={this.onQueryTipsSafetyNetSuggestionClick}
+      queryTipsQueryValidationResponse={
+        this.state.queryTipsQueryValidationResponse
+      }
+      onQueryValidationSuggestionClick={
+        this.onQueryTipsQueryValidationSuggestionClick
+      }
       loading={this.state.queryTipsLoading}
       error={this.state.queryTipsError}
       queryTipsList={this.state.queryTipsList}

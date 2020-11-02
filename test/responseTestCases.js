@@ -108,7 +108,7 @@ export default [
     },
   },
   {
-    // valid safetynet response single suggestion
+    // valid validation response single suggestion
     data: {
       full_suggestion: [
         {

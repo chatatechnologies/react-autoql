@@ -104,7 +104,7 @@ export default class QueryInput extends React.Component {
   animateInputTextAndSubmit = ({
     query,
     userSelection,
-    skipSafetyNet,
+    skipQueryValidation,
     source,
   }) => {
     if (typeof query === 'string' && _get(query, 'length')) {
@@ -118,7 +118,7 @@ export default class QueryInput extends React.Component {
               this.submitQuery({
                 queryText: query,
                 userSelection,
-                skipSafetyNet: true,
+                skipQueryValidation: true,
                 source,
               })
             }, 300)
@@ -128,7 +128,12 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  submitQuery = ({ queryText, userSelection, skipSafetyNet, source } = {}) => {
+  submitQuery = ({
+    queryText,
+    userSelection,
+    skipQueryValidation,
+    source,
+  } = {}) => {
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
@@ -141,7 +146,7 @@ export default class QueryInput extends React.Component {
       this.props.onSubmit(query)
       this.setState({ lastQuery: query })
 
-      if (skipSafetyNet) {
+      if (skipQueryValidation) {
         runQueryOnly({
           query,
           userSelection,

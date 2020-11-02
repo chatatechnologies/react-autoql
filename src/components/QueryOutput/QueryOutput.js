@@ -40,7 +40,7 @@ import dayjs from '../../js/dayjsWithPlugins'
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { QueryInput } from '../QueryInput'
-import { SafetyNetMessage } from '../SafetyNetMessage'
+import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -1628,7 +1628,7 @@ export default class QueryOutput extends React.Component {
     queryId,
     userSelection,
     isButtonClick,
-    skipSafetyNet,
+    skipQueryValidation,
     source,
   }) => {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
@@ -1652,7 +1652,7 @@ export default class QueryOutput extends React.Component {
           query,
           userSelection,
           isButtonClick,
-          skipSafetyNet,
+          skipQueryValidation,
           source,
         })
       }
@@ -1660,7 +1660,7 @@ export default class QueryOutput extends React.Component {
         this.props.queryInputRef.submitQuery({
           queryText: query,
           userSelection,
-          skipSafetyNet: true,
+          skipQueryValidation: true,
           source,
         })
       }
@@ -1768,10 +1768,10 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    // Safetynet was triggered, display safetynet message
+    // Query validation was triggered, display query validation message
     if (_get(queryResponse, 'data.data.replacements')) {
       return (
-        <SafetyNetMessage
+        <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
           key={this.SAFETYNET_KEY}
           response={this.props.queryResponse}
@@ -1780,7 +1780,7 @@ export default class QueryOutput extends React.Component {
               query,
               userSelection,
               isButtonClick: true,
-              skipSafetyNet: true,
+              skipQueryValidation: true,
               source: 'validation',
             })
           }

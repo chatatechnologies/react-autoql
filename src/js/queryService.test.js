@@ -5,7 +5,7 @@ import axios from 'axios'
 import {
   runQuery,
   runQueryOnly,
-  runSafetyNet,
+  runQueryValidation,
   fetchAutocomplete,
   reportProblem,
   fetchSuggestions,
@@ -89,13 +89,13 @@ const allRelatedQueriesParams = {
   domain: 'https://yourdomain.com',
   apiKey: 'yourAPIkey',
   token: 'FH9W83FH23UHRSKFJ9UH2FONFOR5IJEJRG',
-  skipSafetyNet: true,
+  skipQueryValidation: true,
 }
 
 describe('runQuery', () => {
   const data = responseTestCases[7]
 
-  test('fetches query data successfully with all params provided except safetynet', async () => {
+  test('fetches query data successfully with all params provided except query validation', async () => {
     axios.post.mockImplementationOnce(() => Promise.resolve(data))
     await expect(runQuery(allQueryParams)).resolves.toEqual(data)
   })
@@ -166,7 +166,7 @@ describe('runQuery', () => {
     })
   })
 
-  test('throws safetynet error when enableQueryValidation is true and no query is provided', async () => {
+  test('throws validation error when enableQueryValidation is true and no query is provided', async () => {
     const input = {
       ...allQueryParams,
       query: undefined,
@@ -374,31 +374,31 @@ describe('setColumnVisibility', () => {
   })
 })
 
-describe('safetyNet', () => {
+describe('queryValidation', () => {
   const data = validationTestCases[0]
 
   test('fetches validation data successfully with all params provided', async () => {
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(runSafetyNet(allValidationParams)).resolves.toEqual(data)
+    await expect(runQueryValidation(allValidationParams)).resolves.toEqual(data)
   })
 
   test('throws no query supplied error if no input params are supplied', async () => {
-    await expect(runSafetyNet()).rejects.toThrow('No text supplied')
+    await expect(runQueryValidation()).rejects.toThrow('No text supplied')
   })
 
   test('throws unauthenticated error when no token is provided', async () => {
     const input = { ...allValidationParams, token: undefined }
-    await expect(runSafetyNet(input)).rejects.toThrow('Unauthenticated')
+    await expect(runQueryValidation(input)).rejects.toThrow('Unauthenticated')
   })
 
   test('throws unauthenticated error when no API key is provided', async () => {
     const input = { ...allValidationParams, apiKey: undefined }
-    await expect(runSafetyNet(input)).rejects.toThrow('Unauthenticated')
+    await expect(runQueryValidation(input)).rejects.toThrow('Unauthenticated')
   })
 
   test('throws unauthenticated error when no domain is provided', async () => {
     const input = { ...allValidationParams, domain: undefined }
-    await expect(runSafetyNet(input)).rejects.toThrow('Unauthenticated')
+    await expect(runQueryValidation(input)).rejects.toThrow('Unauthenticated')
   })
 })
 
@@ -548,10 +548,10 @@ describe('fetchQueryTips', () => {
     await expect(fetchQueryTips()).rejects.toThrow('Unauthenticated')
   })
 
-  test('fetches safetynet response when skipSafetyNet is false', async () => {
+  test('fetches validation response when skipQueryValidation is false', async () => {
     const input = {
       ...allRelatedQueriesParams,
-      skipSafetyNet: false,
+      skipQueryValidation: false,
     }
 
     axios.get.mockImplementationOnce(() =>
@@ -563,7 +563,7 @@ describe('fetchQueryTips', () => {
   test('fetches correctly when validation suggestions are empty', async () => {
     const input = {
       ...allRelatedQueriesParams,
-      skipSafetyNet: false,
+      skipQueryValidation: false,
     }
 
     axios.get.mockImplementationOnce(() => Promise.resolve(data))

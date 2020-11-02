@@ -167,13 +167,15 @@
   overflow-x: auto;
   overflow-y: hidden;
 }
-.react-autoql-dashboard-tile-inner-div .react-autoql-safety-net-query {
+.react-autoql-dashboard-tile-inner-div .react-autoql-query-validation-query {
   white-space: nowrap;
 }
-.dashboard-tile-response-wrapper.small .react-autoql-safety-net-description,
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-description,
 .dashboard-tile-response-wrapper.small
   .react-autoql-suggestion-message-description,
-.dashboard-tile-response-wrapper.small .react-autoql-safety-net-execute-btn {
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-execute-btn {
   display: none;
 }
 

@@ -183,7 +183,7 @@ export default class DashboardTile extends React.Component {
     })
   }
 
-  processQuery = ({ query, userSelection, skipSafetyNet, source }) => {
+  processQuery = ({ query, userSelection, skipQueryValidation, source }) => {
     if (this.isQueryValid(query)) {
       const finalSource = ['dashboards']
       if (source) {
@@ -201,7 +201,7 @@ export default class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         source: finalSource,
-        skipQueryValidation: skipSafetyNet,
+        skipQueryValidation: skipQueryValidation,
       })
         .then((response) => {
           return Promise.resolve(response)
@@ -211,12 +211,12 @@ export default class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  processTileTop = ({ query, userSelection, skipSafetyNet, source }) => {
+  processTileTop = ({ query, userSelection, skipQueryValidation, source }) => {
     this.setState({ isTopExecuting: true, customMessage: undefined })
 
-    const skipQueryValidation =
-      !!skipSafetyNet ||
-      !!(this.props.tile.query === query && this.props.tile.skipSafetyNet)
+    const skipValidation =
+      !!skipQueryValidation ||
+      !!(this.props.tile.query === query && this.props.tile.skipQueryValidation)
 
     const queryValidationSelections =
       userSelection ||
@@ -232,7 +232,7 @@ export default class DashboardTile extends React.Component {
           this.props.tile.query === query
             ? undefined
             : this.props.tile.dataConfig,
-        skipSafetyNet: skipQueryValidation,
+        skipQueryValidation: skipValidation,
         queryResponse: null,
         selectedSuggestion: undefined,
         queryValidationSelections,
@@ -243,25 +243,30 @@ export default class DashboardTile extends React.Component {
     this.processQuery({
       query,
       userSelection: queryValidationSelections,
-      skipSafetyNet: skipQueryValidation,
+      skipQueryValidation: skipQueryValidation,
       source,
     })
       .then((response) => this.endTopQuery({ response }))
       .catch((response) => this.endTopQuery({ response }))
   }
 
-  processTileBottom = ({ query, userSelection, skipSafetyNet, source }) => {
+  processTileBottom = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+  }) => {
     this.setState({
       isBottomExecuting: true,
       isSecondQueryInputOpen: false,
       secondCustomMessage: undefined,
     })
 
-    const skipQueryValidation =
-      skipSafetyNet ||
+    const skipValidation =
+      skipQueryValidation ||
       !!(
         this.props.tile.secondQuery === query &&
-        this.props.tile.secondSkipSafetyNet
+        this.props.tile.secondskipQueryValidation
       )
 
     const queryValidationSelections =
@@ -278,7 +283,7 @@ export default class DashboardTile extends React.Component {
           this.props.tile.secondQuery === query
             ? undefined
             : this.props.tile.secondDataConfig,
-        secondSkipSafetyNet: skipQueryValidation,
+        secondskipQueryValidation: skipValidation,
         secondQueryResponse: null,
         secondSelectedSuggestion: undefined,
         secondQueryValidationSelections: queryValidationSelections,
@@ -289,7 +294,7 @@ export default class DashboardTile extends React.Component {
     this.processQuery({
       query,
       userSelection: queryValidationSelections,
-      skipSafetyNet: skipQueryValidation,
+      skipQueryValidation: skipQueryValidation,
       source,
     })
       .then((response) => this.endBottomQuery({ response }))
@@ -299,8 +304,8 @@ export default class DashboardTile extends React.Component {
   processTile = ({
     query,
     secondQuery,
-    skipSafetyNet,
-    secondSkipSafetyNet,
+    skipQueryValidation,
+    secondskipQueryValidation,
     source,
   } = {}) => {
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
@@ -309,12 +314,12 @@ export default class DashboardTile extends React.Component {
       this.props.tile.secondSelectedSuggestion ||
       this.state.secondQuery
 
-    this.processTileTop({ query: q1, skipSafetyNet, source })
+    this.processTileTop({ query: q1, skipQueryValidation, source })
 
     if (this.getIsSplitView() && q2 && q1 !== q2) {
       this.processTileBottom({
         query: q2,
-        skipSafetyNet: secondSkipSafetyNet,
+        skipQueryValidation: secondskipQueryValidation,
         source,
       })
     }
@@ -338,7 +343,12 @@ export default class DashboardTile extends React.Component {
     this.setState({ query })
 
     if (isButtonClick) {
-      this.processTileTop({ query, userSelection, skipSafetyNet: true, source })
+      this.processTileTop({
+        query,
+        userSelection,
+        skipQueryValidation: true,
+        source,
+      })
     } else {
       this.props.setParamsForTile(
         { selectedSuggestion: query },
@@ -363,7 +373,7 @@ export default class DashboardTile extends React.Component {
       this.processTileBottom({
         query,
         userSelection,
-        skipSafetyNet: true,
+        skipQueryValidation: true,
         source,
       })
     } else {
@@ -656,7 +666,7 @@ export default class DashboardTile extends React.Component {
     )
   }
 
-  onSecondSafetyNetSelectOption = (queryText, suggestionList) => {
+  onSecondQueryValidationSelectOption = (queryText, suggestionList) => {
     this.setState({ secondQuery: queryText })
     this.props.setParamsForTile(
       {
@@ -1030,7 +1040,7 @@ export default class DashboardTile extends React.Component {
             isSecondHalf: true,
           })
         },
-        onQueryValidationSelectOption: this.onSecondSafetyNetSelectOption,
+        onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
         onColumnsUpdate: (columns) => {
           const newResponse = {
             ...queryResponse,
