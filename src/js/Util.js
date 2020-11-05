@@ -5,16 +5,21 @@ import dayjs from './dayjsWithPlugins'
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
 import { LIGHT_THEME, DARK_THEME } from './Themes'
 
+import {
+  getColumnTypeAmounts,
+  hasMultiSeriesColumn,
+} from '../components/QueryOutput/columnHelpers'
+
 export const onlyUnique = (value, index, self) => {
   return self.indexOf(value) === index
 }
 
-export const makeEmptyArray = (w, h) => {
+export const makeEmptyArray = (w, h, value = '') => {
   var arr = []
   for (let i = 0; i < h; i++) {
     arr[i] = []
     for (let j = 0; j < w; j++) {
-      arr[i][j] = ''
+      arr[i][j] = value
     }
   }
   return arr
@@ -117,21 +122,6 @@ export const formatStringDate = (value, config) => {
 
   // Unable to parse...
   return value
-}
-
-export const isColumnNumberType = (col) => {
-  const { type } = col
-  return (
-    type === 'DOLLAR_AMT' ||
-    type === 'QUANTITY' ||
-    type === 'PERCENT' ||
-    type === 'RATIO'
-  )
-}
-
-export const isColumnStringType = (col) => {
-  const { type } = col
-  return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
 }
 
 export const formatChartLabel = ({ d, col = {}, config = {} }) => {
@@ -426,21 +416,6 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
   })
 }
 
-export const getColumnTypeAmounts = (columns) => {
-  let amountOfStringColumns = 0
-  let amountOfNumberColumns = 0
-
-  columns.forEach((col) => {
-    if (isColumnNumberType(col)) {
-      amountOfNumberColumns += 1
-    } else if (isColumnStringType(col)) {
-      amountOfStringColumns += 1
-    }
-  })
-
-  return { amountOfNumberColumns, amountOfStringColumns }
-}
-
 export const getNumberOfGroupables = (columns) => {
   let numberOfGroupables = 0
   if (columns) {
@@ -481,13 +456,26 @@ export const supports2DCharts = (columns) => {
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
 }
 
-export const getSupportedDisplayTypes = (response) => {
+export const supportsPieChart = (columns, chartData) => {
+  if (hasMultiSeriesColumn(columns)) {
+    return false
+  }
+
+  if (chartData) {
+    // Pie charts really shouldn't have any more than 6 slices
+    return chartData.length < 7
+  }
+
+  return true
+}
+
+export const getSupportedDisplayTypes = (response, chartData) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
     }
 
-    // For CaaS there should be 3 types: data, suggestion, help
+    // There should be 3 types: data, suggestion, help
     const displayType = response.data.data.display_type
 
     if (displayType === 'suggestion' || displayType === 'help') {
@@ -515,15 +503,19 @@ export const getSupportedDisplayTypes = (response) => {
           'table',
         ]
       }
+
+      console.warn(
+        'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
+      )
       return supportedDisplayTypes
     } else if (supports2DCharts(columns)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      // if (rows.length < 11) {
-      supportedDisplayTypes.push('pie')
-      // }
+      if (supportsPieChart(columns, chartData)) {
+        supportedDisplayTypes.push('pie')
+      }
 
       // create pivot based on month and year
       const dateColumnIndex = columns.findIndex(
@@ -906,38 +898,6 @@ export const getQueryParams = (url) => {
   } catch (error) {
     return undefined
   }
-}
-
-export const getNumberColumnIndices = (columns) => {
-  const dollarAmtIndices = []
-  const quantityIndices = []
-  const ratioIndices = []
-
-  columns.forEach((col, index) => {
-    const { type } = col
-    if (type === 'DOLLAR_AMT') {
-      dollarAmtIndices.push(index)
-    } else if (type === 'QUANTITY') {
-      quantityIndices.push(index)
-    } else if (type === 'PERCENT' || type === 'RATIO') {
-      ratioIndices.push(index)
-    }
-  })
-
-  // Returning highest priority of non-empty arrays
-  if (dollarAmtIndices.length) {
-    return dollarAmtIndices
-  }
-
-  if (quantityIndices.length) {
-    return quantityIndices
-  }
-
-  if (ratioIndices.length) {
-    return ratioIndices
-  }
-
-  return []
 }
 
 export const filterDataForDrilldown = (response, drilldownData) => {
