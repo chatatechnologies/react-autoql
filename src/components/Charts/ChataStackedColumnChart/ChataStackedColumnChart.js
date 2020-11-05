@@ -148,7 +148,7 @@ export default class ChataStackedColumnChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'display_name')}
+          legendTitle={_get(legendColumn, 'title')}
           onLegendTitleClick={onLegendTitleClick}
           yGridLines
           onXAxisClick={onXAxisClick}

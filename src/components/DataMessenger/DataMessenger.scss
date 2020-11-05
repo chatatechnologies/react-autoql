@@ -306,7 +306,7 @@
 
 .clear-messages-confirm-popover {
   color: var(--react-autoql-text-color-primary);
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   text-align: right;
   padding: 18px;
   width: 266px;
@@ -315,9 +315,9 @@
   text-align: center;
 }
 .react-autoql-confirm-icon {
-  color: #faad14;
+  color: #faad14 !important;
   vertical-align: middle;
-  margin-right: 5px;
+  margin-right: 5px !important;
   margin-bottom: 3px;
 }
 

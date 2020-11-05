@@ -59,12 +59,20 @@ import {
   isChartType,
   setCSSVars,
   supportsRegularPivotTable,
-  isColumnNumberType,
-  isColumnStringType,
-  getNumberColumnIndices,
   getNumberOfGroupables,
   getPadding,
 } from '../../js/Util.js'
+
+import {
+  isColumnNumberType,
+  isColumnStringType,
+  getNumberColumnIndices,
+  getMultiSeriesColumnIndex,
+  getDateColumnIndex,
+  getStringColumnIndices,
+  hasMultiSeriesColumn,
+  isColumnDateType,
+} from './columnHelpers.js'
 
 import { sendSuggestion } from '../../js/queryService'
 
@@ -118,6 +126,7 @@ export default class QueryOutput extends React.Component {
     onColumnsUpdate: func,
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
+    onSupportedDisplayTypesChange: func,
   }
 
   static defaultProps = {
@@ -143,16 +152,17 @@ export default class QueryOutput extends React.Component {
     enableColumnHeaderContextMenu: false,
     isResizing: false,
     enableDynamicCharting: true,
+    onNoneOfTheseClick: undefined,
+    autoChartAggregations: true,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
+    onSupportedDisplayTypesChange: () => {},
     hideColumnCallback: () => {},
     onTableFilterCallback: () => {},
     onDataConfigChange: () => {},
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
-    onNoneOfTheseClick: undefined,
-    autoChartAggregations: true,
   }
 
   state = {
@@ -178,8 +188,8 @@ export default class QueryOutput extends React.Component {
       setCSSVars(getThemeConfig(this.props.themeConfig))
 
       // Determine the supported visualization types based on the response data
-      this.supportedDisplayTypes = getSupportedDisplayTypes(
-        this.props.queryResponse
+      this.setSupportedDisplayTypes(
+        getSupportedDisplayTypes(this.props.queryResponse)
       )
 
       // Set the initial display type based on prop value, response, and supported display types
@@ -374,19 +384,13 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
-  isDateType = (col) => {
-    return col.type === 'DATE' || col.type === 'DATE_STRING'
-  }
-
   sortTableDataByDate = (data) => {
     try {
       if (!data || typeof data !== 'object') {
         return undefined
       }
 
-      const dateColumnIndex = this.tableColumns.findIndex((col) =>
-        this.isDateType(col)
-      )
+      const dateColumnIndex = getDateColumnIndex(this.tableColumns)
 
       if (dateColumnIndex >= 0) {
         let sortedData = [...data].sort((a, b) => {
@@ -413,6 +417,8 @@ export default class QueryOutput extends React.Component {
     this.tableColumns = this.formatColumnsForTable(
       this.props.queryResponse.data.data.columns
     )
+
+    this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
 
     const data = this.sortTableDataByDate(
       _get(this.props.queryResponse, 'data.data.rows')
@@ -567,11 +573,6 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderForecastVis = () => {
-    return this.renderTable()
-    // return <ChataForecast />
-  }
-
   processCellClick = (cell) => {
     if (this.state.isContextMenuOpen) {
       this.setState({ isContextMenuOpen: false })
@@ -705,177 +706,44 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderAllColumnsHiddenMessage = () => {
-    if (this.areAllColumnsHidden()) {
-      return (
-        <div className="no-columns-error-message">
-          <div>
-            <Icon className="warning-icon" type="warning-triangle" />
-            <br /> All columns in this table are currently hidden. You can
-            adjust your column visibility preferences using the Column
-            Visibility Manager (
-            <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
-          </div>
-        </div>
-      )
+  onChangeStringColumnIndex = (index) => {
+    if (this.dataConfig.legendColumnIndex === index) {
+      this.dataConfig.legendColumnIndex = undefined
     }
+    this.dataConfig.stringColumnIndex = index
 
-    return null
+    if (this.supportsPivot) {
+      this.generatePivotTableData()
+    }
+    this.generateChartData()
+    this.forceUpdate()
   }
 
-  renderTable = () => {
-    if (
-      !this.tableData ||
-      (this.state.displayType === 'pivot_table' && !this.pivotTableData)
-    ) {
-      return 'Error: There was no data supplied for this table'
+  onChangeLegendColumnIndex = (index) => {
+    if (this.dataConfig.stringColumnIndex === index) {
+      this.dataConfig.stringColumnIndex = undefined
     }
+    this.dataConfig.legendColumnIndex = index
 
-    if (this.tableData.length === 1 && this.tableData[0].length === 1) {
-      // This is a single cell of data
-      return this.renderSingleValueResponse()
+    if (this.supportsPivot) {
+      this.generatePivotTableData()
     }
-
-    if (this.state.displayType === 'pivot_table') {
-      return (
-        <ChataTable
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.pivotTableID}
-          ref={(ref) => (this.pivotTableRef = ref)}
-          columns={this.pivotTableColumns}
-          data={this.pivotTableData}
-          onCellClick={this.processCellClick}
-          headerFilters={this.pivotHeaderFilters}
-          onFilterCallback={this.onTableFilter}
-          setFilterTagsCallback={this.props.setFilterTagsCallback}
-          enableColumnHeaderContextMenu={
-            this.props.enableColumnHeaderContextMenu
-          }
-        />
-      )
-    }
-
-    return (
-      <Fragment>
-        {this.renderAllColumnsHiddenMessage()}
-        <ChataTable
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.tableID}
-          ref={(ref) => (this.tableRef = ref)}
-          columns={this.tableColumns}
-          data={this.tableData}
-          onCellClick={this.processCellClick}
-          headerFilters={this.headerFilters}
-          onFilterCallback={this.onTableFilter}
-          setFilterTagsCallback={this.props.setFilterTagsCallback}
-          // We don't want to skip rendering it because we need to
-          // access the table ref for showing the columns if the
-          // col visibility is changed
-          style={{
-            visibility: this.areAllColumnsHidden() ? 'hidden' : 'visible',
-          }}
-        />
-      </Fragment>
-    )
+    this.generateChartData()
+    this.forceUpdate()
   }
 
-  renderChart = (width, height, displayType) => {
-    if (!this.chartData) {
-      return 'Error: There was no data supplied for this chart'
+  onChangeNumberColumnIndice = (indices) => {
+    if (indices) {
+      this.dataConfig.numberColumnIndices = indices
+      this.dataConfig.numberColumnIndex = indices[0]
+      this.generateChartData()
+      this.forceUpdate()
     }
-
-    return (
-      <ErrorBoundary>
-        <ChataChart
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          ref={(ref) => (this.chartRef = ref)}
-          type={displayType || this.state.displayType}
-          data={this.chartData}
-          tableColumns={this.tableColumns}
-          columns={
-            this.supportsPivot ? this.pivotTableColumns : this.tableColumns
-          }
-          height={height}
-          width={width}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
-          backgroundColor={this.props.backgroundColor}
-          activeChartElementKey={this.props.activeChartElementKey}
-          onLegendClick={this.onLegendClick}
-          dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          changeStringColumnIndex={(index) => {
-            if (this.dataConfig.legendColumnIndex === index) {
-              this.dataConfig.legendColumnIndex = undefined
-            }
-            this.dataConfig.stringColumnIndex = index
-
-            if (this.supportsPivot) {
-              this.generatePivotTableData()
-            }
-            this.generateChartData()
-            this.forceUpdate()
-          }}
-          changeLegendColumnIndex={(index) => {
-            if (this.dataConfig.stringColumnIndex === index) {
-              this.dataConfig.stringColumnIndex = undefined
-            }
-            this.dataConfig.legendColumnIndex = index
-
-            if (this.supportsPivot) {
-              this.generatePivotTableData()
-            }
-            this.generateChartData()
-            this.forceUpdate()
-          }}
-          changeNumberColumnIndices={(indices) => {
-            if (indices) {
-              this.dataConfig.numberColumnIndices = indices
-              this.dataConfig.numberColumnIndex = indices[0]
-              this.generateChartData()
-              this.forceUpdate()
-            }
-          }}
-          onChartClick={this.onChartClick}
-          isResizing={this.props.isResizing}
-          enableDynamicCharting={this.props.enableDynamicCharting}
-        />
-      </ErrorBoundary>
-    )
   }
 
-  renderHelpResponse = () => {
-    const url = _get(this.props.queryResponse, 'data.data.rows[0]')
-    if (!url) {
-      return null
-    }
-
-    const hasHashTag = url.includes('#')
-    let linkText = url
-    if (hasHashTag) {
-      const endOfUrl = url.split('#')[1].replace(/-/g, ' ')
-      linkText = endOfUrl.charAt(0).toUpperCase() + endOfUrl.substr(1)
-    }
-
-    return (
-      <Fragment>
-        Great news, I can help with that:
-        <br />
-        {
-          <button
-            className="react-autoql-help-link-btn"
-            target="_blank"
-            onClick={() => window.open(url, '_blank')}
-          >
-            <Icon type="globe" className="react-autoql-help-link-icon" />
-            {linkText}
-          </button>
-        }
-      </Fragment>
-    )
-  }
-
-  setColumnIndices = () => {
-    if (!this.tableColumns) {
+  setColumnIndices = (chartTableColumns) => {
+    const columns = chartTableColumns || this.chartTableColumns
+    if (!columns) {
       return
     }
 
@@ -883,44 +751,52 @@ export default class QueryOutput extends React.Component {
       this.dataConfig = {}
     }
 
-    const allStringColumnIndices = []
-    this.tableColumns.forEach((col, index) => {
-      if (isColumnStringType(col) || col.groupable) {
-        allStringColumnIndices.push(index)
-      }
-    })
-
-    // We will usually want to take the second column because the first one
-    // will most likely have all of the same value. Grab the first column only
-    // if it's the only string column
+    // Set string type columns (ordinal axis)
     if (!this.dataConfig.stringColumnIndices) {
-      this.dataConfig.stringColumnIndices = allStringColumnIndices
-    }
-
-    if (!(this.dataConfig.stringColumnIndex >= 0)) {
-      const dateColumnIndex = this.tableColumns.findIndex(
-        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+      const { stringColumnIndices } = getStringColumnIndices(
+        columns,
+        this.supportsPivot
       )
-
-      let stringColumnIndex = this.dataConfig.stringColumnIndices[0]
-      if (this.supportsPivot) {
-        stringColumnIndex = this.tableColumns.findIndex((col) => col.groupable)
-      } else if (dateColumnIndex >= 0) {
-        stringColumnIndex = dateColumnIndex
-      } else if (this.dataConfig.stringColumnIndices[1] >= 0) {
-        stringColumnIndex = this.dataConfig.stringColumnIndices[1]
-      }
-
+      this.dataConfig.stringColumnIndices = stringColumnIndices
+    }
+    if (!(this.dataConfig.stringColumnIndex >= 0)) {
+      const { stringColumnIndex } = getStringColumnIndices(
+        columns,
+        this.supportsPivot
+      )
       this.dataConfig.stringColumnIndex = stringColumnIndex
     }
 
+    // Set number type columns and number series columns (linear axis)
     if (!this.dataConfig.numberColumnIndices) {
-      const columns = this.supportsPivot
-        ? this.pivotTableColumns
-        : this.tableColumns
-      this.dataConfig.numberColumnIndices = getNumberColumnIndices(columns)
+      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
+        columns
+      )
+      this.dataConfig.numberColumnIndices = numberColumnIndices
+      this.dataConfig.numberColumnIndex = numberColumnIndex
+    } else {
+      this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
     }
-    this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
+    this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices // do we still need this?
+  }
+
+  setSupportedDisplayTypes = (supportedDisplayTypes) => {
+    if (
+      supportedDisplayTypes &&
+      !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes)
+    ) {
+      this.supportedDisplayTypes = supportedDisplayTypes
+      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
+
+      if (!this.supportedDisplayTypes.includes(this.state.displayType)) {
+        this.setState({
+          displayType: getDefaultDisplayType(
+            this.props.queryResponse,
+            this.props.autoChartAggregations
+          ),
+        })
+      }
+    }
   }
 
   getTooltipDataForCell = (row, columnIndex, numberValue) => {
@@ -937,7 +813,7 @@ export default class QueryOutput extends React.Component {
         tooltipElement = `<div>
             <div>
               <strong>${
-                this.pivotTableColumns[0].display_name
+                this.pivotTableColumns[0].title
               }:</strong> ${formatElement({
           element: row[0],
           column: this.pivotTableColumns[0],
@@ -945,41 +821,37 @@ export default class QueryOutput extends React.Component {
         })}
             </div>
             <div><strong>${
-              this.tableColumns[this.dataConfig.legendColumnIndex].display_name
+              this.tableColumns[this.dataConfig.legendColumnIndex].title
             }:</strong> ${this.pivotTableColumns[columnIndex].title}
             </div>
             <div>
-            <div><strong>${numberColumn.display_name}:</strong> ${formatElement(
-          {
-            element: row[columnIndex] || 0,
-            column: numberColumn,
-            config: getDataFormatting(this.props.dataFormatting),
-          }
-        )}
+            <div><strong>${numberColumn.title}:</strong> ${formatElement({
+          element: row[columnIndex] || 0,
+          column: numberColumn,
+          config: getDataFormatting(this.props.dataFormatting),
+        })}
             </div>
           </div>`
       } else {
-        const stringColumn = this.tableColumns[
+        const stringColumn = this.chartTableColumns[
           this.dataConfig.stringColumnIndex
         ]
-        const numberColumn = this.tableColumns[columnIndex]
+        const numberColumn = this.chartTableColumns[columnIndex]
 
         tooltipElement = `<div>
             <div>
-              <strong>${stringColumn.display_name}:</strong> ${formatElement({
+              <strong>${stringColumn.title}:</strong> ${formatElement({
           element: row[this.dataConfig.stringColumnIndex],
           column: stringColumn,
           config: getDataFormatting(this.props.dataFormatting),
         })}
             </div>
             <div>
-            <div><strong>${numberColumn.display_name}:</strong> ${formatElement(
-          {
-            element: numberValue || row[columnIndex] || 0,
-            column: numberColumn,
-            config: getDataFormatting(this.props.dataFormatting),
-          }
-        )}
+            <div><strong>${numberColumn.title}:</strong> ${formatElement({
+          element: numberValue || row[columnIndex] || 0,
+          column: numberColumn,
+          config: getDataFormatting(this.props.dataFormatting),
+        })}
             </div>
           </div>`
       }
@@ -1028,29 +900,129 @@ export default class QueryOutput extends React.Component {
 
   isStringColumnDateType = () => {
     const stringColumn = this.tableColumns[this.dataConfig.stringColumnIndex]
-    return (
-      _get(stringColumn, 'type') === 'DATE' ||
-      _get(stringColumn, 'type') === 'DATE_STRING'
+    return isColumnDateType(stringColumn)
+  }
+
+  getMultiSeriesData = (columns, tableData) => {
+    const { stringColumnIndex } = getStringColumnIndices(
+      columns,
+      this.supportsPivot
     )
+    const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
+    const { numberColumnIndex } = getNumberColumnIndices(columns)
+
+    // Sort data so like values are grouped together
+    const sortedData = _cloneDeep(tableData).sort((a, b) => {
+      const aVal = a[stringColumnIndex]
+      const bVal = b[stringColumnIndex]
+
+      if (!aVal || !bVal) {
+        return b - a
+      }
+      return bVal - aVal
+    })
+
+    // make column index map for adding new data in next step
+    const addedColumnIndexes = {}
+    this.chartTableColumns.forEach((col, index) => {
+      if (col.seriesCategory) {
+        addedColumnIndexes[col.seriesCategory] = index
+      }
+    })
+
+    let prevRow
+    const newTableData = []
+    sortedData.forEach((row, index) => {
+      const category = row[stringColumnIndex]
+      const prevCategory = _get(prevRow, `[${stringColumnIndex}]`)
+      const seriesValue = row[multiSeriesIndex]
+
+      if (prevCategory !== category) {
+        // make new row with original values
+        const cells = makeEmptyArray(this.chartTableColumns.length, 1, 0)
+        cells[0] = category
+        newTableData.push(cells)
+      }
+
+      // add the number column for this category
+      newTableData[newTableData.length - 1][addedColumnIndexes[seriesValue]] =
+        row[numberColumnIndex]
+      prevRow = row
+    })
+
+    return newTableData
+  }
+
+  getMultiSeriesColumns = (columns) => {
+    const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
+    const { numberColumnIndex } = getNumberColumnIndices(columns)
+    const { stringColumnIndex } = getStringColumnIndices(
+      columns,
+      this.supportsPivot
+    )
+
+    const allCategories = this.tableData.map((d) => {
+      return formatElement({
+        element: d[multiSeriesIndex],
+        column: columns[multiSeriesIndex],
+        config: this.props.dataFormatting,
+      })
+    })
+
+    const uniqueCategories = [...allCategories].filter(onlyUnique).sort()
+    const newNumberColumns = []
+    uniqueCategories.forEach((category) => {
+      newNumberColumns.push({
+        ...columns[numberColumnIndex],
+        title: `${columns[numberColumnIndex].title} ${category}`,
+        seriesCategory: category,
+      })
+    })
+
+    return [columns[stringColumnIndex], ...newNumberColumns]
+  }
+
+  getChartTableData = (newTableData) => {
+    let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
+
+    if (hasMultiSeriesColumn(this.tableColumns)) {
+      return this.getMultiSeriesData(this.tableColumns, tableData)
+    }
+
+    if (supportsRegularPivotTable(this.tableColumns)) {
+      tableData = _cloneDeep(this.pivotTableData)
+    }
+
+    return tableData
+  }
+
+  getChartTableColumns = () => {
+    if (hasMultiSeriesColumn(this.tableColumns)) {
+      return this.getMultiSeriesColumns(this.tableColumns)
+    }
+
+    if (supportsRegularPivotTable(this.tableColumns)) {
+      return _cloneDeep(this.pivotTableColumns)
+    }
+
+    return _cloneDeep(this.tableColumns)
   }
 
   generateChartData = (newTableData) => {
     try {
-      this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
-      let columns = this.tableColumns
-      let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
+      // Get columns for chart then reset indexes if necessary
+      const columns = this.getChartTableColumns()
+      this.chartTableColumns = columns
 
-      if (this.supportsPivot) {
-        columns = this.pivotTableColumns
-        tableData = _cloneDeep(this.pivotTableData)
-      }
+      // Get table data for chart after columns
+      const tableData = this.getChartTableData(newTableData)
+      this.chartTableData = tableData
 
-      if (!this.dataConfig) {
+      if (!this.dataConfig || hasMultiSeriesColumn(this.tableColumns)) {
         this.setColumnIndices()
       }
 
       let stringIndex = this.dataConfig.stringColumnIndex
-      this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices
 
       if (this.supportsPivot) {
         stringIndex = 0
@@ -1125,17 +1097,26 @@ export default class QueryOutput extends React.Component {
         }, {})
       )
 
+      // Update supported display types after table data has been recalculated
+      // there may be too many categories for a pie chart etc.
+      this.setSupportedDisplayTypes(
+        getSupportedDisplayTypes(this.props.queryResponse, this.chartData)
+      )
+
       this.chartDataError = false
     } catch (error) {
       if (!this.chartDataError) {
         // Try one more time after resetting data config settings
+        console.warn(
+          'An error was thrown while generating the chart data. Resetting the data config and trying again.'
+        )
         this.chartDataError = true
         this.dataConfig = undefined
         this.setColumnIndices()
         this.generateChartData()
       } else {
         // Something went wrong a second time. Do not show chart options
-        this.supportedDisplayTypes = ['table']
+        this.setSupportedDisplayTypes(['table'])
         this.chartData = undefined
         console.error(error)
       }
@@ -1238,37 +1219,6 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
-  getColTitle = (col) => {
-    if (col.display_name) {
-      return col.display_name
-    }
-
-    let title
-    const nameFragments = col.name.split('___')
-    if (nameFragments.length === 2) {
-      let firstFragment = nameFragments[0]
-      let secondFragment = nameFragments[1]
-
-      if (!firstFragment.isUpperCase()) {
-        firstFragment = firstFragment.toProperCase()
-      }
-      if (!secondFragment.isUpperCase()) {
-        secondFragment = secondFragment.toProperCase()
-      }
-      title = `${firstFragment} (${secondFragment})`
-    } else if (nameFragments.length === 1) {
-      // all good
-    } else {
-      console.warn(`unexpected nameFragments.length ${nameFragments.length}`)
-    }
-
-    // replace underscores with spaces, then collapse all consecutive spaces to 1
-    title = col.name.replace(/_/g, ' ').replace(/\s+/g, ' ')
-    title = `${title.toProperCase()}`
-
-    return title
-  }
-
   formatColumnsForTable = (columns) => {
     if (!columns) {
       return null
@@ -1286,7 +1236,7 @@ export default class QueryOutput extends React.Component {
       }
 
       col.field = `${i}`
-      col.title = this.getColTitle(col)
+      col.title = col.display_name
       col.id = uuid.v4()
       col.widthGrow = 1
       col.widthShrink = 1
@@ -1339,6 +1289,7 @@ export default class QueryOutput extends React.Component {
 
       return col
     })
+
     return formattedColumns
   }
 
@@ -1377,9 +1328,7 @@ export default class QueryOutput extends React.Component {
         [MONTH_NAMES[12]]: 11,
       }
 
-      const dateColumnIndex = this.tableColumns.findIndex(
-        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
-      )
+      const dateColumnIndex = getDateColumnIndex(this.tableColumns)
       if (!(this.dataConfig.numberColumnIndex >= 0)) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
@@ -1489,15 +1438,21 @@ export default class QueryOutput extends React.Component {
       const tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
+      if (!this.dataConfig) {
+        // We should change this to getColumnIndices since this wont be
+        // the final version that we use. We dont want to persist it
+        this.setColumnIndices(this.tableColumns)
+      }
+
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it
       let dataConfigWasPersisted = false
-      if (this.dataConfig.legendColumnIndex >= 0) {
+      if (_get(this.dataConfig, 'legendColumnIndex') >= 0) {
         dataConfigWasPersisted = true
         this.dataConfig.stringColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.legendColumnIndex
         )
-      } else if (this.dataConfig.stringColumnIndex >= 0) {
+      } else if (_get(this.dataConfig, 'stringColumnIndex') >= 0) {
         this.dataConfig.legendColumnIndex = this.tableColumns.findIndex(
           (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
@@ -1511,7 +1466,7 @@ export default class QueryOutput extends React.Component {
       }
 
       // Set the number type column
-      if (!(this.dataConfig.numberColumnIndex >= 0)) {
+      if (!(_get(this.dataConfig, 'numberColumnIndex') >= 0)) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => isColumnNumberType(col) && !col.groupable
         )
@@ -1539,7 +1494,7 @@ export default class QueryOutput extends React.Component {
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
         !dataConfigWasPersisted &&
-        !this.isDateType(this.getColumnFromIndexString('stringColumnIndex'))
+        !isColumnDateType(this.getColumnFromIndexString('stringColumnIndex'))
       ) {
         const tempCol = this.dataConfig.legendColumnIndex
         this.dataConfig.legendColumnIndex = this.dataConfig.stringColumnIndex
@@ -1590,7 +1545,6 @@ export default class QueryOutput extends React.Component {
           ],
           name: columnName,
           title: formattedColumnName,
-          display_name: formattedColumnName,
           field: `${i + 1}`,
           headerContext: undefined,
           visible: true,
@@ -1667,24 +1621,6 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderError = (queryResponse) => {
-    // No response prop was provided to <QueryOutput />
-    if (!queryResponse) {
-      console.warn('Warning: No response object supplied')
-      return this.renderMessage('No response supplied')
-    }
-
-    if (_get(queryResponse, 'data.message')) {
-      // Response is not a suggestion list, but no query data object was provided
-      // There is no valid query data. This is an error. Return message from UMS
-      console.warn('Warning: No response data supplied')
-      return this.renderMessage(queryResponse.data)
-    }
-
-    // There is no error message in the response, display default error message
-    return this.renderMessage()
-  }
-
   replaceErrorTextWithLinks = (errorMessage) => {
     try {
       const splitErrorMessage = errorMessage.split('<report>')
@@ -1706,6 +1642,162 @@ export default class QueryOutput extends React.Component {
     } catch (error) {
       return <span>{errorMessage}</span>
     }
+  }
+
+  renderAllColumnsHiddenMessage = () => {
+    if (this.areAllColumnsHidden()) {
+      return (
+        <div className="no-columns-error-message">
+          <div>
+            <Icon className="warning-icon" type="warning-triangle" />
+            <br /> All columns in this table are currently hidden. You can
+            adjust your column visibility preferences using the Column
+            Visibility Manager (
+            <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  renderTable = () => {
+    if (
+      !this.tableData ||
+      (this.state.displayType === 'pivot_table' && !this.pivotTableData)
+    ) {
+      return 'Error: There was no data supplied for this table'
+    }
+
+    if (this.tableData.length === 1 && this.tableData[0].length === 1) {
+      // This is a single cell of data
+      return this.renderSingleValueResponse()
+    }
+
+    if (this.state.displayType === 'pivot_table') {
+      return (
+        <ChataTable
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          key={this.pivotTableID}
+          ref={(ref) => (this.pivotTableRef = ref)}
+          columns={this.pivotTableColumns}
+          data={this.pivotTableData}
+          onCellClick={this.processCellClick}
+          headerFilters={this.pivotHeaderFilters}
+          onFilterCallback={this.onTableFilter}
+          setFilterTagsCallback={this.props.setFilterTagsCallback}
+          enableColumnHeaderContextMenu={
+            this.props.enableColumnHeaderContextMenu
+          }
+        />
+      )
+    }
+
+    return (
+      <Fragment>
+        {this.renderAllColumnsHiddenMessage()}
+        <ChataTable
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          key={this.tableID}
+          ref={(ref) => (this.tableRef = ref)}
+          columns={this.tableColumns}
+          data={this.tableData}
+          onCellClick={this.processCellClick}
+          headerFilters={this.headerFilters}
+          onFilterCallback={this.onTableFilter}
+          setFilterTagsCallback={this.props.setFilterTagsCallback}
+          // We don't want to skip rendering it because we need to
+          // access the table ref for showing the columns if the
+          // col visibility is changed
+          style={{
+            visibility: this.areAllColumnsHidden() ? 'hidden' : 'visible',
+          }}
+        />
+      </Fragment>
+    )
+  }
+
+  renderChart = (width, height, displayType) => {
+    if (!this.chartData) {
+      return 'Error: There was no data supplied for this chart'
+    }
+
+    return (
+      <ErrorBoundary>
+        <ChataChart
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          ref={(ref) => (this.chartRef = ref)}
+          type={displayType || this.state.displayType}
+          data={this.chartData}
+          tableColumns={this.tableColumns}
+          columns={this.chartTableColumns}
+          height={height}
+          width={width}
+          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          backgroundColor={this.props.backgroundColor}
+          activeChartElementKey={this.props.activeChartElementKey}
+          onLegendClick={this.onLegendClick}
+          dataConfig={_cloneDeep(this.dataConfig)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          changeStringColumnIndex={this.onChangeStringColumnIndex}
+          changeLegendColumnIndex={this.onChangeLegendColumnIndex}
+          changeNumberColumnIndices={this.onChangeNumberColumnIndice}
+          onChartClick={this.onChartClick}
+          isResizing={this.props.isResizing}
+          enableDynamicCharting={this.props.enableDynamicCharting}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  renderHelpResponse = () => {
+    const url = _get(this.props.queryResponse, 'data.data.rows[0]')
+    if (!url) {
+      return null
+    }
+
+    const hasHashTag = url.includes('#')
+    let linkText = url
+    if (hasHashTag) {
+      const endOfUrl = url.split('#')[1].replace(/-/g, ' ')
+      linkText = endOfUrl.charAt(0).toUpperCase() + endOfUrl.substr(1)
+    }
+
+    return (
+      <Fragment>
+        Great news, I can help with that:
+        <br />
+        {
+          <button
+            className="react-autoql-help-link-btn"
+            target="_blank"
+            onClick={() => window.open(url, '_blank')}
+          >
+            <Icon type="globe" className="react-autoql-help-link-icon" />
+            {linkText}
+          </button>
+        }
+      </Fragment>
+    )
+  }
+
+  renderError = (queryResponse) => {
+    // No response prop was provided to <QueryOutput />
+    if (!queryResponse) {
+      console.warn('Warning: No response object supplied')
+      return this.renderMessage('No response supplied')
+    }
+
+    if (_get(queryResponse, 'data.message')) {
+      // Response is not a suggestion list, but no query data object was provided
+      // There is no valid query data. This is an error. Return message from UMS
+      console.warn('Warning: No response data supplied')
+      return this.renderMessage(queryResponse.data)
+    }
+
+    // There is no error message in the response, display default error message
+    return this.renderMessage()
   }
 
   renderMessage = (error) => {

@@ -135,7 +135,7 @@ export default class ChataChart extends Component {
 
     tableColumns.forEach((col, i) => {
       const item = {
-        content: col.display_name,
+        content: col.title,
         checked: numberColumnIndices.includes(i),
         columnIndex: i,
       }
@@ -331,7 +331,7 @@ export default class ChataChart extends Component {
     ) {
       return _get(
         this.props.tableColumns,
-        `[${_get(this.props, 'numberColumnIndex')}].display_name`
+        `[${_get(this.props, 'numberColumnIndex')}].title`
       )
     }
 
@@ -510,7 +510,7 @@ export default class ChataChart extends Component {
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.tableColumns, `[${colIndex}].display_name`)}
+                {_get(this.props.tableColumns, `[${colIndex}].title`)}
               </li>
             )
           })}
@@ -687,7 +687,7 @@ export default class ChataChart extends Component {
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.tableColumns, `[${colIndex}].display_name`)}
+                {_get(this.props.tableColumns, `[${colIndex}].title`)}
               </li>
             )
           })}

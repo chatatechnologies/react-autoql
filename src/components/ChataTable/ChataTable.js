@@ -22,6 +22,7 @@ import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 export default class ChataTable extends React.Component {
+  firstRender = true
   ref = null
 
   static propTypes = {
@@ -48,6 +49,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidMount = () => {
+    this.firstRender = false
     this.TABLE_CONTAINER_ID = uuid.v4()
     this.setInitialHeaderFilters()
     setCSSVars(getThemeConfig(this.props.themeConfig))
@@ -120,7 +122,7 @@ export default class ChataTable extends React.Component {
     if (this.ref && this.ref.table) {
       const data = this.ref.table.getData()
       const columns = this.ref.table.getColumnDefinitions()
-      const columnNames = columns.map((col) => col.display_name)
+      const columnNames = columns.map((col) => col.title)
       data.unshift(columnNames)
 
       const csvContent =
@@ -151,8 +153,8 @@ export default class ChataTable extends React.Component {
       dataFiltering: (filters) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
-        if (this.ref) {
-          this.props.onFilterCallback(this.ref.table.getHeaderFilters())
+        if (this.ref && !this.firstRender) {
+          // this.props.onFilterCallback(this.ref.table.getHeaderFilters())
         }
       },
       downloadDataFormatter: (data) => data,

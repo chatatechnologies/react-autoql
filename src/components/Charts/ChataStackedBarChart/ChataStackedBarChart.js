@@ -146,7 +146,7 @@ export default class ChataStackedBarChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'display_name')}
+          legendTitle={_get(legendColumn, 'title')}
           onLegendTitleClick={onLegendTitleClick}
           enableDynamicCharting={enableDynamicCharting}
           onXAxisClick={onXAxisClick}

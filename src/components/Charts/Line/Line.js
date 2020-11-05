@@ -39,7 +39,7 @@ export default class Line extends Component {
             key={`line-${d[labelValue]}-${series}`}
             className="line"
             x1={xScale(d[labelValue]) + xShift}
-            y1={yScale(d.cells[series].value)}
+            y1={yScale(d.cells[series].value || 0)}
             x2={
               d2
                 ? xScale(d2[labelValue]) + xShift
@@ -47,8 +47,8 @@ export default class Line extends Component {
             }
             y2={
               d2
-                ? yScale(d2.cells[series].value)
-                : yScale(d.cells[series].value)
+                ? yScale(d2.cells[series].value || 0)
+                : yScale(d.cells[series].value || 0)
             }
             stroke={d.cells[series].color}
             opacity={0.7}
