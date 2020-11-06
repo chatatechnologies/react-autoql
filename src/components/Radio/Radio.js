@@ -84,15 +84,15 @@ export default class Radio extends React.Component {
             isActive = this.props.value.includes(option)
           }
           return (
-            <p>
+            <p key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
               <input
-                type="radio"
                 id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 name={`react-autoql-radio-${this.COMPONENT_KEY}`}
-                checked={isActive}
+                type="radio"
+                defaultChecked={isActive}
               />
               <label
-                for={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+                htmlFor={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
                 onClick={() => this.props.onChange(option)}
               >
                 {option}
