@@ -53,21 +53,23 @@ export default class ChataStackedBarChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidUpdate = () => {
+    if (
+      typeof this.prevRotateLabels !== 'undefined' &&
+      this.prevRotateLabels !== this.rotateLabels
+    ) {
+      this.props.onLabelChange()
+    }
+  }
+
   handleLabelRotation = (tickWidth, labelArray) => {
-    const prevRotateLabels = this.rotateLabels
+    this.prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
       this.props.columns[this.props.numberColumnIndex],
       getDataFormatting(this.props.dataFormatting)
     )
-
-    if (
-      typeof prevRotateLabels !== 'undefined' &&
-      prevRotateLabels !== this.rotateLabels
-    ) {
-      this.props.onLabelChange()
-    }
   }
 
   render = () => {

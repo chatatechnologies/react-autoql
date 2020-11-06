@@ -854,10 +854,6 @@ export default class DashboardTile extends React.Component {
   }
 
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
-    if (this.props.tile.title === 'Outstanding Invoices') {
-      console.log('on supported display type change!')
-    }
-
     this.setState({ supportedDisplayTypes })
   }
   onSecondSupportedDisplayTypesChange = (secondSupportedDisplayTypes) => {

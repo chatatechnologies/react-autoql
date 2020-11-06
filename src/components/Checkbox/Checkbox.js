@@ -63,12 +63,17 @@ export default class Checkbox extends React.Component {
   }
 
   render = () => {
-    const { label, type, indeterminate, hasError, ...inputProps } = this.props
-    const nativeProps = {
-      ...inputProps,
-      style: undefined,
-      themeConfig: undefined,
-    }
+    const {
+      label,
+      type,
+      indeterminate,
+      hasError,
+      style,
+      themeConfig,
+      onChange,
+      checked,
+      ...nativeProps
+    } = this.props
 
     const checkboxClassname = `
       react-autoql-checkbox
