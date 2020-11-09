@@ -1,3 +1,19 @@
+# 1.0.0 (2020-11-09)
+
+
+### Bug Fixes
+
+* **charts:** sort dates on axis properly for 3D charts and pivot tables ([b303b0f](https://github.com/chatatechnologies/react-autoql/commit/b303b0f4375df2c5d2439f936788f11671a77a44))
+* **themes:** fix text colour for empty state dashboards and notifications ([5427840](https://github.com/chatatechnologies/react-autoql/commit/5427840b5cbe802dec8808e2d2934de6b52e240d))
+* "all columns are currently hidden" error message ([4f02fc4](https://github.com/chatatechnologies/react-autoql/commit/4f02fc4f5d6f32116971938af167c589d2b0fd5c))
+* get nested defaults for all prevProps ([047bed1](https://github.com/chatatechnologies/react-autoql/commit/047bed1f287babf8ee35ace304cc14bd6f740418))
+
+
+### Features
+
+* show yellow badge on column visibility icon if some are hidden ([2db291d](https://github.com/chatatechnologies/react-autoql/commit/2db291d1ae5b1278ceb518ee6ef3d500c585de4c))
+* **notifications:** add empty state graphic to notification feed ([9d69ff7](https://github.com/chatatechnologies/react-autoql/commit/9d69ff7c38016cc62069f3b725f0761a1348f38f))
+
 # [2.1.0](https://github.com/chatatechnologies/react-autoql/compare/v2.0.0...v2.1.0) (2020-10-27)
 
 ### Bug Fixes
