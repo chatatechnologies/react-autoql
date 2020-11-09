@@ -56,8 +56,6 @@ export default class Bars extends Component {
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
         data.map((d, index) => {
-          // x0 - position of first bar
-          // cX - adjustment for position of bar number 2+
           const y0 = yScale(d[labelValue])
           const dY = i * barHeight
           const finalBarYPosition = y0 + dY

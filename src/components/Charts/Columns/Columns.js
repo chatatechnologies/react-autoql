@@ -25,9 +25,6 @@ export default class Columns extends Component {
   onColumnClick = (d, i) => {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
-      // row: d.origRow,
-      // column: d,
-      // cellIndex: i,
       activeKey: newActiveKey,
       drilldownData: d.cells[i].drilldownData,
     })
@@ -47,8 +44,6 @@ export default class Columns extends Component {
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
         data.map((d) => {
-          // x0 - position of first bar
-          // cX - adjustment for position of bar number 2+
           const x0 = xScale(d[labelValue])
           const dX = i * barWidth
           const finalBarXPosition = x0 + dX

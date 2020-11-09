@@ -154,7 +154,7 @@ export default class ChataTable extends React.Component {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
         if (this.ref && !this.firstRender) {
-          // this.props.onFilterCallback(this.ref.table.getHeaderFilters())
+          this.props.onFilterCallback(this.ref.table.getHeaderFilters())
         }
       },
       downloadDataFormatter: (data) => data,
