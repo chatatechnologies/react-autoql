@@ -54,21 +54,23 @@ export default class ChataBubbleChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidUpdate = () => {
+    if (
+      typeof this.prevRotateLabels !== 'undefined' &&
+      this.prevRotateLabels !== this.rotateLabels
+    ) {
+      this.props.onLabelChange()
+    }
+  }
+
   handleLabelRotation = (labelArray) => {
-    const prevRotateLabels = this.rotateLabels
+    this.prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       this.squareWidth,
       labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
-
-    if (
-      typeof prevRotateLabels !== 'undefined' &&
-      prevRotateLabels !== this.rotateLabels
-    ) {
-      this.props.onLabelChange()
-    }
   }
 
   getXTickValues = (labelArray) => {

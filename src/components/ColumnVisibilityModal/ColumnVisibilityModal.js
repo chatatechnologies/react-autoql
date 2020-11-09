@@ -25,7 +25,7 @@ export default class ColumnVisibilityModal extends React.Component {
     columns: this.props.columns.map((col) => {
       return {
         ...col,
-        content: col.display_name || col.title,
+        content: col.title,
         checked: col.visible,
       }
     }),
@@ -37,7 +37,7 @@ export default class ColumnVisibilityModal extends React.Component {
         columns: this.props.columns.map((col) => {
           return {
             ...col,
-            content: col.display_name || col.title,
+            content: col.title,
             checked: col.visible,
           }
         }),

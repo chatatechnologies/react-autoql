@@ -5,7 +5,7 @@ export default class Columns extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   Y0 = () => {
@@ -25,11 +25,8 @@ export default class Columns extends Component {
   onColumnClick = (d, i) => {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
-      // row: d.origRow,
-      // column: d,
-      // cellIndex: i,
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -46,12 +43,15 @@ export default class Columns extends Component {
     const allBars = []
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
-        data.map(d => {
-          // x0 - position of first bar
-          // cX - adjustment for position of bar number 2+
+        data.map((d) => {
           const x0 = xScale(d[labelValue])
           const dX = i * barWidth
           const finalBarXPosition = x0 + dX
+
+          let height = Math.abs(this.Y(d, i) - this.Y0())
+          if (Number.isNaN(height)) {
+            height = 0
+          }
 
           return (
             <rect
@@ -61,7 +61,7 @@ export default class Columns extends Component {
               }`}
               x={finalBarXPosition}
               y={d.cells[i].value < 0 ? this.Y0() : this.Y(d, i)}
-              height={Math.abs(this.Y(d, i) - this.Y0())}
+              height={height}
               width={barWidth}
               onClick={() => this.onColumnClick(d, i)}
               data-tip={_get(d, `cells[${i}].tooltipData`)}

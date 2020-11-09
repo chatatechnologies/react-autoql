@@ -93,6 +93,10 @@ export default class DashboardTile extends React.Component {
     suggestions: [],
     isSecondQueryInputOpen: false,
     currentSource: 'user',
+    supportedDisplayTypes:
+      getSupportedDisplayTypes(this.props.queryResponse) || [],
+    secondSupportedDisplayTypes:
+      getSupportedDisplayTypes(this.props.secondQueryResponse) || [],
   }
 
   getFilteredProps = (props) => {
@@ -849,6 +853,13 @@ export default class DashboardTile extends React.Component {
     )
   }
 
+  onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
+    this.setState({ supportedDisplayTypes })
+  }
+  onSecondSupportedDisplayTypesChange = (secondSupportedDisplayTypes) => {
+    this.setState({ secondSupportedDisplayTypes })
+  }
+
   renderSuggestionMessage = (customMessage) => {
     if (customMessage) {
       return customMessage
@@ -972,6 +983,7 @@ export default class DashboardTile extends React.Component {
           })
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
+        onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
         reportProblemCallback: this.reportProblemCallback,
         onColumnsUpdate: (columns) => {
           const newResponse = {
@@ -994,8 +1006,7 @@ export default class DashboardTile extends React.Component {
       vizToolbarProps: {
         displayType: displayType,
         onDisplayTypeChange: this.onDisplayTypeChange,
-        supportedDisplayTypes:
-          getSupportedDisplayTypes(this.props.queryResponse) || [],
+        supportedDisplayTypes: this.state.supportedDisplayTypes,
       },
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
@@ -1030,6 +1041,7 @@ export default class DashboardTile extends React.Component {
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
+        onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
@@ -1062,7 +1074,7 @@ export default class DashboardTile extends React.Component {
       vizToolbarProps: {
         displayType: displayType,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
-        supportedDisplayTypes: getSupportedDisplayTypes(queryResponse) || [],
+        supportedDisplayTypes: this.state.secondSupportedDisplayTypes,
       },
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),

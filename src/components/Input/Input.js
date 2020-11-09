@@ -41,12 +41,8 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const { icon, className } = this.props
-    const nativeProps = {
-      ...this.props,
-      icon: undefined,
-      themeConfig: undefined,
-    }
+    const { icon, type, ...nativeProps } = this.props
+    const { className } = nativeProps
 
     return (
       <div

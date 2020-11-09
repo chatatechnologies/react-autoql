@@ -5,11 +5,8 @@ import {
   makeEmptyArray,
   formatEpochDate,
   formatStringDate,
-  isColumnNumberType,
-  isColumnStringType,
   formatChartLabel,
   formatElement,
-  getColumnTypeAmounts,
   getNumberOfGroupables,
   getGroupableColumns,
   isChartType,
@@ -25,6 +22,13 @@ import {
   getMaxValueFromKeyValueObj,
   getMinValueFromKeyValueObj,
 } from './Util'
+
+import {
+  getColumnTypeAmounts,
+  isColumnStringType,
+  isColumnNumberType,
+} from '../components/QueryOutput/columnHelpers'
+
 import responseTestCases from '../../test/responseTestCases'
 
 const sampleListResponse = {

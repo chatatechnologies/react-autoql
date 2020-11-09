@@ -105,6 +105,7 @@ export default class ChatMessage extends React.Component {
       this.props.response,
       this.props.autoChartAggregations
     ),
+    supportedDisplayTypes: getSupportedDisplayTypes(this.props.response),
     isSettingColumnVisibility: false,
     activeMenu: undefined,
   }
@@ -196,6 +197,10 @@ export default class ChatMessage extends React.Component {
     this.setState({ dataConfig: config })
   }
 
+  onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
+    this.setState({ supportedDisplayTypes })
+  }
+
   renderContent = (chartWidth, chartHeight) => {
     const { response, content, type } = this.props
     if (content) {
@@ -221,6 +226,7 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={getAuthentication(this.props.authentication).demo}
+          onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
           )}
@@ -321,17 +327,11 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    // Use QueryOutputs supported display types if possible,
-    // they may have been updated because of certain errors
-    let supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
-    if (_get(this.responseRef, 'supportedDisplayTypes.length')) {
-      supportedDisplayTypes = _get(this.responseRef, 'supportedDisplayTypes')
-    }
-
     let displayType = this.state.displayType
+
     if (
-      supportedDisplayTypes &&
-      !supportedDisplayTypes.includes(this.state.displayType)
+      this.state.supportedDisplayTypes &&
+      !this.state.supportedDisplayTypes.includes(this.state.displayType)
     ) {
       displayType = 'table'
     }
@@ -341,7 +341,7 @@ export default class ChatMessage extends React.Component {
         <VizToolbar
           themeConfig={getThemeConfig(this.props.themeConfig)}
           className="chat-message-toolbar left"
-          supportedDisplayTypes={supportedDisplayTypes || []}
+          supportedDisplayTypes={this.state.supportedDisplayTypes || []}
           displayType={displayType}
           onDisplayTypeChange={this.switchView}
           disableCharts={this.state.disableChartingOptions}

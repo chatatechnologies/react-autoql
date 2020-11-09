@@ -15,7 +15,7 @@ export const getLegendLabelsForMultiSeries = (
       return {
         label: columns[columnIndex].title,
         color: colorScale(i),
-        hidden: columns[columnIndex].isSeriesHidden
+        hidden: columns[columnIndex].isSeriesHidden,
       }
     })
 
@@ -26,7 +26,7 @@ export const getLegendLabelsForMultiSeries = (
   }
 }
 
-export const getNumberOfSeries = data => {
+export const getNumberOfSeries = (data) => {
   try {
     const numSeries = data[0].cells.length
     return numSeries
@@ -36,15 +36,15 @@ export const getNumberOfSeries = data => {
   }
 }
 
-export const getMinAndMaxValues = data => {
+export const getMinAndMaxValues = (data) => {
   try {
     const numSeries = getNumberOfSeries(data)
     const maxValuesFromArrays = []
     const minValuesFromArrays = []
 
     for (let i = 0; i < numSeries; i++) {
-      maxValuesFromArrays.push(max(data, d => d.cells[i].value))
-      minValuesFromArrays.push(min(data, d => d.cells[i].value))
+      maxValuesFromArrays.push(max(data, (d) => d.cells[i].value))
+      minValuesFromArrays.push(min(data, (d) => d.cells[i].value))
     }
 
     let maxValue = max(maxValuesFromArrays)
@@ -62,7 +62,7 @@ export const getMinAndMaxValues = data => {
 
     return {
       minValue,
-      maxValue
+      maxValue,
     }
   } catch (error) {
     console.error(error)
