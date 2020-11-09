@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/chatatechnologies/react-autoql/compare/v2.1.1...v2.2.0) (2020-11-09)
+
+
+### Features
+
+* retry semantic release ([6094a0b](https://github.com/chatatechnologies/react-autoql/commit/6094a0b8e353ee3d3582248c7bfbe909b05d1ef5))
+
 # 1.0.0 (2020-11-09)
 
 
