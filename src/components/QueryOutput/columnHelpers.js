@@ -46,7 +46,7 @@ export const getNumberColumnIndices = (columns) => {
   if (quantityIndices.length) {
     return {
       numberColumnIndices: quantityIndices,
-      numberColumnIndex: dquantityIndices[0],
+      numberColumnIndex: quantityIndices[0],
     }
   }
 
