@@ -652,30 +652,17 @@ export default class QueryOutput extends React.Component {
       })
 
       let newColumns = []
-      if (this.supportsPivot) {
-        newColumns = this.pivotTableColumns.map((col) => {
-          if (col.title === d) {
-            return {
-              ...col,
-              isSeriesHidden: !col.isSeriesHidden,
-            }
+      newColumns = this.chartTableColumns.map((col) => {
+        if (col.title === d) {
+          return {
+            ...col,
+            isSeriesHidden: !col.isSeriesHidden,
           }
-          return col
-        })
-        this.pivotTableColumns = newColumns
-      } else {
-        newColumns = this.tableColumns.map((col) => {
-          if (col.title === d) {
-            return {
-              ...col,
-              isSeriesHidden: !col.isSeriesHidden,
-            }
-          }
-          return col
-        })
-        this.tableColumns = newColumns
-      }
+        }
+        return col
+      })
 
+      this.chartTableColumns = newColumns
       this.chartData = newChartData
     }
 
@@ -1832,6 +1819,7 @@ export default class QueryOutput extends React.Component {
 
       return <div>{errorMessage}</div>
     } catch (error) {
+      console.warn(error)
       return <div>{errorMessages.GENERAL_QUERY}</div>
     }
   }
