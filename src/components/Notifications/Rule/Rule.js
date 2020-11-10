@@ -371,7 +371,7 @@ export default class Rule extends React.Component {
 
   renderValidationError = () => {
     return (
-      <div className="rule-term-validation-error">
+      <div className="expression-term-validation-error">
         <Icon type="warning-triangle" /> That query is invalid. Try entering a
         different query.
       </div>

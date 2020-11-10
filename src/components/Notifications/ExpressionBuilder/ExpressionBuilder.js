@@ -190,7 +190,7 @@ export default class ExpressionBuilder extends React.Component {
 
     return (
       <div
-        className={`notification-rules-container ${
+        className={`data-alerts-container ${
           this.props.readOnly ? 'read-only' : ''
         }`}
       >
@@ -234,7 +234,7 @@ export default class ExpressionBuilder extends React.Component {
 
     return (
       <div
-        className={`notification-rules-container ${
+        className={`data-alerts-container ${
           this.props.readOnly ? 'read-only' : ''
         }`}
       >

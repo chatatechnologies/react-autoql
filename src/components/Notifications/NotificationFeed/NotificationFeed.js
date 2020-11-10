@@ -66,11 +66,11 @@ export default class NotificationFeed extends React.Component {
     isFetchingFirstNotifications: true,
     notificationList: [],
     pagination: {},
-    nextOffset: this.NOTIFICATION_FETCH_LIMIT,
+    nextOffset: 0,
   }
 
   componentDidMount = () => {
-    this.getInitialNotifications()
+    this.getNotifications()
     setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
@@ -85,19 +85,25 @@ export default class NotificationFeed extends React.Component {
     }
   }
 
-  getInitialNotifications = () => {
+  getNotifications = () => {
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
-      offset: 0,
+      offset: this.state.nextOffset,
       limit: this.NOTIFICATION_FETCH_LIMIT,
     })
       .then((response) => {
-        this.setState({
-          notificationList: response.notifications,
-          pagination: response.pagination,
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: null,
-        })
+        if (response.items.length) {
+          this.setState({
+            notificationList: [
+              ...this.state.notificationList,
+              ...response.items,
+            ],
+            pagination: response.pagination,
+            nextOffset: this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT,
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: null,
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
@@ -116,9 +122,7 @@ export default class NotificationFeed extends React.Component {
       offset: 0,
       limit: 10, // Likely wont have more than 10 notifications. If so, we will just reset the whole list
     }).then((response) => {
-      const newNotifications = this.detectNewNotifications(
-        response.notifications
-      )
+      const newNotifications = this.detectNewNotifications(response.items)
 
       if (!newNotifications.length) {
         return
@@ -128,19 +132,16 @@ export default class NotificationFeed extends React.Component {
         // Reset list and pagination to new list
         // This will probably never happen
         this.setState({
-          notificationList: response.notifications,
+          notificationList: response.items,
           pagination: response.pagination,
         })
       } else {
         const newList = [...newNotifications, ...this.state.notificationList]
-        const newPageNumber =
-          Math.ceil(newList.length / this.NOTIFICATION_FETCH_LIMIT) - 1
 
         this.setState({
           notificationList: newList,
           pagination: {
             ...response.pagination,
-            page_number: newPageNumber,
           },
           nextOffset: newList.length - 1,
         })
@@ -224,7 +225,7 @@ export default class NotificationFeed extends React.Component {
     })
   }
 
-  onRuleSave = () => {
+  onDataAlertSave = () => {
     // todo: show success alert
     this.setState({ isEditModalVisible: false })
     this.props.onSuccessCallback('Notification successfully updated.')
@@ -242,11 +243,11 @@ export default class NotificationFeed extends React.Component {
     </div>
   )
 
-  showEditRuleModal = (id) => {
+  showEditDataAlertModal = (id) => {
     this.setState({ isEditModalVisible: true, activeNotificationId: id })
   }
 
-  renderEditRuleModal = () => {
+  renderEditDataAlertModal = () => {
     return (
       <NotificationModal
         key={this.MODAL_COMPONENT_KEY}
@@ -254,13 +255,15 @@ export default class NotificationFeed extends React.Component {
         themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentRule={this.state.activeRule}
-        onSave={this.onRuleSave}
-        onErrorCallback={this.onRuleError}
+        currentDataAlert={this.state.activeDataAlert}
+        onSave={this.onDataAlertSave}
+        onErrorCallback={this.props.onErrorCallback}
         allowDelete={false}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         title={
-          this.state.activeRule ? 'Edit Data Alert' : 'Create New Data Alert'
+          this.state.activeDataAlert
+            ? 'Edit Data Alert'
+            : 'Create New Data Alert'
         }
       />
     )
@@ -310,29 +313,10 @@ export default class NotificationFeed extends React.Component {
               <InfiniteScroll
                 initialLoad={false}
                 pageStart={0}
-                loadMore={() => {
-                  fetchNotificationFeed({
-                    ...getAuthentication(this.props.authentication),
-                    offset: this.state.nextOffset,
-                    limit: this.NOTIFICATION_FETCH_LIMIT,
-                  }).then((response) => {
-                    if (response.notifications.length) {
-                      this.setState({
-                        fetchNotificationsError: null,
-                        notificationList: [
-                          ...this.state.notificationList,
-                          ...response.notifications,
-                        ],
-                        pagination: response.pagination,
-                        nextOffset:
-                          this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT,
-                      })
-                    }
-                  })
-                }}
+                loadMore={this.getNotifications}
                 hasMore={
-                  this.state.pagination.page_number !==
-                  this.state.pagination.total_pages - 1
+                  this.state.pagination.total_items >
+                  this.state.notificationList.length
                 }
                 // loader={
                 //   <div className="loader" key={0}>
@@ -366,9 +350,9 @@ export default class NotificationFeed extends React.Component {
                         this.props.showNotificationDetails
                       }
                       onErrorCallback={this.props.onErrorCallback}
-                      onEditClick={(rule) => {
-                        this.setState({ activeRule: rule })
-                        this.showEditRuleModal()
+                      onEditClick={(dataAlert) => {
+                        this.setState({ activeDataAlert: dataAlert })
+                        this.showEditDataAlertModal()
                       }}
                     />
                   )
@@ -386,13 +370,13 @@ export default class NotificationFeed extends React.Component {
               <Button
                 style={{ marginTop: '10px' }}
                 type="primary"
-                onClick={this.showEditRuleModal}
+                onClick={this.showEditDataAlertModal}
               >
                 Create Data Alert
               </Button>
             </div>
           )}
-          {this.renderEditRuleModal()}
+          {this.renderEditDataAlertModal()}
         </div>
       </ErrorBoundary>
     )
