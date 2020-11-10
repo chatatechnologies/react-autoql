@@ -84,14 +84,6 @@ export const fetchNotificationFeed = ({
   return axiosInstance
     .get(url)
     .then((response) => {
-      // const formattedResponse = {
-      //   notifications: _get(response, 'data.data.items'),
-      //   pagination: {
-      //     offset: _get(response, 'data.data.pagincation.offset'),
-      //     limit: _get(response, 'data.data.pagincation.limit'),
-      //     total_items: _get(response, 'data.data.pagination.total_items'),
-      //   },
-      // }
       return Promise.resolve(_get(response, 'data.data'))
     })
     .catch((error) => {
