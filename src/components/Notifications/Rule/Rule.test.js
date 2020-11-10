@@ -19,6 +19,6 @@ describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
     const ruleComponent = findByTestAttr(wrapper, 'rule')
-    expect(ruleComponent.exists()).toBe(true)
+    expect(dataAlertComponent.exists()).toBe(true)
   })
 })

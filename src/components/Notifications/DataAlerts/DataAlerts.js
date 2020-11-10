@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
@@ -12,7 +13,7 @@ import { NotificationModal } from '../NotificationModal'
 
 import {
   fetchDataAlerts,
-  updateNotificationRuleStatus,
+  updateDataAlertStatus,
 } from '../../../js/notificationService'
 import { setCSSVars } from '../../../js/Util'
 
@@ -44,15 +45,14 @@ export default class DataAlerts extends React.Component {
   state = {
     isFetchingList: true,
     isEditModalVisible: false,
-    activeRule: undefined,
+    activeDataAlert: undefined,
 
-    userRuleList: undefined,
-    projectRuleList: undefined,
+    customAlertsList: undefined,
+    projectAlertsList: undefined,
   }
 
   componentDidMount = () => {
-    this.getDataAlerts('user')
-    this.getDataAlerts('project')
+    this.getDataAlerts()
     setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
@@ -72,9 +72,10 @@ export default class DataAlerts extends React.Component {
       ...getAuthentication(this.props.authentication),
       type,
     })
-      .then((list) => {
+      .then((response) => {
         this.setState({
-          [`${type}RuleList`]: list,
+          customAlertsList: response.custom_alerts,
+          projectAlertsList: response.project_alerts,
         })
       })
       .catch((error) => {
@@ -86,51 +87,63 @@ export default class DataAlerts extends React.Component {
     e.stopPropagation()
     this.setState({
       isEditModalVisible: true,
-      activeRule: notification,
+      activeDataAlert: notification,
     })
   }
 
   onAddClick = () => {
     this.setState({
       isEditModalVisible: true,
-      activeRule: undefined,
+      activeDataAlert: undefined,
     })
   }
 
-  onRuleSave = (ruleResponse) => {
-    let newRuleList = [...this.state.userRuleList]
-    if (this.state.activeRule) {
-      // Update existing rule data
-      newRuleList = this.state.userRuleList.map((r) => {
-        if (r.id === this.state.activeRule.id) {
-          return _get(ruleResponse, 'data.data', this.state.activeRule)
+  onDataAlertSave = (dataAlertResponse) => {
+    let newDataAlertList = [...this.state.customAlertsList]
+    if (this.state.activeDataAlert) {
+      // Update existing data
+      newDataAlertList = this.state.customAlertsList.map((r) => {
+        if (r.id === this.state.activeDataAlert.id) {
+          return _get(
+            dataAlertResponse,
+            'data.data',
+            this.state.activeDataAlert
+          )
         }
         return r
       })
     } else {
-      // Add new rule to top of list
-      if (_get(ruleResponse, 'data.data')) {
-        newRuleList.unshift(_get(ruleResponse, 'data.data'))
+      // Add new data alert to top of list
+      if (_get(dataAlertResponse, 'data.data')) {
+        newDataAlertList.unshift(_get(dataAlertResponse, 'data.data'))
       }
     }
 
-    this.setState({ isEditModalVisible: false, userRuleList: newRuleList })
+    this.setState({
+      isEditModalVisible: false,
+      customAlertsList: newDataAlertList,
+    })
   }
 
-  onRuleDelete = (ruleId) => {
-    const newList = this.state.userRuleList.filter((rule) => rule.id !== ruleId)
+  onDataAlertDelete = (dataAlertId) => {
+    const newList = this.state.customAlertsList.filter(
+      (dataAlert) => dataAlert.id !== dataAlertId
+    )
     this.setState({
-      userRuleList: newList,
+      customAlertsList: newList,
       isEditModalVisible: false,
     })
   }
 
-  onEnableSwitchChange = (e, rule) => {
-    const type = _get(rule, 'type', '').toLowerCase()
-
+  onEnableSwitchChange = (e, dataAlert) => {
     const newStatus = e.target.checked ? 'ACTIVE' : 'INACTIVE'
-    const newList = this.state[`${type}RuleList`].map((n) => {
-      if (rule.id === n.id) {
+
+    let listType =
+      dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
+
+    const oldList = _cloneDeep(this.state[listType])
+    const newList = this.state[listType].map((n) => {
+      if (dataAlert.id === n.id) {
         return {
           ...n,
           status: newStatus,
@@ -138,17 +151,21 @@ export default class DataAlerts extends React.Component {
       }
       return n
     })
+    this.setState({ [`${listType}`]: newList })
 
-    this.setState({ [`${type}RuleList`]: newList })
-
-    updateNotificationRuleStatus({
-      ruleId: rule.id,
-      type: rule.type,
+    updateDataAlertStatus({
+      dataAlertId: dataAlert.id,
+      type: dataAlert.type,
       status: newStatus,
       ...getAuthentication(this.props.authentication),
     }).catch((error) => {
       console.error(error)
-      this.props.onErrorCallback(error)
+      this.props.onErrorCallback(
+        new Error('Something went wrong. Please try again.')
+      )
+
+      // Switch flip back
+      this.setState({ [`${listType}`]: oldList })
     })
   }
 
@@ -160,12 +177,14 @@ export default class DataAlerts extends React.Component {
         authentication={getAuthentication(this.props.authentication)}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
-        currentRule={this.state.activeRule}
-        onSave={this.onRuleSave}
+        currentDataAlert={this.state.activeDataAlert}
+        onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
-        onDelete={this.onRuleDelete}
+        onDelete={this.onDataAlertDelete}
         title={
-          this.state.activeRule ? 'Edit Data Alert' : 'Create New Data Alert'
+          this.state.activeDataAlert
+            ? 'Edit Data Alert'
+            : 'Create New Data Alert'
         }
       />
     )
@@ -196,14 +215,14 @@ export default class DataAlerts extends React.Component {
     }
 
     return (
-      <div className="notification-rules-list-container">
-        {type === 'user' &&
+      <div className="data-alerts-list-container">
+        {type === 'custom' &&
           this.renderNotificationGroupTitle(
             'Set up a custom Data Alert',
             'Create customized Alerts tailored to your unique data needs',
             true
           )}
-        {type === 'user' &&
+        {type === 'custom' &&
           !_get(list, 'length') &&
           this.renderEmptyListMessage()}
         {type === 'project' &&
@@ -218,7 +237,7 @@ export default class DataAlerts extends React.Component {
                 key={`react-autoql-notification-setting-item-${i}`}
                 className={`react-autoql-notification-setting-item ${notification.type}`}
                 onClick={(e) => {
-                  if (notification.type === 'USER') {
+                  if (notification.type === 'CUSTOM') {
                     this.onEditClick(e, notification)
                   }
                 }}
@@ -235,7 +254,7 @@ export default class DataAlerts extends React.Component {
                     </span>
                   </div>
                   <div className="react-autoql-notification-setting-actions">
-                    {notification.type === 'USER' && (
+                    {notification.type === 'CUSTOM' && (
                       <Icon
                         className="react-autoql-notification-action-btn"
                         type="edit"
@@ -288,7 +307,7 @@ export default class DataAlerts extends React.Component {
   )
 
   render = () => {
-    if (!this.state.userRuleList) {
+    if (!this.state.customAlertsList) {
       return (
         <div
           data-test="notification-settings"
@@ -299,16 +318,16 @@ export default class DataAlerts extends React.Component {
       )
     }
 
-    const projectList = _get(this.state, 'projectRuleList', [])
-    const userList = _get(this.state, 'userRuleList', [])
+    const projectAlertsList = _get(this.state, 'projectAlertsList', [])
+    const customAlertsList = _get(this.state, 'customAlertsList', [])
 
     return (
       <div
         className="react-autoql-notification-settings"
         data-test="notification-settings"
       >
-        {this.renderNotificationlist('project', projectList)}
-        {this.renderNotificationlist('user', userList)}
+        {this.renderNotificationlist('project', projectAlertsList)}
+        {this.renderNotificationlist('custom', customAlertsList)}
         {this.renderNotificationEditModal()}
         <ReactTooltip
           className="react-autoql-drawer-tooltip"

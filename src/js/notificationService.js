@@ -1,6 +1,8 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 
+const generalErrorMessage = 'Something went wrong. Please try again.'
+
 // ----------------- GET --------------------
 export const isExpressionQueryValid = ({ query, domain, apiKey, token }) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
@@ -43,7 +45,7 @@ export const fetchNotificationCount = ({
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications/summary/poll?key=${apiKey}&unacknowledged=${unacknowledged}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/summary/poll?key=${apiKey}&unacknowledged=${unacknowledged}`
 
   const config = {
     timeout: 180000,
@@ -77,22 +79,20 @@ export const fetchNotificationFeed = ({
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}&offset=${offset}&limit=${limit}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications?key=${apiKey}&offset=${offset}&limit=${limit}`
 
   return axiosInstance
     .get(url)
     .then((response) => {
-      const formattedResponse = {
-        notifications: _get(response, 'data.data.notifications'),
-        pagination: {
-          offset: _get(response, 'data.data.offset'),
-          limit: _get(response, 'data.data.limit'),
-          page_number: _get(response, 'data.data.page_number'),
-          total_elements: _get(response, 'data.data.total_elements'),
-          total_pages: _get(response, 'data.data.total_pages'),
-        },
-      }
-      return Promise.resolve(formattedResponse)
+      // const formattedResponse = {
+      //   notifications: _get(response, 'data.data.items'),
+      //   pagination: {
+      //     offset: _get(response, 'data.data.pagincation.offset'),
+      //     limit: _get(response, 'data.data.pagincation.limit'),
+      //     total_items: _get(response, 'data.data.pagination.total_items'),
+      //   },
+      // }
+      return Promise.resolve(_get(response, 'data.data'))
     })
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))
@@ -142,19 +142,19 @@ export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules?key=${apiKey}&type=${type}`
+  const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
   return axiosInstance
     .get(url)
     .then((response) => {
-      return Promise.resolve(_get(response, 'data.data.rules'))
+      return Promise.resolve(_get(response, 'data.data'))
     })
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))
     })
 }
 
-export const fetchRule = ({ domain, apiKey, token, ruleId }) => {
+export const fetchRule = ({ domain, apiKey, token, dataAlertId }) => {
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
@@ -165,7 +165,7 @@ export const fetchRule = ({ domain, apiKey, token, ruleId }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
   return axiosInstance
     .get(url)
@@ -195,7 +195,7 @@ export const resetNotificationCount = ({ domain, apiKey, token }) => {
     state: 'ACKNOWLEDGED',
   }
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -229,7 +229,7 @@ export const deleteNotification = ({
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
 
   return axiosInstance
     .delete(url)
@@ -257,7 +257,7 @@ export const dismissAllNotifications = ({ domain, apiKey, token }) => {
     state: 'DISMISSED',
   }
 
-  const url = `${domain}/autoql/api/v1/rules/notifications?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -295,7 +295,7 @@ export const dismissNotification = ({
     state: 'DISMISSED',
   }
 
-  const url = `${domain}/autoql/api/v1/rules/notifications/${notificationId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/${notificationId}?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -307,8 +307,8 @@ export const dismissNotification = ({
     })
 }
 
-export const updateNotificationRuleStatus = ({
-  ruleId,
+export const updateDataAlertStatus = ({
+  dataAlertId,
   status,
   type,
   domain,
@@ -321,19 +321,31 @@ export const updateNotificationRuleStatus = ({
   }
 
   // Make sure there is an id, or it will batch all notifications
-  if (!ruleId) {
+  if (!dataAlertId) {
     return Promise.reject(new Error('No rule to update'))
   }
 
   if (type === 'PROJECT') {
-    return toggleProjectRuleStatus({ ruleId, status, token, domain, apiKey })
+    return toggleProjectDataAlertStatus({
+      dataAlertId,
+      status,
+      token,
+      domain,
+      apiKey,
+    })
   } else {
-    return toggleUserRuleStatus({ ruleId, status, token, domain, apiKey })
+    return toggleCustomDataAlertStatus({
+      dataAlertId,
+      status,
+      token,
+      domain,
+      apiKey,
+    })
   }
 }
 
-export const toggleUserRuleStatus = ({
-  ruleId,
+export const toggleCustomDataAlertStatus = ({
+  dataAlertId,
   status,
   token,
   domain,
@@ -349,7 +361,7 @@ export const toggleUserRuleStatus = ({
     },
   }
 
-  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
   return axios
     .put(url, data, config)
@@ -360,7 +372,7 @@ export const toggleUserRuleStatus = ({
 }
 
 export const removeUserFromProjectRule = ({
-  ruleId,
+  dataAlertId,
   token,
   domain,
   apiKey,
@@ -371,29 +383,40 @@ export const removeUserFromProjectRule = ({
     },
   }
 
-  const url = `${domain}/autoql/api/v1/rules/${ruleId}/user?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
 
   return axios
     .delete(url, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(
+        _get(error, 'response.data'),
+        new Error(generalErrorMessage)
+      )
     })
 }
-export const addUserToProjectRule = ({ ruleId, token, domain, apiKey }) => {
+export const addUserToProjectRule = ({
+  dataAlertId,
+  token,
+  domain,
+  apiKey,
+}) => {
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   }
 
-  const url = `${domain}/autoql/api/v1/rules/${ruleId}/user?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}/user?key=${apiKey}`
 
   return axios
     .post(url, {}, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => {
-      return Promise.reject(_get(error, 'response.data'))
+      return Promise.reject(
+        _get(error, 'response.data'),
+        new Error(generalErrorMessage)
+      )
     })
 }
 
@@ -470,8 +493,8 @@ export const sendDataToChannel = ({
     })
 }
 
-export const toggleProjectRuleStatus = ({
-  ruleId,
+export const toggleProjectDataAlertStatus = ({
+  dataAlertId,
   status,
   token,
   domain,
@@ -479,14 +502,14 @@ export const toggleProjectRuleStatus = ({
 }) => {
   if (status === 'INACTIVE') {
     return removeUserFromProjectRule({
-      ruleId,
+      dataAlertId,
       token,
       domain,
       apiKey,
     })
   } else {
     return addUserToProjectRule({
-      ruleId,
+      dataAlertId,
       token,
       domain,
       apiKey,
@@ -494,14 +517,14 @@ export const toggleProjectRuleStatus = ({
   }
 }
 
-export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
+export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
 
   // Make sure there is an id, or it will batch all notifications
-  if (!rule) {
+  if (!dataAlert) {
     return Promise.reject(new Error('No rule to update'))
   }
 
@@ -511,11 +534,9 @@ export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
     },
   })
 
-  const data = {
-    ...rule,
-  }
+  const { id, ...data } = dataAlert
 
-  const url = `${domain}/autoql/api/v1/rules/${rule.id}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
 
   return axiosInstance
     .put(url, data)
@@ -526,7 +547,7 @@ export const updateNotificationRule = ({ rule, domain, apiKey, token }) => {
 }
 
 // ----------------- POST --------------------
-export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
+export const createDataAlert = ({ rule, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -542,7 +563,7 @@ export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
     ...rule,
   }
 
-  const url = `${domain}/autoql/api/v1/rules?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
   return axiosInstance
     .post(url, data)
@@ -555,7 +576,7 @@ export const createNotificationRule = ({ rule, domain, apiKey, token }) => {
 }
 
 // DELETE
-export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
+export const deleteDataAlert = ({ dataAlertId, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -567,7 +588,7 @@ export const deleteNotificationRule = ({ ruleId, domain, apiKey, token }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/rules/${ruleId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
   return axiosInstance
     .delete(url)

@@ -13,9 +13,9 @@ import { ExpressionBuilder } from '../ExpressionBuilder'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 
 import {
-  createNotificationRule,
-  updateNotificationRule,
-  deleteNotificationRule,
+  createDataAlert,
+  updateDataAlert,
+  deleteDataAlert,
   isExpressionQueryValid,
 } from '../../../js/notificationService'
 
@@ -37,14 +37,14 @@ export default class NotificationModal extends React.Component {
     onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
-    currentRule: PropTypes.shape({}),
+    currentDataAlert: PropTypes.shape({}),
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
     themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
-    onManagementCreateRule: PropTypes.func,
-    onManagementDeleteRule: PropTypes.func,
+    onManagementCreateDataAlert: PropTypes.func,
+    onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
     enableQueryValidation: PropTypes.bool,
   }
@@ -54,14 +54,14 @@ export default class NotificationModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     initialQuery: undefined,
-    currentRule: undefined,
+    currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
     themeConfig: themeConfigDefault,
     isManagement: false,
-    onManagementCreateRule: () => {},
-    onManagementDeleteRule: () => {},
+    onManagementCreateDataAlert: () => {},
+    onManagementDeleteDataAlert: () => {},
     title: 'Create New Data Alert',
     enableQueryValidation: true,
   }
@@ -86,20 +86,20 @@ export default class NotificationModal extends React.Component {
     if (this.props.isVisible && !prevProps.isVisible) {
       // If we are editing an existing notification
       // Fill the fields with the current settings
-      if (this.props.currentRule) {
-        const notification = this.props.currentRule
+      if (this.props.currentDataAlert) {
+        const notification = this.props.currentDataAlert
         this.setState({
           titleInput: notification.title,
           messageInput: notification.message,
-          dataReturnQueryInput: notification.query,
+          dataReturnQueryInput: notification.data_return_query,
           isDataReturnDirty: true,
-          expressionJSON: _get(this.props.currentRule, 'expression'),
+          expressionJSON: _get(this.props.currentDataAlert, 'expression'),
         })
       } else if (
         this.props.initialQuery &&
         typeof this.props.initialQuery === 'string'
       ) {
-        const expressionJSON = this.createRuleJSONFromQuery(
+        const expressionJSON = this.createExpressionJSONFromQuery(
           this.props.initialQuery
         )
         this.setState({
@@ -114,10 +114,12 @@ export default class NotificationModal extends React.Component {
       this.props.initialQuery !== prevProps.initialQuery
     ) {
       this.resetFields()
-      const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+      const expressionJSON = this.createExpressionJSONFromQuery(
+        this.props.initialQuery
+      )
       this.setState({
-        isRulesSectionComplete: true,
-        rulesJSON,
+        isExpressionSectionComplete: true,
+        expressionJSON,
       })
     }
 
@@ -148,7 +150,7 @@ export default class NotificationModal extends React.Component {
     })
   }
 
-  createRuleJSONFromQuery = (query) => {
+  createExpressionJSONFromQuery = (query) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -173,7 +175,7 @@ export default class NotificationModal extends React.Component {
     ]
   }
 
-  getNotificationRuleData = () => {
+  getDataAlertData = () => {
     const { titleInput, dataReturnQueryInput, messageInput } = this.state
 
     let expressionJSON = this.state.expressionJSON
@@ -186,19 +188,17 @@ export default class NotificationModal extends React.Component {
       scheduleData = this.scheduleBuilderRef.getData()
     }
 
-    const notificationRule = this.props.currentRule
-
-    const newRule = {
-      id: _get(notificationRule, 'id'),
+    const newDataAlert = {
+      id: _get(this.props.currentDataAlert, 'id'),
       title: titleInput,
-      query: dataReturnQueryInput,
+      data_return_query: dataReturnQueryInput,
       message: messageInput,
       expression: expressionJSON,
       notification_type: scheduleData.notificationType,
       reset_period: scheduleData.resetPeriod,
     }
 
-    return newRule
+    return newDataAlert
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
@@ -271,56 +271,56 @@ export default class NotificationModal extends React.Component {
     this.setState({ isDataReturnValidated: true })
   }
 
-  onRuleSave = () => {
+  onDataAlertSave = () => {
     this.setState({
-      isSavingRule: true,
+      isSavingDataAlert: true,
     })
 
-    const newRule = this.getNotificationRuleData()
+    const newDataAlert = this.getDataAlertData()
 
     const requestParams = {
-      rule: newRule,
+      dataAlert: newDataAlert,
       ...getAuthentication(this.props.authentication),
     }
 
     if (this.props.isManagement) {
-      this.props.onManagementCreateRule(newRule)
+      this.props.onManagementCreateDataAlert(newDataAlert)
       this.setState({
-        isSavingRule: false,
+        isSavingDataAlert: false,
       })
-    } else if (newRule.id) {
-      updateNotificationRule({
+    } else if (newDataAlert.id) {
+      updateDataAlert({
         ...requestParams,
       })
-        .then((ruleResponse) => {
-          this.props.onSave(ruleResponse)
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
 
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
         .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
     } else {
-      createNotificationRule({
+      createDataAlert({
         ...requestParams,
       })
-        .then((ruleResponse) => {
-          this.props.onSave(ruleResponse)
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
         .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
     }
@@ -387,7 +387,7 @@ export default class NotificationModal extends React.Component {
           onChange={this.onExpressionChange}
           enableQueryValidation={this.props.enableQueryValidation}
           expression={_get(
-            this.props.currentRule,
+            this.props.currentDataAlert,
             'expression',
             this.state.expressionJSON
           )}
@@ -407,7 +407,7 @@ export default class NotificationModal extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
-          rule={this.props.currentRule}
+          dataAlert={this.props.currentDataAlert}
           onCompletedChange={(isComplete) => {
             this.setState({ isScheduleSectionComplete: isComplete })
           }}
@@ -457,7 +457,7 @@ export default class NotificationModal extends React.Component {
           }
         />
         {!this.state.isDataReturnQueryValid && (
-          <div className="rule-term-validation-error">
+          <div className="expression-term-validation-error">
             <Icon type="warning-triangle" /> That query is invalid. Try entering
             a different query.
           </div>
@@ -478,21 +478,21 @@ export default class NotificationModal extends React.Component {
     )
   }
 
-  onRuleDelete = () => {
-    const ruleId = _get(this.props.currentRule, 'id')
-    if (ruleId) {
+  onDataAlertDelete = () => {
+    const dataAlertId = _get(this.props.currentDataAlert, 'id')
+    if (dataAlertId) {
       this.setState({
-        isDeletingRule: true,
+        isDeletingDataAlert: true,
       })
 
-      deleteNotificationRule({
-        ruleId,
+      deleteDataAlert({
+        dataAlertId,
         ...getAuthentication(this.props.authentication),
       })
         .then(() => {
-          this.props.onDelete(ruleId)
+          this.props.onDelete(dataAlertId)
           this.setState({
-            isDeletingRule: false,
+            isDeletingDataAlert: false,
             isConfirmDeleteModalVisible: false,
           })
         })
@@ -500,7 +500,7 @@ export default class NotificationModal extends React.Component {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isDeletingRule: false,
+            isDeletingDataAlert: false,
           })
         })
     }
@@ -568,13 +568,13 @@ export default class NotificationModal extends React.Component {
           footer={
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                {this.props.currentRule && this.props.allowDelete && (
+                {this.props.currentDataAlert && this.props.allowDelete && (
                   <Button
                     type="danger"
                     onClick={() => {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
-                    loading={this.state.isDeletingRule}
+                    loading={this.state.isDeletingDataAlert}
                   >
                     Delete Data Alert
                   </Button>
@@ -592,8 +592,8 @@ export default class NotificationModal extends React.Component {
                 </Button>
                 <Button
                   type="primary"
-                  loading={this.state.isSavingRule}
-                  onClick={this.onRuleSave}
+                  loading={this.state.isSavingDataAlert}
+                  onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
                 >
                   Save
@@ -612,8 +612,8 @@ export default class NotificationModal extends React.Component {
         </Modal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}
-          onConfirm={this.onRuleDelete}
-          confirmLoading={this.state.isDeletingRule}
+          onConfirm={this.onDataAlertDelete}
+          confirmLoading={this.state.isDeletingDataAlert}
           onClose={() => {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}

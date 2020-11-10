@@ -10,12 +10,34 @@ import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
 
 import './ScheduleBuilder.scss'
 
+const getFrequencyValue = (dataAlert) => {
+  if (!dataAlert) {
+    return undefined
+  }
+
+  const notificationType = dataAlert.notification_type
+  const resetPeriod = dataAlert.reset_period
+  let frequencySelectValue = undefined
+
+  if (notificationType === 'CONTINUOUS') {
+    frequencySelectValue = 'Immediately'
+  } else if (resetPeriod === 'DAY') {
+    frequencySelectValue = 'Daily'
+  } else if (resetPeriod === 'WEEK') {
+    frequencySelectValue = 'Weekly'
+  } else if (resetPeriod === 'MONTH') {
+    frequencySelectValue = 'Monthly'
+  }
+
+  return frequencySelectValue
+}
+
 export default class ScheduleBuilder extends React.Component {
   COMPONENT_KEY = uuid.v4()
 
   static propTypes = {
     themeConfig: themeConfigType,
-    rule: PropTypes.shape({}),
+    dataAlert: PropTypes.shape({}),
     onChange: PropTypes.func,
     onCompletedChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
@@ -23,18 +45,17 @@ export default class ScheduleBuilder extends React.Component {
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
-    rule: undefined,
+    dataAlert: undefined,
     onChange: () => {},
     onCompletedChange: () => {},
     onErrorCallback: () => {},
   }
 
   state = {
-    frequencySelectValue: undefined,
+    frequencySelectValue: getFrequencyValue(this.props.dataAlert),
   }
 
   componentDidMount = () => {
-    this.setInitialFrequencyValue()
     this.props.onCompletedChange(this.isComplete())
   }
 
@@ -52,35 +73,13 @@ export default class ScheduleBuilder extends React.Component {
     return !!this.state.frequencySelectValue
   }
 
-  setInitialFrequencyValue = () => {
-    if (!this.props.rule) {
-      return
-    }
-
-    const notificationType = this.props.rule.notification_type
-    const resetPeriod = this.props.rule.reset_period
-    let frequencySelectValue = undefined
-
-    if (notificationType === 'REPEAT_EVENT') {
-      frequencySelectValue = 'Immediately'
-    } else if (resetPeriod === 'DAY') {
-      frequencySelectValue = 'Daily'
-    } else if (resetPeriod === 'WEEK') {
-      frequencySelectValue = 'Weekly'
-    } else if (resetPeriod === 'MONTH') {
-      frequencySelectValue = 'Monthly'
-    }
-
-    this.setState({ frequencySelectValue })
-  }
-
   getData = () => {
     const { frequencySelectValue } = this.state
-    let notificationType = 'SINGLE_EVENT'
+    let notificationType = 'PERIODIC'
     let resetPeriod = null
 
     if (frequencySelectValue === 'Immediately') {
-      notificationType = 'REPEAT_EVENT'
+      notificationType = 'CONTINUOUS'
     } else if (frequencySelectValue === 'Daily') {
       resetPeriod = 'DAY'
     } else if (frequencySelectValue === 'Weekly') {

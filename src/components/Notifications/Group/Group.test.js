@@ -19,6 +19,6 @@ describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
     const ruleGroupComponent = findByTestAttr(wrapper, 'rule-group')
-    expect(ruleGroupComponent.exists()).toBe(true)
+    expect(dataAlertGroupComponent.exists()).toBe(true)
   })
 })

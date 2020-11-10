@@ -15,7 +15,7 @@ import { VizToolbar } from '../../VizToolbar'
 import {
   dismissNotification,
   deleteNotification,
-  updateNotificationRuleStatus,
+  updateDataAlertStatus,
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
@@ -95,9 +95,9 @@ export default class NotificationItem extends React.Component {
   }
 
   fetchRuleDetails = (notification) => {
-    this.setState({ ruleDetails: undefined, ruleStatus: undefined })
+    this.setState({ ruleDetails: undefined, dataAlertStatus: undefined })
     fetchRule({
-      ruleId: notification.rule_id,
+      dataAlertId: notification.data_alert_id,
       ...getAuthentication(this.props.authentication),
     })
       .then((response) => {
@@ -157,9 +157,9 @@ export default class NotificationItem extends React.Component {
   }
 
   changeRuleStatus = (notification, status) => {
-    updateNotificationRuleStatus({
-      ruleId: notification.rule_id,
-      type: notification.rule_type,
+    updateDataAlertStatus({
+      dataAlertId: notification.data_alert_id,
+      type: notification.data_alert_type,
       status,
       ...getAuthentication(this.props.authentication),
     })
@@ -204,10 +204,10 @@ export default class NotificationItem extends React.Component {
       >
         <div className="react-autoql-notification-display-name-container">
           <div className="react-autoql-notification-display-name">
-            {notification.rule_title}
+            {notification.title}
           </div>
           <div className="react-autoql-notification-description">
-            {notification.rule_message}
+            {notification.message}
           </div>
           <div className="react-autoql-notification-timestamp">
             <Icon type="calendar" />{' '}
@@ -306,7 +306,7 @@ export default class NotificationItem extends React.Component {
   }
 
   renderNotificationContent = (notification) => {
-    const queryTitle = notification.rule_query
+    const queryTitle = notification.data_return_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
     let queryResponse
@@ -377,7 +377,7 @@ export default class NotificationItem extends React.Component {
                 authentication={getAuthentication(this.props.authentication)}
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
-                expression={_get(notification, 'rule_expression')}
+                expression={_get(notification, 'expression')}
                 readOnly
               />
             </div>
