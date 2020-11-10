@@ -85,11 +85,11 @@ export default class NotificationFeed extends React.Component {
     }
   }
 
-  getNotifications = () => {
+  getNotifications = (limit) => {
     fetchNotificationFeed({
       ...getAuthentication(this.props.authentication),
       offset: this.state.nextOffset,
-      limit: this.NOTIFICATION_FETCH_LIMIT,
+      limit: limit || this.NOTIFICATION_FETCH_LIMIT,
     })
       .then((response) => {
         if (response.items.length) {
@@ -219,10 +219,15 @@ export default class NotificationFeed extends React.Component {
     const newList = this.state.notificationList.filter(
       (n) => n.id !== notification.id
     )
-    this.setState({
-      notificationList: newList,
-      nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
-    })
+    this.setState(
+      {
+        notificationList: newList,
+        nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
+      },
+      () => {
+        this.getNotifications(1)
+      }
+    )
   }
 
   onDataAlertSave = () => {
