@@ -5,10 +5,6 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
 
-// import DateEditor from 'react-tabulator/lib/editors/DateEditor'
-// import MultiValueFormatter from 'react-tabulator/lib/formatters/MultiValueFormatter'
-// import MultiSelectEditor from 'react-tabulator/lib/editors/MultiSelectEditor'
-
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { setCSSVars, isAggregation } from '../../js/Util'
 import { themeConfigType } from '../../props/types'
@@ -154,7 +150,6 @@ export default class ChataTable extends React.Component {
           this.props.onFilterCallback(this.ref.table.getHeaderFilters())
         }
       },
-      // downloadDataFormatter: (data) => data,
       downloadReady: (fileContents, blob) => blob,
     }
 
