@@ -201,6 +201,45 @@ export default class ChatMessage extends React.Component {
     this.setState({ supportedDisplayTypes })
   }
 
+  setFilterTags = ({ isFilteringTable } = {}) => {
+    const tableRef =
+      this.state.displayType === 'pivot_table'
+        ? _get(this.responseRef, 'pivotTableRef.ref.table')
+        : _get(this.responseRef, 'tableRef.ref.table')
+
+    if (!tableRef) {
+      return
+    }
+
+    const filterValues = tableRef.getHeaderFilters()
+    if (filterValues) {
+      filterValues.forEach((filter) => {
+        try {
+          if (!isFilteringTable) {
+            const filterTagEl = document.createElement('span')
+            filterTagEl.innerText = 'F'
+            filterTagEl.setAttribute('class', 'filter-tag')
+
+            const columnTitleEl = document.querySelector(
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+            )
+            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
+          } else if (isFilteringTable) {
+            var filterTagEl = document.querySelector(
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+            )
+            if (filterTagEl) {
+              filterTagEl.parentNode.removeChild(filterTagEl)
+            }
+          }
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        }
+      })
+    }
+  }
+
   renderContent = (chartWidth, chartHeight) => {
     const { response, content, type } = this.props
     if (content) {
