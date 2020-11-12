@@ -9,7 +9,7 @@ import uuid from 'uuid'
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
-import { NotificationModal } from '../NotificationModal'
+import { DataAlertModal } from '../DataAlertModal'
 
 import {
   fetchDataAlerts,
@@ -171,7 +171,7 @@ export default class DataAlerts extends React.Component {
 
   renderNotificationEditModal = () => {
     return (
-      <NotificationModal
+      <DataAlertModal
         themeConfig={getThemeConfig(this.props.themeConfig)}
         key={this.COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}

@@ -27,9 +27,9 @@ import {
   getThemeConfig,
 } from '../../../props/defaults'
 
-import './NotificationModal.scss'
+import './DataAlertModal.scss'
 
-export default class NotificationModal extends React.Component {
+export default class DataAlertModal extends React.Component {
   NEW_NOTIFICATION_MODAL_ID = uuid.v4()
 
   static propTypes = {
