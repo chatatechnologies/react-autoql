@@ -36,7 +36,7 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
-import { NotificationModal } from '../Notifications/NotificationModal'
+import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { runDrilldown, fetchQueryTips } from '../../js/queryService'
@@ -1162,18 +1162,18 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderNotificationModal = () => {
+  renderDataAlertModal = () => {
     return (
-      <NotificationModal
+      <DataAlertModal
         authentication={getAuthentication(
           getAuthentication(this.props.authentication)
         )}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
-        isVisible={this.state.isNotificationModalVisible}
-        onClose={() => this.setState({ isNotificationModalVisible: false })}
+        isVisible={this.state.isDataAlertModalVisible}
+        onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
           this.props.onSuccessAlert('Notification created!')
-          this.setState({ isNotificationModalVisible: false })
+          this.setState({ isDataAlertModalVisible: false })
         }}
         onErrorCallback={() =>
           this.props.onErrorCallback(
@@ -1222,7 +1222,7 @@ export default class DataMessenger extends React.Component {
               {this.renderBodyContent()}
             </div>
           </Drawer>
-          {this.renderNotificationModal()}
+          {this.renderDataAlertModal()}
         </Fragment>
       </ErrorBoundary>
     )

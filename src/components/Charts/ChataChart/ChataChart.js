@@ -368,7 +368,6 @@ export default class ChataChart extends Component {
       rightMargin,
       leftMargin,
       bottomLegendMargin,
-      // bottomLegendWidth
     } = this.state
 
     const {

@@ -9,7 +9,7 @@ import sqlFormatter from 'sql-formatter'
 
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
-import { NotificationModal } from '../Notifications'
+import { DataAlertModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
 import { SendToSlackModal } from '../SendToSlackModal'
@@ -342,14 +342,14 @@ export default class Input extends React.Component {
     )
   }
 
-  renderNotificationModal = () => {
+  renderDataAlertModal = () => {
     const initialQuery = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.text'
     )
 
     return (
-      <NotificationModal
+      <DataAlertModal
         authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.state.activeMenu === 'notification'}
@@ -804,7 +804,7 @@ export default class Input extends React.Component {
         {this.renderToolbar()}
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
-        {this.renderNotificationModal()}
+        {this.renderDataAlertModal()}
         {this.renderSendToSlackModal()}
         {this.renderSendToTeamsModal()}
         {this.renderSQLModal()}

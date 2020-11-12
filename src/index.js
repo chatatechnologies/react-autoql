@@ -10,7 +10,7 @@ export {
   DataAlerts,
   ExpressionBuilder,
   ScheduleBuilder,
-  NotificationModal,
+  DataAlertModal,
 } from './components/Notifications'
 export { Icon } from './components/Icon'
 export {

@@ -8,7 +8,7 @@ import uuid from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
-import { NotificationModal } from '../NotificationModal'
+import { DataAlertModal } from '../DataAlertModal'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
@@ -254,7 +254,7 @@ export default class NotificationFeed extends React.Component {
 
   renderEditDataAlertModal = () => {
     return (
-      <NotificationModal
+      <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(this.props.themeConfig)}
