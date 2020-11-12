@@ -595,7 +595,7 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     let displayType = 'pivot_table'
 
     if (defaultToChart) {
-      displayType = isAggregation(response)
+      displayType = isAggregation(_get(response, 'data.data.columns'))
         ? getFirstChartDisplayType(supportedDisplayTypes, 'pivot_table')
         : 'pivot_table'
     }
@@ -608,7 +608,7 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     let displayType = 'table'
 
     if (defaultToChart) {
-      displayType = isAggregation(response)
+      displayType = isAggregation(_get(response, 'data.data.columns'))
         ? getFirstChartDisplayType(supportedDisplayTypes, 'table')
         : 'table'
     }
@@ -664,10 +664,9 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const isAggregation = (response) => {
+export const isAggregation = (columns) => {
   try {
     let isAgg = false
-    const columns = _get(response, 'data.data.columns')
     if (columns) {
       isAgg = !!columns.find((col) => col.groupable)
     }
@@ -678,14 +677,18 @@ export const isAggregation = (response) => {
   }
 }
 
-export const getGroupBysFromTable = (row, tableColumns) => {
+export const getGroupBysFromTable = (cell, tableColumns) => {
+  if (!cell || !tableColumns) {
+    return undefined
+  }
+
   const groupableColumns = getGroupableColumns(tableColumns)
   const numGroupables = groupableColumns.length
   if (!numGroupables) {
     return undefined
   }
 
-  const rowData = row.getData()
+  const rowData = cell.getData()
 
   const groupByArray = []
   groupableColumns.forEach((colIndex) => {

@@ -3,23 +3,20 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-
-import {
-  ReactTabulator,
-  // reactFormatter
-} from 'react-tabulator'
-
-import { setCSSVars } from '../../js/Util'
+import { ReactTabulator } from 'react-tabulator'
 
 // import DateEditor from 'react-tabulator/lib/editors/DateEditor'
 // import MultiValueFormatter from 'react-tabulator/lib/formatters/MultiValueFormatter'
 // import MultiSelectEditor from 'react-tabulator/lib/editors/MultiSelectEditor'
 
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { setCSSVars, isAggregation } from '../../js/Util'
+import { themeConfigType } from '../../props/types'
+import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 
 export default class ChataTable extends React.Component {
   firstRender = true
@@ -29,7 +26,6 @@ export default class ChataTable extends React.Component {
     themeConfig: themeConfigType,
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
-    onRowClick: PropTypes.func,
     onFilterCallback: PropTypes.func,
     setFilterTagsCallback: PropTypes.func,
   }
@@ -40,7 +36,6 @@ export default class ChataTable extends React.Component {
     columns: undefined,
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
-    onRowClick: () => {},
     onCellClick: () => {},
   }
 
@@ -51,10 +46,12 @@ export default class ChataTable extends React.Component {
   componentDidMount = () => {
     this.firstRender = false
     this.TABLE_CONTAINER_ID = uuid.v4()
-    this.setInitialHeaderFilters()
-    setCSSVars(getThemeConfig(this.props.themeConfig))
 
-    setTimeout(this.props.setFilterTagsCallback, 100)
+    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setTimeout(() => {
+      this.setInitialHeaderFilters()
+      this.props.setFilterTagsCallback()
+    }, 100)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -91,7 +88,7 @@ export default class ChataTable extends React.Component {
   }
 
   setInitialHeaderFilters = () => {
-    if (_get(this.props, 'headerFilters.length') && this.ref) {
+    if (_get(this.props, 'headerFilters.length') && _get(this.ref, 'table')) {
       this.props.headerFilters.forEach((filter) => {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
@@ -157,32 +154,37 @@ export default class ChataTable extends React.Component {
           this.props.onFilterCallback(this.ref.table.getHeaderFilters())
         }
       },
-      downloadDataFormatter: (data) => data,
+      // downloadDataFormatter: (data) => data,
       downloadReady: (fileContents, blob) => blob,
     }
 
+    const supportsDrilldown = isAggregation(this.props.columns)
+
     return (
-      <div
-        id={`react-autoql-table-container-${this.TABLE_CONTAINER_ID}`}
-        data-test="react-autoql-table"
-        className="react-autoql-table-container"
-        style={this.props.style}
-      >
-        {this.props.data && this.props.columns && (
-          <ReactTabulator
-            ref={(ref) => (this.ref = ref)}
-            columns={this.state.columns}
-            data={this.props.data}
-            cellClick={this.cellClick}
-            options={options}
-            data-custom-attr="test-custom-attribute"
-            className="react-autoql-table"
-            height="100%"
-            clipboard
-            download
-          />
-        )}
-      </div>
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-table-container-${this.TABLE_CONTAINER_ID}`}
+          data-test="react-autoql-table"
+          className={`react-autoql-table-container 
+          ${supportsDrilldown ? 'supports-drilldown' : ''}`}
+          style={this.props.style}
+        >
+          {this.props.data && this.props.columns && (
+            <ReactTabulator
+              ref={(ref) => (this.ref = ref)}
+              columns={this.state.columns}
+              data={this.props.data}
+              cellClick={this.cellClick}
+              options={options}
+              data-custom-attr="test-custom-attribute"
+              className="react-autoql-table"
+              height="100%"
+              clipboard
+              download
+            />
+          )}
+        </div>
+      </ErrorBoundary>
     )
   }
 }
