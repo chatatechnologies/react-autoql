@@ -1315,6 +1315,12 @@ export default class QueryOutput extends React.Component {
         [MONTH_NAMES[12]]: 11,
       }
 
+      if (!this.dataConfig) {
+        // We should change this to getColumnIndices since this wont be
+        // the final version that we use. We dont want to persist it
+        this.setColumnIndices(this.tableColumns)
+      }
+
       const dateColumnIndex = getDateColumnIndex(this.tableColumns)
       if (!(this.dataConfig.numberColumnIndex >= 0)) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
