@@ -17,6 +17,17 @@
 .react-autoql-table.tabulator .tabulator-tableHolder .tabulator-table {
   background-color: inherit;
 }
+.react-autoql-table-container.supports-drilldown
+  .react-autoql-table.tabulator
+  .tabulator-row.tabulator-unselectable:hover {
+  cursor: pointer !important;
+  background-color: var(--react-autoql-hover-color) !important;
+}
+.react-autoql-table.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable:hover {
+  background-color: var(--react-autoql-hover-color) !important;
+}
 .react-autoql-table.tabulator .tabulator-header .tabulator-col,
 .react-autoql-table.tabulator .tabulator-cell {
   border-color: var(--react-autoql-border-color);
@@ -40,13 +51,6 @@
 .react-autoql-table .tabulator-tableHolder {
   max-height: calc(100% - 38px) !important;
   background-color: inherit;
-}
-.react-autoql-table.tabulator .tabulator-row.tabulator-selectable:hover,
-.react-autoql-table.tabulator
-  .tabulator-header
-  .tabulator-col.tabulator-sortable:hover {
-  /* background-color: rgba(0, 0, 0, 0.1) !important; */
-  background-color: var(--react-autoql-hover-color) !important;
 }
 .react-autoql-table.tabulator
   .tabulator-header

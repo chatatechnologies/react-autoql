@@ -325,7 +325,7 @@ export default class Input extends React.Component {
       columns = tableRef.getColumns().map((col) => {
         return {
           ...col.getDefinition(),
-          visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+          visible: col.isVisible(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
         }
       })
     }
@@ -668,7 +668,6 @@ export default class Input extends React.Component {
       showHideColumnsButton:
         getAutoQLConfig(this.props.autoQLConfig)
           .enableColumnVisibilityManager &&
-        // !isAggregation(response) &&
         isTableResponse(response, displayType) &&
         displayType !== 'pivot_table' &&
         _get(response, 'data.data.columns.length') > 0,

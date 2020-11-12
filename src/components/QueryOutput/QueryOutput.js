@@ -606,7 +606,7 @@ export default class QueryOutput extends React.Component {
       setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
-          const newTableData = tableRef.getData(true)
+          const newTableData = tableRef.getData('active')
           // todo: Eventually we will want to update the pivot data too
           // if (this.supportsPivot) {
           //   this.generatePivotData({ newTableData })
@@ -623,7 +623,7 @@ export default class QueryOutput extends React.Component {
       setTimeout(() => {
         const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
         if (pivotTableRef) {
-          const newTableData = pivotTableRef.getData(true)
+          const newTableData = pivotTableRef.getData('active')
           this.props.onTableFilterCallback(newTableData)
         }
       }, 500)
