@@ -875,7 +875,7 @@ export default class QueryOutput extends React.Component {
         data: [
           {
             name: _get(
-              this.tableColumns,
+              this.chartTableColumns,
               `[${this.dataConfig.stringColumnIndex}].name`
             ),
             value: `${_get(row, `[${this.dataConfig.stringColumnIndex}]`)}`,
