@@ -176,29 +176,33 @@ export default class DataAlertModal extends React.Component {
   }
 
   getDataAlertData = () => {
-    const { titleInput, dataReturnQueryInput, messageInput } = this.state
+    try {
+      const { titleInput, dataReturnQueryInput, messageInput } = this.state
 
-    let expressionJSON = this.state.expressionJSON
-    if (this.expressionRef) {
-      expressionJSON = this.expressionRef.getJSON()
+      let expressionJSON = this.state.expressionJSON
+      if (this.expressionRef) {
+        expressionJSON = this.expressionRef.getJSON()
+      }
+
+      let scheduleData = {}
+      if (this.scheduleBuilderRef) {
+        scheduleData = this.scheduleBuilderRef.getData()
+      }
+
+      const newDataAlert = {
+        id: _get(this.props.currentDataAlert, 'id'),
+        title: titleInput,
+        data_return_query: dataReturnQueryInput,
+        message: messageInput,
+        expression: expressionJSON,
+        notification_type: scheduleData.notificationType,
+        reset_period: scheduleData.resetPeriod,
+      }
+
+      return newDataAlert
+    } catch (error) {
+      console.error(error)
     }
-
-    let scheduleData = {}
-    if (this.scheduleBuilderRef) {
-      scheduleData = this.scheduleBuilderRef.getData()
-    }
-
-    const newDataAlert = {
-      id: _get(this.props.currentDataAlert, 'id'),
-      title: titleInput,
-      data_return_query: dataReturnQueryInput,
-      message: messageInput,
-      expression: expressionJSON,
-      notification_type: scheduleData.notificationType,
-      reset_period: scheduleData.resetPeriod,
-    }
-
-    return newDataAlert
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
