@@ -931,9 +931,13 @@ export default class QueryOutput extends React.Component {
         newTableData.push(cells)
       }
 
-      // add the number column for this category
+      // add (or aggregate) the number column for this category
+      const currentNumberColumnValue =
+        newTableData[newTableData.length - 1][
+          addedColumnIndexes[seriesValue]
+        ] || 0
       newTableData[newTableData.length - 1][addedColumnIndexes[seriesValue]] =
-        row[numberColumnIndex]
+        row[numberColumnIndex] + currentNumberColumnValue
       prevRow = row
     })
 
