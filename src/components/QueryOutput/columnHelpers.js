@@ -1,4 +1,5 @@
 import _get from 'lodash.get'
+import { isAggregation } from '../../js/Util'
 
 export const isColumnNumberType = (col) => {
   const { type } = col
@@ -16,7 +17,12 @@ export const isColumnStringType = (col) => {
 }
 
 export const isColumnDateType = (col) => {
-  return col.type === 'DATE' || col.type === 'DATE_STRING'
+  try {
+    const isDateType = col.type === 'DATE' || col.type === 'DATE_STRING'
+    return isDateType
+  } catch (error) {
+    return false
+  }
 }
 
 export const getNumberColumnIndices = (columns) => {
@@ -63,14 +69,21 @@ export const getNumberColumnIndices = (columns) => {
   }
 }
 
-export const hasMultiSeriesColumn = (columns) => {
-  const multiSeriesIndex = columns.findIndex((col) => col.multi_series === true)
+export const shouldPlotMultiSeries = (columns) => {
+  if (isAggregation(columns)) {
+    return false
+  }
 
+  const multiSeriesIndex = columns.findIndex((col) => col.multi_series === true)
   return multiSeriesIndex >= 0
 }
 
 export const getMultiSeriesColumnIndex = (columns) => {
-  return columns.findIndex((col) => col.multi_series === true)
+  if (!columns || !shouldPlotMultiSeries(columns)) {
+    return undefined
+  }
+
+  return columns.findIndex((col) => col && col.multi_series === true)
 }
 
 export const getDateColumnIndex = (columns) => {
