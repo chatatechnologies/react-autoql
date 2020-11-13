@@ -3,6 +3,7 @@ import ReactTooltip from 'react-tooltip'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import InfiniteScroll from 'react-infinite-scroller'
 import uuid from 'uuid'
 
@@ -91,19 +92,24 @@ export default class NotificationFeed extends React.Component {
       offset: this.state.nextOffset,
       limit: limit || this.NOTIFICATION_FETCH_LIMIT,
     })
-      .then((response) => {
-        if (response.items.length) {
-          this.setState({
-            notificationList: [
-              ...this.state.notificationList,
-              ...response.items,
-            ],
-            pagination: response.pagination,
-            nextOffset: this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT,
-            isFetchingFirstNotifications: false,
-            fetchNotificationsError: null,
-          })
+      .then((data) => {
+        let notificationList = _cloneDeep(this.state.notificationList)
+        let nextOffset = this.state.nextOffset
+        let pagination = this.state.pagination
+
+        if (_get(data, 'items.length')) {
+          notificationList = [...notificationList, ...response.items]
+          nextOffset = this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT
+          pagination = data.pagination
         }
+
+        this.setState({
+          notificationList,
+          pagination,
+          nextOffset,
+          isFetchingFirstNotifications: false,
+          fetchNotificationsError: null,
+        })
       })
       .catch((error) => {
         console.error(error)

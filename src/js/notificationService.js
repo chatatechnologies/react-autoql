@@ -526,12 +526,10 @@ export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
     },
   })
 
-  const { id, ...data } = dataAlert
-
   const url = `${domain}/autoql/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
 
   return axiosInstance
-    .put(url, data)
+    .put(url, dataAlert)
     .then((response) => Promise.resolve(response))
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))
@@ -539,7 +537,7 @@ export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
 }
 
 // ----------------- POST --------------------
-export const createDataAlert = ({ rule, domain, apiKey, token }) => {
+export const createDataAlert = ({ dataAlert, domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
@@ -551,9 +549,7 @@ export const createDataAlert = ({ rule, domain, apiKey, token }) => {
     },
   })
 
-  const data = {
-    ...rule,
-  }
+  const { id, ...data } = dataAlert
 
   const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
