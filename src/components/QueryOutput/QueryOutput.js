@@ -70,7 +70,7 @@ import {
   getMultiSeriesColumnIndex,
   getDateColumnIndex,
   getStringColumnIndices,
-  hasMultiSeriesColumn,
+  shouldPlotMultiSeries,
   isColumnDateType,
 } from './columnHelpers.js'
 
@@ -972,7 +972,7 @@ export default class QueryOutput extends React.Component {
   getChartTableData = (newTableData) => {
     let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
 
-    if (hasMultiSeriesColumn(this.tableColumns)) {
+    if (shouldPlotMultiSeries(this.tableColumns)) {
       return this.getMultiSeriesData(this.tableColumns, tableData)
     }
 
@@ -984,7 +984,7 @@ export default class QueryOutput extends React.Component {
   }
 
   getChartTableColumns = () => {
-    if (hasMultiSeriesColumn(this.tableColumns)) {
+    if (shouldPlotMultiSeries(this.tableColumns)) {
       return this.getMultiSeriesColumns(this.tableColumns)
     }
 
@@ -1005,7 +1005,7 @@ export default class QueryOutput extends React.Component {
       const tableData = this.getChartTableData(newTableData)
       this.chartTableData = tableData
 
-      if (!this.dataConfig || hasMultiSeriesColumn(this.tableColumns)) {
+      if (!this.dataConfig || shouldPlotMultiSeries(this.tableColumns)) {
         this.setColumnIndices()
       }
 

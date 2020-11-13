@@ -7,7 +7,7 @@ import { LIGHT_THEME, DARK_THEME } from './Themes'
 
 import {
   getColumnTypeAmounts,
-  hasMultiSeriesColumn,
+  shouldPlotMultiSeries,
 } from '../components/QueryOutput/columnHelpers'
 
 export const onlyUnique = (value, index, self) => {
@@ -457,7 +457,7 @@ export const supports2DCharts = (columns) => {
 }
 
 export const supportsPieChart = (columns, chartData) => {
-  if (hasMultiSeriesColumn(columns)) {
+  if (shouldPlotMultiSeries(columns)) {
     return false
   }
 
