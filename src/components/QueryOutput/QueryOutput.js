@@ -216,72 +216,76 @@ export default class QueryOutput extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    // If data config was changed by a prop, change data config here
-    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
-      if (this.props.dataConfig) {
-        this.dataConfig = _cloneDeep(this.props.dataConfig)
-      } else {
-        this.setColumnIndices()
+    try {
+      // If data config was changed by a prop, change data config here
+      if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
+        if (this.props.dataConfig) {
+          this.dataConfig = _cloneDeep(this.props.dataConfig)
+        } else {
+          this.setColumnIndices()
+        }
       }
-    }
 
-    // If data config was changed here, tell the parent
-    if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
-      this.props.onDataConfigChange(this.dataConfig)
-    }
+      // If data config was changed here, tell the parent
+      if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
+        this.props.onDataConfigChange(this.dataConfig)
+      }
 
-    // If columns changed, we need to reset the column data config
-    if (!_isEqual(this.props.columns, prevProps.columns)) {
-      this.props.onDataConfigChange({})
-    }
+      // If columns changed, we need to reset the column data config
+      if (!_isEqual(this.props.columns, prevProps.columns)) {
+        this.props.onDataConfigChange({})
+      }
 
-    if (
-      _isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
+      if (
+        _isEqual(
+          getThemeConfig(this.props.themeConfig),
+          getThemeConfig(prevProps.themeConfig)
+        )
+      ) {
+        setCSSVars(getThemeConfig(this.props.themeConfig))
+      }
 
-    if (this.props.queryResponse && !prevProps.queryResponse) {
-      this.setResponseData(this.state.displayType)
-      this.forceUpdate()
-    }
+      if (this.props.queryResponse && !prevProps.queryResponse) {
+        this.setResponseData(this.state.displayType)
+        this.forceUpdate()
+      }
 
-    // Initial display type has been determined, set the table and chart data now
-    if (!prevState.displayType && this.state.displayType) {
-      this.props.onDisplayTypeUpdate()
-      this.setResponseData(this.state.displayType)
-      this.forceUpdate()
-      ReactTooltip.hide()
-    }
+      // Initial display type has been determined, set the table and chart data now
+      if (!prevState.displayType && this.state.displayType) {
+        this.props.onDisplayTypeUpdate()
+        this.setResponseData(this.state.displayType)
+        this.forceUpdate()
+        ReactTooltip.hide()
+      }
 
-    // Detected a display type change from props. We must make sure
-    // the display type is valid before updating the state
-    if (
-      this.props.displayType &&
-      this.props.displayType !== prevProps.displayType &&
-      this.supportedDisplayTypes &&
-      this.supportedDisplayTypes.includes(this.props.displayType)
-    ) {
-      this.tableID = uuid.v4()
-      this.pivotTableID = uuid.v4()
-      this.setState({ displayType: this.props.displayType })
-    }
+      // Detected a display type change from props. We must make sure
+      // the display type is valid before updating the state
+      if (
+        this.props.displayType &&
+        this.props.displayType !== prevProps.displayType &&
+        this.supportedDisplayTypes &&
+        this.supportedDisplayTypes.includes(this.props.displayType)
+      ) {
+        this.tableID = uuid.v4()
+        this.pivotTableID = uuid.v4()
+        this.setState({ displayType: this.props.displayType })
+      }
 
-    // Do not allow scrolling while the context menu is open
-    if (!prevState.isContextMenuOpen && this.state.isContextMenuOpen) {
-      disableScroll.on()
-    } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
-      disableScroll.off()
-    }
+      // Do not allow scrolling while the context menu is open
+      if (!prevState.isContextMenuOpen && this.state.isContextMenuOpen) {
+        disableScroll.on()
+      } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
+        disableScroll.off()
+      }
 
-    if (this.props.optionsToolbarRef) {
-      this.props.optionsToolbarRef.forceUpdate()
-    }
+      if (this.props.optionsToolbarRef) {
+        this.props.optionsToolbarRef.forceUpdate()
+      }
 
-    ReactTooltip.rebuild()
+      ReactTooltip.rebuild()
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   componentWillUnmount = () => {
@@ -394,11 +398,22 @@ export default class QueryOutput extends React.Component {
 
       if (dateColumnIndex >= 0) {
         let sortedData = [...data].sort((a, b) => {
-          const aDate = dayjs(a[dateColumnIndex]).unix()
-          const bDate = dayjs(b[dateColumnIndex]).unix()
+          const aValue = a[dateColumnIndex]
+          const bValue = b[dateColumnIndex]
 
+          // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+          let aDate = Number(aValue)
+          let bDate = Number(bValue)
+
+          // If one is not a number, use dayjs to format
+          if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+            aDate = dayjs(aValue).unix()
+            bDate = dayjs(bValue).unix()
+          }
+
+          // Finally if all else fails, just compare the 2 values directly
           if (!aDate || !bDate) {
-            return b - a
+            return bValue - aValue
           }
 
           return bDate - aDate
@@ -409,6 +424,7 @@ export default class QueryOutput extends React.Component {
 
       return data
     } catch (error) {
+      console.error(error)
       return undefined
     }
   }
