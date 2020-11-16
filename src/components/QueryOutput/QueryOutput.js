@@ -388,6 +388,25 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.length > 1
   }
 
+  dateSortFn = (a, b) => {
+    // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+    let aDate = Number(a)
+    let bDate = Number(b)
+
+    // If one is not a number, use dayjs to format
+    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+      aDate = dayjs(a).unix()
+      bDate = dayjs(b).unix()
+    }
+
+    // Finally if all else fails, just compare the 2 values directly
+    if (!aDate || !bDate) {
+      return b - a
+    }
+
+    return bDate - aDate
+  }
+
   sortTableDataByDate = (data) => {
     try {
       if (!data || typeof data !== 'object') {
@@ -397,27 +416,9 @@ export default class QueryOutput extends React.Component {
       const dateColumnIndex = getDateColumnIndex(this.tableColumns)
 
       if (dateColumnIndex >= 0) {
-        let sortedData = [...data].sort((a, b) => {
-          const aValue = a[dateColumnIndex]
-          const bValue = b[dateColumnIndex]
-
-          // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
-          let aDate = Number(aValue)
-          let bDate = Number(bValue)
-
-          // If one is not a number, use dayjs to format
-          if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
-            aDate = dayjs(aValue).unix()
-            bDate = dayjs(bValue).unix()
-          }
-
-          // Finally if all else fails, just compare the 2 values directly
-          if (!aDate || !bDate) {
-            return bValue - aValue
-          }
-
-          return bDate - aDate
-        })
+        let sortedData = [...data].sort((a, b) =>
+          this.dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+        )
 
         return sortedData
       }
@@ -1206,16 +1207,7 @@ export default class QueryOutput extends React.Component {
 
   setSorterFunction = (col) => {
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
-      return function(a, b, aRow, bRow, column, dir, sorterParams) {
-        const aDate = dayjs(a).unix()
-        const bDate = dayjs(b).unix()
-
-        if (!aDate || !bDate) {
-          return a - b
-        }
-
-        return aDate - bDate
-      }
+      return (a, b) => this.dateSortFn(a, b)
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
       // certain columns. This explicitly sets the sorter so
