@@ -34,12 +34,14 @@ export default class Line extends Component {
       data.forEach((d, i) => {
         const d2 = data[i + 1]
         const xShift = xScale.bandwidth() / 2
+        const minValue = yScale.domain()[0]
+
         allLines.push(
           <line
             key={`line-${d[labelValue]}-${series}`}
             className="line"
             x1={xScale(d[labelValue]) + xShift}
-            y1={yScale(d.cells[series].value || 0)}
+            y1={yScale(d.cells[series].value || minValue)}
             x2={
               d2
                 ? xScale(d2[labelValue]) + xShift
@@ -47,8 +49,8 @@ export default class Line extends Component {
             }
             y2={
               d2
-                ? yScale(d2.cells[series].value || 0)
-                : yScale(d.cells[series].value || 0)
+                ? yScale(d2.cells[series].value || minValue)
+                : yScale(d.cells[series].value || minValue)
             }
             stroke={d.cells[series].color}
             opacity={0.7}
