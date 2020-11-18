@@ -1,3 +1,28 @@
+# [3.0.0](https://github.com/chatatechnologies/react-autoql/compare/v2.2.0...v3.0.0) (2020-11-18)
+
+
+### Bug Fixes
+
+* **tables:** fix sorting for columns with just year ([61aaab6](https://github.com/chatatechnologies/react-autoql/commit/61aaab677fd13e641b1909532f5cb37aac38c839))
+* fix bug where multi series was overwriting values instead of aggregating ([56fd37f](https://github.com/chatatechnologies/react-autoql/commit/56fd37fc87eb4e60eeea9f15b1d1e4230391dd21))
+* fix date pivot data generation ([63be2de](https://github.com/chatatechnologies/react-autoql/commit/63be2de6b49d22ce41dc5f61acdde15380ef3579))
+* fix multiseries drilldowns ([03be3b1](https://github.com/chatatechnologies/react-autoql/commit/03be3b169ea2cd6c3ef6cfd27166a9e89752c901))
+* ignore multi_series param for groupable queries ([9a66881](https://github.com/chatatechnologies/react-autoql/commit/9a668810e8d87ed7093ee80b6bcc106d82108f3b))
+* **filtering:** fix filter tags after changing visualization ([f306627](https://github.com/chatatechnologies/react-autoql/commit/f3066275cbed241fa9bd3490f8a878f9447b6325))
+* **tables:** fix bug where data messenger crashes when going back to a filtered table from a chart ([2fc7a41](https://github.com/chatatechnologies/react-autoql/commit/2fc7a418c554e00ca7e7063a457e00a0f5fda99c))
+
+
+### Features
+
+* **charts:** chart data as multiple series for queries with "IN" clause ([dcfcacc](https://github.com/chatatechnologies/react-autoql/commit/dcfcacc3b1502cda74fea2266827ae7867e27ac6))
+* **notifications:** fetch new notification when one is deleted ([4979ec4](https://github.com/chatatechnologies/react-autoql/commit/4979ec4f4a555fed9423733c4a9f275fcb97f95c))
+* **notifications:** rename NotificationModal to DataAlertModal ([43a6d91](https://github.com/chatatechnologies/react-autoql/commit/43a6d9118a8e0956d657f99997c12f1900381d2a))
+
+
+### BREAKING CHANGES
+
+* **notifications:** <NotificationModal/> no longer exists. It is now <DataAlertModal/>
+
 # [2.2.0](https://github.com/chatatechnologies/react-autoql/compare/v2.1.1...v2.2.0) (2020-11-09)
 
 
