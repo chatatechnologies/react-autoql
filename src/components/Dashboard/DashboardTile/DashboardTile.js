@@ -7,7 +7,6 @@ import _cloneDeep from 'lodash.clonedeep'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
-import 'react-splitter-layout/lib/index.css'
 
 import { QueryOutput } from '../../QueryOutput'
 import { VizToolbar } from '../../VizToolbar'

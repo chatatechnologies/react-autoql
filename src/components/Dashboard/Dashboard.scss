@@ -8,15 +8,36 @@
   padding-bottom: 200px;
 }
 
-.react-autoql-dashboard-drilldown-original {
-  flex: 0 0 47vh;
-  height: 47vh;
-  padding-bottom: 20px;
-}
-.react-autoql-dashboard-drilldown-table {
-  flex: 1;
-  height: 30vh;
-  overflow: hidden;
+.dashboard-drilldown-modal {
+  .ReactModal__Content {
+    margin-top: 20px !important;
+    max-height: 93vh !important;
+  }
+
+  .react-autoql-modal-body {
+    padding: 0;
+  }
+
+  .react-autoql-table {
+    opacity: 0.9;
+    font-size: 11px;
+  }
+
+  .splitter-layout {
+    height: calc(100% - 55px);
+  }
+
+  .react-autoql-dashboard-drilldown-original {
+    padding: 20px;
+    padding-bottom: 10px;
+    height: 100%;
+  }
+  .react-autoql-dashboard-drilldown-table {
+    padding: 20px;
+    padding-top: 10px;
+    overflow: hidden;
+    height: 100%;
+  }
 }
 
 .empty-dashboard-message-container {
