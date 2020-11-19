@@ -26,6 +26,8 @@
   max-width: 90vw;
   max-height: calc(100vh - 90px);
 
+  top: unset !important;
+
   input.react-autoql-input,
   textarea.react-autoql-input,
   textarea {
