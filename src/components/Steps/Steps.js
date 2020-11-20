@@ -7,6 +7,7 @@ import _isEqual from 'lodash.isequal'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Steps.scss'
 
@@ -155,54 +156,56 @@ export default class Steps extends React.Component {
     }
 
     return (
-      <div
-        id={`react-autoql-steps-${this.COMPONENT_KEY}`}
-        className="react-autoql-steps-container"
-        data-test="react-autoql-steps"
-      >
-        {this.props.steps.map((step, i) => {
-          return (
-            <div
-              key={`react-autoql-steps-${this.COMPONENT_KEY}-${i}`}
-              style={{ overflow: 'hidden' }}
-            >
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-steps-${this.COMPONENT_KEY}`}
+          className="react-autoql-steps-container"
+          data-test="react-autoql-steps"
+        >
+          {this.props.steps.map((step, i) => {
+            return (
               <div
-                className={`react-autoql-step-container
+                key={`react-autoql-steps-${this.COMPONENT_KEY}-${i}`}
+                style={{ overflow: 'hidden' }}
+              >
+                <div
+                  className={`react-autoql-step-container
                 ${this.getStepStatus(step)}
                 ${
                   this.props.collapsible && i === this.state.activeStep
                     ? ' active'
                     : ''
                 }`}
-                data-test={`react-autoql-step-container-${i}`}
-              >
-                <div
-                  className="react-autoql-step-title-container"
-                  data-test={`react-autoql-step-title-${i}`}
-                  onClick={() => this.onStepTitleClick(i, step)}
+                  data-test={`react-autoql-step-container-${i}`}
                 >
-                  <div className="react-autoql-step-title">{step.title}</div>
-                </div>
-                <div
-                  id={`react-autoql-step-content-${this.COMPONENT_KEY}-${i}`}
-                  className="react-autoql-step-content-container"
-                >
-                  <div className="react-autoql-step-subtitle">
-                    {step.subtitle || null}
+                  <div
+                    className="react-autoql-step-title-container"
+                    data-test={`react-autoql-step-title-${i}`}
+                    onClick={() => this.onStepTitleClick(i, step)}
+                  >
+                    <div className="react-autoql-step-title">{step.title}</div>
                   </div>
                   <div
-                    className="react-autoql-step-content"
-                    data-test={`react-autoql-step-content-${i}`}
+                    id={`react-autoql-step-content-${this.COMPONENT_KEY}-${i}`}
+                    className="react-autoql-step-content-container"
                   >
-                    {step.content}
+                    <div className="react-autoql-step-subtitle">
+                      {step.subtitle || null}
+                    </div>
+                    <div
+                      className="react-autoql-step-content"
+                      data-test={`react-autoql-step-content-${i}`}
+                    >
+                      {step.content}
+                    </div>
                   </div>
+                  <div className="react-autoql-step-dot">{i + 1}</div>
                 </div>
-                <div className="react-autoql-step-dot">{i + 1}</div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

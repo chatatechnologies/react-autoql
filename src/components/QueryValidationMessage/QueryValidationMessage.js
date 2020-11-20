@@ -6,6 +6,7 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import { Icon } from '../Icon'
 import { Select } from '../Select'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
@@ -364,9 +365,11 @@ export default class QueryValidationMessage extends React.Component {
 
   render = () => {
     return (
-      <div className="react-autoql-response-content-container">
-        {this.renderResponse()}
-      </div>
+      <ErrorBoundary>
+        <div className="react-autoql-response-content-container">
+          {this.renderResponse()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

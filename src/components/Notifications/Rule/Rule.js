@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
@@ -8,6 +8,7 @@ import _get from 'lodash.get'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
 import { Icon } from '../../Icon'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -350,22 +351,24 @@ export default class Rule extends React.Component {
 
   renderReadOnlyRule = () => {
     return (
-      <div>
-        <span className="read-only-rule-term">{`${capitalizeFirstChar(
-          this.state.input1Value
-        )}`}</span>
-        <span className="read-only-rule-term">{`${this.renderConditionOperator(
-          this.state.conditionSelectValue
-        )}`}</span>
-        {this.state.conditionSelectValue !== 'EXISTS' && (
-          <span className="read-only-rule-term">
-            {capitalizeFirstChar(this.state.input2Value)}
-          </span>
-        )}
-        {this.props.andOrValue && (
-          <span className="read-only-rule-term">{this.props.andOrValue}</span>
-        )}
-      </div>
+      <ErrorBoundary>
+        <div>
+          <span className="read-only-rule-term">{`${capitalizeFirstChar(
+            this.state.input1Value
+          )}`}</span>
+          <span className="read-only-rule-term">{`${this.renderConditionOperator(
+            this.state.conditionSelectValue
+          )}`}</span>
+          {this.state.conditionSelectValue !== 'EXISTS' && (
+            <span className="read-only-rule-term">
+              {capitalizeFirstChar(this.state.input2Value)}
+            </span>
+          )}
+          {this.props.andOrValue && (
+            <span className="read-only-rule-term">{this.props.andOrValue}</span>
+          )}
+        </div>
+      </ErrorBoundary>
     )
   }
 
@@ -380,130 +383,136 @@ export default class Rule extends React.Component {
 
   renderRule = () => {
     return (
-      <div
-        className="react-autoql-notification-rule-container"
-        data-test="rule"
-      >
-        <div className="react-autoql-rule-input">
-          <Input
-            placeholder="Type a query"
-            value={this.state.input1Value}
-            onChange={(e) => this.setState({ input1Value: e.target.value })}
-            onBlur={this.validateFirstTerm}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                this.validateFirstTerm()
-              }
-            }}
-          />
-          {!this.state.isFirstTermValid && this.renderValidationError()}
-          {
-            // Keep for implementing autocomplete later
-            // <div className="react-autoql-bar-container">
-            //   <Autosuggest
-            //   className="auto-complete-chata"
-            //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-            //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-            //   getSuggestionValue={this.userSelectedSuggestionHandler}
-            //   suggestions={this.state.suggestions}
-            //   ref={ref => {
-            //     this.autoSuggest = ref
-            //   }}
-            //   renderSuggestion={suggestion => (
-            //     <Fragment>{suggestion.name}</Fragment>
-            //   )}
-            //   inputProps={{
-            //     className: 'react-autoql-rule-input react-autoql-input',
-            //     // icon:"react-autoql-bubbles-outlined"
-            //     placeholder: 'query',
-            //     value: this.state.input1Value,
-            //     onChange: e => this.setState({ input1Value: e.target.value })
-            //   }}
-            // />
-            // </div>
-          }
-        </div>
-        <Select
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          options={[
-            { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
-            { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
-            { value: 'EQUALS', label: '=', tooltip: 'Equals' },
-            { value: 'EXISTS', label: <span>&#8707;</span>, tooltip: 'Exists' },
-          ]}
-          value={this.state.conditionSelectValue}
-          className="react-autoql-rule-condition-select"
-          onChange={(value) => {
-            this.setState({ conditionSelectValue: value })
-          }}
-        />
+      <ErrorBoundary>
         <div
-          className={`react-autoql-rule-second-input-container${
-            this.state.conditionSelectValue === 'EXISTS' ? ' hidden' : ''
-          }`}
+          className="react-autoql-notification-rule-container"
+          data-test="rule"
         >
           <div className="react-autoql-rule-input">
             <Input
-              placeholder="Type a query or number"
-              value={this.state.input2Value}
-              onChange={(e) => this.setState({ input2Value: e.target.value })}
-              onBlur={this.validateSecondTerm}
+              placeholder="Type a query"
+              value={this.state.input1Value}
+              onChange={(e) => this.setState({ input1Value: e.target.value })}
+              onBlur={this.validateFirstTerm}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  this.validateSecondTerm()
+                  this.validateFirstTerm()
                 }
               }}
             />
-            {!this.state.isSecondTermValid && this.renderValidationError()}
+            {!this.state.isFirstTermValid && this.renderValidationError()}
             {
               // Keep for implementing autocomplete later
-              // <Input
-              //   className="react-autoql-rule-input"
-              //   icon="react-autoql-bubbles-outlined"
-              //   type={inputType}
-              //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
-              //   value={this.state.input2Value}
-              //   onChange={e => this.setState({ input2Value: e.target.value })}
-              // />
-              // <Select
-              //   options={[
-              //     {
-              //       value: 'query',
-              //       label: (
-              //         <Icon
-              //           type="react-autoql-bubbles-outlined"
-              //           className="rule-input-select-bubbles-icon"
-              //         />
-              //       ),
-              //       tooltip: 'Query'
-              //     },
-              //     {
-              //       value: 'constant',
-              //       // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
-              //       label: <div style={{ fontSize: '9px' }}>123</div>,
-              //       tooltip: 'Constant'
-              //     }
-              //     // { value: 'equation', label: 'Eq' }
-              //   ]}
-              //   value={this.state.secondTermType}
-              //   className="react-autoql-rule-term-type-selector"
-              //   onChange={value => {
-              //     this.setState({ secondTermType: value })
+              // <div className="react-autoql-bar-container">
+              //   <Autosuggest
+              //   className="auto-complete-chata"
+              //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+              //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+              //   getSuggestionValue={this.userSelectedSuggestionHandler}
+              //   suggestions={this.state.suggestions}
+              //   ref={ref => {
+              //     this.autoSuggest = ref
+              //   }}
+              //   renderSuggestion={suggestion => (
+              //     <Fragment>{suggestion.name}</Fragment>
+              //   )}
+              //   inputProps={{
+              //     className: 'react-autoql-rule-input react-autoql-input',
+              //     // icon:"react-autoql-bubbles-outlined"
+              //     placeholder: 'query',
+              //     value: this.state.input1Value,
+              //     onChange: e => this.setState({ input1Value: e.target.value })
               //   }}
               // />
+              // </div>
             }
           </div>
+          <Select
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            options={[
+              { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
+              { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
+              { value: 'EQUALS', label: '=', tooltip: 'Equals' },
+              {
+                value: 'EXISTS',
+                label: <span>&#8707;</span>,
+                tooltip: 'Exists',
+              },
+            ]}
+            value={this.state.conditionSelectValue}
+            className="react-autoql-rule-condition-select"
+            onChange={(value) => {
+              this.setState({ conditionSelectValue: value })
+            }}
+          />
+          <div
+            className={`react-autoql-rule-second-input-container${
+              this.state.conditionSelectValue === 'EXISTS' ? ' hidden' : ''
+            }`}
+          >
+            <div className="react-autoql-rule-input">
+              <Input
+                placeholder="Type a query or number"
+                value={this.state.input2Value}
+                onChange={(e) => this.setState({ input2Value: e.target.value })}
+                onBlur={this.validateSecondTerm}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    this.validateSecondTerm()
+                  }
+                }}
+              />
+              {!this.state.isSecondTermValid && this.renderValidationError()}
+              {
+                // Keep for implementing autocomplete later
+                // <Input
+                //   className="react-autoql-rule-input"
+                //   icon="react-autoql-bubbles-outlined"
+                //   type={inputType}
+                //   placeholder={inputType === 'number' ? 'Constant' : 'Query'}
+                //   value={this.state.input2Value}
+                //   onChange={e => this.setState({ input2Value: e.target.value })}
+                // />
+                // <Select
+                //   options={[
+                //     {
+                //       value: 'query',
+                //       label: (
+                //         <Icon
+                //           type="react-autoql-bubbles-outlined"
+                //           className="rule-input-select-bubbles-icon"
+                //         />
+                //       ),
+                //       tooltip: 'Query'
+                //     },
+                //     {
+                //       value: 'constant',
+                //       // label: <Icon type="numbers" style={{ fontSize: '20px' }} />
+                //       label: <div style={{ fontSize: '9px' }}>123</div>,
+                //       tooltip: 'Constant'
+                //     }
+                //     // { value: 'equation', label: 'Eq' }
+                //   ]}
+                //   value={this.state.secondTermType}
+                //   className="react-autoql-rule-term-type-selector"
+                //   onChange={value => {
+                //     this.setState({ secondTermType: value })
+                //   }}
+                // />
+              }
+            </div>
+          </div>
+          <Icon
+            className="react-autoql-rule-delete-btn"
+            type="close"
+            data-tip="Remove Condition"
+            data-for="notification-expression-tooltip"
+            onClick={() => {
+              this.props.onDelete(this.props.ruleId)
+            }}
+          />
         </div>
-        <Icon
-          className="react-autoql-rule-delete-btn"
-          type="close"
-          data-tip="Remove Condition"
-          data-for="notification-expression-tooltip"
-          onClick={() => {
-            this.props.onDelete(this.props.ruleId)
-          }}
-        />
-      </div>
+      </ErrorBoundary>
     )
   }
 

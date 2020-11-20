@@ -27,6 +27,7 @@ import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 import { OptionsToolbar } from '../OptionsToolbar'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
 import {
@@ -471,31 +472,33 @@ export default class ChatMessage extends React.Component {
     const maxMessageHeight = this.getMaxMessageheight()
 
     return (
-      <div
-        id={`message-${this.props.id}`}
-        className={`chat-single-message-container
-          ${this.props.isResponse ? ' response' : ' request'}`}
-        style={{
-          maxHeight: maxMessageHeight,
-          height: messageHeight,
-        }}
-        data-test="chat-message"
-      >
+      <ErrorBoundary>
         <div
-          className={`chat-message-bubble
+          id={`message-${this.props.id}`}
+          className={`chat-single-message-container
+          ${this.props.isResponse ? ' response' : ' request'}`}
+          style={{
+            maxHeight: maxMessageHeight,
+            height: messageHeight,
+          }}
+          data-test="chat-message"
+        >
+          <div
+            className={`chat-message-bubble
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
-          style={{
-            minWidth: this.isTableResponse() ? '317px' : undefined,
-          }}
-        >
-          {this.renderContent(chartWidth, chartHeight)}
-          {this.props.isDataMessengerOpen && this.renderRightToolbar()}
-          {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
-          {this.renderDataLimitWarning()}
+            style={{
+              minWidth: this.isTableResponse() ? '317px' : undefined,
+            }}
+          >
+            {this.renderContent(chartWidth, chartHeight)}
+            {this.props.isDataMessengerOpen && this.renderRightToolbar()}
+            {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
+            {this.renderDataLimitWarning()}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     )
   }
 }

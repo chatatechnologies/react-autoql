@@ -5,6 +5,7 @@ import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Checkbox } from '../Checkbox'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
 import { getThemeConfig, themeConfigDefault } from '../../props/defaults'
@@ -96,85 +97,87 @@ export default class SelectableList extends React.Component {
     const items = _cloneDeep(this.props.items)
 
     return (
-      <div
-        className="react-autoql-selectable-list"
-        data-test="selectable-list"
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
-      >
-        {!!_get(this.props.columns, 'length') && (
-          <div className="col-visibility-header">
-            {this.props.columns.map((col, index) => {
-              if (index === this.props.columns.length - 1) {
-                const allItemsChecked = items.every((col) => col.checked)
-                return (
-                  <div key={`list-header-${uuid.v4()}`}>
-                    {col.name}
-                    <Checkbox
-                      themeConfig={getThemeConfig(this.props.themeConfig)}
-                      checked={allItemsChecked}
-                      style={{ marginLeft: '10px' }}
-                      onChange={() => {
-                        if (allItemsChecked) {
-                          items.forEach((item) => {
-                            item.checked = false
-                          })
-                        } else {
-                          items.forEach((item) => {
-                            item.checked = true
-                          })
-                        }
-                        this.props.onChange(items)
-                      }}
-                    />
-                  </div>
-                )
-              }
-              return <div key={`list-header-${uuid.v4()}`}>{col.name}</div>
-            })}
-          </div>
-        )}
-        {items.map((item, index) => {
-          return (
-            <div
-              key={`list-item-${uuid.v4()}`}
-              className={`react-autoql-list-item${
-                this.state.selected.includes(index) ? ' selected' : ''
-              }`}
-              onClick={(e) => {
-                if (e.shiftKey) {
-                  this.handleShiftSelect(index)
-                } else if (e.ctrlKey || e.metaKey) {
-                  this.handleCtrlSelect(index)
-                } else {
-                  this.props.onSelect([index])
-                  this.setState({ selected: [index] })
+      <ErrorBoundary>
+        <div
+          className="react-autoql-selectable-list"
+          data-test="selectable-list"
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+        >
+          {!!_get(this.props.columns, 'length') && (
+            <div className="col-visibility-header">
+              {this.props.columns.map((col, index) => {
+                if (index === this.props.columns.length - 1) {
+                  const allItemsChecked = items.every((col) => col.checked)
+                  return (
+                    <div key={`list-header-${uuid.v4()}`}>
+                      {col.name}
+                      <Checkbox
+                        themeConfig={getThemeConfig(this.props.themeConfig)}
+                        checked={allItemsChecked}
+                        style={{ marginLeft: '10px' }}
+                        onChange={() => {
+                          if (allItemsChecked) {
+                            items.forEach((item) => {
+                              item.checked = false
+                            })
+                          } else {
+                            items.forEach((item) => {
+                              item.checked = true
+                            })
+                          }
+                          this.props.onChange(items)
+                        }}
+                      />
+                    </div>
+                  )
                 }
-              }}
-            >
-              <div>{item.content} </div>
-              <div>
-                <Checkbox
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
-                  checked={item.checked}
-                  onChange={() => {
-                    if (
-                      this.state.selected.length > 1 &&
-                      this.state.selected.includes(index)
-                    ) {
-                      this.handleMultipleCheck(items)
-                    } else {
-                      item.checked = !item.checked
-                      this.props.onChange(items)
-                    }
-                  }}
-                />
-              </div>
+                return <div key={`list-header-${uuid.v4()}`}>{col.name}</div>
+              })}
             </div>
-          )
-        })}
-      </div>
+          )}
+          {items.map((item, index) => {
+            return (
+              <div
+                key={`list-item-${uuid.v4()}`}
+                className={`react-autoql-list-item${
+                  this.state.selected.includes(index) ? ' selected' : ''
+                }`}
+                onClick={(e) => {
+                  if (e.shiftKey) {
+                    this.handleShiftSelect(index)
+                  } else if (e.ctrlKey || e.metaKey) {
+                    this.handleCtrlSelect(index)
+                  } else {
+                    this.props.onSelect([index])
+                    this.setState({ selected: [index] })
+                  }
+                }}
+              >
+                <div>{item.content} </div>
+                <div>
+                  <Checkbox
+                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    checked={item.checked}
+                    onChange={() => {
+                      if (
+                        this.state.selected.length > 1 &&
+                        this.state.selected.includes(index)
+                      ) {
+                        this.handleMultipleCheck(items)
+                      } else {
+                        item.checked = !item.checked
+                        this.props.onChange(items)
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

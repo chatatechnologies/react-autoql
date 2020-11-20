@@ -1,9 +1,10 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 
 import { Spinner } from '../Spinner'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Button.scss'
 
@@ -67,7 +68,7 @@ export default class Button extends React.Component {
     const isDisabled = this.props.loading || this.props.disabled
 
     return (
-      <Fragment>
+      <ErrorBoundary>
         <button
           className={`react-autoql-btn
           ${this.props.className || ''}
@@ -92,7 +93,7 @@ export default class Button extends React.Component {
           delayShow={500}
           place="top"
         />
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

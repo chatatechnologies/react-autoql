@@ -18,6 +18,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng, awaitTimeout } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
@@ -895,40 +896,42 @@ export default class ChataChart extends Component {
     }
 
     return (
-      <div
-        id={`react-autoql-chart-${this.CHART_ID}`}
-        className={`react-autoql-chart-container ${
-          this.state.isLoading ? 'loading' : ''
-        }`}
-        data-test="react-autoql-chart"
-      >
-        <svg
-          ref={(r) => (this.chartRef = r)}
-          xmlns="http://www.w3.org/2000/svg"
-          width={this.props.width}
-          height={this.props.height}
-          style={{
-            fontFamily: _get(
-              getThemeConfig(this.props.themeConfig),
-              'font-family',
-              'sans-serif'
-            ),
-            color: _get(
-              getThemeConfig(this.props.themeConfig),
-              'text-color-primary',
-              'inherit'
-            ),
-            background: _get(
-              getThemeConfig(this.props.themeConfig),
-              'background-color',
-              'inherit'
-            ),
-          }}
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-chart-${this.CHART_ID}`}
+          className={`react-autoql-chart-container ${
+            this.state.isLoading ? 'loading' : ''
+          }`}
+          data-test="react-autoql-chart"
         >
-          <g className="react-autoql-chart-content-container">{chart}</g>
-        </svg>
-        {this.renderAxisSelectors()}
-      </div>
+          <svg
+            ref={(r) => (this.chartRef = r)}
+            xmlns="http://www.w3.org/2000/svg"
+            width={this.props.width}
+            height={this.props.height}
+            style={{
+              fontFamily: _get(
+                getThemeConfig(this.props.themeConfig),
+                'font-family',
+                'sans-serif'
+              ),
+              color: _get(
+                getThemeConfig(this.props.themeConfig),
+                'text-color-primary',
+                'inherit'
+              ),
+              background: _get(
+                getThemeConfig(this.props.themeConfig),
+                'background-color',
+                'inherit'
+              ),
+            }}
+          >
+            <g className="react-autoql-chart-content-container">{chart}</g>
+          </svg>
+          {this.renderAxisSelectors()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

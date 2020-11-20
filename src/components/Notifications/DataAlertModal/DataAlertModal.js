@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import uuid from 'uuid'
@@ -11,6 +11,7 @@ import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { ExpressionBuilder } from '../ExpressionBuilder'
 import { ScheduleBuilder } from '../ScheduleBuilder'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
   createDataAlert,
@@ -560,7 +561,7 @@ export default class DataAlertModal extends React.Component {
     const steps = this.getModalContent()
 
     return (
-      <Fragment>
+      <ErrorBoundary>
         <Modal
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
@@ -629,7 +630,7 @@ export default class DataAlertModal extends React.Component {
             You will no longer be notified about these changes in your data.
           </p>
         </ConfirmModal>
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

@@ -7,6 +7,7 @@ import uuid from 'uuid'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Radio.scss'
 
@@ -48,59 +49,63 @@ export default class Radio extends React.Component {
 
   renderButtonType = () => {
     return (
-      <div
-        className="react-autoql-radio-btn-container"
-        data-test="react-autoql-radio"
-      >
-        {this.props.options.map((option, i) => {
-          let isActive = this.props.value === option
-          if (this.props.multiSelect) {
-            isActive = this.props.value.includes(option)
-          }
-          return (
-            <div
-              key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-              className={`react-autoql-radio-btn
+      <ErrorBoundary>
+        <div
+          className="react-autoql-radio-btn-container"
+          data-test="react-autoql-radio"
+        >
+          {this.props.options.map((option, i) => {
+            let isActive = this.props.value === option
+            if (this.props.multiSelect) {
+              isActive = this.props.value.includes(option)
+            }
+            return (
+              <div
+                key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+                className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}`}
-              onClick={() => this.props.onChange(option)}
-            >
-              {option}
-            </div>
-          )
-        })}
-      </div>
+                onClick={() => this.props.onChange(option)}
+              >
+                {option}
+              </div>
+            )
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 
   renderOriginalType = () => {
     return (
-      <div
-        className="react-autoql-radio-btn-container"
-        data-test="react-autoql-radio"
-      >
-        {this.props.options.map((option, i) => {
-          let isActive = this.props.value === option
-          if (this.props.multiSelect) {
-            isActive = this.props.value.includes(option)
-          }
-          return (
-            <p key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
-              <input
-                id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-                name={`react-autoql-radio-${this.COMPONENT_KEY}`}
-                type="radio"
-                defaultChecked={isActive}
-              />
-              <label
-                htmlFor={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
-                onClick={() => this.props.onChange(option)}
-              >
-                {option}
-              </label>
-            </p>
-          )
-        })}
-      </div>
+      <ErrorBoundary>
+        <div
+          className="react-autoql-radio-btn-container"
+          data-test="react-autoql-radio"
+        >
+          {this.props.options.map((option, i) => {
+            let isActive = this.props.value === option
+            if (this.props.multiSelect) {
+              isActive = this.props.value.includes(option)
+            }
+            return (
+              <p key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
+                <input
+                  id={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+                  name={`react-autoql-radio-${this.COMPONENT_KEY}`}
+                  type="radio"
+                  defaultChecked={isActive}
+                />
+                <label
+                  htmlFor={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}
+                  onClick={() => this.props.onChange(option)}
+                >
+                  {option}
+                </label>
+              </p>
+            )
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 

@@ -33,6 +33,7 @@ import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './QueryInput.scss'
 
@@ -309,77 +310,79 @@ export default class QueryInput extends React.Component {
 
   render = () => {
     return (
-      <div
-        className={`react-autoql-bar-container ${this.props.className} ${
-          this.props.autoCompletePlacement === 'below'
-            ? 'autosuggest-bottom'
-            : 'autosuggest-top'
-        }`}
-        data-test="chat-bar"
-      >
-        {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
-          <Autosuggest
-            className="auto-complete-chata"
-            onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-            onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-            getSuggestionValue={this.userSelectedSuggestionHandler}
-            suggestions={this.state.suggestions}
-            ref={(ref) => {
-              this.autoSuggest = ref
-            }}
-            renderSuggestion={(suggestion) => (
-              <Fragment>{suggestion.name}</Fragment>
-            )}
-            inputProps={{
-              className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
-                this.props.showChataIcon ? ' left-padding' : ''
-              }`,
-              placeholder: this.props.placeholder || 'Type your queries here',
-              disabled: this.props.isDisabled,
-              onChange: this.onInputChange,
-              onKeyPress: this.onKeyPress,
-              onKeyDown: this.onKeyDown,
-              value: this.state.inputValue,
-              onFocus: this.moveCaretAtEnd,
-              autoFocus: true,
-            }}
-          />
-        ) : (
-          <div className="react-autoql-chatbar-input-container">
-            <input
-              className={`react-autoql-chatbar-input${
-                this.props.showChataIcon ? ' left-padding' : ''
-              }`}
-              placeholder={this.props.placeholder || 'Type your queries here'}
-              value={this.state.inputValue}
-              onChange={(e) => this.setState({ inputValue: e.target.value })}
-              data-test="chat-bar-input"
-              onKeyPress={this.onKeyPress}
-              onKeyDown={this.onKeyDown}
-              disabled={this.props.isDisabled}
-              ref={this.setInputRef}
-              onFocus={this.moveCaretAtEnd}
-              autoFocus
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-bar-container ${this.props.className} ${
+            this.props.autoCompletePlacement === 'below'
+              ? 'autosuggest-bottom'
+              : 'autosuggest-top'
+          }`}
+          data-test="chat-bar"
+        >
+          {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
+            <Autosuggest
+              className="auto-complete-chata"
+              onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+              onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+              getSuggestionValue={this.userSelectedSuggestionHandler}
+              suggestions={this.state.suggestions}
+              ref={(ref) => {
+                this.autoSuggest = ref
+              }}
+              renderSuggestion={(suggestion) => (
+                <Fragment>{suggestion.name}</Fragment>
+              )}
+              inputProps={{
+                className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
+                  this.props.showChataIcon ? ' left-padding' : ''
+                }`,
+                placeholder: this.props.placeholder || 'Type your queries here',
+                disabled: this.props.isDisabled,
+                onChange: this.onInputChange,
+                onKeyPress: this.onKeyPress,
+                onKeyDown: this.onKeyDown,
+                value: this.state.inputValue,
+                onFocus: this.moveCaretAtEnd,
+                autoFocus: true,
+              }}
             />
-          </div>
-        )}
-        {this.props.showChataIcon && (
-          <div className="chat-bar-input-icon">
-            <Icon type="react-autoql-bubbles-outlined" />
-          </div>
-        )}
-        {this.props.showLoadingDots && this.state.isQueryRunning && (
-          <div className="input-response-loading-container">
-            <LoadingDots />
-          </div>
-        )}
-        {this.props.enableVoiceRecord && (
-          <SpeechToTextButton
-            onTranscriptChange={this.onTranscriptChange}
-            onFinalTranscript={this.onFinalTranscript}
-          />
-        )}
-      </div>
+          ) : (
+            <div className="react-autoql-chatbar-input-container">
+              <input
+                className={`react-autoql-chatbar-input${
+                  this.props.showChataIcon ? ' left-padding' : ''
+                }`}
+                placeholder={this.props.placeholder || 'Type your queries here'}
+                value={this.state.inputValue}
+                onChange={(e) => this.setState({ inputValue: e.target.value })}
+                data-test="chat-bar-input"
+                onKeyPress={this.onKeyPress}
+                onKeyDown={this.onKeyDown}
+                disabled={this.props.isDisabled}
+                ref={this.setInputRef}
+                onFocus={this.moveCaretAtEnd}
+                autoFocus
+              />
+            </div>
+          )}
+          {this.props.showChataIcon && (
+            <div className="chat-bar-input-icon">
+              <Icon type="react-autoql-bubbles-outlined" />
+            </div>
+          )}
+          {this.props.showLoadingDots && this.state.isQueryRunning && (
+            <div className="input-response-loading-container">
+              <LoadingDots />
+            </div>
+          )}
+          {this.props.enableVoiceRecord && (
+            <SpeechToTextButton
+              onTranscriptChange={this.onTranscriptChange}
+              onFinalTranscript={this.onFinalTranscript}
+            />
+          )}
+        </div>
+      </ErrorBoundary>
     )
   }
 }
