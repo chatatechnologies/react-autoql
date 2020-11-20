@@ -1,10 +1,11 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import SpeechRecognition from 'react-speech-recognition'
 
 import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './SpeechToTextButton.scss'
 
@@ -60,7 +61,7 @@ class Dictaphone extends React.Component {
     }
 
     return (
-      <Fragment>
+      <ErrorBoundary>
         <button
           id="react-autoql-voice-record-button"
           data-test="speech-to-text-btn"
@@ -80,7 +81,7 @@ class Dictaphone extends React.Component {
           effect="solid"
           delayShow={800}
         />
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

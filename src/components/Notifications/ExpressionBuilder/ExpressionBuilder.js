@@ -8,6 +8,7 @@ import ReactTooltip from 'react-tooltip'
 import { Group } from '../Group'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -299,7 +300,7 @@ export default class ExpressionBuilder extends React.Component {
 
   render = () => {
     return (
-      <Fragment>
+      <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
         <ReactTooltip
           className="react-autoql-drawer-tooltip"
@@ -308,7 +309,7 @@ export default class ExpressionBuilder extends React.Component {
           delayShow={500}
           html
         />
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

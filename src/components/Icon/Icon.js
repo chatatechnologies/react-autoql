@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Icons
 import {
@@ -333,17 +334,19 @@ export default class Icon extends React.Component {
     }
 
     return (
-      <span
-        {...nativeProps}
-        data-test="react-autoql-icon"
-        className={`react-autoql-icon ${this.props.className || ''} ${
-          this.props.type
-        }`}
-        style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
-      >
-        {icon}
-        {this.props.showBadge && <div className="react-autoql-badge" />}
-      </span>
+      <ErrorBoundary>
+        <span
+          {...nativeProps}
+          data-test="react-autoql-icon"
+          className={`react-autoql-icon ${this.props.className || ''} ${
+            this.props.type
+          }`}
+          style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
+        >
+          {icon}
+          {this.props.showBadge && <div className="react-autoql-badge" />}
+        </span>
+      </ErrorBoundary>
     )
   }
 }

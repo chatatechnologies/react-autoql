@@ -1977,7 +1977,7 @@ export default class QueryOutput extends React.Component {
     }
 
     return (
-      <Fragment>
+      <ErrorBoundary>
         <div
           key={this.COMPONENT_KEY}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
@@ -1989,7 +1989,7 @@ export default class QueryOutput extends React.Component {
           {this.renderResponse(width, height)}
         </div>
         {this.renderContextMenu()}
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

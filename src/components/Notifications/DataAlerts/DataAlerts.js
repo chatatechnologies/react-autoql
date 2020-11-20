@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
@@ -10,6 +10,7 @@ import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
   fetchDataAlerts,
@@ -322,21 +323,23 @@ export default class DataAlerts extends React.Component {
     const customAlertsList = _get(this.state, 'customAlertsList', [])
 
     return (
-      <div
-        className="react-autoql-notification-settings"
-        data-test="notification-settings"
-      >
-        {this.renderNotificationlist('project', projectAlertsList)}
-        {this.renderNotificationlist('custom', customAlertsList)}
-        {this.renderNotificationEditModal()}
-        <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="react-autoql-notification-settings-tooltip"
-          effect="solid"
-          delayShow={500}
-          html
-        />
-      </div>
+      <ErrorBoundary>
+        <div
+          className="react-autoql-notification-settings"
+          data-test="notification-settings"
+        >
+          {this.renderNotificationlist('project', projectAlertsList)}
+          {this.renderNotificationlist('custom', customAlertsList)}
+          {this.renderNotificationEditModal()}
+          <ReactTooltip
+            className="react-autoql-drawer-tooltip"
+            id="react-autoql-notification-settings-tooltip"
+            effect="solid"
+            delayShow={500}
+            html
+          />
+        </div>
+      </ErrorBoundary>
     )
   }
 }

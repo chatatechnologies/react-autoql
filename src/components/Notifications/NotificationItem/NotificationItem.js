@@ -12,6 +12,8 @@ import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
 import { ExpressionBuilder } from '../ExpressionBuilder'
 import { VizToolbar } from '../../VizToolbar'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+
 import {
   dismissNotification,
   deleteNotification,
@@ -392,18 +394,20 @@ export default class NotificationItem extends React.Component {
     const { notification } = this.props
 
     return (
-      <div
-        id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
-        key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
-        className={`react-autoql-notification-list-item
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+          key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+          className={`react-autoql-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
-      >
-        {this.renderNotificationHeader(notification)}
-        {this.renderNotificationContent(notification)}
-        {this.renderAlertColorStrip()}
-      </div>
+        >
+          {this.renderNotificationHeader(notification)}
+          {this.renderNotificationContent(notification)}
+          {this.renderAlertColorStrip()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

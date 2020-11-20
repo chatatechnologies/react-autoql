@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 
 import { Icon } from '../../Icon'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
   fetchNotificationCount,
@@ -137,25 +138,27 @@ export default class NotificationIcon extends React.Component {
 
   render = () => {
     return (
-      <div
-        className={`react-autoql-notifications-button-container ${
-          this.props.useDot ? 'dot' : ''
-        }
-        ${!this.state.count ? 'no-badge' : ''}`}
-        data-test="notification-button"
-        style={{ ...this.props.style }}
-        onClick={() => {
-          if (this.props.clearCountOnClick) {
-            this.resetCount()
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-notifications-button-container ${
+            this.props.useDot ? 'dot' : ''
           }
-        }}
-      >
-        <Icon
-          type="notification"
-          className="react-autoql-notifications-button"
-        />
-        {this.renderBadge()}
-      </div>
+        ${!this.state.count ? 'no-badge' : ''}`}
+          data-test="notification-button"
+          style={{ ...this.props.style }}
+          onClick={() => {
+            if (this.props.clearCountOnClick) {
+              this.resetCount()
+            }
+          }}
+        >
+          <Icon
+            type="notification"
+            className="react-autoql-notifications-button"
+          />
+          {this.renderBadge()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

@@ -5,6 +5,7 @@ import _isEqual from 'lodash.isequal'
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
 
 import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setCSSVars } from '../../js/Util'
 import {
@@ -94,7 +95,7 @@ export default class SpeechToTextBtn extends React.Component {
 
   render = () => {
     return (
-      <Fragment>
+      <ErrorBoundary>
         <button
           id="chata-voice-record-button"
           data-test="speech-to-text-btn"
@@ -116,7 +117,7 @@ export default class SpeechToTextBtn extends React.Component {
           effect="solid"
           delayShow={800}
         />
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

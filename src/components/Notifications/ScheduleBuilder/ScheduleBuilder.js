@@ -4,6 +4,7 @@ import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Radio } from '../../Radio'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
@@ -121,25 +122,30 @@ export default class ScheduleBuilder extends React.Component {
 
   render = () => {
     return (
-      <div className="notification-frequency-step" data-test="schedule-builder">
-        <div className="frequency-settings-container">
-          <p>You will be notified as soon as the Alert conditions are met.</p>
-          <p>Reset Alert to run:</p>
-          <Radio
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            options={['Immediately', 'Daily', 'Weekly', 'Monthly']}
-            selectionPlaceholder="Select a frequency"
-            value={this.state.frequencySelectValue}
-            type="original"
-            onChange={(option) =>
-              this.setState({ frequencySelectValue: option })
-            }
-          />
+      <ErrorBoundary>
+        <div
+          className="notification-frequency-step"
+          data-test="schedule-builder"
+        >
+          <div className="frequency-settings-container">
+            <p>You will be notified as soon as the Alert conditions are met.</p>
+            <p>Reset Alert to run:</p>
+            <Radio
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              options={['Immediately', 'Daily', 'Weekly', 'Monthly']}
+              selectionPlaceholder="Select a frequency"
+              value={this.state.frequencySelectValue}
+              type="original"
+              onChange={(option) =>
+                this.setState({ frequencySelectValue: option })
+              }
+            />
+          </div>
+          <div className="frequency-description-box-container">
+            {this.renderFrequencyDescription()}
+          </div>
         </div>
-        <div className="frequency-description-box-container">
-          {this.renderFrequencyDescription()}
-        </div>
-      </div>
+      </ErrorBoundary>
     )
   }
 }
