@@ -138,13 +138,13 @@ export default class QueryInput extends React.Component {
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
-    this.setState({ isQueryRunning: true, suggestions: [] })
+
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
+    this.setState({ isQueryRunning: true, inputValue: '' })
 
     if (query.trim()) {
       this.props.onSubmit(query)
-      this.setState({ lastQuery: query })
 
       if (skipQueryValidation) {
         runQueryOnly({
@@ -184,8 +184,9 @@ export default class QueryInput extends React.Component {
             this.setState({ isQueryRunning: false })
           })
       }
+
+      this.setState({ lastQuery: query, suggestions: [] })
     }
-    this.setState({ inputValue: '' })
   }
 
   onKeyDown = (e) => {
