@@ -66,9 +66,8 @@ export default class Select extends React.Component {
         <Popover
           isOpen={this.state.isOpen}
           position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
-          padding={0} // adjust padding here!
+          padding={0}
           onClickOutside={() => this.setState({ isOpen: false })}
-          // contentLocation={this.state.contextMenuPosition}
           content={({
             position,
             nudgedLeft,
@@ -86,7 +85,6 @@ export default class Select extends React.Component {
                   id={`select-tooltip-${this.ID}`}
                   className="react-autoql-drawer-tooltip"
                   effect="solid"
-                  // place="right"
                   delayShow={500}
                 />
 
@@ -134,7 +132,6 @@ export default class Select extends React.Component {
                 <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
                   {this.props.selectionPlaceholder || 'Select an item'}
                 </span>
-                // null
               )}
           </div>
         </Popover>
