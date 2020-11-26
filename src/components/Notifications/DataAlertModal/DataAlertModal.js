@@ -198,6 +198,7 @@ export default class DataAlertModal extends React.Component {
         expression: expressionJSON,
         notification_type: scheduleData.notificationType,
         reset_period: scheduleData.resetPeriod,
+        timezone: scheduleData.timezone,
       }
 
       return newDataAlert
