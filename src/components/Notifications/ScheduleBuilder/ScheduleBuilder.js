@@ -55,6 +55,7 @@ export default class ScheduleBuilder extends React.Component {
 
   state = {
     frequencySelectValue: getFrequencyValue(this.props.dataAlert),
+    timezone: _get(this.props.dataAlert, 'timezone'),
   }
 
   componentDidMount = () => {
