@@ -104,6 +104,16 @@ export const runQueryOnly = ({
     },
   }
 
+  axios.interceptors.response.use(
+    (response) => {
+      return response
+    },
+    function(error) {
+      console.log('error in interceptor', error.response)
+      return Promise.reject(error)
+    }
+  )
+
   return axios
     .post(url, data, config)
     .then((response) => {
@@ -116,6 +126,22 @@ export const runQueryOnly = ({
       return Promise.resolve(response)
     })
     .catch((error) => {
+      if (!('toJSON' in Error.prototype))
+        Object.defineProperty(Error.prototype, 'toJSON', {
+          value: function() {
+            var alt = {}
+
+            Object.getOwnPropertyNames(this).forEach(function(key) {
+              alt[key] = this[key]
+            }, this)
+
+            return alt
+          },
+          configurable: true,
+          writable: true,
+        })
+      const str = JSON.stringify(error)
+      console.log(JSON.parse(str))
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
