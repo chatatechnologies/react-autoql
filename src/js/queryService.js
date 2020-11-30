@@ -109,7 +109,6 @@ export const runQueryOnly = ({
     .then((response) => {
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
-        // queryCall = null
         throw new Error('Parse error')
       }
 

@@ -4,6 +4,7 @@ import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Radio } from '../../Radio'
+import { TimezoneSelector } from '../../TimezoneSelector'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
@@ -54,6 +55,7 @@ export default class ScheduleBuilder extends React.Component {
 
   state = {
     frequencySelectValue: getFrequencyValue(this.props.dataAlert),
+    timezone: _get(this.props.dataAlert, 'time_zone'),
   }
 
   componentDidMount = () => {
@@ -75,7 +77,7 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getData = () => {
-    const { frequencySelectValue } = this.state
+    const { frequencySelectValue, timezone } = this.state
     let notificationType = 'PERIODIC'
     let resetPeriod = null
 
@@ -92,6 +94,7 @@ export default class ScheduleBuilder extends React.Component {
     return {
       notificationType,
       resetPeriod,
+      timezone,
     }
   }
 
@@ -120,6 +123,32 @@ export default class ScheduleBuilder extends React.Component {
     return <div className="frequency-description-box">{description}</div>
   }
 
+  onTimezoneChange = (timezone) => {
+    this.setState({ timezone: timezone.value })
+  }
+
+  defaultTimezoneComponent = () => {
+    if (this.state.timezone) {
+      return (
+        <div>
+          We detected your timezone to be <em>{this.state.timezone}</em>.{' '}
+          <a onClick={() => this.setState({ isEditingTimezone: true })}>
+            Change
+          </a>
+        </div>
+      )
+    }
+  }
+
+  editTimezoneComponent = () => {
+    return (
+      <div>
+        <span>Select your time zone: </span>
+        <TimezoneSelector onChange={this.onTimezoneChange} />
+      </div>
+    )
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
@@ -144,6 +173,11 @@ export default class ScheduleBuilder extends React.Component {
           <div className="frequency-description-box-container">
             {this.renderFrequencyDescription()}
           </div>
+        </div>
+        <div className="schedule-builder-timezone-section">
+          {this.state.isEditingTimezone || !this.state.timezone
+            ? this.editTimezoneComponent()
+            : this.defaultTimezoneComponent()}
         </div>
       </ErrorBoundary>
     )
