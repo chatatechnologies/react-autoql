@@ -109,7 +109,6 @@ export const runQueryOnly = ({
       return response
     },
     function(error) {
-      console.log('error in interceptor', error.response)
       return Promise.reject(error)
     }
   )
@@ -141,7 +140,6 @@ export const runQueryOnly = ({
           writable: true,
         })
       const str = JSON.stringify(error)
-      console.log(JSON.parse(str))
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
