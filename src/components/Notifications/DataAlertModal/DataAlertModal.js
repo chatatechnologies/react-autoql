@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
 
 import { Modal } from '../../Modal'
@@ -8,8 +9,7 @@ import { ConfirmModal } from '../../ConfirmModal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
-import { Icon } from '../../Icon'
-import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
@@ -17,7 +17,6 @@ import {
   createDataAlert,
   updateDataAlert,
   deleteDataAlert,
-  isExpressionQueryValid,
 } from '../../../js/notificationService'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
@@ -73,7 +72,6 @@ export default class DataAlertModal extends React.Component {
     isExpressionSectionComplete: false,
     expressionJSON: [],
     isScheduleSectionComplete: false,
-    dataReturnQueryInput: '',
     isDataReturnDirty: false,
     isDataReturnQueryValid: true,
     isDataReturnValidated: false,
@@ -92,7 +90,7 @@ export default class DataAlertModal extends React.Component {
         this.setState({
           titleInput: notification.title,
           messageInput: notification.message,
-          dataReturnQueryInput: notification.data_return_query,
+          dataReturnQuery: notification.data_return_query,
           isDataReturnDirty: true,
           expressionJSON: _get(this.props.currentDataAlert, 'expression'),
         })
@@ -144,7 +142,6 @@ export default class DataAlertModal extends React.Component {
       isExpressionSectionComplete: false,
       isScheduleSectionComplete: false,
       expressionJSON: [],
-      dataReturnQueryInput: '',
       isDataReturnDirty: false,
       titleInput: '',
       messageInput: '',
@@ -178,11 +175,13 @@ export default class DataAlertModal extends React.Component {
 
   getDataAlertData = () => {
     try {
-      const { titleInput, dataReturnQueryInput, messageInput } = this.state
+      const { titleInput, messageInput } = this.state
 
-      let expressionJSON = this.state.expressionJSON
+      let dataReturnQuery
+      let expressionJSON = _cloneDeep(this.state.expressionJSON)
       if (this.expressionRef) {
         expressionJSON = this.expressionRef.getJSON()
+        dataReturnQuery = this.expressionRef.getFirstQuery()
       }
 
       let scheduleData = {}
@@ -193,7 +192,7 @@ export default class DataAlertModal extends React.Component {
       const newDataAlert = {
         id: _get(this.props.currentDataAlert, 'id'),
         title: titleInput,
-        data_return_query: dataReturnQueryInput,
+        data_return_query: dataReturnQuery,
         message: messageInput,
         expression: expressionJSON,
         notification_type: scheduleData.notificationType,
@@ -208,73 +207,12 @@ export default class DataAlertModal extends React.Component {
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    let { dataReturnQueryInput } = this.state
-    const firstQuery = this.getFirstQuery(expressionJSON[0])
-    if (!this.state.isDataReturnDirty && firstQuery) {
-      dataReturnQueryInput = firstQuery
-    }
-
-    this.setState(
-      {
-        isExpressionSectionComplete: isComplete,
-        isFirstSectionComplete: isComplete && !!this.state.titleInput,
-        isExpressionSectionValid: isValid,
-        expressionJSON,
-        dataReturnQueryInput,
-      },
-      () => {
-        this.validateDataReturnQuery()
-      }
-    )
-  }
-
-  getFirstQuery = (term) => {
-    if (!term) {
-      return undefined
-    }
-
-    if (term.term_type === 'group') {
-      return this.getFirstQuery(_get(term, 'term_value[0]'))
-    } else if (term.term_type === 'query') {
-      return term.term_value
-    }
-    return undefined
-  }
-
-  validateDataReturnQuery = () => {
-    if (this.props.enableQueryValidation) {
-      if (
-        this.state.dataReturnQueryInput &&
-        !this.state.isValidatingDataReturnQuery &&
-        this.state.lastCheckedDataReturnQuery !==
-          this.state.dataReturnQueryInput
-      ) {
-        this.setState({
-          isValidatingDataReturnQuery: true,
-          lastCheckedDataReturnQuery: this.state.dataReturnQueryInput,
-        })
-        isExpressionQueryValid({
-          query: this.state.dataReturnQueryInput,
-          ...getAuthentication(this.props.authentication),
-        })
-          .then(() => {
-            this.setState({
-              isDataReturnQueryValid: true,
-              isValidatingDataReturnQuery: false,
-              isDataReturnValidated: true,
-            })
-          })
-          .catch(() => {
-            this.setState({
-              isDataReturnQueryValid: false,
-              isValidatingDataReturnQuery: false,
-              isDataReturnValidated: true,
-            })
-          })
-      }
-    }
-
-    this.setState({ isDataReturnValidated: true })
+    this.setState({
+      isExpressionSectionComplete: isComplete,
+      isFirstSectionComplete: isComplete && !!this.state.titleInput,
+      isExpressionSectionValid: isValid,
+      expressionJSON,
+    })
   }
 
   onDataAlertSave = () => {
@@ -332,7 +270,16 @@ export default class DataAlertModal extends React.Component {
     }
   }
 
-  renderNextBtn = (className, disabled, onclick = () => {}) => {
+  validateAndNext = () => {
+    // Step 1: validate expression
+    // Step 2: move on to next step if valid,
+    // show warning message if not valid
+    if (this.stepsRef) {
+      this.stepsRef.nextStep()
+    }
+  }
+
+  renderNextBtn = (className, disabled, onclick = () => {}, text) => {
     return (
       <Button
         className={className}
@@ -345,7 +292,7 @@ export default class DataAlertModal extends React.Component {
         disabled={disabled}
         type="primary"
       >
-        Next
+        {text || 'Next'}
       </Button>
     )
   }
@@ -385,7 +332,7 @@ export default class DataAlertModal extends React.Component {
           }}
         />
         <p>Conditions:</p>
-        <ExpressionBuilder
+        <ExpressionBuilderSimple
           authentication={getAuthentication(this.props.authentication)}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.expressionRef = r)}
@@ -398,10 +345,14 @@ export default class DataAlertModal extends React.Component {
             this.state.expressionJSON
           )}
         />
-        {this.renderNextBtn(
-          'first-step-next-btn',
-          !this.state.isFirstSectionComplete
-        )}
+        <div className="step-btn-container">
+          {this.renderNextBtn(
+            'first-step-next-btn',
+            !this.state.isFirstSectionComplete,
+            this.validateAndNext,
+            'Validate and Next'
+          )}
+        </div>
       </div>
     )
   }
@@ -423,12 +374,7 @@ export default class DataAlertModal extends React.Component {
           {this.renderBackBtn('second-step-back-btn')}
           {this.renderNextBtn(
             'second-step-next-btn',
-            !this.state.isScheduleSectionComplete,
-            () => {
-              if (this.state.dataReturnQueryInput) {
-                this.setState({ isDataReturnDirty: true })
-              }
-            }
+            !this.state.isScheduleSectionComplete
           )}
         </div>
       </div>
@@ -438,37 +384,7 @@ export default class DataAlertModal extends React.Component {
   renderAlertPreferencesStep = () => {
     return (
       <div>
-        <p>Return the data from this query:</p>
-        <Input
-          ref={(r) => (this.dataReturnInputRef = r)}
-          className="react-autoql-notification-display-name-input"
-          icon="react-autoql-bubbles-outlined"
-          placeholder="Type query here"
-          value={this.state.dataReturnQueryInput}
-          onFocus={() => {
-            this.setState({ isDataReturnDirty: true })
-          }}
-          onKeyDown={(e) => {
-            if (!this.state.isDataReturnDirty) {
-              this.setState({ isDataReturnDirty: true })
-            }
-            if (e.key === 'Enter' && this.stepsRef) {
-              this.stepsRef.nextStep()
-              this.validateDataReturnQuery()
-            }
-          }}
-          onBlur={this.validateDataReturnQuery}
-          onChange={(e) =>
-            this.setState({ dataReturnQueryInput: e.target.value })
-          }
-        />
-        {!this.state.isDataReturnQueryValid && (
-          <div className="expression-term-validation-error">
-            <Icon type="warning-triangle" /> That query is invalid. Try entering
-            a different query.
-          </div>
-        )}
-        <p>Send the following message:</p>
+        <p>When this Alert is triggered, send the following message:</p>
         <Input
           className="react-autoql-notification-message-input"
           placeholder="Compose a short message to accompany your triggered Alert"
@@ -533,22 +449,12 @@ export default class DataAlertModal extends React.Component {
       },
       {
         title: 'Manage Alert Preferences',
-        subtitle: 'When this Alert is triggered:',
         content: this.renderAlertPreferencesStep(),
-        onClick: () => {
-          if (this.state.dataReturnQueryInput) {
-            this.setState({ isDataReturnDirty: true })
-          }
-        },
         complete:
-          !!this.state.dataReturnQueryInput &&
-          this.state.isDataReturnDirty &&
-          this.state.isDataReturnQueryValid,
-        error:
-          this.state.isDataReturnValidated &&
-          !!this.state.dataReturnQueryInput &&
-          this.state.isDataReturnDirty &&
-          !this.state.isDataReturnQueryValid,
+          this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
+        onClick: () => {
+          this.setState({ isThirdSectionDirty: true })
+        },
       },
     ]
     return steps
