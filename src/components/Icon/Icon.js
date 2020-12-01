@@ -76,11 +76,17 @@ export default class Icon extends React.Component {
     type: PropTypes.string.isRequired,
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
+    color: PropTypes.string,
+    warning: PropTypes.bool,
+    danger: PropTypes.bool,
   }
 
   static defaultProps = {
     size: undefined,
     showBadge: false,
+    color: undefined,
+    warning: false,
+    danger: false,
   }
 
   render = () => {
@@ -338,10 +344,16 @@ export default class Icon extends React.Component {
         <span
           {...nativeProps}
           data-test="react-autoql-icon"
-          className={`react-autoql-icon ${this.props.className || ''} ${
-            this.props.type
-          }`}
-          style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
+          className={`react-autoql-icon
+            ${this.props.className || ''}
+            ${this.props.type}
+            ${this.props.warning ? ' warning' : ''}
+            ${this.props.danger ? ' danger' : ''}`}
+          style={{
+            color: this.props.color,
+            fontSize: `${this.props.size}px`,
+            ...this.props.style, // Overwrite other styles if provided
+          }}
         >
           {icon}
           {this.props.showBadge && <div className="react-autoql-badge" />}
