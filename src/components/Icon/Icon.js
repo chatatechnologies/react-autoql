@@ -90,7 +90,14 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const { type, size, showBadge, ...nativeProps } = this.props
+    const {
+      type,
+      size,
+      showBadge,
+      warning,
+      danger,
+      ...nativeProps
+    } = this.props
 
     let icon = null
     switch (this.props.type) {
