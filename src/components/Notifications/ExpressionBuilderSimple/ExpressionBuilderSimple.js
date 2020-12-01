@@ -58,7 +58,7 @@ export default class ExpressionBuilderSimple extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     themeConfig: themeConfigType,
-    expression: PropTypes.arrayOf(PropTypes.shape({})), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
+    expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
   }

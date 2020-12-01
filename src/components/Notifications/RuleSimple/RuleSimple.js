@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import parseNum from 'parse-num'
 
 import { Input } from '../../Input'
 import { Select } from '../../Select'
@@ -156,14 +157,26 @@ export default class RuleSimple extends React.Component {
         term_type: this.isNumerical(input2Value) ? 'constant' : 'query',
         condition: 'TERMINATOR',
         term_value: this.isNumerical(input2Value)
-          ? Number(input2Value)
+          ? parseNum(input2Value)
           : input2Value,
       },
     ]
   }
 
   isNumerical = (num) => {
-    return !Number.isNaN(Number(num))
+    if (!num) {
+      return false
+    }
+
+    // Check for multiple words. If so, do not attempt parse
+    const words = num.split(' ')
+    if (words && words.length > 1) {
+      return false
+    }
+
+    // If just one word, strip everything but numbers
+    const strippedSymbolsStr = parseNum(num)
+    return !Number.isNaN(Number(strippedSymbolsStr))
   }
 
   isComplete = () => {
