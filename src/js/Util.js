@@ -170,6 +170,11 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       break
     }
     case 'QUANTITY': {
+      if (Number(d)) {
+        formattedLabel = Numbro(d).format({
+          thousandSeparated: true,
+        })
+      }
       break
     }
     case 'DATE': {
