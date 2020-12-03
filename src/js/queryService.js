@@ -53,9 +53,7 @@ export const fetchSuggestions = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const commaSeparatedKeywords =
-    typeof query === 'string' ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow&query_id=${queryId}`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${query}&scope=narrow&query_id=${queryId}`
 
   const config = {
     headers: {
