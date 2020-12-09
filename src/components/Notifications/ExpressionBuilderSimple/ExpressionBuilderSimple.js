@@ -25,11 +25,17 @@ const getInitialStateData = (initialData) => {
   let expression = undefined
   let expressionError = false
 
-  // If expression is just 1 set of terms
-  if (_get(initialData, 'term_value[0]') === 'query') {
+  if (
+    Array.isArray(initialData) &&
+    _get(initialData, '[0].term_type') === 'query'
+  ) {
+    // If expression is just 1 set of terms (new format)
+    expression = initialData
+  } else if (_get(initialData, 'term_value[0].term_type') === 'query') {
+    // (deprecated - remove later)
     expression = initialData.term_value
   } else if (_get(initialData, '[0].term_type') === 'group') {
-    // Here we will check for legacy data alert formats
+    // Here we will check for legacy data alert formats (deprecated - remove later)
     if (
       _get(initialData.length > 1) ||
       _get(initialData, '[0].term_value.length') > 1
@@ -113,14 +119,6 @@ export default class ExpressionBuilderSimple extends React.Component {
       expression = this.ruleRef.getJSON()
     }
 
-    if (Array.isArray(expression)) {
-      expression = {
-        id: uuid.v4(),
-        condition: 'TERMINATOR',
-        term_type: 'group',
-        term_value: expression,
-      }
-    }
 
     return expression
   }

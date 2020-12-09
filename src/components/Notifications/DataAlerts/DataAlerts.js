@@ -35,11 +35,13 @@ export default class DataAlerts extends React.Component {
     authentication: authenticationType,
     themeConfig: themeConfigType,
     onErrorCallback: PropTypes.func,
+    showCreateAlertBtn: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
+    showCreateAlertBtn: false,
     onErrorCallback: () => {},
   }
 
@@ -197,7 +199,7 @@ export default class DataAlerts extends React.Component {
         <div style={{ fontSize: '17px' }}>{title}</div>
         <div style={{ fontSize: '11px', opacity: 0.6 }}>{description}</div>
       </div>
-      {includeAddBtn && (
+      {includeAddBtn && this.props.showCreateAlertBtn && (
         <div
           className="react-autoql-notification-add-btn"
           onClick={this.onAddClick}
@@ -297,13 +299,15 @@ export default class DataAlerts extends React.Component {
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
       <span style={{ opacity: 0.6 }}>No Alerts are set up yet.</span>
       <br />
-      <Button
-        type="primary"
-        onClick={this.onAddClick}
-        style={{ marginTop: '10px' }}
-      >
-        Create Data Alert
-      </Button>
+      {this.props.showCreateAlertBtn && (
+        <Button
+          type="primary"
+          onClick={this.onAddClick}
+          style={{ marginTop: '10px' }}
+        >
+          Create Data Alert
+        </Button>
+      )}
     </div>
   )
 
