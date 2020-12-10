@@ -350,7 +350,7 @@ export default class DataAlertModal extends React.Component {
             'first-step-next-btn',
             !this.state.isFirstSectionComplete,
             this.validateAndNext,
-            'Validate and Next'
+            'Next'
           )}
         </div>
       </div>
