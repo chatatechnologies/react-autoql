@@ -19,3 +19,4 @@ export {
   isDisplayTypeValid,
 } from './js/Util.js'
 export { fetchQueryTips } from './js/queryService'
+export { LoadingDots } from './components/LoadingDots'
