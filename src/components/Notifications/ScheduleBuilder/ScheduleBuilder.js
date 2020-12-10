@@ -127,24 +127,14 @@ export default class ScheduleBuilder extends React.Component {
     this.setState({ timezone: timezone.value })
   }
 
-  defaultTimezoneComponent = () => {
-    if (this.state.timezone) {
-      return (
-        <div>
-          We detected your timezone to be <em>{this.state.timezone}</em>.{' '}
-          <a onClick={() => this.setState({ isEditingTimezone: true })}>
-            Change
-          </a>
-        </div>
-      )
-    }
-  }
-
-  editTimezoneComponent = () => {
+  renderTimezoneComponent = () => {
     return (
       <div>
-        <span>Select your time zone: </span>
-        <TimezoneSelector onChange={this.onTimezoneChange} />
+        <span>Time zone: </span>
+        <TimezoneSelector
+          onChange={this.onTimezoneChange}
+          defaultSelection={this.state.timezone}
+        />
       </div>
     )
   }
@@ -175,9 +165,7 @@ export default class ScheduleBuilder extends React.Component {
           </div>
         </div>
         <div className="schedule-builder-timezone-section">
-          {this.state.isEditingTimezone || !this.state.timezone
-            ? this.editTimezoneComponent()
-            : this.defaultTimezoneComponent()}
+          {this.renderTimezoneComponent()}
         </div>
       </ErrorBoundary>
     )
