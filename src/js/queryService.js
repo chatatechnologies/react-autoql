@@ -53,7 +53,9 @@ export const fetchSuggestions = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${query}&scope=narrow&query_id=${queryId}`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+    query
+  )}&scope=narrow&query_id=${queryId}`
 
   const config = {
     headers: {
@@ -337,7 +339,9 @@ export const fetchQueryTips = ({
   skipQueryValidation,
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+    commaSeparatedKeywords
+  )}&page_size=${pageSize}&page=${pageNumber}`
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
