@@ -16,10 +16,12 @@ const options = momentTZ.tz.names().map((tz) => {
 export default class DataAlertModal extends React.Component {
   static propTypes = {
     onChange: PropTypes.func,
+    defaultSelection: PropTypes.string,
   }
 
   static defaultProps = {
     onChange: () => {},
+    defaultSelection: undefined,
   }
 
   componentDidMount = () => {
@@ -28,8 +30,10 @@ export default class DataAlertModal extends React.Component {
   }
 
   getSelectedOption = () => {
+    const defaultValue = this.props.defaultSelection || defaultTimeZone
+
     return options.find((option) => {
-      return option.label === defaultTimeZone
+      return option.label === defaultValue
     })
   }
 
