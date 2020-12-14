@@ -486,6 +486,7 @@ export default class DataAlertModal extends React.Component {
 
   render = () => {
     const steps = this.getModalContent()
+    console.log('rendering data alert modal', this.props, this.state)
 
     return (
       <ErrorBoundary>
