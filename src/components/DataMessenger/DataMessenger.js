@@ -636,7 +636,7 @@ export default class DataMessenger extends React.Component {
                 <div
                   className={`tab${
                     page === 'explore-queries' ? ' active' : ''
-                  } tips`}
+                  } react-autoql-explore-queries`}
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
@@ -653,7 +653,7 @@ export default class DataMessenger extends React.Component {
                   <div
                     className={`tab${
                       page === 'notifications' ? ' active' : ''
-                    } notifications`}
+                    } react-autoql-notifications`}
                     onClick={() => {
                       if (this.notificationBadgeRef) {
                         this.notificationBadgeRef.resetCount()
