@@ -77,6 +77,11 @@ export default class DataAlertModal extends React.Component {
     isConfirmDeleteModalVisible: false,
   }
 
+  componentDidMount = () => {
+    console.log('component just MOUNTED. initializing fields now', this.props)
+    this.initializeFields()
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     console.log('component UPDATED', prevProps, this.props)
     if (!this.props.isVisible && prevProps.isVisible) {
@@ -84,44 +89,7 @@ export default class DataAlertModal extends React.Component {
     }
     if (this.props.isVisible && !prevProps.isVisible) {
       console.log('is visible prop changed to true')
-      // If we are editing an existing notification
-      // Fill the fields with the current settings
-      if (this.props.currentDataAlert) {
-        console.log(
-          'current data alert was provided so didnt use initial query',
-          this.props.currentDataAlert
-        )
-        const notification = this.props.currentDataAlert
-        this.setState({
-          titleInput: notification.title,
-          messageInput: notification.message,
-          dataReturnQuery: notification.data_return_query,
-          isDataReturnDirty: true,
-          expressionJSON: _get(this.props.currentDataAlert, 'expression'),
-        })
-        if (this.props.currentDataAlert.status !== 'ERROR')
-          setTimeout(() => {
-            // If its an existing data alert and not in an error state, its already been validated
-            this.setState({ isExpressionValidated: true })
-          }, 500)
-      } else if (
-        this.props.initialQuery &&
-        typeof this.props.initialQuery === 'string'
-      ) {
-        const expressionJSON = this.createExpressionJSONFromQuery(
-          this.props.initialQuery
-        )
-        console.log(
-          'component updated and initial query changed! setting new expression json now',
-          expressionJSON
-        )
-        this.setState({
-          isExpressionSectionComplete: true,
-          expressionJSON,
-        })
-      } else {
-        console.log('none of the conditions applied?')
-      }
+      this.initializeFields()
     }
 
     if (
@@ -166,6 +134,45 @@ export default class DataAlertModal extends React.Component {
       titleInput: '',
       messageInput: '',
     })
+  }
+
+  initializeFields = () => {
+    // If we are editing an existing notification
+    // Fill the fields with the current settings
+    if (this.props.currentDataAlert) {
+      console.log(
+        'current data alert was provided so didnt use initial query',
+        this.props.currentDataAlert
+      )
+      const notification = this.props.currentDataAlert
+      this.setState({
+        titleInput: notification.title,
+        messageInput: notification.message,
+        dataReturnQuery: notification.data_return_query,
+        isDataReturnDirty: true,
+        expressionJSON: _get(this.props.currentDataAlert, 'expression'),
+      })
+      if (this.props.currentDataAlert.status !== 'ERROR')
+        setTimeout(() => {
+          // If its an existing data alert and not in an error state, its already been validated
+          this.setState({ isExpressionValidated: true })
+        }, 500)
+    } else if (
+      this.props.initialQuery &&
+      typeof this.props.initialQuery === 'string'
+    ) {
+      const expressionJSON = this.createExpressionJSONFromQuery(
+        this.props.initialQuery
+      )
+      console.log(
+        'component updated and initial query changed! setting new expression json now',
+        expressionJSON
+      )
+      this.setState({
+        isExpressionSectionComplete: true,
+        expressionJSON,
+      })
+    }
   }
 
   createExpressionJSONFromQuery = (query) => {
