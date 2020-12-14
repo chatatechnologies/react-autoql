@@ -71,10 +71,9 @@ export default class DataAlertModal extends React.Component {
     messageInput: '',
     isExpressionSectionComplete: false,
     expressionJSON: [],
+    isExpressionValidated: false,
     isScheduleSectionComplete: false,
     isDataReturnDirty: false,
-    isDataReturnQueryValid: true,
-    isDataReturnValidated: false,
     isConfirmDeleteModalVisible: false,
   }
 
@@ -94,6 +93,11 @@ export default class DataAlertModal extends React.Component {
           isDataReturnDirty: true,
           expressionJSON: _get(this.props.currentDataAlert, 'expression'),
         })
+        if (this.props.currentDataAlert.status !== 'ERROR')
+          setTimeout(() => {
+            // If its an existing data alert and not in an error state, its already been validated
+            this.setState({ isExpressionValidated: true })
+          }, 500)
       } else if (
         this.props.initialQuery &&
         typeof this.props.initialQuery === 'string'
@@ -211,6 +215,7 @@ export default class DataAlertModal extends React.Component {
       isExpressionSectionComplete: isComplete,
       isFirstSectionComplete: isComplete && !!this.state.titleInput,
       isExpressionSectionValid: isValid,
+      isExpressionValidated: false,
       expressionJSON,
     })
   }
@@ -350,7 +355,7 @@ export default class DataAlertModal extends React.Component {
             'first-step-next-btn',
             !this.state.isFirstSectionComplete,
             this.validateAndNext,
-            'Next'
+            'Validate and Next'
           )}
         </div>
       </div>
