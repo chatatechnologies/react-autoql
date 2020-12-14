@@ -78,6 +78,7 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    console.log('component UPDATED', prevProps, this.props)
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
     }
