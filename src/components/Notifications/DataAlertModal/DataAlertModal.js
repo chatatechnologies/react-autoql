@@ -82,9 +82,14 @@ export default class DataAlertModal extends React.Component {
       setTimeout(this.resetFields, 500)
     }
     if (this.props.isVisible && !prevProps.isVisible) {
+      console.log('is visible prop changed to true')
       // If we are editing an existing notification
       // Fill the fields with the current settings
       if (this.props.currentDataAlert) {
+        console.log(
+          'current data alert was provided so didnt use initial query',
+          this.props.currentDataAlert
+        )
         const notification = this.props.currentDataAlert
         this.setState({
           titleInput: notification.title,
@@ -105,10 +110,16 @@ export default class DataAlertModal extends React.Component {
         const expressionJSON = this.createExpressionJSONFromQuery(
           this.props.initialQuery
         )
+        console.log(
+          'component updated and initial query changed! setting new expression json now',
+          expressionJSON
+        )
         this.setState({
           isExpressionSectionComplete: true,
           expressionJSON,
         })
+      } else {
+        console.log('none of the conditions applied?')
       }
     }
 
@@ -119,6 +130,10 @@ export default class DataAlertModal extends React.Component {
       this.resetFields()
       const expressionJSON = this.createExpressionJSONFromQuery(
         this.props.initialQuery
+      )
+      console.log(
+        'initial query changed! updating expression json now',
+        expressionJSON
       )
       this.setState({
         isExpressionSectionComplete: true,
