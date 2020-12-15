@@ -10,7 +10,7 @@ import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
-import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { VizToolbar } from '../../VizToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
@@ -375,7 +375,7 @@ export default class NotificationItem extends React.Component {
               <div className="react-autoql-notification-details-title">
                 Conditions:
               </div>
-              <ExpressionBuilder
+              <ExpressionBuilderSimple
                 authentication={getAuthentication(this.props.authentication)}
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
