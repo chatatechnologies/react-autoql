@@ -73,6 +73,11 @@ export default class Steps extends React.Component {
     this.onStepTitleClick(nextStep)
   }
 
+  setStep = (step) => {
+    console.log('setting step in steps component', step)
+    this.setState({ activeStep: step })
+  }
+
   getHeightOfStepContent = (index) => {
     if (this.props.collapsible) {
       const content = document.querySelector(

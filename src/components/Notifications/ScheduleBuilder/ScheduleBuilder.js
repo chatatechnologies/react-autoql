@@ -4,7 +4,9 @@ import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Radio } from '../../Radio'
+import { Icon } from '../../Icon'
 import { TimezoneSelector } from '../../TimezoneSelector'
+import { formateResetDate } from '../helpers'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
@@ -120,7 +122,21 @@ export default class ScheduleBuilder extends React.Component {
         'You will be notified as soon as this happens, any time this happens.'
     }
 
-    return <div className="frequency-description-box">{description}</div>
+    return (
+      <div className="frequency-description-box">
+        {description}
+        {!!_get(this.props.dataAlert, 'reset_date') && (
+          <span>
+            <br />
+            <br />
+            <Icon type="hour-glass" />{' '}
+            {`This Alert has been triggered. Scanning will resume on ${formateResetDate(
+              this.props.dataAlert
+            )} (${this.props.dataAlert.time_zone})`}
+          </span>
+        )}
+      </div>
+    )
   }
 
   onTimezoneChange = (timezone) => {

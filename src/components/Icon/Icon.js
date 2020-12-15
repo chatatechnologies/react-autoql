@@ -27,11 +27,13 @@ import {
   FiSettings,
   FiSend,
   FiArrowLeft,
+  FiPauseCircle,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline,
+  IoIosHourglass,
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
@@ -213,6 +215,10 @@ export default class Icon extends React.Component {
         icon = heatmapIcon
         break
       }
+      case 'hour-glass': {
+        icon = <IoIosHourglass />
+        break
+      }
       case 'info': {
         icon = <MdInfoOutline />
         break
@@ -259,6 +265,10 @@ export default class Icon extends React.Component {
       }
       case 'notification-off': {
         icon = <FiBellOff />
+        break
+      }
+      case 'notification-pause': {
+        icon = <FiPauseCircle />
         break
       }
       case 'numbers': {

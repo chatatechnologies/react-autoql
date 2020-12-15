@@ -11,12 +11,14 @@ import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import dayjs from '../../../js/dayjsWithPlugins'
 
 import {
   fetchDataAlerts,
   updateDataAlertStatus,
 } from '../../../js/notificationService'
 import { setCSSVars } from '../../../js/Util'
+import { formateResetDate } from '../helpers'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -175,6 +177,7 @@ export default class DataAlerts extends React.Component {
   renderNotificationEditModal = () => {
     return (
       <DataAlertModal
+        ref={(r) => (this.editModalRef = r)}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         key={this.COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
@@ -212,6 +215,27 @@ export default class DataAlerts extends React.Component {
     </div>
   )
 
+  goToScheduleStep = (notification) => {
+    this.setState({ isEditModalVisible: true, activeDataAlert: notification })
+    setTimeout(() => {
+      if (this.editModalRef) {
+        this.editModalRef.setStep(1)
+      }
+    }, 0)
+  }
+
+  goToErrorFeedback = (notification) => {
+    this.setState({
+      activeDataAlert: notification,
+      isEditModalVisible: true,
+    })
+    // setTimeout(() => {
+    //   if (this.editModalRef) {
+    //     this.editModalRef.validateExpression()
+    //   }
+    // }, 0)
+  }
+
   renderNotificationlist = (type, list) => {
     if (type === 'project' && !_get(list, 'length')) {
       return null
@@ -221,8 +245,8 @@ export default class DataAlerts extends React.Component {
       <div className="data-alerts-list-container">
         {type === 'custom' &&
           this.renderNotificationGroupTitle(
-            'Set up a custom Data Alert',
-            'Create customized Alerts tailored to your unique data needs',
+            'Custom Data Alerts',
+            'View and manage your custom Data Alerts',
             true
           )}
         {type === 'custom' &&
@@ -239,16 +263,23 @@ export default class DataAlerts extends React.Component {
               <div
                 key={`react-autoql-notification-setting-item-${i}`}
                 className={`react-autoql-notification-setting-item ${notification.type}`}
-                onClick={(e) => {
-                  if (notification.type === 'CUSTOM') {
-                    this.onEditClick(e, notification)
-                  }
-                }}
               >
                 <div className="react-autoql-notification-setting-item-header">
                   <div className="react-autoql-notification-setting-display-name">
                     <span className="react-autoql-notification-setting-display-name-title">
-                      {notification.title}
+                      <span>
+                        {notification.status === 'GENERAL_ERROR' && (
+                          <Icon
+                            type="warning-triangle"
+                            className="react-autoql-notification-error-status-icon"
+                            onClick={() => this.goToErrorFeedback(notification)}
+                            data-for="react-autoql-notification-settings-tooltip"
+                            data-tip="There was a problem with this Data Alert. Click for more information."
+                            warning
+                          />
+                        )}
+                        {notification.title}
+                      </span>
                     </span>
                     <span className="react-autoql-notification-setting-display-name-message">
                       {notification.message && (
@@ -261,6 +292,24 @@ export default class DataAlerts extends React.Component {
                       <Icon
                         className="react-autoql-notification-action-btn"
                         type="edit"
+                        data-for="react-autoql-notification-settings-tooltip"
+                        data-tip="Edit Data Alert"
+                        onClick={(e) => {
+                          if (notification.type === 'CUSTOM') {
+                            this.onEditClick(e, notification)
+                          }
+                        }}
+                      />
+                    )}
+                    {notification.reset_date && (
+                      <Icon
+                        className="reset-period-info-icon"
+                        data-tip={`This Alert has been triggered. Scanning will resume on ${formateResetDate(
+                          notification
+                        )} (${notification.time_zone})`}
+                        data-for="react-autoql-notification-settings-tooltip"
+                        onClick={() => this.goToScheduleStep(notification)}
+                        type="hour-glass"
                       />
                     )}
                     <Checkbox

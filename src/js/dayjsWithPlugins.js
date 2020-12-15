@@ -2,11 +2,13 @@ import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import LocalizedFormat from 'dayjs/plugin/localizedFormat'
 import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 
 dayjs.extend(utc)
+dayjs.extend(timezone)
 dayjs.extend(advancedFormat)
 dayjs.extend(LocalizedFormat)
-;(function applyLocale () {
+;(function applyLocale() {
   const specificLanguageCode = window.navigator.language || 'en'
   const genericLanguageCode = specificLanguageCode.split('-')[0]
 
