@@ -39,7 +39,7 @@
   }
 
   .sql-copied {
-    color: #2aca4d !important;
+    color: var(--react-autoql-success-color) !important;
   }
 
   &:hover .copy-sql-btn {

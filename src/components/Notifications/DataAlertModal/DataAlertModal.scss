@@ -9,3 +9,11 @@
     text-align: right;
   }
 }
+
+.expression-valid-checkmark.react-autoql-icon svg {
+  color: var(--react-autoql-success-color);
+}
+
+.expression-invalid-message {
+  color: var(--react-autoql-danger-color);
+}

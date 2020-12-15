@@ -9,6 +9,7 @@ import { ConfirmModal } from '../../ConfirmModal'
 import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
+import { Icon } from '../../Icon'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -17,6 +18,7 @@ import {
   createDataAlert,
   updateDataAlert,
   deleteDataAlert,
+  validateExpression,
 } from '../../../js/notificationService'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
@@ -139,6 +141,8 @@ export default class DataAlertModal extends React.Component {
         messageInput: notification.message,
         dataReturnQuery: notification.data_return_query,
         isDataReturnDirty: true,
+        isExpressionValidated: true,
+        isExpressionValid: true,
         expressionJSON: _get(this.props.currentDataAlert, 'expression'),
       })
       if (this.props.currentDataAlert.status !== 'ERROR')
@@ -221,11 +225,32 @@ export default class DataAlertModal extends React.Component {
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
     this.setState({
       isExpressionSectionComplete: isComplete,
-      isFirstSectionComplete: isComplete && !!this.state.titleInput,
-      isExpressionSectionValid: isValid,
+      isFirstSectionComplete: this.isFirstSectionComplete(),
       isExpressionValidated: false,
       expressionJSON,
     })
+  }
+
+  isFirstSectionComplete = () => {
+    let isExpressionComplete = false
+    if (this.expressionRef) {
+      isExpressionComplete = this.expressionRef.isComplete()
+    }
+
+    console.log(
+      'is first section complete?',
+      isExpressionComplete,
+      !!this.state.titleInput,
+      this.state.isExpressionValidated,
+      this.state.isExpressionValid
+    )
+
+    return (
+      isExpressionComplete &&
+      !!this.state.titleInput &&
+      this.state.isExpressionValidated &&
+      this.state.isExpressionValid
+    )
   }
 
   onDataAlertSave = () => {
@@ -283,13 +308,51 @@ export default class DataAlertModal extends React.Component {
     }
   }
 
-  validateAndNext = () => {
-    // Step 1: validate expression
-    // Step 2: move on to next step if valid,
-    // show warning message if not valid
-    if (this.stepsRef) {
-      this.stepsRef.nextStep()
+  validateExpression = () => {
+    this.setState({ isValidating: true, isExpressionValidated: false })
+    if (this.expressionRef) {
+      const expression = this.expressionRef.getJSON()
+      validateExpression({
+        ...this.props.authentication,
+        expression,
+      })
+        .then(() => {
+          this.setState({
+            isValidating: false,
+            isExpressionValid: true,
+            isExpressionValidated: true,
+          })
+          return Promise.resolve(true)
+        })
+        .catch((error) => {
+          this.setState({
+            isValidating: false,
+            isExpressionValid: false,
+            isExpressionValidated: true,
+            expressionError: _get(error, 'message'),
+          })
+          return Promise.resolve(false)
+        })
+    } else {
+      this.setState({
+        isValidating: false,
+        isExpressionValid: false,
+        isExpressionValidated: true,
+      })
+      return Promise.resolve(false)
     }
+  }
+
+  renderValidateBtn = () => {
+    return (
+      <Button
+        type="default"
+        onClick={this.validateExpression}
+        loading={this.state.isValidating}
+      >
+        Validate
+      </Button>
+    )
   }
 
   renderNextBtn = (className, disabled, onclick = () => {}, text) => {
@@ -359,11 +422,25 @@ export default class DataAlertModal extends React.Component {
           )}
         />
         <div className="step-btn-container">
+          {this.state.isExpressionValidated && this.state.isExpressionValid && (
+            <Icon
+              className="expression-valid-checkmark"
+              type="check"
+              data-for=""
+              data-tip=""
+            />
+          )}
+          {this.state.isExpressionValidated &&
+            !this.state.isExpressionValid &&
+            !!this.state.expressionError && (
+              <span className="expression-invalid-message">
+                <Icon type="warning-triangle" /> {this.state.expressionError}
+              </span>
+            )}
+          {this.renderValidateBtn()}
           {this.renderNextBtn(
             'first-step-next-btn',
-            !this.state.isFirstSectionComplete,
-            this.validateAndNext,
-            'Validate and Next'
+            !this.state.isExpressionValidated || !this.state.isExpressionValid
           )}
         </div>
       </div>
@@ -450,10 +527,9 @@ export default class DataAlertModal extends React.Component {
       {
         title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
-        complete: this.state.isFirstSectionComplete,
+        complete: this.isFirstSectionComplete(),
         error:
-          this.state.isExpressionSectionComplete &&
-          !this.state.isExpressionSectionValid,
+          this.state.isExpressionValidated && !this.state.isExpressionValid,
       },
       {
         title: 'Select Alert Interval',

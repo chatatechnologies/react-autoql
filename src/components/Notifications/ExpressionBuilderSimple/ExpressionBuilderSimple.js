@@ -119,7 +119,6 @@ export default class ExpressionBuilderSimple extends React.Component {
       expression = this.ruleRef.getJSON()
     }
 
-
     return expression
   }
 
@@ -184,7 +183,6 @@ export default class ExpressionBuilderSimple extends React.Component {
             ref={(r) => (this.ruleRef = r)}
             ruleId={_get(this.state.expression, 'id', uuid.v4())}
             onUpdate={this.onRuleUpdate}
-            hideTopCondition={i === 0}
             initialData={this.state.expression}
             readOnly={true}
           />

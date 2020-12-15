@@ -562,6 +562,30 @@ export const createDataAlert = ({ dataAlert, domain, apiKey, token }) => {
       return Promise.reject(_get(error, 'response.data'))
     })
 }
+export const validateExpression = ({ expression, domain, apiKey, token }) => {
+  if (!token || !apiKey || !domain) {
+    return Promise.reject(new Error('UNAUTHORIZED'))
+  }
+
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  const data = { expression }
+
+  const url = `${domain}/autoql/api/v1/data-alerts/validate?key=${apiKey}`
+
+  return axiosInstance
+    .post(url, data)
+    .then((response) => {
+      return Promise.resolve(response)
+    })
+    .catch((error) => {
+      return Promise.reject(_get(error, 'response.data'))
+    })
+}
 
 // DELETE
 export const deleteDataAlert = ({ dataAlertId, domain, apiKey, token }) => {

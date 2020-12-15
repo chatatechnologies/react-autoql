@@ -1,4 +1,6 @@
 .react-autoql-notification-rule-container {
+  display: flex;
+
   .react-autoql-rule-input {
     display: flex;
     flex-direction: column;
@@ -8,11 +10,15 @@
 
   .react-autoql-rule-first-input-container {
     display: flex;
+    flex: 1;
   }
 
   .react-autoql-rule-second-input-container {
     display: flex;
-    margin: 2px;
+    padding: 2px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    flex: 1;
 
     .react-autoql-rule-condition-select {
       flex: 0;
@@ -20,7 +26,7 @@
     }
     .react-autoql-rule-input {
       flex: 1;
-      margin-left: 2px;
+      margin-left: 4px;
     }
     .react-autoql-delete-compare-btn {
       cursor: pointer;
