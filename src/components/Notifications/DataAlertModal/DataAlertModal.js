@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
+import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -136,20 +137,18 @@ export default class DataAlertModal extends React.Component {
     // Fill the fields with the current settings
     if (this.props.currentDataAlert) {
       const notification = this.props.currentDataAlert
-      this.setState({
-        titleInput: notification.title,
-        messageInput: notification.message,
-        dataReturnQuery: notification.data_return_query,
-        isDataReturnDirty: true,
-        isExpressionValidated: true,
-        isExpressionValid: true,
-        expressionJSON: _get(this.props.currentDataAlert, 'expression'),
-      })
-      if (this.props.currentDataAlert.status !== 'ERROR')
-        setTimeout(() => {
-          // If its an existing data alert and not in an error state, its already been validated
-          this.setState({ isExpressionValidated: true })
-        }, 500)
+      this.setState(
+        {
+          titleInput: notification.title,
+          messageInput: notification.message,
+          dataReturnQuery: notification.data_return_query,
+          isDataReturnDirty: true,
+          expressionJSON: _get(this.props.currentDataAlert, 'expression'),
+        },
+        () => {
+          this.validateExpression()
+        }
+      )
     } else if (
       this.props.initialQuery &&
       typeof this.props.initialQuery === 'string'
@@ -237,13 +236,9 @@ export default class DataAlertModal extends React.Component {
       isExpressionComplete = this.expressionRef.isComplete()
     }
 
-    console.log(
-      'is first section complete?',
-      isExpressionComplete,
-      !!this.state.titleInput,
-      this.state.isExpressionValidated,
-      this.state.isExpressionValid
-    )
+    if (!this.props.enableQueryValidation) {
+      return isExpressionComplete && !!this.state.titleInput
+    }
 
     return (
       isExpressionComplete &&
@@ -344,15 +339,45 @@ export default class DataAlertModal extends React.Component {
   }
 
   renderValidateBtn = () => {
+    if (this.expressionRef && this.expressionRef.state.expressionError) {
+      // If expression is unable to be displayed because it is too old
+      // User must reset conditions before they are able to validate
+      return null
+    }
+
     return (
-      <Button
-        type="default"
-        onClick={this.validateExpression}
-        loading={this.state.isValidating}
-      >
-        Validate
-      </Button>
+      <Fragment>
+        {this.state.isExpressionValidated && this.state.isExpressionValid && (
+          <Icon
+            className="expression-valid-checkmark"
+            type="check"
+            data-for="react-autoql-data-alert-modal-tooltip"
+            data-tip="Expression is valid"
+          />
+        )}
+        {this.state.isExpressionValidated &&
+          !this.state.isExpressionValid &&
+          !!this.state.expressionError && (
+            <span className="expression-invalid-message">
+              <Icon type="warning-triangle" /> {this.state.expressionError}
+            </span>
+          )}
+        <Button
+          type="default"
+          onClick={this.validateExpression}
+          loading={this.state.isValidating}
+        >
+          Validate
+        </Button>
+      </Fragment>
     )
+  }
+
+  setStep = (step) => {
+    if (this.stepsRef) {
+      console.log('setting step in data alert modal', step)
+      this.stepsRef.setStep(step)
+    }
   }
 
   renderNextBtn = (className, disabled, onclick = () => {}, text) => {
@@ -422,25 +447,12 @@ export default class DataAlertModal extends React.Component {
           )}
         />
         <div className="step-btn-container">
-          {this.state.isExpressionValidated && this.state.isExpressionValid && (
-            <Icon
-              className="expression-valid-checkmark"
-              type="check"
-              data-for=""
-              data-tip=""
-            />
-          )}
-          {this.state.isExpressionValidated &&
-            !this.state.isExpressionValid &&
-            !!this.state.expressionError && (
-              <span className="expression-invalid-message">
-                <Icon type="warning-triangle" /> {this.state.expressionError}
-              </span>
-            )}
-          {this.renderValidateBtn()}
+          {this.props.enableQueryValidation && this.renderValidateBtn()}
           {this.renderNextBtn(
             'first-step-next-btn',
-            !this.state.isExpressionValidated || !this.state.isExpressionValid
+            this.props.enableQueryValidation &&
+              (!this.state.isExpressionValidated ||
+                !this.state.isExpressionValid)
           )}
         </div>
       </div>
@@ -523,13 +535,22 @@ export default class DataAlertModal extends React.Component {
       return null
     }
 
+    console.log(
+      'is there an error?',
+      this.props.enableQueryValidation,
+      this.state.isExpressionValidated,
+      !this.state.isExpressionValid
+    )
+
     const steps = [
       {
         title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
         complete: this.isFirstSectionComplete(),
         error:
-          this.state.isExpressionValidated && !this.state.isExpressionValid,
+          this.props.enableQueryValidation &&
+          this.state.isExpressionValidated &&
+          !this.state.isExpressionValid,
       },
       {
         title: 'Select Alert Interval',
@@ -558,6 +579,13 @@ export default class DataAlertModal extends React.Component {
 
     return (
       <ErrorBoundary>
+        <ReactTooltip
+          className="react-autoql-drawer-tooltip"
+          id="react-autoql-data-alert-modal-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
         <Modal
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
