@@ -50,6 +50,7 @@ export default class DataAlertModal extends React.Component {
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
     enableQueryValidation: PropTypes.bool,
+    onValidate: PropTypes.func,
   }
 
   static defaultProps = {
@@ -67,6 +68,7 @@ export default class DataAlertModal extends React.Component {
     onManagementDeleteDataAlert: () => {},
     title: 'Create New Data Alert',
     enableQueryValidation: true,
+    onValidate: undefined,
   }
 
   state = {
@@ -303,11 +305,14 @@ export default class DataAlertModal extends React.Component {
     }
   }
 
+  validateFn = this.props.onValidate || validateExpression
+
   validateExpression = () => {
     this.setState({ isValidating: true, isExpressionValidated: false })
     if (this.expressionRef) {
       const expression = this.expressionRef.getJSON()
-      validateExpression({
+
+      this.validateFn({
         ...this.props.authentication,
         expression,
       })
