@@ -18,7 +18,7 @@ import {
   updateDataAlertStatus,
 } from '../../../js/notificationService'
 import { setCSSVars } from '../../../js/Util'
-import { formateResetDate } from '../helpers'
+import { formatResetDate } from '../helpers'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -304,7 +304,7 @@ export default class DataAlerts extends React.Component {
                     {notification.reset_date && (
                       <Icon
                         className="reset-period-info-icon"
-                        data-tip={`This Alert has been triggered. Scanning will resume on ${formateResetDate(
+                        data-tip={`This Alert has been triggered. Scanning will resume on ${formatResetDate(
                           notification
                         )} (${notification.time_zone})`}
                         data-for="react-autoql-notification-settings-tooltip"

@@ -74,7 +74,6 @@ export default class Steps extends React.Component {
   }
 
   setStep = (step) => {
-    console.log('setting step in steps component', step)
     this.setState({ activeStep: step })
   }
 
