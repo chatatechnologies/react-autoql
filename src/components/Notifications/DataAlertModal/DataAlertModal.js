@@ -553,7 +553,7 @@ export default class DataAlertModal extends React.Component {
           !this.state.isExpressionValid,
       },
       {
-        title: 'Select Alert Interval',
+        title: 'Set Alert Interval',
         content: this.renderFrequencyStep(),
         complete: this.state.isScheduleSectionComplete,
       },
