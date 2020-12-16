@@ -84,7 +84,7 @@ export default class Steps extends React.Component {
         `#react-autoql-step-content-${this.COMPONENT_KEY}-${index}`
       )
       if (content) {
-        return content.scrollHeight
+        return content.scrollHeight + 15
       }
     }
     return undefined
