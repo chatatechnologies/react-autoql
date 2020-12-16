@@ -6,7 +6,7 @@ import uuid from 'uuid'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import { TimezoneSelector } from '../../TimezoneSelector'
-import { formateResetDate } from '../helpers'
+import { formatResetDate } from '../helpers'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
@@ -100,6 +100,20 @@ export default class ScheduleBuilder extends React.Component {
     }
   }
 
+  getResetPeriod = (frequencySelectValue) => {
+    if (frequencySelectValue === 'Daily') {
+      return 'DAY'
+    } else if (frequencySelectValue === 'Monthly') {
+      return 'MONTH'
+    } else if (frequencySelectValue === 'Weekly') {
+      return 'WEEK'
+    } else if (frequencySelectValue === 'Immediately') {
+      return 'CONTINUOUS'
+    }
+
+    return undefined
+  }
+
   renderFrequencyDescription = () => {
     if (!this.isComplete()) {
       return null
@@ -123,16 +137,18 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div className="frequency-description-box">
         {description}
-        {!!_get(this.props.dataAlert, 'reset_date') && (
-          <span>
-            <br />
-            <br />
-            <Icon type="hour-glass" />{' '}
-            {`This Alert has been triggered. Scanning will resume on ${formateResetDate(
-              this.props.dataAlert
-            )} (${this.props.dataAlert.time_zone})`}
-          </span>
-        )}
+        {!!_get(this.props.dataAlert, 'reset_date') &&
+          this.props.dataAlert.reset_period ===
+            this.getResetPeriod(this.state.frequencySelectValue) && (
+            <span>
+              <br />
+              <br />
+              <Icon type="hour-glass" />{' '}
+              {`This Alert has been triggered. Scanning will resume on ${formatResetDate(
+                this.props.dataAlert
+              )} (${this.props.dataAlert.time_zone})`}
+            </span>
+          )}
       </div>
     )
   }

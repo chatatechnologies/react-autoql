@@ -380,7 +380,6 @@ export default class DataAlertModal extends React.Component {
 
   setStep = (step) => {
     if (this.stepsRef) {
-      console.log('setting step in data alert modal', step)
       this.stepsRef.setStep(step)
     }
   }
@@ -539,13 +538,6 @@ export default class DataAlertModal extends React.Component {
     if (!this.props.isVisible) {
       return null
     }
-
-    console.log(
-      'is there an error?',
-      this.props.enableQueryValidation,
-      this.state.isExpressionValidated,
-      !this.state.isExpressionValid
-    )
 
     const steps = [
       {
