@@ -308,38 +308,45 @@ export default class DataAlertModal extends React.Component {
   validateFn = this.props.onValidate || validateExpression
 
   validateExpression = () => {
-    this.setState({ isValidating: true, isExpressionValidated: false })
-    if (this.expressionRef) {
-      const expression = this.expressionRef.getJSON()
+    try {
+      this.setState({ isValidating: true, isExpressionValidated: false })
 
-      this.validateFn({
-        ...this.props.authentication,
-        expression,
-      })
-        .then(() => {
-          this.setState({
-            isValidating: false,
-            isExpressionValid: true,
-            isExpressionValidated: true,
-          })
-          return Promise.resolve(true)
+      if (this.expressionRef) {
+        const expression = this.expressionRef.getJSON()
+
+        this.validateFn({
+          ...this.props.authentication,
+          expression,
         })
-        .catch((error) => {
-          this.setState({
-            isValidating: false,
-            isExpressionValid: false,
-            isExpressionValidated: true,
-            expressionError: _get(error, 'message'),
+          .then(() => {
+            this.setState({
+              isValidating: false,
+              isExpressionValid: true,
+              isExpressionValidated: true,
+            })
           })
-          return Promise.resolve(false)
+          .catch((error) => {
+            this.setState({
+              isValidating: false,
+              isExpressionValid: false,
+              isExpressionValidated: true,
+              expressionError: _get(error, 'message'),
+            })
+          })
+      } else {
+        this.setState({
+          isValidating: false,
+          isExpressionValid: false,
+          isExpressionValidated: true,
         })
-    } else {
+      }
+    } catch (error) {
+      console.error(error)
       this.setState({
         isValidating: false,
         isExpressionValid: false,
         isExpressionValidated: true,
       })
-      return Promise.resolve(false)
     }
   }
 
