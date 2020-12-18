@@ -236,6 +236,14 @@ export default class DataAlerts extends React.Component {
     // }, 0)
   }
 
+  hasError = (dataAlert) => {
+    return (
+      dataAlert.status === 'GENERAL_ERROR' ||
+      dataAlert.status === 'EVALUATION_ERROR' ||
+      dataAlert.status === 'DATA_RETURN_ERROR'
+    )
+  }
+
   renderNotificationlist = (type, list) => {
     if (type === 'project' && !_get(list, 'length')) {
       return null
@@ -268,7 +276,7 @@ export default class DataAlerts extends React.Component {
                   <div className="react-autoql-notification-setting-display-name">
                     <span className="react-autoql-notification-setting-display-name-title">
                       <span>
-                        {notification.status === 'GENERAL_ERROR' && (
+                        {this.hasError(notification) && (
                           <Icon
                             type="warning-triangle"
                             className="react-autoql-notification-error-status-icon"
