@@ -125,10 +125,10 @@ export default class ScheduleBuilder extends React.Component {
     let description = null
     if (selection === 'Daily') {
       description = `This Alert may be triggered multiple times, but you will only be notified once per day. Scanning will resume daily at 12am (${timeZone}).`
-    } else if (selection === 'Monthly') {
-      description = `This Alert may be triggered multiple times, but you will only be notified once per week. Scanning will resume next Monday at 12am (${timeZone}).`
     } else if (selection === 'Weekly') {
-      description = `This Alert may be triggered multiple times, but you will only be notified once per month. Scanning will resume daily on the first day of next month at 12am (${timeZone}).`
+      description = `This Alert may be triggered multiple times, but you will only be notified once per week. Scanning will resume next Monday at 12am (${timeZone}).`
+    } else if (selection === 'Monthly') {
+      description = `This Alert may be triggered multiple times, but you will only be notified once per month. Scanning will resume on the first day of next month at 12am (${timeZone}).`
     } else if (selection === 'Immediately') {
       description =
         'You will be notified as soon as this happens, any time this happens. Scanning will happen continuously.'
@@ -146,7 +146,7 @@ export default class ScheduleBuilder extends React.Component {
               <Icon type="hour-glass" />{' '}
               {`This Alert has been triggered. Scanning will resume on ${formatResetDate(
                 this.props.dataAlert
-              )} (${this.props.dataAlert.time_zone})`}
+              )} (${this.state.timezone})`}
             </span>
           )}
       </div>
@@ -181,7 +181,7 @@ export default class ScheduleBuilder extends React.Component {
               We’ll scan your database and notify you as soon as the Alert
               conditions are are met.
             </p>
-            <p>Once Alert has been triggered, resume scanning:</p>
+            <p>Once the Alert has been triggered, resume scanning:</p>
             <Radio
               themeConfig={getThemeConfig(this.props.themeConfig)}
               options={['Immediately', 'Daily', 'Weekly', 'Monthly']}

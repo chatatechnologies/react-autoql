@@ -566,6 +566,23 @@ export default class Input extends React.Component {
     return !columns.find((col) => col.visible)
   }
 
+  isDrilldownResponse = () => {
+    try {
+      const queryText = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.text'
+      )
+      console.log('query text:', queryText)
+      console.log('split:', queryText.split(' '))
+      if (queryText.split(' ')[0] === 'Drilldown:') {
+        return true
+      }
+      return false
+    } catch (error) {
+      return false
+    }
+  }
+
   renderSendToSlackModal = () => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
       return (
@@ -686,7 +703,8 @@ export default class Input extends React.Component {
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:
         isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableNotifications,
+        getAutoQLConfig(this.props.autoQLConfig).enableNotifications &&
+        !this.isDrilldownResponse(),
       showShareToSlackButton: false,
       // This feature is disabled indefinitely
       // isDataResponse &&

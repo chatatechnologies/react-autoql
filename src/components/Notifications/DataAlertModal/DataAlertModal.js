@@ -487,7 +487,8 @@ export default class DataAlertModal extends React.Component {
           {this.renderBackBtn('second-step-back-btn')}
           {this.renderNextBtn(
             'second-step-next-btn',
-            !this.state.isScheduleSectionComplete
+            !this.state.isScheduleSectionComplete,
+            () => this.setState({ isThirdSectionDirty: true })
           )}
         </div>
       </div>
