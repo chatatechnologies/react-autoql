@@ -225,15 +225,10 @@ export default class NotificationFeed extends React.Component {
     const newList = this.state.notificationList.filter(
       (n) => n.id !== notification.id
     )
-    this.setState(
-      {
-        notificationList: newList,
-        nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
-      },
-      () => {
-        this.getNotifications(1)
-      }
-    )
+    this.setState({
+      notificationList: newList,
+      nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
+    })
   }
 
   onDataAlertSave = () => {
@@ -348,6 +343,9 @@ export default class NotificationFeed extends React.Component {
                       onClick={this.onItemClick}
                       onDismissCallback={this.onDismissClick}
                       onDeleteCallback={this.onDeleteClick}
+                      onDeleteSuccessCallback={() => {
+                        this.getNotifications(1)
+                      }}
                       onExpandCallback={(notification) => {
                         this.props.onExpandCallback(notification)
                         this.setState({

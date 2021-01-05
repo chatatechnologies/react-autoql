@@ -53,6 +53,7 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
+    onDeleteSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
   }
@@ -67,6 +68,7 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
+    onDeleteSuccessCallback: () => {},
     onErrorCallback: () => {},
   }
 
@@ -152,10 +154,14 @@ export default class NotificationItem extends React.Component {
     deleteNotification({
       ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDeleteSuccessCallback()
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   changeRuleStatus = (notification, status) => {
