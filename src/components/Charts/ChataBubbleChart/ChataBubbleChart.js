@@ -145,16 +145,16 @@ export default class ChataBubbleChart extends Component {
     const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
     const minValue = min(data, (d) => min(d.cells, (cell) => cell.value))
 
-    const uniqueYLabels = data.map((d) => d.label)
-    const yScale = this.xScale
-      .domain(uniqueYLabels)
-      .range([height - bottomMargin, topMargin])
-      .paddingOuter(0.5)
-
-    const uniqueXLabels = data[0].cells.map((cell) => cell.label)
-    const xScale = this.yScale
+    const uniqueXLabels = data.map((d) => d.label)
+    const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([leftMargin, width - rightMargin])
+      .paddingOuter(0.5)
+
+    const uniqueYLabels = data[0].cells.map((cell) => cell.label)
+    const yScale = this.yScale
+      .domain(uniqueYLabels)
+      .range([height - bottomMargin, topMargin])
 
     this.squareWidth = xScale.bandwidth()
     const xTickValues = this.getXTickValues(uniqueXLabels)
@@ -169,8 +169,8 @@ export default class ChataBubbleChart extends Component {
         <Axes
           themeConfig={getThemeConfig(this.props.themeConfig)}
           scales={{ xScale, yScale }}
-          xCol={legendColumn}
-          yCol={columns[0]}
+          xCol={columns[0]}
+          yCol={legendColumn}
           valueCol={columns[2]}
           margins={{
             left: leftMargin,

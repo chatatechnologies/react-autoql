@@ -824,8 +824,8 @@ export default class ChataChart extends Component {
     <ChataHeatmapChart
       {...this.getCommonChartProps()}
       dataValue="value"
-      labelValueX="labelX"
-      labelValueY="labelY"
+      labelValueX="labelY"
+      labelValueY="labelX"
     />
   )
 
@@ -833,8 +833,8 @@ export default class ChataChart extends Component {
     <ChataBubbleChart
       {...this.getCommonChartProps()}
       dataValue="value"
-      labelValueX="labelX"
-      labelValueY="labelY"
+      labelValueX="labelY"
+      labelValueY="labelX"
     />
   )
 
