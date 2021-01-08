@@ -106,7 +106,7 @@ export default class ChataTable extends React.Component {
   saveAsCSV = () => {
     if (this.ref && this.ref.table) {
       this.ref.table.download('csv', 'table.csv', {
-        delimeter: ',',
+        delimiter: '\t',
       })
     }
   }
