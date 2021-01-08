@@ -33,6 +33,23 @@
     padding-bottom: 10px;
     height: 100%;
   }
+  .drilldown-hide-chart-btn {
+    text-align: right;
+    width: 100%;
+
+    &.bottom {
+      position: absolute;
+      bottom: 5px;
+      padding-right: 40px;
+    }
+
+    &.top {
+      padding-right: 20px;
+      padding-top: 10px;
+      margin-bottom: -8px;
+    }
+  }
+
   .react-autoql-dashboard-drilldown-table {
     padding: 20px;
     padding-top: 10px;

@@ -572,8 +572,6 @@ export default class Input extends React.Component {
         this.props.responseRef,
         'props.queryResponse.data.data.text'
       )
-      console.log('query text:', queryText)
-      console.log('split:', queryText.split(' '))
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
       }
