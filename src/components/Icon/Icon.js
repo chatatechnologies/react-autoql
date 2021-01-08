@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Icons
+import { BsArrowBarUp, BsArrowBarDown } from 'react-icons/bs'
+import { BiLineChart } from 'react-icons/bi'
 import {
   MdClose,
   MdError,
@@ -155,6 +157,10 @@ export default class Icon extends React.Component {
         icon = bubblesIconFilledAlt
         break
       }
+      case 'chart': {
+        icon = <BiLineChart />
+        break
+      }
       case 'check': {
         icon = <FiCheck />
         break
@@ -165,6 +171,10 @@ export default class Icon extends React.Component {
       }
       case 'close-circle': {
         icon = <IoIosCloseCircleOutline />
+        break
+      }
+      case 'collapse': {
+        icon = <BsArrowBarUp />
         break
       }
       case 'column-chart': {
@@ -197,6 +207,10 @@ export default class Icon extends React.Component {
       }
       case 'edit': {
         icon = <AiOutlineEdit />
+        break
+      }
+      case 'expand': {
+        icon = <BsArrowBarDown />
         break
       }
       case 'eye': {
