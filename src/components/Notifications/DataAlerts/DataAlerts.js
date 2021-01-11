@@ -229,11 +229,6 @@ export default class DataAlerts extends React.Component {
       activeDataAlert: notification,
       isEditModalVisible: true,
     })
-    // setTimeout(() => {
-    //   if (this.editModalRef) {
-    //     this.editModalRef.validateExpression()
-    //   }
-    // }, 0)
   }
 
   hasError = (dataAlert) => {
