@@ -288,7 +288,7 @@ export default class DataMessenger extends React.Component {
   }
 
   setintroMessages = () => {
-    const introMessages = [
+    let introMessages = [
       this.createIntroMessage({
         type: 'text',
         content: this.props.introMessage
@@ -297,6 +297,18 @@ export default class DataMessenger extends React.Component {
               'there'}! Let’s dive into your data. What can I help you discover today?`,
       }),
     ]
+
+    if (_get(this.props.authentication, 'isQandA')) {
+      introMessages = [
+        this.createIntroMessage({
+          type: 'text',
+          content: this.props.introMessage
+            ? `${this.props.introMessage}`
+            : `Hi ${this.props.userDisplayName ||
+                'there'}! What can I help you with today?`,
+        }),
+      ]
+    }
 
     if (
       !this.props.introMessage &&
@@ -1214,6 +1226,7 @@ export default class DataMessenger extends React.Component {
             {this.props.resizable && this.renderResizeHandle()}
             {(this.props.enableExploreQueriesTab ||
               this.props.enableNotificationsTab) &&
+              !_get(this.props.authentication, 'isQandA') &&
               this.renderTabs()}
             <div className="react-autoql-drawer-content-container">
               <div className="chat-header-container">

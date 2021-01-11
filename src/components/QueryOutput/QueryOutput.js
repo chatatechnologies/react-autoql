@@ -6,6 +6,7 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import HTMLRenderer from 'react-html-renderer'
 
 import { scaleOrdinal } from 'd3-scale'
 import {
@@ -1842,9 +1843,18 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  renderHTMLMessage = (queryResponse) => {
+    return <HTMLRenderer html={_get(queryResponse, 'data.data.answer')} />
+  }
+
   renderResponse = (width, height) => {
     const { displayType } = this.state
     const { queryResponse } = this.props
+
+    if (displayType === 'html') {
+      return this.renderHTMLMessage(queryResponse)
+    }
+
     const data = _get(queryResponse, 'data.data.rows')
 
     if (this.hasError(queryResponse)) {

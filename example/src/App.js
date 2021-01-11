@@ -105,6 +105,7 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
+    isQandA: false,
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
@@ -181,6 +182,13 @@ export default class App extends Component {
   }
 
   getAuthProp = () => {
+    if (this.state.isQandA) {
+      return {
+        isQandA: true,
+        projectID: this.state.projectId,
+      }
+    }
+
     return {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey,
@@ -454,49 +462,53 @@ export default class App extends Component {
   }
 
   onLogin = async () => {
-    try {
-      this.setState({
-        isAuthenticating: true,
-      })
-      const baseUrl = getBaseUrl()
-
-      // Login to get login token
-      const loginFormData = new FormData()
-      loginFormData.append('username', this.state.email)
-      loginFormData.append('password', this.state.password)
-      const loginResponse = await axios.post(
-        `${baseUrl}/api/v1/login`,
-        loginFormData,
-        {
-          headers: {
-            // 'Access-Control-Allow-Origin': '*'
-          },
-        }
-      )
-
-      // Put login token in local storage
-      const loginToken = loginResponse.data
-      setStoredProp('loginToken', loginToken)
-
-      await this.getJWT(loginToken)
-
+    if (this.state.isQandA) {
       message.success('Login Sucessful!', 0.8)
-      this.fetchDashboards()
-      this.fetchTopics()
-    } catch (error) {
-      console.error(error)
-      // Clear tokens
-      setStoredProp('loginToken', null)
-      setStoredProp('jwtToken', null)
-      this.setState({
-        isAuthenticated: false,
-        isAuthenticating: false,
-        activeIntegrator: null,
-        componentKey: uuid.v4(),
-      })
+    } else {
+      try {
+        this.setState({
+          isAuthenticating: true,
+        })
+        const baseUrl = getBaseUrl()
 
-      // Dont fetch dashboard if authentication failed...
-      message.error('Invalid Credentials')
+        // Login to get login token
+        const loginFormData = new FormData()
+        loginFormData.append('username', this.state.email)
+        loginFormData.append('password', this.state.password)
+        const loginResponse = await axios.post(
+          `${baseUrl}/api/v1/login`,
+          loginFormData,
+          {
+            headers: {
+              // 'Access-Control-Allow-Origin': '*'
+            },
+          }
+        )
+
+        // Put login token in local storage
+        const loginToken = loginResponse.data
+        setStoredProp('loginToken', loginToken)
+
+        await this.getJWT(loginToken)
+
+        message.success('Login Sucessful!', 0.8)
+        this.fetchDashboards()
+        this.fetchTopics()
+      } catch (error) {
+        console.error(error)
+        // Clear tokens
+        setStoredProp('loginToken', null)
+        setStoredProp('jwtToken', null)
+        this.setState({
+          isAuthenticated: false,
+          isAuthenticating: false,
+          activeIntegrator: null,
+          componentKey: uuid.v4(),
+        })
+
+        // Dont fetch dashboard if authentication failed...
+        message.error('Invalid Credentials')
+      }
     }
   }
 
@@ -827,80 +839,90 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
-          <Form.Item
-            label="User Email"
-            name="displayName"
-            rules={[{ required: true, message: 'Please enter your email' }]}
-          >
-            <Input
-              name="user-id"
-              onChange={(e) => {
-                this.setState({ displayName: e.target.value })
-              }}
-              onBlur={(e) => setStoredProp('user-id', e.target.value)}
-              value={this.state.displayName}
-              // autoComplete="on"
-            />
-          </Form.Item>
-          <Form.Item
-            label="API key"
-            name="apiKey"
-            rules={[{ required: true, message: 'Please enter your API key' }]}
-          >
-            <Input
-              name="api-key"
-              onChange={(e) => {
-                this.setState({ apiKey: e.target.value })
-              }}
-              onBlur={(e) => setStoredProp('api-key', e.target.value)}
-              value={this.state.apiKey}
-              // autoComplete="on"
-            />
-          </Form.Item>
-          <Form.Item
-            label="Domain URL"
-            name="domain"
-            rules={[
-              { required: true, message: 'Please enter your domain URL' },
-            ]}
-          >
-            <Input
-              name="domain-url"
-              onChange={(e) => {
-                this.setState({ domain: e.target.value })
-              }}
-              onBlur={(e) => setStoredProp('domain-url', e.target.value)}
-              value={this.state.domain}
-              // autoComplete="on"
-            />
-          </Form.Item>
-          <Form.Item
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: 'Please enter your username' }]}
-          >
-            <Input
-              onChange={(e) => {
-                this.setState({ email: e.target.value })
-              }}
-              value={this.state.email}
-              // autoComplete="on"
-            />
-          </Form.Item>
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Please enter your password' }]}
-          >
-            <Input
-              type="password"
-              onChange={(e) => {
-                this.setState({ password: e.target.value })
-              }}
-              value={this.state.password}
-              // autoComplete="on"
-            />
-          </Form.Item>
+          {!this.state.isQandA && (
+            <>
+              <Form.Item
+                label="User Email"
+                name="displayName"
+                rules={[{ required: true, message: 'Please enter your email' }]}
+              >
+                <Input
+                  name="user-id"
+                  onChange={(e) => {
+                    this.setState({ displayName: e.target.value })
+                  }}
+                  onBlur={(e) => setStoredProp('user-id', e.target.value)}
+                  value={this.state.displayName}
+                  // autoComplete="on"
+                />
+              </Form.Item>
+              <Form.Item
+                label="API key"
+                name="apiKey"
+                rules={[
+                  { required: true, message: 'Please enter your API key' },
+                ]}
+              >
+                <Input
+                  name="api-key"
+                  onChange={(e) => {
+                    this.setState({ apiKey: e.target.value })
+                  }}
+                  onBlur={(e) => setStoredProp('api-key', e.target.value)}
+                  value={this.state.apiKey}
+                  // autoComplete="on"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Domain URL"
+                name="domain"
+                rules={[
+                  { required: true, message: 'Please enter your domain URL' },
+                ]}
+              >
+                <Input
+                  name="domain-url"
+                  onChange={(e) => {
+                    this.setState({ domain: e.target.value })
+                  }}
+                  onBlur={(e) => setStoredProp('domain-url', e.target.value)}
+                  value={this.state.domain}
+                  // autoComplete="on"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Username"
+                name="username"
+                rules={[
+                  { required: true, message: 'Please enter your username' },
+                ]}
+              >
+                <Input
+                  onChange={(e) => {
+                    this.setState({ email: e.target.value })
+                  }}
+                  value={this.state.email}
+                  // autoComplete="on"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Password"
+                name="password"
+                rules={[
+                  { required: true, message: 'Please enter your password' },
+                ]}
+              >
+                <Input
+                  type="password"
+                  onChange={(e) => {
+                    this.setState({ password: e.target.value })
+                  }}
+                  value={this.state.password}
+                  // autoComplete="on"
+                />
+              </Form.Item>
+            </>
+          )}
           <Form.Item {...tailLayout}>
             <Button
               type="primary"
@@ -924,6 +946,15 @@ export default class App extends Component {
     return (
       <div>
         <h1>Authentication</h1>
+        <Switch
+          checkedChildren="Q&amp;A ON"
+          unCheckedChildren="Q&amp;A OFF"
+          onChange={(checked) => {
+            this.setState({ isQandA: checked }, () =>
+              this.reloadDataMessenger()
+            )
+          }}
+        />
         {this.renderAuthenticationForm()}
         {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
           true,
@@ -1546,7 +1577,8 @@ export default class App extends Component {
           <ChataIcon type="react-autoql-bubbles-outlined" />
           Data Messenger
         </Menu.Item>
-        {this.state.isAuthenticated && (
+
+        {this.state.isAuthenticated && !this.state.isQandA && (
           <Menu.Item key="dashboard">
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
@@ -1555,32 +1587,39 @@ export default class App extends Component {
         {this.state.isAuthenticated && (
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
         )} */}
-        <Menu.Item key="reviews">Reviews</Menu.Item>
-        <Menu.Item key="speech">Speech Training</Menu.Item>
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
+        {!this.state.isQandA && <Menu.Item key="reviews">Reviews</Menu.Item>}
+
+        {!this.state.isQandA && (
+          <Menu.Item key="speech">Speech Training</Menu.Item>
         )}
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="notifications">
-            <NotificationIcon
-              ref={(r) => (this.notificationBadgeRef = r)}
-              authentication={this.getAuthProp()}
-              themeConfig={this.getThemeConfigProp()}
-              clearCountOnClick={false}
-              style={{ fontSize: '18px' }}
-              onNewNotification={() => {
-                // If a new notification is detected, refresh the list
-                if (
-                  this.notificationListRef &&
-                  this.state.currentPage === 'notifications'
-                ) {
-                  this.notificationListRef.refreshNotifications()
-                }
-              }}
-              onErrorCallback={this.onError}
-            />
-          </Menu.Item>
-        )}
+        {this.state.isAuthenticated &&
+          this.state.enableNotifications &&
+          !this.state.isQandA && (
+            <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
+          )}
+        {this.state.isAuthenticated &&
+          this.state.enableNotifications &&
+          !this.state.isQandA && (
+            <Menu.Item key="notifications">
+              <NotificationIcon
+                ref={(r) => (this.notificationBadgeRef = r)}
+                authentication={this.getAuthProp()}
+                themeConfig={this.getThemeConfigProp()}
+                clearCountOnClick={false}
+                style={{ fontSize: '18px' }}
+                onNewNotification={() => {
+                  // If a new notification is detected, refresh the list
+                  if (
+                    this.notificationListRef &&
+                    this.state.currentPage === 'notifications'
+                  ) {
+                    this.notificationListRef.refreshNotifications()
+                  }
+                }}
+                onErrorCallback={this.onError}
+              />
+            </Menu.Item>
+          )}
       </Menu>
     )
   }
