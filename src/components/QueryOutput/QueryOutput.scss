@@ -1,10 +1,21 @@
-.react-autoql-response-content-container {
+.react-autoql-response-content-container:not(.html-content) {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   background-color: inherit;
+  font-size: 14px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  color: var(--react-autoql-text-color-primary);
+}
+
+.react-autoql-response-content-container.html-content {
+  position: relative;
+  background-color: inherit;
+  text-align: left;
   font-size: 14px;
   height: 100%;
   width: 100%;

@@ -312,7 +312,8 @@ export default class DataMessenger extends React.Component {
 
     if (
       !this.props.introMessage &&
-      _get(this.props.queryQuickStartTopics, 'length')
+      _get(this.props.queryQuickStartTopics, 'length') &&
+      !_get(this.props.authentication, 'isQandA')
     ) {
       const topicsMessageContent = this.createTopicsMessage()
 

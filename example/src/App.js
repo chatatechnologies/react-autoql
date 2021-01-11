@@ -950,9 +950,15 @@ export default class App extends Component {
           checkedChildren="Q&amp;A ON"
           unCheckedChildren="Q&amp;A OFF"
           onChange={(checked) => {
-            this.setState({ isQandA: checked }, () =>
+            this.setState({ isQandA: checked }, () => {
+              this.setState({
+                isAuthenticated: false,
+                dashboardTiles: undefined,
+              })
+              setStoredProp('loginToken', undefined)
+              setStoredProp('jwtToken', undefined)
               this.reloadDataMessenger()
-            )
+            })
           }}
         />
         {this.renderAuthenticationForm()}

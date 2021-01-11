@@ -1992,9 +1992,9 @@ export default class QueryOutput extends React.Component {
           key={this.COMPONENT_KEY}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
-          className={`react-autoql-response-content-container ${
-            isTableType(this.state.displayType) ? 'table' : ''
-          }`}
+          className={`react-autoql-response-content-container
+          ${isTableType(this.state.displayType) ? 'table' : ''}
+          ${this.state.displayType === 'html' ? 'html-content' : ''}`}
         >
           {this.renderResponse(width, height)}
         </div>
