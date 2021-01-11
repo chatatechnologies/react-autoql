@@ -77,18 +77,6 @@ export const runQandAQuery = ({ query, projectID }) => {
   }
   const config = {}
 
-  return Promise.resolve({
-    data: {
-      data: {
-        display_type: 'html',
-        query,
-        answer: 'this is some html <a>with an anchor tag</a>',
-      },
-      reference_id: '1.1.200',
-      message: 'ok',
-    },
-  })
-
   return axios
     .post(url, data, config)
     .then((response) => {
