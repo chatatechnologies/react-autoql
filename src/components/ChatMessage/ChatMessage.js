@@ -444,7 +444,7 @@ export default class ChatMessage extends React.Component {
   getMaxMessageheight = () => {
     const { chartHeight } = this.getChartDimensions()
 
-    if (this.props.type === 'text') {
+    if (this.props.type === 'text' || this.state.displayType === 'html') {
       return undefined
     } else if (chartHeight) {
       return chartHeight + 40
