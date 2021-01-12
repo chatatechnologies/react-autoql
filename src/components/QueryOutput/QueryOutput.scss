@@ -21,6 +21,10 @@
   width: 100%;
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .react-autoql-response-content-container.table {
