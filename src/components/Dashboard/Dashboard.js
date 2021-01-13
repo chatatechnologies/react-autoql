@@ -467,6 +467,9 @@ class Dashboard extends React.Component {
               isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
             })
           }}
+          tooltip={
+            this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'
+          }
         >
           <Icon type="chart" />
           <Icon
