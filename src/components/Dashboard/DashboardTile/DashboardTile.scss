@@ -534,9 +534,14 @@
 .dashboard-tile-response-container .layout-pane-primary {
   overflow: hidden;
 }
-.dashboard-tile-response-container .splitter-layout,
-.dashboard-tile-split-pane-container {
-  height: 100%;
+.splitter-layout,
+.layout-pane,
+.dashboard-tile-split-pane-container,
+.react-autoql-dashboard-drilldown-original {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
 }
 .dashboard-tile-response-container .splitter-layout,
 .dashboard-tile-response-container .layout-pane,
