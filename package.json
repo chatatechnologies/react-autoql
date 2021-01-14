@@ -83,7 +83,7 @@
     "react-splitter-layout": "^4.0.0",
     "react-tabulator": "^0.13.2",
     "react-tiny-popover": "^3.4.5",
-    "react-tooltip": "^4.2.11",
+    "react-tooltip": "4.2.10",
     "recordrtc": "^5.6.1",
     "sql-formatter": "^2.3.3",
     "tabulator-tables": "4.7.2",
