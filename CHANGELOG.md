@@ -1,3 +1,39 @@
+# [3.1.0](https://github.com/chatatechnologies/react-autoql/compare/v3.0.0...v3.1.0) (2021-01-19)
+
+
+### Bug Fixes
+
+* do not send comma separated list for suggestions endpoint from failed query ([f397377](https://github.com/chatatechnologies/react-autoql/commit/f397377e25ef1087391ba381f36dc03eb83e62cb))
+* encode search text to URI for related queries ([685fd6f](https://github.com/chatatechnologies/react-autoql/commit/685fd6fa5ba5ab2459606878193504ada605c697))
+* Error ID not showing in some cases ([0a04f05](https://github.com/chatatechnologies/react-autoql/commit/0a04f051f23081c08e2d20c43e37cf327d5d9cf1))
+* fix chart height for split view tiles in safari ([63989e1](https://github.com/chatatechnologies/react-autoql/commit/63989e178366518e7d5f67bc18ab6d09b1a53e82))
+* put date on x axis for both heatmap and bubble chart ([a9e9f95](https://github.com/chatatechnologies/react-autoql/commit/a9e9f95547aa5c53e01adbe0dd54ea562ec2c2c4))
+* update tooltip library ([dc26a62](https://github.com/chatatechnologies/react-autoql/commit/dc26a62989245a8985fcc1cd8d2fe4c499943f4e))
+* **notifications:** only fetch new notification after delete is finished ([97c10ee](https://github.com/chatatechnologies/react-autoql/commit/97c10ee80a61331ea7dacb57fbc73dbb2186b511))
+* update classname for notifications tab ([cad34cd](https://github.com/chatatechnologies/react-autoql/commit/cad34cdd38cd4e36e6bfa8a407198bf039d2b6cf))
+* update tooltip library to fix positioning ([f7a38bf](https://github.com/chatatechnologies/react-autoql/commit/f7a38bf9b7c848b06e70012cd296f74fccb690a0))
+* **data messenger:** fix bug in up arrow for last query ([34c1ec4](https://github.com/chatatechnologies/react-autoql/commit/34c1ec4df932f632b0dd3f76174bd726e35d79f7))
+
+
+### Features
+
+* **dashboards:** add collapse/expand button to chart in dashboard drilldown modal ([58e163e](https://github.com/chatatechnologies/react-autoql/commit/58e163ed0a2a00b25b437e6657b16a694aba7713))
+* **data alerts:** update data alert reset_date to new format ([4779365](https://github.com/chatatechnologies/react-autoql/commit/4779365f83dd3c6f3af789b6b4d6e6533d7c287d))
+* **tables:** change csv delimiter to tab ([037e625](https://github.com/chatatechnologies/react-autoql/commit/037e62544601f3ff67e7a9e7761d9522a37c01a8))
+* Add error boundary to every component so fatal errors are not propagated ([7c571a6](https://github.com/chatatechnologies/react-autoql/commit/7c571a6348fab2b3c6ec08a027aced9a5bc67301))
+* add onValidate prop to DataAlertModal for portal ([7d4b63d](https://github.com/chatatechnologies/react-autoql/commit/7d4b63d7dec738d366ff13b1b5d94a18232f1f0f))
+* add time zone selection to schedule step in Data Alert Modal ([ca03d29](https://github.com/chatatechnologies/react-autoql/commit/ca03d294c4bbb8b3c383093fb4f1e017bbf4c57d))
+* add validate button to data alert modal ([a2fd4cb](https://github.com/chatatechnologies/react-autoql/commit/a2fd4cba231eb66b05202a3302223bbdaf03d0ae))
+* change max row limit to 500 ([6f395a3](https://github.com/chatatechnologies/react-autoql/commit/6f395a33c3183699dc80b6266e5c3338df809d90))
+* display reset date and time zone in data alert list ([56ecd2b](https://github.com/chatatechnologies/react-autoql/commit/56ecd2bc435508be5b6ee2671b3c512127ecb2e6))
+* expose LoadingDots and Icon components ([262b317](https://github.com/chatatechnologies/react-autoql/commit/262b317c78fe8200758a91b3415f4da3d1026b0c))
+* Improve notification copy ([0be6028](https://github.com/chatatechnologies/react-autoql/commit/0be6028debb8a7dd7050b8ec599178db15aeca9c))
+* **charts:** Format quantities with commas in chart labels ([11dfbbe](https://github.com/chatatechnologies/react-autoql/commit/11dfbbeed5d1edc57f60e8139c8ea8020011f948))
+* **notifications:** add showCreateAlertBtn prop to DataAlerts component ([38ddbbe](https://github.com/chatatechnologies/react-autoql/commit/38ddbbed69dc924d4fb9852dc2526f3d8fd3aa9b))
+* **notifications:** parse currencies into numbers in data alert modal compare query ([dce09f3](https://github.com/chatatechnologies/react-autoql/commit/dce09f345b6ffce89199179eed76444f8a87409e))
+* Improve drilldown modal UI (add draggable splitter, make modal bigger, text smaller) ([f03b6d3](https://github.com/chatatechnologies/react-autoql/commit/f03b6d349ec39240be216beeeddd00d40a338043))
+* Simplify conditions and data return in data alert modal ([cd09420](https://github.com/chatatechnologies/react-autoql/commit/cd0942085c9d57b16739dd92cac329205adbfebf))
+
 # [3.0.0](https://github.com/chatatechnologies/react-autoql/compare/v2.2.0...v3.0.0) (2020-11-18)
 
 
