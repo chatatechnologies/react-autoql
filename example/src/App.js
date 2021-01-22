@@ -230,6 +230,10 @@ export default class App extends Component {
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
 
+    if (this.state.themeCode === '1') {
+      lightAccentColor = '#C53392'
+    }
+
     return {
       theme: this.state.theme,
       accentColor:
@@ -464,6 +468,7 @@ export default class App extends Component {
   onLogin = async () => {
     if (this.state.isQandA) {
       message.success('Login Sucessful!', 0.8)
+      this.fetchTopics()
     } else {
       try {
         this.setState({
@@ -839,6 +844,18 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
+          {this.state.isQandA && (
+            <Form.Item label="Theme Code" name="themeCode">
+              <Input
+                name="theme-code"
+                onChange={(e) => {
+                  this.setState({ themeCode: e.target.value })
+                }}
+                onBlur={(e) => setStoredProp('theme-code', e.target.value)}
+                value={this.state.themeCode}
+              />
+            </Form.Item>
+          )}
           {!this.state.isQandA && (
             <>
               <Form.Item

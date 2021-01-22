@@ -288,33 +288,26 @@ export default class DataMessenger extends React.Component {
   }
 
   setintroMessages = () => {
+    let introMessageContent = this.props.introMessage
+      ? `${this.props.introMessage}`
+      : `Hi ${this.props.userDisplayName ||
+          'there'}! Let’s dive into your data. What can I help you discover today?`
+
+    if (_get(this.props.authentication, 'isQandA')) {
+      introMessageContent = this.props.introMessage
+        ? `${this.props.introMessage}`
+        : `Hi ${this.props.userDisplayName ||
+            'there'}! What can I help you with today?`
+    }
+
     let introMessages = [
       this.createIntroMessage({
         type: 'text',
-        content: this.props.introMessage
-          ? `${this.props.introMessage}`
-          : `Hi ${this.props.userDisplayName ||
-              'there'}! Let’s dive into your data. What can I help you discover today?`,
+        content: introMessageContent,
       }),
     ]
 
-    if (_get(this.props.authentication, 'isQandA')) {
-      introMessages = [
-        this.createIntroMessage({
-          type: 'text',
-          content: this.props.introMessage
-            ? `${this.props.introMessage}`
-            : `Hi ${this.props.userDisplayName ||
-                'there'}! What can I help you with today?`,
-        }),
-      ]
-    }
-
-    if (
-      !this.props.introMessage &&
-      _get(this.props.queryQuickStartTopics, 'length') &&
-      !_get(this.props.authentication, 'isQandA')
-    ) {
+    if (_get(this.props.queryQuickStartTopics, 'length')) {
       const topicsMessageContent = this.createTopicsMessage()
 
       if (topicsMessageContent) {
