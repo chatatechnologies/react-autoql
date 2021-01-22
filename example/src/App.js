@@ -857,39 +857,39 @@ export default class App extends Component {
             </Form.Item>
           )}
           {!this.state.isQandA && (
+            <Form.Item
+              label="User Email"
+              name="displayName"
+              rules={[{ required: true, message: 'Please enter your email' }]}
+            >
+              <Input
+                name="user-id"
+                onChange={(e) => {
+                  this.setState({ displayName: e.target.value })
+                }}
+                onBlur={(e) => setStoredProp('user-id', e.target.value)}
+                value={this.state.displayName}
+                // autoComplete="on"
+              />
+            </Form.Item>
+          )}
+          <Form.Item
+            label="API key"
+            name="apiKey"
+            rules={[{ required: true, message: 'Please enter your API key' }]}
+          >
+            <Input
+              name="api-key"
+              onChange={(e) => {
+                this.setState({ apiKey: e.target.value })
+              }}
+              onBlur={(e) => setStoredProp('api-key', e.target.value)}
+              value={this.state.apiKey}
+              // autoComplete="on"
+            />
+          </Form.Item>
+          {!this.state.isQandA && (
             <>
-              <Form.Item
-                label="User Email"
-                name="displayName"
-                rules={[{ required: true, message: 'Please enter your email' }]}
-              >
-                <Input
-                  name="user-id"
-                  onChange={(e) => {
-                    this.setState({ displayName: e.target.value })
-                  }}
-                  onBlur={(e) => setStoredProp('user-id', e.target.value)}
-                  value={this.state.displayName}
-                  // autoComplete="on"
-                />
-              </Form.Item>
-              <Form.Item
-                label="API key"
-                name="apiKey"
-                rules={[
-                  { required: true, message: 'Please enter your API key' },
-                ]}
-              >
-                <Input
-                  name="api-key"
-                  onChange={(e) => {
-                    this.setState({ apiKey: e.target.value })
-                  }}
-                  onBlur={(e) => setStoredProp('api-key', e.target.value)}
-                  value={this.state.apiKey}
-                  // autoComplete="on"
-                />
-              </Form.Item>
               <Form.Item
                 label="Domain URL"
                 name="domain"
