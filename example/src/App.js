@@ -1777,6 +1777,10 @@ export default class App extends Component {
   }
 
   renderUIOverlay = () => {
+    if (this.state.uiOverlay && this.state.themeCode === '1') {
+      return <div className="ui-overlay theme-1" />
+    }
+
     if (!this.state.isAuthenticated) {
       return null
     }
