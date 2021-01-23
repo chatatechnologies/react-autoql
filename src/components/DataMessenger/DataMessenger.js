@@ -238,6 +238,9 @@ export default class DataMessenger extends React.Component {
   }
 
   createTopicsMessage = () => {
+    const enableExploreQueries = this.props.enableExploreQueriesTab
+    const isQandA = _get(this.props.authentication, 'isQandA')
+
     const topics = this.props.queryQuickStartTopics.map((topic) => {
       return {
         label: topic.topic,
@@ -264,19 +267,27 @@ export default class DataMessenger extends React.Component {
                     source: 'welcome_prompt',
                   })
                 }}
-                onSeeMoreClick={(label) => this.runTopicInExporeQueries(label)}
+                onSeeMoreClick={
+                  enableExploreQueries && !isQandA
+                    ? (label) => this.runTopicInExporeQueries(label)
+                    : undefined
+                }
               />
             }
           </div>
-          Use{' '}
-          <span
-            className="intro-qi-link"
-            onClick={() => this.setState({ activePage: 'explore-queries' })}
-          >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
-            Queries
-          </span>{' '}
-          to further explore the possibilities.
+          {enableExploreQueries && !isQandA && (
+            <div>
+              Use{' '}
+              <span
+                className="intro-qi-link"
+                onClick={() => this.setState({ activePage: 'explore-queries' })}
+              >
+                <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
+                Explore Queries
+              </span>{' '}
+              to further explore the possibilities.
+            </div>
+          )}
         </div>
       )
 

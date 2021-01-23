@@ -146,6 +146,7 @@ export default class App extends Component {
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
     projectId: getStoredProp('customer-id') || '',
+    themeCode: getStoredProp('theme-code') || '',
     displayName: getStoredProp('user-id') || '',
     currencyCode: 'USD',
     languageCode: 'en-US',
