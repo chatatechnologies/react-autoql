@@ -58,8 +58,12 @@ export default class SpeechToTextPage extends React.Component {
   sendWavFile = (file, blob) => {
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
+
     data.append('file', file, 'speech.wav')
     data.append('eng', this.state.queryList[this.state.currentQuery])
+    data.append('user_email', this.props.userEmail)
+    data.append('project_id', this.props.projectID)
+
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
