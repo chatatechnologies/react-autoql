@@ -55,7 +55,7 @@ export default class SpeechToTextPage extends React.Component {
     audio0.play()
   }
 
-  sendWavFile = (file, blob) => {
+  sendWavFile = (file, blob, query) => {
     this.setState({
       isConfirmingRecording: false,
       currentQuery: this.state.currentQuery + 1,
@@ -65,7 +65,7 @@ export default class SpeechToTextPage extends React.Component {
     const data = new FormData()
 
     data.append('file', file, 'speech.wav')
-    data.append('eng', this.state.queryList[this.state.currentQuery])
+    data.append('eng', query)
     data.append('user_email', this.props.userEmail)
     data.append('project_id', this.props.projectID)
 
@@ -78,7 +78,7 @@ export default class SpeechToTextPage extends React.Component {
     axios.post(url, data, config).then((response) => {
       const newResultHistory = [
         {
-          query: this.state.queryList[this.state.currentQuery],
+          query,
           audio: (
             <Button
               shape="circle"
@@ -154,7 +154,11 @@ export default class SpeechToTextPage extends React.Component {
           style={{ marginTop: '20px' }}
           type="primary"
           onClick={() =>
-            this.sendWavFile(this.state.currentFile, this.state.currentBlob)
+            this.sendWavFile(
+              this.state.currentFile,
+              this.state.currentBlob,
+              this.state.queryList[this.state.currentQuery]
+            )
           }
         >
           Approve Recording
