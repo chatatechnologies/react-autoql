@@ -1778,6 +1778,8 @@ export default class App extends Component {
           <SpeechToTextPage
             authentication={this.getAuthProp()}
             themeConfig={this.getThemeConfigProp()}
+            userEmail={this.state.displayName}
+            projectID={this.state.projectId}
           />
         )
         break

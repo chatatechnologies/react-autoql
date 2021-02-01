@@ -55,11 +55,20 @@ export default class SpeechToTextPage extends React.Component {
     audio0.play()
   }
 
-  sendWavFile = (file, blob) => {
+  sendWavFile = (file, blob, query) => {
+    this.setState({
+      isConfirmingRecording: false,
+      currentQuery: this.state.currentQuery + 1,
+    })
+
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
+
     data.append('file', file, 'speech.wav')
-    data.append('eng', this.state.queryList[this.state.currentQuery])
+    data.append('eng', query)
+    data.append('user_email', this.props.userEmail)
+    data.append('project_id', this.props.projectID)
+
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
@@ -69,7 +78,7 @@ export default class SpeechToTextPage extends React.Component {
     axios.post(url, data, config).then((response) => {
       const newResultHistory = [
         {
-          query: this.state.queryList[this.state.currentQuery],
+          query,
           audio: (
             <Button
               shape="circle"
@@ -93,9 +102,90 @@ export default class SpeechToTextPage extends React.Component {
       ]
       this.setState({
         resultHistory: newResultHistory,
-        currentQuery: this.state.currentQuery + 1,
       })
     })
+  }
+
+  renderS2TButtonAndQuery = () => {
+    return (
+      <Fragment>
+        <SpeechToTextBtn
+          themeConfig={this.props.themeConfig}
+          onRecordStop={(file, blob) => {
+            this.setState({
+              isConfirmingRecording: true,
+              currentFile: file,
+              currentBlob: blob,
+            })
+          }}
+        />
+        <div>
+          {this.state.queryList[this.state.currentQuery] || 'Say anything!'}
+        </div>
+        {!!this.state.queryList.length && (
+          <Button
+            style={{ marginTop: '20px' }}
+            onClick={() => {
+              this.setState({ currentQuery: this.state.currentQuery + 1 })
+            }}
+          >
+            Skip
+          </Button>
+        )}
+      </Fragment>
+    )
+  }
+
+  renderConfirmRecording = () => {
+    return (
+      <Fragment>
+        <Button
+          style={{ margin: '10px' }}
+          shape="circle"
+          type="primary"
+          onClick={() => {
+            this.replayBlob(this.state.currentBlob)
+          }}
+          size="large"
+          icon={<PlayCircleOutlined />}
+        ></Button>
+        <div>{this.state.queryList[this.state.currentQuery] || ''}</div>
+        <Button
+          style={{ marginTop: '20px' }}
+          type="primary"
+          onClick={() =>
+            this.sendWavFile(
+              this.state.currentFile,
+              this.state.currentBlob,
+              this.state.queryList[this.state.currentQuery]
+            )
+          }
+        >
+          Approve Recording
+        </Button>
+        <br />
+        <Button
+          style={{ marginTop: '5px' }}
+          onClick={() => {
+            this.setState({ isConfirmingRecording: false })
+          }}
+        >
+          Retry
+        </Button>
+        <br />
+        <Button
+          style={{ marginTop: '5px' }}
+          onClick={() => {
+            this.setState({
+              isConfirmingRecording: false,
+              currentQuery: this.state.currentQuery + 1,
+            })
+          }}
+        >
+          Skip
+        </Button>
+      </Fragment>
+    )
   }
 
   render = () => {
@@ -131,24 +221,9 @@ export default class SpeechToTextPage extends React.Component {
         {this.state.isAuthenticated ? (
           <Fragment>
             <div style={{ padding: '5px', textAlign: 'center' }}>
-              <SpeechToTextBtn
-                themeConfig={this.props.themeConfig}
-                onRecordStop={this.sendWavFile}
-              />
-              <div>
-                {this.state.queryList[this.state.currentQuery] ||
-                  'Say anything!'}
-              </div>
-              {!!this.state.queryList.length && (
-                <Button
-                  style={{ marginTop: '20px' }}
-                  onClick={() => {
-                    this.setState({ currentQuery: this.state.currentQuery + 1 })
-                  }}
-                >
-                  Skip
-                </Button>
-              )}
+              {this.state.isConfirmingRecording
+                ? this.renderConfirmRecording()
+                : this.renderS2TButtonAndQuery()}
             </div>
             {
               <div style={{ marginTop: '50px' }}>
