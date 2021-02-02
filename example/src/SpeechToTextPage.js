@@ -49,10 +49,20 @@ export default class SpeechToTextPage extends React.Component {
     }
   }
 
-  replayBlob = (blob) => {
+  replayBlob = (blob, isCurrentPlayback) => {
     const blobURL = window.URL.createObjectURL(blob)
     const audio0 = new Audio(blobURL)
     audio0.play()
+
+    audio0.addEventListener(
+      'ended',
+      () => {
+        if (isCurrentPlayback) {
+          this.setState({ hasPlayedBack: true })
+        }
+      },
+      false
+    )
   }
 
   sendWavFile = (file, blob, query) => {
@@ -116,6 +126,7 @@ export default class SpeechToTextPage extends React.Component {
               isConfirmingRecording: true,
               currentFile: file,
               currentBlob: blob,
+              hasPlayedBack: false,
             })
           }}
         />
@@ -144,7 +155,7 @@ export default class SpeechToTextPage extends React.Component {
           shape="circle"
           type="primary"
           onClick={() => {
-            this.replayBlob(this.state.currentBlob)
+            this.replayBlob(this.state.currentBlob, true)
           }}
           size="large"
           icon={<PlayCircleOutlined />}
@@ -153,6 +164,7 @@ export default class SpeechToTextPage extends React.Component {
         <Button
           style={{ marginTop: '20px' }}
           type="primary"
+          disabled={!this.state.hasPlayedBack}
           onClick={() =>
             this.sendWavFile(
               this.state.currentFile,
@@ -163,6 +175,11 @@ export default class SpeechToTextPage extends React.Component {
         >
           Approve Recording
         </Button>
+        {!this.state.hasPlayedBack && (
+          <div style={{ fontSize: '12px' }}>
+            To approve this recording, you must listen to it first
+          </div>
+        )}
         <br />
         <Button
           style={{ marginTop: '5px' }}
