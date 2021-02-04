@@ -90,6 +90,33 @@ export default class SentimentAnalysisPage extends React.Component {
       })
   }
 
+  getResponseV2 = () => {
+    const url = `https://reputation-staging.chata.io/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
+    const data = {
+      review_text: this.state.reviewTextValue,
+      name_hotel: this.state.hotelName,
+      review_title: this.state.title,
+      total_rating: `${this.state.rating || ''}`,
+      name_user: this.state.name,
+      responder: this.state.responder,
+      responder_title: this.state.responderTitle,
+      rank_type: this.state.rankType,
+    }
+
+    axios
+      .post(url, data, {
+        headers: {
+          Authorization: `Bearer ${getStoredProp('sentimentJWT')}`,
+        },
+      })
+      .then((response) => {
+        this.setState({ responseV2: response.data, isProcessing: false })
+      })
+      .catch((error) => {
+        this.setState({ responseV2: undefined, isProcessing: false })
+      })
+  }
+
   getResponse = () => {
     const url = `https://reputation-staging.chata.io/reputation-responsor/postapi_response?key=${this.state.sentimentApiKey}`
     const data = {
@@ -125,6 +152,7 @@ export default class SentimentAnalysisPage extends React.Component {
       .then(() => {
         this.getSentiment()
         this.getResponse()
+        this.getResponseV2()
       })
       .catch(() => {
         message.error('Authentication Error')
@@ -132,11 +160,11 @@ export default class SentimentAnalysisPage extends React.Component {
       })
   }
 
-  renderReviewResponse = () => {
+  renderReviewResponseV1 = () => {
     if (this.state.response) {
       return (
         <div>
-          <h3>Recommended Responses</h3>
+          <h3>Recommended Responses (V1)</h3>
           <Collapse defaultActiveKey="sentiment-response-0">
             {Object.keys(this.state.response['output response']).map(
               (title, index) => {
@@ -145,6 +173,38 @@ export default class SentimentAnalysisPage extends React.Component {
 
                 return (
                   <Panel header={title} key={`sentiment-response-${index}`}>
+                    {text.map((str, i) => {
+                      return (
+                        <Fragment key={i}>
+                          {str} <br />
+                        </Fragment>
+                      )
+                    })}
+                  </Panel>
+                )
+              }
+            )}
+          </Collapse>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  renderReviewResponseV2 = () => {
+    if (this.state.responseV2) {
+      return (
+        <div>
+          <h3>Recommended Responses (V2)</h3>
+          <Collapse defaultActiveKey="sentiment-responseV2-0">
+            {Object.keys(this.state.responseV2['output response']).map(
+              (title, index) => {
+                let text = `${this.state.responseV2['output response'][title]}`
+                text = text.split(' \\n')
+
+                return (
+                  <Panel header={title} key={`sentiment-responseV2-${index}`}>
                     {text.map((str, i) => {
                       return (
                         <Fragment key={i}>
@@ -310,7 +370,7 @@ export default class SentimentAnalysisPage extends React.Component {
                 value={this.state.name}
               />
             </Form.Item>
-            <Form.Item label="Rouge Score" name="score">
+            <Form.Item label="Rouge Score (v1 only)" name="score">
               <InputNumber
                 step={0.1}
                 min={0}
@@ -319,6 +379,33 @@ export default class SentimentAnalysisPage extends React.Component {
                   this.setState({ score: e })
                 }}
                 value={this.state.score}
+              />
+            </Form.Item>
+            <Form.Item label="Responder (v2 only)" name="responder">
+              <Input
+                type="text"
+                onChange={(e) => {
+                  this.setState({ responder: e.target.value })
+                }}
+                value={this.state.responder}
+              />
+            </Form.Item>
+            <Form.Item label="Responder Title (v2 only)" name="responder-title">
+              <Input
+                type="text"
+                onChange={(e) => {
+                  this.setState({ responderTitle: e.target.value })
+                }}
+                value={this.state.responderTitle}
+              />
+            </Form.Item>
+            <Form.Item label="Rank Type (v2 only)" name="rank-type">
+              <Input
+                type="text"
+                onChange={(e) => {
+                  this.setState({ rankType: e.target.value })
+                }}
+                value={this.state.rankType}
               />
             </Form.Item>
             <div style={{ textAlign: 'right' }}>
@@ -337,7 +424,8 @@ export default class SentimentAnalysisPage extends React.Component {
         <div style={{ flex: 1, marginLeft: '20px' }}>
           <h2>Analysis</h2>
           {this.renderSentiment()}
-          {this.renderReviewResponse()}
+          {this.renderReviewResponseV1()}
+          {this.renderReviewResponseV2()}
         </div>
       </div>
     )
