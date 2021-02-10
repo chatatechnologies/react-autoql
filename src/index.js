@@ -8,8 +8,8 @@ export {
   NotificationFeed,
   NotificationItem,
   DataAlerts,
-  ExpressionBuilder,
   ExpressionBuilderSimple,
+  ExpressionBuilder,
   ScheduleBuilder,
   DataAlertModal,
 } from './components/Notifications'
