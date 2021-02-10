@@ -9,6 +9,7 @@ export {
   NotificationItem,
   DataAlerts,
   ExpressionBuilder,
+  ExpressionBuilderSimple,
   ScheduleBuilder,
   DataAlertModal,
 } from './components/Notifications'
