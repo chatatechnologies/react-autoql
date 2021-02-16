@@ -16,15 +16,19 @@ const getStoredProp = (name) => {
 
 export default class SentimentAnalysisPage extends React.Component {
   state = {
-    reviewTextValue: '',
     sentimentApiKey: getStoredProp('sentimentApiKey'),
     username: getStoredProp('sentimentUsername'),
     password: '',
-    rating: undefined,
-    title: '',
-    name: '',
-    hotelName: '',
     isProcessing: false,
+
+    reviewTextValue: '',
+    hotelName: '',
+    title: '',
+    rating: undefined,
+    name: '',
+    responder: '',
+    responderTitle: '',
+    rankType: '',
   }
 
   getJWT = async (loginToken) => {
@@ -94,13 +98,13 @@ export default class SentimentAnalysisPage extends React.Component {
     const url = `https://reputation-staging.chata.io/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
     const data = {
       review_text: this.state.reviewTextValue,
-      name_hotel: this.state.hotelName,
-      review_title: this.state.title,
-      total_rating: `${this.state.rating || ''}`,
-      name_user: this.state.name,
-      responder: this.state.responder,
-      responder_title: this.state.responderTitle,
-      rank_type: this.state.rankType,
+      name_hotel: this.state.hotelName || 'the hotel',
+      review_title: this.state.title || 'the trip',
+      total_rating: `${this.state.rating || '4'}`,
+      name_user: this.state.name || 'the guest',
+      responder: this.state.responder || 'john',
+      responder_title: this.state.responderTitle || 'general manager',
+      rank_type: this.state.rankType || 'len',
     }
 
     axios
@@ -121,10 +125,10 @@ export default class SentimentAnalysisPage extends React.Component {
     const url = `https://reputation-staging.chata.io/reputation-responsor/postapi_response?key=${this.state.sentimentApiKey}`
     const data = {
       rv_text: this.state.reviewTextValue,
-      rv_hotel: this.state.hotelName,
-      rv_title: this.state.title,
-      rv_rate: `${this.state.rating || ''}`,
-      rv_name: this.state.name,
+      rv_hotel: this.state.hotelName || 'the hotel',
+      rv_title: this.state.title || 'the trip',
+      rv_rate: `${this.state.rating || '4'}`,
+      rv_name: this.state.name || 'the guest',
       rouge_score: `${this.state.score || ''}`,
     }
 
