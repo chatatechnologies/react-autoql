@@ -105,6 +105,7 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
+    vizDisplayType: 'column',
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
@@ -1263,7 +1264,8 @@ export default class App extends Component {
         placement={
           this.state.currentPage === 'drawer' ||
           this.state.currentPage === 'dashboard' ||
-          this.state.currentPage === 'speech'
+          this.state.currentPage === 'speech' ||
+          this.state.currentPage === 'ssr'
             ? this.state.placement
             : 'bottom'
         }
@@ -1557,6 +1559,7 @@ export default class App extends Component {
         )} */}
         <Menu.Item key="reviews">Reviews</Menu.Item>
         <Menu.Item key="speech">Speech Training</Menu.Item>
+        <Menu.Item key="ssr">Test SSR</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (
           <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
         )}
@@ -1730,6 +1733,66 @@ export default class App extends Component {
     }
   }
 
+  fetchQueryVisualization = async (queryResponse) => {
+    try {
+      const queryOutputProps = {
+        theme_config: this.getThemeConfigProp(),
+        query_response: queryResponse.data,
+      }
+
+      const chartResponse = await axios.post(
+        'http://localhost:8103/api/v1/query-visualization',
+        queryOutputProps
+      )
+
+      return Promise.resolve(chartResponse.data)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  renderSSRTestPage = () => {
+    return (
+      <div>
+        <div style={{ display: 'flex', flexDirection: 'row' }}>
+          <div style={{ flex: 1 }}>
+            <QueryInput
+              authentication={this.getAuthProp()}
+              autoQLConfig={this.getAutoQLConfigProp()}
+              dataFormatting={this.getDataFormattingProp()}
+              themeConfig={this.getThemeConfigProp()}
+              ref={(r) => (this.queryInputRef = r)}
+              autoCompletePlacement="below"
+              onSubmit={() =>
+                this.setState({ response: null, chartPng: undefined })
+              }
+              onResponseCallback={(response) => {
+                this.fetchQueryVisualization(response).then((charts) => {
+                  this.setState({
+                    charts,
+                  })
+                })
+              }}
+              showChataIcon
+              showLoadingDots
+            />
+          </div>
+        </div>
+
+        {_.get(this.state.charts, 'ssr') &&
+          this.state.charts.ssr.map((chart) => {
+            console.log(chart.data)
+            return (
+              <img
+                // style={{ width: '300px' }}
+                src={`data:image/png;base64, ${chart.data}`}
+              />
+            )
+          })}
+      </div>
+    )
+  }
+
   renderMaintenancePage = () => (
     <div
       style={{
@@ -1782,6 +1845,10 @@ export default class App extends Component {
             projectID={this.state.projectId}
           />
         )
+        break
+      }
+      case 'ssr': {
+        pageToRender = this.renderSSRTestPage()
         break
       }
       case 'dashboard': {
