@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/chatatechnologies/react-autoql/compare/v3.1.0...v3.1.1) (2021-02-10)
+
+
+### Bug Fixes
+
+* expose ExpressionBuilderSimple ([42e8c9e](https://github.com/chatatechnologies/react-autoql/commit/42e8c9eb2dd35ffc50851ee294e3a31eacc34305))
+
 # [3.1.0](https://github.com/chatatechnologies/react-autoql/compare/v3.0.0...v3.1.0) (2021-01-19)
 
 

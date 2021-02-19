@@ -8,6 +8,7 @@ export {
   NotificationFeed,
   NotificationItem,
   DataAlerts,
+  ExpressionBuilderSimple,
   ExpressionBuilder,
   ScheduleBuilder,
   DataAlertModal,

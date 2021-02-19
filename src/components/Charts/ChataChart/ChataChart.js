@@ -456,7 +456,7 @@ export default class ChataChart extends Component {
       legendLabels: getLegendLabelsForMultiSeries(
         this.props.columns,
         this.colorScale,
-        this.props.dataConfig.seriesIndices
+        numberColumnIndices
       ),
     }
   }
