@@ -945,7 +945,7 @@ export default class QueryOutput extends React.Component {
       if (prevCategory !== category) {
         // make new row with original values
         const cells = makeEmptyArray(this.chartTableColumns.length, 1, 0)
-        cells[0] = category
+        cells[0] = categoryå
         newTableData.push(cells)
       }
 
@@ -983,7 +983,7 @@ export default class QueryOutput extends React.Component {
     uniqueCategories.forEach((category) => {
       newNumberColumns.push({
         ...columns[numberColumnIndex],
-        title: `${columns[numberColumnIndex].title} ${category}`,
+        title: category,
         seriesCategory: category,
       })
     })
