@@ -38,7 +38,6 @@ export const themeConfigType = shape({
 export const dataConfigType = shape({
   stringColumnIndices: arrayOf(number),
   numberColumnIndices: arrayOf(number),
-  seriesIndices: arrayOf(number),
   stringColumnIndex: number,
   legendColumnIndex: number,
   numberColumnIndex: number,

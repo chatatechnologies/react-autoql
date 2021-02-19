@@ -39,7 +39,6 @@ export const themeConfigDefault = {
 export const dataConfigDefault = {
   stringColumnIndices: [],
   numberColumnIndices: [],
-  seriesIndices: [],
   stringColumnIndex: 0,
   legendColumnIndex: undefined,
   numberColumnIndex: 1,
