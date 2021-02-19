@@ -782,7 +782,6 @@ export default class QueryOutput extends React.Component {
     } else {
       this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
     }
-    this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices // do we still need this?
   }
 
   setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
@@ -1036,10 +1035,10 @@ export default class QueryOutput extends React.Component {
 
       if (this.supportsPivot) {
         stringIndex = 0
-        this.dataConfig.seriesIndices = this.pivotTableColumns.map(
+        this.dataConfig.numberColumnIndices = this.pivotTableColumns.map(
           (col, i) => i
         )
-        this.dataConfig.seriesIndices.shift()
+        this.dataConfig.numberColumnIndices.shift()
       }
 
       if (this.isStringColumnDateType()) {
@@ -1051,7 +1050,7 @@ export default class QueryOutput extends React.Component {
           // Loop through columns and create a series for each
           const cells = []
 
-          this.dataConfig.seriesIndices.forEach((columnIndex, i) => {
+          this.dataConfig.numberColumnIndices.forEach((columnIndex, i) => {
             const value = row[columnIndex]
             const colorScaleValue = this.supportsPivot ? columnIndex : i
             const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
@@ -1097,7 +1096,7 @@ export default class QueryOutput extends React.Component {
                 value: newValue,
                 tooltipData: this.getTooltipDataForCell(
                   row,
-                  this.dataConfig.seriesIndices[index],
+                  this.dataConfig.numberColumnIndices[index],
                   newValue
                 ),
               }

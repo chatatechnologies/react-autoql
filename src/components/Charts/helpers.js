@@ -83,11 +83,12 @@ export const getLegendLocation = (seriesArray, displayType) => {
     displayType === 'stacked_line'
   ) {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 3) {
+  } else if (_get(seriesArray, 'length') > 2) {
     return 'right'
   } else if (_get(seriesArray, 'length') > 1) {
     return 'bottom'
   }
+
   return undefined
 }
 
