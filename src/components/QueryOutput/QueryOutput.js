@@ -189,7 +189,8 @@ export default class QueryOutput extends React.Component {
 
       // Determine the supported visualization types based on the response data
       this.setSupportedDisplayTypes(
-        getSupportedDisplayTypes(this.props.queryResponse)
+        getSupportedDisplayTypes(this.props.queryResponse),
+        true
       )
 
       // Set the initial display type based on prop value, response, and supported display types
@@ -784,10 +785,11 @@ export default class QueryOutput extends React.Component {
     this.dataConfig.seriesIndices = this.dataConfig.numberColumnIndices // do we still need this?
   }
 
-  setSupportedDisplayTypes = (supportedDisplayTypes) => {
+  setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
     if (
       supportedDisplayTypes &&
-      !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes)
+      (justMounted ||
+        !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes))
     ) {
       this.supportedDisplayTypes = supportedDisplayTypes
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
