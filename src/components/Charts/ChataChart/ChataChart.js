@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _reduce from 'lodash.reduce'
+import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { max } from 'd3-array'
@@ -37,7 +39,6 @@ import {
   getDataFormatting,
   getThemeConfig,
 } from '../../../props/defaults'
-import _isEqual from 'lodash.isequal'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -103,7 +104,43 @@ export default class ChataChart extends Component {
     this.setNumberColumnSelectorState()
   }
 
-  componentDidUpdate = (prevProps) => {
+  shouldComponentUpdate = (nextProps, nextState) => {
+    return !_isEqual(nextProps, this.props) || !_isEqual(nextState, this.state)
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    // Keep this for a deep compare to debug
+    const self = this
+    if (!_isEqual(prevProps, this.props)) {
+      console.log(
+        'PROPS were not equal!! Re-rendering',
+        _reduce(
+          prevProps,
+          function(result, value, key) {
+            return _isEqual(value, self.props[key])
+              ? result
+              : result.concat(key)
+          },
+          []
+        )
+      )
+    }
+
+    if (!_isEqual(prevState, this.state)) {
+      console.log(
+        'STATE was not equal!! Re-rendering',
+        _reduce(
+          prevState,
+          function(result, value, key) {
+            return _isEqual(value, self.state[key])
+              ? result
+              : result.concat(key)
+          },
+          []
+        )
+      )
+    }
+
     if (!this.props.isResizing && prevProps.isResizing) {
       this.updateMargins()
     }
@@ -900,7 +937,7 @@ export default class ChataChart extends Component {
         <div
           id={`react-autoql-chart-${this.CHART_ID}`}
           className={`react-autoql-chart-container ${
-            this.state.isLoading ? 'loading' : ''
+            this.state.isLoading ? 'loadingg' : ''
           }`}
           data-test="react-autoql-chart"
         >

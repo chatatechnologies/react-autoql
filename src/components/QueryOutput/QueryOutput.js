@@ -6,6 +6,8 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import dayjs from '../../js/dayjsWithPlugins'
+import JSONFn from 'json-fn'
 
 import { scaleOrdinal } from 'd3-scale'
 import {
@@ -35,16 +37,20 @@ import {
   getThemeConfig,
 } from '../../props/defaults'
 
-import dayjs from '../../js/dayjsWithPlugins'
-
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
 import { QueryInput } from '../QueryInput'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
+import { sendSuggestion } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import errorMessages from '../../js/errorMessages'
+import { MONTH_NAMES } from '../../js/Constants'
+// import chartDataWorker from 'web-worker:./chartDataWorker.js'
+// import pivotDataWorker from 'web-worker:./pivotDataWorker.js'
+import chartDataWorker from './chartDataWorker.js'
+import pivotDataWorker from './pivotDataWorker.js'
 
 import {
   onlyUnique,
@@ -74,10 +80,13 @@ import {
   isColumnDateType,
 } from './columnHelpers.js'
 
-import { sendSuggestion } from '../../js/queryService'
-
 import './QueryOutput.scss'
-import { MONTH_NAMES } from '../../js/Constants'
+
+const loadWebWorker = (worker) => {
+  const code = worker.toString()
+  const blob = new Blob(['(' + code + ')()'])
+  return new Worker(URL.createObjectURL(blob))
+}
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -94,6 +103,10 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
+  // chartDataWorker = new chartDataWorker()
+  // pivotDataWorker = new pivotDataWorker()
+  chartDataWorker = loadWebWorker(chartDataWorker)
+  pivotDataWorker = loadWebWorker(pivotDataWorker)
   SAFETYNET_KEY = uuid.v4()
 
   static propTypes = {
@@ -290,7 +303,13 @@ export default class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    ReactTooltip.hide()
+    try {
+      ReactTooltip.hide()
+      this.chartDataWorker.terminate()
+      this.pivotDataWorker.terminate()
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   hasError = (response) => {
@@ -721,7 +740,7 @@ export default class QueryOutput extends React.Component {
       this.generatePivotTableData()
     }
     this.generateChartData()
-    this.forceUpdate()
+    // this.forceUpdate()
   }
 
   onChangeLegendColumnIndex = (index) => {
@@ -734,7 +753,7 @@ export default class QueryOutput extends React.Component {
       this.generatePivotTableData()
     }
     this.generateChartData()
-    this.forceUpdate()
+    // this.forceUpdate()
   }
 
   onChangeNumberColumnIndice = (indices) => {
@@ -742,7 +761,7 @@ export default class QueryOutput extends React.Component {
       this.dataConfig.numberColumnIndices = indices
       this.dataConfig.numberColumnIndex = indices[0]
       this.generateChartData()
-      this.forceUpdate()
+      // this.forceUpdate()
     }
   }
 
@@ -1018,93 +1037,58 @@ export default class QueryOutput extends React.Component {
   }
 
   generateChartData = (newTableData) => {
-    try {
-      // Get columns for chart then reset indexes if necessary
-      const columns = this.getChartTableColumns()
-      this.chartTableColumns = columns
+    // try {
+    // Get columns for chart then reset indexes if necessary
+    const columns = this.getChartTableColumns()
+    this.chartTableColumns = columns
 
-      // Get table data for chart after columns
-      const tableData = this.getChartTableData(newTableData)
-      this.chartTableData = tableData
+    // Get table data for chart after columns
+    const tableData = this.getChartTableData(newTableData)
+    this.chartTableData = tableData
 
-      if (!this.dataConfig || shouldPlotMultiSeries(this.tableColumns)) {
-        this.setColumnIndices()
-      }
+    // Set data config
+    if (!this.dataConfig || shouldPlotMultiSeries(this.tableColumns)) {
+      this.setColumnIndices()
+    }
 
-      let stringIndex = this.dataConfig.stringColumnIndex
+    let stringIndex = this.dataConfig.stringColumnIndex
 
-      if (this.supportsPivot) {
-        stringIndex = 0
-        this.dataConfig.numberColumnIndices = this.pivotTableColumns.map(
-          (col, i) => i
-        )
-        this.dataConfig.numberColumnIndices.shift()
-      }
-
-      if (this.isStringColumnDateType()) {
-        tableData.reverse()
-      }
-
-      this.chartData = Object.values(
-        tableData.reduce((chartDataObject, row, rowIndex) => {
-          // Loop through columns and create a series for each
-          const cells = []
-
-          this.dataConfig.numberColumnIndices.forEach((columnIndex, i) => {
-            const value = row[columnIndex]
-            const colorScaleValue = this.supportsPivot ? columnIndex : i
-            const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
-            const tooltipData = this.getTooltipDataForCell(
-              row,
-              columnIndex,
-              value
-            )
-
-            cells.push({
-              value: !Number.isNaN(Number(value)) ? Number(value) : value, // this should always be able to convert to a number
-              label: columns[columnIndex].title,
-              color: this.colorScale(colorScaleValue),
-              hidden: false,
-              drilldownData,
-              tooltipData,
-            })
-          })
-
-          // Make sure the row label doesn't exist already
-          if (!chartDataObject[row[stringIndex]]) {
-            chartDataObject[row[stringIndex]] = {
-              origRow: row,
-              label: row[stringIndex],
-              cells,
-              formatter: (value, column) => {
-                return formatElement({
-                  element: value,
-                  column,
-                  config: getDataFormatting(this.props.dataFormatting),
-                })
-              },
-            }
-          } else {
-            // If this label already exists, just add the values together
-            // The BE should prevent this from happening though
-            chartDataObject[row[stringIndex]].cells = chartDataObject[
-              row[stringIndex]
-            ].cells.map((cell, index) => {
-              const newValue = cell.value + Number(cells[index].value)
-              return {
-                ...cell,
-                value: newValue,
-                tooltipData: this.getTooltipDataForCell(
-                  row,
-                  this.dataConfig.numberColumnIndices[index],
-                  newValue
-                ),
-              }
-            })
-          }
-          return chartDataObject
-        }, {})
+    if (this.supportsPivot) {
+      stringIndex = 0
+      this.dataConfig.numberColumnIndices = this.pivotTableColumns.map(
+        (col, i) => i
       )
+      this.dataConfig.numberColumnIndices.shift()
+    }
+
+    // Do all chart calculations with a web worker
+    const webWorkerData = {
+      stringIndex,
+      tableData,
+      columns,
+      chartTableColumns: this.chartTableColumns,
+      dataConfig: this.dataConfig,
+      dataFormatting: getDataFormatting(this.props.dataFormatting),
+      supportsPivot: this.supportsPivot,
+      tableColumns: this.tableColumns,
+      pivotTableColumns: this.pivotTableColumns,
+      queryResponse: this.props.queryResponse,
+      colorScale: this.colorScale,
+      supportsPivot: this.supportsPivot,
+    }
+
+    const clonedWebWorkerData = _cloneDeep(webWorkerData)
+    this.chartDataWorker.postMessage({
+      data: JSON.stringify(clonedWebWorkerData),
+      fns: {
+        isColumnDateType: JSONFn.stringify(isColumnDateType),
+      },
+      url: document.location.protocol + '//' + document.location.host,
+    })
+
+    this.chartDataWorker.onmessage = (e) => {
+      const chartData = JSON.parse(e.data).chartData
+      this.chartData = chartData
 
       // Update supported display types after table data has been recalculated
       // there may be too many categories for a pie chart etc.
@@ -1113,7 +1097,12 @@ export default class QueryOutput extends React.Component {
       )
 
       this.chartDataError = false
-    } catch (error) {
+      this.forceUpdate()
+    }
+
+    this.chartDataWorker.onerror = (error) => {
+      console.error('there was an error in the web worker', error)
+
       if (!this.chartDataError) {
         // Try one more time after resetting data config settings
         console.warn(
@@ -1130,6 +1119,96 @@ export default class QueryOutput extends React.Component {
         console.error(error)
       }
     }
+
+    //   if (this.isStringColumnDateType()) {
+    //     tableData.reverse()
+    //   }
+
+    //   this.chartData = Object.values(
+    //     tableData.reduce((chartDataObject, row, rowIndex) => {
+    //       // Loop through columns and create a series for each
+    //       const cells = []
+
+    //       this.dataConfig.numberColumnIndices.forEach((columnIndex, i) => {
+    //         const value = row[columnIndex]
+    //         const colorScaleValue = this.supportsPivot ? columnIndex : i
+    //         const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
+    //         const tooltipData = this.getTooltipDataForCell(
+    //           row,
+    //           columnIndex,
+    //           value
+    //         )
+
+    //         cells.push({
+    //           value: !Number.isNaN(Number(value)) ? Number(value) : value, // this should always be able to convert to a number
+    //           label: columns[columnIndex].title,
+    //           color: this.colorScale(colorScaleValue),
+    //           hidden: false,
+    //           drilldownData,
+    //           tooltipData,
+    //         })
+    //       })
+
+    //       // Make sure the row label doesn't exist already
+    //       if (!chartDataObject[row[stringIndex]]) {
+    //         chartDataObject[row[stringIndex]] = {
+    //           origRow: row,
+    //           label: row[stringIndex],
+    //           cells,
+    //           formatter: (value, column) => {
+    //             return formatElement({
+    //               element: value,
+    //               column,
+    //               config: getDataFormatting(this.props.dataFormatting),
+    //             })
+    //           },
+    //         }
+    //       } else {
+    //         // If this label already exists, just add the values together
+    //         // The BE should prevent this from happening though
+    //         chartDataObject[row[stringIndex]].cells = chartDataObject[
+    //           row[stringIndex]
+    //         ].cells.map((cell, index) => {
+    //           const newValue = cell.value + Number(cells[index].value)
+    //           return {
+    //             ...cell,
+    //             value: newValue,
+    //             tooltipData: this.getTooltipDataForCell(
+    //               row,
+    //               this.dataConfig.numberColumnIndices[index],
+    //               newValue
+    //             ),
+    //           }
+    //         })
+    //       }
+    //       return chartDataObject
+    //     }, {})
+    //   )
+
+    //   // Update supported display types after table data has been recalculated
+    //   // there may be too many categories for a pie chart etc.
+    //   this.setSupportedDisplayTypes(
+    //     getSupportedDisplayTypes(this.props.queryResponse, this.chartData)
+    //   )
+
+    //   this.chartDataError = false
+    // } catch (error) {
+    //   if (!this.chartDataError) {
+    //     // Try one more time after resetting data config settings
+    //     console.warn(
+    //       'An error was thrown while generating the chart data. Resetting the data config and trying again.'
+    //     )
+    //     this.chartDataError = true
+    //     this.dataConfig = undefined
+    //     this.setColumnIndices()
+    //     this.generateChartData()
+    //   } else {
+    //     // Something went wrong a second time. Do not show chart options
+    //     this.setSupportedDisplayTypes(['table'])
+    //     this.chartData = undefined
+    //     console.error(error)
+    //   }
+    // }
   }
 
   setFilterFunction = (col) => {

@@ -949,15 +949,18 @@ export default class DashboardTile extends React.Component {
   }
 
   renderTopResponse = () => {
-    const displayType = isDisplayTypeValid(
-      this.props.queryResponse,
-      this.props.displayType
-    )
-      ? this.props.displayType
-      : getDefaultDisplayType(
-          this.props.queryResponse,
-          this.props.autoChartAggregations
-        )
+    let displayType
+    if (this.props.queryResponse) {
+      displayType = isDisplayTypeValid(
+        this.props.queryResponse,
+        this.props.displayType
+      )
+        ? this.props.displayType
+        : getDefaultDisplayType(
+            this.props.queryResponse,
+            this.props.autoChartAggregations
+          )
+    }
 
     return this.renderQueryOutput({
       queryOutputProps: {
@@ -1019,12 +1022,15 @@ export default class DashboardTile extends React.Component {
     const queryResponse =
       this.props.tile.secondQueryResponse || this.props.queryResponse
 
-    const displayType = isDisplayTypeValid(
-      queryResponse,
-      this.props.secondDisplayType
-    )
-      ? this.props.secondDisplayType
-      : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
+    let displayType
+    if (queryResponse) {
+      const displayType = isDisplayTypeValid(
+        queryResponse,
+        this.props.secondDisplayType
+      )
+        ? this.props.secondDisplayType
+        : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
+    }
 
     return this.renderQueryOutput({
       queryOutputProps: {

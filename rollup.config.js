@@ -5,6 +5,7 @@ import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
 import image from '@rollup/plugin-image'
+import webWorkerLoader from 'rollup-plugin-web-worker-loader'
 
 import pkg from './package.json'
 
@@ -42,6 +43,7 @@ const common = {
       plugins: ['external-helpers'],
       exclude: 'node_modules/**',
     }),
+    webWorkerLoader(),
     production && terser(),
   ],
   external: makeExternalPredicate(external),
