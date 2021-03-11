@@ -1,9 +1,9 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
 
 import { Button } from '../Button'
-import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ConfirmModal.scss'
 
@@ -58,25 +58,27 @@ export default class ConfirmModal extends React.Component {
 
   render = () => {
     return (
-      <ReactModal
-        isOpen={this.props.isVisible}
-        bodyOpenClassName="react-autoql-modal-container"
-        ariaHideApp={false}
-        contentLocation={{ top: 0, left: 0 }}
-        closeTimeoutMS={200}
-        data-test="react-autoql-confirm-modal"
-        style={{
-          content: {
-            ...this.props.style,
-            bottom: 'auto',
-            width: this.props.width,
-            height: this.props.height,
-          },
-        }}
-      >
-        <div className="react-autoql-modal-body">{this.props.children}</div>
-        <div className="react-autoql-modal-footer">{this.renderFooter()}</div>
-      </ReactModal>
+      <ErrorBoundary>
+        <ReactModal
+          isOpen={this.props.isVisible}
+          bodyOpenClassName="react-autoql-modal-container"
+          ariaHideApp={false}
+          contentLocation={{ top: 0, left: 0 }}
+          closeTimeoutMS={200}
+          data-test="react-autoql-confirm-modal"
+          style={{
+            content: {
+              ...this.props.style,
+              bottom: 'auto',
+              width: this.props.width,
+              height: this.props.height,
+            },
+          }}
+        >
+          <div className="react-autoql-modal-body">{this.props.children}</div>
+          <div className="react-autoql-modal-footer">{this.renderFooter()}</div>
+        </ReactModal>
+      </ErrorBoundary>
     )
   }
 }

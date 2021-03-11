@@ -1,7 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Icons
+import { BsArrowBarUp, BsArrowBarDown } from 'react-icons/bs'
+import { BiLineChart } from 'react-icons/bi'
 import {
   MdClose,
   MdError,
@@ -26,11 +29,13 @@ import {
   FiSettings,
   FiSend,
   FiArrowLeft,
+  FiPauseCircle,
 } from 'react-icons/fi'
 import {
   IoIosSearch,
   IoIosGlobe,
   IoIosCloseCircleOutline,
+  IoIosHourglass,
 } from 'react-icons/io'
 import { TiSortNumerically } from 'react-icons/ti'
 import {
@@ -74,14 +79,29 @@ export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
+    showBadge: PropTypes.bool,
+    color: PropTypes.string,
+    warning: PropTypes.bool,
+    danger: PropTypes.bool,
   }
 
   static defaultProps = {
     size: undefined,
+    showBadge: false,
+    color: undefined,
+    warning: false,
+    danger: false,
   }
 
   render = () => {
-    const nativeProps = { ...this.props, type: undefined, size: undefined }
+    const {
+      type,
+      size,
+      showBadge,
+      warning,
+      danger,
+      ...nativeProps
+    } = this.props
 
     let icon = null
     switch (this.props.type) {
@@ -137,6 +157,10 @@ export default class Icon extends React.Component {
         icon = bubblesIconFilledAlt
         break
       }
+      case 'chart': {
+        icon = <BiLineChart />
+        break
+      }
       case 'check': {
         icon = <FiCheck />
         break
@@ -147,6 +171,10 @@ export default class Icon extends React.Component {
       }
       case 'close-circle': {
         icon = <IoIosCloseCircleOutline />
+        break
+      }
+      case 'collapse': {
+        icon = <BsArrowBarUp />
         break
       }
       case 'column-chart': {
@@ -181,6 +209,10 @@ export default class Icon extends React.Component {
         icon = <AiOutlineEdit />
         break
       }
+      case 'expand': {
+        icon = <BsArrowBarDown />
+        break
+      }
       case 'eye': {
         icon = <FiEye />
         break
@@ -195,6 +227,10 @@ export default class Icon extends React.Component {
       }
       case 'heatmap': {
         icon = heatmapIcon
+        break
+      }
+      case 'hour-glass': {
+        icon = <IoIosHourglass />
         break
       }
       case 'info': {
@@ -243,6 +279,10 @@ export default class Icon extends React.Component {
       }
       case 'notification-off': {
         icon = <FiBellOff />
+        break
+      }
+      case 'notification-pause': {
+        icon = <FiPauseCircle />
         break
       }
       case 'numbers': {
@@ -329,17 +369,27 @@ export default class Icon extends React.Component {
         break
       }
     }
+
     return (
-      <span
-        {...nativeProps}
-        data-test="react-autoql-icon"
-        className={`react-autoql-icon ${this.props.className || ''} ${
-          this.props.type
-        }`}
-        style={{ ...this.props.style, fontSize: `${this.props.size}px` }}
-      >
-        {icon}
-      </span>
+      <ErrorBoundary>
+        <span
+          {...nativeProps}
+          data-test="react-autoql-icon"
+          className={`react-autoql-icon
+            ${this.props.className || ''}
+            ${this.props.type}
+            ${this.props.warning ? ' warning' : ''}
+            ${this.props.danger ? ' danger' : ''}`}
+          style={{
+            color: this.props.color,
+            fontSize: `${this.props.size}px`,
+            ...this.props.style, // Overwrite other styles if provided
+          }}
+        >
+          {icon}
+          {this.props.showBadge && <div className="react-autoql-badge" />}
+        </span>
+      </ErrorBoundary>
     )
   }
 }

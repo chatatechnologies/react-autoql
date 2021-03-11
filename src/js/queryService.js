@@ -53,9 +53,9 @@ export const fetchSuggestions = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const commaSeparatedKeywords =
-    typeof query === 'string' ? query.split(' ') : []
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&scope=narrow&query_id=${queryId}`
+  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+    query
+  )}&scope=narrow&query_id=${queryId}`
 
   const config = {
     headers: {
@@ -109,7 +109,6 @@ export const runQueryOnly = ({
     .then((response) => {
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
-        // queryCall = null
         throw new Error('Parse error')
       }
 
@@ -149,7 +148,7 @@ export const runQuery = ({
   skipQueryValidation,
 } = {}) => {
   if (enableQueryValidation && !skipQueryValidation) {
-    return runSafetyNet({
+    return runQueryValidation({
       text: query,
       domain,
       apiKey,
@@ -187,7 +186,7 @@ export const runQuery = ({
   })
 }
 
-export const runSafetyNet = ({ text, domain, apiKey, token } = {}) => {
+export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
   if (!text) {
     return Promise.reject(new Error('No text supplied'))
   }
@@ -209,7 +208,7 @@ export const runSafetyNet = ({ text, domain, apiKey, token } = {}) => {
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runDrilldown = ({
@@ -337,10 +336,12 @@ export const fetchQueryTips = ({
   domain,
   apiKey,
   token,
-  skipSafetyNet,
+  skipQueryValidation,
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${commaSeparatedKeywords}&page_size=${pageSize}&page=${pageNumber}`
+  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+    commaSeparatedKeywords
+  )}&page_size=${pageSize}&page=${pageNumber}`
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
@@ -352,16 +353,18 @@ export const fetchQueryTips = ({
     },
   }
 
-  if (!skipSafetyNet) {
-    return runSafetyNet({
+  if (!skipQueryValidation) {
+    return runQueryValidation({
       text: keywords,
       domain,
       apiKey,
       token,
     })
-      .then((safetyNetResponse) => {
-        if (_get(safetyNetResponse, 'data.data.replacements.length') > 0) {
-          return Promise.resolve(safetyNetResponse)
+      .then((queryValidationResponse) => {
+        if (
+          _get(queryValidationResponse, 'data.data.replacements.length') > 0
+        ) {
+          return Promise.resolve(queryValidationResponse)
         }
         return axios
           .get(queryTipsUrl, config)

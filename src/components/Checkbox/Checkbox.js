@@ -4,6 +4,7 @@ import uuid from 'uuid'
 import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setCSSVars } from '../../js/Util'
 import { themeConfigType } from '../../props/types'
@@ -49,7 +50,10 @@ export default class Checkbox extends React.Component {
     }
 
     if (
-      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
@@ -60,12 +64,17 @@ export default class Checkbox extends React.Component {
   }
 
   render = () => {
-    const { label, type, indeterminate, hasError, ...inputProps } = this.props
-    const nativeProps = {
-      ...inputProps,
-      style: undefined,
-      themeConfig: undefined,
-    }
+    const {
+      label,
+      type,
+      indeterminate,
+      hasError,
+      style,
+      themeConfig,
+      onChange,
+      checked,
+      ...nativeProps
+    } = this.props
 
     const checkboxClassname = `
       react-autoql-checkbox
@@ -85,40 +94,42 @@ export default class Checkbox extends React.Component {
     `
 
     return (
-      <div
-        className="react-autoql-checkbox-container"
-        data-test="react-autoql-checkbox"
-      >
+      <ErrorBoundary>
         <div
-          className={`${checkboxClassname} ${this.props.className}`}
-          style={this.props.style}
+          className="react-autoql-checkbox-container"
+          data-test="react-autoql-checkbox"
         >
-          <input
-            {...nativeProps}
-            type="checkbox"
-            className={inputClassname}
-            ref={(el) => (this.selector = el)}
-            id={this.ID}
-            checked={this.props.checked}
-            onChange={this.onCheckedChange}
-          />
-          {this.props.checked && this.props.type === 'default' && (
-            <div className="react-autoql-checkbox-tick">
-              <Icon type="check" />
-            </div>
-          )}
-          {label && (
-            <div
-              className="react-autoql-checkbox-label"
-              onClick={(e) => {
-                this.selector.click()
-              }}
-            >
-              {label}
-            </div>
-          )}
+          <div
+            className={`${checkboxClassname} ${this.props.className}`}
+            style={this.props.style}
+          >
+            <input
+              {...nativeProps}
+              type="checkbox"
+              className={inputClassname}
+              ref={(el) => (this.selector = el)}
+              id={this.ID}
+              checked={this.props.checked}
+              onChange={this.onCheckedChange}
+            />
+            {this.props.checked && this.props.type === 'default' && (
+              <div className="react-autoql-checkbox-tick">
+                <Icon type="check" />
+              </div>
+            )}
+            {label && (
+              <div
+                className="react-autoql-checkbox-label"
+                onClick={(e) => {
+                  this.selector.click()
+                }}
+              >
+                {label}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     )
   }
 }

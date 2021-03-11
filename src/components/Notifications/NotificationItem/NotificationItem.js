@@ -10,12 +10,14 @@ import { Icon } from '../../Icon'
 import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import { Button } from '../../Button'
-import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { VizToolbar } from '../../VizToolbar'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+
 import {
   dismissNotification,
   deleteNotification,
-  updateNotificationRuleStatus,
+  updateDataAlertStatus,
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
@@ -51,6 +53,7 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: PropTypes.func,
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
+    onDeleteSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
   }
@@ -65,6 +68,7 @@ export default class NotificationItem extends React.Component {
     onExpandCallback: () => {},
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
+    onDeleteSuccessCallback: () => {},
     onErrorCallback: () => {},
   }
 
@@ -95,9 +99,9 @@ export default class NotificationItem extends React.Component {
   }
 
   fetchRuleDetails = (notification) => {
-    this.setState({ ruleDetails: undefined, ruleStatus: undefined })
+    this.setState({ ruleDetails: undefined, dataAlertStatus: undefined })
     fetchRule({
-      ruleId: notification.rule_id,
+      dataAlertId: notification.data_alert_id,
       ...getAuthentication(this.props.authentication),
     })
       .then((response) => {
@@ -150,16 +154,20 @@ export default class NotificationItem extends React.Component {
     deleteNotification({
       ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDeleteSuccessCallback()
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   changeRuleStatus = (notification, status) => {
-    updateNotificationRuleStatus({
-      ruleId: notification.rule_id,
-      type: notification.rule_type,
+    updateDataAlertStatus({
+      dataAlertId: notification.data_alert_id,
+      type: notification.data_alert_type,
       status,
       ...getAuthentication(this.props.authentication),
     })
@@ -204,10 +212,10 @@ export default class NotificationItem extends React.Component {
       >
         <div className="react-autoql-notification-display-name-container">
           <div className="react-autoql-notification-display-name">
-            {notification.rule_title}
+            {notification.title}
           </div>
           <div className="react-autoql-notification-description">
-            {notification.rule_message}
+            {notification.message}
           </div>
           <div className="react-autoql-notification-timestamp">
             <Icon type="calendar" />{' '}
@@ -306,7 +314,7 @@ export default class NotificationItem extends React.Component {
   }
 
   renderNotificationContent = (notification) => {
-    const queryTitle = notification.rule_query
+    const queryTitle = notification.data_return_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
 
     let queryResponse
@@ -373,11 +381,11 @@ export default class NotificationItem extends React.Component {
               <div className="react-autoql-notification-details-title">
                 Conditions:
               </div>
-              <ExpressionBuilder
+              <ExpressionBuilderSimple
                 authentication={getAuthentication(this.props.authentication)}
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
-                expression={_get(notification, 'rule_expression')}
+                expression={_get(notification, 'expression')}
                 readOnly
               />
             </div>
@@ -392,18 +400,20 @@ export default class NotificationItem extends React.Component {
     const { notification } = this.props
 
     return (
-      <div
-        id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
-        key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
-        className={`react-autoql-notification-list-item
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+          key={`react-autoql-notification-item-${this.COMPONENT_KEY}`}
+          className={`react-autoql-notification-list-item
           ${this.getIsTriggered(notification.state) ? ' triggered' : ''}
           ${notification.expanded ? ' expanded' : ''}
           ${this.state.fullyExpanded ? ' animation-complete' : ''}`}
-      >
-        {this.renderNotificationHeader(notification)}
-        {this.renderNotificationContent(notification)}
-        {this.renderAlertColorStrip()}
-      </div>
+        >
+          {this.renderNotificationHeader(notification)}
+          {this.renderNotificationContent(notification)}
+          {this.renderAlertColorStrip()}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

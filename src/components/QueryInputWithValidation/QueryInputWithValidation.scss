@@ -1,4 +1,4 @@
-.query-input-with-safetynet {
+.query-input-with-validation {
   display: inline-block;
   padding: 10px;
   padding-left: 20px;
@@ -15,8 +15,8 @@
   overflow: hidden;
   cursor: text;
 
-  .safetynet-selector-element {
-    border-bottom: 1px dashed var(--chata-input-accent-color);
+  .validation-selector-element {
+    border-bottom: 1px dashed var(--react-autoql-accent-color);
   }
 
   &.left-padding {
@@ -24,8 +24,8 @@
   }
 
   border-radius: 24px;
-  border: 1px solid var(--chata-input-border-color, rgba(0, 0, 0, 0.1));
-  color: var(--chata-input-text-color-primary, #5d5d5d);
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  color: var(--react-autoql-text-color-primary, #5d5d5d);
   outline: none !important;
 
   &:disabled {
@@ -37,7 +37,7 @@
   }
 }
 
-.query-input-with-safetynet:empty:before {
+.query-input-with-validation:empty:before {
   content: attr(data-placeholder);
   opacity: 0.6;
 }

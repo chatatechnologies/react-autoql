@@ -36,7 +36,7 @@ import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
 import { Cascader } from '../Cascader'
-import { NotificationModal } from '../Notifications/NotificationModal'
+import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { runDrilldown, fetchQueryTips } from '../../js/queryService'
@@ -189,7 +189,7 @@ export default class DataMessenger extends React.Component {
 
       const thisTheme = getThemeConfig(getThemeConfig(this.props.themeConfig))
         .theme
-      const prevTheme = prevProps.themeConfig.theme
+      const prevTheme = getThemeConfig(prevProps.themeConfig).theme
       if (thisTheme && thisTheme !== prevTheme) {
         setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       }
@@ -233,6 +233,7 @@ export default class DataMessenger extends React.Component {
       isResponse: true,
       type: type || 'text',
       content: content || '',
+      isIntroMessage: true,
     }
   }
 
@@ -411,12 +412,17 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onSuggestionClick = ({ query, userSelection, skipSafetyNet, source }) => {
+  onSuggestionClick = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+  }) => {
     if (this.queryInputRef) {
       this.queryInputRef.animateInputTextAndSubmit({
         query,
         userSelection,
-        skipSafetyNet,
+        skipQueryValidation,
         source,
       })
     }
@@ -630,7 +636,7 @@ export default class DataMessenger extends React.Component {
                 <div
                   className={`tab${
                     page === 'explore-queries' ? ' active' : ''
-                  } tips`}
+                  } react-autoql-explore-queries`}
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
@@ -647,7 +653,7 @@ export default class DataMessenger extends React.Component {
                   <div
                     className={`tab${
                       page === 'notifications' ? ' active' : ''
-                    } notifications`}
+                    } react-autoql-notifications`}
                     onClick={() => {
                       if (this.notificationBadgeRef) {
                         this.notificationBadgeRef.resetCount()
@@ -819,6 +825,7 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
+                  isIntroMessage={message.isIntroMessage}
                   authentication={getAuthentication(
                     getAuthentication(this.props.authentication)
                   )}
@@ -904,7 +911,7 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  fetchQueryTipsList = (keywords, pageNumber, skipSafetyNet) => {
+  fetchQueryTipsList = (keywords, pageNumber, skipQueryValidation) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
     const containerElement = document.querySelector(
@@ -917,14 +924,14 @@ export default class DataMessenger extends React.Component {
       keywords,
       pageSize,
       pageNumber,
-      skipSafetyNet,
+      skipQueryValidation,
     })
       .then((response) => {
-        // if caught by safetynet...
+        // if caught by validation...
         if (_get(response, 'data.full_suggestion')) {
           this.setState({
             queryTipsLoading: false,
-            queryTipsSafetyNetResponse: response,
+            queryTipsQueryValidationResponse: response,
           })
         } else {
           const totalQueries = Number(
@@ -944,7 +951,7 @@ export default class DataMessenger extends React.Component {
             queryTipsTotalPages: totalPages,
             queryTipsCurrentPage: pageNumber,
             queryTipsTotalQueries: totalQueries,
-            queryTipsSafetyNetResponse: undefined,
+            queryTipsQueryValidationResponse: undefined,
           })
         }
       })
@@ -954,7 +961,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           queryTipsLoading: false,
           queryTipsError: true,
-          queryTipsSafetyNetResponse: undefined,
+          queryTipsQueryValidationResponse: undefined,
         })
       })
   }
@@ -972,8 +979,8 @@ export default class DataMessenger extends React.Component {
     this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
   }
 
-  onQueryTipsSafetyNetSuggestionClick = (safetyNetObj) => {
-    const keywords = safetyNetObj.query
+  onQueryTipsQueryValidationSuggestionClick = (queryValidationObj) => {
+    const keywords = queryValidationObj.query
     this.setState({ queryTipsInputValue: keywords })
     this.fetchQueryTipsList(keywords, 1, true)
   }
@@ -1004,8 +1011,12 @@ export default class DataMessenger extends React.Component {
     <QueryTipsTab
       themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
       onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
-      queryTipsSafetyNetResponse={this.state.queryTipsSafetyNetResponse}
-      onSafetyNetSuggestionClick={this.onQueryTipsSafetyNetSuggestionClick}
+      queryTipsQueryValidationResponse={
+        this.state.queryTipsQueryValidationResponse
+      }
+      onQueryValidationSuggestionClick={
+        this.onQueryTipsQueryValidationSuggestionClick
+      }
       loading={this.state.queryTipsLoading}
       error={this.state.queryTipsError}
       queryTipsList={this.state.queryTipsList}
@@ -1151,18 +1162,18 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderNotificationModal = () => {
+  renderDataAlertModal = () => {
     return (
-      <NotificationModal
+      <DataAlertModal
         authentication={getAuthentication(
           getAuthentication(this.props.authentication)
         )}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
-        isVisible={this.state.isNotificationModalVisible}
-        onClose={() => this.setState({ isNotificationModalVisible: false })}
+        isVisible={this.state.isDataAlertModalVisible}
+        onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
           this.props.onSuccessAlert('Notification created!')
-          this.setState({ isNotificationModalVisible: false })
+          this.setState({ isDataAlertModalVisible: false })
         }}
         onErrorCallback={() =>
           this.props.onErrorCallback(
@@ -1211,7 +1222,7 @@ export default class DataMessenger extends React.Component {
               {this.renderBodyContent()}
             </div>
           </Drawer>
-          {this.renderNotificationModal()}
+          {this.renderDataAlertModal()}
         </Fragment>
       </ErrorBoundary>
     )

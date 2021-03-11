@@ -8,9 +8,10 @@ export {
   NotificationFeed,
   NotificationItem,
   DataAlerts,
+  ExpressionBuilderSimple,
   ExpressionBuilder,
   ScheduleBuilder,
-  NotificationModal,
+  DataAlertModal,
 } from './components/Notifications'
 export { Icon } from './components/Icon'
 export {
@@ -19,3 +20,4 @@ export {
   isDisplayTypeValid,
 } from './js/Util.js'
 export { fetchQueryTips } from './js/queryService'
+export { LoadingDots } from './components/LoadingDots'

@@ -9,12 +9,13 @@ import sqlFormatter from 'sql-formatter'
 
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
-import { NotificationModal } from '../Notifications'
+import { DataAlertModal } from '../Notifications'
 import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
 import { SendToSlackModal } from '../SendToSlackModal'
 import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setColumnVisibility, reportProblem } from '../../js/queryService'
 import { CHART_TYPES } from '../../js/Constants.js'
@@ -79,7 +80,10 @@ export default class Input extends React.Component {
     }
 
     if (
-      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
@@ -322,69 +326,75 @@ export default class Input extends React.Component {
       columns = tableRef.getColumns().map((col) => {
         return {
           ...col.getDefinition(),
-          visible: col.getVisibility(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
+          visible: col.isVisible(), // for some reason this doesn't get updated when .hide() or .show() are called, so we are manually updating it here
         }
       })
     }
 
     return (
-      <ColumnVisibilityModal
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        columns={columns}
-        isVisible={this.state.isHideColumnsModalVisible}
-        onClose={() => this.setState({ isHideColumnsModalVisible: false })}
-        isSettingColumns={this.state.isSettingColumnVisibility}
-        onConfirm={this.onColumnVisibilitySave}
-      />
+      <ErrorBoundary>
+        <ColumnVisibilityModal
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          columns={columns}
+          isVisible={this.state.isHideColumnsModalVisible}
+          onClose={() => this.setState({ isHideColumnsModalVisible: false })}
+          isSettingColumns={this.state.isSettingColumnVisibility}
+          onConfirm={this.onColumnVisibilitySave}
+        />
+      </ErrorBoundary>
     )
   }
 
-  renderNotificationModal = () => {
+  renderDataAlertModal = () => {
     const initialQuery = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.text'
     )
 
     return (
-      <NotificationModal
-        authentication={getAuthentication(this.props.authentication)}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        isVisible={this.state.activeMenu === 'notification'}
-        initialQuery={initialQuery}
-        onClose={() => this.setState({ activeMenu: undefined })}
-        onErrorCallback={this.props.onErrorCallback}
-        onSave={() => {
-          this.props.onSuccessAlert('Successfully created a notification')
-          this.setState({ activeMenu: undefined })
-        }}
-      />
+      <ErrorBoundary>
+        <DataAlertModal
+          authentication={getAuthentication(this.props.authentication)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          isVisible={this.state.activeMenu === 'notification'}
+          initialQuery={initialQuery}
+          onClose={() => this.setState({ activeMenu: undefined })}
+          onErrorCallback={this.props.onErrorCallback}
+          onSave={() => {
+            this.props.onSuccessAlert('Successfully created a notification')
+            this.setState({ activeMenu: undefined })
+          }}
+        />
+      </ErrorBoundary>
     )
   }
 
   renderReportProblemModal = () => {
     return (
-      <Modal
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        isVisible={this.state.activeMenu === 'other-problem'}
-        onClose={() => {
-          this.setState({ activeMenu: undefined })
-        }}
-        onConfirm={() => {
-          this.reportQueryProblem(this.reportProblemMessage)
-          this.reportProblemMessage = undefined
-        }}
-        confirmLoading={this.state.isReportingProblem}
-        title="Report a Problem"
-        enableBodyScroll={true}
-        width="600px"
-        confirmText="Report"
-      >
-        Please tell us more about the problem you are experiencing:
-        <textarea
-          className="report-problem-text-area"
-          onChange={(e) => (this.reportProblemMessage = e.target.value)}
-        />
-      </Modal>
+      <ErrorBoundary>
+        <Modal
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          isVisible={this.state.activeMenu === 'other-problem'}
+          onClose={() => {
+            this.setState({ activeMenu: undefined })
+          }}
+          onConfirm={() => {
+            this.reportQueryProblem(this.reportProblemMessage)
+            this.reportProblemMessage = undefined
+          }}
+          confirmLoading={this.state.isReportingProblem}
+          title="Report a Problem"
+          enableBodyScroll={true}
+          width="600px"
+          confirmText="Report"
+        >
+          Please tell us more about the problem you are experiencing:
+          <textarea
+            className="report-problem-text-area"
+            onChange={(e) => (this.reportProblemMessage = e.target.value)}
+          />
+        </Modal>
+      </ErrorBoundary>
     )
   }
 
@@ -546,9 +556,29 @@ export default class Input extends React.Component {
     )
   }
 
+  areColumnsHidden = () => {
+    const columns = _get(this.props.responseRef, 'tableColumns', [])
+    return !!columns.find((col) => !col.visible)
+  }
+
   areAllColumnsHidden = () => {
     const columns = _get(this.props.responseRef, 'tableColumns', [])
     return !columns.find((col) => col.visible)
+  }
+
+  isDrilldownResponse = () => {
+    try {
+      const queryText = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.text'
+      )
+      if (queryText.split(' ')[0] === 'Drilldown:') {
+        return true
+      }
+      return false
+    } catch (error) {
+      return false
+    }
   }
 
   renderSendToSlackModal = () => {
@@ -597,44 +627,46 @@ export default class Input extends React.Component {
     }
 
     return (
-      <Modal
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        isVisible={this.state.activeMenu === 'sql'}
-        footer={
-          <div>
+      <ErrorBoundary>
+        <Modal
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          isVisible={this.state.activeMenu === 'sql'}
+          footer={
+            <div>
+              <Button
+                type="primary"
+                onClick={() => this.setState({ activeMenu: undefined })}
+              >
+                Ok
+              </Button>
+            </div>
+          }
+          onClose={() => this.setState({ activeMenu: undefined })}
+          title="Generated SQL"
+          enableBodyScroll={false}
+          width="600px"
+        >
+          <div className="copy-sql-modal-content">
+            <textarea
+              className="copy-sql-formatted-text"
+              value={`${sqlFormatter.format(sql)}`}
+              disabled
+            />
             <Button
-              type="primary"
-              onClick={() => this.setState({ activeMenu: undefined })}
+              className={`copy-sql-btn ${
+                this.state.sqlCopySuccess ? 'sql-copied' : ''
+              }`}
+              onClick={this.copySQL}
+              tooltip="Copy to Clipboard"
             >
-              Ok
+              <Icon type="copy" />
+              {this.state.sqlCopySuccess && (
+                <Icon type="check" className="sql-copied" />
+              )}
             </Button>
           </div>
-        }
-        onClose={() => this.setState({ activeMenu: undefined })}
-        title="Generated SQL"
-        enableBodyScroll={false}
-        width="600px"
-      >
-        <div className="copy-sql-modal-content">
-          <textarea
-            className="copy-sql-formatted-text"
-            value={`${sqlFormatter.format(sql)}`}
-            disabled
-          />
-          <Button
-            className={`copy-sql-btn ${
-              this.state.sqlCopySuccess ? 'sql-copied' : ''
-            }`}
-            onClick={this.copySQL}
-            tooltip="Copy to Clipboard"
-          >
-            <Icon type="copy" />
-            {this.state.sqlCopySuccess && (
-              <Icon type="check" className="sql-copied" />
-            )}
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      </ErrorBoundary>
     )
   }
 
@@ -660,7 +692,6 @@ export default class Input extends React.Component {
       showHideColumnsButton:
         getAutoQLConfig(this.props.autoQLConfig)
           .enableColumnVisibilityManager &&
-        // !isAggregation(response) &&
         isTableResponse(response, displayType) &&
         displayType !== 'pivot_table' &&
         _get(response, 'data.data.columns.length') > 0,
@@ -670,13 +701,16 @@ export default class Input extends React.Component {
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:
         isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableNotifications,
-      showShareToSlackButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
-      showShareToTeamsButton:
-        isDataResponse &&
-        getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
+        getAutoQLConfig(this.props.autoQLConfig).enableNotifications &&
+        !this.isDrilldownResponse(),
+      showShareToSlackButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing,
+      showShareToTeamsButton: false,
+      // This feature is disabled indefinitely
+      // isDataResponse &&
+      // getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing,
     }
 
     shouldShowButton.showMoreOptionsButton =
@@ -690,116 +724,117 @@ export default class Input extends React.Component {
 
     // If there is nothing to put in the toolbar, don't render it
     if (
-      !this.props.responseRef ||
       !Object.values(shouldShowButton).find((showButton) => showButton === true)
     ) {
       return null
     }
 
     return (
-      <div
-        className={`autoql-options-toolbar
+      <ErrorBoundary>
+        <div
+          className={`autoql-options-toolbar
         ${this.state.activeMenu ? 'active' : ''}
         ${this.props.className || ''}`}
-        data-test="autoql-options-toolbar"
-      >
-        {shouldShowButton.showFilterButton && (
-          <button
-            onClick={this.toggleTableFilter}
-            className="react-autoql-toolbar-btn"
-            data-tip="Filter table"
-            data-for="react-autoql-toolbar-btn-tooltip"
-          >
-            <Icon type="filter" />
-          </button>
-        )}
-        {shouldShowButton.showHideColumnsButton && (
-          <button
-            onClick={this.showHideColumnsModal}
-            className="react-autoql-toolbar-btn"
-            data-tip="Show/hide columns"
-            data-for="react-autoql-toolbar-btn-tooltip"
-            data-test="options-toolbar-col-vis"
-          >
-            <Icon type="eye" />
-          </button>
-        )}
-        {shouldShowButton.showReportProblemButton && (
-          <Popover
-            key={uuid.v4()}
-            isOpen={this.state.activeMenu === 'report-problem'}
-            padding={8}
-            onClickOutside={() => {
-              this.setState({ activeMenu: undefined })
-            }}
-            position="bottom" // preferred position
-            content={(props) => this.renderReportProblemMenu(props)}
-          >
+          data-test="autoql-options-toolbar"
+        >
+          {shouldShowButton.showFilterButton && (
             <button
-              onClick={() => {
-                this.setState({ activeMenu: 'report-problem' })
-              }}
+              onClick={this.toggleTableFilter}
               className="react-autoql-toolbar-btn"
-              data-tip="Report a problem"
+              data-tip="Filter table"
               data-for="react-autoql-toolbar-btn-tooltip"
             >
-              <Icon type="warning-triangle" />
+              <Icon type="filter" />
             </button>
-          </Popover>
-        )}
-        {shouldShowButton.showDeleteButton && (
-          <button
-            onClick={this.deleteMessage}
-            className="react-autoql-toolbar-btn"
-            data-tip="Delete data response"
-            data-for="react-autoql-toolbar-btn-tooltip"
-            data-test="options-toolbar-trash-btn"
-          >
-            <Icon type="trash" />
-          </button>
-        )}
-        {shouldShowButton.showMoreOptionsButton && (
-          <Popover
-            key={uuid.v4()}
-            isOpen={this.state.activeMenu === 'more-options'}
-            position="bottom"
-            padding={8}
-            onClickOutside={() => {
-              this.setState({ activeMenu: undefined })
-            }}
-            content={(props) =>
-              this.renderMoreOptionsMenu(props, shouldShowButton)
-            }
-          >
+          )}
+          {shouldShowButton.showHideColumnsButton && (
             <button
-              onClick={() => {
-                ReactTooltip.hide()
-                this.setState({ activeMenu: 'more-options' })
-              }}
+              onClick={this.showHideColumnsModal}
               className="react-autoql-toolbar-btn"
-              data-tip="More options"
+              data-tip="Show/hide columns"
               data-for="react-autoql-toolbar-btn-tooltip"
-              data-test="react-autoql-toolbar-more-options-btn"
+              data-test="options-toolbar-col-vis"
             >
-              <Icon type="more-vertical" />
+              <Icon type="eye" showBadge={this.areColumnsHidden()} />
             </button>
-          </Popover>
-        )}
-      </div>
+          )}
+          {shouldShowButton.showReportProblemButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'report-problem'}
+              padding={8}
+              onClickOutside={() => {
+                this.setState({ activeMenu: undefined })
+              }}
+              position="bottom" // preferred position
+              content={(props) => this.renderReportProblemMenu(props)}
+            >
+              <button
+                onClick={() => {
+                  this.setState({ activeMenu: 'report-problem' })
+                }}
+                className="react-autoql-toolbar-btn"
+                data-tip="Report a problem"
+                data-for="react-autoql-toolbar-btn-tooltip"
+              >
+                <Icon type="warning-triangle" />
+              </button>
+            </Popover>
+          )}
+          {shouldShowButton.showDeleteButton && (
+            <button
+              onClick={this.deleteMessage}
+              className="react-autoql-toolbar-btn"
+              data-tip="Delete data response"
+              data-for="react-autoql-toolbar-btn-tooltip"
+              data-test="options-toolbar-trash-btn"
+            >
+              <Icon type="trash" />
+            </button>
+          )}
+          {shouldShowButton.showMoreOptionsButton && (
+            <Popover
+              key={uuid.v4()}
+              isOpen={this.state.activeMenu === 'more-options'}
+              position="bottom"
+              padding={8}
+              onClickOutside={() => {
+                this.setState({ activeMenu: undefined })
+              }}
+              content={(props) =>
+                this.renderMoreOptionsMenu(props, shouldShowButton)
+              }
+            >
+              <button
+                onClick={() => {
+                  ReactTooltip.hide()
+                  this.setState({ activeMenu: 'more-options' })
+                }}
+                className="react-autoql-toolbar-btn"
+                data-tip="More options"
+                data-for="react-autoql-toolbar-btn-tooltip"
+                data-test="react-autoql-toolbar-more-options-btn"
+              >
+                <Icon type="more-vertical" />
+              </button>
+            </Popover>
+          )}
+        </div>
+      </ErrorBoundary>
     )
   }
 
   render = () => {
     return (
-      <Fragment>
+      <ErrorBoundary>
         {this.renderToolbar()}
         {this.renderHideColumnsModal()}
         {this.renderReportProblemModal()}
-        {this.renderNotificationModal()}
+        {this.renderDataAlertModal()}
         {this.renderSendToSlackModal()}
         {this.renderSendToTeamsModal()}
         {this.renderSQLModal()}
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

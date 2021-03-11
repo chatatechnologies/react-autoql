@@ -4,6 +4,7 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 
 import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Cascader.scss'
 
@@ -117,19 +118,21 @@ export default class Cascader extends React.Component {
 
   render = () => {
     return (
-      <div
-        id={`react-autoql-cascader-${this.COMPONENT_ID}`}
-        className="react-autoql-cascader"
-        data-test="react-autoql-cascader"
-      >
-        {this.state.optionsArray.map((optionsObject, index) => {
-          return this.renderOptionsList({
-            options: optionsObject.options,
-            active: optionsObject.active,
-            index,
-          })
-        })}
-      </div>
+      <ErrorBoundary>
+        <div
+          id={`react-autoql-cascader-${this.COMPONENT_ID}`}
+          className="react-autoql-cascader"
+          data-test="react-autoql-cascader"
+        >
+          {this.state.optionsArray.map((optionsObject, index) => {
+            return this.renderOptionsList({
+              options: optionsObject.options,
+              active: optionsObject.active,
+              index,
+            })
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

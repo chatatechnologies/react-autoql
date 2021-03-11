@@ -54,21 +54,23 @@ export default class ChataBubbleChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidUpdate = () => {
+    if (
+      typeof this.prevRotateLabels !== 'undefined' &&
+      this.prevRotateLabels !== this.rotateLabels
+    ) {
+      this.props.onLabelChange()
+    }
+  }
+
   handleLabelRotation = (labelArray) => {
-    const prevRotateLabels = this.rotateLabels
+    this.prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       this.squareWidth,
       labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
-
-    if (
-      typeof prevRotateLabels !== 'undefined' &&
-      prevRotateLabels !== this.rotateLabels
-    ) {
-      this.props.onLabelChange()
-    }
   }
 
   getXTickValues = (labelArray) => {
@@ -143,16 +145,16 @@ export default class ChataBubbleChart extends Component {
     const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
     const minValue = min(data, (d) => min(d.cells, (cell) => cell.value))
 
-    const uniqueYLabels = data.map((d) => d.label)
-    const yScale = this.xScale
-      .domain(uniqueYLabels)
-      .range([height - bottomMargin, topMargin])
-      .paddingOuter(0.5)
-
-    const uniqueXLabels = data[0].cells.map((cell) => cell.label)
-    const xScale = this.yScale
+    const uniqueXLabels = data.map((d) => d.label)
+    const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([leftMargin, width - rightMargin])
+      .paddingOuter(0.5)
+
+    const uniqueYLabels = data[0].cells.map((cell) => cell.label)
+    const yScale = this.yScale
+      .domain(uniqueYLabels)
+      .range([height - bottomMargin, topMargin])
 
     this.squareWidth = xScale.bandwidth()
     const xTickValues = this.getXTickValues(uniqueXLabels)
@@ -167,8 +169,8 @@ export default class ChataBubbleChart extends Component {
         <Axes
           themeConfig={getThemeConfig(this.props.themeConfig)}
           scales={{ xScale, yScale }}
-          xCol={legendColumn}
-          yCol={columns[0]}
+          xCol={columns[0]}
+          yCol={legendColumn}
           valueCol={columns[2]}
           margins={{
             left: leftMargin,

@@ -56,11 +56,14 @@ export default class Bars extends Component {
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
         data.map((d, index) => {
-          // x0 - position of first bar
-          // cX - adjustment for position of bar number 2+
           const y0 = yScale(d[labelValue])
           const dY = i * barHeight
           const finalBarYPosition = y0 + dY
+
+          let width = Math.abs(this.X(d, i) - this.X0())
+          if (Number.isNaN(width)) {
+            width = 0
+          }
 
           return (
             <rect
@@ -71,7 +74,7 @@ export default class Bars extends Component {
               data-test={`bar-${i}-${index}`}
               y={finalBarYPosition}
               x={d.cells[i].value > 0 ? this.X0() : this.X(d, i)}
-              width={Math.abs(this.X(d, i) - this.X0())}
+              width={width}
               height={barHeight}
               onClick={() => this.onBarClick(d, i)}
               data-tip={_get(d, `cells[${i}].tooltipData`)}

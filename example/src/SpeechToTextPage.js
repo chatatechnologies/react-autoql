@@ -4,7 +4,6 @@ import _ from 'lodash'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
 import { SpeechToTextBtn, fetchQueryTips } from 'react-autoql'
-import { getAuthentication, getThemeConfig } from '../../src/props/defaults'
 
 export default class SpeechToTextPage extends React.Component {
   state = {
@@ -20,7 +19,7 @@ export default class SpeechToTextPage extends React.Component {
 
   componentDidMount = () => {
     fetchQueryTips({
-      ...getAuthentication(this.props.authentication),
+      ...this.props.authentication,
       keywords: '',
       pageSize: 200,
       pageNumber: 1,
@@ -50,17 +49,36 @@ export default class SpeechToTextPage extends React.Component {
     }
   }
 
-  replayBlob = (blob) => {
+  replayBlob = (blob, isCurrentPlayback) => {
     const blobURL = window.URL.createObjectURL(blob)
     const audio0 = new Audio(blobURL)
     audio0.play()
+
+    audio0.addEventListener(
+      'ended',
+      () => {
+        if (isCurrentPlayback) {
+          this.setState({ hasPlayedBack: true })
+        }
+      },
+      false
+    )
   }
 
-  sendWavFile = (file, blob) => {
+  sendWavFile = (file, blob, query) => {
+    this.setState({
+      isConfirmingRecording: false,
+      currentQuery: this.state.currentQuery + 1,
+    })
+
     const url = 'https://backend-staging.chata.io/gcp/api/v1/wav_upload'
     const data = new FormData()
+
     data.append('file', file, 'speech.wav')
-    data.append('eng', this.state.queryList[this.state.currentQuery])
+    data.append('eng', query)
+    data.append('user_email', this.props.userEmail)
+    data.append('project_id', this.props.projectID)
+
     const config = {
       headers: {
         Authorization: `Bearer ${this.state.token}`,
@@ -70,7 +88,7 @@ export default class SpeechToTextPage extends React.Component {
     axios.post(url, data, config).then((response) => {
       const newResultHistory = [
         {
-          query: this.state.queryList[this.state.currentQuery],
+          query,
           audio: (
             <Button
               shape="circle"
@@ -94,9 +112,97 @@ export default class SpeechToTextPage extends React.Component {
       ]
       this.setState({
         resultHistory: newResultHistory,
-        currentQuery: this.state.currentQuery + 1,
       })
     })
+  }
+
+  renderS2TButtonAndQuery = () => {
+    return (
+      <Fragment>
+        <SpeechToTextBtn
+          themeConfig={this.props.themeConfig}
+          onRecordStop={(file, blob) => {
+            this.setState({
+              isConfirmingRecording: true,
+              currentFile: file,
+              currentBlob: blob,
+              hasPlayedBack: false,
+            })
+          }}
+        />
+        <div>
+          {this.state.queryList[this.state.currentQuery] || 'Say anything!'}
+        </div>
+        {!!this.state.queryList.length && (
+          <Button
+            style={{ marginTop: '20px' }}
+            onClick={() => {
+              this.setState({ currentQuery: this.state.currentQuery + 1 })
+            }}
+          >
+            Skip
+          </Button>
+        )}
+      </Fragment>
+    )
+  }
+
+  renderConfirmRecording = () => {
+    return (
+      <Fragment>
+        <Button
+          style={{ margin: '10px' }}
+          shape="circle"
+          type="primary"
+          onClick={() => {
+            this.replayBlob(this.state.currentBlob, true)
+          }}
+          size="large"
+          icon={<PlayCircleOutlined />}
+        ></Button>
+        <div>{this.state.queryList[this.state.currentQuery] || ''}</div>
+        <Button
+          style={{ marginTop: '20px' }}
+          type="primary"
+          disabled={!this.state.hasPlayedBack}
+          onClick={() =>
+            this.sendWavFile(
+              this.state.currentFile,
+              this.state.currentBlob,
+              this.state.queryList[this.state.currentQuery]
+            )
+          }
+        >
+          Approve Recording
+        </Button>
+        {!this.state.hasPlayedBack && (
+          <div style={{ fontSize: '12px' }}>
+            To approve this recording, you must listen to it first
+          </div>
+        )}
+        <br />
+        <Button
+          style={{ marginTop: '5px' }}
+          onClick={() => {
+            this.setState({ isConfirmingRecording: false })
+          }}
+        >
+          Retry
+        </Button>
+        <br />
+        <Button
+          style={{ marginTop: '5px' }}
+          onClick={() => {
+            this.setState({
+              isConfirmingRecording: false,
+              currentQuery: this.state.currentQuery + 1,
+            })
+          }}
+        >
+          Skip
+        </Button>
+      </Fragment>
+    )
   }
 
   render = () => {
@@ -132,24 +238,9 @@ export default class SpeechToTextPage extends React.Component {
         {this.state.isAuthenticated ? (
           <Fragment>
             <div style={{ padding: '5px', textAlign: 'center' }}>
-              <SpeechToTextBtn
-                themeConfig={getThemeConfig(this.props.themeConfig)}
-                onRecordStop={this.sendWavFile}
-              />
-              <div>
-                {this.state.queryList[this.state.currentQuery] ||
-                  'Say anything!'}
-              </div>
-              {!!this.state.queryList.length && (
-                <Button
-                  style={{ marginTop: '20px' }}
-                  onClick={() => {
-                    this.setState({ currentQuery: this.state.currentQuery + 1 })
-                  }}
-                >
-                  Skip
-                </Button>
-              )}
+              {this.state.isConfirmingRecording
+                ? this.renderConfirmRecording()
+                : this.renderS2TButtonAndQuery()}
             </div>
             {
               <div style={{ marginTop: '50px' }}>

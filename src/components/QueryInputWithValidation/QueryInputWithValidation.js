@@ -16,16 +16,17 @@ import {
   themeConfigDefault,
   authenticationDefault,
   getAuthentication,
+  getThemeConfig,
 } from '../../props/defaults'
 import { themeConfigType, authenticationType } from '../../props/types'
 
-import { runSafetyNet } from '../../js/queryService'
+import { runQueryValidation } from '../../js/queryService'
 
-import './QueryInputWithSafetyNet.scss'
+import './QueryInputWithValidation.scss'
 
-export default class SafetyNetMessage extends React.Component {
-  COMPONENT_KEY = `query-input-with-safetynet-${uuid.v4()}`
-  POPOVER_TRIGGER_KEY = `safetynet-popover-trigger-${uuid.v4()}`
+export default class QueryValidationMessage extends React.Component {
+  COMPONENT_KEY = `query-input-with-validation-${uuid.v4()}`
+  POPOVER_TRIGGER_KEY = `validation-popover-trigger-${uuid.v4()}`
   originalReplaceWords = []
   suggestionLists = []
 
@@ -34,7 +35,7 @@ export default class SafetyNetMessage extends React.Component {
     this.contentEditable = React.createRef()
     this.state = {
       html: '',
-      safetyNetQueryArray: [],
+      validationQueryArray: [],
       selectedSuggestions: undefined,
     }
   }
@@ -52,6 +53,7 @@ export default class SafetyNetMessage extends React.Component {
     message: PropTypes.string,
     placeholder: PropTypes.string,
     showChataIcon: PropTypes.bool,
+    showLoadingDots: PropTypes.bool,
     submitQuery: PropTypes.func,
   }
 
@@ -68,33 +70,33 @@ export default class SafetyNetMessage extends React.Component {
     onQueryValidationSelectOption: () => {},
     placeholder: 'Type your queries here',
     showChataIcon: false,
+    showLoadingDots: false,
     submitQuery: () => {},
   }
 
   componentDidMount = () => {
-    const { themeConfig } = this.props
-    setCSSVars({ themeConfig, prefix: '--chata-input-' })
+    setCSSVars(getThemeConfig(this.props.themeConfig))
 
     if (_get(this.props, 'response.data')) {
-      this.initializeSafetyNetOptions(this.props.response.data)
+      this.initializeQueryValidationOptions(this.props.response.data)
     }
   }
 
   componentDidUpdate = () => {
-    const safetyNetSelectElements = document.querySelectorAll(
-      `#${this.COMPONENT_KEY} .safetynet-selector-element`
+    const validationSelectElements = document.querySelectorAll(
+      `#${this.COMPONENT_KEY} .validation-selector-element`
     )
 
-    if (_get(safetyNetSelectElements, 'length')) {
-      const elements = [...safetyNetSelectElements]
+    if (_get(validationSelectElements, 'length')) {
+      const elements = [...validationSelectElements]
       elements.forEach((el) => {
-        el.removeEventListener('click', this.onSafetyNetTriggerClick)
-        el.addEventListener('click', this.onSafetyNetTriggerClick)
+        el.removeEventListener('click', this.onQueryValidationTriggerClick)
+        el.addEventListener('click', this.onQueryValidationTriggerClick)
       })
     }
   }
 
-  onSafetyNetTriggerClick = (e) => {
+  onQueryValidationTriggerClick = (e) => {
     const popoverTrigger = document.querySelector(
       `#${this.POPOVER_TRIGGER_KEY}`
     )
@@ -119,19 +121,20 @@ export default class SafetyNetMessage extends React.Component {
     }
   }
 
-  // ================================ SAFETYNET =======================================
+  // ================================ QUERY_VALIDATION =======================================
+  // todo: centralize these functions so we can use them in both here and QueryValidationMessage
 
-  getSuggestionLists = (query, fullSuggestions) => {
+  getSuggestionLists = (query, replacements) => {
     const suggestionLists = []
-    if (fullSuggestions.length) {
-      fullSuggestions.forEach((suggestionInfo) => {
+    if (replacements.length) {
+      replacements.forEach((suggestionInfo) => {
         const originalWord = query.slice(
           suggestionInfo.start,
           suggestionInfo.end
         )
 
         // Add ID to each original suggestion
-        const originalSuggestionList = suggestionInfo.suggestion_list.map(
+        const originalSuggestionList = suggestionInfo.suggestions.map(
           (suggestion) => {
             return {
               id: uuid.v4(),
@@ -197,16 +200,16 @@ export default class SafetyNetMessage extends React.Component {
       return
     }
 
-    let safetyNetQueryString = ''
+    let validationQueryString = ''
     this.plainTextList.forEach((word, dropdownIndex) => {
-      safetyNetQueryString = safetyNetQueryString.concat(word)
+      validationQueryString = validationQueryString.concat(word)
       const suggestion = selectedSuggestions[dropdownIndex]
 
       if (suggestion && !suggestion.hidden) {
-        const startIndex = safetyNetQueryString.length
+        const startIndex = validationQueryString.length
         suggestion.start = startIndex
         suggestion.end = startIndex + suggestion.text.length
-        safetyNetQueryString = safetyNetQueryString.concat(suggestion.text)
+        validationQueryString = validationQueryString.concat(suggestion.text)
       }
     })
   }
@@ -245,26 +248,24 @@ export default class SafetyNetMessage extends React.Component {
     )
   }
 
-  initializeSafetyNetOptions = (responseBody) => {
-    const { full_suggestion: fullSuggestions } = responseBody
-    if (!fullSuggestions) {
+  initializeQueryValidationOptions = (responseBody) => {
+    const { replacements, query } = responseBody.data
+    if (!replacements || !query) {
       return []
     }
 
-    const query = this.replaceNbsps(this.getPlainTextFromHTML(this.state.html))
-
     // Gets list of suggestions with value labels for each "dropdown"
     // and also includes the original query at the end of this list
-    this.suggestionLists = this.getSuggestionLists(query, fullSuggestions)
+    this.suggestionLists = this.getSuggestionLists(query, replacements)
 
     // Gets list of text from the query that are not part of the suggestions
-    this.plainTextList = this.getPlainTextList(query, fullSuggestions)
+    this.plainTextList = this.getPlainTextList(query, replacements)
 
-    // Set initial safetynet selection values based on props
+    // Set initial validation selection values based on props
     this.setInitialSelections()
   }
 
-  onChangeSafetyNetSelectOption = (suggestionId) => {
+  onChangeQueryValidationSelectOption = (suggestionId) => {
     const index = this.validationSelectorIndex
     const newSuggestion = this.suggestionLists[index].find(
       (suggestion) => suggestion.id === suggestionId
@@ -272,9 +273,9 @@ export default class SafetyNetMessage extends React.Component {
     const newSelectedSuggestions = _cloneDeep(this.state.selectedSuggestions)
     newSelectedSuggestions[index] = newSuggestion
 
-    // If user provided callback for safetynet selection
+    // If user provided callback for validation selection
     this.props.onQueryValidationSelectOption(
-      this.getSafetyNetQueryText(newSelectedSuggestions),
+      this.getQueryValidationQueryText(newSelectedSuggestions),
       newSelectedSuggestions
     )
 
@@ -349,7 +350,7 @@ export default class SafetyNetMessage extends React.Component {
 
     return (
       <div
-        className={`chata-safety-net-selector-container
+        className={`react-autoql-query-validation-selector-container
           ${this.props.showChataIcon ? ' left-padding' : ''}`}
         key={`query-element-${suggestion.id}`}
       >
@@ -357,18 +358,21 @@ export default class SafetyNetMessage extends React.Component {
           options={options}
           key={uuid.v4()}
           value={suggestion.id}
-          className="chata-safetynet-select"
-          popupClassname="safetynet-select"
+          className="react-autoql-query-validation-select"
+          popupClassname="validation-select"
           // style={{ width: selectWidth }}
           onChange={(value) =>
-            this.onChangeSafetyNetSelectOption(value, suggestionDropdownIndex)
+            this.onChangeQueryValidationSelectOption(
+              value,
+              suggestionDropdownIndex
+            )
           }
         />
       </div>
     )
   }
 
-  getSafetyNetQueryText = (newSelectedSuggestions) => {
+  getQueryValidationQueryText = (newSelectedSuggestions) => {
     const selectedSuggestions =
       newSelectedSuggestions || this.state.selectedSuggestions
 
@@ -376,16 +380,16 @@ export default class SafetyNetMessage extends React.Component {
       return this.getPlainTextFromHTML(this.state.html)
     }
 
-    let safetyNetQueryText = ''
+    let validationQueryText = ''
     this.plainTextList.forEach((word, dropdownIndex) => {
-      safetyNetQueryText = safetyNetQueryText.concat(word)
+      validationQueryText = validationQueryText.concat(word)
       const suggestion = selectedSuggestions[dropdownIndex]
       if (suggestion && !suggestion.hidden) {
-        safetyNetQueryText = safetyNetQueryText.concat(suggestion.text)
+        validationQueryText = validationQueryText.concat(suggestion.text)
       }
     })
 
-    return safetyNetQueryText
+    return validationQueryText
   }
 
   // ==================================== Input =========================================
@@ -412,7 +416,7 @@ export default class SafetyNetMessage extends React.Component {
   }
 
   runQueryValidation = throttle(300, ({ text }) => {
-    runSafetyNet({
+    runQueryValidation({
       text,
       ...getAuthentication(this.props.authentication),
     })
@@ -424,7 +428,11 @@ export default class SafetyNetMessage extends React.Component {
           this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) &&
           _get(response, 'data.data.replacements.length')
         ) {
-          this.initializeSafetyNetOptions(_cloneDeep(response.data))
+          console.log(
+            'these were the replacements:',
+            _get(response, 'data.data.replacements')
+          )
+          this.initializeQueryValidationOptions(_cloneDeep(response.data))
         }
       })
       .catch((error) => {
@@ -502,11 +510,11 @@ export default class SafetyNetMessage extends React.Component {
         isValidationSelectorOpen: false,
       })
     } else {
-      // Reset safetynet values to plain text since query changed
+      // Reset validation values to plain text since query changed
       this.plainTextList = undefined
       this.setState({
         html: newPlainTextQuery,
-        safetyNetQueryArray: [],
+        validationQueryArray: [],
         selectedSuggestions: undefined,
         isValidationSelectorOpen: false,
       })
@@ -533,13 +541,13 @@ export default class SafetyNetMessage extends React.Component {
     if (e.key == 'Enter') {
       const html = this.getHTML()
       const queryText = this.getPlainTextFromHTML(html)
-      this.props.submitQuery({ queryText, skipSafetyNet: true })
+      this.props.submitQuery({ queryText, skipQueryValidation: true })
       return
     }
 
     if (e.key == 'Tab') {
       e.preventDefault()
-      // loop through options for word from safetynet
+      // loop through options for word from validation
     }
   }
 
@@ -561,7 +569,7 @@ export default class SafetyNetMessage extends React.Component {
           const suggestionValueLabel = suggestion.value_label
             ? ` <em> (${suggestion.value_label})</em>`
             : ''
-          suggestionElement = `<span class="safetynet-selector-element" data-index="${index}">${suggestionText}</span>`
+          suggestionElement = `<span class="validation-selector-element" data-index="${index}">${suggestionText}</span>`
         }
 
         html = html.concat(textElement, suggestionElement)
@@ -581,7 +589,7 @@ export default class SafetyNetMessage extends React.Component {
           id={this.COMPONENT_KEY}
           ref={(ref) => (this.inputRef = ref)}
           innerRef={this.contentEditable}
-          className="query-input-with-safetynet"
+          className="query-input-with-validation"
           disabled={this.props.isDisabled}
           onChange={this.onInputChange}
           onKeyDown={this.handleKeyDown}
@@ -620,18 +628,20 @@ export default class SafetyNetMessage extends React.Component {
               this.validationSelectorIndex
             )
             return (
-              <div className={`chata-select-popup-container safetynet-select`}>
-                <ul className="chata-select-popup">
+              <div
+                className={`react-autoql-select-popup-container validation-select`}
+              >
+                <ul className="react-autoql-select-popup">
                   {options.map((option) => {
                     return (
                       <li
                         key={`select-option-${this.ID}-${option.value}`}
-                        className={`chata-select-option${
+                        className={`react-autoql-select-option${
                           option.value === this.props.value ? ' active' : ''
                         }`}
                         onClick={() => {
                           this.setState({ isValidationSelectorOpen: false })
-                          this.onChangeSafetyNetSelectOption(option.value)
+                          this.onChangeQueryValidationSelectOption(option.value)
                         }}
                         data-tip={option.tooltip || null}
                         data-for={`select-tooltip-${this.ID}`}

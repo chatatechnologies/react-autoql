@@ -167,13 +167,15 @@
   overflow-x: auto;
   overflow-y: hidden;
 }
-.react-autoql-dashboard-tile-inner-div .react-autoql-safety-net-query {
+.react-autoql-dashboard-tile-inner-div .react-autoql-query-validation-query {
   white-space: nowrap;
 }
-.dashboard-tile-response-wrapper.small .react-autoql-safety-net-description,
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-description,
 .dashboard-tile-response-wrapper.small
   .react-autoql-suggestion-message-description,
-.dashboard-tile-response-wrapper.small .react-autoql-safety-net-execute-btn {
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-execute-btn {
   display: none;
 }
 
@@ -532,9 +534,14 @@
 .dashboard-tile-response-container .layout-pane-primary {
   overflow: hidden;
 }
-.dashboard-tile-response-container .splitter-layout,
-.dashboard-tile-split-pane-container {
-  height: 100%;
+.splitter-layout,
+.layout-pane,
+.dashboard-tile-split-pane-container,
+.react-autoql-dashboard-drilldown-original {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
 }
 .dashboard-tile-response-container .splitter-layout,
 .dashboard-tile-response-container .layout-pane,

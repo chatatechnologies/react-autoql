@@ -53,21 +53,23 @@ export default class ChataStackedLineChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidUpdate = () => {
+    if (
+      typeof this.prevRotateLabels !== 'undefined' &&
+      this.prevRotateLabels !== this.rotateLabels
+    ) {
+      this.props.onLabelChange()
+    }
+  }
+
   handleLabelRotation = (tickWidth, labelArray) => {
-    const prevRotateLabels = this.rotateLabels
+    this.prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
-
-    if (
-      typeof prevRotateLabels !== 'undefined' &&
-      prevRotateLabels !== this.rotateLabels
-    ) {
-      this.props.onLabelChange()
-    }
   }
 
   render = () => {
@@ -142,7 +144,7 @@ export default class ChataStackedLineChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'display_name')}
+          legendTitle={_get(legendColumn, 'title')}
           onLegendTitleClick={onLegendTitleClick}
           yGridLines
           onXAxisClick={onXAxisClick}
@@ -164,7 +166,7 @@ export default class ChataStackedLineChart extends Component {
           height={height}
           onChartClick={onChartClick}
           activeKey={activeChartElementKey}
-          legendTitle={_get(legendColumn, 'display_name')}
+          legendTitle={_get(legendColumn, 'title')}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

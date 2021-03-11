@@ -5,13 +5,15 @@
     padding-left: 8px;
   }
 
-  .first-step-next-btn {
-    position: absolute;
-    right: 10px;
-    bottom: 18px;
-  }
-
   .step-btn-container {
     text-align: right;
   }
+}
+
+.expression-valid-checkmark.react-autoql-icon svg {
+  color: var(--react-autoql-success-color);
+}
+
+.expression-invalid-message {
+  color: var(--react-autoql-danger-color);
 }

@@ -27,6 +27,7 @@ import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { Icon } from '../Icon'
 import { OptionsToolbar } from '../OptionsToolbar'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
 import {
@@ -50,6 +51,7 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
 
     isResponse: PropTypes.bool.isRequired,
+    isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
     setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
@@ -83,6 +85,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     isDataMessengerOpen: false,
+    isIntroMessage: false,
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -103,6 +106,7 @@ export default class ChatMessage extends React.Component {
       this.props.response,
       this.props.autoChartAggregations
     ),
+    supportedDisplayTypes: getSupportedDisplayTypes(this.props.response),
     isSettingColumnVisibility: false,
     activeMenu: undefined,
   }
@@ -194,6 +198,49 @@ export default class ChatMessage extends React.Component {
     this.setState({ dataConfig: config })
   }
 
+  onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
+    this.setState({ supportedDisplayTypes })
+  }
+
+  setFilterTags = ({ isFilteringTable } = {}) => {
+    const tableRef =
+      this.state.displayType === 'pivot_table'
+        ? _get(this.responseRef, 'pivotTableRef.ref.table')
+        : _get(this.responseRef, 'tableRef.ref.table')
+
+    if (!tableRef) {
+      return
+    }
+
+    const filterValues = tableRef.getHeaderFilters()
+    if (filterValues) {
+      filterValues.forEach((filter) => {
+        try {
+          if (!isFilteringTable) {
+            const filterTagEl = document.createElement('span')
+            filterTagEl.innerText = 'F'
+            filterTagEl.setAttribute('class', 'filter-tag')
+
+            const columnTitleEl = document.querySelector(
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+            )
+            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
+          } else if (isFilteringTable) {
+            var filterTagEl = document.querySelector(
+              `#message-${this.props.id} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+            )
+            if (filterTagEl) {
+              filterTagEl.parentNode.removeChild(filterTagEl)
+            }
+          }
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        }
+      })
+    }
+  }
+
   renderContent = (chartWidth, chartHeight) => {
     const { response, content, type } = this.props
     if (content) {
@@ -219,6 +266,7 @@ export default class ChatMessage extends React.Component {
           height={chartHeight}
           width={chartWidth}
           demo={getAuthentication(this.props.authentication).demo}
+          onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
           )}
@@ -303,7 +351,7 @@ export default class ChatMessage extends React.Component {
           responseRef={this.responseRef}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
-          enableDeleteBtn
+          enableDeleteBtn={!this.props.isIntroMessage}
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
           }
@@ -319,17 +367,11 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    // Use QueryOutputs supported display types if possible,
-    // they may have been updated because of certain errors
-    let supportedDisplayTypes = getSupportedDisplayTypes(this.props.response)
-    if (_get(this.responseRef, 'supportedDisplayTypes.length')) {
-      supportedDisplayTypes = _get(this.responseRef, 'supportedDisplayTypes')
-    }
-
     let displayType = this.state.displayType
+
     if (
-      supportedDisplayTypes &&
-      !supportedDisplayTypes.includes(this.state.displayType)
+      this.state.supportedDisplayTypes &&
+      !this.state.supportedDisplayTypes.includes(this.state.displayType)
     ) {
       displayType = 'table'
     }
@@ -339,7 +381,7 @@ export default class ChatMessage extends React.Component {
         <VizToolbar
           themeConfig={getThemeConfig(this.props.themeConfig)}
           className="chat-message-toolbar left"
-          supportedDisplayTypes={supportedDisplayTypes || []}
+          supportedDisplayTypes={this.state.supportedDisplayTypes || []}
           displayType={displayType}
           onDisplayTypeChange={this.switchView}
           disableCharts={this.state.disableChartingOptions}
@@ -430,31 +472,33 @@ export default class ChatMessage extends React.Component {
     const maxMessageHeight = this.getMaxMessageheight()
 
     return (
-      <div
-        id={`message-${this.props.id}`}
-        className={`chat-single-message-container
-          ${this.props.isResponse ? ' response' : ' request'}`}
-        style={{
-          maxHeight: maxMessageHeight,
-          height: messageHeight,
-        }}
-        data-test="chat-message"
-      >
+      <ErrorBoundary>
         <div
-          className={`chat-message-bubble
+          id={`message-${this.props.id}`}
+          className={`chat-single-message-container
+          ${this.props.isResponse ? ' response' : ' request'}`}
+          style={{
+            maxHeight: maxMessageHeight,
+            height: messageHeight,
+          }}
+          data-test="chat-message"
+        >
+          <div
+            className={`chat-message-bubble
             ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
-          style={{
-            minWidth: this.isTableResponse() ? '317px' : undefined,
-          }}
-        >
-          {this.renderContent(chartWidth, chartHeight)}
-          {this.props.isDataMessengerOpen && this.renderRightToolbar()}
-          {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
-          {this.renderDataLimitWarning()}
+            style={{
+              minWidth: this.isTableResponse() ? '317px' : undefined,
+            }}
+          >
+            {this.renderContent(chartWidth, chartHeight)}
+            {this.props.isDataMessengerOpen && this.renderRightToolbar()}
+            {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
+            {this.renderDataLimitWarning()}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     )
   }
 }

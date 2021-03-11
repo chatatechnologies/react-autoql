@@ -4,7 +4,8 @@
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  border: 1px solid #d3d3d352;
+  background: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
 
   &.vertical .react-autoql-toolbar-btn {
     display: block;
@@ -38,7 +39,7 @@
   }
 
   .sql-copied {
-    color: #2aca4d !important;
+    color: var(--react-autoql-success-color) !important;
   }
 
   &:hover .copy-sql-btn {

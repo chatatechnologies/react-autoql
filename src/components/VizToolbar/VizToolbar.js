@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
 
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
@@ -39,7 +41,10 @@ class VizToolbar extends React.Component {
     ReactTooltip.rebuild()
 
     if (
-      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
@@ -92,52 +97,66 @@ class VizToolbar extends React.Component {
       CHART_TYPES.includes(displayType)
     ) {
       return (
-        <div
-          className={`${this.props.className || ''} viz-toolbar ${
-            this.props.vertical ? 'vertical' : ''
-          }`}
-          data-test="viz-toolbar"
-        >
-          {this.createVisButton('table', 'Table', <Icon type="table" />)}
-          {this.createVisButton(
-            'pivot_table',
-            'Pivot Table',
-            <Icon type="pivot-table" />
-          )}
-          {this.createVisButton(
-            'column',
-            'Column Chart',
-            <Icon type="column-chart" />
-          )}
-          {this.createVisButton('bar', 'Bar Chart', <Icon type="bar-chart" />)}
-          {this.createVisButton(
-            'line',
-            'Line Chart',
-            <Icon type="line-chart" />
-          )}
-          {this.createVisButton('pie', 'Pie Chart', <Icon type="pie-chart" />)}
-          {this.createVisButton('heatmap', 'Heatmap', <Icon type="heatmap" />)}
-          {this.createVisButton(
-            'bubble',
-            'Bubble Chart',
-            <Icon type="bubble-chart" />
-          )}
-          {this.createVisButton(
-            'stacked_bar',
-            'Stacked Bar Chart',
-            <Icon type="stacked-bar-chart" />
-          )}
-          {this.createVisButton(
-            'stacked_column',
-            'Stacked Column Chart',
-            <Icon type="stacked-column-chart" />
-          )}
-          {this.createVisButton(
-            'stacked_line',
-            'Stacked Area Chart',
-            <Icon type="stacked-line-chart" />
-          )}
-        </div>
+        <ErrorBoundary>
+          <div
+            className={`${this.props.className || ''} viz-toolbar ${
+              this.props.vertical ? 'vertical' : ''
+            }`}
+            data-test="viz-toolbar"
+          >
+            {this.createVisButton('table', 'Table', <Icon type="table" />)}
+            {this.createVisButton(
+              'pivot_table',
+              'Pivot Table',
+              <Icon type="pivot-table" />
+            )}
+            {this.createVisButton(
+              'column',
+              'Column Chart',
+              <Icon type="column-chart" />
+            )}
+            {this.createVisButton(
+              'bar',
+              'Bar Chart',
+              <Icon type="bar-chart" />
+            )}
+            {this.createVisButton(
+              'line',
+              'Line Chart',
+              <Icon type="line-chart" />
+            )}
+            {this.createVisButton(
+              'pie',
+              'Pie Chart',
+              <Icon type="pie-chart" />
+            )}
+            {this.createVisButton(
+              'heatmap',
+              'Heatmap',
+              <Icon type="heatmap" />
+            )}
+            {this.createVisButton(
+              'bubble',
+              'Bubble Chart',
+              <Icon type="bubble-chart" />
+            )}
+            {this.createVisButton(
+              'stacked_bar',
+              'Stacked Bar Chart',
+              <Icon type="stacked-bar-chart" />
+            )}
+            {this.createVisButton(
+              'stacked_column',
+              'Stacked Column Chart',
+              <Icon type="stacked-column-chart" />
+            )}
+            {this.createVisButton(
+              'stacked_line',
+              'Stacked Area Chart',
+              <Icon type="stacked-line-chart" />
+            )}
+          </div>
+        </ErrorBoundary>
       )
     }
     return null

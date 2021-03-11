@@ -5,11 +5,8 @@ import {
   makeEmptyArray,
   formatEpochDate,
   formatStringDate,
-  isColumnNumberType,
-  isColumnStringType,
   formatChartLabel,
   formatElement,
-  getColumnTypeAmounts,
   getNumberOfGroupables,
   getGroupableColumns,
   isChartType,
@@ -25,6 +22,13 @@ import {
   getMaxValueFromKeyValueObj,
   getMinValueFromKeyValueObj,
 } from './Util'
+
+import {
+  getColumnTypeAmounts,
+  isColumnStringType,
+  isColumnNumberType,
+} from '../components/QueryOutput/columnHelpers'
+
 import responseTestCases from '../../test/responseTestCases'
 
 const sampleListResponse = {
@@ -571,16 +575,22 @@ describe('nameValueObject', () => {
 
 describe('isAggregation', () => {
   test('single groupable', () => {
-    expect(isAggregation(sampleSingleGroupableResponse)).toBe(true)
+    expect(isAggregation(sampleSingleGroupableResponse.data.data.columns)).toBe(
+      true
+    )
   })
   test('double groupable', () => {
-    expect(isAggregation(sampleDoubleGroupableResponse)).toBe(true)
+    expect(isAggregation(sampleDoubleGroupableResponse.data.data.columns)).toBe(
+      true
+    )
   })
   test('single value', () => {
-    expect(isAggregation(sampleSingleValueResponse)).toBe(false)
+    expect(isAggregation(sampleSingleValueResponse.data.data.columns)).toBe(
+      false
+    )
   })
   test('list', () => {
-    expect(isAggregation(sampleListResponse)).toBe(false)
+    expect(isAggregation(sampleListResponse.data.data.columns)).toBe(false)
   })
 })
 

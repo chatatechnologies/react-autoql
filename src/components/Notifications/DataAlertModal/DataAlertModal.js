@@ -1,7 +1,9 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
+import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -9,14 +11,15 @@ import { Steps } from '../../Steps'
 import { Input } from '../../Input'
 import { Button } from '../../Button'
 import { Icon } from '../../Icon'
-import { ExpressionBuilder } from '../ExpressionBuilder'
+import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
-  createNotificationRule,
-  updateNotificationRule,
-  deleteNotificationRule,
-  isExpressionQueryValid,
+  createDataAlert,
+  updateDataAlert,
+  deleteDataAlert,
+  validateExpression,
 } from '../../../js/notificationService'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
@@ -27,9 +30,9 @@ import {
   getThemeConfig,
 } from '../../../props/defaults'
 
-import './NotificationModal.scss'
+import './DataAlertModal.scss'
 
-export default class NotificationModal extends React.Component {
+export default class DataAlertModal extends React.Component {
   NEW_NOTIFICATION_MODAL_ID = uuid.v4()
 
   static propTypes = {
@@ -37,16 +40,17 @@ export default class NotificationModal extends React.Component {
     onErrorCallback: PropTypes.func,
     onSave: PropTypes.func,
     initialQuery: PropTypes.string,
-    currentRule: PropTypes.shape({}),
+    currentDataAlert: PropTypes.shape({}),
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
     themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
-    onManagementCreateRule: PropTypes.func,
-    onManagementDeleteRule: PropTypes.func,
+    onManagementCreateDataAlert: PropTypes.func,
+    onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
     enableQueryValidation: PropTypes.bool,
+    onValidate: PropTypes.func,
   }
 
   static defaultProps = {
@@ -54,16 +58,17 @@ export default class NotificationModal extends React.Component {
     onSave: () => {},
     onErrorCallback: () => {},
     initialQuery: undefined,
-    currentRule: undefined,
+    currentDataAlert: undefined,
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
     themeConfig: themeConfigDefault,
     isManagement: false,
-    onManagementCreateRule: () => {},
-    onManagementDeleteRule: () => {},
+    onManagementCreateDataAlert: () => {},
+    onManagementDeleteDataAlert: () => {},
     title: 'Create New Data Alert',
     enableQueryValidation: true,
+    onValidate: undefined,
   }
 
   state = {
@@ -71,12 +76,14 @@ export default class NotificationModal extends React.Component {
     messageInput: '',
     isExpressionSectionComplete: false,
     expressionJSON: [],
+    isExpressionValidated: false,
     isScheduleSectionComplete: false,
-    dataReturnQueryInput: '',
     isDataReturnDirty: false,
-    isDataReturnQueryValid: true,
-    isDataReturnValidated: false,
     isConfirmDeleteModalVisible: false,
+  }
+
+  componentDidMount = () => {
+    this.initializeFields()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -84,29 +91,7 @@ export default class NotificationModal extends React.Component {
       setTimeout(this.resetFields, 500)
     }
     if (this.props.isVisible && !prevProps.isVisible) {
-      // If we are editing an existing notification
-      // Fill the fields with the current settings
-      if (this.props.currentRule) {
-        const notification = this.props.currentRule
-        this.setState({
-          titleInput: notification.title,
-          messageInput: notification.message,
-          dataReturnQueryInput: notification.query,
-          isDataReturnDirty: true,
-          expressionJSON: _get(this.props.currentRule, 'expression'),
-        })
-      } else if (
-        this.props.initialQuery &&
-        typeof this.props.initialQuery === 'string'
-      ) {
-        const expressionJSON = this.createRuleJSONFromQuery(
-          this.props.initialQuery
-        )
-        this.setState({
-          isExpressionSectionComplete: true,
-          expressionJSON,
-        })
-      }
+      this.initializeFields()
     }
 
     if (
@@ -114,10 +99,12 @@ export default class NotificationModal extends React.Component {
       this.props.initialQuery !== prevProps.initialQuery
     ) {
       this.resetFields()
-      const rulesJSON = this.createRuleJSONFromQuery(this.props.initialQuery)
+      const expressionJSON = this.createExpressionJSONFromQuery(
+        this.props.initialQuery
+      )
       this.setState({
-        isRulesSectionComplete: true,
-        rulesJSON,
+        isExpressionSectionComplete: true,
+        expressionJSON,
       })
     }
 
@@ -141,14 +128,44 @@ export default class NotificationModal extends React.Component {
       isExpressionSectionComplete: false,
       isScheduleSectionComplete: false,
       expressionJSON: [],
-      dataReturnQueryInput: '',
       isDataReturnDirty: false,
       titleInput: '',
       messageInput: '',
     })
   }
 
-  createRuleJSONFromQuery = (query) => {
+  initializeFields = () => {
+    // If we are editing an existing notification
+    // Fill the fields with the current settings
+    if (this.props.currentDataAlert) {
+      const notification = this.props.currentDataAlert
+      this.setState(
+        {
+          titleInput: notification.title,
+          messageInput: notification.message,
+          dataReturnQuery: notification.data_return_query,
+          isDataReturnDirty: true,
+          expressionJSON: _get(this.props.currentDataAlert, 'expression'),
+        },
+        () => {
+          this.validateExpression()
+        }
+      )
+    } else if (
+      this.props.initialQuery &&
+      typeof this.props.initialQuery === 'string'
+    ) {
+      const expressionJSON = this.createExpressionJSONFromQuery(
+        this.props.initialQuery
+      )
+      this.setState({
+        isExpressionSectionComplete: true,
+        expressionJSON,
+      })
+    }
+  }
+
+  createExpressionJSONFromQuery = (query) => {
     return [
       {
         condition: 'TERMINATOR',
@@ -173,160 +190,208 @@ export default class NotificationModal extends React.Component {
     ]
   }
 
-  getNotificationRuleData = () => {
-    const { titleInput, dataReturnQueryInput, messageInput } = this.state
+  getDataAlertData = () => {
+    try {
+      const { titleInput, messageInput } = this.state
 
-    let expressionJSON = this.state.expressionJSON
-    if (this.expressionRef) {
-      expressionJSON = this.expressionRef.getJSON()
+      let dataReturnQuery
+      let expressionJSON = _cloneDeep(this.state.expressionJSON)
+      if (this.expressionRef) {
+        expressionJSON = this.expressionRef.getJSON()
+        dataReturnQuery = this.expressionRef.getFirstQuery()
+      }
+
+      let scheduleData = {}
+      if (this.scheduleBuilderRef) {
+        scheduleData = this.scheduleBuilderRef.getData()
+      }
+
+      const newDataAlert = {
+        id: _get(this.props.currentDataAlert, 'id'),
+        title: titleInput,
+        data_return_query: dataReturnQuery,
+        message: messageInput,
+        expression: expressionJSON,
+        notification_type: scheduleData.notificationType,
+        reset_period: scheduleData.resetPeriod,
+        time_zone: scheduleData.timezone,
+      }
+
+      return newDataAlert
+    } catch (error) {
+      console.error(error)
     }
-
-    let scheduleData = {}
-    if (this.scheduleBuilderRef) {
-      scheduleData = this.scheduleBuilderRef.getData()
-    }
-
-    const notificationRule = this.props.currentRule
-
-    const newRule = {
-      id: _get(notificationRule, 'id'),
-      title: titleInput,
-      query: dataReturnQueryInput,
-      message: messageInput,
-      expression: expressionJSON,
-      notification_type: scheduleData.notificationType,
-      reset_period: scheduleData.resetPeriod,
-    }
-
-    return newRule
   }
 
   onExpressionChange = (isComplete, isValid, expressionJSON) => {
-    let { dataReturnQueryInput } = this.state
-    const firstQuery = this.getFirstQuery(expressionJSON[0])
-    if (!this.state.isDataReturnDirty && firstQuery) {
-      dataReturnQueryInput = firstQuery
+    this.setState({
+      isExpressionSectionComplete: isComplete,
+      isFirstSectionComplete: this.isFirstSectionComplete(),
+      isExpressionValidated: false,
+      expressionJSON,
+    })
+  }
+
+  isFirstSectionComplete = () => {
+    let isExpressionComplete = false
+    if (this.expressionRef) {
+      isExpressionComplete = this.expressionRef.isComplete()
     }
 
-    this.setState(
-      {
-        isExpressionSectionComplete: isComplete,
-        isFirstSectionComplete: isComplete && !!this.state.titleInput,
-        isExpressionSectionValid: isValid,
-        expressionJSON,
-        dataReturnQueryInput,
-      },
-      () => {
-        this.validateDataReturnQuery()
-      }
+    if (!this.props.enableQueryValidation) {
+      return isExpressionComplete && !!this.state.titleInput
+    }
+
+    return (
+      isExpressionComplete &&
+      !!this.state.titleInput &&
+      this.state.isExpressionValidated &&
+      this.state.isExpressionValid
     )
   }
 
-  getFirstQuery = (term) => {
-    if (!term) {
-      return undefined
-    }
-
-    if (term.term_type === 'group') {
-      return this.getFirstQuery(_get(term, 'term_value[0]'))
-    } else if (term.term_type === 'query') {
-      return term.term_value
-    }
-    return undefined
-  }
-
-  validateDataReturnQuery = () => {
-    if (this.props.enableQueryValidation) {
-      if (
-        this.state.dataReturnQueryInput &&
-        !this.state.isValidatingDataReturnQuery &&
-        this.state.lastCheckedDataReturnQuery !==
-          this.state.dataReturnQueryInput
-      ) {
-        this.setState({
-          isValidatingDataReturnQuery: true,
-          lastCheckedDataReturnQuery: this.state.dataReturnQueryInput,
-        })
-        isExpressionQueryValid({
-          query: this.state.dataReturnQueryInput,
-          ...getAuthentication(this.props.authentication),
-        })
-          .then(() => {
-            this.setState({
-              isDataReturnQueryValid: true,
-              isValidatingDataReturnQuery: false,
-              isDataReturnValidated: true,
-            })
-          })
-          .catch(() => {
-            this.setState({
-              isDataReturnQueryValid: false,
-              isValidatingDataReturnQuery: false,
-              isDataReturnValidated: true,
-            })
-          })
-      }
-    }
-
-    this.setState({ isDataReturnValidated: true })
-  }
-
-  onRuleSave = () => {
+  onDataAlertSave = () => {
     this.setState({
-      isSavingRule: true,
+      isSavingDataAlert: true,
     })
 
-    const newRule = this.getNotificationRuleData()
+    const newDataAlert = this.getDataAlertData()
 
     const requestParams = {
-      rule: newRule,
+      dataAlert: newDataAlert,
       ...getAuthentication(this.props.authentication),
     }
 
     if (this.props.isManagement) {
-      this.props.onManagementCreateRule(newRule)
+      this.props.onManagementCreateDataAlert(newDataAlert)
       this.setState({
-        isSavingRule: false,
+        isSavingDataAlert: false,
       })
-    } else if (newRule.id) {
-      updateNotificationRule({
+    } else if (newDataAlert.id) {
+      updateDataAlert({
         ...requestParams,
       })
-        .then((ruleResponse) => {
-          this.props.onSave(ruleResponse)
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
 
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
         .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
     } else {
-      createNotificationRule({
+      createDataAlert({
         ...requestParams,
       })
-        .then((ruleResponse) => {
-          this.props.onSave(ruleResponse)
+        .then((dataAlertResponse) => {
+          this.props.onSave(dataAlertResponse)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
         .catch((error) => {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isSavingRule: false,
+            isSavingDataAlert: false,
           })
         })
     }
   }
 
-  renderNextBtn = (className, disabled, onclick = () => {}) => {
+  validateFn = this.props.onValidate || validateExpression
+
+  validateExpression = () => {
+    try {
+      this.setState({ isValidating: true, isExpressionValidated: false })
+
+      if (this.expressionRef) {
+        const expression = this.expressionRef.getJSON()
+
+        this.validateFn({
+          ...this.props.authentication,
+          expression,
+        })
+          .then(() => {
+            this.setState({
+              isValidating: false,
+              isExpressionValid: true,
+              isExpressionValidated: true,
+            })
+          })
+          .catch((error) => {
+            this.setState({
+              isValidating: false,
+              isExpressionValid: false,
+              isExpressionValidated: true,
+              expressionError: _get(error, 'message'),
+            })
+          })
+      } else {
+        this.setState({
+          isValidating: false,
+          isExpressionValid: false,
+          isExpressionValidated: true,
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      this.setState({
+        isValidating: false,
+        isExpressionValid: false,
+        isExpressionValidated: true,
+      })
+    }
+  }
+
+  renderValidateBtn = () => {
+    if (this.expressionRef && this.expressionRef.state.expressionError) {
+      // If expression is unable to be displayed because it is too old
+      // User must reset conditions before they are able to validate
+      return null
+    }
+
+    return (
+      <Fragment>
+        {this.state.isExpressionValidated && this.state.isExpressionValid && (
+          <Icon
+            className="expression-valid-checkmark"
+            type="check"
+            data-for="react-autoql-data-alert-modal-tooltip"
+            data-tip="Expression is valid"
+          />
+        )}
+        {this.state.isExpressionValidated &&
+          !this.state.isExpressionValid &&
+          !!this.state.expressionError && (
+            <span className="expression-invalid-message">
+              <Icon type="warning-triangle" /> {this.state.expressionError}
+            </span>
+          )}
+        <Button
+          type="default"
+          onClick={this.validateExpression}
+          loading={this.state.isValidating}
+        >
+          Validate
+        </Button>
+      </Fragment>
+    )
+  }
+
+  setStep = (step) => {
+    if (this.stepsRef) {
+      this.stepsRef.setStep(step)
+    }
+  }
+
+  renderNextBtn = (className, disabled, onclick = () => {}, text) => {
     return (
       <Button
         className={className}
@@ -339,7 +404,7 @@ export default class NotificationModal extends React.Component {
         disabled={disabled}
         type="primary"
       >
-        Next
+        {text || 'Next'}
       </Button>
     )
   }
@@ -379,7 +444,7 @@ export default class NotificationModal extends React.Component {
           }}
         />
         <p>Conditions:</p>
-        <ExpressionBuilder
+        <ExpressionBuilderSimple
           authentication={getAuthentication(this.props.authentication)}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.expressionRef = r)}
@@ -387,15 +452,20 @@ export default class NotificationModal extends React.Component {
           onChange={this.onExpressionChange}
           enableQueryValidation={this.props.enableQueryValidation}
           expression={_get(
-            this.props.currentRule,
+            this.props.currentDataAlert,
             'expression',
             this.state.expressionJSON
           )}
         />
-        {this.renderNextBtn(
-          'first-step-next-btn',
-          !this.state.isFirstSectionComplete
-        )}
+        <div className="step-btn-container">
+          {this.props.enableQueryValidation && this.renderValidateBtn()}
+          {this.renderNextBtn(
+            'first-step-next-btn',
+            this.props.enableQueryValidation &&
+              (!this.state.isExpressionValidated ||
+                !this.state.isExpressionValid)
+          )}
+        </div>
       </div>
     )
   }
@@ -407,7 +477,7 @@ export default class NotificationModal extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
-          rule={this.props.currentRule}
+          dataAlert={this.props.currentDataAlert}
           onCompletedChange={(isComplete) => {
             this.setState({ isScheduleSectionComplete: isComplete })
           }}
@@ -418,11 +488,7 @@ export default class NotificationModal extends React.Component {
           {this.renderNextBtn(
             'second-step-next-btn',
             !this.state.isScheduleSectionComplete,
-            () => {
-              if (this.state.dataReturnQueryInput) {
-                this.setState({ isDataReturnDirty: true })
-              }
-            }
+            () => this.setState({ isThirdSectionDirty: true })
           )}
         </div>
       </div>
@@ -432,37 +498,7 @@ export default class NotificationModal extends React.Component {
   renderAlertPreferencesStep = () => {
     return (
       <div>
-        <p>Return the data from this query:</p>
-        <Input
-          ref={(r) => (this.dataReturnInputRef = r)}
-          className="react-autoql-notification-display-name-input"
-          icon="react-autoql-bubbles-outlined"
-          placeholder="Type query here"
-          value={this.state.dataReturnQueryInput}
-          onFocus={() => {
-            this.setState({ isDataReturnDirty: true })
-          }}
-          onKeyDown={(e) => {
-            if (!this.state.isDataReturnDirty) {
-              this.setState({ isDataReturnDirty: true })
-            }
-            if (e.key === 'Enter' && this.stepsRef) {
-              this.stepsRef.nextStep()
-              this.validateDataReturnQuery()
-            }
-          }}
-          onBlur={this.validateDataReturnQuery}
-          onChange={(e) =>
-            this.setState({ dataReturnQueryInput: e.target.value })
-          }
-        />
-        {!this.state.isDataReturnQueryValid && (
-          <div className="rule-term-validation-error">
-            <Icon type="warning-triangle" /> That query is invalid. Try entering
-            a different query.
-          </div>
-        )}
-        <p>Send the following message:</p>
+        <p>When this Alert is triggered, send the following message:</p>
         <Input
           className="react-autoql-notification-message-input"
           placeholder="Compose a short message to accompany your triggered Alert"
@@ -478,21 +514,21 @@ export default class NotificationModal extends React.Component {
     )
   }
 
-  onRuleDelete = () => {
-    const ruleId = _get(this.props.currentRule, 'id')
-    if (ruleId) {
+  onDataAlertDelete = () => {
+    const dataAlertId = _get(this.props.currentDataAlert, 'id')
+    if (dataAlertId) {
       this.setState({
-        isDeletingRule: true,
+        isDeletingDataAlert: true,
       })
 
-      deleteNotificationRule({
-        ruleId,
+      deleteDataAlert({
+        dataAlertId,
         ...getAuthentication(this.props.authentication),
       })
         .then(() => {
-          this.props.onDelete(ruleId)
+          this.props.onDelete(dataAlertId)
           this.setState({
-            isDeletingRule: false,
+            isDeletingDataAlert: false,
             isConfirmDeleteModalVisible: false,
           })
         })
@@ -500,7 +536,7 @@ export default class NotificationModal extends React.Component {
           console.error(error)
           this.props.onErrorCallback(error)
           this.setState({
-            isDeletingRule: false,
+            isDeletingDataAlert: false,
           })
         })
     }
@@ -513,36 +549,27 @@ export default class NotificationModal extends React.Component {
 
     const steps = [
       {
-        title: 'Set up your Alert',
+        title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
-        complete: this.state.isFirstSectionComplete,
+        complete: this.isFirstSectionComplete(),
         error:
-          this.state.isExpressionSectionComplete &&
-          !this.state.isExpressionSectionValid,
+          this.props.enableQueryValidation &&
+          this.state.isExpressionValidated &&
+          !this.state.isExpressionValid,
       },
       {
-        title: 'Schedule Frequency',
+        title: 'Set Alert Interval',
         content: this.renderFrequencyStep(),
         complete: this.state.isScheduleSectionComplete,
       },
       {
         title: 'Manage Alert Preferences',
-        subtitle: 'When this Alert is triggered:',
         content: this.renderAlertPreferencesStep(),
-        onClick: () => {
-          if (this.state.dataReturnQueryInput) {
-            this.setState({ isDataReturnDirty: true })
-          }
-        },
         complete:
-          !!this.state.dataReturnQueryInput &&
-          this.state.isDataReturnDirty &&
-          this.state.isDataReturnQueryValid,
-        error:
-          this.state.isDataReturnValidated &&
-          !!this.state.dataReturnQueryInput &&
-          this.state.isDataReturnDirty &&
-          !this.state.isDataReturnQueryValid,
+          this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
+        onClick: () => {
+          this.setState({ isThirdSectionDirty: true })
+        },
       },
     ]
     return steps
@@ -556,7 +583,14 @@ export default class NotificationModal extends React.Component {
     const steps = this.getModalContent()
 
     return (
-      <Fragment>
+      <ErrorBoundary>
+        <ReactTooltip
+          className="react-autoql-drawer-tooltip"
+          id="react-autoql-data-alert-modal-tooltip"
+          effect="solid"
+          delayShow={500}
+          html
+        />
         <Modal
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
@@ -568,13 +602,13 @@ export default class NotificationModal extends React.Component {
           footer={
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                {this.props.currentRule && this.props.allowDelete && (
+                {this.props.currentDataAlert && this.props.allowDelete && (
                   <Button
                     type="danger"
                     onClick={() => {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
-                    loading={this.state.isDeletingRule}
+                    loading={this.state.isDeletingDataAlert}
                   >
                     Delete Data Alert
                   </Button>
@@ -592,8 +626,8 @@ export default class NotificationModal extends React.Component {
                 </Button>
                 <Button
                   type="primary"
-                  loading={this.state.isSavingRule}
-                  onClick={this.onRuleSave}
+                  loading={this.state.isSavingDataAlert}
+                  onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
                 >
                   Save
@@ -612,8 +646,8 @@ export default class NotificationModal extends React.Component {
         </Modal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}
-          onConfirm={this.onRuleDelete}
-          confirmLoading={this.state.isDeletingRule}
+          onConfirm={this.onDataAlertDelete}
+          confirmLoading={this.state.isDeletingDataAlert}
           onClose={() => {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}
@@ -625,7 +659,7 @@ export default class NotificationModal extends React.Component {
             You will no longer be notified about these changes in your data.
           </p>
         </ConfirmModal>
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

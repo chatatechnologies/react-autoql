@@ -6,7 +6,8 @@ import _get from 'lodash.get'
 
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
-import { SafetyNetMessage } from '../SafetyNetMessage'
+import { QueryValidationMessage } from '../QueryValidationMessage'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
@@ -38,14 +39,13 @@ export default class QueryTipsTab extends React.Component {
   // }
 
   renderQueryTipsContent = () => {
-    if (this.props.queryTipsSafetyNetResponse) {
+    if (this.props.queryTipsQueryValidationResponse) {
       return (
-        <SafetyNetMessage
+        <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          response={this.props.queryTipsSafetyNetResponse}
-          onSuggestionClick={this.props.onSafetyNetSuggestionClick}
+          response={this.props.queryTipsQueryValidationResponse}
+          onSuggestionClick={this.props.onQueryValidationSuggestionClick}
           autoSelectSuggestion={true}
-          // message="Did you mean"
           submitText="Search"
           submitIcon="search"
         />
@@ -126,44 +126,46 @@ export default class QueryTipsTab extends React.Component {
 
   render = () => {
     return (
-      <Scrollbars
-        ref={(c) => {
-          this.queryTipsScrollComponent = c
-        }}
-      >
-        <div className="query-tips-page-container" data-test="query-tips-tab">
-          <div
-            className="react-autoql-chatbar-input-container"
-            style={{ animation: 'slideDown 0.5s ease' }}
-          >
-            <input
-              className="react-autoql-chatbar-input left-padding"
-              placeholder="Search relevant queries by topic"
-              value={this.props.queryTipsInputValue}
-              onChange={this.props.onQueryTipsInputKeyPress}
-              onKeyPress={this.props.onQueryTipsInputKeyPress}
-              ref={(ref) => (this.queryTipsInputRef = ref)}
-              autoFocus
-            />
-            <div className="chat-bar-input-icon">
-              <Icon
-                type="search"
-                style={{ width: '19px', height: '20px', color: '#999' }}
+      <ErrorBoundary>
+        <Scrollbars
+          ref={(c) => {
+            this.queryTipsScrollComponent = c
+          }}
+        >
+          <div className="query-tips-page-container" data-test="query-tips-tab">
+            <div
+              className="react-autoql-chatbar-input-container"
+              style={{ animation: 'slideDown 0.5s ease' }}
+            >
+              <input
+                className="react-autoql-chatbar-input left-padding"
+                placeholder="Search relevant queries by topic"
+                value={this.props.queryTipsInputValue}
+                onChange={this.props.onQueryTipsInputKeyPress}
+                onKeyPress={this.props.onQueryTipsInputKeyPress}
+                ref={(ref) => (this.queryTipsInputRef = ref)}
+                autoFocus
               />
-            </div>
-            {this.props.loading && (
-              <div className="chat-bar-loading-spinner">
-                <Spinner
+              <div className="chat-bar-input-icon">
+                <Icon
+                  type="search"
                   style={{ width: '19px', height: '20px', color: '#999' }}
                 />
               </div>
-            )}
+              {this.props.loading && (
+                <div className="chat-bar-loading-spinner">
+                  <Spinner
+                    style={{ width: '19px', height: '20px', color: '#999' }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="query-tips-result-container">
+              {this.renderQueryTipsContent()}
+            </div>
           </div>
-          <div className="query-tips-result-container">
-            {this.renderQueryTipsContent()}
-          </div>
-        </div>
-      </Scrollbars>
+        </Scrollbars>
+      </ErrorBoundary>
     )
   }
 }

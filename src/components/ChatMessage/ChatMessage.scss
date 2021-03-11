@@ -109,8 +109,8 @@ so we dont have to redraw the whole table */
   outline: none !important;
 }
 .data-limit-warning-icon {
-  color: #ffcc00;
-  position: absolute;
+  color: var(--react-autoql-warning-color) !important;
+  position: absolute !important;
   bottom: 2px;
   right: 4px;
   font-size: 20px;

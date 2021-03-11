@@ -52,8 +52,8 @@ export default class Squares extends Component {
                 ? ' active'
                 : ''
             }`}
-            x={xScale(cell.label)}
-            y={yScale(d.label)}
+            x={xScale(d.label)}
+            y={yScale(cell.label)}
             width={xScale.bandwidth()}
             height={yScale.bandwidth()}
             onClick={() => {

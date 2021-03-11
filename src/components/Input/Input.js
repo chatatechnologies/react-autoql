@@ -2,6 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Input.scss'
 
@@ -41,48 +42,46 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const { icon, className } = this.props
-    const nativeProps = {
-      ...this.props,
-      icon: undefined,
-      themeConfig: undefined,
-    }
+    const { icon, type, ...nativeProps } = this.props
+    const { className } = nativeProps
 
     return (
-      <div
-        className={`react-autoql-input-container${
-          this.state.focused ? ' focus' : ''
-        } ${className} `}
-        data-test="react-autoql-input"
-      >
-        {this.props.type === 'multi' ? (
-          <textarea
-            {...nativeProps}
-            ref={(r) => (this.inputRef = r)}
-            className="react-autoql-input area"
-            onFocus={this.onFocus}
-            onBlur={this.onBlur}
-          />
-        ) : (
-          <Fragment>
-            <input
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-input-container${
+            this.state.focused ? ' focus' : ''
+          } ${className} `}
+          data-test="react-autoql-input"
+        >
+          {this.props.type === 'multi' ? (
+            <textarea
               {...nativeProps}
               ref={(r) => (this.inputRef = r)}
-              className={`react-autoql-input ${icon ? 'with-icon' : ''}`}
+              className="react-autoql-input area"
               onFocus={this.onFocus}
               onBlur={this.onBlur}
             />
-            {icon && (
-              <Icon
-                className={`react-autoql-input-icon ${
-                  this.state.focused ? ' focus' : ''
-                }`}
-                type={icon}
+          ) : (
+            <Fragment>
+              <input
+                {...nativeProps}
+                ref={(r) => (this.inputRef = r)}
+                className={`react-autoql-input ${icon ? 'with-icon' : ''}`}
+                onFocus={this.onFocus}
+                onBlur={this.onBlur}
               />
-            )}
-          </Fragment>
-        )}
-      </div>
+              {icon && (
+                <Icon
+                  className={`react-autoql-input-icon ${
+                    this.state.focused ? ' focus' : ''
+                  }`}
+                  type={icon}
+                />
+              )}
+            </Fragment>
+          )}
+        </div>
+      </ErrorBoundary>
     )
   }
 }

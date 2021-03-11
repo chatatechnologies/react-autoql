@@ -20,10 +20,10 @@
   }
 
   &.error {
-    border-color: #ffcc00;
+    border-color: var(--react-autoql-warning-color);
     .react-autoql-step-dot {
-      border-color: #ffcc00;
-      background: #ffcc00;
+      border-color: var(--react-autoql-warning-color);
+      background: var(--react-autoql-warning-color);
       color: white;
     }
   }

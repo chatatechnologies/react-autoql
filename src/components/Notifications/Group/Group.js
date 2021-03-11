@@ -5,6 +5,7 @@ import uuid from 'uuid'
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
+import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -261,80 +262,86 @@ export default class Group extends React.Component {
       this.state.rules.filter((rule) => rule.type === 'rule').length <= 1
 
     return (
-      <div
-        className="notification-group-wrapper"
-        style={{ marginLeft: this.props.onlyGroup ? '0px' : '50px' }}
-      >
-        {!this.props.onlyGroup && (
-          <div
-            className="notification-and-or-break"
-            style={{
-              top: this.props.hideTopCondition ? '0px' : '-19px',
-              height: this.props.hideTopCondition
-                ? '100%'
-                : 'calc(100% + 19px)',
-            }}
-          >
-            {!this.props.hideTopCondition && (
-              <div
-                className="notification-and-or-text"
-                style={{
-                  background:
-                    this.props.topCondition === 'ALL' ? '#bae9ff' : '#fffaca',
-                  border:
-                    this.props.topCondition === 'ALL'
-                      ? '1px solid rgb(144, 221, 255)'
-                      : '1px solid #FFEB3B',
-                }}
-              >
-                {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
-              </div>
-            )}
-          </div>
-        )}
+      <ErrorBoundary>
         <div
-          className={`react-autoql-notification-group-container${
-            hasOnlyOneRule ? ' disable-first-delete' : ''
-          }`}
-          data-test="rule-group"
+          className="notification-group-wrapper"
+          style={{ marginLeft: this.props.onlyGroup ? '0px' : '50px' }}
         >
-          {this.state.rules.map((rule, i) => {
-            if (rule.type === 'rule') {
-              return (
-                <Rule
-                  authentication={getAuthentication(this.props.authentication)}
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
-                  ref={(r) => (this.ruleRefs[i] = r)}
-                  ruleId={rule.id}
-                  key={rule.id}
-                  initialData={rule.termValue}
-                  onDelete={() => this.deleteRuleOrGroup(rule.id)}
-                  onUpdate={this.onRuleUpdate}
-                  onAdd={this.addRule}
-                  readOnly={this.props.readOnly}
-                  enableQueryValidation={this.props.enableQueryValidation}
-                />
-              )
-            } else if (rule.type === 'group') {
-              return (
-                <Group
-                  authentication={getAuthentication(this.props.authentication)}
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
-                  groupId={rule.id}
-                  key={rule.id}
-                  initialData={rule.termValue}
-                  onDelete={() => this.deleteRuleOrGroup(rule.id)}
-                  readOnly={this.props.readOnly}
-                  enableQueryValidation={this.props.enableQueryValidation}
-                />
-              )
-            }
-          })}
-          {this.renderAllAnySelect()}
-          {this.renderDeleteGroupBtn()}
-          {this.renderAddBtn()}
+          {!this.props.onlyGroup && (
+            <div
+              className="notification-and-or-break"
+              style={{
+                top: this.props.hideTopCondition ? '0px' : '-19px',
+                height: this.props.hideTopCondition
+                  ? '100%'
+                  : 'calc(100% + 19px)',
+              }}
+            >
+              {!this.props.hideTopCondition && (
+                <div
+                  className="notification-and-or-text"
+                  style={{
+                    background:
+                      this.props.topCondition === 'ALL' ? '#bae9ff' : '#fffaca',
+                    border:
+                      this.props.topCondition === 'ALL'
+                        ? '1px solid rgb(144, 221, 255)'
+                        : '1px solid #FFEB3B',
+                  }}
+                >
+                  {this.props.topCondition === 'ALL' ? 'AND' : 'OR'}
+                </div>
+              )}
+            </div>
+          )}
+          <div
+            className={`react-autoql-notification-group-container${
+              hasOnlyOneRule ? ' disable-first-delete' : ''
+            }`}
+            data-test="rule-group"
+          >
+            {this.state.rules.map((rule, i) => {
+              if (rule.type === 'rule') {
+                return (
+                  <Rule
+                    authentication={getAuthentication(
+                      this.props.authentication
+                    )}
+                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    ref={(r) => (this.ruleRefs[i] = r)}
+                    ruleId={rule.id}
+                    key={rule.id}
+                    initialData={rule.termValue}
+                    onDelete={() => this.deleteRuleOrGroup(rule.id)}
+                    onUpdate={this.onRuleUpdate}
+                    onAdd={this.addRule}
+                    readOnly={this.props.readOnly}
+                    enableQueryValidation={this.props.enableQueryValidation}
+                  />
+                )
+              } else if (rule.type === 'group') {
+                return (
+                  <Group
+                    authentication={getAuthentication(
+                      this.props.authentication
+                    )}
+                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    groupId={rule.id}
+                    key={rule.id}
+                    initialData={rule.termValue}
+                    onDelete={() => this.deleteRuleOrGroup(rule.id)}
+                    readOnly={this.props.readOnly}
+                    enableQueryValidation={this.props.enableQueryValidation}
+                  />
+                )
+              }
+            })}
+            {this.renderAllAnySelect()}
+            {this.renderDeleteGroupBtn()}
+            {this.renderAddBtn()}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     )
   }
 
@@ -350,47 +357,53 @@ export default class Group extends React.Component {
     }
 
     return (
-      <div
-        className={`notification-read-only-group ${
-          hasOnlyOneRule ? ' no-border' : ''
-        }`}
-      >
-        {this.state.rules.map((rule, i) => {
-          if (rule.type === 'rule') {
-            return (
-              <Rule
-                key={`rule-readonly-${rule.id}`}
-                ref={(r) => (this.ruleRefs[i] = r)}
-                ruleId={rule.id}
-                initialData={rule.termValue}
-                andOrValue={
-                  i !== this.state.rules.length - 1 ? conditionText : null
-                }
-                enableQueryValidation={false}
-                readOnly
-              />
-            )
-          } else if (rule.type === 'group') {
-            return (
-              <div key={`group-${rule.id}`}>
-                <Group
-                  authentication={getAuthentication(this.props.authentication)}
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
-                  groupId={rule.id}
+      <ErrorBoundary>
+        <div
+          className={`notification-read-only-group ${
+            hasOnlyOneRule ? ' no-border' : ''
+          }`}
+        >
+          {this.state.rules.map((rule, i) => {
+            if (rule.type === 'rule') {
+              return (
+                <Rule
+                  key={`rule-readonly-${rule.id}`}
+                  ref={(r) => (this.ruleRefs[i] = r)}
+                  ruleId={rule.id}
                   initialData={rule.termValue}
+                  andOrValue={
+                    i !== this.state.rules.length - 1 ? conditionText : null
+                  }
                   enableQueryValidation={false}
                   readOnly
                 />
-                {i !== this.state.rules.length - 1 && (
-                  <div>
-                    <span className="read-only-rule-term">{conditionText}</span>
-                  </div>
-                )}
-              </div>
-            )
-          }
-        })}
-      </div>
+              )
+            } else if (rule.type === 'group') {
+              return (
+                <div key={`group-${rule.id}`}>
+                  <Group
+                    authentication={getAuthentication(
+                      this.props.authentication
+                    )}
+                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    groupId={rule.id}
+                    initialData={rule.termValue}
+                    enableQueryValidation={false}
+                    readOnly
+                  />
+                  {i !== this.state.rules.length - 1 && (
+                    <div>
+                      <span className="read-only-rule-term">
+                        {conditionText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          })}
+        </div>
+      </ErrorBoundary>
     )
   }
 

@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import ReactModal from 'react-modal'
 import _isEqual from 'lodash.isequal'
@@ -6,6 +6,7 @@ import _isEqual from 'lodash.isequal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
@@ -60,7 +61,10 @@ export default class Modal extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (
-      !_isEqual(getThemeConfig(this.props.themeConfig), prevProps.themeConfig)
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
@@ -100,10 +104,12 @@ export default class Modal extends React.Component {
 
   render = () => {
     return (
-      <Fragment>
+      <ErrorBoundary>
         <ReactModal
           isOpen={this.props.isVisible}
-          bodyOpenClassName="react-autoql-modal-container"
+          bodyOpenClassName={`react-autoql-modal-container${
+            this.props.className ? ` ${this.props.className}` : ''
+          }`}
           ariaHideApp={false}
           contentLocation={{ top: 0, left: 0 }}
           closeTimeoutMS={200}
@@ -153,7 +159,7 @@ export default class Modal extends React.Component {
           <h3>Are you sure you want to leave this page?</h3>
           <p>All unsaved changes will be lost.</p>
         </ConfirmModal>
-      </Fragment>
+      </ErrorBoundary>
     )
   }
 }

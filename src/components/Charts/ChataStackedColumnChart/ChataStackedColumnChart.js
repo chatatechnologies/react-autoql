@@ -58,22 +58,23 @@ export default class ChataStackedColumnChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidUpdate = () => {
+    if (
+      typeof this.prevRotateLabels !== 'undefined' &&
+      this.prevRotateLabels !== this.rotateLabels
+    ) {
+      this.props.onLabelChange()
+    }
+  }
+
   handleLabelRotation = (tickWidth, labelArray) => {
-    const prevRotateLabels = this.rotateLabels
+    this.prevRotateLabels = this.rotateLabels
     this.rotateLabels = shouldRotateLabels(
       tickWidth,
       labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
-
-    if (
-      typeof prevRotateLabels !== 'undefined' &&
-      prevRotateLabels !== this.rotateLabels
-    ) {
-      this.props.onLabelChange()
-    } else {
-    }
   }
 
   render = () => {
@@ -148,7 +149,7 @@ export default class ChataStackedColumnChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'display_name')}
+          legendTitle={_get(legendColumn, 'title')}
           onLegendTitleClick={onLegendTitleClick}
           yGridLines
           onXAxisClick={onXAxisClick}
