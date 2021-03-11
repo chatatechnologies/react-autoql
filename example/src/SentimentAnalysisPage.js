@@ -96,11 +96,12 @@ export default class SentimentAnalysisPage extends React.Component {
 
   getResponseV2 = () => {
     const url = `https://reputation-staging.chata.io/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
+    const rating = this.state.rating ? `${this.state.rating}.0` : '4.0'
     const data = {
       review_text: this.state.reviewTextValue,
       name_hotel: this.state.hotelName || 'the hotel',
       review_title: this.state.title || 'the trip',
-      total_rating: `${this.state.rating || '4'}`,
+      total_rating: rating,
       name_user: this.state.name || 'the guest',
       responder: this.state.responder || 'john',
       responder_title: this.state.responderTitle || 'general manager',
