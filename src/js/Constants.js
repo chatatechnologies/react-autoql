@@ -46,5 +46,3 @@ export const WEEKDAY_NAMES = {
   6: 'Friday',
   7: 'Saturday',
 }
-
-export const MAX_ROW_LIMIT = 500
