@@ -29,7 +29,7 @@ import { Icon } from '../Icon'
 import { OptionsToolbar } from '../OptionsToolbar'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { CHART_TYPES, MAX_ROW_LIMIT } from '../../js/Constants.js'
+import { CHART_TYPES } from '../../js/Constants.js'
 import {
   getDefaultDisplayType,
   isTableType,
@@ -455,7 +455,7 @@ export default class ChatMessage extends React.Component {
 
   renderDataLimitWarning = () => {
     const numRows = _get(this.props, 'response.data.data.rows.length')
-    const maxRowLimit = _get(this.props, 'response.data.data.limit_row_num')
+    const maxRowLimit = _get(this.props, 'response.data.data.row_limit')
 
     if (maxRowLimit && numRows === maxRowLimit) {
       return (
