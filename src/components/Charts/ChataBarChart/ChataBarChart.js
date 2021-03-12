@@ -78,13 +78,16 @@ export default class ChataBarChart extends Component {
       hasMultipleStringColumns,
       activeChartElementKey,
       enableDynamicCharting,
+      onLegendTitleClick,
       bottomLegendMargin,
       numberColumnIndex,
       stringColumnIndex,
       numberAxisTitle,
+      stringAxisTitle,
       dataFormatting,
       legendLocation,
       onLegendClick,
+      legendColumn,
       onXAxisClick,
       onYAxisClick,
       legendLabels,
@@ -145,6 +148,8 @@ export default class ChataBarChart extends Component {
           dataFormatting={dataFormatting}
           hasRightLegend={legendLocation === 'right'}
           hasBottomLegend={legendLocation === 'bottom'}
+          legendTitle={_get(legendColumn, 'title', 'Category')}
+          onLegendTitleClick={onLegendTitleClick}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
           onXAxisClick={onXAxisClick}
@@ -152,6 +157,7 @@ export default class ChataBarChart extends Component {
           hasXDropdown={enableDynamicCharting && hasMultipleNumberColumns}
           hasYDropdown={enableDynamicCharting && hasMultipleStringColumns}
           xAxisTitle={numberAxisTitle}
+          yAxisTitle={stringAxisTitle}
           xGridLines
         />
         {

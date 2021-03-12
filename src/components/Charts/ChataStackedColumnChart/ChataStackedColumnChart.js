@@ -79,6 +79,8 @@ export default class ChataStackedColumnChart extends Component {
 
   render = () => {
     const {
+      hasMultipleNumberColumns,
+      hasMultipleStringColumns,
       onLegendTitleClick,
       activeChartElementKey,
       enableDynamicCharting,
@@ -149,12 +151,13 @@ export default class ChataStackedColumnChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'title')}
+          legendTitle={_get(legendColumn, 'title', 'Category')}
           onLegendTitleClick={onLegendTitleClick}
           yGridLines
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
-          hasXDropdown={enableDynamicCharting}
+          hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
+          hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
           yAxisTitle={numberAxisTitle}
         />
         <StackedColumns

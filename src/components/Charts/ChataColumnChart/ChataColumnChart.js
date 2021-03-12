@@ -12,7 +12,6 @@ import {
   themeConfigDefault,
   dataFormattingDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataColumnChart extends Component {
@@ -82,13 +81,16 @@ export default class ChataColumnChart extends Component {
       enableDynamicCharting,
       numberColumnIndices,
       stringColumnIndices,
+      onLegendTitleClick,
       bottomLegendMargin,
       stringColumnIndex,
       numberColumnIndex,
       numberAxisTitle,
+      stringAxisTitle,
       dataFormatting,
       legendLocation,
       onLegendClick,
+      legendColumn,
       innerPadding,
       outerPadding,
       bottomMargin,
@@ -149,6 +151,8 @@ export default class ChataColumnChart extends Component {
           hasBottomLegend={legendLocation === 'bottom'}
           legendLabels={legendLabels}
           onLegendClick={onLegendClick}
+          legendTitle={_get(legendColumn, 'title', 'Category')}
+          onLegendTitleClick={onLegendTitleClick}
           yGridLines
           onXAxisClick={onXAxisClick}
           onYAxisClick={onYAxisClick}
@@ -156,6 +160,7 @@ export default class ChataColumnChart extends Component {
           numberColumnIndices={numberColumnIndices}
           hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
           hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
+          xAxisTitle={stringAxisTitle}
           yAxisTitle={numberAxisTitle}
         />
         <Columns

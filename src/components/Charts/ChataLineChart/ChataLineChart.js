@@ -81,18 +81,20 @@ export default class ChataLineChart extends Component {
       hasMultipleNumberColumns,
       activeChartElementKey,
       enableDynamicCharting,
+      onLegendTitleClick,
       bottomLegendMargin,
       stringColumnIndex,
       numberColumnIndex,
       numberAxisTitle,
+      stringAxisTitle,
       backgroundColor,
       legendLocation,
       dataFormatting,
       onLegendClick,
+      legendColumn,
       onXAxisClick,
       onYAxisClick,
       innerPadding,
-      outerPadding,
       bottomMargin,
       legendLabels,
       onChartClick,
@@ -148,6 +150,8 @@ export default class ChataLineChart extends Component {
           legendLabels={legendLabels}
           hasRightLegend={legendLocation === 'right'}
           hasBottomLegend={legendLocation === 'bottom'}
+          legendTitle={_get(legendColumn, 'title', 'Category')}
+          onLegendTitleClick={onLegendTitleClick}
           onLegendClick={onLegendClick}
           yGridLines
           onXAxisClick={onXAxisClick}
@@ -155,6 +159,7 @@ export default class ChataLineChart extends Component {
           hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
           hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
           yAxisTitle={numberAxisTitle}
+          xAxisTitle={stringAxisTitle}
         />
         <Line
           themeConfig={themeConfig}

@@ -503,15 +503,19 @@ export const getSupportedDisplayTypes = (response, chartData) => {
           'stacked_column',
           'stacked_bar',
           'stacked_line',
+          'column',
+          'bar',
+          'line',
           'bubble',
           'heatmap',
           'table',
         ]
+      } else {
+        console.warn(
+          'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
+        )
       }
 
-      console.warn(
-        'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
-      )
       return supportedDisplayTypes
     } else if (supports2DCharts(columns)) {
       // If there is at least one string column and one number
