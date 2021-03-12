@@ -185,7 +185,6 @@ export default class Axis extends Component {
           if (this.props.onLegendTitleClick) {
             this.styleLegendTitleWithBorder(svg)
           } else {
-            console.log('render lgened without border')
             this.styleLegendTitleNoBorder(svg)
           }
         }

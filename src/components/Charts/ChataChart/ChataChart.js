@@ -624,6 +624,7 @@ export default class ChataChart extends Component {
                       return { ...item, checked: false }
                     }
                   )
+
                   this.setState({
                     activeNumberType: 'RATIO',
                     ratioSelectorState,

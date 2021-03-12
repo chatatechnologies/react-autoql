@@ -737,7 +737,17 @@ export default class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  onChangeNumberColumnIndice = (indices) => {
+  onChangeNumberColumnIndices = (indices) => {
+    if (this.supportsPivot && this.pivotTableColumns) {
+      // Add "hidden" attribute to pivot table columns for charts
+      this.pivotTableColumns = this.pivotTableColumns.map((column, i) => {
+        return {
+          ...column,
+          numberColHidden: !indices.includes(i),
+        }
+      })
+    }
+
     if (indices) {
       this.dataConfig.numberColumnIndices = indices
       this.dataConfig.numberColumnIndex = indices[0]
@@ -777,6 +787,7 @@ export default class QueryOutput extends React.Component {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
         columns
       )
+
       this.dataConfig.numberColumnIndices = numberColumnIndices
       this.dataConfig.numberColumnIndex = numberColumnIndex
     } else {
@@ -1035,10 +1046,14 @@ export default class QueryOutput extends React.Component {
 
       if (this.supportsPivot) {
         stringIndex = 0
-        this.dataConfig.numberColumnIndices = this.pivotTableColumns.map(
-          (col, i) => i
-        )
-        this.dataConfig.numberColumnIndices.shift()
+        const newNumberColumnIndices = []
+        this.pivotTableColumns.forEach((col, i) => {
+          if (!col.numberColHidden && i !== stringIndex) {
+            newNumberColumnIndices.push(i)
+          }
+        })
+
+        this.dataConfig.numberColumnIndices = newNumberColumnIndices
       }
 
       if (this.isStringColumnDateType()) {
@@ -1748,7 +1763,7 @@ export default class QueryOutput extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
-          changeNumberColumnIndices={this.onChangeNumberColumnIndice}
+          changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
