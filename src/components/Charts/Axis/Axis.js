@@ -73,10 +73,6 @@ export default class Axis extends Component {
       .style('font-weight', 'bold')
       .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
-
-    // Move to front
-    const legendElement = select(this.legendBorder).node()
-    legendElement.parentNode.appendChild(legendElement)
   }
 
   styleLegendTitleWithBorder = (svg) => {
