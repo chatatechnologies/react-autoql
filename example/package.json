@@ -3,16 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "react-autoql": "file:../",
     "antd": "^4.0.1",
     "axios": "^0.19.0",
     "lodash": "^4.17.15",
     "penv": "^0.2.0",
     "react": "^16.8.6",
+    "react-autoql": "file:../",
     "react-dom": "^16.8.6",
     "react-scripts": "^3.4.1",
-    "react-sortable": "^2.0.0",
-    "react-ratings-declarative": "^3.4.1"
+    "react-sortable": "^2.0.0"
   },
   "scripts": {
     "preinstall": "npx penv $NODE_ENV",

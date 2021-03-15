@@ -1,7 +1,10 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
 import { Input, Button, Form, message, InputNumber, Collapse } from 'antd'
-import Ratings from 'react-ratings-declarative'
+
+// replace 'react-ratings-declarative'
+// Also initializing transition from ant design to material ui
+import Rating from '@material-ui/lab/Rating'
 
 const { TextArea } = Input
 const { Panel } = Collapse
@@ -96,7 +99,7 @@ export default class SentimentAnalysisPage extends React.Component {
 
   getResponseV2 = () => {
     const url = `https://reputation-staging.chata.io/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
-    const rating = this.state.rating ? `${this.state.rating}.0` : '4.0'
+    const rating = this.state.rating ? `${this.state.rating}` : '4.0'
     const data = {
       review_text: this.state.reviewTextValue,
       name_hotel: this.state.hotelName || 'the hotel',
@@ -262,24 +265,18 @@ export default class SentimentAnalysisPage extends React.Component {
       <div style={{ padding: '20px', display: 'flex' }}>
         <div style={{ flex: 1 }}>
           <h2>Leave a Review</h2>
-
-          <Ratings
-            rating={this.state.rating}
-            widgetRatedColors="#ffdd15"
-            widgetHoverColors="#ffdd1599"
-            widgetDimensions="25px"
-            changeRating={(newRating) =>
+          <Rating
+            name="review-rating"
+            size="large"
+            defaultValue={4}
+            precision={0.5}
+            value={this.state.rating ? this.state.rating : '4.0'}
+            onChange={(event, newRating) =>
               this.setState({
-                rating: newRating,
+                rating: newRating.toFixed(1),
               })
             }
-          >
-            <Ratings.Widget />
-            <Ratings.Widget />
-            <Ratings.Widget />
-            <Ratings.Widget />
-            <Ratings.Widget />
-          </Ratings>
+          />
           <span
             onClick={() => {
               this.setState({ rating: undefined })
