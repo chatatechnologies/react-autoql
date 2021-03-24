@@ -1652,7 +1652,9 @@ export default class QueryOutput extends React.Component {
               <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
                 <span>{str}</span>
                 {index !== splitErrorMessage.length - 1 && (
-                  <a onClick={this.props.reportProblemCallback}>report</a>
+                  <a onClick={this.props.reportProblemCallback} href="#">
+                    report
+                  </a>
                 )}
               </span>
             )

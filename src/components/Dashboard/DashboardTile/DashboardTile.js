@@ -133,7 +133,13 @@ export default class DashboardTile extends React.Component {
   componentDidUpdate = (prevProps) => {
     // If query or title change from props (due to undo for example), update state
     if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
-      this.setState({ query: _get(this.props, 'tile.query') })
+      this.setState({ query: _get(this.props, 'tile.query') }, () => {
+        this.setState({
+          supportedDisplayTypes: getSupportedDisplayTypes(
+            _get(this.props, 'queryResponse')
+          ),
+        })
+      })
     }
 
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
