@@ -109,7 +109,12 @@ export default class DashboardTile extends React.Component {
     const thisPropsFiltered = this.getFilteredProps(this.props)
     const nextPropsFiltered = this.getFilteredProps(nextProps)
 
-    if (!_isEqual(thisPropsFiltered, nextPropsFiltered)) {
+    if (
+      !_isEqual(
+        _.omit(thisPropsFiltered, _.functions(thisPropsFiltered)),
+        _.omit(nextPropsFiltered, _.functions(nextPropsFiltered))
+      )
+    ) {
       // Keep this for a deep compare to debug
       // console.log(
       //   'PROPS were not equal!! Re-rendering',
