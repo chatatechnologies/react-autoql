@@ -816,7 +816,7 @@ export default class DataMessenger extends React.Component {
           }}
           className="chat-message-container"
           renderView={(props) => (
-            <div {...props} className="custom-crollbar-container" />
+            <div {...props} className="custom-scrollbar-container" />
           )}
         >
           {this.state.messages.length > 0 &&
