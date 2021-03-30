@@ -274,7 +274,7 @@ export default class ChatMessage extends React.Component {
         this.scrollIntoView()
       } else {
         messageElement.style.maxHeight = '85%'
-        messageElement.style.height = `${messageElement.offsetHeight - 35}px`
+        messageElement.style.height = `${messageElement.offsetHeights}px`
       }
     } catch (error) {
       console.error(error)
