@@ -1,3 +1,22 @@
+# [3.2.0](https://github.com/chatatechnologies/react-autoql/compare/v3.1.1...v3.2.0) (2021-03-31)
+
+
+### Bug Fixes
+
+* switching charts bottom cut off bug ([#143](https://github.com/chatatechnologies/react-autoql/issues/143)) ([81101f6](https://github.com/chatatechnologies/react-autoql/commit/81101f6987368eb528952d20ba8f724aba8933b1))
+* **charts:** AC-717, AC-681 Fix axis series selector bugs ([3e32d97](https://github.com/chatatechnologies/react-autoql/commit/3e32d9788c20c4996e21d8ad912a7f83d07b0455))
+* **charts:** fix legend selection bug ([32b20a7](https://github.com/chatatechnologies/react-autoql/commit/32b20a7a1ea90da207d3ab6c5d9405ca1c81fbd8))
+* **dashboards:** AC-746 Update visualization choices when query changes in dashboard tiles ([72ca109](https://github.com/chatatechnologies/react-autoql/commit/72ca109cdaab5fbb1010d1497b568e6f803e9ad1))
+* **dashboardtile.js:** only re-render the tile whose props or states has changes ([43d266c](https://github.com/chatatechnologies/react-autoql/commit/43d266ca472042fd2da89c6a65126a8dffde6aa4))
+* **dashboardtile.js&queryoutput.js:** make sure supportedDisplayTypes update&& hyper link on'report' ([322071d](https://github.com/chatatechnologies/react-autoql/commit/322071d328fd73740e7f5a6d7bc6dba5315ef877))
+* **tables:** AC716 - fix double filter tag bug ([b89ba41](https://github.com/chatatechnologies/react-autoql/commit/b89ba4189d5c774004319f98bf8794b7d6d20425))
+
+
+### Features
+
+* **charts:** AC-639 Add non-stacked column bar and line charts for double groupby queries ([25b56eb](https://github.com/chatatechnologies/react-autoql/commit/25b56eb6b690f7101221a588284d8134077dca67))
+* AC-700 add row limit number to limit exceeded warning message ([fe190ec](https://github.com/chatatechnologies/react-autoql/commit/fe190ec94b2b9049013e6a4721f3e0ca6ee11c34))
+
 ## [3.1.1](https://github.com/chatatechnologies/react-autoql/compare/v3.1.0...v3.1.1) (2021-02-10)
 
 
