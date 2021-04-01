@@ -4,9 +4,7 @@ import _get from 'lodash.get'
 import uuid from 'uuid'
 
 import { Radio } from '../../Radio'
-import { Icon } from '../../Icon'
 import { TimezoneSelector } from '../../TimezoneSelector'
-import { formatResetDate } from '../helpers'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
@@ -24,13 +22,13 @@ const getFrequencyValue = (dataAlert) => {
   let frequencySelectValue = undefined
 
   if (notificationType === 'CONTINUOUS') {
-    frequencySelectValue = 'Immediately'
+    frequencySelectValue = 'Every time this happens'
   } else if (resetPeriod === 'DAY') {
-    frequencySelectValue = 'Daily'
+    frequencySelectValue = 'Only once per day'
   } else if (resetPeriod === 'WEEK') {
-    frequencySelectValue = 'Weekly'
+    frequencySelectValue = 'Only once per week'
   } else if (resetPeriod === 'MONTH') {
-    frequencySelectValue = 'Monthly'
+    frequencySelectValue = 'Only once per month'
   }
 
   return frequencySelectValue
@@ -83,13 +81,13 @@ export default class ScheduleBuilder extends React.Component {
     let notificationType = 'PERIODIC'
     let resetPeriod = null
 
-    if (frequencySelectValue === 'Immediately') {
+    if (frequencySelectValue === 'Every time this happens') {
       notificationType = 'CONTINUOUS'
-    } else if (frequencySelectValue === 'Daily') {
+    } else if (frequencySelectValue === 'Only once per day') {
       resetPeriod = 'DAY'
-    } else if (frequencySelectValue === 'Weekly') {
+    } else if (frequencySelectValue === 'Only once per week') {
       resetPeriod = 'WEEK'
-    } else if (frequencySelectValue === 'Monthly') {
+    } else if (frequencySelectValue === 'Only once per month') {
       resetPeriod = 'MONTH'
     }
 
@@ -101,56 +99,17 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   getResetPeriod = (frequencySelectValue) => {
-    if (frequencySelectValue === 'Daily') {
+    if (frequencySelectValue === 'Only once per day') {
       return 'DAY'
-    } else if (frequencySelectValue === 'Monthly') {
+    } else if (frequencySelectValue === 'Only once per month') {
       return 'MONTH'
-    } else if (frequencySelectValue === 'Weekly') {
+    } else if (frequencySelectValue === 'Only once per week') {
       return 'WEEK'
-    } else if (frequencySelectValue === 'Immediately') {
+    } else if (frequencySelectValue === 'Every time this happens') {
       return 'CONTINUOUS'
     }
 
     return undefined
-  }
-
-  renderFrequencyDescription = () => {
-    if (!this.isComplete()) {
-      return null
-    }
-
-    const selection = this.state.frequencySelectValue
-    const timeZone = this.state.timezone
-
-    let description = null
-    if (selection === 'Daily') {
-      description = `This Alert may be triggered multiple times, but you will only be notified once per day. Scanning will resume daily at 12am (${timeZone}).`
-    } else if (selection === 'Weekly') {
-      description = `This Alert may be triggered multiple times, but you will only be notified once per week. Scanning will resume next Monday at 12am (${timeZone}).`
-    } else if (selection === 'Monthly') {
-      description = `This Alert may be triggered multiple times, but you will only be notified once per month. Scanning will resume on the first day of next month at 12am (${timeZone}).`
-    } else if (selection === 'Immediately') {
-      description =
-        'You will be notified as soon as this happens, any time this happens. Scanning will happen continuously.'
-    }
-
-    return (
-      <div className="frequency-description-box">
-        {description}
-        {!!_get(this.props.dataAlert, 'reset_date') &&
-          this.props.dataAlert.reset_period ===
-            this.getResetPeriod(this.state.frequencySelectValue) && (
-            <span>
-              <br />
-              <br />
-              <Icon type="hour-glass" />{' '}
-              {`This Alert has been triggered. Scanning will resume on ${formatResetDate(
-                this.props.dataAlert
-              )} (${this.state.timezone})`}
-            </span>
-          )}
-      </div>
-    )
   }
 
   onTimezoneChange = (timezone) => {
@@ -178,13 +137,17 @@ export default class ScheduleBuilder extends React.Component {
         >
           <div className="frequency-settings-container">
             <p>
-              We’ll scan your database and notify you as soon as the Alert
-              conditions are are met.
+              When the conditions of this Data Alert are met, how often do you
+              want to be notified?
             </p>
-            <p>Once the Alert has been triggered, resume scanning:</p>
             <Radio
               themeConfig={getThemeConfig(this.props.themeConfig)}
-              options={['Immediately', 'Daily', 'Weekly', 'Monthly']}
+              options={[
+                'Every time this happens',
+                'Only once per day',
+                'Only once per week',
+                'Only once per month',
+              ]}
               selectionPlaceholder="Select a frequency"
               value={this.state.frequencySelectValue}
               type="original"
@@ -192,9 +155,6 @@ export default class ScheduleBuilder extends React.Component {
                 this.setState({ frequencySelectValue: option })
               }
             />
-          </div>
-          <div className="frequency-description-box-container">
-            {this.renderFrequencyDescription()}
           </div>
         </div>
         <div className="schedule-builder-timezone-section">
