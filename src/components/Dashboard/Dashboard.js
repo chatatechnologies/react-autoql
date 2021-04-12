@@ -434,9 +434,7 @@ class Dashboard extends React.Component {
   }
 
   reportProblemCallback = () => {
-    if (this.optionsToolbarRef) {
-      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
-    }
+    this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
   }
 
   renderDrilldownTable = () => {
@@ -461,10 +459,6 @@ class Dashboard extends React.Component {
             reportProblemCallback={this.reportProblemCallback}
             ref={(ref) => (this.responseRef = ref)}
             optionsToolbarRef={this.optionsToolbarRef}
-            //   optionsToolbarProps= {
-            //   ref= (r) => (this.optionsToolbarRef = r),
-            //   responseRef= {this.responseRef}
-            // }
           />
         )}
       </div>
@@ -570,8 +564,6 @@ class Dashboard extends React.Component {
                           '--react-autoql-background-color-primary'
                         )}
                         reportProblemCallback={this.reportProblemCallback}
-                        ref={(ref) => (this.responseRef = ref)}
-                        optionsToolbarRef={this.optionsToolbarRef}
                       />
                     )}
                     {this.renderChartCollapseBtn('bottom')}
