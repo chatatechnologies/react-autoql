@@ -458,9 +458,7 @@ class Dashboard extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
-            reportProblemCallback={this.reportProblemCallback}
-            ref={(ref) => (this.responseRef = ref)}
-            optionsToolbarRef={this.optionsToolbarRef}
+
             //   optionsToolbarProps= {
             //   ref= (r) => (this.optionsToolbarRef = r),
             //   responseRef= {this.responseRef}
@@ -569,6 +567,9 @@ class Dashboard extends React.Component {
                         backgroundColor={document.documentElement.style.getPropertyValue(
                           '--react-autoql-background-color-primary'
                         )}
+                        reportProblemCallback={this.reportProblemCallback}
+                        ref={(ref) => (this.responseRef = ref)}
+                        optionsToolbarRef={this.optionsToolbarRef}
                       />
                     )}
                     {this.renderChartCollapseBtn('bottom')}
