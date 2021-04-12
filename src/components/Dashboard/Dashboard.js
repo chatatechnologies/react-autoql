@@ -434,7 +434,7 @@ class Dashboard extends React.Component {
   }
 
   reportProblemCallback = () => {
-    this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    this.setState({ activeMenu: 'other-problem' })
   }
 
   renderDrilldownTable = () => {
