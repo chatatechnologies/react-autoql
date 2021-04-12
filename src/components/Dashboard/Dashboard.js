@@ -433,6 +433,12 @@ class Dashboard extends React.Component {
     return CHART_TYPES.includes(displayType)
   }
 
+  reportProblemCallback = () => {
+    if (this.optionsToolbarRef) {
+      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    }
+  }
+
   renderDrilldownTable = () => {
     return (
       <div className="react-autoql-dashboard-drilldown-table">
@@ -452,6 +458,13 @@ class Dashboard extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
+            reportProblemCallback={this.reportProblemCallback}
+            ref={(ref) => (this.responseRef = ref)}
+            optionsToolbarRef={this.optionsToolbarRef}
+            //   optionsToolbarProps= {
+            //   ref= (r) => (this.optionsToolbarRef = r),
+            //   responseRef= {this.responseRef}
+            // }
           />
         )}
       </div>
