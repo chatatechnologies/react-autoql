@@ -188,9 +188,7 @@ export default class DataAlerts extends React.Component {
         onErrorCallback={this.props.onErrorCallback}
         onDelete={this.onDataAlertDelete}
         title={
-          this.state.activeDataAlert
-            ? 'Edit Data Alert'
-            : 'Create New Data Alert'
+          this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
       />
     )

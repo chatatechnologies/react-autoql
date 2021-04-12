@@ -66,7 +66,7 @@ export default class DataAlertModal extends React.Component {
     isManagement: false,
     onManagementCreateDataAlert: () => {},
     onManagementDeleteDataAlert: () => {},
-    title: 'Create New Data Alert',
+    title: 'Create Data Alert',
     enableQueryValidation: true,
     onValidate: undefined,
   }
@@ -373,9 +373,11 @@ export default class DataAlertModal extends React.Component {
         {this.state.isExpressionValidated &&
           !this.state.isExpressionValid &&
           !!this.state.expressionError && (
-            <span className="expression-invalid-message">
-              <Icon type="warning-triangle" /> {this.state.expressionError}
-            </span>
+            <div className="expression-invalid-message-container">
+              <span className="expression-invalid-message">
+                <Icon type="warning-triangle" /> {this.state.expressionError}
+              </span>
+            </div>
           )}
         <Button
           type="default"
