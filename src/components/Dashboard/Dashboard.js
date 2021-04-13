@@ -36,7 +36,7 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-
+import { OptionsToolbar } from '../OptionsToolbar'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
@@ -445,21 +445,31 @@ class Dashboard extends React.Component {
             <LoadingDots />
           </div>
         ) : (
-          <QueryOutput
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            queryResponse={this.state.activeDrilldownResponse}
-            renderTooltips={false}
-            autoChartAggregations={this.props.autoChartAggregations}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
-            )}
-            reportProblemCallback={this.reportProblemCallback}
-            ref={(ref) => (this.responseRef = ref)}
-            optionsToolbarRef={this.optionsToolbarRef}
-          />
+          <Fragment>
+            <QueryOutput
+              authentication={getAuthentication(this.props.authentication)}
+              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              dataFormatting={getDataFormatting(this.props.dataFormatting)}
+              queryResponse={this.state.activeDrilldownResponse}
+              renderTooltips={false}
+              autoChartAggregations={this.props.autoChartAggregations}
+              backgroundColor={document.documentElement.style.getPropertyValue(
+                '--react-autoql-background-color-primary'
+              )}
+              reportProblemCallback={this.reportProblemCallback}
+              ref={(ref) => (this.responseRef = ref)}
+              optionsToolbarRef={this.optionsToolbarRef}
+            />
+            <OptionsToolbar
+              authentication={getAuthentication(this.props.authentication)}
+              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              onErrorCallback={this.props.onErrorCallback}
+              onSuccessAlert={this.props.onSuccessCallback}
+              {...optionsToolbarProps}
+            />
+          </Fragment>
         )}
       </div>
     )
