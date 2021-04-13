@@ -473,7 +473,7 @@ export default class ChatMessage extends React.Component {
                 this.isTableResponse() &&
                 this.state.supportedDisplayTypes.length >= 4
                   ? '400px'
-                  : '317px',
+                  : undefined,
             }}
           >
             {this.renderContent(chartWidth, chartHeight)}
