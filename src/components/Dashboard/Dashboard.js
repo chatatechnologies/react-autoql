@@ -467,7 +467,8 @@ class Dashboard extends React.Component {
               themeConfig={getThemeConfig(this.props.themeConfig)}
               onErrorCallback={this.props.onErrorCallback}
               onSuccessAlert={this.props.onSuccessCallback}
-              {...optionsToolbarProps}
+              ref={(r) => (this.optionsToolbarRef = r)}
+              responseRef={this.responseRef}
             />
           </Fragment>
         )}
