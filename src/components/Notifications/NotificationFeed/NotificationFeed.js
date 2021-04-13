@@ -269,9 +269,7 @@ export default class NotificationFeed extends React.Component {
         allowDelete={false}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         title={
-          this.state.activeDataAlert
-            ? 'Edit Data Alert'
-            : 'Create New Data Alert'
+          this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
       />
     )
