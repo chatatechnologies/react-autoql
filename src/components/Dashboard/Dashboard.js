@@ -7,7 +7,6 @@ import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
-
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -16,10 +15,8 @@ import { QueryOutput } from '../QueryOutput'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
 import { CHART_TYPES } from '../../js/Constants'
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
-
 import {
   authenticationType,
   autoQLConfigType,
