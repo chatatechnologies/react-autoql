@@ -576,7 +576,6 @@ class Dashboard extends React.Component {
                         backgroundColor={document.documentElement.style.getPropertyValue(
                           '--react-autoql-background-color-primary'
                         )}
-                        reportProblemCallback={this.reportProblemCallback}
                       />
                     )}
                     {this.renderChartCollapseBtn('bottom')}
