@@ -66,7 +66,7 @@ export default class DataAlertModal extends React.Component {
     isManagement: false,
     onManagementCreateDataAlert: () => {},
     onManagementDeleteDataAlert: () => {},
-    title: 'Create New Data Alert',
+    title: 'Create Data Alert',
     enableQueryValidation: true,
     onValidate: undefined,
   }
@@ -373,15 +373,27 @@ export default class DataAlertModal extends React.Component {
         {this.state.isExpressionValidated &&
           !this.state.isExpressionValid &&
           !!this.state.expressionError && (
-            <span className="expression-invalid-message">
-              <Icon type="warning-triangle" /> {this.state.expressionError}
-            </span>
+            <div className="expression-invalid-message-container">
+              <span className="expression-invalid-message">
+                <Icon type="warning-triangle" />
+              </span>{' '}
+              <p
+                className="expression-invalid-message"
+                style={{ maxWidth: '80%', marginTop: 0, marginRight: 0 }}
+              >
+                {this.state.expressionError}
+              </p>
+            </div>
           )}
         <Button
           type="default"
           onClick={this.validateExpression}
           loading={this.state.isValidating}
           type="primary"
+          disabled={
+            !this.state.titleInput ||
+            !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
+          }
         >
           {'Check Alert & continue'}
         </Button>
