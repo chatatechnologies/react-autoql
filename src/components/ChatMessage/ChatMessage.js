@@ -469,7 +469,11 @@ export default class ChatMessage extends React.Component {
           ${this.props.type === 'text' ? ' text' : ''}
             ${this.props.isActive ? ' active' : ''}`}
             style={{
-              minWidth: this.isTableResponse() ? '317px' : undefined,
+              minWidth:
+                this.isTableResponse() &&
+                this.state.supportedDisplayTypes.length >= 4
+                  ? '400px'
+                  : '317px',
             }}
           >
             {this.renderContent(chartWidth, chartHeight)}
