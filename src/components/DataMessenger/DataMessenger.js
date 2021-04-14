@@ -49,15 +49,14 @@ import './DataMessenger.scss'
 
 let strings = new LocalizedStrings({
   en: {
-    dataMessenger: "Data Messenger",
     introPrompt: "Some things you can ask me: ",
-    explorePrompt: "Use Explore Queries to further explore the possibilities.",
+    exploreQueries: "Explore Queries",
+    explorePrompt: "to further explore the possibilities.",
     run: "We run on AutoQL by Chata",
     queryPrompt: "Type your queries here ",
     seeMore: "See more",
     clearDataResponses: "Clear data responses",
     closeDataMessenger: "Close Data Messenger",
-    exploreQueries: "Explore Queries",
     searchQueries: "Search relevant queries by topic",
     discoverPrompt: "Discover what you can ask by entering a topic in the search bar above. Simply click on any of the returned options to run the query in Data Messenger.",
     reportAProblem: "Report a problem",
@@ -84,15 +83,14 @@ let strings = new LocalizedStrings({
     apply: "Apply"
   },
   sp: {
-    dataMessenger: "Data Messenger",
     introPrompt: "Cosas que puedes preguntarme:",
-    explorePrompt: "Utiliza Explorar Consultas para ampliar las posibilidades.",
+    exploreQueries: "Explorar Consultas",
+    explorePrompt: "para ampliar las posibilidades.",
     run: "Corremos en AutoQL de Chata",
     queryPrompt: "Escribe tus consultas aquí",
     seeMore: "Ver más",
     clearDataResponses: "Limpiar respuestas",
     closeDataMessenger: "Cerrar Data mesenger",
-    exploreQueries: "Explorar consultas",
     searchQueries: "Buscar consultas relevantes por tema",
     discoverPrompt: "Descubre lo que puede preguntar ingresando un tema en la barra de búsqueda de arriba. Da clic en cualquiera de las opciones devueltas para ejecutar la consulta en Data Messenger.",
     reportAProblem: "Informar de un problema",
@@ -327,7 +325,7 @@ export default class DataMessenger extends React.Component {
     try {
       const content = (
         <div>
-          Some things you can ask me:
+          {strings.introPrompt}
           <br />
           <div className="topics-container">
             {
@@ -348,10 +346,9 @@ export default class DataMessenger extends React.Component {
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
-            Queries
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> {strings.exploreQueries}
           </span>{' '}
-          to further explore the possibilities.
+          {strings.explorePrompt}
         </div>
       )
 
@@ -733,7 +730,7 @@ export default class DataMessenger extends React.Component {
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
-                  data-tip="Explore Queries"
+                  data-tip={strings.exploreQueries}
                   data-for="react-autoql-header-tooltip"
                   data-delay-show={1000}
                 >
@@ -830,7 +827,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip="Clear data responses"
+            data-tip={strings.clearDataResponses}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
@@ -846,7 +843,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'explore-queries') {
-      title = 'Explore Queries'
+      title = strings.exploreQueries
     }
     if (this.state.activePage === 'notifications') {
       title = 'Notifications'
@@ -861,7 +858,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="react-autoql-drawer-header-btn close"
-            data-tip="Close Data Messenger"
+            data-tip={strings.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
@@ -974,7 +971,7 @@ export default class DataMessenger extends React.Component {
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
-            We run on AutoQL by Chata
+            {strings.run}
           </div>
           <QueryInput
             authentication={getAuthentication(
