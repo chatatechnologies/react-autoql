@@ -6,6 +6,7 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
+import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 // import { throttle, debounce } from 'throttle-debounce'
@@ -512,7 +513,26 @@ export default class DataMessenger extends React.Component {
         content: 'I want to make sure I understood your query. Did you mean:',
       })
     }
-    this.addResponseMessage({ response, query })
+    if (_has(_get(response, 'data.data'), 'authorization_url')) {
+      this.addResponseMessage({
+        content: (
+          <span>
+            Looks like you’re trying to query a Microsoft Dynamics data source.{' '}
+            <br />
+            <br />
+            <a
+              href={_get(response, 'data.data.authorization_url')}
+              target="_blank"
+            >
+              Click here to authorize access
+            </a>
+            , then try querying again.
+          </span>
+        ),
+      })
+    } else {
+      this.addResponseMessage({ response, query })
+    }
 
     this.setState({ isChataThinking: false })
     if (this.queryInputRef) {
@@ -888,7 +908,7 @@ export default class DataMessenger extends React.Component {
           }}
           className="chat-message-container"
           renderView={(props) => (
-            <div {...props} className="custom-crollbar-container" />
+            <div {...props} className="custom-scrollbar-container" />
           )}
         >
           {this.state.messages.length > 0 &&
