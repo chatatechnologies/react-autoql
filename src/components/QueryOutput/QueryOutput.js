@@ -1957,7 +1957,7 @@ export default class QueryOutput extends React.Component {
       <Popover
         isOpen={this.state.isContextMenuOpen}
         position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
-        padding={10} // adjust padding here!
+        padding={10} // adjust padding here
         onClickOutside={() => this.setState({ isContextMenuOpen: false })}
         contentLocation={this.state.contextMenuPosition}
         content={(props) => this.renderContextMenuContent(props)}
