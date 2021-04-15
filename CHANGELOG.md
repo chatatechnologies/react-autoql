@@ -1,3 +1,11 @@
+## [3.2.1](https://github.com/chatatechnologies/react-autoql/compare/v3.2.0...v3.2.1) (2021-04-15)
+
+
+### Bug Fixes
+
+* same as last commit ([b1545e8](https://github.com/chatatechnologies/react-autoql/commit/b1545e8fb3c95abefbee2f1a4841f9b29fc377be))
+* **dashboard.js:** aNT-647 ([04885c6](https://github.com/chatatechnologies/react-autoql/commit/04885c6b93f0e9916075774eef27a5de00cad8ab))
+
 # [3.2.0](https://github.com/chatatechnologies/react-autoql/compare/v3.1.1...v3.2.0) (2021-03-31)
 
 
