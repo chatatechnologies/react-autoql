@@ -89,7 +89,7 @@ export default class RuleSimple extends React.Component {
   state = {
     input1Value: '',
     input2Value: '',
-    conditionSelectValue: 'EXISTS',
+    conditionSelectValue: 'GREATER_THAN',
     secondTermType: 'query',
     isFirstTermValid: true,
     isSecondTermValid: true,
@@ -312,7 +312,7 @@ export default class RuleSimple extends React.Component {
             this.setState({ conditionSelectValue: 'GREATER_THAN' })
           }}
         >
-          Compare result...
+          Compare
         </Button>
       )
     }
@@ -327,6 +327,11 @@ export default class RuleSimple extends React.Component {
           { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
           { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
           { value: 'EQUALS', label: '=', tooltip: 'Equals' },
+          {
+            value: 'EXISTS',
+            label: 'Exists',
+            tooltip: 'No Comparison',
+          },
         ]}
         value={this.state.conditionSelectValue}
         className="react-autoql-rule-condition-select"

@@ -49,6 +49,7 @@ export default class NotificationFeed extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    showCreateAlertBtn: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -57,6 +58,7 @@ export default class NotificationFeed extends React.Component {
     activeNotificationData: undefined,
     showNotificationDetails: true,
     autoChartAggregations: true,
+    showCreateAlertBtn: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -267,9 +269,7 @@ export default class NotificationFeed extends React.Component {
         allowDelete={false}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         title={
-          this.state.activeDataAlert
-            ? 'Edit Data Alert'
-            : 'Create New Data Alert'
+          this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
       />
     )
@@ -376,13 +376,15 @@ export default class NotificationFeed extends React.Component {
               </div>
               <div>Stay tuned!</div>
               <br />
-              <Button
-                style={{ marginTop: '10px' }}
-                type="primary"
-                onClick={this.showEditDataAlertModal}
-              >
-                Create Data Alert
-              </Button>
+              {this.props.showCreateAlertBtn && (
+                <Button
+                  style={{ marginTop: '10px' }}
+                  type="primary"
+                  onClick={this.showEditDataAlertModal}
+                >
+                  Create Data Alert
+                </Button>
+              )}
             </div>
           )}
           {this.renderEditDataAlertModal()}

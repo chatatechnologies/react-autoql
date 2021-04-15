@@ -1685,6 +1685,7 @@ export default class App extends Component {
           themeConfig={this.getThemeConfigProp()}
           onExpandCallback={this.fetchNotificationContent}
           autoChartAggregations={this.state.autoChartAggregations}
+          showCreateAlertBtn={true}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
