@@ -460,7 +460,7 @@ class Dashboard extends React.Component {
               ref={(ref) => (this.responseRef = ref)}
               optionsToolbarRef={this.optionsToolbarRef}
             />
-            <div style={{ display: none }}>
+            <div style={{ display: 'none' }}>
               <OptionsToolbar
                 authentication={getAuthentication(this.props.authentication)}
                 autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
