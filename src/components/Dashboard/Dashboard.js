@@ -460,7 +460,7 @@ class Dashboard extends React.Component {
               ref={(ref) => (this.responseRef = ref)}
               optionsToolbarRef={this.optionsToolbarRef}
             />
-            <OptionsToolbar
+            {/* <OptionsToolbar
               authentication={getAuthentication(this.props.authentication)}
               autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
               themeConfig={getThemeConfig(this.props.themeConfig)}
@@ -468,7 +468,7 @@ class Dashboard extends React.Component {
               onSuccessAlert={this.props.onSuccessCallback}
               ref={(r) => (this.optionsToolbarRef = r)}
               responseRef={this.responseRef}
-            />
+            /> */}
           </Fragment>
         )}
       </div>
