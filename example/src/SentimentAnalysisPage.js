@@ -17,6 +17,18 @@ const getStoredProp = (name) => {
   return localStorage.getItem(name)
 }
 
+const getBaseUrl = () => {
+  return window.location.href.includes('prod')
+    ? 'https://backend.chata.io'
+    : 'https://backend-staging.chata.io'
+}
+
+const getReputationUrl = () => {
+  return window.location.href.includes('prod')
+    ? 'https://reputation.chata.io'
+    : 'https://reputation-staging.chata.io'
+}
+
 export default class SentimentAnalysisPage extends React.Component {
   state = {
     sentimentApiKey: getStoredProp('sentimentApiKey'),
@@ -41,7 +53,8 @@ export default class SentimentAnalysisPage extends React.Component {
         return Promise.reject()
       }
 
-      let url = 'https://backend-staging.chata.io/gcp/api/v1/reputation/jwt'
+      const baseUrl = getBaseUrl()
+      let url = `${baseUrl}/gcp/api/v1/reputation/jwt`
 
       // Use login token to get JWT token
       const jwtResponse = await axios.get(url, {
@@ -66,8 +79,9 @@ export default class SentimentAnalysisPage extends React.Component {
     formData.append('username', this.state.email)
     formData.append('password', this.state.password)
 
+    const baseUrl = getBaseUrl()
     const loginResponse = await axios.post(
-      'https://backend-staging.chata.io/gcp/api/v1/login',
+      `${baseUrl}/gcp/api/v1/login`,
       formData
     )
 
@@ -78,7 +92,8 @@ export default class SentimentAnalysisPage extends React.Component {
   }
 
   getSentiment = () => {
-    const url = `https://reputation-staging.chata.io/reputation-sentiment/postapi_sentiment?key=${this.state.sentimentApiKey}`
+    const reputationUrl = getReputationUrl()
+    const url = `${reputationUrl}/reputation-sentiment/postapi_sentiment?key=${this.state.sentimentApiKey}`
     const data = {
       rv_text: this.state.reviewTextValue,
     }
@@ -98,7 +113,8 @@ export default class SentimentAnalysisPage extends React.Component {
   }
 
   getResponseV2 = () => {
-    const url = `https://reputation-staging.chata.io/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
+    const reputationUrl = getReputationUrl()
+    const url = `${reputationUrl}/reputation-responsor/v2/postapi_response?key=${this.state.sentimentApiKey}`
     const rating = this.state.rating ? `${this.state.rating}` : '4.0'
     const data = {
       review_text: this.state.reviewTextValue,
@@ -126,7 +142,8 @@ export default class SentimentAnalysisPage extends React.Component {
   }
 
   getResponse = () => {
-    const url = `https://reputation-staging.chata.io/reputation-responsor/postapi_response?key=${this.state.sentimentApiKey}`
+    const reputationUrl = getReputationUrl()
+    const url = `${reputationUrl}/reputation-responsor/postapi_response?key=${this.state.sentimentApiKey}`
     const data = {
       rv_text: this.state.reviewTextValue,
       rv_hotel: this.state.hotelName || 'the hotel',
