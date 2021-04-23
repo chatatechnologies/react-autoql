@@ -790,9 +790,11 @@ export default class QueryOutput extends React.Component {
 
       this.dataConfig.numberColumnIndices = numberColumnIndices
       this.dataConfig.numberColumnIndex = numberColumnIndex
-    } else {
-      this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
     }
+    //else {
+    //   //here is bug!!!
+    //   this.dataConfig.numberColumnIndex = this.dataConfig.numberColumnIndices[0]
+    // }
   }
 
   setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
@@ -1004,7 +1006,6 @@ export default class QueryOutput extends React.Component {
 
   getChartTableData = (newTableData) => {
     let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
-
     if (shouldPlotMultiSeries(this.tableColumns)) {
       return this.getMultiSeriesData(this.tableColumns, tableData)
     }
@@ -1032,6 +1033,7 @@ export default class QueryOutput extends React.Component {
     try {
       // Get columns for chart then reset indexes if necessary
       const columns = this.getChartTableColumns()
+
       this.chartTableColumns = columns
 
       // Get table data for chart after columns
@@ -1120,7 +1122,6 @@ export default class QueryOutput extends React.Component {
           return chartDataObject
         }, {})
       )
-
       // Update supported display types after table data has been recalculated
       // there may be too many categories for a pie chart etc.
       this.setSupportedDisplayTypes(
@@ -1458,7 +1459,6 @@ export default class QueryOutput extends React.Component {
     try {
       const tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
-
       if (!this.dataConfig) {
         // We should change this to getColumnIndices since this wont be
         // the final version that we use. We dont want to persist it
@@ -1485,14 +1485,12 @@ export default class QueryOutput extends React.Component {
           (col, i) => col.groupable && i !== this.dataConfig.stringColumnIndex
         )
       }
-
       // Set the number type column
       if (!(_get(this.dataConfig, 'numberColumnIndex') >= 0)) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => isColumnNumberType(col) && !col.groupable
         )
       }
-
       let uniqueValues0 = this.sortTableDataByDate(tableData)
         .map((d) => d[this.dataConfig.stringColumnIndex])
         .filter(onlyUnique)
@@ -1533,7 +1531,6 @@ export default class QueryOutput extends React.Component {
       //   this.setState({ displayType: "table" });
       //   return null;
       // }
-
       // Generate new column array
       const pivotTableColumns = [
         {
