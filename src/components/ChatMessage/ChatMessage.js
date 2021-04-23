@@ -450,7 +450,6 @@ export default class ChatMessage extends React.Component {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
     const maxMessageHeight = this.getMaxMessageheight()
-
     return (
       <ErrorBoundary>
         <div
@@ -470,8 +469,12 @@ export default class ChatMessage extends React.Component {
             ${this.props.isActive ? ' active' : ''}`}
             style={{
               minWidth:
-                this.isTableResponse() &&
-                this.state.supportedDisplayTypes.length >= 4
+                (this.isTableResponse() &&
+                  this.state.supportedDisplayTypes.length >= 4) ||
+                (this.props.response &&
+                  _get(this.props.response, 'data.data.columns').every(
+                    (col) => !col.visible
+                  ))
                   ? '400px'
                   : undefined,
             }}
