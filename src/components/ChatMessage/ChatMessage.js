@@ -477,7 +477,8 @@ export default class ChatMessage extends React.Component {
                   this.props.response.data.data.columns &&
                   _get(this.props.response, 'data.data.columns').every(
                     (col) => !col.visible
-                  ))
+                  )) ||
+                this.allColumnsAreHidden()
                   ? '400px'
                   : undefined,
             }}

@@ -787,7 +787,6 @@ export default class QueryOutput extends React.Component {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
         columns
       )
-
       this.dataConfig.numberColumnIndices = numberColumnIndices
       this.dataConfig.numberColumnIndex = numberColumnIndex
     }
@@ -1356,7 +1355,6 @@ export default class QueryOutput extends React.Component {
           (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
         )
       }
-
       const tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
 
@@ -1464,7 +1462,6 @@ export default class QueryOutput extends React.Component {
         // the final version that we use. We dont want to persist it
         this.setColumnIndices(this.tableColumns)
       }
-
       // Set the columns used for the 2 headers (ordinal and legend for charts)
       // If one of the indices is already specified, use it
       let dataConfigWasPersisted = false
@@ -1486,7 +1483,7 @@ export default class QueryOutput extends React.Component {
         )
       }
       // Set the number type column
-      if (!(_get(this.dataConfig, 'numberColumnIndex') >= 0)) {
+      if (_get(this.dataConfig, 'numberColumnIndex') >= 0) {
         this.dataConfig.numberColumnIndex = this.tableColumns.findIndex(
           (col, index) => isColumnNumberType(col) && !col.groupable
         )
