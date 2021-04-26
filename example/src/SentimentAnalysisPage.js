@@ -25,8 +25,8 @@ const getBaseUrl = () => {
 
 const getReputationUrl = () => {
   return window.location.href.includes('prod')
-    ? 'https://reputation.chata.io'
-    : 'https://reputation-staging.chata.io'
+    ? 'https://chata.chata.io/autoql'
+    : 'https://chata-staging.chata.io/autoql'
 }
 
 export default class SentimentAnalysisPage extends React.Component {
