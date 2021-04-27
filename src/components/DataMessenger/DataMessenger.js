@@ -50,6 +50,7 @@ import './DataMessenger.scss'
 let strings = new LocalizedStrings({
   en: {
     introPrompt: "Some things you can ask me: ",
+    use: "Use",
     exploreQueries: "Explore Queries",
     explorePrompt: "to further explore the possibilities.",
     run: "We run on AutoQL by Chata",
@@ -84,6 +85,7 @@ let strings = new LocalizedStrings({
   },
   sp: {
     introPrompt: "Cosas que puedes preguntarme:",
+    use: "Utiliza",
     exploreQueries: "Explorar Consultas",
     explorePrompt: "para ampliar las posibilidades.",
     run: "Corremos en AutoQL de Chata",
@@ -341,7 +343,7 @@ export default class DataMessenger extends React.Component {
               />
             }
           </div>
-          Use{' '}
+          {strings.use}{' '}
           <span
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
@@ -1274,6 +1276,16 @@ export default class DataMessenger extends React.Component {
     )
   }
 
+  setLanguage = () => {
+    var userLang = navigator.language || navigator.userLanguage;
+    if (userLang.includes("sp")) {
+      strings.setLanguage("sp")
+    }
+    else {
+      strings.setLanguage("en")
+    }
+  }
+
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1283,6 +1295,7 @@ export default class DataMessenger extends React.Component {
       <ErrorBoundary>
         <Fragment>
           {this.renderTooltips()}
+          {this.setLanguage()}
           <Drawer
             data-test="react-autoql-drawer-test"
             className={`react-autoql-drawer
