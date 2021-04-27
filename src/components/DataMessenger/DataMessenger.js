@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import LocalizedStrings from 'react-localization'
 import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
@@ -45,6 +46,79 @@ import { runDrilldown, fetchQueryTips } from '../../js/queryService'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+
+let lang = new LocalizedStrings({
+  en: {
+    introPrompt: "Some things you can ask me: ",
+    use: "Use",
+    exploreQueries: "Explore Queries",
+    explorePrompt: "to further explore the possibilities.",
+    run: "We run on AutoQL by Chata",
+    queryPrompt: "Type your queries here ",
+    seeMore: "See more",
+    clearDataResponses: "Clear data responses",
+    closeDataMessenger: "Close Data Messenger",
+    searchQueries: "Search relevant queries by topic",
+    discoverPrompt: "Discover what you can ask by entering a topic in the search bar above. Simply click on any of the returned options to run the query in Data Messenger.",
+    reportAProblem: "Report a problem",
+    deleteDataResponse: "Delete data response",
+    table: "Table",
+    barChart: "Bar Chart",
+    columnChart: "Column Chart",
+    lineChart: "Line Chart",
+    pieChart: "Pie Chart",
+    heatMap: "Heat Map",
+    bubbleChart: "Bubble Chart",
+    stackedColumnChart: "Stacked Column Chart",
+    stackedBarChart: "Stacked Bar Chart",
+    stackedAreaChart: "Stacked Area Chart",
+    downloadAsPNG: "Download as a PNG",
+    filterTable: "Filter table",
+    showHideColumns: "Show/hide columns",
+    downloadAsCSV: "Download as a CSV",
+    copyTableToClipboard: "Copy table to clipboard",
+    filterColumn: "Filter column",
+    columnName: "Column Name",
+    visibility: "Visibility",
+    cancel: "Cancel",
+    apply: "Apply"
+  },
+  sp: {
+    introPrompt: "Cosas que puedes preguntarme:",
+    use: "Utiliza",
+    exploreQueries: "Explorar Consultas",
+    explorePrompt: "para ampliar las posibilidades.",
+    run: "Corremos en AutoQL de Chata",
+    queryPrompt: "Escribe tus consultas aquí",
+    seeMore: "Ver más",
+    clearDataResponses: "Limpiar respuestas",
+    closeDataMessenger: "Cerrar Data mesenger",
+    searchQueries: "Buscar consultas relevantes por tema",
+    discoverPrompt: "Descubre lo que puede preguntar ingresando un tema en la barra de búsqueda de arriba. Da clic en cualquiera de las opciones devueltas para ejecutar la consulta en Data Messenger.",
+    reportAProblem: "Informar de un problema",
+    deleteDataResponse: "Eliminar respuesta de datos",
+    table: "Tabla",
+    barChart: "Gráfico de barras",
+    columnChart: "Gráfico de columnas",
+    lineChart: "Gráfico de linea",
+    pieChart: "Gráfico circular",
+    heatMap: "Mapa de calor",
+    bubbleChart: "Gráfico de burbujas",
+    stackedColumnChart: "Gráfico de columnas apiladas",
+    stackedBarChart: "Gráfico de barras apiladas",
+    stackedAreaChart: "Gráfico de área apilada",
+    downloadAsPNG: "Descargar como PNG",
+    filterTable: "Tabla de filtros",
+    showHideColumns: "Mostrar/ocultar columnas",
+    downloadAsCSV: "Descargar como CSV",
+    copyTableToClipboard: "Copiar tabla al portapapelas",
+    filterColumn: "Columna de filtro",
+    columnName: "Nombre de columna",
+    visibility: "Visibilidad",
+    cancel: "Cancelar",
+    apply: "Aplicar"
+  }
+});
 
 export default class DataMessenger extends React.Component {
   static propTypes = {
@@ -119,10 +193,10 @@ export default class DataMessenger extends React.Component {
     autoChartAggregations: true,
 
     // Callbacks
-    onHandleClick: () => {},
-    onVisibleChange: () => {},
-    onErrorCallback: () => {},
-    onSuccessAlert: () => {},
+    onHandleClick: () => { },
+    onVisibleChange: () => { },
+    onErrorCallback: () => { },
+    onSuccessAlert: () => { },
   }
 
   state = {
@@ -253,7 +327,7 @@ export default class DataMessenger extends React.Component {
     try {
       const content = (
         <div>
-          Some things you can ask me:
+          {lang.introPrompt}
           <br />
           <div className="topics-container">
             {
@@ -269,15 +343,14 @@ export default class DataMessenger extends React.Component {
               />
             }
           </div>
-          Use{' '}
+          {lang.use}{' '}
           <span
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
-            Queries
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> {lang.exploreQueries}
           </span>{' '}
-          to further explore the possibilities.
+          {lang.explorePrompt}
         </div>
       )
 
@@ -295,7 +368,7 @@ export default class DataMessenger extends React.Component {
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
-              'there'}! Let’s dive into your data. What can I help you discover today?`,
+          'there'}! Let’s dive into your data. What can I help you discover today?`,
       }),
     ]
 
@@ -338,8 +411,8 @@ export default class DataMessenger extends React.Component {
               draggable="false"
             />
           ) : (
-            <Icon type="react-autoql-bubbles-outlined" size={26} />
-          )}
+              <Icon type="react-autoql-bubbles-outlined" size={26} />
+            )}
         </div>
       )
     }
@@ -654,13 +727,12 @@ export default class DataMessenger extends React.Component {
               </div>
               {this.props.enableExploreQueriesTab && (
                 <div
-                  className={`tab${
-                    page === 'explore-queries' ? ' active' : ''
-                  } react-autoql-explore-queries`}
+                  className={`tab${page === 'explore-queries' ? ' active' : ''
+                    } react-autoql-explore-queries`}
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
-                  data-tip="Explore Queries"
+                  data-tip={lang.exploreQueries}
                   data-for="react-autoql-header-tooltip"
                   data-delay-show={1000}
                 >
@@ -671,9 +743,8 @@ export default class DataMessenger extends React.Component {
                 getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
                   .enableNotifications && (
                   <div
-                    className={`tab${
-                      page === 'notifications' ? ' active' : ''
-                    } react-autoql-notifications`}
+                    className={`tab${page === 'notifications' ? ' active' : ''
+                      } react-autoql-notifications`}
                     onClick={() => {
                       if (this.notificationBadgeRef) {
                         this.notificationBadgeRef.resetCount()
@@ -758,7 +829,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip="Clear data responses"
+            data-tip={lang.clearDataResponses}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
@@ -774,7 +845,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'explore-queries') {
-      title = 'Explore Queries'
+      title = lang.exploreQueries
     }
     if (this.state.activePage === 'notifications') {
       title = 'Notifications'
@@ -789,7 +860,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="react-autoql-drawer-header-btn close"
-            data-tip="Close Data Messenger"
+            data-tip={lang.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
@@ -902,7 +973,7 @@ export default class DataMessenger extends React.Component {
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
-            We run on AutoQL by Chata
+            {lang.run}
           </div>
           <QueryInput
             authentication={getAuthentication(
@@ -1205,6 +1276,16 @@ export default class DataMessenger extends React.Component {
     )
   }
 
+  setLanguage = () => {
+    var userLang = navigator.language || navigator.userLanguage;
+    if (userLang.includes("sp")) {
+      lang.setLanguage("sp")
+    }
+    else {
+      lang.setLanguage("en")
+    }
+  }
+
   render = () => {
     if (this.state.hasError) {
       return null
@@ -1223,6 +1304,7 @@ export default class DataMessenger extends React.Component {
       <ErrorBoundary>
         <Fragment>
           {this.renderTooltips()}
+          {this.setLanguage()}
           <Drawer
             data-test="react-autoql-drawer-test"
             className={`react-autoql-drawer
