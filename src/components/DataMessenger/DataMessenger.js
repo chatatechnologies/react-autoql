@@ -1290,6 +1290,15 @@ export default class DataMessenger extends React.Component {
     if (this.state.hasError) {
       return null
     }
+    let chartToolTipElement = document.getElementById('chart-element-tooltip')
+    const dataMessenger = document.getElementsByClassName(
+      'drawer-content-wrapper'
+    )[0]
+    if (chartToolTipElement && dataMessenger) {
+      chartToolTipElement.style.maxWidth = `${dataMessenger.style.width.match(
+        /\d+/g
+      )[0] - 70}px`
+    }
 
     return (
       <ErrorBoundary>
