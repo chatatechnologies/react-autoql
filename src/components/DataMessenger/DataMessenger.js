@@ -47,7 +47,7 @@ import { runDrilldown, fetchQueryTips } from '../../js/queryService'
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
-let strings = new LocalizedStrings({
+let lang = new LocalizedStrings({
   en: {
     introPrompt: "Some things you can ask me: ",
     use: "Use",
@@ -327,7 +327,7 @@ export default class DataMessenger extends React.Component {
     try {
       const content = (
         <div>
-          {strings.introPrompt}
+          {lang.introPrompt}
           <br />
           <div className="topics-container">
             {
@@ -343,14 +343,14 @@ export default class DataMessenger extends React.Component {
               />
             }
           </div>
-          {strings.use}{' '}
+          {lang.use}{' '}
           <span
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> {strings.exploreQueries}
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> {lang.exploreQueries}
           </span>{' '}
-          {strings.explorePrompt}
+          {lang.explorePrompt}
         </div>
       )
 
@@ -732,7 +732,7 @@ export default class DataMessenger extends React.Component {
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
-                  data-tip={strings.exploreQueries}
+                  data-tip={lang.exploreQueries}
                   data-for="react-autoql-header-tooltip"
                   data-delay-show={1000}
                 >
@@ -829,7 +829,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip={strings.clearDataResponses}
+            data-tip={lang.clearDataResponses}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
@@ -845,7 +845,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'explore-queries') {
-      title = strings.exploreQueries
+      title = lang.exploreQueries
     }
     if (this.state.activePage === 'notifications') {
       title = 'Notifications'
@@ -860,7 +860,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="react-autoql-drawer-header-btn close"
-            data-tip={strings.closeDataMessenger}
+            data-tip={lang.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
@@ -973,7 +973,7 @@ export default class DataMessenger extends React.Component {
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
-            {strings.run}
+            {lang.run}
           </div>
           <QueryInput
             authentication={getAuthentication(
@@ -1279,10 +1279,10 @@ export default class DataMessenger extends React.Component {
   setLanguage = () => {
     var userLang = navigator.language || navigator.userLanguage;
     if (userLang.includes("sp")) {
-      strings.setLanguage("sp")
+      lang.setLanguage("sp")
     }
     else {
-      strings.setLanguage("en")
+      lang.setLanguage("en")
     }
   }
 
