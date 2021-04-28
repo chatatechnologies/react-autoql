@@ -7,7 +7,6 @@ import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
-
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -16,10 +15,8 @@ import { QueryOutput } from '../QueryOutput'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
 import { CHART_TYPES } from '../../js/Constants'
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
-
 import {
   authenticationType,
   autoQLConfigType,
@@ -36,7 +33,7 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-
+import { OptionsToolbar } from '../OptionsToolbar'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
@@ -433,6 +430,12 @@ class Dashboard extends React.Component {
     return CHART_TYPES.includes(displayType)
   }
 
+  reportProblemCallback = () => {
+    if (this.optionsToolbarRef) {
+      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    }
+  }
+
   renderDrilldownTable = () => {
     return (
       <div className="react-autoql-dashboard-drilldown-table">
@@ -441,18 +444,34 @@ class Dashboard extends React.Component {
             <LoadingDots />
           </div>
         ) : (
-          <QueryOutput
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            queryResponse={this.state.activeDrilldownResponse}
-            renderTooltips={false}
-            autoChartAggregations={this.props.autoChartAggregations}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
-            )}
-          />
+          <Fragment>
+            <QueryOutput
+              authentication={getAuthentication(this.props.authentication)}
+              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              dataFormatting={getDataFormatting(this.props.dataFormatting)}
+              queryResponse={this.state.activeDrilldownResponse}
+              renderTooltips={false}
+              autoChartAggregations={this.props.autoChartAggregations}
+              backgroundColor={document.documentElement.style.getPropertyValue(
+                '--react-autoql-background-color-primary'
+              )}
+              reportProblemCallback={this.reportProblemCallback}
+              ref={(ref) => (this.responseRef = ref)}
+              optionsToolbarRef={this.optionsToolbarRef}
+            />
+            <div style={{ display: 'none' }}>
+              <OptionsToolbar
+                authentication={getAuthentication(this.props.authentication)}
+                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                onErrorCallback={this.props.onErrorCallback}
+                onSuccessAlert={this.props.onSuccessCallback}
+                ref={(r) => (this.optionsToolbarRef = r)}
+                responseRef={this.responseRef}
+              />
+            </div>
+          </Fragment>
         )}
       </div>
     )
