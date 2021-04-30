@@ -1309,7 +1309,6 @@ export default class DataMessenger extends React.Component {
         'style.width'
       ).match(/\d+/g)[0] - 70}px`
     }
-    console.log(chartToolTipElement)
     return (
       <ErrorBoundary>
         <Fragment>
