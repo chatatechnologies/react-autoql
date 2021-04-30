@@ -1304,13 +1304,10 @@ export default class DataMessenger extends React.Component {
       this.props.placement !== 'top' &&
       this.props.placement !== 'bottom'
     ) {
-      console.log(dataMessenger)
-      // if (_get(chartToolTipElement, 'style.maxWidth')) {
       chartToolTipElement.style.maxWidth = `${_get(
         dataMessenger,
         'style.width'
       ).match(/\d+/g)[0] - 70}px`
-      // }
     }
     console.log(chartToolTipElement)
     return (
