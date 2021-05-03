@@ -1298,7 +1298,6 @@ export default class DataMessenger extends React.Component {
     const dataMessenger = document.getElementsByClassName(
       'drawer-content-wrapper'
     )[0]
-    
     if (
       chartToolTipElement &&
       dataMessenger &&
