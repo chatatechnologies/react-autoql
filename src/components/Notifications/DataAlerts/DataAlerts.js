@@ -12,7 +12,7 @@ import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import dayjs from '../../../js/dayjsWithPlugins'
-import {Loading} from '../../Loading'
+import LoadingDots from '../../LoadingDots/LoadingDots'
 import {
   fetchDataAlerts,
   updateDataAlertStatus,
@@ -368,7 +368,12 @@ export default class DataAlerts extends React.Component {
   render = () => {
     if (!this.state.customAlertsList) {
       return (
-        <Loading data-test="notification-settings" isLightTheme={getThemeConfig(this.props.themeConfig).theme==='light'} />
+        <div
+        data-test="notification-settings"
+        style={{ textAlign: 'center', marginTop: '100px' }}
+      >
+        <LoadingDots/>
+      </div>
       )
     }
 
