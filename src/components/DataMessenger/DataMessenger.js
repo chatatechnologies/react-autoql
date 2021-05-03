@@ -276,7 +276,8 @@ export default class DataMessenger extends React.Component {
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> {lang.exploreQueries}
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
+            {lang.exploreQueries}
           </span>{' '}
           {lang.explorePrompt}
         </div>
@@ -1212,10 +1213,18 @@ export default class DataMessenger extends React.Component {
     const dataMessenger = document.getElementsByClassName(
       'drawer-content-wrapper'
     )[0]
-    if (chartToolTipElement && dataMessenger) {
-      chartToolTipElement.style.maxWidth = `${dataMessenger.style.width.match(
-        /\d+/g
-      )[0] - 70}px`
+
+    if (
+      chartToolTipElement &&
+      dataMessenger &&
+      (this.props.placement !== 'top' || this.props.placement !== 'bottom')
+    ) {
+      if (_get(dataMessenger, 'style.width')) {
+        chartToolTipElement.style.maxWidth = `${_get(
+          dataMessenger,
+          'style.width'
+        ).match(/\d+/g)[0] - 75}px`
+      }
     }
 
     return (

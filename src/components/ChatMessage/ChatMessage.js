@@ -34,7 +34,6 @@ import {
   getDefaultDisplayType,
   isTableType,
   getSupportedDisplayTypes,
-  isAggregation,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -167,7 +166,7 @@ export default class ChatMessage extends React.Component {
   }
 
   scrollIntoView = () => {
-    setTimeout(() => {
+    this.scrollIntoViewTimeout = setTimeout(() => {
       const element = document.getElementById(`message-${this.props.id}`)
 
       if (!this.isScrolledIntoView(element)) {
@@ -212,6 +211,8 @@ export default class ChatMessage extends React.Component {
     const { response, content, type } = this.props
     if (content) {
       return content
+    } else if (_get(response, 'status') === 401) {
+      return errorMessages.UNAUTHENTICATED
     } else if (response) {
       return (
         <QueryOutput
