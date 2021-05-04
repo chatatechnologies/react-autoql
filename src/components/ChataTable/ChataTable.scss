@@ -103,6 +103,11 @@
   height: 7px;
   transition: all 0.3s ease;
 }
+.react-autoql-table.tabulator .tabulator-tableHolder{
+  min-height: calc(100% - 40px)  !important;
+  height: calc(100% - 40px) !important;
+  max-height: calc(100% - 40px) !important;
+}
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {

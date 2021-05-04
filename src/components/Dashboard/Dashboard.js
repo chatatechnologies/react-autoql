@@ -50,6 +50,16 @@ const executeDashboard = (ref) => {
   }
 }
 
+const unExecuteDashboard = (ref) => {
+  if (ref) {
+    try {
+      ref.unExecuteDashboard()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}
+
 class Dashboard extends React.Component {
   tileRefs = {}
 
@@ -174,6 +184,18 @@ class Dashboard extends React.Component {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
           this.tileRefs[dashboardTile].processTile()
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  unExecuteDashboard = () => {
+    try {
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          this.tileRefs[dashboardTile].unExecuteTile()
         }
       }
     } catch (error) {
@@ -730,4 +752,4 @@ class Dashboard extends React.Component {
   }
 }
 
-export { Dashboard, executeDashboard }
+export { Dashboard, executeDashboard, unExecuteDashboard }

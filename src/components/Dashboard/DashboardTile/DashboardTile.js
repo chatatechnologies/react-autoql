@@ -96,6 +96,7 @@ export default class DashboardTile extends React.Component {
       getSupportedDisplayTypes(this.props.queryResponse) || [],
     secondSupportedDisplayTypes:
       getSupportedDisplayTypes(this.props.secondQueryResponse) || [],
+    isUnExecuted: false,
   }
 
   getFilteredProps = (props) => {
@@ -161,6 +162,11 @@ export default class DashboardTile extends React.Component {
 
   isQueryValid = (query) => {
     return !!query && !!query.trim()
+  }
+
+  /** force the tile into the un-executed state */
+  unExecuteTile = () => {
+    this.setState({ isUnExecuted: true })
   }
 
   endTopQuery = ({ response }) => {
@@ -322,6 +328,8 @@ export default class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
+    this.setState({ isUnExecuted: false })
+
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -634,13 +642,20 @@ export default class DashboardTile extends React.Component {
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (!this.props.isEditing && isExecuted) {
+    } else if (
+      !this.props.isEditing &&
+      isExecuted &&
+      !this.state.isUnExecuted
+    ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>No query was supplied for this tile.</em>
         </div>
       )
-    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
+    } else if (
+      this.props.isEditing &&
+      (!_get(this.state.query, 'trim()') || this.state.isUnExecuted)
+    ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -905,7 +920,9 @@ export default class DashboardTile extends React.Component {
 
     return (
       <div className="loading-container-centered">
-        {!queryOutputProps.queryResponse || isExecuting ? (
+        {!queryOutputProps.queryResponse ||
+        isExecuting ||
+        this.state.isUnExecuted ? (
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <Fragment>
