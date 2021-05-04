@@ -7,7 +7,7 @@ export const getLegendLabelsForMultiSeries = (
   seriesIndices = []
 ) => {
   try {
-    if (seriesIndices.length <= 1) {
+    if (seriesIndices.length < 1) {
       return []
     }
 
@@ -18,7 +18,6 @@ export const getLegendLabelsForMultiSeries = (
         hidden: columns[columnIndex].isSeriesHidden,
       }
     })
-
     return legendLabels
   } catch (error) {
     console.error(error)
