@@ -7,6 +7,7 @@ import {
   QueryInput,
   Dashboard,
   executeDashboard,
+  unExecuteDashboard,
   NotificationIcon,
   NotificationFeed,
   DataAlerts,
@@ -1434,6 +1435,13 @@ export default class App extends Component {
                 style={{ marginLeft: '10px' }}
               >
                 Execute
+              </Button>
+              <Button
+                onClick={() => unExecuteDashboard(this.dashboardRef)}
+                icon={<PlayCircleOutlined />}
+                style={{ marginLeft: '10px' }}
+              >
+                Un-Execute
               </Button>
               <Button
                 onClick={() => console.log(this.state.dashboardTiles)}
