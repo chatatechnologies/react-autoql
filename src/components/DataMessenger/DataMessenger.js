@@ -1298,15 +1298,17 @@ export default class DataMessenger extends React.Component {
     const dataMessenger = document.getElementsByClassName(
       'drawer-content-wrapper'
     )[0]
+    
     if (
-      (chartToolTipElement && dataMessenger) ||
-      this.props.placement !== 'top' ||
-      this.props.placement !== 'bottom'
+      chartToolTipElement &&
+      dataMessenger &&
+      (this.props.placement !== 'top' || this.props.placement !== 'bottom')
     ) {
-      if (_get(chartToolTipElement, 'style.maxWidth')) {
-        chartToolTipElement = `${_get(dataMessenger, 'style.width').match(
-          /\d+/g
-        )[0] - 70}px`
+      if (_get(dataMessenger, 'style.width')) {
+        chartToolTipElement.style.maxWidth = `${_get(
+          dataMessenger,
+          'style.width'
+        ).match(/\d+/g)[0] - 75}px`
       }
     }
 
