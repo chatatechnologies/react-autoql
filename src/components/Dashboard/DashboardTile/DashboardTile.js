@@ -63,6 +63,7 @@ export default class DashboardTile extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    isUnExecuted: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -79,6 +80,7 @@ export default class DashboardTile extends React.Component {
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
+    isUnExecuted: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
   }
@@ -645,7 +647,7 @@ export default class DashboardTile extends React.Component {
     } else if (
       !this.props.isEditing &&
       isExecuted &&
-      !this.state.isUnExecuted
+      !this.props.isUnExecuted
     ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
@@ -654,7 +656,7 @@ export default class DashboardTile extends React.Component {
       )
     } else if (
       this.props.isEditing &&
-      (!_get(this.state.query, 'trim()') || this.state.isUnExecuted)
+      (!_get(this.state.query, 'trim()') || this.props.isUnExecuted)
     ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
@@ -922,7 +924,7 @@ export default class DashboardTile extends React.Component {
       <div className="loading-container-centered">
         {!queryOutputProps.queryResponse ||
         isExecuting ||
-        this.state.isUnExecuted ? (
+        this.props.isUnExecuted ? (
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <Fragment>
