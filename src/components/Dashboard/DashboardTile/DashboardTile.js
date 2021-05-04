@@ -64,6 +64,7 @@ export default class DashboardTile extends React.Component {
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     isUnExecuted: PropTypes.bool,
+    onProcessTileCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -83,6 +84,7 @@ export default class DashboardTile extends React.Component {
     isUnExecuted: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
+    onProcessTileCallback: () => {},
   }
 
   state = {
@@ -164,11 +166,6 @@ export default class DashboardTile extends React.Component {
 
   isQueryValid = (query) => {
     return !!query && !!query.trim()
-  }
-
-  /** force the tile into the un-executed state */
-  unExecuteTile = () => {
-    this.setState({ isUnExecuted: true })
   }
 
   endTopQuery = ({ response }) => {
@@ -330,7 +327,7 @@ export default class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
-    this.setState({ isUnExecuted: false })
+    this.props.onProcessTileCallback(this.props.tile.i)
 
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
