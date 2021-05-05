@@ -121,10 +121,10 @@ export default class DataMessenger extends React.Component {
     autoChartAggregations: true,
 
     // Callbacks
-    onHandleClick: () => { },
-    onVisibleChange: () => { },
-    onErrorCallback: () => { },
-    onSuccessAlert: () => { },
+    onHandleClick: () => {},
+    onVisibleChange: () => {},
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {},
   }
 
   state = {
@@ -206,6 +206,28 @@ export default class DataMessenger extends React.Component {
     try {
       document.removeEventListener('keydown', this.escFunction, false)
       window.removeEventListener('resize', this.onWindowResize)
+
+      if (this.scrollToBottomTimeout) {
+        clearTimeout(this.scrollToBottomTimeout)
+      }
+      if (this.windowResizeTimer) {
+        clearTimeout(this.windowResizeTimer)
+      }
+      if (this.responseTimeout) {
+        clearTimeout(this.responseTimeout)
+      }
+      if (this.feedbackTimeout) {
+        clearTimeout(this.feedbackTimeout)
+      }
+      if (this.animateTextTimeout) {
+        clearTimeout(this.animateTextTimeout)
+      }
+      if (this.exploreQueriesTimeout) {
+        clearTimeout(this.exploreQueriesTimeout)
+      }
+      if (this.executeQueryTimeout) {
+        clearTimeout(this.executeQueryTimeout)
+      }
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -297,7 +319,7 @@ export default class DataMessenger extends React.Component {
         content: this.props.introMessage
           ? `${this.props.introMessage}`
           : `Hi ${this.props.userDisplayName ||
-          'there'}! Let’s dive into your data. What can I help you discover today?`,
+              'there'}! Let’s dive into your data. What can I help you discover today?`,
       }),
     ]
 
@@ -340,8 +362,8 @@ export default class DataMessenger extends React.Component {
               draggable="false"
             />
           ) : (
-              <Icon type="react-autoql-bubbles-outlined" size={26} />
-            )}
+            <Icon type="react-autoql-bubbles-outlined" size={26} />
+          )}
         </div>
       )
     }
@@ -403,7 +425,7 @@ export default class DataMessenger extends React.Component {
     }
 
     // Required to make animation smooth
-    setTimeout(() => {
+    this.scrollToBottomTimeout = setTimeout(() => {
       if (this.messengerScrollComponent) {
         this.messengerScrollComponent.scrollToBottom()
       }
@@ -501,7 +523,7 @@ export default class DataMessenger extends React.Component {
 
     const drilldownResponse = filterDataForDrilldown(response, drilldownData)
 
-    setTimeout(() => {
+    this.responseTimeout = setTimeout(() => {
       this.addResponseMessage({
         response: drilldownResponse,
       })
@@ -656,8 +678,9 @@ export default class DataMessenger extends React.Component {
               </div>
               {this.props.enableExploreQueriesTab && (
                 <div
-                  className={`tab${page === 'explore-queries' ? ' active' : ''
-                    } react-autoql-explore-queries`}
+                  className={`tab${
+                    page === 'explore-queries' ? ' active' : ''
+                  } react-autoql-explore-queries`}
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
@@ -672,8 +695,9 @@ export default class DataMessenger extends React.Component {
                 getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
                   .enableNotifications && (
                   <div
-                    className={`tab${page === 'notifications' ? ' active' : ''
-                      } react-autoql-notifications`}
+                    className={`tab${
+                      page === 'notifications' ? ' active' : ''
+                    } react-autoql-notifications`}
                     onClick={() => {
                       if (this.notificationBadgeRef) {
                         this.notificationBadgeRef.resetCount()
@@ -821,7 +845,7 @@ export default class DataMessenger extends React.Component {
 
   onNoneOfTheseClick = () => {
     this.setState({ isChataThinking: true })
-    setTimeout(() => {
+    this.feedbackTimeout = setTimeout(() => {
       this.setState({ isChataThinking: false })
       this.addResponseMessage({ content: 'Thank you for your feedback' })
     }, 1000)
@@ -1008,7 +1032,7 @@ export default class DataMessenger extends React.Component {
   animateQITextAndSubmit = (text) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
-        setTimeout(() => {
+        this.animateTextTimeout = setTimeout(() => {
           this.setState({
             queryTipsInputValue: text.slice(0, i),
           })
@@ -1022,7 +1046,7 @@ export default class DataMessenger extends React.Component {
 
   runTopicInExporeQueries = (topic) => {
     this.setState({ activePage: 'explore-queries' })
-    setTimeout(() => {
+    this.exploreQueriesTimeout = setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
   }
@@ -1046,7 +1070,7 @@ export default class DataMessenger extends React.Component {
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
-        setTimeout(() => {
+        this.executeQueryTimeout = setTimeout(() => {
           this.onSuggestionClick({ query, source: 'explore_queries' })
         }, 500)
       }}
