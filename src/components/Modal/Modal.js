@@ -18,6 +18,7 @@ export default class Modal extends React.Component {
   static propTypes = {
     themeConfig: themeConfigType,
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
+    titleIcon: PropTypes.elementTypes,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
@@ -36,6 +37,7 @@ export default class Modal extends React.Component {
   static defaultProps = {
     themeConfig: themeConfigDefault,
     title: '',
+    titleIcon: undefined,
     isVisible: false,
     width: '80vw',
     height: undefined,
@@ -124,7 +126,7 @@ export default class Modal extends React.Component {
           }}
         >
           <div className="react-autoql-modal-header">
-            {this.props.title}
+            {this.props.titleIcon} {this.props.title}
             <Icon
               type="close"
               className="react-autoql-modal-close-btn"

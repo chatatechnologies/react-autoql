@@ -70,8 +70,12 @@ export default class DataAlerts extends React.Component {
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
-    if(!_isEqual(getAuthentication(this.props.authentication),getAuthentication(prevProps.authentication)))
-    {
+    if (
+      !_isEqual(
+        getAuthentication(this.props.authentication),
+        getAuthentication(prevProps.authentication)
+      )
+    ) {
       this.getDataAlerts()
     }
   }
@@ -194,6 +198,7 @@ export default class DataAlerts extends React.Component {
         title={
           this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
+        titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
       />
     )
   }
@@ -369,11 +374,11 @@ export default class DataAlerts extends React.Component {
     if (!this.state.customAlertsList) {
       return (
         <div
-        data-test="notification-settings"
-        style={{ textAlign: 'center', marginTop: '100px' }}
-      >
-        <LoadingDots/>
-      </div>
+          data-test="notification-settings"
+          style={{ textAlign: 'center', marginTop: '100px' }}
+        >
+          <LoadingDots />
+        </div>
       )
     }
 
