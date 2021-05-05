@@ -120,6 +120,7 @@ export default class ChataChart extends Component {
       this.updateMargins()
       ReactTooltip.rebuild()
     }
+
     if (!_isEqual(this.props.columns, prevProps.columns)) {
       this.setNumberColumnSelectorState()
     }
