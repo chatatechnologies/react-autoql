@@ -12,7 +12,7 @@ import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import dayjs from '../../../js/dayjsWithPlugins'
-
+import LoadingDots from '../../LoadingDots/LoadingDots'
 import {
   fetchDataAlerts,
   updateDataAlertStatus,
@@ -69,6 +69,14 @@ export default class DataAlerts extends React.Component {
       )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
+    }
+    if (
+      !_isEqual(
+        getAuthentication(this.props.authentication),
+        getAuthentication(prevProps.authentication)
+      )
+    ) {
+      this.getDataAlerts()
     }
   }
 
@@ -190,6 +198,7 @@ export default class DataAlerts extends React.Component {
         title={
           this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
+        titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
       />
     )
   }
@@ -368,7 +377,7 @@ export default class DataAlerts extends React.Component {
           data-test="notification-settings"
           style={{ textAlign: 'center', marginTop: '100px' }}
         >
-          Loading...
+          <LoadingDots />
         </div>
       )
     }

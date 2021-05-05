@@ -58,12 +58,12 @@ export default class Input extends React.Component {
 
     responseRef: undefined,
     enableDeleteBtn: false,
-    onSuccessAlert: () => {},
-    onErrorCallback: () => {},
-    onNewNotificationCallback: () => {},
-    deleteMessageCallback: () => {},
-    onFilterCallback: () => {},
-    onColumnVisibilitySave: () => {},
+    onSuccessAlert: () => { },
+    onErrorCallback: () => { },
+    onNewNotificationCallback: () => { },
+    deleteMessageCallback: () => { },
+    onFilterCallback: () => { },
+    onColumnVisibilitySave: () => { },
   }
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
@@ -655,9 +655,8 @@ export default class Input extends React.Component {
               disabled
             />
             <Button
-              className={`copy-sql-btn ${
-                this.state.sqlCopySuccess ? 'sql-copied' : ''
-              }`}
+              className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''
+                }`}
               onClick={this.copySQL}
               tooltip="Copy to Clipboard"
             >

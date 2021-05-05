@@ -271,6 +271,7 @@ export default class NotificationFeed extends React.Component {
         title={
           this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
+        titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
       />
     )
   }

@@ -34,7 +34,6 @@ import {
   getDefaultDisplayType,
   isTableType,
   getSupportedDisplayTypes,
-  isAggregation,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -167,7 +166,7 @@ export default class ChatMessage extends React.Component {
   }
 
   scrollIntoView = () => {
-    setTimeout(() => {
+    this.scrollIntoViewTimeout = setTimeout(() => {
       const element = document.getElementById(`message-${this.props.id}`)
 
       if (!this.isScrolledIntoView(element)) {
@@ -212,6 +211,8 @@ export default class ChatMessage extends React.Component {
     const { response, content, type } = this.props
     if (content) {
       return content
+    } else if (_get(response, 'status') === 401) {
+      return errorMessages.UNAUTHENTICATED
     } else if (response) {
       return (
         <QueryOutput
@@ -450,7 +451,6 @@ export default class ChatMessage extends React.Component {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
     const maxMessageHeight = this.getMaxMessageheight()
-
     return (
       <ErrorBoundary>
         <div
@@ -470,8 +470,16 @@ export default class ChatMessage extends React.Component {
             ${this.props.isActive ? ' active' : ''}`}
             style={{
               minWidth:
-                this.isTableResponse() &&
-                this.state.supportedDisplayTypes.length >= 4
+                (this.isTableResponse() &&
+                  this.state.supportedDisplayTypes.length >= 4) ||
+                (this.props.response &&
+                  this.props.response.data &&
+                  this.props.response.data.data &&
+                  this.props.response.data.data.columns &&
+                  _get(this.props.response, 'data.data.columns').every(
+                    (col) => !col.visible
+                  )) ||
+                this.allColumnsAreHidden()
                   ? '400px'
                   : undefined,
             }}

@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import LocalizedStrings from 'react-localization'
 import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
@@ -29,6 +30,7 @@ import {
 
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
+import { lang, setLanguage } from '../../js/Localization'
 
 // Components
 import { Icon } from '../Icon'
@@ -204,6 +206,28 @@ export default class DataMessenger extends React.Component {
     try {
       document.removeEventListener('keydown', this.escFunction, false)
       window.removeEventListener('resize', this.onWindowResize)
+
+      if (this.scrollToBottomTimeout) {
+        clearTimeout(this.scrollToBottomTimeout)
+      }
+      if (this.windowResizeTimer) {
+        clearTimeout(this.windowResizeTimer)
+      }
+      if (this.responseTimeout) {
+        clearTimeout(this.responseTimeout)
+      }
+      if (this.feedbackTimeout) {
+        clearTimeout(this.feedbackTimeout)
+      }
+      if (this.animateTextTimeout) {
+        clearTimeout(this.animateTextTimeout)
+      }
+      if (this.exploreQueriesTimeout) {
+        clearTimeout(this.exploreQueriesTimeout)
+      }
+      if (this.executeQueryTimeout) {
+        clearTimeout(this.executeQueryTimeout)
+      }
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -253,7 +277,7 @@ export default class DataMessenger extends React.Component {
     try {
       const content = (
         <div>
-          Some things you can ask me:
+          {lang.introPrompt}
           <br />
           <div className="topics-container">
             {
@@ -269,15 +293,15 @@ export default class DataMessenger extends React.Component {
               />
             }
           </div>
-          Use{' '}
+          {lang.use}{' '}
           <span
             className="intro-qi-link"
             onClick={() => this.setState({ activePage: 'explore-queries' })}
           >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} /> Explore
-            Queries
+            <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
+            {lang.exploreQueries}
           </span>{' '}
-          to further explore the possibilities.
+          {lang.explorePrompt}
         </div>
       )
 
@@ -401,7 +425,7 @@ export default class DataMessenger extends React.Component {
     }
 
     // Required to make animation smooth
-    setTimeout(() => {
+    this.scrollToBottomTimeout = setTimeout(() => {
       if (this.messengerScrollComponent) {
         this.messengerScrollComponent.scrollToBottom()
       }
@@ -499,7 +523,7 @@ export default class DataMessenger extends React.Component {
 
     const drilldownResponse = filterDataForDrilldown(response, drilldownData)
 
-    setTimeout(() => {
+    this.responseTimeout = setTimeout(() => {
       this.addResponseMessage({
         response: drilldownResponse,
       })
@@ -660,7 +684,7 @@ export default class DataMessenger extends React.Component {
                   onClick={() =>
                     this.setState({ activePage: 'explore-queries' })
                   }
-                  data-tip="Explore Queries"
+                  data-tip={lang.exploreQueries}
                   data-for="react-autoql-header-tooltip"
                   data-delay-show={1000}
                 >
@@ -758,7 +782,7 @@ export default class DataMessenger extends React.Component {
               this.setState({ isClearMessageConfirmVisible: true })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip="Clear data responses"
+            data-tip={lang.clearDataResponses}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
@@ -774,7 +798,7 @@ export default class DataMessenger extends React.Component {
       title = this.props.title
     }
     if (this.state.activePage === 'explore-queries') {
-      title = 'Explore Queries'
+      title = lang.exploreQueries
     }
     if (this.state.activePage === 'notifications') {
       title = 'Notifications'
@@ -789,7 +813,7 @@ export default class DataMessenger extends React.Component {
           <button
             onClick={this.props.onHandleClick}
             className="react-autoql-drawer-header-btn close"
-            data-tip="Close Data Messenger"
+            data-tip={lang.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
@@ -821,7 +845,7 @@ export default class DataMessenger extends React.Component {
 
   onNoneOfTheseClick = () => {
     this.setState({ isChataThinking: true })
-    setTimeout(() => {
+    this.feedbackTimeout = setTimeout(() => {
       this.setState({ isChataThinking: false })
       this.addResponseMessage({ content: 'Thank you for your feedback' })
     }, 1000)
@@ -902,7 +926,7 @@ export default class DataMessenger extends React.Component {
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
-            We run on AutoQL by Chata
+            {lang.run}
           </div>
           <QueryInput
             authentication={getAuthentication(
@@ -1008,7 +1032,7 @@ export default class DataMessenger extends React.Component {
   animateQITextAndSubmit = (text) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
-        setTimeout(() => {
+        this.animateTextTimeout = setTimeout(() => {
           this.setState({
             queryTipsInputValue: text.slice(0, i),
           })
@@ -1022,7 +1046,7 @@ export default class DataMessenger extends React.Component {
 
   runTopicInExporeQueries = (topic) => {
     this.setState({ activePage: 'explore-queries' })
-    setTimeout(() => {
+    this.exploreQueriesTimeout = setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
   }
@@ -1046,7 +1070,7 @@ export default class DataMessenger extends React.Component {
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
-        setTimeout(() => {
+        this.executeQueryTimeout = setTimeout(() => {
           this.onSuggestionClick({ query, source: 'explore_queries' })
         }, 500)
       }}
@@ -1209,11 +1233,29 @@ export default class DataMessenger extends React.Component {
     if (this.state.hasError) {
       return null
     }
+    let chartToolTipElement = document.getElementById('chart-element-tooltip')
+    const dataMessenger = document.getElementsByClassName(
+      'drawer-content-wrapper'
+    )[0]
+
+    if (
+      chartToolTipElement &&
+      dataMessenger &&
+      (this.props.placement !== 'top' || this.props.placement !== 'bottom')
+    ) {
+      if (_get(dataMessenger, 'style.width')) {
+        chartToolTipElement.style.maxWidth = `${_get(
+          dataMessenger,
+          'style.width'
+        ).match(/\d+/g)[0] - 75}px`
+      }
+    }
 
     return (
       <ErrorBoundary>
         <Fragment>
           {this.renderTooltips()}
+          {setLanguage()}
           <Drawer
             data-test="react-autoql-drawer-test"
             className={`react-autoql-drawer

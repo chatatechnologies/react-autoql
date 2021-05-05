@@ -63,6 +63,8 @@ export default class DashboardTile extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    isUnExecuted: PropTypes.bool,
+    onProcessTileCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -79,8 +81,10 @@ export default class DashboardTile extends React.Component {
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
+    isUnExecuted: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
+    onProcessTileCallback: () => {},
   }
 
   state = {
@@ -96,6 +100,7 @@ export default class DashboardTile extends React.Component {
       getSupportedDisplayTypes(this.props.queryResponse) || [],
     secondSupportedDisplayTypes:
       getSupportedDisplayTypes(this.props.secondQueryResponse) || [],
+    isUnExecuted: false,
   }
 
   getFilteredProps = (props) => {
@@ -322,6 +327,8 @@ export default class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
+    this.props.onProcessTileCallback(this.props.tile.i)
+
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -634,13 +641,20 @@ export default class DashboardTile extends React.Component {
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (!this.props.isEditing && isExecuted) {
+    } else if (
+      !this.props.isEditing &&
+      isExecuted &&
+      !this.props.isUnExecuted
+    ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>No query was supplied for this tile.</em>
         </div>
       )
-    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
+    } else if (
+      this.props.isEditing &&
+      (!_get(this.state.query, 'trim()') || this.props.isUnExecuted)
+    ) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -905,7 +919,9 @@ export default class DashboardTile extends React.Component {
 
     return (
       <div className="loading-container-centered">
-        {!queryOutputProps.queryResponse || isExecuting ? (
+        {!queryOutputProps.queryResponse ||
+        isExecuting ||
+        this.props.isUnExecuted ? (
           this.renderContentPlaceholder({ isExecuting, isExecuted })
         ) : (
           <Fragment>

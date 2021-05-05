@@ -50,6 +50,16 @@ const executeDashboard = (ref) => {
   }
 }
 
+const unExecuteDashboard = (ref) => {
+  if (ref) {
+    try {
+      ref.unExecuteDashboard()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}
+
 class Dashboard extends React.Component {
   tileRefs = {}
 
@@ -96,6 +106,8 @@ class Dashboard extends React.Component {
   state = {
     isDragging: false,
     previousTileState: this.props.tiles,
+    /** keep a separate un-executed value for each tile */
+    isTileUnExecuted: {},
   }
 
   componentDidMount = () => {
@@ -170,6 +182,8 @@ class Dashboard extends React.Component {
   }
 
   executeDashboard = () => {
+    this.setState({ isTileUnExecuted: {} })
+
     try {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
@@ -179,6 +193,16 @@ class Dashboard extends React.Component {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  unExecuteDashboard = () => {
+    const newUnExecutedObj = {}
+
+    this.props.tiles.forEach((tile) => {
+      newUnExecutedObj[tile.key] = true
+    })
+
+    this.setState({ isTileUnExecuted: newUnExecutedObj })
   }
 
   getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
@@ -460,15 +484,17 @@ class Dashboard extends React.Component {
               ref={(ref) => (this.responseRef = ref)}
               optionsToolbarRef={this.optionsToolbarRef}
             />
-            <OptionsToolbar
-              authentication={getAuthentication(this.props.authentication)}
-              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-              themeConfig={getThemeConfig(this.props.themeConfig)}
-              onErrorCallback={this.props.onErrorCallback}
-              onSuccessAlert={this.props.onSuccessCallback}
-              ref={(r) => (this.optionsToolbarRef = r)}
-              responseRef={this.responseRef}
-            />
+            <div style={{ display: 'none' }}>
+              <OptionsToolbar
+                authentication={getAuthentication(this.props.authentication)}
+                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                onErrorCallback={this.props.onErrorCallback}
+                onSuccessAlert={this.props.onSuccessCallback}
+                ref={(r) => (this.optionsToolbarRef = r)}
+                responseRef={this.responseRef}
+              />
+            </div>
           </Fragment>
         )}
       </div>
@@ -693,6 +719,15 @@ class Dashboard extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
+            isUnExecuted={this.state.isTileUnExecuted[tile.key]}
+            onProcessTileCallback={(tileKey) => {
+              this.setState((prevState) => ({
+                isTileUnExecuted: {
+                  ...prevState.isTileUnExecuted,
+                  [tileKey]: undefined,
+                },
+              }))
+            }}
           />
         ))}
       </ReactGridLayout>
@@ -728,4 +763,4 @@ class Dashboard extends React.Component {
   }
 }
 
-export { Dashboard, executeDashboard }
+export { Dashboard, executeDashboard, unExecuteDashboard }
