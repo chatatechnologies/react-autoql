@@ -83,7 +83,6 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
-    console.log('didMount')
     this.initializeFields()
   }
 
@@ -151,7 +150,6 @@ export default class DataAlertModal extends React.Component {
       this.props.initialQuery &&
       typeof this.props.initialQuery === 'string'
     ) {
-      console.log('dataalert is null')
       const expressionJSON = this.createExpressionJSONFromQuery(
         this.props.initialQuery
       )
