@@ -49,7 +49,6 @@ export default class DataAlertModal extends React.Component {
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
-    titleIcon: PropTypes.elementType,
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
   }
@@ -68,7 +67,6 @@ export default class DataAlertModal extends React.Component {
     onManagementCreateDataAlert: () => {},
     onManagementDeleteDataAlert: () => {},
     title: 'Create Data Alert',
-    titleIcon: undefined,
     enableQueryValidation: true,
     onValidate: undefined,
   }
@@ -85,6 +83,7 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
+    console.log('didMount')
     this.initializeFields()
   }
 
@@ -139,24 +138,20 @@ export default class DataAlertModal extends React.Component {
   initializeFields = () => {
     // If we are editing an existing notification
     // Fill the fields with the current settings
-    if (this.props.currentDataAlert) {
+    if (!_.isEmpty(this.props.currentDataAlert)) {
       const notification = this.props.currentDataAlert
-      this.setState(
-        {
-          titleInput: notification.title,
-          messageInput: notification.message,
-          dataReturnQuery: notification.data_return_query,
-          isDataReturnDirty: true,
-          expressionJSON: _get(this.props.currentDataAlert, 'expression'),
-        },
-        () => {
-          this.validateExpression()
-        }
-      )
+      this.setState({
+        titleInput: notification.title,
+        messageInput: notification.message,
+        dataReturnQuery: notification.data_return_query,
+        isDataReturnDirty: true,
+        expressionJSON: _get(this.props.currentDataAlert, 'expression'),
+      })
     } else if (
       this.props.initialQuery &&
       typeof this.props.initialQuery === 'string'
     ) {
+      console.log('dataalert is null')
       const expressionJSON = this.createExpressionJSONFromQuery(
         this.props.initialQuery
       )
@@ -654,7 +649,11 @@ export default class DataAlertModal extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
           titleIcon={
-            this.props.currentDataAlert ? this.props.titleIcon : <span />
+            !_.isEmpty(this.props.currentDataAlert) ? (
+              <Icon type="edit" />
+            ) : (
+              <span />
+            )
           }
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
