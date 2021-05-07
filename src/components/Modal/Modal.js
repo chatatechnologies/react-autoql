@@ -18,7 +18,10 @@ export default class Modal extends React.Component {
   static propTypes = {
     themeConfig: themeConfigType,
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-    titleIcon: PropTypes.elementTypes,
+    titleIcon: PropTypes.oneOfType([
+      PropTypes.element,
+      PropTypes.instanceOf(Icon),
+    ]),
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
     onConfirm: PropTypes.func,
