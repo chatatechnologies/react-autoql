@@ -7,7 +7,7 @@ export const getLegendLabelsForMultiSeries = (
   seriesIndices = []
 ) => {
   try {
-    if (seriesIndices.length <= 1) {
+    if (seriesIndices.length < 1) {
       return []
     }
 
@@ -18,7 +18,6 @@ export const getLegendLabelsForMultiSeries = (
         hidden: columns[columnIndex].isSeriesHidden,
       }
     })
-
     return legendLabels
   } catch (error) {
     console.error(error)
@@ -83,11 +82,12 @@ export const getLegendLocation = (seriesArray, displayType) => {
     displayType === 'stacked_line'
   ) {
     return 'right'
-  } else if (_get(seriesArray, 'length') > 3) {
+  } else if (_get(seriesArray, 'length') > 2) {
     return 'right'
   } else if (_get(seriesArray, 'length') > 1) {
     return 'bottom'
   }
+
   return undefined
 }
 

@@ -60,3 +60,7 @@ body {
 .ant-form-item input {
   max-width: unset;
 }
+
+.chat-voice-record-button {
+  margin: 10px;
+}

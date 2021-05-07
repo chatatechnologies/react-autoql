@@ -7,7 +7,6 @@ import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import SplitterLayout from 'react-splitter-layout'
-
 import { Modal } from '../Modal'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
@@ -16,10 +15,8 @@ import { QueryOutput } from '../QueryOutput'
 import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
 import { CHART_TYPES } from '../../js/Constants'
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
-
 import {
   authenticationType,
   autoQLConfigType,
@@ -36,7 +33,7 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-
+import { OptionsToolbar } from '../OptionsToolbar'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
@@ -47,6 +44,16 @@ const executeDashboard = (ref) => {
   if (ref) {
     try {
       ref.executeDashboard()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}
+
+const unExecuteDashboard = (ref) => {
+  if (ref) {
+    try {
+      ref.unExecuteDashboard()
     } catch (error) {
       console.error(error)
     }
@@ -99,6 +106,8 @@ class Dashboard extends React.Component {
   state = {
     isDragging: false,
     previousTileState: this.props.tiles,
+    /** keep a separate un-executed value for each tile */
+    isTileUnExecuted: {},
   }
 
   componentDidMount = () => {
@@ -173,6 +182,8 @@ class Dashboard extends React.Component {
   }
 
   executeDashboard = () => {
+    this.setState({ isTileUnExecuted: {} })
+
     try {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
@@ -182,6 +193,16 @@ class Dashboard extends React.Component {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  unExecuteDashboard = () => {
+    const newUnExecutedObj = {}
+
+    this.props.tiles.forEach((tile) => {
+      newUnExecutedObj[tile.key] = true
+    })
+
+    this.setState({ isTileUnExecuted: newUnExecutedObj })
   }
 
   getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
@@ -433,6 +454,12 @@ class Dashboard extends React.Component {
     return CHART_TYPES.includes(displayType)
   }
 
+  reportProblemCallback = () => {
+    if (this.optionsToolbarRef) {
+      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+    }
+  }
+
   renderDrilldownTable = () => {
     return (
       <div className="react-autoql-dashboard-drilldown-table">
@@ -441,18 +468,34 @@ class Dashboard extends React.Component {
             <LoadingDots />
           </div>
         ) : (
-          <QueryOutput
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            queryResponse={this.state.activeDrilldownResponse}
-            renderTooltips={false}
-            autoChartAggregations={this.props.autoChartAggregations}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
-            )}
-          />
+          <Fragment>
+            <QueryOutput
+              authentication={getAuthentication(this.props.authentication)}
+              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              dataFormatting={getDataFormatting(this.props.dataFormatting)}
+              queryResponse={this.state.activeDrilldownResponse}
+              renderTooltips={false}
+              autoChartAggregations={this.props.autoChartAggregations}
+              backgroundColor={document.documentElement.style.getPropertyValue(
+                '--react-autoql-background-color-primary'
+              )}
+              reportProblemCallback={this.reportProblemCallback}
+              ref={(ref) => (this.responseRef = ref)}
+              optionsToolbarRef={this.optionsToolbarRef}
+            />
+            <div style={{ display: 'none' }}>
+              <OptionsToolbar
+                authentication={getAuthentication(this.props.authentication)}
+                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                onErrorCallback={this.props.onErrorCallback}
+                onSuccessAlert={this.props.onSuccessCallback}
+                ref={(r) => (this.optionsToolbarRef = r)}
+                responseRef={this.responseRef}
+              />
+            </div>
+          </Fragment>
         )}
       </div>
     )
@@ -467,6 +510,9 @@ class Dashboard extends React.Component {
               isDrilldownChartHidden: !this.state.isDrilldownChartHidden,
             })
           }}
+          tooltip={
+            this.state.isDrilldownChartHidden ? 'Show Chart' : 'Hide Chart'
+          }
         >
           <Icon type="chart" />
           <Icon
@@ -673,6 +719,15 @@ class Dashboard extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
+            isUnExecuted={this.state.isTileUnExecuted[tile.key]}
+            onProcessTileCallback={(tileKey) => {
+              this.setState((prevState) => ({
+                isTileUnExecuted: {
+                  ...prevState.isTileUnExecuted,
+                  [tileKey]: undefined,
+                },
+              }))
+            }}
           />
         ))}
       </ReactGridLayout>
@@ -708,4 +763,4 @@ class Dashboard extends React.Component {
   }
 }
 
-export { Dashboard, executeDashboard }
+export { Dashboard, executeDashboard, unExecuteDashboard }

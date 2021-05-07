@@ -29,22 +29,6 @@
   .frequency-settings-container {
     flex: 0 1 400px;
   }
-  .frequency-description-box-container {
-    flex: 1 1 0%;
-    .frequency-description-box {
-      border: 1px solid #ffeb3b;
-      border-radius: 4px;
-      padding: 20px;
-      margin-left: 20px;
-      background: #fffaca;
-      color: rgba(0, 0, 0, 0.4);
-    }
-
-    .frequency-description-title {
-      color: rgba(0, 0, 0, 0.6);
-      font-weight: 600;
-    }
-  }
 }
 
 .schedule-builder-timezone-section {

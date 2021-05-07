@@ -31,20 +31,18 @@
   .react-autoql-dashboard-drilldown-original {
     padding: 20px;
     padding-bottom: 10px;
-    height: 100%;
   }
   .drilldown-hide-chart-btn {
     text-align: right;
     width: 100%;
+    padding-right: 20px;
 
     &.bottom {
       position: absolute;
       bottom: 5px;
-      padding-right: 40px;
     }
 
     &.top {
-      padding-right: 20px;
       padding-top: 10px;
       margin-bottom: -8px;
     }

@@ -7,6 +7,7 @@ import {
   QueryInput,
   Dashboard,
   executeDashboard,
+  unExecuteDashboard,
   NotificationIcon,
   NotificationFeed,
   DataAlerts,
@@ -232,15 +233,15 @@ export default class App extends Component {
     let dashboardBackground = this.state.dashboardBackground
 
     // eq-bank
-    if (this.state.themeCode === '1') {
+    if (this.state.themeCode === '1' && this.state.uiOverlay) {
       lightAccentColor = '#C53392'
     }
     // raddison
-    if (this.state.themeCode === '2') {
+    if (this.state.themeCode === '2' && this.state.uiOverlay) {
       lightAccentColor = '#565759'
     }
     // texas a&m
-    if (this.state.themeCode === '3') {
+    if (this.state.themeCode === '3' && this.state.uiOverlay) {
       lightAccentColor = '#4e0101'
     }
 
@@ -1501,6 +1502,13 @@ export default class App extends Component {
                 Execute
               </Button>
               <Button
+                onClick={() => unExecuteDashboard(this.dashboardRef)}
+                icon={<PlayCircleOutlined />}
+                style={{ marginLeft: '10px' }}
+              >
+                Un-Execute
+              </Button>
+              <Button
                 onClick={() => console.log(this.state.dashboardTiles)}
                 style={{ marginLeft: '10px' }}
               >
@@ -1757,6 +1765,7 @@ export default class App extends Component {
           themeConfig={this.getThemeConfigProp()}
           onExpandCallback={this.fetchNotificationContent}
           autoChartAggregations={this.state.autoChartAggregations}
+          showCreateAlertBtn={true}
           onCollapseCallback={() => {
             this.setState({ currentNotificationContent: null })
           }}
@@ -1860,6 +1869,8 @@ export default class App extends Component {
           <SpeechToTextPage
             authentication={this.getAuthProp()}
             themeConfig={this.getThemeConfigProp()}
+            userEmail={this.state.displayName}
+            projectID={this.state.projectId}
           />
         )
         break

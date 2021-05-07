@@ -247,7 +247,7 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runDrilldown = ({

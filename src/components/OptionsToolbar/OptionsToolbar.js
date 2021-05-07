@@ -58,12 +58,12 @@ export default class Input extends React.Component {
 
     responseRef: undefined,
     enableDeleteBtn: false,
-    onSuccessAlert: () => {},
-    onErrorCallback: () => {},
-    onNewNotificationCallback: () => {},
-    deleteMessageCallback: () => {},
-    onFilterCallback: () => {},
-    onColumnVisibilitySave: () => {},
+    onSuccessAlert: () => { },
+    onErrorCallback: () => { },
+    onNewNotificationCallback: () => { },
+    deleteMessageCallback: () => { },
+    onFilterCallback: () => { },
+    onColumnVisibilitySave: () => { },
   }
 
   state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
@@ -112,25 +112,28 @@ export default class Input extends React.Component {
 
     const queryOutputId = this.props.responseRef.COMPONENT_KEY
     const filterValues = tableRef.getHeaderFilters()
+
     if (filterValues) {
       filterValues.forEach((filter) => {
         try {
-          if (!isFilteringTable) {
-            const filterTagEl = document.createElement('span')
-            filterTagEl.innerText = 'F'
-            filterTagEl.setAttribute('class', 'filter-tag')
+          const existingFilterTag = document.querySelector(
+            `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
+          )
 
-            const columnTitleEl = document.querySelector(
-              `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
-            )
-            columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-          } else if (isFilteringTable) {
-            var filterTagEl = document.querySelector(
-              `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
-            )
-            if (filterTagEl) {
-              filterTagEl.parentNode.removeChild(filterTagEl)
+          if (!isFilteringTable) {
+            // Only add a filter tag if there isn't already one there
+            if (!existingFilterTag) {
+              const filterTagEl = document.createElement('span')
+              filterTagEl.innerText = 'F'
+              filterTagEl.setAttribute('class', 'filter-tag')
+
+              const columnTitleEl = document.querySelector(
+                `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+              )
+              columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
             }
+          } else if (isFilteringTable && existingFilterTag) {
+            existingFilterTag.parentNode.removeChild(existingFilterTag)
           }
         } catch (error) {
           console.error(error)
@@ -141,9 +144,8 @@ export default class Input extends React.Component {
   }
 
   toggleTableFilter = () => {
-    this.props.onFilterCallback()
-
     this.filtering = !this.filtering
+    this.props.onFilterCallback(this.filtering)
     const queryOutputId = _get(this.props.responseRef, 'COMPONENT_KEY')
 
     try {
@@ -653,9 +655,8 @@ export default class Input extends React.Component {
               disabled
             />
             <Button
-              className={`copy-sql-btn ${
-                this.state.sqlCopySuccess ? 'sql-copied' : ''
-              }`}
+              className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''
+                }`}
               onClick={this.copySQL}
               tooltip="Copy to Clipboard"
             >

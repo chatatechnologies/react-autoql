@@ -120,13 +120,17 @@ export default class ChataChart extends Component {
       this.updateMargins()
       ReactTooltip.rebuild()
     }
+
+    if (!_isEqual(this.props.columns, prevProps.columns)) {
+      this.setNumberColumnSelectorState()
+    }
   }
 
   setNumberColumnSelectorState = () => {
-    const { tableColumns } = this.props
+    const { columns } = this.props
     const { numberColumnIndices } = this.props.dataConfig
 
-    if (!tableColumns || !numberColumnIndices) {
+    if (!columns || !numberColumnIndices) {
       return
     }
 
@@ -134,7 +138,7 @@ export default class ChataChart extends Component {
     const quantityItems = []
     const ratioItems = []
 
-    tableColumns.forEach((col, i) => {
+    columns.forEach((col, i) => {
       const item = {
         content: col.title,
         checked: numberColumnIndices.includes(i),
@@ -151,7 +155,7 @@ export default class ChataChart extends Component {
     })
 
     this.setState({
-      activeNumberType: _get(tableColumns, `[${numberColumnIndices[0]}].type`),
+      activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
       ratioSelectorState: ratioItems,
@@ -324,27 +328,30 @@ export default class ChataChart extends Component {
       })
   }
 
+  getStringAxisTitle = () => {
+    return _get(
+      this.props.tableColumns,
+      `[${_get(this.props, 'dataConfig.stringColumnIndex')}].display_name`
+    )
+  }
+
   getNumberAxisTitle = () => {
-    if (
-      this.props.type === 'stacked_bar' ||
-      this.props.type === 'stacked_column' ||
-      this.props.type === 'stacked_line'
-    ) {
-      return _get(
-        this.props.tableColumns,
-        `[${_get(this.props, 'numberColumnIndex')}].title`
-      )
-    }
-
-    if (_get(this.props.dataConfig, 'numberColumnIndices.length', 0) <= 1) {
-      return undefined
-    }
-
     try {
-      const columnType = this.props.columns.find(
-        (col, i) => i === _get(this.props.dataConfig, 'numberColumnIndices[0]')
-      ).type
+      const { columns, dataConfig } = this.props
+      const numberColumns = columns.filter((col, i) => {
+        return _get(dataConfig, 'numberColumnIndices').includes(i)
+      })
 
+      // If there are different titles for any of the columns, return a generic label based on the type
+      const allTitlesEqual = !numberColumns.find((col) => {
+        return col.display_name !== numberColumns[0].display_name
+      })
+
+      if (allTitlesEqual) {
+        return _get(numberColumns, '[0].display_name')
+      }
+
+      const columnType = _get(numberColumns, '[0].type')
       if (columnType === 'DOLLAR_AMT') {
         return 'Amount'
       } else if (columnType === 'QUANTITY') {
@@ -417,12 +424,14 @@ export default class ChataChart extends Component {
           axisSelectorLocation: { left: e.pageX, top: e.pageY },
         })
       },
-      onLegendTitleClick: (e) => {
-        this.setState({
-          activeAxisSelector: 'legend',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY },
-        })
-      },
+      onLegendTitleClick: !!this.props.tableColumns[legendColumnIndex]
+        ? (e) => {
+            this.setState({
+              activeAxisSelector: 'legend',
+              axisSelectorLocation: { left: e.pageX, top: e.pageY },
+            })
+          }
+        : undefined,
       onLabelChange: this.updateMargins,
       height,
       width,
@@ -443,6 +452,7 @@ export default class ChataChart extends Component {
       numberColumnIndex,
       numberColumnIndices,
       numberAxisTitle: this.getNumberAxisTitle(),
+      stringAxisTitle: this.getStringAxisTitle(),
       enableDynamicCharting,
       hasMultipleNumberColumns:
         [
@@ -456,7 +466,7 @@ export default class ChataChart extends Component {
       legendLabels: getLegendLabelsForMultiSeries(
         this.props.columns,
         this.colorScale,
-        this.props.dataConfig.seriesIndices
+        numberColumnIndices
       ),
     }
   }
@@ -618,6 +628,7 @@ export default class ChataChart extends Component {
                       return { ...item, checked: false }
                     }
                   )
+
                   this.setState({
                     activeNumberType: 'RATIO',
                     ratioSelectorState,
@@ -852,6 +863,7 @@ export default class ChataChart extends Component {
 
   render = () => {
     let chart
+
     switch (this.props.type) {
       case 'column': {
         chart = this.renderColumnChart()

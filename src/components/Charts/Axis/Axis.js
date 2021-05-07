@@ -16,8 +16,6 @@ import { themeConfigType, dataFormattingType } from '../../../props/types.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
-  getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults.js'
 
 export default class Axis extends Component {
@@ -58,7 +56,7 @@ export default class Axis extends Component {
     hasRightLegend: false,
     hasBottomLegend: false,
     onLegendClick: () => {},
-    onLegendTitleClick: () => {},
+    onLegendTitleClick: undefined,
   }
 
   componentDidMount = () => {
@@ -69,7 +67,15 @@ export default class Axis extends Component {
     this.renderAxis()
   }
 
-  styleLegendTitle = (svg) => {
+  styleLegendTitleNoBorder = (svg) => {
+    svg
+      .select('.legendTitle')
+      .style('font-weight', 'bold')
+      .style('transform', 'translate(0, -5px)')
+      .attr('data-test', 'legend-title')
+  }
+
+  styleLegendTitleWithBorder = (svg) => {
     svg
       .select('.legendTitle')
       .style('font-weight', 'bold')
@@ -172,7 +178,11 @@ export default class Axis extends Component {
         svg.call(legendOrdinal).style('font-family', 'inherit')
 
         if (this.props.legendTitle) {
-          this.styleLegendTitle(svg)
+          if (this.props.onLegendTitleClick) {
+            this.styleLegendTitleWithBorder(svg)
+          } else {
+            this.styleLegendTitleNoBorder(svg)
+          }
         }
 
         // adjust container width to exact width of legend
@@ -403,12 +413,14 @@ export default class Axis extends Component {
                 style={{ transform: 'translate(-30px, -30px)' }}
               />
             </clipPath>
-            <rect
-              ref={(el) => {
-                this.legendBorder = el
-              }}
-              onClick={this.props.onLegendTitleClick}
-            />
+            {this.props.onLegendTitleClick && (
+              <rect
+                ref={(el) => {
+                  this.legendBorder = el
+                }}
+                onClick={this.props.onLegendTitleClick}
+              />
+            )}
           </g>
         )}
         {this.props.hasBottomLegend && (

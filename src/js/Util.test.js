@@ -514,6 +514,9 @@ describe('getSupportedDisplayTypes', () => {
       'stacked_column',
       'stacked_bar',
       'stacked_line',
+      'column',
+      'bar',
+      'line',
       'bubble',
       'heatmap',
       'table',
@@ -529,7 +532,7 @@ describe('isDisplayTypeValid', () => {
   })
 
   test('returns false for invalid display type', () => {
-    expect(isDisplayTypeValid(sampleDoubleGroupableResponse, 'bar')).toBe(false)
+    expect(isDisplayTypeValid(sampleDoubleGroupableResponse, 'pie')).toBe(false)
   })
 })
 
