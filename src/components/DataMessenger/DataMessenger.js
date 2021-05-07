@@ -263,6 +263,9 @@ export default class DataMessenger extends React.Component {
   }
 
   createTopicsMessage = () => {
+    const enableExploreQueries = this.props.enableExploreQueriesTab
+    const isQandA = _get(this.props.authentication, 'isQandA')
+
     const topics = this.props.queryQuickStartTopics.map((topic) => {
       return {
         label: topic.topic,
@@ -289,10 +292,27 @@ export default class DataMessenger extends React.Component {
                     source: 'welcome_prompt',
                   })
                 }}
-                onSeeMoreClick={(label) => this.runTopicInExporeQueries(label)}
+                onSeeMoreClick={
+                  enableExploreQueries && !isQandA
+                    ? (label) => this.runTopicInExporeQueries(label)
+                    : undefined
+                }
               />
             }
           </div>
+          {enableExploreQueries && !isQandA && (
+            <div>
+              Use{' '}
+              <span
+                className="intro-qi-link"
+                onClick={() => this.setState({ activePage: 'explore-queries' })}
+              >
+                <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
+                Explore Queries
+              </span>{' '}
+              to further explore the possibilities.
+            </div>
+          )}
           {lang.use}{' '}
           <span
             className="intro-qi-link"
@@ -313,20 +333,26 @@ export default class DataMessenger extends React.Component {
   }
 
   setintroMessages = () => {
-    const introMessages = [
+    let introMessageContent = this.props.introMessage
+      ? `${this.props.introMessage}`
+      : `Hi ${this.props.userDisplayName ||
+          'there'}! Let’s dive into your data. What can I help you discover today?`
+
+    if (_get(this.props.authentication, 'isQandA')) {
+      introMessageContent = this.props.introMessage
+        ? `${this.props.introMessage}`
+        : `Hi ${this.props.userDisplayName ||
+            'there'}! What can I help you with today?`
+    }
+
+    let introMessages = [
       this.createIntroMessage({
         type: 'text',
-        content: this.props.introMessage
-          ? `${this.props.introMessage}`
-          : `Hi ${this.props.userDisplayName ||
-              'there'}! Let’s dive into your data. What can I help you discover today?`,
+        content: introMessageContent,
       }),
     ]
 
-    if (
-      !this.props.introMessage &&
-      _get(this.props.queryQuickStartTopics, 'length')
-    ) {
+    if (_get(this.props.queryQuickStartTopics, 'length')) {
       const topicsMessageContent = this.createTopicsMessage()
 
       if (topicsMessageContent) {
@@ -1276,6 +1302,7 @@ export default class DataMessenger extends React.Component {
             {this.props.resizable && this.renderResizeHandle()}
             {(this.props.enableExploreQueriesTab ||
               this.props.enableNotificationsTab) &&
+              !_get(this.props.authentication, 'isQandA') &&
               this.renderTabs()}
             <div className="react-autoql-drawer-content-container">
               <div className="chat-header-container">

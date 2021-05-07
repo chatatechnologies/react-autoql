@@ -20,7 +20,7 @@ export default class Cascader extends React.Component {
   static defaultProps = {
     options: [],
     onFinalOptionClick: () => {},
-    onSeeMoreClick: () => {},
+    onSeeMoreClick: undefined,
   }
 
   state = {
@@ -82,7 +82,7 @@ export default class Cascader extends React.Component {
             </div>
           )
         })}
-        {hasNoChildren && mostRecentOptionLabel && (
+        {hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
           <div
             className="option"
             data-test="see-more-option"

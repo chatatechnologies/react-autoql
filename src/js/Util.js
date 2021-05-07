@@ -483,7 +483,11 @@ export const getSupportedDisplayTypes = (response, chartData) => {
     // There should be 3 types: data, suggestion, help
     const displayType = response.data.data.display_type
 
-    if (displayType === 'suggestion' || displayType === 'help') {
+    if (
+      displayType === 'suggestion' ||
+      displayType === 'help' ||
+      displayType === 'html'
+    ) {
       return [displayType]
     }
 
@@ -576,6 +580,7 @@ export const isDisplayTypeValid = (response, displayType) => {
       'Warning: provided display type is not valid for this response data'
     )
   }
+
   return isValid
 }
 
@@ -595,7 +600,11 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
   const responseDisplayType = _get(response, 'data.data.display_type')
 
   // If the display type is a recognized non-chart or non-table type
-  if (responseDisplayType === 'suggestion' || responseDisplayType === 'help') {
+  if (
+    responseDisplayType === 'suggestion' ||
+    responseDisplayType === 'help' ||
+    responseDisplayType === 'html'
+  ) {
     return responseDisplayType
   }
 

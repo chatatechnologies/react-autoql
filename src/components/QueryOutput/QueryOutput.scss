@@ -1,4 +1,4 @@
-.react-autoql-response-content-container {
+.react-autoql-response-content-container:not(.html-content) {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -10,6 +10,60 @@
   width: 100%;
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
+}
+
+.react-autoql-response-content-container.html-content {
+  position: relative;
+  background-color: inherit;
+  text-align: left;
+  font-size: 14px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  color: var(--react-autoql-text-color-primary);
+
+  table {
+    th {
+      border-bottom: 2px solid var(--react-autoql-border-color);
+    }
+    tr:not(:last-child) {
+      border-bottom: 1px solid var(--react-autoql-border-color);
+    }
+    td:not(:last-child) {
+      border-right: 1px solid var(--react-autoql-border-color);
+    }
+    th,
+    td {
+      padding: 5px 10px;
+    }
+  }
+
+  * {
+    font-size: inherit;
+  }
+
+  sup,
+  sub {
+    font-size: 10px;
+  }
+
+  > *:first-child {
+    margin-top: 0 !important;
+  }
+
+  > *:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  caption {
+    display: table-caption;
+    text-align: -webkit-center;
+    padding-top: unset;
+    padding-bottom: unset;
+    color: unset;
+    text-align: unset;
+    caption-side: unset;
+  }
 }
 
 .react-autoql-response-content-container.table {
