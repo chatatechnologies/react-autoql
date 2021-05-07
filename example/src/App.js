@@ -231,8 +231,17 @@ export default class App extends Component {
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
 
+    // eq-bank
     if (this.state.themeCode === '1') {
       lightAccentColor = '#C53392'
+    }
+    // raddison
+    if (this.state.themeCode === '2') {
+      lightAccentColor = '#565759'
+    }
+    // texas a&m
+    if (this.state.themeCode === '3') {
+      lightAccentColor = '#4e0101'
     }
 
     return {
@@ -1780,6 +1789,12 @@ export default class App extends Component {
   renderUIOverlay = () => {
     if (this.state.uiOverlay && this.state.themeCode === '1') {
       return <div className="ui-overlay theme-1" />
+    }
+    if (this.state.uiOverlay && this.state.themeCode === '2') {
+      return <div className="ui-overlay theme-2" />
+    }
+    if (this.state.uiOverlay && this.state.themeCode === '3') {
+      return <div className="ui-overlay theme-3" />
     }
 
     if (!this.state.isAuthenticated) {
