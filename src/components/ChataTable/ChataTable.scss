@@ -103,8 +103,8 @@
   height: 7px;
   transition: all 0.3s ease;
 }
-.react-autoql-table.tabulator .tabulator-tableHolder{
-  min-height: calc(100% - 40px)  !important;
+.react-autoql-table.tabulator .tabulator-tableHolder {
+  min-height: calc(100% - 40px) !important;
   height: calc(100% - 40px) !important;
   max-height: calc(100% - 40px) !important;
 }
@@ -140,6 +140,9 @@ the whole table when the filter button is clicked */
   .react-autoql-table
   .tabulator-col {
   height: auto !important;
+}
+.tabulator-table .tabulator-row .tabulator-cell {
+  min-height: 38px;
 }
 
 /* Center header titles */
