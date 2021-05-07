@@ -57,7 +57,7 @@ describe('renders correctly with 1 set of children', () => {
   })
 
   describe('after clicking first option', () => {
-    const wrapper = setup({ options: testOptions })
+    const wrapper = setup({ options: testOptions, onSeeMoreClick: () => {} })
     const firstOption = findByTestAttr(wrapper, 'options-item-0-0')
     firstOption.simulate('click')
 

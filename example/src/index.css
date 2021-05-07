@@ -33,6 +33,18 @@ body {
   background-image: url('./images/demo_ui.png');
 }
 
+.ui-overlay.theme-1 {
+  background-image: url('./images/theme_1.png');
+}
+
+.ui-overlay.theme-2 {
+  background-image: url('./images/theme_2.png');
+}
+
+.ui-overlay.theme-3 {
+  background-image: url('./images/theme_3.png');
+}
+
 .dashboard-toolbar-container .ant-btn {
   margin-top: 10px;
 }

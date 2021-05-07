@@ -69,8 +69,39 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
+export const runQandAQuery = ({ query, projectID }) => {
+  const url = 'https://backend-staging.chata.io/api/v1/answers'
+  const data = {
+    query,
+    project_id: projectID,
+  }
+  const config = {}
+
+  return axios
+    .post(url, data, config)
+    .then((response) => {
+      if (response.data && typeof response.data === 'string') {
+        // There was an error parsing the json
+        throw new Error('Parse error')
+      }
+
+      return Promise.resolve(response)
+    })
+    .catch((error) => {
+      if (error.message === 'Parse error') {
+        return Promise.reject({ error: 'Parse error' })
+      }
+      if (error.response === 401 || !_get(error, 'response.data')) {
+        return Promise.reject({ error: 'Unauthenticated' })
+      }
+      return Promise.reject(_get(error, 'response'))
+    })
+}
+
 export const runQueryOnly = ({
   query,
+  isQandA,
+  projectID,
   userSelection,
   debug,
   test,
@@ -92,6 +123,10 @@ export const runQueryOnly = ({
 
   if (!query || !query.trim()) {
     return Promise.reject({ error: 'No query supplied' })
+  }
+
+  if (isQandA) {
+    return runQandAQuery({ query, projectID })
   }
 
   if (!apiKey || !domain || !token) {
@@ -137,6 +172,8 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
+  isQandA,
+  projectID,
   userSelection,
   debug,
   test,
@@ -147,7 +184,7 @@ export const runQuery = ({
   source,
   skipQueryValidation,
 } = {}) => {
-  if (enableQueryValidation && !skipQueryValidation) {
+  if (enableQueryValidation && !skipQueryValidation && !isQandA) {
     return runQueryValidation({
       text: query,
       domain,
@@ -176,6 +213,8 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
+    isQandA,
+    projectID,
     userSelection,
     debug,
     test,

@@ -7,6 +7,9 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
+// change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
+import HTMLRenderer from 'react-html-renderer'
+
 import { scaleOrdinal } from 'd3-scale'
 import {
   number,
@@ -1854,9 +1857,27 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  renderHTMLMessage = (queryResponse) => {
+    return (
+      <HTMLRenderer
+        html={_get(queryResponse, 'data.data.answer')}
+        components={{
+          a: (props) => {
+            return <a {...props} target="_blank" />
+          },
+        }}
+      />
+    )
+  }
+
   renderResponse = (width, height) => {
     const { displayType } = this.state
     const { queryResponse } = this.props
+
+    if (displayType === 'html') {
+      return this.renderHTMLMessage(queryResponse)
+    }
+
     const data = _get(queryResponse, 'data.data.rows')
 
     if (this.hasError(queryResponse)) {
@@ -1994,9 +2015,9 @@ export default class QueryOutput extends React.Component {
           key={this.COMPONENT_KEY}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
-          className={`react-autoql-response-content-container ${
-            isTableType(this.state.displayType) ? 'table' : ''
-          }`}
+          className={`react-autoql-response-content-container
+          ${isTableType(this.state.displayType) ? 'table' : ''}
+          ${this.state.displayType === 'html' ? 'html-content' : ''}`}
         >
           {this.renderResponse(width, height)}
         </div>
