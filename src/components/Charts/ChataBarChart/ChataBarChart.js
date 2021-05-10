@@ -133,7 +133,7 @@ export default class ChataBarChart extends Component {
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
           xCol={columns[numberColumnIndex]}
-          yCol={columns[stringColumnIndex]}
+          yCol={columns[0]}
           margins={{
             left: leftMargin,
             right: rightMargin,
