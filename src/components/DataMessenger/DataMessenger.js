@@ -302,26 +302,17 @@ export default class DataMessenger extends React.Component {
           </div>
           {enableExploreQueries && !isQandA && (
             <div>
-              Use{' '}
+              {lang.use}{' '}
               <span
                 className="intro-qi-link"
                 onClick={() => this.setState({ activePage: 'explore-queries' })}
               >
                 <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
-                Explore Queries
+                {lang.exploreQueries}
               </span>{' '}
-              to further explore the possibilities.
+              {lang.explorePrompt}
             </div>
           )}
-          {lang.use}{' '}
-          <span
-            className="intro-qi-link"
-            onClick={() => this.setState({ activePage: 'explore-queries' })}
-          >
-            <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
-            {lang.exploreQueries}
-          </span>{' '}
-          {lang.explorePrompt}
         </div>
       )
 
