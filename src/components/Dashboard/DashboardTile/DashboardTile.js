@@ -950,6 +950,7 @@ export default class DashboardTile extends React.Component {
                 {...queryOutputProps}
               />
             )}
+            {this.renderDataLimitWarning()}
           </Fragment>
         )}
         {this.props.isEditing && (
@@ -1139,6 +1140,22 @@ export default class DashboardTile extends React.Component {
         <div className="react-autoql-dashboard-tile-drag-handle right" />
       </Fragment>
     )
+  }
+
+  renderDataLimitWarning = () => {
+    const numRows = _get(this.props, 'queryResponse.data.data.rows.length')
+    const maxRowLimit = _get(this.props, 'queryResponse.data.data.row_limit')
+
+    if (maxRowLimit && numRows === maxRowLimit) {
+      return (
+        <Icon
+          type="warning"
+          className="dashboard-data-limit-warning-icon"
+          data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+          data-for="chart-element-tooltip"
+        />
+      )
+    }
   }
 
   render = () => {
