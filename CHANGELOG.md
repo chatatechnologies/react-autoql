@@ -1,3 +1,18 @@
+# [3.3.0](https://github.com/chatatechnologies/react-autoql/compare/v3.2.1...v3.3.0) (2021-05-07)
+
+
+### Bug Fixes
+
+* **chatmessage:** memory leak and error message fix ([6e014b8](https://github.com/chatatechnologies/react-autoql/commit/6e014b897b2e1d0e1022ba961cd0586f218872ea))
+* **dashboard:** fix resetting of the isUnexecuted value when entering edit mode ([c3b7623](https://github.com/chatatechnologies/react-autoql/commit/c3b7623db48bd6ec8c1d356af5c7ee358182012c))
+* **datamessenger:** messenger placement bug fixed ([8ab156f](https://github.com/chatatechnologies/react-autoql/commit/8ab156f8cd9621c82f39931808e9e4a58b08b15f))
+* switching charts bottom cut off bug ([7fde30a](https://github.com/chatatechnologies/react-autoql/commit/7fde30aa575915f2a43d93e2272bbd467a1cfce8))
+
+
+### Features
+
+* **dashboard:** add a public function to allow un-executing a dashboard ([2ed2625](https://github.com/chatatechnologies/react-autoql/commit/2ed2625a0a5d57c38f2f33b794f8be8aeb095857))
+
 ## [3.2.1](https://github.com/chatatechnologies/react-autoql/compare/v3.2.0...v3.2.1) (2021-04-15)
 
 
