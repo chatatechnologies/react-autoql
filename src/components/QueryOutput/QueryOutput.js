@@ -440,10 +440,10 @@ export default class QueryOutput extends React.Component {
     )
 
     this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
-
-    const data = this.sortTableDataByDate(
-      _get(this.props.queryResponse, 'data.data.rows')
+    let filteredResponse = this.props.queryResponse.data.data.rows.filter(
+      (row) => row[0] !== null
     )
+    const data = this.sortTableDataByDate(filteredResponse)
     this.tableData = data
 
     this.numberOfTableRows = _get(data, 'length', 0)
@@ -1458,8 +1458,9 @@ export default class QueryOutput extends React.Component {
 
   generatePivotTableData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
-      const tableData =
+      let tableData =
         newTableData || _get(this.props.queryResponse, 'data.data.rows')
+      tableData = tableData.filter((row) => row[0] !== null)
       if (!this.dataConfig) {
         // We should change this to getColumnIndices since this wont be
         // the final version that we use. We dont want to persist it

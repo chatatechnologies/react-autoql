@@ -57,7 +57,8 @@ export default class DataAlerts extends React.Component {
   }
 
   componentDidMount = () => {
-    this.getDataAlerts()
+    this._isMounted = true
+    this._isMounted && this.getDataAlerts()
     setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
@@ -80,16 +81,21 @@ export default class DataAlerts extends React.Component {
     }
   }
 
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
   getDataAlerts = (type) => {
     fetchDataAlerts({
       ...getAuthentication(this.props.authentication),
       type,
     })
       .then((response) => {
-        this.setState({
-          customAlertsList: response.custom_alerts,
-          projectAlertsList: response.project_alerts,
-        })
+        this._isMounted &&
+          this.setState({
+            customAlertsList: response.custom_alerts,
+            projectAlertsList: response.project_alerts,
+          })
       })
       .catch((error) => {
         console.error(error)
