@@ -18,17 +18,23 @@ export default class SpeechToTextPage extends React.Component {
   }
 
   componentDidMount = () => {
-    fetchQueryTips({
-      ...this.props.authentication,
-      keywords: '',
-      pageSize: 200,
-      pageNumber: 1,
-    }).then((response) => {
-      if (_.get(response, 'data.data.items.length')) {
-        const randomized = _.shuffle(response.data.data.items)
-        this.setState({ queryList: randomized })
-      }
-    })
+    this._isMounted = true
+    this._isMounted &&
+      fetchQueryTips({
+        ...this.props.authentication,
+        keywords: '',
+        pageSize: 200,
+        pageNumber: 1,
+      }).then((response) => {
+        if (_.get(response, 'data.data.items.length')) {
+          const randomized = _.shuffle(response.data.data.items)
+          this._isMounted && this.setState({ queryList: randomized })
+        }
+      })
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   login = async () => {
