@@ -283,7 +283,8 @@ export default class QueryOutput extends React.Component {
       }
 
       if (this.props.optionsToolbarRef) {
-        this.props.optionsToolbarRef.forceUpdate()
+        this.props.optionsToolbarRef._isMounted &&
+          this.props.optionsToolbarRef.forceUpdate()
       }
 
       ReactTooltip.rebuild()
