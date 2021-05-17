@@ -49,7 +49,10 @@ export default class DataAlertModal extends React.Component {
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
-    titleIcon: PropTypes.elementType,
+    titleIcon: PropTypes.oneOfType([
+      PropTypes.element,
+      PropTypes.instanceOf(Icon),
+    ]),
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
   }
