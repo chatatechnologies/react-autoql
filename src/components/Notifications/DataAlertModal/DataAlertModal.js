@@ -394,6 +394,7 @@ export default class DataAlertModal extends React.Component {
             !this.state.titleInput ||
             !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
           }
+          style={{ position: 'absolute', right: 0 }}
         >
           {'Check Alert & continue'}
         </Button>
