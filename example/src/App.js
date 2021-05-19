@@ -244,6 +244,10 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '3') {
       lightAccentColor = '#4e0101'
     }
+    // stifel
+    if (this.state.uiOverlay && this.state.themeCode === '4') {
+      lightAccentColor = '#003057'
+    }
 
     return {
       theme: this.state.theme,
@@ -1807,6 +1811,10 @@ export default class App extends Component {
     // texas a&m
     if (this.state.uiOverlay && this.state.themeCode === '3') {
       return <div className="ui-overlay theme-3" />
+    }
+    // stifel
+    if (this.state.uiOverlay && this.state.themeCode === '4') {
+      return <div className="ui-overlay theme-4" />
     }
 
     if (!this.state.isAuthenticated) {
