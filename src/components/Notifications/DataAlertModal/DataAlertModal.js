@@ -49,7 +49,10 @@ export default class DataAlertModal extends React.Component {
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
-    titleIcon: PropTypes.elementType,
+    titleIcon: PropTypes.oneOfType([
+      PropTypes.element,
+      PropTypes.instanceOf(Icon),
+    ]),
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
   }
@@ -360,12 +363,20 @@ export default class DataAlertModal extends React.Component {
     return (
       <Fragment>
         {this.state.isExpressionValidated && this.state.isExpressionValid && (
-          <Icon
-            className="expression-valid-checkmark"
-            type="check"
-            data-for="react-autoql-data-alert-modal-tooltip"
-            data-tip="Expression is valid"
-          />
+          <span
+            style={{
+              display: 'inline-block',
+              position: 'absolute',
+              right: '210px',
+            }}
+          >
+            <Icon
+              className="expression-valid-checkmark"
+              type="check"
+              data-for="react-autoql-data-alert-modal-tooltip"
+              data-tip="Expression is valid"
+            />
+          </span>
         )}
         {this.state.isExpressionValidated &&
           !this.state.isExpressionValid &&
@@ -391,6 +402,7 @@ export default class DataAlertModal extends React.Component {
             !this.state.titleInput ||
             !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
           }
+          style={{ position: 'absolute', right: 0 }}
         >
           {'Check Alert & continue'}
         </Button>

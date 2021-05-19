@@ -122,6 +122,7 @@ export default class ChatMessage extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.hide()
+    this.props.scrollToBottom()
   }
 
   componentWillUnmount = () => {
