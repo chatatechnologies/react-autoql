@@ -363,12 +363,20 @@ export default class DataAlertModal extends React.Component {
     return (
       <Fragment>
         {this.state.isExpressionValidated && this.state.isExpressionValid && (
-          <Icon
-            className="expression-valid-checkmark"
-            type="check"
-            data-for="react-autoql-data-alert-modal-tooltip"
-            data-tip="Expression is valid"
-          />
+          <span
+            style={{
+              display: 'inline-block',
+              position: 'absolute',
+              right: '210px',
+            }}
+          >
+            <Icon
+              className="expression-valid-checkmark"
+              type="check"
+              data-for="react-autoql-data-alert-modal-tooltip"
+              data-tip="Expression is valid"
+            />
+          </span>
         )}
         {this.state.isExpressionValidated &&
           !this.state.isExpressionValid &&
