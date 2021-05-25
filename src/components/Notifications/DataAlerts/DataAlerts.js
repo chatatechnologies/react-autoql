@@ -62,7 +62,7 @@ export default class DataAlerts extends React.Component {
     setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (
       !_isEqual(
         getThemeConfig(this.props.themeConfig),
@@ -77,6 +77,9 @@ export default class DataAlerts extends React.Component {
         getAuthentication(prevProps.authentication)
       )
     ) {
+      this.getDataAlerts()
+    }
+    if (!_isEqual(this.state.projectAlertsList, prevState.projectAlertsList)) {
       this.getDataAlerts()
     }
   }
@@ -205,6 +208,7 @@ export default class DataAlerts extends React.Component {
           this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
         titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
+        selectedDemoProjectId={this.props.selectedDemoProjectId}
       />
     )
   }
@@ -328,28 +332,54 @@ export default class DataAlerts extends React.Component {
                         type="hour-glass"
                       />
                     )}
-                    <Checkbox
-                      themeConfig={getThemeConfig(this.props.themeConfig)}
-                      type="switch"
-                      checked={
-                        notification.status === 'ACTIVE' ||
-                        notification.status === 'WAITING'
-                      }
-                      className="react-autoql-notification-enable-checkbox"
-                      onClick={(e) => e.stopPropagation()}
-                      data-tip={
-                        notification.status === 'ACTIVE' ||
-                        notification.status === 'WAITING'
-                          ? 'Turn Data Alert off'
-                          : 'Turn Data Alert on'
-                      }
-                      data-for="react-autoql-notification-settings-tooltip"
-                      onChange={(e) => {
-                        this.onEnableSwitchChange(e, notification)
-                        ReactTooltip.hide()
-                        ReactTooltip.rebuild()
-                      }}
-                    />
+                    {this.hasError(notification) ? (
+                      <React.Fragment>
+                        <Button
+                          type="primary"
+                          className="react-autoql-re-initialize-btn"
+                          tooltip="Please re-initialize data alert"
+                          onClick={() =>
+                            this.props.handleInitialize(
+                              notification,
+                              this.props.selectedDemoProjectId,
+                              this.props.authentication
+                            )
+                          }
+                        >
+                          <span className="react-autoql-re-initialize-btn-text">
+                            Re-Initialize
+                          </span>
+                        </Button>
+                        <Checkbox
+                          themeConfig={getThemeConfig(this.props.themeConfig)}
+                          type="switch"
+                          className="react-autoql-notification-disable-checkbox"
+                        />
+                      </React.Fragment>
+                    ) : (
+                      <Checkbox
+                        themeConfig={getThemeConfig(this.props.themeConfig)}
+                        type="switch"
+                        checked={
+                          notification.status === 'ACTIVE' ||
+                          notification.status === 'WAITING'
+                        }
+                        className="react-autoql-notification-enable-checkbox"
+                        onClick={(e) => e.stopPropagation()}
+                        data-tip={
+                          notification.status === 'ACTIVE' ||
+                          notification.status === 'WAITING'
+                            ? 'Turn Data Alert off'
+                            : 'Turn Data Alert on'
+                        }
+                        data-for="react-autoql-notification-settings-tooltip"
+                        onChange={(e) => {
+                          this.onEnableSwitchChange(e, notification)
+                          ReactTooltip.hide()
+                          ReactTooltip.rebuild()
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

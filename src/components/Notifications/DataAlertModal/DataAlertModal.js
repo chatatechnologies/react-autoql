@@ -255,7 +255,10 @@ export default class DataAlertModal extends React.Component {
       isSavingDataAlert: true,
     })
 
-    const newDataAlert = this.getDataAlertData()
+    const newDataAlert = {
+      ...this.getDataAlertData(),
+      project_id: this.props.selectedDemoProjectId,
+    }
 
     const requestParams = {
       dataAlert: newDataAlert,

@@ -526,7 +526,7 @@ export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
+  const url = `${domain}/autoql/management/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
 
   return axiosInstance
     .put(url, dataAlert)
