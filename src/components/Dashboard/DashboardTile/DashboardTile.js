@@ -1152,7 +1152,7 @@ export default class DashboardTile extends React.Component {
           type="warning"
           className="dashboard-data-limit-warning-icon"
           data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for="chart-element-tooltip"
+          data-for="dashboard-data-limit-warning-tooltip"
         />
       )
     }
@@ -1165,6 +1165,18 @@ export default class DashboardTile extends React.Component {
       onMouseUp,
       onTouchStart,
       onTouchEnd,
+    }
+
+    let dashboardTileToolTipElement = document.getElementById(
+      'dashboard-data-limit-warning-tooltip'
+    )
+    if (dashboardTileToolTipElement) {
+      if (_get(this.props, 'style.width')) {
+        dashboardTileToolTipElement.style.maxWidth = `${_get(
+          this.props,
+          'style.width'
+        ).match(/\d+/g)[0] - 75}px`
+      }
     }
 
     return (
