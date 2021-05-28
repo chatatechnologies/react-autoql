@@ -541,7 +541,13 @@ export default class ChataChart extends Component {
         <div className="axis-selector-container">
           {!!currencySelectorState.length && (
             <Fragment>
-              <div className="number-selector-header">Currency</div>
+              <div className="number-selector-header">
+                {this.props.dataConfig && this.props.tableColumns
+                  ? this.props.tableColumns[
+                      this.props.dataConfig.legendColumnIndex
+                    ].display_name
+                  : 'Currency'}
+              </div>
               <SelectableList
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.currencySelectRef = r)}
@@ -575,7 +581,14 @@ export default class ChataChart extends Component {
 
           {!!quantitySelectorState.length && (
             <Fragment>
-              <div className="number-selector-header">Quantity</div>
+              <div className="number-selector-header">
+                {' '}
+                {this.props.dataConfig && this.props.tableColumns
+                  ? this.props.tableColumns[
+                      this.props.dataConfig.legendColumnIndex
+                    ].display_name
+                  : 'Quantity'}
+              </div>
               <SelectableList
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.quantitySelectRef = r)}
@@ -608,7 +621,14 @@ export default class ChataChart extends Component {
 
           {!!ratioSelectorState.length && (
             <Fragment>
-              <div className="number-selector-header">Ratio</div>
+              <div className="number-selector-header">
+                {' '}
+                {this.props.dataConfig && this.props.tableColumns
+                  ? this.props.tableColumns[
+                      this.props.dataConfig.legendColumnIndex
+                    ].display_name
+                  : 'Ratio'}
+              </div>
               <SelectableList
                 themeConfig={getThemeConfig(this.props.themeConfig)}
                 ref={(r) => (this.ratioSelectRef = r)}

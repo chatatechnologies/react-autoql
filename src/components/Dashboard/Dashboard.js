@@ -757,6 +757,13 @@ class Dashboard extends React.Component {
             delayShow={500}
             html
           />
+          <ReactTooltip
+            place="left"
+            className="react-autoql-chart-tooltip"
+            id="dashboard-data-limit-warning-tooltip"
+            effect="solid"
+            html
+          />
         </Fragment>
       </ErrorBoundary>
     )

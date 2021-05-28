@@ -133,7 +133,7 @@ export default class ChataLineChart extends Component {
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
-          xCol={columns[stringColumnIndex]}
+          xCol={columns[0]}
           yCol={columns[numberColumnIndex]}
           margins={{
             left: leftMargin,
