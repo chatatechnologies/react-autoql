@@ -542,7 +542,9 @@ export default class ChataChart extends Component {
           {!!currencySelectorState.length && (
             <Fragment>
               <div className="number-selector-header">
-                {this.props.dataConfig && this.props.tableColumns
+                {this.props.dataConfig &&
+                this.props.tableColumns &&
+                this.props.dataConfig.legendColumnIndex !== undefined
                   ? this.props.tableColumns[
                       this.props.dataConfig.legendColumnIndex
                     ].display_name
@@ -583,7 +585,9 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">
                 {' '}
-                {this.props.dataConfig && this.props.tableColumns
+                {this.props.dataConfig &&
+                this.props.tableColumns &&
+                this.props.dataConfig.legendColumnIndex !== undefined
                   ? this.props.tableColumns[
                       this.props.dataConfig.legendColumnIndex
                     ].display_name
@@ -623,7 +627,9 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">
                 {' '}
-                {this.props.dataConfig && this.props.tableColumns
+                {this.props.dataConfig &&
+                this.props.tableColumns &&
+                this.props.dataConfig.legendColumnIndex !== undefined
                   ? this.props.tableColumns[
                       this.props.dataConfig.legendColumnIndex
                     ].display_name
