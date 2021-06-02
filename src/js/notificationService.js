@@ -588,8 +588,9 @@ export const validateExpression = ({ expression, domain, apiKey, token }) => {
 }
 
 // DELETE
-export const deleteDataAlert = ({ dataAlertId, domain, apiKey, token }) => {
+export const deleteDataAlert = (dataAlertId, projectId, authObject) => {
   // If there is missing data, dont bother making the call
+  const { domain, apiKey, token } = authObject
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
   }
@@ -600,7 +601,7 @@ export const deleteDataAlert = ({ dataAlertId, domain, apiKey, token }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
+  const url = `${domain}/autoql/management/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
   return axiosInstance
     .delete(url)
