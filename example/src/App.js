@@ -250,7 +250,7 @@ export default class App extends Component {
     }
     // city of calgary
     if (this.state.uiOverlay && this.state.themeCode === '5') {
-      lightAccentColor = '#C80F2E'
+      lightAccentColor = '#C7102E'
     }
 
     return {
