@@ -69,6 +69,12 @@
       margin-bottom: 4px;
       margin-right: 8px;
     }
+    .react-autoql-notification-disable-checkbox {
+      margin-bottom: 4px;
+      margin-right: 8px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
   }
 
   .react-autoql-notification-title-container {
@@ -110,5 +116,16 @@
     .react-autoql-notification-setting-display-name-message {
       opacity: 0.5;
     }
+  }
+  .react-autoql-re-initialize-btn {
+    vertical-align: middle;
+    margin-bottom: 4px;
+    height: 18px;
+  }
+
+  .react-autoql-re-initialize-btn-text {
+    display: flex;
+    align-items: center;
+    margin-top: -25px;
   }
 }
