@@ -248,6 +248,10 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '4') {
       lightAccentColor = '#003057'
     }
+    // city of calgary
+    if (this.state.uiOverlay && this.state.themeCode === '5') {
+      lightAccentColor = '#C80F2E'
+    }
 
     return {
       theme: this.state.theme,
@@ -1815,6 +1819,10 @@ export default class App extends Component {
     // stifel
     if (this.state.uiOverlay && this.state.themeCode === '4') {
       return <div className="ui-overlay theme-4" />
+    }
+    // City of Calgary
+    if (this.state.uiOverlay && this.state.themeCode === '5') {
+      return <div className="ui-overlay theme-5" />
     }
 
     if (!this.state.isAuthenticated) {
