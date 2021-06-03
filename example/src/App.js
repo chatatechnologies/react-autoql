@@ -1820,13 +1820,10 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '4') {
       return <div className="ui-overlay theme-4" />
     }
-<<<<<<< HEAD
     // City of Calgary
     if (this.state.uiOverlay && this.state.themeCode === '5') {
       return <div className="ui-overlay theme-5" />
     }
-=======
->>>>>>> fbacec8b2191bceba476263aa68ee3f6a29b88a4
 
     if (!this.state.isAuthenticated) {
       return null
