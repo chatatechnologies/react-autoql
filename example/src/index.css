@@ -53,6 +53,10 @@ body {
   background-image: url('./images/theme_5.png');
 }
 
+.ui-overlay.theme-6 {
+  background-image: url('./images/theme_6.png');
+}
+
 .dashboard-toolbar-container .ant-btn {
   margin-top: 10px;
 }
