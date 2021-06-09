@@ -1888,7 +1888,7 @@ export default class QueryOutput extends React.Component {
       return this.renderSuggestionMessage(
         this.state.QandASuggestions,
         _get(queryResponse, 'data.data.query_id'),
-        true // isQandA === true
+        true // isQandA
       )
     }
 
