@@ -79,7 +79,6 @@
 .react-autoql-suggestion-btn {
   padding: 6px 14px;
   background: transparent;
-  border-radius: 4px;
   font-family: inherit;
   font-size: 12px;
   margin-bottom: 5px;
@@ -87,8 +86,8 @@
   cursor: pointer;
   letter-spacing: 0.05em;
   transition: all 0.1s ease;
-  /* border: 1px solid rgba(0, 0, 0, 0.15); */
-  border-color: #e2e2e26e;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
   color: inherit;
 }
 .react-autoql-suggestion-btn:hover {
@@ -118,6 +117,9 @@
   height: 15px;
   margin-bottom: -3px;
   margin-right: 3px;
+}
+.qanda-positive-feedback-checkmark.react-autoql-icon svg {
+  color: var(--react-autoql-success-color);
 }
 
 .react-autoql-suggestion-message {

@@ -69,6 +69,35 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
+export const fetchQandASuggestions = ({ queryID, projectID }) => {
+  const url = 'https://backend-staging.chata.io/api/v1/answers/suggestions'
+  const data = {
+    query_id: queryID,
+    project_id: projectID,
+  }
+  const config = {}
+
+  return axios
+    .post(url, data, config)
+    .then((response) => {
+      if (response.data && typeof response.data === 'string') {
+        // There was an error parsing the json
+        throw new Error('Parse error')
+      }
+
+      return Promise.resolve(response)
+    })
+    .catch((error) => {
+      if (error.message === 'Parse error') {
+        return Promise.reject({ error: 'Parse error' })
+      }
+      if (error.response === 401 || !_get(error, 'response.data')) {
+        return Promise.reject({ error: 'Unauthenticated' })
+      }
+      return Promise.reject(_get(error, 'response'))
+    })
+}
+
 export const runQandAQuery = ({ query, projectID }) => {
   const url = 'https://backend-staging.chata.io/api/v1/answers'
   const data = {
@@ -348,11 +377,12 @@ export const sendSuggestion = ({
   apiKey,
   domain,
   token,
+  isQandA,
 }) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
   const data = { suggestion }
 
-  if (!token || !domain || !apiKey) {
+  if (!isQandA && (!token || !domain || !apiKey)) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
