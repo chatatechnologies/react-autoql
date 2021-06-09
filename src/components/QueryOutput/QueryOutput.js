@@ -1882,13 +1882,13 @@ export default class QueryOutput extends React.Component {
     const { queryResponse } = this.props
 
     if (
-      getAuthentication(this.props.authentication).isQandA &&
+      _get(getAuthentication(this.props.authentication), 'isQandA') &&
       this.state.QandASuggestions.length !== 0
     ) {
       return this.renderSuggestionMessage(
         this.state.QandASuggestions,
         _get(queryResponse, 'data.data.query_id'),
-        true // isQandA
+        true
       )
     }
 
@@ -2089,7 +2089,7 @@ export default class QueryOutput extends React.Component {
           ${this.state.displayType === 'html' ? 'html-content' : ''}`}
         >
           {this.renderResponse(width, height)}
-          {getAuthentication(this.props.authentication).isQandA &&
+          {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
         {this.renderContextMenu()}
