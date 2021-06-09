@@ -77,7 +77,7 @@ import {
   isColumnDateType,
 } from './columnHelpers.js'
 
-import { sendSuggestion } from '../../js/queryService'
+import { sendSuggestion, fetchQandASuggestions } from '../../js/queryService'
 
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
@@ -172,6 +172,8 @@ export default class QueryOutput extends React.Component {
     displayType: null,
     tableFilters: [],
     suggestionSelection: this.props.selectedSuggestion,
+    QandAResponseCorrect: false,
+    QandASuggestions: [],
   }
 
   componentDidMount = () => {
@@ -466,7 +468,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderSuggestionMessage = (suggestions, queryId) => {
+  renderSuggestionMessage = (suggestions, queryId, isQandA) => {
     let suggestionListMessage
 
     try {
@@ -506,6 +508,7 @@ export default class QueryOutput extends React.Component {
                           isButtonClick: true,
                           source: 'suggestion',
                           queryId,
+                          isQandA: isQandA,
                         })
                       }
                       className="react-autoql-suggestion-btn"
@@ -1604,6 +1607,7 @@ export default class QueryOutput extends React.Component {
     isButtonClick,
     skipQueryValidation,
     source,
+    isQandA,
   }) => {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
     if (!userSelection) {
@@ -1628,6 +1632,7 @@ export default class QueryOutput extends React.Component {
           isButtonClick,
           skipQueryValidation,
           source,
+          isQandA: isQandA,
         })
       }
       if (this.props.queryInputRef) {
@@ -1876,6 +1881,17 @@ export default class QueryOutput extends React.Component {
     const { displayType } = this.state
     const { queryResponse } = this.props
 
+    if (
+      getAuthentication(this.props.authentication).isQandA &&
+      this.state.QandASuggestions.length !== 0
+    ) {
+      return this.renderSuggestionMessage(
+        this.state.QandASuggestions,
+        _get(queryResponse, 'data.data.query_id'),
+        true // isQandA === true
+      )
+    }
+
     if (displayType === 'html') {
       return this.renderHTMLMessage(queryResponse)
     }
@@ -1944,6 +1960,57 @@ export default class QueryOutput extends React.Component {
       )
     }
     return null
+  }
+
+  renderQandAResponseConfirmation = () => {
+    const { queryResponse, authentication } = this.props
+    return (
+      <React.Fragment>
+        <br />
+        <br />
+        <div>
+          Does this answer your question?{' '}
+          <a
+            role="button"
+            onClick={() => {
+              this.setState({ QandAResponseCorrect: true })
+            }}
+          >
+            Yes
+          </a>
+          /
+          <a
+            role="button"
+            onClick={() =>
+              fetchQandASuggestions({
+                queryID: _get(queryResponse, 'data.data.query_id'),
+                projectID: _get(getAuthentication(authentication), 'projectID'),
+              }).then((response) => {
+                let array = []
+                _get(response, 'data.data').map((item) => {
+                  array.push(item.question)
+                })
+                this.setState({ QandASuggestions: array })
+                return this.renderResponse()
+              })
+            }
+          >
+            No
+          </a>
+          ?
+          {this.state.QandAResponseCorrect && (
+            <p style={{ marginTop: 6 }}>
+              <Icon
+                type="check"
+                className="qanda-positive-feedback-checkmark"
+                size={20}
+              />
+              Thank you for your feedback!
+            </p>
+          )}
+        </div>
+      </React.Fragment>
+    )
   }
 
   renderContextMenuContent = ({
@@ -2022,6 +2089,8 @@ export default class QueryOutput extends React.Component {
           ${this.state.displayType === 'html' ? 'html-content' : ''}`}
         >
           {this.renderResponse(width, height)}
+          {getAuthentication(this.props.authentication).isQandA &&
+            this.renderQandAResponseConfirmation()}
         </div>
         {this.renderContextMenu()}
       </ErrorBoundary>
