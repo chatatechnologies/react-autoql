@@ -57,6 +57,10 @@ body {
   background-image: url('./images/theme_6.png');
 }
 
+.ui-overlay.theme-7 {
+  background-image: url('./images/theme_7.png');
+}
+
 .dashboard-toolbar-container .ant-btn {
   margin-top: 10px;
 }

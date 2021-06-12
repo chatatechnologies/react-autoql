@@ -256,6 +256,10 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '6') {
       lightAccentColor = '#005088'
     }
+    // uceed
+    if (this.state.uiOverlay && this.state.themeCode === '7') {
+      lightAccentColor = '#F9A41A'
+    }
 
     return {
       theme: this.state.theme,
@@ -1831,6 +1835,11 @@ export default class App extends Component {
     // wyndham
     if (this.state.uiOverlay && this.state.themeCode === '6') {
       return <div className="ui-overlay theme-6" />
+    }
+
+    // uceed
+    if (this.state.uiOverlay && this.state.themeCode === '7') {
+      return <div className="ui-overlay theme-7" />
     }
 
     if (!this.state.isAuthenticated) {
