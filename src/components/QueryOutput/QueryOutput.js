@@ -443,14 +443,9 @@ export default class QueryOutput extends React.Component {
     )
 
     this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
-    let filteredResponse
-    if (this.props.queryResponse.data.data.rows) {
-      filteredResponse = this.props.queryResponse.data.data.rows.filter(
-        (row) => row[0] !== null
-      )
-    }
-
-    const data = this.sortTableDataByDate(filteredResponse)
+    const data = this.sortTableDataByDate(
+      this.props.queryResponse.data.data.rows
+    )
     this.tableData = data
 
     this.numberOfTableRows = _get(data, 'length', 0)
