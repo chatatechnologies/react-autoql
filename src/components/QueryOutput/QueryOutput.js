@@ -1120,9 +1120,6 @@ export default class QueryOutput extends React.Component {
               return {
                 ...cell,
                 value: newValue,
-                // label: isNaN(row[stringIndex])
-                //   ? row[stringIndex]
-                //   : dayjs.unix(row[stringIndex]).format('YYYY-MM-DDTHH:mm'),
                 tooltipData: this.getTooltipDataForCell(
                   row,
                   this.dataConfig.numberColumnIndices[index],
