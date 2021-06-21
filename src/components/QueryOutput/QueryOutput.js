@@ -443,9 +443,13 @@ export default class QueryOutput extends React.Component {
     )
 
     this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
-    let filteredResponse = this.props.queryResponse.data.data.rows.filter(
-      (row) => row[0] !== null
-    )
+    let filteredResponse
+    if (this.props.queryResponse.data.data.rows) {
+      filteredResponse = this.props.queryResponse.data.data.rows.filter(
+        (row) => row[0] !== null
+      )
+    }
+
     const data = this.sortTableDataByDate(filteredResponse)
     this.tableData = data
 
@@ -860,26 +864,28 @@ export default class QueryOutput extends React.Component {
         const stringColumn = this.chartTableColumns[
           this.dataConfig.stringColumnIndex
         ]
-        const numberColumn = this.chartTableColumns[columnIndex]
+        if (stringColumn) {
+          const numberColumn = this.chartTableColumns[columnIndex]
 
-        tooltipElement = `<div>
-            <div>
-              <strong>${stringColumn.title}:</strong> ${formatElement({
-          element: row[this.dataConfig.stringColumnIndex],
-          column: stringColumn,
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-            </div>
-            <div>
-            <div><strong>${numberColumn.title}:</strong> ${formatElement({
-          element: numberValue || row[columnIndex] || 0,
-          column: numberColumn,
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-            </div>
-          </div>`
+          tooltipElement = `<div>
+              <div>
+                <strong>${stringColumn.title}:</strong> ${formatElement({
+            element: row[this.dataConfig.stringColumnIndex],
+            column: stringColumn,
+            config: getDataFormatting(this.props.dataFormatting),
+          })}
+              </div>
+              <div>
+              <div><strong>${numberColumn.title}:</strong> ${formatElement({
+            element: numberValue || row[columnIndex] || 0,
+            column: numberColumn,
+            config: getDataFormatting(this.props.dataFormatting),
+          })}
+              </div>
+            </div>`
+        }
+        return tooltipElement
       }
-      return tooltipElement
     } catch (error) {
       console.error(error)
       return null
