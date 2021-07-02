@@ -1335,6 +1335,7 @@ export default class App extends Component {
         dataFormatting={this.getDataFormattingProp()}
         themeConfig={this.getThemeConfigProp()}
         key={this.state.componentKey}
+        AutoAEId={this.state.componentKey}
         isVisible={this.state.isVisible}
         onHandleClick={() =>
           this.setState({ isVisible: !this.state.isVisible })
