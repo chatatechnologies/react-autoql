@@ -154,6 +154,7 @@ export default class QueryInput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
+          AutoAEId: this.props.AutoAEId,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)
@@ -170,6 +171,7 @@ export default class QueryInput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
+          AutoAEId: this.props.AutoAEId,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)

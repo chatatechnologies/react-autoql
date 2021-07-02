@@ -966,6 +966,7 @@ export default class DataMessenger extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             hideInput={this.props.hideInput}
             source={['data_messenger']}
+            AutoAEId={this.props.AutoAEId}
           />
         </div>
       </Fragment>
