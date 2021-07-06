@@ -3,8 +3,18 @@ import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
 import QueryInput from './QueryInput'
+import LocalStorageMock from '../../../test/localStorageMock'
 
 const defaultProps = {}
+
+beforeAll(() => {
+  global.localStorage = {
+    lastQuery: 'sales per customer',
+    getItem: function() {
+      return 'sales per customer'
+    },
+  }
+})
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -43,7 +53,9 @@ describe('validation call', () => {
       { lastQuery: 'sales per customer' }
     )
     wrapper.find('input').simulate('keydown', { key: 'ArrowUp' })
-    expect(wrapper.find('input').props().value).toBe('sales per customer')
+    expect(wrapper.find('input').props().value).toBe(
+      global.localStorage.getItem('lastQuery')
+    )
   })
 })
 
