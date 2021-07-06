@@ -3,10 +3,10 @@ import ReactTooltip from 'react-tooltip'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc'
-
+import axios from 'axios'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
+import PropTypes from 'prop-types'
 import { setCSSVars } from '../../js/Util'
 import {
   authenticationDefault,
@@ -22,6 +22,12 @@ export default class SpeechToTextBtn extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     themeConfig: themeConfigType,
+    transcript: PropTypes.string,
+    interimTranscript: PropTypes.string,
+    finalTranscript: PropTypes.string,
+    resetTranscript: PropTypes.func,
+    onTranscriptChange: PropTypes.func,
+    onFinalTranscript: PropTypes.func,
   }
 
   static defaultProps = {
@@ -39,6 +45,16 @@ export default class SpeechToTextBtn extends React.Component {
 
   componentDidMount = () => {
     setCSSVars(getThemeConfig(this.props.themeConfig))
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.finalTranscript !== prevProps.finalTranscript) {
+      this.props.onFinalTranscript(this.props.finalTranscript)
+    } else if (this.props.transcript !== prevProps.transcript) {
+      this.props.onTranscriptChange(this.props.transcript)
+    } else if (this.props.interimTranscript !== prevProps.interimTranscript) {
+      this.props.onTranscriptChange(this.props.interimTranscript)
+    }
   }
 
   startRecording = () => {
@@ -65,12 +81,17 @@ export default class SpeechToTextBtn extends React.Component {
   }
 
   onRecordStop = (file, blob) => {
-    this.setState({
-      //  isConfirmingRecording: true,
-      currentFile: file,
-      currentBlob: blob,
-      //hasPlayedBack: false,
-    })
+    this.setState(
+      {
+        //  isConfirmingRecording: true,
+        currentFile: file,
+        currentBlob: blob,
+        //hasPlayedBack: false,
+      },
+      () => {
+        this.sendWavFile(file)
+      }
+    )
   }
 
   stopRecording = () => {
@@ -78,7 +99,6 @@ export default class SpeechToTextBtn extends React.Component {
     this.recordAudio.stopRecording(() => {
       let blob = this.recordAudio.getBlob()
       this.onRecordStop(this.blobToFile(blob), blob)
-      console.log(blob)
       try {
         this.stream.getTracks().forEach((track) => track.stop())
       } catch (error) {
@@ -107,23 +127,18 @@ export default class SpeechToTextBtn extends React.Component {
     this.startRecording()
   }
 
-  sendWavFile = (file, blob, query) => {
-    // this.setState({
-    //   isConfirmingRecording: false,
-    //   currentQuery: this.state.currentQuery + 1,
-    // })
-
-    const url = `https://backend-staging.chata.io/gcp/api/v1/wav_upload`
+  sendWavFile = (file) => {
+    const url = `${this.props.authentication.domain}/autoql/api/v1/query/speech-to-text?key=${this.props.authentication.apiKey}`
     const data = new FormData()
     data.append('file', file, 'speech.wav')
     const config = {
       headers: {
-        Authorization: `Bearer ${this.state.token}`,
+        Authorization: `Bearer ${this.props.authentication.token}`,
       },
       timeout: 30000,
     }
     axios.post(url, data, config).then((res) => {
-      console.log(res)
+      this.props.onTranscriptChange(res.data.data.transcription)
     })
   }
 

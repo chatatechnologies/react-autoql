@@ -382,14 +382,7 @@ export default class QueryInput extends React.Component {
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               themeConfig={this.props.themeConfig}
-              // onRecordStop={(file, blob) => {
-              // this.setState({
-              //   isConfirmingRecording: true,
-              //   currentFile: file,
-              //   currentBlob: blob,
-              //   hasPlayedBack: false,
-              // })
-              // }}
+              authentication={getAuthentication(this.props.authentication)}
             />
           )}
         </div>
