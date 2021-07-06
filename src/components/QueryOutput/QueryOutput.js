@@ -443,9 +443,10 @@ export default class QueryOutput extends React.Component {
     )
 
     this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
-    const data = this.sortTableDataByDate(
-      this.props.queryResponse.data.data.rows
+    let filteredResponse = this.props.queryResponse.data.data.rows.filter(
+      (row) => row[0] !== null
     )
+    const data = this.sortTableDataByDate(filteredResponse)
     this.tableData = data
 
     this.numberOfTableRows = _get(data, 'length', 0)
@@ -859,28 +860,26 @@ export default class QueryOutput extends React.Component {
         const stringColumn = this.chartTableColumns[
           this.dataConfig.stringColumnIndex
         ]
-        if (stringColumn) {
-          const numberColumn = this.chartTableColumns[columnIndex]
+        const numberColumn = this.chartTableColumns[columnIndex]
 
-          tooltipElement = `<div>
-              <div>
-                <strong>${stringColumn.title}:</strong> ${formatElement({
-            element: row[this.dataConfig.stringColumnIndex],
-            column: stringColumn,
-            config: getDataFormatting(this.props.dataFormatting),
-          })}
-              </div>
-              <div>
-              <div><strong>${numberColumn.title}:</strong> ${formatElement({
-            element: numberValue || row[columnIndex] || 0,
-            column: numberColumn,
-            config: getDataFormatting(this.props.dataFormatting),
-          })}
-              </div>
-            </div>`
-        }
-        return tooltipElement
+        tooltipElement = `<div>
+            <div>
+              <strong>${stringColumn.title}:</strong> ${formatElement({
+          element: row[this.dataConfig.stringColumnIndex],
+          column: stringColumn,
+          config: getDataFormatting(this.props.dataFormatting),
+        })}
+            </div>
+            <div>
+            <div><strong>${numberColumn.title}:</strong> ${formatElement({
+          element: numberValue || row[columnIndex] || 0,
+          column: numberColumn,
+          config: getDataFormatting(this.props.dataFormatting),
+        })}
+            </div>
+          </div>`
       }
+      return tooltipElement
     } catch (error) {
       console.error(error)
       return null
