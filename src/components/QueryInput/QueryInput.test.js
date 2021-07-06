@@ -48,13 +48,9 @@ describe('validation call', () => {
   test('should call query endpoint only when validation is set to false', () => {})
 
   test('show last query on up press', () => {
-    // Storage.prototype.setItem = jest.fn((key, value) => {
-    //   this.store[key] = String(value)
-    // });
     const wrapper = setup(
       { autoQLConfig: { enableAutocomplete: false } },
       { lastQuery: 'sales per customer' }
-      // LocalStorageMock.setItem('lastQuery', 'sales per customer')
     )
     wrapper.find('input').simulate('keydown', { key: 'ArrowUp' })
     expect(wrapper.find('input').props().value).toBe(
