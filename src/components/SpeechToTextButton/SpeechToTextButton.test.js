@@ -24,12 +24,12 @@ describe('renders correctly', () => {
     )
     expect(speechToTextButtonComponent.exists()).toBe(true)
   })
-  test('does not render if no browser support', () => {
-    const wrapper = setup({ browserSupportsSpeechRecognition: false })
-    const speechToTextButtonComponent = findByTestAttr(
-      wrapper,
-      'speech-to-text-btn'
-    )
-    expect(speechToTextButtonComponent.exists()).toBe(false)
-  })
+  // test('does not render if no browser support', () => {
+  //   const wrapper = setup({ browserSupportsSpeechRecognition: false })
+  //   const speechToTextButtonComponent = findByTestAttr(
+  //     wrapper,
+  //     'speech-to-text-btn'
+  //   )
+  //   expect(speechToTextButtonComponent.exists()).toBe(false)
+  // })
 })

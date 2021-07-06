@@ -381,6 +381,15 @@ export default class QueryInput extends React.Component {
             <SpeechToTextButton
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
+              themeConfig={this.props.themeConfig}
+              // onRecordStop={(file, blob) => {
+              // this.setState({
+              //   isConfirmingRecording: true,
+              //   currentFile: file,
+              //   currentBlob: blob,
+              //   hasPlayedBack: false,
+              // })
+              // }}
             />
           )}
         </div>
