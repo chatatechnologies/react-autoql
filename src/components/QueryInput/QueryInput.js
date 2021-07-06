@@ -382,6 +382,8 @@ export default class QueryInput extends React.Component {
             <SpeechToTextButton
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
+              themeConfig={this.props.themeConfig}
+              authentication={getAuthentication(this.props.authentication)}
             />
           )}
         </div>
