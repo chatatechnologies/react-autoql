@@ -157,7 +157,7 @@ export default class SpeechToTextBtn extends React.Component {
           )
         } else {
           this.setState(
-            { errorMessage: 'Oops!Something wrong with your account' },
+            { errorMessage: 'Oops! Something wrong with your account' },
             () => {
               this.setState({ showPopoverMessage: true })
             }
@@ -171,7 +171,6 @@ export default class SpeechToTextBtn extends React.Component {
       <ErrorBoundary>
         <Popover
           isOpen={this.state.showPopoverMessage}
-          // position={['top', 'right']}
           padding={20}
           content={() => (
             <div
