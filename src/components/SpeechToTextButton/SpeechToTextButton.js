@@ -15,7 +15,7 @@ import {
   getThemeConfig,
 } from '../../props/defaults'
 import { authenticationType, themeConfigType } from '../../props/types'
-
+import Popover, { ArrowContainer } from 'react-tiny-popover'
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {
@@ -41,6 +41,8 @@ export default class SpeechToTextBtn extends React.Component {
     resultHistory: [],
     currentFile: '',
     currentBlob: '',
+    showPopoverMessage: false,
+    errorMessage: '',
   }
 
   componentDidMount = () => {
@@ -137,29 +139,72 @@ export default class SpeechToTextBtn extends React.Component {
       },
       timeout: 30000,
     }
-    axios.post(url, data, config).then((res) => {
-      this.props.onTranscriptChange(res.data.data.transcription)
-    })
+    axios
+      .post(url, data, config)
+      .then((res) => {
+        this.props.onTranscriptChange(res.data.data.transcription)
+      })
+      .catch((error) => {
+        if (error.response.status === 404) {
+          this.setState(
+            {
+              errorMessage:
+                'Oops! Speech-to-text has not been enabled. Try typing a query instead.',
+            },
+            () => {
+              this.setState({ showPopoverMessage: true })
+            }
+          )
+        } else {
+          this.setState(
+            { errorMessage: 'Oops!Something wrong with your account' },
+            () => {
+              this.setState({ showPopoverMessage: true })
+            }
+          )
+        }
+      })
   }
 
   render = () => {
     return (
       <ErrorBoundary>
-        <button
-          id="react-autoql-voice-record-button"
-          data-test="speech-to-text-btn"
-          className={`chat-voice-record-button${
-            this.state.isRecording ? ' listening' : ''
-          }`}
-          onMouseDown={this.onMouseDown}
-          onMouseUp={this.stopRecording}
-          onMouseLeave={this.state.isRecording ? this.stopRecording : undefined}
-          data-tip="Hold for voice-to-text"
-          data-for="react-autoql-speech-to-text-tooltip"
-          data-tip-disable={this.state.isRecording}
+        <Popover
+          isOpen={this.state.showPopoverMessage}
+          // position={['top', 'right']}
+          padding={20}
+          content={() => (
+            <div
+              style={{
+                backgroundColor: '#FFD2D2',
+                opacity: 1,
+                paddingLeft: '10px',
+                paddingRight: '10px',
+              }}
+            >
+              <Icon type="warning-triangle" /> {this.state.errorMessage}
+            </div>
+          )}
+          onClickOutside={() => this.setState({ showPopoverMessage: false })}
         >
-          <Icon type="microphone" />
-        </button>
+          <button
+            id="react-autoql-voice-record-button"
+            data-test="speech-to-text-btn"
+            className={`chat-voice-record-button${
+              this.state.isRecording ? ' listening' : ''
+            }`}
+            onMouseDown={this.onMouseDown}
+            onMouseUp={this.stopRecording}
+            onMouseLeave={
+              this.state.isRecording ? this.stopRecording : undefined
+            }
+            data-tip="Hold for voice-to-text"
+            data-for="react-autoql-speech-to-text-tooltip"
+            data-tip-disable={this.state.isRecording}
+          >
+            <Icon type="microphone" />
+          </button>
+        </Popover>
         <ReactTooltip
           className="react-autoql-tooltip"
           id="react-autoql-speech-to-text-tooltip"
