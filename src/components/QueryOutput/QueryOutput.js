@@ -1097,9 +1097,10 @@ export default class QueryOutput extends React.Component {
           if (!chartDataObject[row[stringIndex]]) {
             chartDataObject[row[stringIndex]] = {
               origRow: row,
-              label: isNaN(row[stringIndex])
-                ? row[stringIndex]
-                : dayjs.unix(row[stringIndex]).format('YYYY-MM-DDTHH:mm'),
+              // label: isNaN(row[stringIndex])
+              //   ? row[stringIndex]
+              //   : dayjs.unix(row[stringIndex]).format('YYYY-MM-DDTHH:mm'),
+              label: row[stringIndex],
               cells,
               formatter: (value, column) => {
                 return formatElement({
