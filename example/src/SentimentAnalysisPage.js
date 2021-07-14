@@ -1,13 +1,16 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
 import { Input, Button, Form, message, InputNumber, Collapse } from 'antd' //styling
-import Rating from './components/Rating/Rating'
+import Rating from './components/Rating/Ratings'
+
+// replace 'react-ratings-declarative'
+// Also initializing transition from ant design to material ui
 
 const { TextArea } = Input
+const { ControlSignals } = Input
 const { Panel } = Collapse
-const ratingChanged = (newRating) => {
-  console.log(newRating)
-}
+//const ratingChanged = (newRating) => { console.log(newRating);};
+
 
 const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
@@ -57,7 +60,7 @@ export default class SentimentAnalysisPage extends React.Component {
       let url = `${baseUrl}/gcp/api/v1/reputation/jwt`
 
       // Use login token to get JWT token
-      const jwtResponse = await axios.get(url, {
+      const jwtResponse = await axios.get(url, { //axios.get function is used to retrieve API?
         headers: {
           Authorization: `Bearer ${loginToken}`,
         },
@@ -126,7 +129,7 @@ export default class SentimentAnalysisPage extends React.Component {
       responder_title: this.state.responderTitle || 'general manager',
       rank_type: this.state.rankType || 'len',
     }
-
+    //dont look past this.... 
     axios
       .post(url, data, {
         headers: {
@@ -185,37 +188,7 @@ export default class SentimentAnalysisPage extends React.Component {
       })
   }
 
-  renderReviewResponseV1 = () => {
-    if (this.state.response) {
-      return (
-        <div>
-          <h3>Recommended Responses (V1)</h3>
-          <Collapse defaultActiveKey="sentiment-response-0">
-            {Object.keys(this.state.response['output response']).map(
-              (title, index) => {
-                let text = `${this.state.response['output response'][title]}`
-                text = text.split(' \\n')
 
-                return (
-                  <Panel header={title} key={`sentiment-response-${index}`}>
-                    {text.map((str, i) => {
-                      return (
-                        <Fragment key={i}>
-                          {str} <br />
-                        </Fragment>
-                      )
-                    })}
-                  </Panel>
-                )
-              }
-            )}
-          </Collapse>
-        </div>
-      )
-    }
-
-    return null
-  }
 
   renderReviewResponseV2 = () => {
     if (this.state.responseV2) {
@@ -248,6 +221,46 @@ export default class SentimentAnalysisPage extends React.Component {
 
     return null
   }
+
+
+  //for now, I will keep the names as similar as possible to make it easier to track until I have 
+  //everything running, and then I can go back and change names appropriately.
+  renderReviewResponseV1 = () => {
+    if (this.state.response) {
+      return (
+        <div>
+          {/* <h3>Recommended Responses (V2.1)</h3>
+
+
+          <Collapse defaultActiveKey="sentiment-response-0">
+            {Object.keys(this.state.response['output response']).map(
+              (title, index) => {
+                let text = `${this.state.response['output response'][title]}`
+                text = text.split(' \\n')
+
+                return (
+                  <Panel header={title} key={`sentiment-response-${index}`}>
+                    {text.map((str, i) => {
+                      return (
+                        <Fragment key={i}>
+                          {str} <br />
+                        </Fragment>
+                      )
+                    })}
+                  </Panel>
+                )
+              }
+            )}
+          </Collapse>*/}
+
+
+
+        </div>
+      )
+    }
+
+    return null
+  } 
 
   renderSentiment = () => {
     if (this.state.sentiment) {
@@ -294,40 +307,20 @@ export default class SentimentAnalysisPage extends React.Component {
               })
             }
           /> */}
-          {
-            <Rating
-              rating={this.state.rating}
-              onSelectRating={(newRating) => {
-                /**
-                 * The value of rating is 0-9. We need 0.5-5 (counting half step values).
-                 * to achieve this, we add 1 to the value of rating to make it 1-10, then
-                 * divide this value by 2.
-                 *
-                 * Remove this message and console log when you feel comfortable in your
-                 * understanding. Feel free to leave a new comment of your own for the next
-                 * dev if you like.
-                 */
-                console.log((newRating + 1) / 2)
-                this.setState({
-                  rating: (newRating + 1) / 2,
-                })
-              }}
-            />
-          }
 
-          {/* var newInput = {
-            {title: this.inputTitle.value,
-            entry: this.inputEntry.value  
-          } } 
-        <input type="Clear" id="inputname" className="form-control" ref={el => this.inputTitle = el} />   
-        <textarea id="inputage" ref={el => this.inputEntry = el} className="form-control" />
-        <button className="btn btn-info" onClick={this.sendThru}>Add</button>
+            {<Rating 
+              //defaultValue={2}
+              value={this.state.rating} 
 
-        sendThru() {
-        //{this.inputTitle.value = "",
-        //this.inputEntry.value = "",}
-      }  
-      ref={el => this.inputTitle = el} */}
+              onChange={(event, newRating) =>
+                //this.setState({
+                //  rating: newRating.toFixed(1),
+                //})
+                console.log(event)
+              }
+
+              />}
+
 
           <span
             onClick={() => {
@@ -352,6 +345,27 @@ export default class SentimentAnalysisPage extends React.Component {
             value={this.state.reviewTextValue}
             style={{ marginTop: '5px', minHeight: '130px' }}
           />
+
+
+
+          //edit starts here
+          <Input
+            type="text"
+            onChange={(e) => {
+              this.setState({ title: e.target.value })
+            }}
+            value={this.state.title}
+            placeholder="Enter any extra control words/phrases"
+            style={{ marginTop: '5px' }}
+          />
+
+          <ControlSignals 
+            placeholder="Type your review here"
+            onChange={(e) => this.setState({ reviewTextValue: e.target.value })}
+            value={this.state.reviewTextValue}
+            style={{ marginTop: '5px', minHeight: '130px' }}
+          /> 
+///stop edit here
 
           <br />
           <Form
@@ -478,10 +492,11 @@ export default class SentimentAnalysisPage extends React.Component {
         <div style={{ flex: 1, marginLeft: '20px' }}>
           <h2>Analysis</h2>
           {this.renderSentiment()}
-          {this.renderReviewResponseV1()}
           {this.renderReviewResponseV2()}
+
         </div>
       </div>
     )
   }
 }
+//line 482 commented out ==>  {this.renderReviewResponseV1()}
