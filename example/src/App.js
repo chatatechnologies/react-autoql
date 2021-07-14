@@ -260,6 +260,18 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '7') {
       lightAccentColor = '#F9A41A'
     }
+    // deeleeoo
+    if (this.state.uiOverlay && this.state.themeCode === '8') {
+      lightAccentColor = '#FE7B44'
+    }
+    // opm
+    if (this.state.uiOverlay && this.state.themeCode === '9') {
+      lightAccentColor = '#669900'
+    }
+    // us_army
+    if (this.state.uiOverlay && this.state.themeCode === '10') {
+      lightAccentColor = '#FEC325'
+    }
 
     return {
       theme: this.state.theme,
@@ -1837,10 +1849,21 @@ export default class App extends Component {
     if (this.state.uiOverlay && this.state.themeCode === '6') {
       return <div className="ui-overlay theme-6" />
     }
-
     // uceed
     if (this.state.uiOverlay && this.state.themeCode === '7') {
       return <div className="ui-overlay theme-7" />
+    }
+    // deeleoo
+    if (this.state.uiOverlay && this.state.themeCode === '8') {
+      return <div className="ui-overlay theme-8" />
+    }
+    // opm
+    if (this.state.uiOverlay && this.state.themeCode === '9') {
+      return <div className="ui-overlay theme-9" />
+    }
+    // us_army
+    if (this.state.uiOverlay && this.state.themeCode === '10') {
+      return <div className="ui-overlay theme-10" />
     }
 
     if (!this.state.isAuthenticated) {
