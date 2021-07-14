@@ -46,9 +46,9 @@ export default class Rating extends React.PureComponent {
         <i //pertaining to each star individually
           style={{
             display: 'inline-block',
-            width: '20px', // <---   These three values together work together
-            minHeight: '20px', //    |-- to determine the size of your star icons.
-            fontSize: '46px', // <---   Feel free to play around with them.
+            width: '20px', // <-------  These three values together work together
+            minHeight: '20px', // <---  to determine the size of your star icons.
+            fontSize: '46px', // <----  Feel free to play around with them.
             overflow: 'hidden',
             direction: i % 2 === 0 ? 'ltr' : 'rtl',
           }}
