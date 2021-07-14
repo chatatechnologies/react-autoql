@@ -154,6 +154,7 @@ export default class QueryInput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
+          AutoAEId: this.props.AutoAEId,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)
@@ -170,6 +171,7 @@ export default class QueryInput extends React.Component {
           ...getAuthentication(this.props.authentication),
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
+          AutoAEId: this.props.AutoAEId,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)
@@ -187,12 +189,13 @@ export default class QueryInput extends React.Component {
       }
 
       this.setState({ lastQuery: query, suggestions: [] })
+      localStorage.setItem('inputValue', query)
     }
   }
 
   onKeyDown = (e) => {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
-      this.setState({ inputValue: this.state.lastQuery })
+      this.setState({ inputValue: localStorage.getItem('inputValue') })
     }
   }
 
@@ -379,6 +382,8 @@ export default class QueryInput extends React.Component {
             <SpeechToTextButton
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
+              themeConfig={this.props.themeConfig}
+              authentication={getAuthentication(this.props.authentication)}
             />
           )}
         </div>

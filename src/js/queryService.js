@@ -98,13 +98,17 @@ export const fetchQandASuggestions = ({ queryID, projectID }) => {
     })
 }
 
-export const runQandAQuery = ({ query, projectID }) => {
+export const runQandAQuery = ({ query, projectID, AutoAEId }) => {
   const url = 'https://backend-staging.chata.io/api/v1/answers'
   const data = {
     query,
     project_id: projectID,
   }
-  const config = {}
+  const config = {
+    headers: {
+      'AutoAE-Session-ID': AutoAEId,
+    },
+  }
 
   return axios
     .post(url, data, config)
@@ -138,6 +142,7 @@ export const runQueryOnly = ({
   apiKey,
   token,
   source,
+  AutoAEId,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
@@ -155,7 +160,7 @@ export const runQueryOnly = ({
   }
 
   if (isQandA) {
-    return runQandAQuery({ query, projectID })
+    return runQandAQuery({ query, projectID, AutoAEId })
   }
 
   if (!apiKey || !domain || !token) {
@@ -212,6 +217,7 @@ export const runQuery = ({
   token,
   source,
   skipQueryValidation,
+  AutoAEId,
 } = {}) => {
   if (enableQueryValidation && !skipQueryValidation && !isQandA) {
     return runQueryValidation({
@@ -233,6 +239,7 @@ export const runQuery = ({
           apiKey,
           token,
           source,
+          AutoAEId,
         })
       })
       .catch((error) => {
@@ -251,6 +258,7 @@ export const runQuery = ({
     domain,
     apiKey,
     source,
+    AutoAEId,
   })
 }
 

@@ -387,7 +387,7 @@ export default class ChatMessage extends React.Component {
     return { chartWidth, chartHeight }
   }
 
-  allColumnsAreHidden = (newColumns) => {
+  allColumnsAreHidden = () => {
     if (this.responseRef) {
       return this.responseRef.areAllColumnsHidden()
     }
@@ -436,7 +436,7 @@ export default class ChatMessage extends React.Component {
     const numRows = _get(this.props, 'response.data.data.rows.length')
     const maxRowLimit = _get(this.props, 'response.data.data.row_limit')
 
-    if (maxRowLimit && numRows === maxRowLimit) {
+    if (maxRowLimit && numRows === maxRowLimit && !this.allColumnsAreHidden()) {
       return (
         <Icon
           type="warning"
