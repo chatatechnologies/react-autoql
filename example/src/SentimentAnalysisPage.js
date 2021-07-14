@@ -1,13 +1,16 @@
+import ReactStars from "react-rating-stars-component";
 import React, { Fragment } from 'react'
 import axios from 'axios'
-import { Input, Button, Form, message, InputNumber, Collapse } from 'antd'
+import { Input, Button, Form, message, InputNumber, Collapse } from 'antd' //styling
+import Rating from './components/Rating/Ratings'
 
 // replace 'react-ratings-declarative'
 // Also initializing transition from ant design to material ui
-import Rating from '@material-ui/lab/Rating'
 
 const { TextArea } = Input
 const { Panel } = Collapse
+const ratingChanged = (newRating) => { console.log(newRating);};
+
 
 const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
@@ -73,6 +76,8 @@ export default class SentimentAnalysisPage extends React.Component {
       return Promise.reject()
     }
   }
+
+
 
   login = async () => {
     const formData = new FormData()
@@ -282,7 +287,7 @@ export default class SentimentAnalysisPage extends React.Component {
       <div style={{ padding: '20px', display: 'flex' }}>
         <div style={{ flex: 1 }}>
           <h2>Leave a Review</h2>
-          <Rating
+          {/* <Rating
             name="review-rating"
             size="large"
             defaultValue={4}
@@ -293,7 +298,36 @@ export default class SentimentAnalysisPage extends React.Component {
                 rating: newRating.toFixed(1),
               })
             }
-          />
+          /> */}
+
+            {<Rating 
+              //defaultValue={2}
+              value={this.state.rating} 
+
+              onChange={(event, newRating) =>
+                //this.setState({
+                //  rating: newRating.toFixed(1),
+                //})
+                console.log(event)
+              }
+
+              />}
+
+          {/* var newInput = {
+            {title: this.inputTitle.value,
+            entry: this.inputEntry.value  
+          } } 
+        <input type="Clear" id="inputname" className="form-control" ref={el => this.inputTitle = el} />   
+        <textarea id="inputage" ref={el => this.inputEntry = el} className="form-control" />
+        <button className="btn btn-info" onClick={this.sendThru}>Add</button>
+
+        sendThru() {
+        //{this.inputTitle.value = "",
+        //this.inputEntry.value = "",}
+      }  
+      ref={el => this.inputTitle = el} */}
+
+
           <span
             onClick={() => {
               this.setState({ rating: undefined })
