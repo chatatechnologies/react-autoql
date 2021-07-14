@@ -1,16 +1,13 @@
-import ReactStars from "react-rating-stars-component";
 import React, { Fragment } from 'react'
 import axios from 'axios'
 import { Input, Button, Form, message, InputNumber, Collapse } from 'antd' //styling
-import Rating from './components/Rating/Ratings'
-
-// replace 'react-ratings-declarative'
-// Also initializing transition from ant design to material ui
+import Rating from './components/Rating/Rating'
 
 const { TextArea } = Input
 const { Panel } = Collapse
-const ratingChanged = (newRating) => { console.log(newRating);};
-
+const ratingChanged = (newRating) => {
+  console.log(newRating)
+}
 
 const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
@@ -76,8 +73,6 @@ export default class SentimentAnalysisPage extends React.Component {
       return Promise.reject()
     }
   }
-
-
 
   login = async () => {
     const formData = new FormData()
@@ -299,19 +294,26 @@ export default class SentimentAnalysisPage extends React.Component {
               })
             }
           /> */}
-
-            {<Rating 
-              //defaultValue={2}
-              value={this.state.rating} 
-
-              onChange={(event, newRating) =>
-                //this.setState({
-                //  rating: newRating.toFixed(1),
-                //})
-                console.log(event)
-              }
-
-              />}
+          {
+            <Rating
+              rating={this.state.rating}
+              onSelectRating={(newRating) => {
+                /**
+                 * The value of rating is 0-9. We need 0.5-5 (counting half step values).
+                 * to achieve this, we add 1 to the value of rating to make it 1-10, then
+                 * divide this value by 2.
+                 *
+                 * Remove this message and console log when you feel comfortable in your
+                 * understanding. Feel free to leave a new comment of your own for the next
+                 * dev if you like.
+                 */
+                console.log((newRating + 1) / 2)
+                this.setState({
+                  rating: (newRating + 1) / 2,
+                })
+              }}
+            />
+          }
 
           {/* var newInput = {
             {title: this.inputTitle.value,
@@ -326,7 +328,6 @@ export default class SentimentAnalysisPage extends React.Component {
         //this.inputEntry.value = "",}
       }  
       ref={el => this.inputTitle = el} */}
-
 
           <span
             onClick={() => {
