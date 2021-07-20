@@ -235,42 +235,57 @@ export default class App extends Component {
     // eq-bank
     if (this.state.uiOverlay && this.state.themeCode === '1') {
       lightAccentColor = '#C53392'
+      darkAccentColor = '#C53392'
     }
     // raddison
     if (this.state.uiOverlay && this.state.themeCode === '2') {
       lightAccentColor = '#565759'
+      darkAccentColor = '#565759'
     }
     // texas a&m
     if (this.state.uiOverlay && this.state.themeCode === '3') {
       lightAccentColor = '#4e0101'
+      darkAccentColor = '#4e0101'
     }
     // stifel
     if (this.state.uiOverlay && this.state.themeCode === '4') {
       lightAccentColor = '#003057'
+      darkAccentColor = '#003057'
     }
     // city of calgary
     if (this.state.uiOverlay && this.state.themeCode === '5') {
       lightAccentColor = '#C7102E'
+      darkAccentColor = '#C7102E'
     }
     // wyndham
     if (this.state.uiOverlay && this.state.themeCode === '6') {
       lightAccentColor = '#005088'
+      darkAccentColor = '#005088'
     }
     // uceed
     if (this.state.uiOverlay && this.state.themeCode === '7') {
-      lightAccentColor = '#F9A41A'
+      lightAccentColor = '#FFCD00'
+      darkAccentColor = '#FFCD00'
     }
     // deeleeoo
     if (this.state.uiOverlay && this.state.themeCode === '8') {
       lightAccentColor = '#FE7B44'
+      darkAccentColor = '#FE7B44'
     }
     // opm
     if (this.state.uiOverlay && this.state.themeCode === '9') {
       lightAccentColor = '#669900'
+      darkAccentColor = '#669900'
     }
     // us_army
     if (this.state.uiOverlay && this.state.themeCode === '10') {
       lightAccentColor = '#FEC325'
+      darkAccentColor = '#FEC325'
+    }
+    // BRP
+    if (this.state.uiOverlay && this.state.themeCode === '11') {
+      lightAccentColor = '#FFC300'
+      darkAccentColor = '#FFC300'
     }
 
     return {
@@ -1864,6 +1879,10 @@ export default class App extends Component {
     // us_army
     if (this.state.uiOverlay && this.state.themeCode === '10') {
       return <div className="ui-overlay theme-10" />
+    }
+    // brp
+    if (this.state.uiOverlay && this.state.themeCode === '11') {
+      return <div className="ui-overlay theme-11" />
     }
 
     if (!this.state.isAuthenticated) {
