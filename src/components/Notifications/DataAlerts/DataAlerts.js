@@ -190,7 +190,6 @@ export default class DataAlerts extends React.Component {
       dataAlertId: dataAlert.id,
       type: dataAlert.type,
       status: newStatus,
-      projects: newProjects,
       ...getAuthentication(this.props.authentication),
     }).catch((error) => {
       this.props.onErrorCallback(
@@ -201,7 +200,6 @@ export default class DataAlerts extends React.Component {
       this.setState({ [`${listType}`]: oldList })
     })
   }
-
   renderNotificationEditModal = () => {
     return (
       <DataAlertModal
@@ -261,9 +259,15 @@ export default class DataAlerts extends React.Component {
 
   hasError = (dataAlert) => {
     return (
-      dataAlert.projects[0].status === 'GENERAL_ERROR' ||
-      dataAlert.projects[0].status === 'EVALUATION_ERROR' ||
-      dataAlert.projects[0].status === 'DATA_RETURN_ERROR'
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'GENERAL_ERROR' ||
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'EVALUATION_ERROR' ||
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'DATA_RETURN_ERROR'
     )
   }
 
