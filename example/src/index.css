@@ -33,48 +33,52 @@ body {
   background-image: url('./images/demo_ui.png');
 }
 
-.ui-overlay.theme-1 {
-  background-image: url('./images/theme_1.png');
+.ui-overlay.theme-radisson {
+  background-image: url('./images/theme_radisson.png');
 }
 
-.ui-overlay.theme-2 {
-  background-image: url('./images/theme_2.png');
+.ui-overlay.theme-radisson {
+  background-image: url('./images/theme_radisson.png');
 }
 
-.ui-overlay.theme-3 {
-  background-image: url('./images/theme_3.png');
+.ui-overlay.theme-texas {
+  background-image: url('./images/theme_texas.png');
 }
 
-.ui-overlay.theme-4 {
-  background-image: url('./images/theme_4.png');
+.ui-overlay.theme-stifel {
+  background-image: url('./images/theme_stifel.png');
 }
 
-.ui-overlay.theme-5 {
-  background-image: url('./images/theme_5.png');
+.ui-overlay.theme-city-of-calgary {
+  background-image: url('./images/theme_city_of_calgary.png');
 }
 
-.ui-overlay.theme-6 {
-  background-image: url('./images/theme_6.png');
+.ui-overlay.theme-wyndham {
+  background-image: url('./images/theme_wyndham.png');
 }
 
-.ui-overlay.theme-7 {
-  background-image: url('./images/theme_7.png');
+.ui-overlay.theme-uceed {
+  background-image: url('./images/theme_uceed.png');
 }
 
-.ui-overlay.theme-8 {
-  background-image: url('./images/theme_8.png');
+.ui-overlay.theme-deeleeo {
+  background-image: url('./images/theme_deeleeo.png');
 }
 
-.ui-overlay.theme-9 {
-  background-image: url('./images/theme_9.png');
+.ui-overlay.theme-opm {
+  background-image: url('./images/theme_opm.png');
 }
 
-.ui-overlay.theme-10 {
-  background-image: url('./images/theme_10.png');
+.ui-overlay.theme-us-army {
+  background-image: url('./images/theme_us_army.png');
 }
 
-.ui-overlay.theme-11 {
-  background-image: url('./images/theme_11.png');
+.ui-overlay.theme-brp {
+  background-image: url('./images/theme_brp.png');
+}
+
+.ui-overlay.theme-chata {
+  background-image: url('./images/theme_chata.png');
 }
 
 .dashboard-toolbar-container .ant-btn {
