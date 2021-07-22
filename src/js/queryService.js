@@ -104,7 +104,7 @@ export const fetchQandASuggestions = ({ queryID, projectID }) => {
  * @returns
  */
 export const runQandAQuery = ({ query, projectID, AutoAEId, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers?key=${apiKey}`
+  const url = `https://backend-staging.chata.io/api/v1/answers`
   console.log('test')
   const data = {
     query,
