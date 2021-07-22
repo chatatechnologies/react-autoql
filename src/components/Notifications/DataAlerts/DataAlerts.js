@@ -96,8 +96,12 @@ export default class DataAlerts extends React.Component {
       .then((response) => {
         this._isMounted &&
           this.setState({
-            customAlertsList: response.custom_alerts,
-            projectAlertsList: response.project_alerts,
+            customAlertsList: [],
+            projectAlertsList: response.data.items.filter((al) =>
+              _.find(al.projects, (p) => {
+                return p.id === this.props.selectedDemoProjectId
+              })
+            ),
           })
       })
       .catch((error) => {
@@ -162,17 +166,24 @@ export default class DataAlerts extends React.Component {
 
     let listType =
       dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
+    let newProjects = dataAlert.projects.map((p) => {
+      if (p.id === this.props.selectedDemoProjectId) {
+        p.status = newStatus
+      }
+      return p
+    })
 
     const oldList = _cloneDeep(this.state[listType])
     const newList = this.state[listType].map((n) => {
       if (dataAlert.id === n.id) {
         return {
           ...n,
-          status: newStatus,
+          projects: newProjects,
         }
       }
       return n
     })
+
     this.setState({ [`${listType}`]: newList })
 
     updateDataAlertStatus({
@@ -181,7 +192,6 @@ export default class DataAlerts extends React.Component {
       status: newStatus,
       ...getAuthentication(this.props.authentication),
     }).catch((error) => {
-      console.error(error)
       this.props.onErrorCallback(
         new Error('Something went wrong. Please try again.')
       )
@@ -190,7 +200,6 @@ export default class DataAlerts extends React.Component {
       this.setState({ [`${listType}`]: oldList })
     })
   }
-
   renderNotificationEditModal = () => {
     return (
       <DataAlertModal
@@ -250,9 +259,15 @@ export default class DataAlerts extends React.Component {
 
   hasError = (dataAlert) => {
     return (
-      dataAlert.status === 'GENERAL_ERROR' ||
-      dataAlert.status === 'EVALUATION_ERROR' ||
-      dataAlert.status === 'DATA_RETURN_ERROR'
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'GENERAL_ERROR' ||
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'EVALUATION_ERROR' ||
+      dataAlert.projects.map(
+        (p) => p.id === this.props.selectedDemoProjectId
+      )[0].status === 'DATA_RETURN_ERROR'
     )
   }
 
@@ -361,14 +376,26 @@ export default class DataAlerts extends React.Component {
                         themeConfig={getThemeConfig(this.props.themeConfig)}
                         type="switch"
                         checked={
-                          notification.status === 'ACTIVE' ||
-                          notification.status === 'WAITING'
+                          notification.projects &&
+                          notification.projects.filter(
+                            (p) =>
+                              (p.status === 'ACTIVE' &&
+                                p.id === this.props.selectedDemoProjectId) ||
+                              (p.status === 'WAITING' &&
+                                p.id === this.props.selectedDemoProjectId)
+                          ).length > 0
                         }
                         className="react-autoql-notification-enable-checkbox"
                         onClick={(e) => e.stopPropagation()}
                         data-tip={
-                          notification.status === 'ACTIVE' ||
-                          notification.status === 'WAITING'
+                          notification.projects &&
+                          notification.projects.filter(
+                            (p) =>
+                              (p.status === 'ACTIVE' &&
+                                p.id === this.props.selectedDemoProjectId) ||
+                              (p.status === 'WAITING' &&
+                                p.id === this.props.selectedDemoProjectId)
+                          ).length > 0
                             ? 'Turn Data Alert off'
                             : 'Turn Data Alert on'
                         }
