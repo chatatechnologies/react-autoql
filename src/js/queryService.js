@@ -70,7 +70,7 @@ export const fetchSuggestions = ({
 }
 
 export const fetchQandASuggestions = ({ queryID, projectID }) => {
-  const url = 'https://backend-staging.chata.io/api/v1/answers/suggestions'
+  const url = `https://backend-staging.chata.io/api/v1/answers/suggestions?key=${apiKey}`
   const data = {
     query_id: queryID,
     project_id: projectID,
@@ -99,7 +99,7 @@ export const fetchQandASuggestions = ({ queryID, projectID }) => {
 }
 
 export const runQandAQuery = ({ query, projectID, AutoAEId, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers&key=${apiKey}`
+  const url = `https://backend-staging.chata.io/api/v1/answers?key=${apiKey}`
   const data = {
     query,
     project_id: projectID,
