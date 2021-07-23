@@ -1985,6 +1985,7 @@ export default class QueryOutput extends React.Component {
               fetchQandASuggestions({
                 queryID: _get(queryResponse, 'data.data.query_id'),
                 projectID: _get(getAuthentication(authentication), 'projectID'),
+                apiKey: _get(getAuthentication(authentication), 'apiKey'),
               }).then((response) => {
                 let array = []
                 _get(response, 'data.data').map((item) => {
