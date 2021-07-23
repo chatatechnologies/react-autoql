@@ -447,6 +447,7 @@ export default class DataAlerts extends React.Component {
 
     const projectAlertsList = _get(this.state, 'projectAlertsList', [])
     const customAlertsList = _get(this.state, 'customAlertsList', [])
+    console.log('test')
 
     return (
       <ErrorBoundary>
