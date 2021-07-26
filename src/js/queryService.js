@@ -69,7 +69,7 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
-export const fetchQandASuggestions = ({ queryID, projectID }) => {
+export const fetchQandASuggestions = ({ queryID, projectID, apiKey }) => {
   const url = `https://backend-staging.chata.io/api/v1/answers/suggestions?key=${apiKey}`
   const data = {
     query_id: queryID,
