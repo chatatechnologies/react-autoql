@@ -31,7 +31,6 @@ export default class Rating extends React.PureComponent {
       temp_rating: rating,
     })
   }
-
  
   componentWillReceiveProps(nextProps) {
     if (nextProps.rating === undefined) {

@@ -37,6 +37,7 @@ const getReputationUrl = () => {
     : 'https://chata-staging.chata.io/autoql'
 }
 
+
 export default class SentimentAnalysisPage extends React.Component {
   state = {
     sentimentApiKey: getStoredProp('sentimentApiKey'),
