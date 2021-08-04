@@ -10,8 +10,6 @@ export default class Rating extends React.PureComponent {
     }
   }
 
-  //onChange()
-
   handleMouseover(rating) {
     this.setState((prev) => ({
       rating,
@@ -26,13 +24,30 @@ export default class Rating extends React.PureComponent {
   }
 
   rate(rating) {
-    this.props.onSelectRating(rating) // this is the property that interacts with the parent component (sentimentAnalysis)
+    this.props.onSelectRating(rating) 
 
-    // this state value us is for internal useage. It will not affect anything outside of this component
     this.setState({
       rating,
       temp_rating: rating,
     })
+  }
+
+ 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.rating === undefined) {
+      this.setState({
+        rating: nextProps.rating,
+        temp_rating: nextProps.rating,
+      })
+    }
+  }
+
+  update() {
+    this.props.onClear(
+      this.setState({
+        rating: undefined,
+      })
+    )
   }
 
   render() {
@@ -43,23 +58,26 @@ export default class Rating extends React.PureComponent {
         klass = 'ion-ios-star'
       }
       stars.push(
-        <i //pertaining to each star individually
+        <i
+          key={i} 
           style={{
             display: 'inline-block',
-            width: '20px', // <-------  These three values together work together
-            minHeight: '20px', // <---  to determine the size of your star icons.
-            fontSize: '46px', // <----  Feel free to play around with them.
+            width: '20px',
+            minHeight: '20px',
+            fontSize: '46px',
             overflow: 'hidden',
             direction: i % 2 === 0 ? 'ltr' : 'rtl',
           }}
           className={klass}
           onMouseOver={() => this.handleMouseover(i)}
-          onClick={() => this.rate(i)} // i instead of .5i
+          onClick={() => {
+            this.rate(i)
+          }}
           onMouseOut={() => this.handleMouseout()}
         />
       )
     }
 
-    return <div className="rating-style">{stars}</div> //pertaining to the container that thet stars are in
+    return <div className="rating-style">{stars}</div> 
   }
 }
