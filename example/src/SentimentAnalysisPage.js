@@ -65,15 +65,12 @@ export default class SentimentAnalysisPage extends React.Component {
 
       const baseUrl = getBaseUrl()
       let url = `${baseUrl}/gcp/api/v1/reputation/jwt`
-
-      // Use login token to get JWT token
       const jwtResponse = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${loginToken}`,
         },
       })
 
-      // Put jwt token into storage
       const jwtToken = jwtResponse.data
       setStoredProp('sentimentJWT', jwtToken)
       return Promise.resolve()
@@ -367,7 +364,6 @@ export default class SentimentAnalysisPage extends React.Component {
             checkedChildren="OLD ON"
             unCheckedChildren="OLD OFF"
             />
-            {/* toggle switches on to show second model*/}
           
             <Form
               {...layout}
