@@ -100,3 +100,29 @@ body {
 .chat-voice-record-button {
   margin: 10px;
 }
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 90px;
+  height: 34px;
+  margin-top: 10px;
+}
+
+.switch input {
+  display: none;
+}
+
+#clear-rating-button {
+  margin-top: 25px;
+  padding: 5px;
+  float: left;
+}
+
+#submit-form-button {
+  margin-bottom: 15px;
+}
+
+#toggle-switch {
+  margin-top: 20px;
+}
