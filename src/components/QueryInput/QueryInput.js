@@ -379,22 +379,14 @@ export default class QueryInput extends React.Component {
               <LoadingDots />
             </div>
           )}
-          {this.props.enableVoiceRecord &&
-            (this.props.authentication.isQandA ? (
-              <SpeechToTextButtonBrowser
-                onTranscriptChange={this.onTranscriptChange}
-                onFinalTranscript={this.onFinalTranscript}
-                themeConfig={this.props.themeConfig}
-                authentication={getAuthentication(this.props.authentication)}
-              />
-            ) : (
-              <SpeechToTextButton
-                onTranscriptChange={this.onTranscriptChange}
-                onFinalTranscript={this.onFinalTranscript}
-                themeConfig={this.props.themeConfig}
-                authentication={getAuthentication(this.props.authentication)}
-              />
-            ))}
+          {this.props.enableVoiceRecord && (
+            <SpeechToTextButtonBrowser
+              onTranscriptChange={this.onTranscriptChange}
+              onFinalTranscript={this.onFinalTranscript}
+              themeConfig={this.props.themeConfig}
+              authentication={getAuthentication(this.props.authentication)}
+            />
+          )}
         </div>
       </ErrorBoundary>
     )
