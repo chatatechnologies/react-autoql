@@ -134,12 +134,12 @@ export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
     },
   })
 
-  const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
+  const url = `${domain}/autoql/management/api/v1/data-alerts?key=${apiKey}`
 
   return axiosInstance
     .get(url)
     .then((response) => {
-      return Promise.resolve(_get(response, 'data.data'))
+      return Promise.resolve(_get(response, 'data'))
     })
     .catch((error) => {
       return Promise.reject(_get(error, 'response.data'))

@@ -188,6 +188,7 @@ export default class App extends Component {
       return {
         isQandA: true,
         projectID: this.state.projectId,
+        apiKey: this.state.apiKey,
       }
     }
 
@@ -232,33 +233,60 @@ export default class App extends Component {
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
 
-    // eq-bank
-    if (this.state.uiOverlay && this.state.themeCode === '1') {
-      lightAccentColor = '#C53392'
-    }
-    // raddison
-    if (this.state.uiOverlay && this.state.themeCode === '2') {
-      lightAccentColor = '#565759'
-    }
-    // texas a&m
-    if (this.state.uiOverlay && this.state.themeCode === '3') {
-      lightAccentColor = '#4e0101'
-    }
-    // stifel
-    if (this.state.uiOverlay && this.state.themeCode === '4') {
-      lightAccentColor = '#003057'
-    }
-    // city of calgary
-    if (this.state.uiOverlay && this.state.themeCode === '5') {
-      lightAccentColor = '#C7102E'
-    }
-    // wyndham
-    if (this.state.uiOverlay && this.state.themeCode === '6') {
-      lightAccentColor = '#005088'
-    }
-    // uceed
-    if (this.state.uiOverlay && this.state.themeCode === '7') {
-      lightAccentColor = '#F9A41A'
+    if (this.state.isQandA && this.state.uiOverlay) {
+      switch (this.state.projectId) {
+        case 'eq_bank':
+          lightAccentColor = '#C53392'
+          darkAccentColor = '#C53392'
+          break
+        case 'radisson':
+          lightAccentColor = '#565759'
+          darkAccentColor = '#565759'
+          break
+        case 'texas':
+          lightAccentColor = '#4e0101'
+          darkAccentColor = '#4e0101'
+          break
+        case 'stifel':
+          lightAccentColor = '#003057'
+          darkAccentColor = '#003057'
+          break
+        case 'city_of_calgary':
+          lightAccentColor = '#C7102E'
+          darkAccentColor = '#C7102E'
+          break
+        case 'wyndham':
+          lightAccentColor = '#005088'
+          darkAccentColor = '#005088'
+          break
+        case 'uceed':
+          lightAccentColor = '#FFCD00'
+          darkAccentColor = '#FFCD00'
+          break
+        case 'deeleeo':
+          lightAccentColor = '#FE7B44'
+          darkAccentColor = '#FE7B44'
+          break
+        case 'opm':
+          lightAccentColor = '#669900'
+          darkAccentColor = '#669900'
+          break
+        case 'us_army':
+          lightAccentColor = '#FEC325'
+          darkAccentColor = '#FEC325'
+          break
+        case 'brp':
+          lightAccentColor = '#FFC300'
+          darkAccentColor = '#FFC300'
+          break
+        case 'chata':
+          lightAccentColor = '#26A7Df'
+          darkAccentColor = '#26A7Df'
+          break
+        default:
+          lightAccentColor = '#26A7Df'
+          darkAccentColor = '#26A7Df'
+      }
     }
 
     return {
@@ -871,18 +899,6 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
-          {this.state.isQandA && (
-            <Form.Item label="Theme Code" name="themeCode">
-              <Input
-                name="theme-code"
-                onChange={(e) => {
-                  this.setState({ themeCode: e.target.value })
-                }}
-                onBlur={(e) => setStoredProp('theme-code', e.target.value)}
-                value={this.state.themeCode}
-              />
-            </Form.Item>
-          )}
           {!this.state.isQandA && (
             <Form.Item
               label="User Email"
@@ -1813,35 +1829,35 @@ export default class App extends Component {
   }
 
   renderUIOverlay = () => {
-    // eq-bank
-    if (this.state.uiOverlay && this.state.themeCode === '1') {
-      return <div className="ui-overlay theme-1" />
-    }
-    // raddison
-    if (this.state.uiOverlay && this.state.themeCode === '2') {
-      return <div className="ui-overlay theme-2" />
-    }
-    // texas a&m
-    if (this.state.uiOverlay && this.state.themeCode === '3') {
-      return <div className="ui-overlay theme-3" />
-    }
-    // stifel
-    if (this.state.uiOverlay && this.state.themeCode === '4') {
-      return <div className="ui-overlay theme-4" />
-    }
-    // City of Calgary
-    if (this.state.uiOverlay && this.state.themeCode === '5') {
-      return <div className="ui-overlay theme-5" />
-    }
-    // wyndham
-    if (this.state.uiOverlay && this.state.themeCode === '6') {
-      return <div className="ui-overlay theme-6" />
-    }
-
-    // uceed
-    if (this.state.uiOverlay && this.state.themeCode === '7') {
-      return <div className="ui-overlay theme-7" />
-    }
+    if (this.state.isQandA && this.state.uiOverlay)
+      switch (this.state.projectId) {
+        case 'eq_bank':
+          return <div className="ui-overlay theme-radisson" />
+        case 'radisson':
+          return <div className="ui-overlay theme-radisson" />
+        case 'texas':
+          return <div className="ui-overlay theme-texas" />
+        case 'stifel':
+          return <div className="ui-overlay theme-stifel" />
+        case 'city_of_calgary':
+          return <div className="ui-overlay theme-city-of-calgary" />
+        case 'wyndham':
+          return <div className="ui-overlay theme-wyndham" />
+        case 'uceed':
+          return <div className="ui-overlay theme-uceed" />
+        case 'deeleeo':
+          return <div className="ui-overlay theme-deeleeo" />
+        case 'opm':
+          return <div className="ui-overlay theme-opm" />
+        case 'us_army':
+          return <div className="ui-overlay theme-us-army" />
+        case 'brp':
+          return <div className="ui-overlay theme-brp" />
+        case 'chata':
+          return <div className="ui-overlay theme-chata" />
+        default:
+          return <div />
+      }
 
     if (!this.state.isAuthenticated) {
       return null
