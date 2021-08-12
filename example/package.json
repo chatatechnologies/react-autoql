@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "react-autoql": "file:react-autoql-0.0.0-semantically-released.tgz",
+    "react-autoql": "file:../",
     "antd": "^4.0.1",
     "axios": "^0.19.0",
     "lodash": "^4.17.15",
@@ -32,5 +32,8 @@
     "node": ">=10.15.1",
     "npm": "^6.0.1"
   },
-  "cacheDirectories": []
+  "cacheDirectories": [],
+  "env": {
+    "NODE_ENV": "dev"
+  }
 }

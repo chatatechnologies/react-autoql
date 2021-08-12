@@ -31,8 +31,7 @@ import {
 } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 
-import SpeechToTextButton from '../SpeechToTextButton/SpeechToTextButton.js'
-import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
+import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrower.js'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 

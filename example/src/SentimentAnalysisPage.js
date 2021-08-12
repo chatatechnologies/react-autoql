@@ -1,21 +1,10 @@
 import React, { Fragment } from 'react'
 import axios from 'axios'
-import {
-  Input,
-  Button,
-  Form,
-  message,
-  Collapse,
-  Switch,
-} from 'antd'
+import { Input, Button, Form, message, Collapse, Switch } from 'antd'
 import Rating from './components/Rating/Rating'
 
 const { TextArea } = Input
 const { Panel } = Collapse
-
-function callback(key) {
-  console.log(key);
-}
 
 const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
@@ -36,7 +25,6 @@ const getReputationUrl = () => {
     ? 'https://chata.chata.io/autoql'
     : 'https://chata-staging.chata.io/autoql'
 }
-
 
 export default class SentimentAnalysisPage extends React.Component {
   state = {
@@ -309,7 +297,7 @@ export default class SentimentAnalysisPage extends React.Component {
       <div style={{ padding: '20px', display: 'flex' }}>
         <div style={{ flex: 1 }}>
           <h2>Leave a Review</h2>
-          
+
           <span>
             <Input
               type="text"
@@ -333,14 +321,16 @@ export default class SentimentAnalysisPage extends React.Component {
               />
             }
           </div>
-          
+
           <div id="clear-rating-button">
             <button
               onClick={() => {
                 this.setState({ rating: undefined })
               }}
               style={{ cursor: 'pointer', opacity: '0.5', marginLeft: '23px' }}
-            >Clear</button> 
+            >
+              Clear
+            </button>
           </div>
           <Input
             type="text"
@@ -357,133 +347,137 @@ export default class SentimentAnalysisPage extends React.Component {
             value={this.state.reviewTextValue}
             style={{ marginTop: '5px', minHeight: '130px' }}
           />
-          
-            <Switch 
+
+          {/* disabling second v2 model for prod */}
+          {/* <Switch 
             id="toggle-switch"
             onChange={this.onV2Activate}
             checkedChildren="OLD ON"
             unCheckedChildren="OLD OFF"
-            />
-          
-            <Form
-              {...layout}
-              initialValues={{
-                sentimentApiKey: this.state.sentimentApiKey,
-              }}
-              style={{ marginTop: '20px' }}
-              onFinish={this.onLogin}
-            >
+            /> */}
 
-              <div style={{ textAlign: 'right' }}>
-                <Button
-                  id="submit-form-button" 
-                  type="primary"
-                  loading={this.state.isProcessing}
-                  onClick={this.submitReview}
-                  htmlType="submit"
-                  disabled={!this.state.reviewTextValue}
-                >
-                  {this.state.isProcessing ? 'Submitting' : 'Submit Review'}
-                </Button>
-              </div>
-            </Form>
+          <Form
+            {...layout}
+            initialValues={{
+              sentimentApiKey: this.state.sentimentApiKey,
+            }}
+            style={{ marginTop: '20px' }}
+            onFinish={this.onLogin}
+          >
+            <div style={{ textAlign: 'right' }}>
+              <Button
+                id="submit-form-button"
+                type="primary"
+                loading={this.state.isProcessing}
+                onClick={this.submitReview}
+                htmlType="submit"
+                disabled={!this.state.reviewTextValue}
+              >
+                {this.state.isProcessing ? 'Submitting' : 'Submit Review'}
+              </Button>
+            </div>
+          </Form>
 
-  <Collapse defaultActiveKey={['1']} onChange={callback}>
-      <Panel header="Administrative Panel" key="1">
-        <Form.Item
-              label="API key"
-              name="sentimentApiKey"
-              rules={[{ required: true, message: 'Please enter your API key' }]}
-            >
-              <Input
-                name="api-key"
-                onChange={(e) => {
-                  this.setState({ apiKey: e.target.value })
-                }}
-                onBlur={(e) => setStoredProp('sentimentApiKey', e.target.value)}
-                value={this.state.sentimentApiKey}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Username"
-              name="sentimentUsername"
-              rules={[
-                { required: true, message: 'Please enter your username' },
-              ]}
-            >
-              <Input
-                onChange={(e) => {
-                  setStoredProp('sentimentUsername', e.target.value)
-                  this.setState({ email: e.target.value })
-                }}
-                value={this.state.email}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Password"
-              name="sentimentPassword"
-              rules={[
-                { required: true, message: 'Please enter your password' },
-              ]}
-            >
-              <Input
-                type="password"
-                onChange={(e) => {
-                  this.setState({ password: e.target.value })
-                }}
-                value={this.state.password}
-              />
-            </Form.Item>
-            <Form.Item label="Hotel Name" name="hotelName">
-              <Input
-                type="text"
-                onChange={(e) => {
-                  this.setState({ hotelName: e.target.value })
-                }}
-                value={this.state.hotelName}
-              />
-            </Form.Item>
-            <Form.Item label="Your Name" name="name">
-              <Input
-                type="text"
-                onChange={(e) => {
-                  this.setState({ name: e.target.value })
-                }}
-                value={this.state.name}
-              />
-            </Form.Item>
-            <Form.Item label="Responder" name="responder">
-              <Input
-                type="text"
-                onChange={(e) => {
-                  this.setState({ responder: e.target.value })
-                }}
-                value={this.state.responder}
-              />
-            </Form.Item>
-            <Form.Item label="Responder Title" name="responder-title">
-              <Input
-                type="text"
-                onChange={(e) => {
-                  this.setState({ responderTitle: e.target.value })
-                }}
-                value={this.state.responderTitle}
-              />
-            </Form.Item>
+          <Collapse defaultActiveKey={['1']}>
+            <Panel header="Administrative Panel" key="1">
+              <Form.Item
+                label="API key"
+                name="sentimentApiKey"
+                rules={[
+                  { required: true, message: 'Please enter your API key' },
+                ]}
+              >
+                <Input
+                  name="api-key"
+                  onChange={(e) => {
+                    this.setState({ apiKey: e.target.value })
+                  }}
+                  onBlur={(e) =>
+                    setStoredProp('sentimentApiKey', e.target.value)
+                  }
+                  value={this.state.sentimentApiKey}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Username"
+                name="sentimentUsername"
+                rules={[
+                  { required: true, message: 'Please enter your username' },
+                ]}
+              >
+                <Input
+                  onChange={(e) => {
+                    setStoredProp('sentimentUsername', e.target.value)
+                    this.setState({ email: e.target.value })
+                  }}
+                  value={this.state.email}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Password"
+                name="sentimentPassword"
+                rules={[
+                  { required: true, message: 'Please enter your password' },
+                ]}
+              >
+                <Input
+                  type="password"
+                  onChange={(e) => {
+                    this.setState({ password: e.target.value })
+                  }}
+                  value={this.state.password}
+                />
+              </Form.Item>
+              <Form.Item label="Hotel Name" name="hotelName">
+                <Input
+                  type="text"
+                  onChange={(e) => {
+                    this.setState({ hotelName: e.target.value })
+                  }}
+                  value={this.state.hotelName}
+                />
+              </Form.Item>
+              <Form.Item label="Your Name" name="name">
+                <Input
+                  type="text"
+                  onChange={(e) => {
+                    this.setState({ name: e.target.value })
+                  }}
+                  value={this.state.name}
+                />
+              </Form.Item>
+              <Form.Item label="Responder" name="responder">
+                <Input
+                  type="text"
+                  onChange={(e) => {
+                    this.setState({ responder: e.target.value })
+                  }}
+                  value={this.state.responder}
+                />
+              </Form.Item>
+              <Form.Item label="Responder Title" name="responder-title">
+                <Input
+                  type="text"
+                  onChange={(e) => {
+                    this.setState({ responderTitle: e.target.value })
+                  }}
+                  value={this.state.responderTitle}
+                />
+              </Form.Item>
 
-            <Form.Item label="Rank Type" name="rank-type">
-              <Input
-                type="text"
-                onChange={(e) => {
-                  this.setState({ rankType: e.target.value })
-                }}
-                value={this.state.rankType}
-              />
-        </Form.Item>
-      </Panel>
-    </Collapse>
-        
-        <br />
+              <Form.Item label="Rank Type" name="rank-type">
+                <Input
+                  type="text"
+                  onChange={(e) => {
+                    this.setState({ rankType: e.target.value })
+                  }}
+                  value={this.state.rankType}
+                />
+              </Form.Item>
+            </Panel>
+          </Collapse>
+
+          <br />
         </div>
         <div style={{ flex: 1, marginLeft: '20px' }}>
           <h2>Analysis</h2>

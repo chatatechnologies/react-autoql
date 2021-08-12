@@ -1,3 +1,10 @@
+## [3.3.1](https://github.com/chatatechnologies/react-autoql/compare/v3.3.0...v3.3.1) (2021-07-13)
+
+
+### Bug Fixes
+
+* **app:** fix theme code prop in demo ([1e6df2b](https://github.com/chatatechnologies/react-autoql/commit/1e6df2b18a12f5f9aa61b2cced9743d07442587a))
+
 # [3.3.0](https://github.com/chatatechnologies/react-autoql/compare/v3.2.1...v3.3.0) (2021-05-07)
 
 

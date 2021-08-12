@@ -11,11 +11,10 @@ import { setCSSVars } from '../../js/Util'
 import {
   authenticationDefault,
   themeConfigDefault,
-  getAuthentication,
   getThemeConfig,
 } from '../../props/defaults'
 import { authenticationType, themeConfigType } from '../../props/types'
-import Popover, { ArrowContainer } from 'react-tiny-popover'
+import Popover from 'react-tiny-popover'
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {
