@@ -1,5 +1,5 @@
 import React from 'react'
-import './Ratings.scss'
+import './Ratings.css'
 
 export default class Rating extends React.PureComponent {
   constructor(props) {
@@ -24,14 +24,14 @@ export default class Rating extends React.PureComponent {
   }
 
   rate(rating) {
-    this.props.onSelectRating(rating) 
+    this.props.onSelectRating(rating)
 
     this.setState({
       rating,
       temp_rating: rating,
     })
   }
- 
+
   componentWillReceiveProps(nextProps) {
     if (nextProps.rating === undefined) {
       this.setState({
@@ -58,7 +58,7 @@ export default class Rating extends React.PureComponent {
       }
       stars.push(
         <i
-          key={i} 
+          key={i}
           style={{
             display: 'inline-block',
             width: '20px',
@@ -77,6 +77,6 @@ export default class Rating extends React.PureComponent {
       )
     }
 
-    return <div className="rating-style">{stars}</div> 
+    return <div className="rating-style">{stars}</div>
   }
 }
