@@ -1964,53 +1964,63 @@ export default class QueryOutput extends React.Component {
 
   renderQandAResponseConfirmation = () => {
     const { queryResponse, authentication } = this.props
-    return (
-      <React.Fragment>
-        <br />
-        <br />
-        <div>
-          Does this answer your question?{' '}
-          <a
-            role="button"
-            onClick={() => {
-              this.setState({ QandAResponseCorrect: true })
-            }}
-          >
-            Yes
-          </a>
-          /
-          <a
-            role="button"
-            onClick={() =>
-              fetchQandASuggestions({
-                queryID: _get(queryResponse, 'data.data.query_id'),
-                projectID: _get(getAuthentication(authentication), 'projectID'),
-              }).then((response) => {
-                let array = []
-                _get(response, 'data.data').map((item) => {
-                  array.push(item.question)
+    if (
+      _get(queryResponse, 'status') === 200 &&
+      _get(queryResponse, 'data.data.answer') !==
+        "Oops, I'm not sure if I got that right. Could you try asking a different way?"
+    ) {
+      return (
+        <React.Fragment>
+          <br />
+          <br />
+          <div>
+            Does this answer your question?{' '}
+            <a
+              role="button"
+              onClick={() => {
+                this.setState({ QandAResponseCorrect: true })
+              }}
+            >
+              Yes
+            </a>
+            /
+            <a
+              role="button"
+              onClick={() =>
+                fetchQandASuggestions({
+                  queryID: _get(queryResponse, 'data.data.query_id'),
+                  projectID: _get(
+                    getAuthentication(authentication),
+                    'projectID'
+                  ),
+                  apiKey: _get(getAuthentication(authentication), 'apiKey'),
+                }).then((response) => {
+                  let array = []
+                  _get(response, 'data.data').map((item) => {
+                    array.push(item.question)
+                  })
+                  this.setState({ QandASuggestions: array })
+                  return this.renderResponse()
                 })
-                this.setState({ QandASuggestions: array })
-                return this.renderResponse()
-              })
-            }
-          >
-            No
-          </a>
-          ?
-          {this.state.QandAResponseCorrect && (
-            <p style={{ marginTop: 6 }}>
-              <Icon
-                type="check"
-                className="qanda-positive-feedback-checkmark"
-                size={20}
-              />
-              Thank you for your feedback!
-            </p>
-          )}
-        </div>
-      </React.Fragment>
-    )
+              }
+            >
+              No
+            </a>
+            ?
+            {this.state.QandAResponseCorrect && (
+              <p style={{ marginTop: 6 }}>
+                <Icon
+                  type="check"
+                  className="qanda-positive-feedback-checkmark"
+                  size={20}
+                />
+                Thank you for your feedback!
+              </p>
+            )}
+          </div>
+        </React.Fragment>
+      )
+    }
   }
 
   renderContextMenuContent = ({

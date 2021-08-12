@@ -461,6 +461,25 @@ class Dashboard extends React.Component {
   }
 
   renderDrilldownTable = () => {
+    const queryOutComponent = () => {
+      return (
+        <QueryOutput
+          authentication={getAuthentication(this.props.authentication)}
+          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          queryResponse={this.state.activeDrilldownResponse}
+          renderTooltips={false}
+          autoChartAggregations={this.props.autoChartAggregations}
+          backgroundColor={document.documentElement.style.getPropertyValue(
+            '--react-autoql-background-color-primary'
+          )}
+          reportProblemCallback={this.reportProblemCallback}
+          ref={(ref) => (this.responseRef = ref)}
+          optionsToolbarRef={this.optionsToolbarRef}
+        />
+      )
+    }
     return (
       <div className="react-autoql-dashboard-drilldown-table">
         {this.state.isDrilldownRunning ? (
@@ -492,7 +511,7 @@ class Dashboard extends React.Component {
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessCallback}
                 ref={(r) => (this.optionsToolbarRef = r)}
-                responseRef={this.responseRef}
+                responseRef={queryOutComponent()}
               />
             </div>
           </Fragment>

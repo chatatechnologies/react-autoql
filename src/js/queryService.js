@@ -69,8 +69,8 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
-export const fetchQandASuggestions = ({ queryID, projectID }) => {
-  const url = 'https://backend-staging.chata.io/api/v1/answers/suggestions'
+export const fetchQandASuggestions = ({ queryID, projectID, apiKey }) => {
+  const url = `https://backend-staging.chata.io/api/v1/answers/suggestions?key=${apiKey}`
   const data = {
     query_id: queryID,
     project_id: projectID,
@@ -98,8 +98,13 @@ export const fetchQandASuggestions = ({ queryID, projectID }) => {
     })
 }
 
-export const runQandAQuery = ({ query, projectID, AutoAEId }) => {
-  const url = 'https://backend-staging.chata.io/api/v1/answers'
+/**
+ * This function is for AutoAE Queries
+ * @param {*} param0
+ * @returns
+ */
+export const runQandAQuery = ({ query, projectID, AutoAEId, apiKey }) => {
+  const url = `https://backend-staging.chata.io/api/v1/answers?key=${apiKey}`
   const data = {
     query,
     project_id: projectID,
@@ -160,7 +165,7 @@ export const runQueryOnly = ({
   }
 
   if (isQandA) {
-    return runQandAQuery({ query, projectID, AutoAEId })
+    return runQandAQuery({ query, projectID, AutoAEId, apiKey })
   }
 
   if (!apiKey || !domain || !token) {
