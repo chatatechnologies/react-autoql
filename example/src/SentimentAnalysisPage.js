@@ -6,10 +6,6 @@ import Rating from './components/Rating/Rating'
 const { TextArea } = Input
 const { Panel } = Collapse
 
-function callback(key) {
-  console.log(key)
-}
-
 const setStoredProp = (name, value) => {
   localStorage.setItem(name, value)
 }
@@ -382,7 +378,7 @@ export default class SentimentAnalysisPage extends React.Component {
             </div>
           </Form>
 
-          <Collapse defaultActiveKey={['1']} onChange={callback}>
+          <Collapse defaultActiveKey={['1']}>
             <Panel header="Administrative Panel" key="1">
               <Form.Item
                 label="API key"
