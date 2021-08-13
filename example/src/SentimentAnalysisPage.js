@@ -349,7 +349,7 @@ export default class SentimentAnalysisPage extends React.Component {
           />
 
           {/* disabling second v2 model for prod */}
-          <Switch 
+          <Switch
             id="toggle-switch"
             onChange={this.onV2Activate}
             checkedChildren="OLD ON"
