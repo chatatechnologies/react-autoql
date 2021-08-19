@@ -32,6 +32,7 @@ import {
 import Autosuggest from 'react-autosuggest'
 
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
+import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -379,12 +380,19 @@ export default class QueryInput extends React.Component {
             </div>
           )}
           {this.props.enableVoiceRecord && (
-            <SpeechToTextButtonBrowser
+            <SpeechToTextBtn
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               themeConfig={this.props.themeConfig}
               authentication={getAuthentication(this.props.authentication)}
             />
+            // KEEP THIS FOR NOW
+            // <SpeechToTextButtonBrowser
+            //   onTranscriptChange={this.onTranscriptChange}
+            //   onFinalTranscript={this.onFinalTranscript}
+            //   themeConfig={this.props.themeConfig}
+            //   authentication={getAuthentication(this.props.authentication)}
+            // />
           )}
         </div>
       </ErrorBoundary>
