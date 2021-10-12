@@ -1,5 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
+import _uniq from 'lodash.uniq'
+import jwt_decode from 'jwt-decode'
 
 var autoCompleteCall = null
 
@@ -355,6 +357,80 @@ export const fetchAutocomplete = ({
 
   return axios
     .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchValueLabelAutocomplete = ({
+  suggestion,
+  domain,
+  token,
+  apiKey,
+} = {}) => {
+  if (!suggestion || !suggestion.trim()) {
+    return Promise.reject(new Error('No query supplied'))
+  }
+
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(
+    suggestion
+  )}&key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchConditions = ({ apiKey, token, domain } = {}) => {
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  console.log(conditions)
+
+  const data = {
+    columns: conditions,
+  }
+
+  return axios
+    .put(url, data, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

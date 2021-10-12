@@ -11,6 +11,7 @@ import {
   MdContentCopy,
   MdInfoOutline,
   MdPlayCircleOutline,
+  MdLock,
 } from 'react-icons/md'
 import {
   FiBell,
@@ -47,6 +48,7 @@ import {
   AiOutlineEdit,
   AiOutlineBulb,
   AiOutlineQuestionCircle,
+  AiOutlineMenu,
 } from 'react-icons/ai'
 import { FaMicrophoneAlt } from 'react-icons/fa'
 import { GoReport } from 'react-icons/go'
@@ -245,6 +247,10 @@ export default class Icon extends React.Component {
         icon = lineChartIcon
         break
       }
+      case 'lock': {
+        icon = <MdLock />
+        break
+      }
       case 'stacked-line-chart': {
         icon = stackedLineIcon
         break
@@ -259,6 +265,10 @@ export default class Icon extends React.Component {
             draggable="false"
           />
         )
+        break
+      }
+      case 'menu': {
+        icon = <AiOutlineMenu />
         break
       }
       case 'microphone': {
