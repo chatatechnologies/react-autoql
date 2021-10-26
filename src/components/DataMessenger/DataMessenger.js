@@ -866,7 +866,10 @@ export default class DataMessenger extends React.Component {
       <Fragment>
         <div className="react-autoql-header-left-container">
           <button
-            onClick={this.props.onHandleClick}
+            onClick={() => {
+              this.props.onHandleClick()
+              this.setState({ isConditionLockingMenuOpen: false })
+            }}
             className="react-autoql-drawer-header-btn close"
             data-tip={lang.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
@@ -876,11 +879,17 @@ export default class DataMessenger extends React.Component {
         </div>
         <Popover
           isOpen={this.state.isConditionLockingMenuOpen}
-          // onClickOutside={() =>
-          //   this.setState({ isConditionLockingMenuOpen: false })
-          // }
+          onClickOutside={(e) => {
+            if (
+              e.target.innerText !== lang.openConditionLocking &&
+              !e.target.className.includes('react-autoql-condition-lock-menu')
+            ) {
+              this.setState({ isConditionLockingMenuOpen: false })
+            }
+          }}
           position="bottom"
           padding={2}
+          align="center"
           content={
             <ConditionLockMenu
               authentication={getAuthentication(

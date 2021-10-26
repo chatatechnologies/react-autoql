@@ -1,7 +1,7 @@
-.react-autoql-condition-lock-header {
-  // display: flex;
-  // justify-content: space-between;
-}
+// .react-autoql-condition-lock-header {
+//   // display: flex;
+//   // justify-content: space-between;
+// }
 
 .react-autoql-condition-locking-input {
   padding: 5px;
@@ -35,6 +35,7 @@
 .condition-table th {
   text-align: left;
   padding: 4px;
+  margin: 0 10px 0 10px;
   font-weight: 800;
 }
 
@@ -78,17 +79,24 @@
 }
 
 .autoql-close-button {
-  // flex: 0 1 auto;
+  background-color: inherit;
+  border: none;
+  text-align: left;
+  font-size: 20px;
+  margin-top: -20px;
+  float: none !important;
+  color: inherit;
+}
+
+.react-tiny-popover-container {
+  background: var(--react-autoql-background-color-primary);
 }
 
 .autoql-condition-locking-menu-container .react-autosuggest__container {
-  // position: relative;
-  // flex: 1;
-  display: block;
-  width: 100%;
+  flex-grow: 1;
+  display: inline;
+  width: 90%;
   height: 100%;
-  padding: 0;
-  margin: 0;
 }
 
 .autoql-condition-locking-menu-container

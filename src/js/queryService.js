@@ -151,7 +151,7 @@ export const runQueryOnly = ({
   source,
   AutoAEId,
 } = {}) => {
-  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
+  const url = `${domain}/autoql/api/v2/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
   const data = {
@@ -423,14 +423,33 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     },
   }
 
-  console.log(conditions)
-
   const data = {
     columns: conditions,
   }
 
   return axios
     .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const unsetCondition = ({ apiKey, token, domain, condition } = {}) => {
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/condition-locking/${condition.id}?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {}
+
+  return axios
+    .delete(url, config, data)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

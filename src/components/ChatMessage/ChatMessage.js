@@ -448,6 +448,26 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  /**
+   * ** WIP **
+   *
+   * Apply conditions to queries that contain them.
+   * @returns a list of conditions
+   */
+  renderLockedConditions = () => {
+    fetchConditions({
+      ...getAuthentication(this.props.authentication),
+    }).then((reponse) => {
+      console.log(_get(reponse, 'data.data.data'))
+    })
+    return (
+      <div>
+        <button className="chat-condition-item">Test Condition 1 </button>,
+        <button className="chat-condition-item">Test Condition 2</button>
+      </div>
+    )
+  }
+
   render = () => {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
@@ -489,6 +509,7 @@ export default class ChatMessage extends React.Component {
             {this.props.isDataMessengerOpen && this.renderRightToolbar()}
             {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
             {this.renderDataLimitWarning()}
+            {/* WIP {this.renderLockedConditions()} */}
           </div>
         </div>
       </ErrorBoundary>

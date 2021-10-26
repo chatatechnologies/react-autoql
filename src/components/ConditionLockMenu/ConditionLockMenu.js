@@ -10,6 +10,7 @@ import { authenticationType } from '../../props/types'
 import {
   fetchValueLabelAutocomplete,
   setConditions,
+  unsetCondition,
   fetchConditions,
 } from '../../js/queryService'
 
@@ -51,15 +52,14 @@ export default class ConditionLockMenu extends React.Component {
           let array = this.state.selectedConditions
           for (let i = 0; i < conditions.length; i++) {
             array.push({
+              id: conditions[i].id,
               keyword: conditions[i].value,
               value: conditions[i].value.toLowerCase(),
               show_message: conditions[i].show_message,
               key: conditions[i].key,
-              // lock_flag: conditions[i].lock_flag,
-              lock_flag: 0,
+              lock_flag: conditions[i].lock_flag,
             })
           }
-          console.log(array)
           this.setState({ selectedConditions: array, inputValue: '' })
         }
       )
@@ -90,12 +90,11 @@ export default class ConditionLockMenu extends React.Component {
       value: suggestion.name.keyword.toLowerCase(),
       show_message: suggestion.name.show_message,
       key: suggestion.name.canonical,
-      lock_flag: 0,
+      lock_flag: suggestion.name.lock_flag,
     })
     this.setState({ selectedConditions: array, inputValue: '' })
   }
 
-  // Use your imagination to render suggestions.
   renderSuggestion = (suggestion) => (
     <div>{_get(suggestion, 'name.keyword')}</div>
   )
@@ -108,24 +107,33 @@ export default class ConditionLockMenu extends React.Component {
 
     if (e && e.target && (e.target.value || e.target.value === '')) {
       this.setState({ inputValue: e.target.value })
-    } else {
-      // User clicked on autosuggest item
-      // let array = this.state.selectedConditions.push(e.target.value)
-      // console.log(array)
-      // this.setState({
-      //   selectedConditions: array,
-      // })
     }
   }
 
-  removeCondition = (index) => {
-    console.log(index)
-    // const reducedArr = [...this.state.selectedConditions]
-
-    // reducedArr.splice(index, 1)
-
-    // this.setState({ selectedConditions: reducedArr })
+  removeCondition = (item) => {
+    unsetCondition({
+      ...getAuthentication(this.props.authentication),
+      condition: item,
+    })
+      .then(() => {
+        const array = [...this.state.selectedConditions]
+        array.splice(item, 1)
+        this.setState({ selectedConditions: array })
+      })
+      .catch((e) => {
+        // WIP: error handling
+      })
   }
+
+  /**
+   * WIP: Session Locking
+   * @param {*} item
+   */
+  // handleConditionCheckbox = (item) => {
+  // this.setState(prevState => ({
+  //   selectedConditions: prevState.selectedConditions.map(el => (el.key === item.key ? { ...el, lock_flag = 0 } : el))
+  // }))
+  // }
 
   onSuggestionsFetchRequested = ({ value }) => {
     if (this.autoCompleteTimer) {
@@ -137,7 +145,6 @@ export default class ConditionLockMenu extends React.Component {
         ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
-          console.log(response)
           const body = _get(response, 'data.data')
 
           const sortingArray = []
@@ -176,7 +183,7 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   render = () => {
-    const { authentication, containerWidth } = this.props
+    const { containerWidth } = this.props
 
     return (
       <ErrorBoundary>
@@ -185,21 +192,21 @@ export default class ConditionLockMenu extends React.Component {
           style={{ width: containerWidth }}
         >
           <div className="react-autoql-condition-lock-header">
-            <button
-              onClick={() => {
-                this.props.onClose()
-                setConditions({
-                  ...getAuthentication(this.props.authentication),
-                  conditions: this.state.selectedConditions,
-                })
-              }}
-              className="autoql-close-button"
-              data-tip={lang.closeConditionLocking}
-              data-for="react-autoql-header-tooltip"
-            >
-              <Icon type="close" />
-            </button>
             <div className="autoql-condition-locking-menu-container">
+              <button
+                onClick={() => {
+                  this.props.onClose()
+                  setConditions({
+                    ...getAuthentication(this.props.authentication),
+                    conditions: this.state.selectedConditions,
+                  })
+                }}
+                className="autoql-close-button"
+                data-tip={lang.closeConditionLocking}
+                data-for="react-autoql-header-tooltip"
+              >
+                <Icon type="close" />
+              </button>
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
@@ -239,7 +246,16 @@ export default class ConditionLockMenu extends React.Component {
                 <thead>
                   <th scope="col">Condition</th>
                   <th scope="col">Category</th>
-                  <th scope="col">Actions</th>
+                  <th
+                    scope="col"
+                    style={{
+                      display: 'table-cell',
+                      verticalAlign: 'middle',
+                      textAlign: 'right',
+                    }}
+                  >
+                    Actions
+                  </th>
                 </thead>
                 <tbody>
                   {this.state.selectedConditions.map((item, index) => {
@@ -251,6 +267,7 @@ export default class ConditionLockMenu extends React.Component {
                           style={{
                             display: 'table-cell',
                             verticalAlign: 'middle',
+                            textAlign: 'right',
                           }}
                         >
                           <ReactTooltip
@@ -259,12 +276,14 @@ export default class ConditionLockMenu extends React.Component {
                             effect="solid"
                             html
                           />
+                          {/* {item.lock_flag ? 'Persistent' : 'Session'}
                           <input
                             type="checkbox"
                             data-tip="Lock this condition across sessions"
                             data-for="condition-lock-persist"
                             checked={item.lock_flag}
-                          ></input>
+                            onClick={() => this.handleConditionCheckbox(item)}
+                          ></input> */}
                           <ReactTooltip
                             className="react-autoql-chart-tooltip"
                             id="react-autoql-remove-condition"
@@ -279,7 +298,7 @@ export default class ConditionLockMenu extends React.Component {
                             data-tip="Remove this condition"
                             data-for="react-autoql-remove-condition"
                             type="trash"
-                            onClick={() => this.removeCondition(item)}
+                            onClick={() => this.removeCondition(item, index)}
                           />
                         </td>
                       </tr>

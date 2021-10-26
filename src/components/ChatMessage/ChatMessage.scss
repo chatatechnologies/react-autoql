@@ -20,6 +20,16 @@
     }
   }
 }
+
+.chat-condition-item {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  font-family: var(--react-autoql-font-family);
+  color: var(--react-autoql-accent-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
 .chat-single-message-container.response {
   display: flex;
   justify-content: flex-start;
