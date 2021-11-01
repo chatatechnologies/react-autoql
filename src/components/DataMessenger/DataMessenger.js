@@ -879,34 +879,6 @@ export default class DataMessenger extends React.Component {
             <Icon type="close" />
           </button>
         </div>
-        {/* {this.state.isConditionLockingMenuOpen && (
-          <div
-            style={{
-              background: 'white',
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              marginRight: '-200px',
-              // marginLeft: '-150px',
-              // top: 0,
-              // left: 0,
-            }}
-          >
-            <ConditionLockMenu
-              authentication={getAuthentication(
-                getAuthentication(this.props.authentication)
-              )}
-              containerWidth={this.getDrawerWidth()}
-              isOpen={this.state.isConditionLockingMenuOpen}
-              onClose={() =>
-                this.setState({ isConditionLockingMenuOpen: false })
-              }
-            />
-          </div>
-        )} */}
-        {/* !e.target.className.includes(
-                'react-autoql-condition-lock-menu'
-              )  */}
         <Popover
           isOpen={this.state.isConditionLockingMenuOpen}
           onClickOutside={(e) => {

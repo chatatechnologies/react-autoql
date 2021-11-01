@@ -3,7 +3,7 @@ import axios from 'axios'
 import _ from 'lodash'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
-import { SpeechToTextButton, fetchQueryTips } from 'react-autoql'
+import { SpeechToTextBtn, fetchQueryTips } from 'react-autoql'
 
 export default class SpeechToTextPage extends React.Component {
   state = {
@@ -125,7 +125,7 @@ export default class SpeechToTextPage extends React.Component {
   renderS2TButtonAndQuery = () => {
     return (
       <Fragment>
-        <SpeechToTextButton
+        <SpeechToTextBtn
           themeConfig={this.props.themeConfig}
           onRecordStop={(file, blob) => {
             this.setState({

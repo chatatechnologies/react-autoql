@@ -258,7 +258,6 @@ export default class ChatMessage extends React.Component {
               }
             }}
           />
-          {/* <div>{this.renderLockedConditions()}</div> */}
         </React.Fragment>
       )
     }
@@ -491,7 +490,6 @@ export default class ChatMessage extends React.Component {
             {this.renderContent(chartWidth, chartHeight)}
             {this.props.isDataMessengerOpen && this.renderRightToolbar()}
             {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
-            {/* {this.renderLockedConditions()} */}
             {this.renderDataLimitWarning()}
           </div>
         </div>
