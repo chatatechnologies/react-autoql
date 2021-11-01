@@ -1,8 +1,3 @@
-// .react-autoql-condition-lock-header {
-//   // display: flex;
-//   // justify-content: space-between;
-// }
-
 .react-autoql-condition-locking-input {
   padding: 5px;
   padding-left: 20px;
@@ -24,7 +19,7 @@
 }
 
 .condition-table {
-  min-width: 100%;
+  min-width: 95%;
   margin: 10px auto;
 }
 
@@ -37,6 +32,22 @@
   padding: 4px;
   margin: 0 10px 0 10px;
   font-weight: 800;
+}
+
+.react-autoql-accept-conditions-button {
+  text-align: right;
+  margin-bottom: 12px;
+  padding-right: 10px;
+  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+  transition: color 0.1s ease;
+
+  span {
+    opacity: 0.8;
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
+  }
 }
 
 .condition-table tr {
@@ -102,24 +113,24 @@
 .autoql-condition-locking-menu-container
   .react-autosuggest__suggestions-container--open {
   position: absolute;
-  bottom: unset;
-  overflow-y: scroll;
+  // bottom: unset;
+  overflow-y: scroll !important;
   padding-top: 5px;
   padding-bottom: 5px;
   display: block;
-  height: unset;
-  border-radius: 24px;
   font-family: inherit;
   font-size: 15px;
   font-weight: normal;
   z-index: 2;
-  overflow: hidden;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
   text-align: left;
-  width: 100%;
+  width: 95%;
   top: 35px;
   border-radius: 4px;
-  margin: 0;
+  margin: 10px auto;
+  height: auto;
+  max-height: 50vh;
+  overflow-y: auto;
 }
 
 .autoql-condition-locking-menu-container

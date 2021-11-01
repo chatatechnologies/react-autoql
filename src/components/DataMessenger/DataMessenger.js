@@ -6,6 +6,7 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
+import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -48,6 +49,7 @@ import { ConditionLockMenu } from '../ConditionLockMenu'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+import { MdCropLandscape } from 'react-icons/md'
 
 export default class DataMessenger extends React.Component {
   static propTypes = {
@@ -877,12 +879,43 @@ export default class DataMessenger extends React.Component {
             <Icon type="close" />
           </button>
         </div>
+        {/* {this.state.isConditionLockingMenuOpen && (
+          <div
+            style={{
+              background: 'white',
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              marginRight: '-200px',
+              // marginLeft: '-150px',
+              // top: 0,
+              // left: 0,
+            }}
+          >
+            <ConditionLockMenu
+              authentication={getAuthentication(
+                getAuthentication(this.props.authentication)
+              )}
+              containerWidth={this.getDrawerWidth()}
+              isOpen={this.state.isConditionLockingMenuOpen}
+              onClose={() =>
+                this.setState({ isConditionLockingMenuOpen: false })
+              }
+            />
+          </div>
+        )} */}
+        {/* !e.target.className.includes(
+                'react-autoql-condition-lock-menu'
+              )  */}
         <Popover
           isOpen={this.state.isConditionLockingMenuOpen}
           onClickOutside={(e) => {
             if (
-              e.target.innerText !== lang.openConditionLocking &&
-              !e.target.className.includes('react-autoql-condition-lock-menu')
+              _get(e, 'target.innerText') !== lang.openConditionLocking &&
+              !_includes(
+                _get(e, 'target.className'),
+                'react-autosuggest__suggestion'
+              )
             ) {
               this.setState({ isConditionLockingMenuOpen: false })
             }

@@ -2061,6 +2061,36 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  /**
+   * ** WIP **
+   *
+   * Apply conditions to queries that contain them.
+   * @returns a list of conditions
+   */
+  renderLockedConditions = () => {
+    const { queryResponse } = this.props
+    if (
+      _get(queryResponse, 'data.data.persistent_locked_conditions.length') > 0
+    ) {
+      return (
+        <div className="chat-condition-item-container">
+          {queryResponse.data.data.persistent_locked_conditions.map(
+            (condition) => {
+              return (
+                <span>
+                  {' '}
+                  <button className="chat-condition-item">{condition}</button>
+                </span>
+              )
+            }
+          )}
+        </div>
+      )
+    }
+
+    return
+  }
+
   render = () => {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
@@ -2103,6 +2133,7 @@ export default class QueryOutput extends React.Component {
             this.renderQandAResponseConfirmation()}
         </div>
         {this.renderContextMenu()}
+        {this.renderLockedConditions()}
       </ErrorBoundary>
     )
   }

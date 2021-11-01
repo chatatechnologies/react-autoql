@@ -4,6 +4,8 @@ import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _includes from 'lodash.includes'
+import _has from 'lodash.has'
 import ReactTooltip from 'react-tooltip'
 
 import { authenticationType } from '../../props/types'
@@ -68,7 +70,11 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
-  // Teach Autosuggest how to calculate suggestions for any given input value.
+  /**
+   *
+   * @param {*} value
+   * @returns
+   */
   getSuggestions = (value) => {
     const inputValue = value.trim().toLowerCase()
     const inputLength = inputValue.length
@@ -80,9 +86,12 @@ export default class ConditionLockMenu extends React.Component {
         )
   }
 
-  // When suggestion is clicked, Autosuggest needs to populate the input
-  // based on the clicked suggestion. Teach Autosuggest how to calculate the
-  // input value for every given suggestion.
+  /**
+   * When suggestion is clicked, Autosuggest populates the input
+   * based on the clicked suggestion. Teach Autosuggest how to calculate the
+   * input value for every given suggestion.
+   * @param {*} suggestion
+   */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
     array.push({
@@ -110,19 +119,30 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
-  removeCondition = (item) => {
-    unsetCondition({
-      ...getAuthentication(this.props.authentication),
-      condition: item,
-    })
-      .then(() => {
-        const array = [...this.state.selectedConditions]
-        array.splice(item, 1)
+  /**
+   * Removes condition from the list.
+   * @param {*} item
+   */
+  removeCondition = (item, index) => {
+    let isSaved
+    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      (response) => {
+        _get(response, 'data.data.data').map((r) => {
+          if (_includes(r, item.id)) {
+            isSaved = true
+          }
+        })
+        if (isSaved) {
+          unsetCondition({
+            ...getAuthentication(this.props.authentication),
+            condition: item,
+          })
+        }
+        const array = this.state.selectedConditions
+        array.splice(index, 1)
         this.setState({ selectedConditions: array })
-      })
-      .catch((e) => {
-        // WIP: error handling
-      })
+      }
+    )
   }
 
   /**
@@ -130,9 +150,10 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} item
    */
   // handleConditionCheckbox = (item) => {
-  // this.setState(prevState => ({
-  //   selectedConditions: prevState.selectedConditions.map(el => (el.key === item.key ? { ...el, lock_flag = 0 } : el))
-  // }))
+  //   sessionStorage.setItem(item)
+  //   this.setState(prevState => ({
+  //     selectedConditions: prevState.selectedConditions.map(el => (el.key === item.key ? { ...el, lock_flag = 0 } : el))
+  //   }))
   // }
 
   onSuggestionsFetchRequested = ({ value }) => {
@@ -182,6 +203,25 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
+  renderAcceptConditionsButton = () => (
+    <div
+      key="accept-conditions-btn"
+      className="react-autoql-accept-conditions-button"
+    >
+      <span
+        onClick={() => {
+          this.props.onClose()
+          setConditions({
+            ...getAuthentication(this.props.authentication),
+            conditions: this.state.selectedConditions,
+          })
+        }}
+      >
+        <Icon type="lock" style={{ verticalAlign: 'middle' }} /> Done
+      </span>
+    </div>
+  )
+
   render = () => {
     const { containerWidth } = this.props
 
@@ -196,10 +236,6 @@ export default class ConditionLockMenu extends React.Component {
               <button
                 onClick={() => {
                   this.props.onClose()
-                  setConditions({
-                    ...getAuthentication(this.props.authentication),
-                    conditions: this.state.selectedConditions,
-                  })
                 }}
                 className="autoql-close-button"
                 data-tip={lang.closeConditionLocking}
@@ -242,72 +278,82 @@ export default class ConditionLockMenu extends React.Component {
                 </p>
               </div>
             ) : (
-              <table className="condition-table">
-                <thead>
-                  <th scope="col">Condition</th>
-                  <th scope="col">Category</th>
-                  <th
-                    scope="col"
-                    style={{
-                      display: 'table-cell',
-                      verticalAlign: 'middle',
-                      textAlign: 'right',
-                    }}
-                  >
-                    Actions
-                  </th>
-                </thead>
-                <tbody>
-                  {this.state.selectedConditions.map((item, index) => {
-                    return (
-                      <tr key={index}>
-                        <td>{item.keyword}</td>
-                        <td>{item.show_message}</td>
-                        <td
-                          style={{
-                            display: 'table-cell',
-                            verticalAlign: 'middle',
-                            textAlign: 'right',
-                          }}
-                        >
-                          <ReactTooltip
-                            className="react-autoql-chart-tooltip"
-                            id="condition-lock-persist"
-                            effect="solid"
-                            html
-                          />
-                          {/* {item.lock_flag ? 'Persistent' : 'Session'}
-                          <input
-                            type="checkbox"
-                            data-tip="Lock this condition across sessions"
-                            data-for="condition-lock-persist"
-                            checked={item.lock_flag}
-                            onClick={() => this.handleConditionCheckbox(item)}
-                          ></input> */}
-                          <ReactTooltip
-                            className="react-autoql-chart-tooltip"
-                            id="react-autoql-remove-condition"
-                            effect="solid"
-                            html
-                          />
-                          <Icon
-                            style={{
-                              paddingLeft: 5,
-                              color: 'red',
-                            }}
-                            data-tip="Remove this condition"
-                            data-for="react-autoql-remove-condition"
-                            type="trash"
-                            onClick={() => this.removeCondition(item, index)}
-                          />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-                <tfoot></tfoot>
-              </table>
+              <div>
+                <div style={{ minHeight: 100 }}>
+                  <table className="condition-table">
+                    <thead>
+                      <th scope="col">Condition</th>
+                      <th scope="col">Category</th>
+                      <th
+                        scope="col"
+                        style={{
+                          display: 'table-cell',
+                          verticalAlign: 'middle',
+                          textAlign: 'right',
+                        }}
+                      >
+                        Actions
+                      </th>
+                    </thead>
+                    <tbody>
+                      {this.state.selectedConditions.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            <td>{item.keyword}</td>
+                            <td>{item.show_message}</td>
+                            <td
+                              style={{
+                                display: 'table-cell',
+                                verticalAlign: 'middle',
+                                textAlign: 'right',
+                              }}
+                            >
+                              <ReactTooltip
+                                className="react-autoql-chart-tooltip"
+                                id="condition-lock-persist"
+                                effect="solid"
+                                html
+                              />
+                              {/* WIP Session Locking */}
+                              {/* {item.lock_flag ? 'Persistent' : 'Session'}
+                            <input
+                              type="checkbox"
+                              data-tip="Lock this condition across sessions"
+                              data-for="condition-lock-persist"
+                              checked={item.lock_flag}
+                              onChange={(e) => {
+                                this.handleConditionCheckbox(e, item)
+                              }}
+                            ></input> */}
+                              <ReactTooltip
+                                className="react-autoql-chart-tooltip"
+                                id="react-autoql-remove-condition"
+                                effect="solid"
+                                html
+                              />
+                              <Icon
+                                style={{
+                                  paddingLeft: 5,
+                                  color: 'red',
+                                }}
+                                data-tip="Remove this condition"
+                                data-for="react-autoql-remove-condition"
+                                type="trash"
+                                onClick={() =>
+                                  this.removeCondition(item, index)
+                                }
+                              />
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot></tfoot>
+                  </table>
+                </div>
+              </div>
             )}
+            {this.renderAcceptConditionsButton()}
           </div>
         </div>
       </ErrorBoundary>

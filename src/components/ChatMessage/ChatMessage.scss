@@ -21,9 +21,18 @@
   }
 }
 
+.chat-condition-item-container {
+  // display: none;
+  position: absolute;
+  background: inherit;
+  bottom: 0px;
+  padding: 5px;
+  border-radius: 6px;
+}
 .chat-condition-item {
   background: none !important;
   border: none;
+  margin-top: -20px !important;
   padding: 0 !important;
   font-family: var(--react-autoql-font-family);
   color: var(--react-autoql-accent-color);

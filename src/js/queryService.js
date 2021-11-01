@@ -423,8 +423,21 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     },
   }
 
+  // discard id of existing conditions before sending.
+  let array = []
+  conditions.forEach((obj) => {
+    array.push({
+      key: obj.key,
+      keyword: obj.keyword,
+      // lock_flag: obj.lock_flag,
+      lock_flag: 1,
+      show_message: obj.show_message,
+      value: obj.value,
+    })
+  })
+
   const data = {
-    columns: conditions,
+    columns: array,
   }
 
   return axios

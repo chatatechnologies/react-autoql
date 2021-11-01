@@ -216,47 +216,50 @@ export default class ChatMessage extends React.Component {
       return errorMessages.UNAUTHENTICATED
     } else if (response) {
       return (
-        <QueryOutput
-          ref={(ref) => (this.responseRef = ref)}
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          onDataClick={this.props.processDrilldown}
-          queryResponse={response}
-          displayType={this.state.displayType}
-          onSuggestionClick={this.props.onSuggestionClick}
-          isQueryRunning={this.props.isChataThinking}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          copyToClipboard={this.copyToClipboard}
-          tableOptions={this.props.tableOptions}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
-          setFilterTagsCallback={this.setFilterTags}
-          hideColumnCallback={this.hideColumnCallback}
-          onTableFilterCallback={this.onTableFilter}
-          height={chartHeight}
-          width={chartWidth}
-          demo={getAuthentication(this.props.authentication).demo}
-          onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
-          backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-background-color-primary'
-          )}
-          // We want to render our own in the parent component
-          // so the tooltip doesn't get clipped by the drawer
-          renderTooltips={false}
-          onErrorCallback={this.props.onErrorCallback}
-          enableColumnHeaderContextMenu={true}
-          isResizing={this.props.isResizing}
-          enableDynamicCharting={this.props.enableDynamicCharting}
-          dataConfig={this.state.dataConfig}
-          onDataConfigChange={this.updateDataConfig}
-          optionsToolbarRef={this.optionsToolbarRef}
-          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
-          autoChartAggregations={this.props.autoChartAggregations}
-          reportProblemCallback={() => {
-            if (this.optionsToolbarRef) {
-              this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
-            }
-          }}
-        />
+        <React.Fragment>
+          <QueryOutput
+            ref={(ref) => (this.responseRef = ref)}
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            onDataClick={this.props.processDrilldown}
+            queryResponse={response}
+            displayType={this.state.displayType}
+            onSuggestionClick={this.props.onSuggestionClick}
+            isQueryRunning={this.props.isChataThinking}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            copyToClipboard={this.copyToClipboard}
+            tableOptions={this.props.tableOptions}
+            dataFormatting={getDataFormatting(this.props.dataFormatting)}
+            setFilterTagsCallback={this.setFilterTags}
+            hideColumnCallback={this.hideColumnCallback}
+            onTableFilterCallback={this.onTableFilter}
+            height={chartHeight}
+            width={chartWidth}
+            demo={getAuthentication(this.props.authentication).demo}
+            onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
+            backgroundColor={document.documentElement.style.getPropertyValue(
+              '--react-autoql-background-color-primary'
+            )}
+            // We want to render our own in the parent component
+            // so the tooltip doesn't get clipped by the drawer
+            renderTooltips={false}
+            onErrorCallback={this.props.onErrorCallback}
+            enableColumnHeaderContextMenu={true}
+            isResizing={this.props.isResizing}
+            enableDynamicCharting={this.props.enableDynamicCharting}
+            dataConfig={this.state.dataConfig}
+            onDataConfigChange={this.updateDataConfig}
+            optionsToolbarRef={this.optionsToolbarRef}
+            onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+            autoChartAggregations={this.props.autoChartAggregations}
+            reportProblemCallback={() => {
+              if (this.optionsToolbarRef) {
+                this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+              }
+            }}
+          />
+          {/* <div>{this.renderLockedConditions()}</div> */}
+        </React.Fragment>
       )
     }
     return errorMessages.GENERAL_QUERY
@@ -407,7 +410,7 @@ export default class ChatMessage extends React.Component {
         // Allow space for the error message in case the table is small
         messageHeight = 210
       } else {
-        messageHeight = this.TABLE_CONTAINER_HEIGHT
+        messageHeight = this.TABLE_CONTAINER_HEIGHT + 40
       }
     } else if (
       this.state.displayType === 'pivot_table' &&
@@ -446,26 +449,6 @@ export default class ChatMessage extends React.Component {
         />
       )
     }
-  }
-
-  /**
-   * ** WIP **
-   *
-   * Apply conditions to queries that contain them.
-   * @returns a list of conditions
-   */
-  renderLockedConditions = () => {
-    fetchConditions({
-      ...getAuthentication(this.props.authentication),
-    }).then((reponse) => {
-      console.log(_get(reponse, 'data.data.data'))
-    })
-    return (
-      <div>
-        <button className="chat-condition-item">Test Condition 1 </button>,
-        <button className="chat-condition-item">Test Condition 2</button>
-      </div>
-    )
   }
 
   render = () => {
@@ -508,8 +491,8 @@ export default class ChatMessage extends React.Component {
             {this.renderContent(chartWidth, chartHeight)}
             {this.props.isDataMessengerOpen && this.renderRightToolbar()}
             {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
+            {/* {this.renderLockedConditions()} */}
             {this.renderDataLimitWarning()}
-            {/* WIP {this.renderLockedConditions()} */}
           </div>
         </div>
       </ErrorBoundary>
