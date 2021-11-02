@@ -299,6 +299,11 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
+.react-autoql-condition-lock-menu {
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-primary);
+}
+
 .react-tiny-popover-container {
   z-index: 9999;
   border: 1px solid #ababab52;
@@ -316,6 +321,13 @@
 }
 .react-autoql-confirm-text {
   text-align: center;
+}
+.react-autoql-menu-text {
+  text-align: center;
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    cursor: pointer;
+  }
 }
 .react-autoql-confirm-icon {
   color: #faad14 !important;

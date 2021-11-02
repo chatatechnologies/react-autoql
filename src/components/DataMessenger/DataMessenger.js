@@ -6,6 +6,7 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
+import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -43,10 +44,12 @@ import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { runDrilldown, fetchQueryTips } from '../../js/queryService'
+import { ConditionLockMenu } from '../ConditionLockMenu'
 
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
+import { MdCropLandscape } from 'react-icons/md'
 
 export default class DataMessenger extends React.Component {
   static propTypes = {
@@ -136,7 +139,8 @@ export default class DataMessenger extends React.Component {
     isResizing: false,
 
     lastMessageId: undefined,
-    isClearMessageConfirmVisible: false,
+    isOptionsDropdownOpen: false,
+    isConditionLockingMenuOpen: false,
     messages: [],
 
     queryTipsList: undefined,
@@ -356,7 +360,8 @@ export default class DataMessenger extends React.Component {
     this.setState({
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
-      isClearMessageConfirmVisible: false,
+      isOptionsDropdownOpen: false,
+      isConditionLockingMenuOpen: false,
     })
   }
 
@@ -674,6 +679,15 @@ export default class DataMessenger extends React.Component {
     this.queryInputRef = ref
   }
 
+  handleClearQueriesDropdown = () => {
+    var acc = document.getElementById('clear-queries-dropdown')
+    if (acc.style.display === 'block') {
+      acc.style.display = 'none'
+    } else {
+      acc.style.display = 'block'
+    }
+  }
+
   renderTabs = () => {
     const page = this.state.activePage
 
@@ -760,49 +774,75 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  renderClearMessagesButton = () => {
+  renderOptionsDropdown = () => {
     if (this.state.activePage === 'data-messenger') {
       return (
         <Popover
-          isOpen={this.state.isClearMessageConfirmVisible}
-          onClickOutside={() =>
-            this.setState({ isClearMessageConfirmVisible: false })
-          }
+          isOpen={this.state.isOptionsDropdownOpen}
+          onClickOutside={() => this.setState({ isOptionsDropdownOpen: false })}
           position="bottom" // preferred position
           content={
-            <div className="clear-messages-confirm-popover">
-              <div className="react-autoql-confirm-text">
-                <Icon className="react-autoql-confirm-icon" type="warning" />
-                Clear all queries & responses?
+            <div>
+              <div className="clear-messages-confirm-popover">
+                <div
+                  className="react-autoql-menu-text"
+                  onClick={() => {
+                    this.setState({
+                      isConditionLockingMenuOpen: true,
+                      isOptionsDropdownOpen: false,
+                    })
+                  }}
+                >
+                  <Icon type="lock" />
+                  <span style={{ marginLeft: 5 }}>
+                    {lang.openConditionLocking}
+                  </span>
+                </div>
               </div>
-              <Button
-                type="default"
-                size="small"
-                onClick={() =>
-                  this.setState({ isClearMessageConfirmVisible: false })
-                }
-              >
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => this.clearMessages()}
-              >
-                Clear
-              </Button>
+              <hr style={{ padding: 0, marginTop: 0, marginBottom: 0 }} />
+              <div className="clear-messages-confirm-popover">
+                <div
+                  className="react-autoql-menu-text"
+                  onClick={this.handleClearQueriesDropdown}
+                >
+                  <Icon type="trash" />
+                  <span style={{ marginLeft: 5 }}>
+                    {lang.clearDataResponses}
+                  </span>
+                </div>
+                <div id="clear-queries-dropdown" style={{ display: 'none' }}>
+                  <Button
+                    type="default"
+                    size="small"
+                    onClick={() =>
+                      this.setState({ isOptionsDropdownOpen: false })
+                    }
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => this.clearMessages()}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
             </div>
           }
         >
           <button
             onClick={() =>
-              this.setState({ isClearMessageConfirmVisible: true })
+              this.setState({
+                isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
+              })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip={lang.clearDataResponses}
+            data-tip={lang.dataMessengerOptions}
             data-for="react-autoql-header-tooltip"
           >
-            <Icon type="trash" />
+            <Icon type="menu" />
           </button>
         </Popover>
       )
@@ -828,7 +868,10 @@ export default class DataMessenger extends React.Component {
       <Fragment>
         <div className="react-autoql-header-left-container">
           <button
-            onClick={this.props.onHandleClick}
+            onClick={() => {
+              this.props.onHandleClick()
+              this.setState({ isConditionLockingMenuOpen: false })
+            }}
             className="react-autoql-drawer-header-btn close"
             data-tip={lang.closeDataMessenger}
             data-for="react-autoql-header-tooltip"
@@ -836,11 +879,41 @@ export default class DataMessenger extends React.Component {
             <Icon type="close" />
           </button>
         </div>
-        <div className="react-autoql-header-center-container">
-          {this.renderHeaderTitle()}
-        </div>
+        <Popover
+          isOpen={this.state.isConditionLockingMenuOpen}
+          onClickOutside={(e) => {
+            if (
+              _get(e, 'target.innerText') !== lang.openConditionLocking &&
+              !_includes(
+                _get(e, 'target.className'),
+                'react-autosuggest__suggestion'
+              )
+            ) {
+              this.setState({ isConditionLockingMenuOpen: false })
+            }
+          }}
+          position="bottom"
+          padding={2}
+          align="center"
+          content={
+            <ConditionLockMenu
+              authentication={getAuthentication(
+                getAuthentication(this.props.authentication)
+              )}
+              containerWidth={this.getDrawerWidth()}
+              isOpen={this.state.isConditionLockingMenuOpen}
+              onClose={() =>
+                this.setState({ isConditionLockingMenuOpen: false })
+              }
+            />
+          }
+        >
+          <div className="react-autoql-header-center-container">
+            {this.renderHeaderTitle()}
+          </div>
+        </Popover>
         <div className="react-autoql-header-right-container">
-          {this.renderClearMessagesButton()}
+          {this.renderOptionsDropdown()}
         </div>
       </Fragment>
     )
