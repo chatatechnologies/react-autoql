@@ -1,7 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import _uniq from 'lodash.uniq'
-import jwt_decode from 'jwt-decode'
 
 var autoCompleteCall = null
 
