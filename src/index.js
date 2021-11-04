@@ -2,7 +2,7 @@ export * from './components/DataMessenger'
 export * from './components/QueryInput'
 export * from './components/Dashboard'
 export * from './components/QueryOutput'
-export * from './components/SpeechToTextButton2'
+export * from './components/SpeechToTextButton'
 export {
   NotificationIcon,
   NotificationFeed,
