@@ -65,6 +65,7 @@
   /* make small margin on bottom because sometimes react
   custom scrollbar cuts off a pixel or 2 at the bottom */
   margin-bottom: 6px;
+  // padding-bottom: 30px;
 }
 .chat-single-message-container .chat-message-bubble.text {
   max-width: 85%;
@@ -128,6 +129,20 @@ so we dont have to redraw the whole table */
 }
 .data-limit-warning-icon {
   color: var(--react-autoql-warning-color) !important;
+  position: absolute !important;
+  bottom: 2px;
+  right: 4px;
+  font-size: 20px;
+}
+.condition-info-icon-left-align {
+  color: var(--react-autoql-accent-color) !important;
+  position: absolute !important;
+  bottom: 2px;
+  right: 10px;
+  font-size: 20px;
+}
+.condition-info-icon {
+  color: var(--react-autoql-accent-color) !important;
   position: absolute !important;
   bottom: 2px;
   right: 4px;

@@ -18,7 +18,7 @@
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "jest --findRelatedTests",
-    "build": "NODE_ENV=dev rollup -c && export NODE_OPTIONS =-openssl-legacy-provider",
+    "build": "NODE_ENV=dev rollup -c",
     "lint": "eslint '**/*.js'",
     "lint:fix": "prettier-eslint '**/*.js' --write",
     "prepublish": "npx rimraf dist && npm run build",
