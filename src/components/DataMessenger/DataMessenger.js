@@ -49,7 +49,6 @@ import { ConditionLockMenu } from '../ConditionLockMenu'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { MdCropLandscape } from 'react-icons/md'
 
 export default class DataMessenger extends React.Component {
   static propTypes = {
