@@ -461,21 +461,6 @@ export default class ChatMessage extends React.Component {
     const numRows = _get(response, 'data.data.rows.length')
     const maxRowLimit = _get(response, 'data.data.row_limit')
 
-    // <div className="chat-condition-item-container">
-    //           {response.data.data.persistent_locked_conditions.map(
-    //             (condition) => {
-    //               return (
-    //                 <span>
-    //                   {' '}
-    //                   <button className="chat-condition-item">
-    //                     {condition}
-    //                   </button>
-    //                 </span>
-    //               )
-    //             }
-    //           )}
-    //         </div>
-
     if (_get(response, 'data.data.persistent_locked_conditions.length') > 0) {
       return (
         <Icon
