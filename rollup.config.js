@@ -39,7 +39,7 @@ const common = {
     image(),
     svg(),
     babel({
-      plugins: ['external-helpers'],
+      // plugins: ['external-helpers'],
       exclude: 'node_modules/**',
     }),
     production && terser(),

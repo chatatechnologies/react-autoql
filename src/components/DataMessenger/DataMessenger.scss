@@ -1,3 +1,25 @@
+#condition-lock-snackbar-success {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-success-color);
+  text-align: center;
+  border-radius: 4px;
+  padding: 8px;
+  position: fixed;
+  z-index: 999999999;
+  left: 80%;
+  top: 30px;
+  box-shadow: 2px 5px #888888;
+}
+
+#condition-lock-snackbar-success.show {
+  visibility: visible;
+  // -webkit-animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
+  animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
+}
+
 .react-autoql-drawer {
   font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
@@ -556,5 +578,27 @@
   }
   100% {
     transform: translateY(0%);
+  }
+}
+
+@keyframes snackbarFadein {
+  from {
+    top: 0;
+    opacity: 0;
+  }
+  to {
+    top: 30px;
+    opacity: 1;
+  }
+}
+
+@keyframes snackbarFadeout {
+  from {
+    top: 30px;
+    opacity: 1;
+  }
+  to {
+    top: 0;
+    opacity: 0;
   }
 }
