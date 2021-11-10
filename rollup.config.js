@@ -5,7 +5,7 @@ import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
 import image from '@rollup/plugin-image'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
+// import { nodeResolve } from '@rollup/plugin-node-resolve'
 
 import pkg from './package.json'
 
@@ -40,7 +40,7 @@ const common = {
     image(),
     svg(),
     babel({
-      plugins: [nodeResolve()],
+      // plugins: [nodeResolve()],
       exclude: 'node_modules/**',
     }),
     production && terser(),
