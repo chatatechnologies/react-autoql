@@ -12,7 +12,7 @@ jobs:
       - node/with-cache:
           steps:
             - run: npm i
-            - run: export NODE_OPTIONS=--openssl-legacy-provider && npm i react react-dom
+            - run: npm i react react-dom
             - run:
                 name: Run Tests
                 no_output_timeout: 60m
@@ -26,7 +26,7 @@ jobs:
       - checkout
       - node/with-cache:
           steps:
-            - run: npm install
+            - run: export NODE_OPTIONS=--openssl-legacy-provider && npm install
             - run: npm i react react-dom
             - run:
                 name: Run Tests
