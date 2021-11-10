@@ -210,14 +210,20 @@ export default class ConditionLockMenu extends React.Component {
     >
       <span
         onClick={() => {
-          this.props.onClose()
           setConditions({
             ...getAuthentication(this.props.authentication),
             conditions: this.state.selectedConditions,
           })
+            .then(() => {
+              this.props.onClose(true)
+            })
+            .catch((e) => {
+              //WIP showErrorMessage
+              console.error(e)
+            })
         }}
       >
-        <Icon type="lock" style={{ verticalAlign: 'middle' }} /> Done
+        <Icon type="lock" style={{ verticalAlign: 'middle' }} /> Save
       </span>
     </div>
   )

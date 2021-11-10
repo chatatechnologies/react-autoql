@@ -862,6 +862,12 @@ export default class DataMessenger extends React.Component {
     return <div className="header-title">{title}</div>
   }
 
+  renderShowSuccessMessage = () => (
+    <div id="condition-lock-snackbar-success">
+      <Icon type="check" /> Conditions Applied
+    </div>
+  )
+
   renderHeaderContent = () => {
     return (
       <Fragment>
@@ -901,9 +907,18 @@ export default class DataMessenger extends React.Component {
               )}
               containerWidth={this.getDrawerWidth()}
               isOpen={this.state.isConditionLockingMenuOpen}
-              onClose={() =>
+              onClose={(isSaved) => {
+                if (isSaved) {
+                  var el = document.getElementById(
+                    'condition-lock-snackbar-success'
+                  )
+                  el.className = 'show'
+                  setTimeout(() => {
+                    el.className = el.className.replace('show', '')
+                  }, 3000)
+                }
                 this.setState({ isConditionLockingMenuOpen: false })
-              }
+              }}
             />
           }
         >
@@ -914,6 +929,7 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-right-container">
           {this.renderOptionsDropdown()}
         </div>
+        {this.renderShowSuccessMessage()}
       </Fragment>
     )
   }
