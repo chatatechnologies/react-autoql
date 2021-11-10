@@ -1,16 +1,16 @@
 #condition-lock-snackbar-success {
   visibility: hidden;
-  min-width: 250px;
+  min-width: 200px;
   margin-left: -125px;
   background-color: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-success-color);
   text-align: center;
   border-radius: 4px;
-  padding: 8px;
+  padding: 6px;
   position: fixed;
   z-index: 999999999;
-  left: 80%;
-  top: 30px;
+  left: 86%;
+  top: 40px;
   box-shadow: 2px 5px #888888;
 }
 
