@@ -1,17 +1,24 @@
 #condition-lock-snackbar-success {
   visibility: hidden;
   min-width: 200px;
-  margin-left: -125px;
+  line-height: 1 !important;
+  font-size: 14px !important;
   background-color: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-success-color);
   text-align: center;
   border-radius: 4px;
   padding: 6px;
   position: fixed;
+  display: block;
   z-index: 999999999;
-  left: 86%;
-  top: 40px;
-  box-shadow: 2px 5px #888888;
+  transform: translateX(-10%);
+  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
+}
+
+.autoql-condition-locking-menu-container
+  .react-autosuggest__suggestions-container--open {
+  transform: translateX(8%);
+  width: 90% !important;
 }
 
 #condition-lock-snackbar-success.show {
@@ -128,13 +135,36 @@
 }
 
 .react-autoql-drawer .watermark {
-  position: absolute;
   color: var(--react-autoql-text-color-primary);
   text-align: center;
   opacity: 0.2;
   top: 6px;
   width: calc(100% - 10px);
   font-size: 13px;
+}
+
+.react-autoql-drawer .condition-list-container {
+  position: absolute;
+  border: 1px solid var(--react-autoql-text-color-primary);
+  border-radius: 100rem;
+  background-color: transparent;
+  color: var(--react-autoql-text-color-primary);
+  padding: 0 5px 0 5px;
+  transition: background-color 250ms ease, box-shadow 250ms ease;
+  z-index: 9999999;
+  width: fit-content;
+  height: fit-content;
+}
+
+.condition-list-display {
+  display: none;
+  background-color: var(--react-autoql-background-color-primary);
+  border-radius: 4px;
+  padding: 5px;
+  width: fit-content;
+  height: fit-content;
+  padding: 10px;
+  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
 }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
@@ -583,22 +613,22 @@
 
 @keyframes snackbarFadein {
   from {
-    top: 0;
+    top: 30px;
     opacity: 0;
   }
   to {
-    top: 30px;
+    top: 60px;
     opacity: 1;
   }
 }
 
 @keyframes snackbarFadeout {
   from {
-    top: 30px;
+    top: 60px;
     opacity: 1;
   }
   to {
-    top: 0;
+    top: 30px;
     opacity: 0;
   }
 }
