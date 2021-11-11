@@ -1,5 +1,4 @@
 import React, { Fragment } from 'react'
-import LocalizedStrings from 'react-localization'
 import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
 import uuid from 'uuid'
 import Drawer from 'rc-drawer'
@@ -43,7 +42,11 @@ import { Cascader } from '../Cascader'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import { runDrilldown, fetchQueryTips } from '../../js/queryService'
+import {
+  runDrilldown,
+  fetchQueryTips,
+  fetchConditions,
+} from '../../js/queryService'
 import { ConditionLockMenu } from '../ConditionLockMenu'
 
 // Styles
@@ -140,6 +143,7 @@ export default class DataMessenger extends React.Component {
     lastMessageId: undefined,
     isOptionsDropdownOpen: false,
     isConditionLockingMenuOpen: false,
+    conditions: undefined,
     messages: [],
 
     queryTipsList: undefined,
@@ -166,6 +170,14 @@ export default class DataMessenger extends React.Component {
       console.error(error)
       this.setState({ hasError: true })
     }
+
+    // WIP
+    // fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+    //   (response) => {
+    //     console.log(_get(response, 'data.data.data'))
+    //     this.setState({ conditions: _get(response, 'data.data.data') })
+    //   }
+    // )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -687,6 +699,31 @@ export default class DataMessenger extends React.Component {
     }
   }
 
+  getConditionMenuPosition = () => {
+    switch (this.getPlacementProp()) {
+      case 'right':
+        return {
+          transform: 'translate(1%, -3%)',
+        }
+      case 'left':
+        return {
+          transform: 'translate(-1%, -3%)',
+        }
+      case 'top':
+        return {
+          transform: 'translate(1.5%, -3%)',
+          minWidth: '100vw',
+        }
+      case 'bottom':
+        return {
+          transform: 'translate(1.5%, -3%)',
+          minWidth: '100vw',
+        }
+      default:
+      // code block
+    }
+  }
+
   renderTabs = () => {
     const page = this.state.activePage
 
@@ -885,6 +922,7 @@ export default class DataMessenger extends React.Component {
           </button>
         </div>
         <Popover
+          containerStyle={this.getConditionMenuPosition()}
           isOpen={this.state.isConditionLockingMenuOpen}
           onClickOutside={(e) => {
             if (
@@ -892,6 +930,10 @@ export default class DataMessenger extends React.Component {
               !_includes(
                 _get(e, 'target.className'),
                 'react-autosuggest__suggestion'
+              ) &&
+              !_includes(
+                _get(e, 'target.className'),
+                'condition-list-container'
               )
             ) {
               this.setState({ isConditionLockingMenuOpen: false })
@@ -924,12 +966,12 @@ export default class DataMessenger extends React.Component {
         >
           <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
+            {this.renderShowSuccessMessage()}
           </div>
         </Popover>
         <div className="react-autoql-header-right-container">
           {this.renderOptionsDropdown()}
         </div>
-        {this.renderShowSuccessMessage()}
       </Fragment>
     )
   }
@@ -1029,6 +1071,38 @@ export default class DataMessenger extends React.Component {
           </div>
         )}
         <div className="chat-bar-container">
+          {this.state.conditions && (
+            <React.Fragment>
+              <div id="conditionListContent" className="condition-list-display">
+                <h5>Content:</h5>
+                <ul>
+                  <li>thing 1</li>
+                  <li>thing 2</li>
+                </ul>
+              </div>
+              <span
+                className="condition-list-container"
+                onMouseEnter={() =>
+                  (document.getElementById(
+                    'conditionListContent'
+                  ).style.display = 'block')
+                }
+                onMouseLeave={() =>
+                  (document.getElementById(
+                    'conditionListContent'
+                  ).style.display = 'none')
+                }
+                onClick={() => {
+                  this.setState({
+                    isConditionLockingMenuOpen: true,
+                    isOptionsDropdownOpen: false,
+                  })
+                }}
+              >
+                <Icon type="lock" /> Conditions
+              </span>
+            </React.Fragment>
+          )}
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
