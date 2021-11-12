@@ -56,7 +56,7 @@ export default class ConditionLockMenu extends React.Component {
             array.push({
               id: conditions[i].id,
               keyword: conditions[i].value,
-              value: conditions[i].value.toLowerCase(),
+              value: conditions[i].value,
               show_message: conditions[i].show_message,
               key: conditions[i].key,
               lock_flag: conditions[i].lock_flag,
@@ -96,7 +96,7 @@ export default class ConditionLockMenu extends React.Component {
     let array = this.state.selectedConditions
     array.push({
       keyword: suggestion.name.keyword,
-      value: suggestion.name.keyword.toLowerCase(),
+      value: suggestion.name.keyword,
       show_message: suggestion.name.show_message,
       key: suggestion.name.canonical,
       lock_flag: suggestion.name.lock_flag,
