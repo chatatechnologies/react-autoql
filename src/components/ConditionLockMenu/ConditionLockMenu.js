@@ -71,6 +71,7 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   /**
+   * format suggestions
    *
    * @param {*} value
    * @returns
