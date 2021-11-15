@@ -4,6 +4,7 @@ import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
 import ReactTooltip from 'react-tooltip'
+import _ from 'lodash'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
