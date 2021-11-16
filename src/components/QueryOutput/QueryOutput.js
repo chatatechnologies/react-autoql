@@ -1865,16 +1865,25 @@ export default class QueryOutput extends React.Component {
   }
 
   renderHTMLMessage = (queryResponse) => {
-    return (
-      <HTMLRenderer
-        html={_get(queryResponse, 'data.data.answer')}
-        components={{
-          a: (props) => {
-            return <a {...props} target="_blank" />
-          },
-        }}
-      />
-    )
+    if (_get(queryResponse, 'data.data.answer') !== null) {
+      return (
+        <HTMLRenderer
+          html={_get(queryResponse, 'data.data.answer')}
+          components={{
+            a: (props) => {
+              return <a {...props} target="_blank" />
+            },
+          }}
+        />
+      )
+    } else {
+      return (
+        <span>
+          I'm not sure I understood your question. Please try asking again in a
+          different way.
+        </span>
+      )
+    }
   }
 
   renderResponse = (width, height) => {

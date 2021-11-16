@@ -224,32 +224,54 @@ export const runQuery = ({
   skipQueryValidation,
   AutoAEId,
 } = {}) => {
-  if (enableQueryValidation && !skipQueryValidation && !isQandA) {
-    return runQueryValidation({
-      text: query,
-      domain,
-      apiKey,
-      token,
-    })
-      .then((response) => {
-        if (failedValidation(response)) {
-          return Promise.resolve(response)
-        }
-        return runQueryOnly({
-          query,
-          userSelection,
-          debug,
-          test,
-          domain,
-          apiKey,
-          token,
-          source,
-          AutoAEId,
+  // Temp for demo: decode token to get project id
+  let id
+  let base64Url
+  let base64
+  if (token) {
+    base64Url = token.split('.')[1]
+    if (base64Url) {
+      base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const buff = Buffer.from(base64, 'base64')
+      const payloadinit = buff.toString('ascii')
+      const payload = JSON.parse(payloadinit)
+      id = _get(payload, 'project_id')
+    }
+  }
+
+  // ignore validation for these projects
+  if (
+    id !== 'accounting-demo' &&
+    id !== 'operational-demo' &&
+    id !== 'stockmarket-demo'
+  ) {
+    if (enableQueryValidation && !skipQueryValidation && !isQandA) {
+      return runQueryValidation({
+        text: query,
+        domain,
+        apiKey,
+        token,
+      })
+        .then((response) => {
+          if (failedValidation(response)) {
+            return Promise.resolve(response)
+          }
+          return runQueryOnly({
+            query,
+            userSelection,
+            debug,
+            test,
+            domain,
+            apiKey,
+            token,
+            source,
+            AutoAEId,
+          })
         })
-      })
-      .catch((error) => {
-        return Promise.reject(error)
-      })
+        .catch((error) => {
+          return Promise.reject(error)
+        })
+    }
   }
 
   return runQueryOnly({
