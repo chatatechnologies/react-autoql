@@ -1,3 +1,4 @@
+const esModules = ['jwt-decoded'].join('|')
 module.exports = {
   setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
   setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
@@ -21,5 +22,6 @@ module.exports = {
   transform: { '^.+\\.js?$': 'babel-jest' },
   moduleFileExtensions: ['js', 'jsx'],
   moduleDirectories: ['node_modules'],
-  coverageReporters: ['json-summary', 'text', 'lcov']
+  coverageReporters: ['json-summary', 'text', 'lcov'],
+  transformIgnorePatterns: [`/node_modules/(?!${esModules})`],
 }

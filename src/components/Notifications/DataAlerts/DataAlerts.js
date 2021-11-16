@@ -5,13 +5,13 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
+import _ from 'lodash'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import { Checkbox } from '../../Checkbox'
 import { DataAlertModal } from '../DataAlertModal'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import dayjs from '../../../js/dayjsWithPlugins'
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import {
   fetchDataAlerts,
