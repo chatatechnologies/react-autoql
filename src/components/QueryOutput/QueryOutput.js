@@ -1865,7 +1865,7 @@ export default class QueryOutput extends React.Component {
   }
 
   renderHTMLMessage = (queryResponse) => {
-    if (_get(queryResponse, 'data.data.answer') !== null) {
+    if (_get(queryResponse, 'data.data.answer', null) !== null) {
       return (
         <HTMLRenderer
           html={_get(queryResponse, 'data.data.answer')}
