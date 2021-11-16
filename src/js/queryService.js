@@ -227,11 +227,11 @@ export const runQuery = ({
   // Temp for demo: decode token to get project id
   let id
   let base64Url
-  let base64
   if (token) {
     base64Url = token.split('.')[1]
+    //bass64Url was failing unit tests due to undefined.
     if (base64Url) {
-      base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
       const buff = Buffer.from(base64, 'base64')
       const payloadinit = buff.toString('ascii')
       const payload = JSON.parse(payloadinit)
@@ -239,7 +239,7 @@ export const runQuery = ({
     }
   }
 
-  // ignore validation for these projects
+  // temp ignore validation for these projects
   if (
     id !== 'accounting-demo' &&
     id !== 'operational-demo' &&
