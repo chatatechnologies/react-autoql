@@ -165,13 +165,11 @@
     "rollup-plugin-terser": "^5.1.2",
     "semantic-release": "^17.0.8",
     "semantic-release-cli": "^5.3.1",
-    "watch": "^1.0.2",
-    "jwt-decode": "^3.1.2"
+    "watch": "^1.0.2"
   },
   "peerDependencies": {
     "react": ">=16.2",
-    "react-dom": ">=16.13.1",
-    "jwt-decode": "^3.1.2"
+    "react-dom": ">=16.13.1"
   },
   "resolutions": {
     "**/**/fsevents": "^1.2.9"
