@@ -1,6 +1,6 @@
 import axios from 'axios'
 // todo: set up mock axios for easier edge case handling
-import mockAxios from 'jest-mock-axios'
+// import mockAxios from 'jest-mock-axios'
 
 import {
   runQuery,
