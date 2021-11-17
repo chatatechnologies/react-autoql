@@ -1,3 +1,4 @@
+const esModules = ['jwt-decoded'].join('|')
 module.exports = {
   setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
   setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
