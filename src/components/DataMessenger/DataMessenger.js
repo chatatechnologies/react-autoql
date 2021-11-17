@@ -819,8 +819,8 @@ export default class DataMessenger extends React.Component {
           position="bottom" // preferred position
           content={
             <div>
-              {/*<div className="clear-messages-confirm-popover">
-                 <div
+              <div className="clear-messages-confirm-popover">
+                <div
                   className="react-autoql-menu-text"
                   onClick={() => {
                     this.setState({
@@ -833,9 +833,9 @@ export default class DataMessenger extends React.Component {
                   <span style={{ marginLeft: 5 }}>
                     {lang.openConditionLocking}
                   </span>
-                </div> 
-              </div>*/}
-              {/* <hr style={{ padding: 0, marginTop: 0, marginBottom: 0 }} /> */}
+                </div>
+              </div>
+              <hr style={{ padding: 0, marginTop: 0, marginBottom: 0 }} />
               <div className="clear-messages-confirm-popover">
                 <div
                   className="react-autoql-menu-text"
