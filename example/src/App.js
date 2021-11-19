@@ -1823,6 +1823,7 @@ export default class App extends Component {
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}
+          showCreateAlertBtn
         />
       </div>
     )
