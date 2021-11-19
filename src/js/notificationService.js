@@ -134,7 +134,7 @@ export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
     },
   })
 
-  const url = `${domain}/autoql/management/api/v1/data-alerts?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts?key=${apiKey}`
 
   return axiosInstance
     .get(url)
@@ -526,7 +526,7 @@ export const updateDataAlert = ({ dataAlert, domain, apiKey, token }) => {
     },
   })
 
-  const url = `${domain}/autoql/management/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlert.id}?key=${apiKey}`
 
   return axiosInstance
     .put(url, dataAlert)
@@ -601,7 +601,7 @@ export const deleteDataAlert = (dataAlertId, projectId, authObject) => {
     },
   })
 
-  const url = `${domain}/autoql/management/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/data-alerts/${dataAlertId}?key=${apiKey}`
 
   return axiosInstance
     .delete(url)
