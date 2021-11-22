@@ -49,7 +49,7 @@ export default class NotificationIcon extends React.Component {
 
   componentDidMount = async () => {
     this._isMounted = true
-    // this.subscribeToNotificationCount()
+    this.subscribeToNotificationCount()
   }
 
   componentWillUnmount = () => {
