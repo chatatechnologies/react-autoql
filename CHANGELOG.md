@@ -1,3 +1,10 @@
+## [3.3.2](https://github.com/chatatechnologies/react-autoql/compare/v3.3.1...v3.3.2) (2021-11-22)
+
+
+### Bug Fixes
+
+* **notificationservice:** changed data-alerts endpoints ([#250](https://github.com/chatatechnologies/react-autoql/issues/250)) ([198fac8](https://github.com/chatatechnologies/react-autoql/commit/198fac899565f8b04f17a90a76ab8c2d0b72b33e))
+
 ## [3.3.1](https://github.com/chatatechnologies/react-autoql/compare/v3.3.0...v3.3.1) (2021-07-13)
 
 
