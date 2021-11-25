@@ -588,7 +588,7 @@ export const validateExpression = ({ expression, domain, apiKey, token }) => {
 }
 
 // DELETE
-export const deleteDataAlert = (dataAlertId, projectId, authObject) => {
+export const deleteDataAlert = (dataAlertId, authObject) => {
   // If there is missing data, dont bother making the call
   const { domain, apiKey, token } = authObject
   if (!token || !apiKey || !domain) {
