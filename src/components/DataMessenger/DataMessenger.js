@@ -172,12 +172,12 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    // fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-    //   (response) => {
-    //     console.log(_get(response, 'data.data.data'))
-    //     this.setState({ conditions: _get(response, 'data.data.data') })
-    //   }
-    // )
+    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      (response) => {
+        // console.log(_get(response, 'data.data.data'))
+        this.setState({ conditions: _get(response, 'data.data.data') })
+      }
+    )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
