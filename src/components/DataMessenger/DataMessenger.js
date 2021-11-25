@@ -172,11 +172,11 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-      (response) => {
-        this.setState({ conditions: _get(response, 'data.data.data') })
-      }
-    )
+    // fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+    //   (response) => {
+    //     this.setState({ conditions: _get(response, 'data.data.data') })
+    //   }
+    // )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -818,23 +818,24 @@ export default class DataMessenger extends React.Component {
           position="bottom" // preferred position
           content={
             <div>
-              <div className="clear-messages-confirm-popover">
-                <div
-                  className="react-autoql-menu-text"
-                  onClick={() => {
-                    this.setState({
-                      isConditionLockingMenuOpen: true,
-                      isOptionsDropdownOpen: false,
-                    })
-                  }}
-                >
-                  <Icon type="lock" />
-                  <span style={{ marginLeft: 5 }}>
-                    {lang.openConditionLocking}
-                  </span>
+              {process.env.NODE_ENV === 'development' && 
+                <div className="clear-messages-confirm-popover">
+                  <div
+                    className="react-autoql-menu-text"
+                    onClick={() => {
+                      this.setState({
+                        isConditionLockingMenuOpen: true,
+                        isOptionsDropdownOpen: false,
+                      })
+                    }}
+                  >
+                    <Icon type="lock" />
+                    <span style={{ marginLeft: 5 }}>
+                      {lang.openConditionLocking}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <hr style={{ padding: 0, marginTop: 0, marginBottom: 0 }} />
+              }
               <div className="clear-messages-confirm-popover">
                 <div
                   className="react-autoql-menu-text"
