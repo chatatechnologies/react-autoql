@@ -253,7 +253,6 @@ export default class DataAlerts extends React.Component {
    * @returns
    */
   hasError = (dataAlert) => {
-    console.log(dataAlert)
     return (
       dataAlert.status === 'GENERAL_ERROR' ||
       dataAlert.status === 'EVALUATION_ERROR' ||
