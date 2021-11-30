@@ -1070,38 +1070,6 @@ export default class DataMessenger extends React.Component {
           </div>
         )}
         <div className="chat-bar-container">
-          {/* {this.state.conditions && (
-            <React.Fragment>
-              <div id="conditionListContent" className="condition-list-display">
-                <h5>Content:</h5>
-                <ul>
-                  <li>thing 1</li>
-                  <li>thing 2</li>
-                </ul>
-              </div>
-              <span
-                className="condition-list-container"
-                onMouseEnter={() =>
-                  (document.getElementById(
-                    'conditionListContent'
-                  ).style.display = 'block')
-                }
-                onMouseLeave={() =>
-                  (document.getElementById(
-                    'conditionListContent'
-                  ).style.display = 'none')
-                }
-                onClick={() => {
-                  this.setState({
-                    isConditionLockingMenuOpen: true,
-                    isOptionsDropdownOpen: false,
-                  })
-                }}
-              >
-                <Icon type="lock" /> Conditions
-              </span>
-            </React.Fragment>
-          )} */}
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
