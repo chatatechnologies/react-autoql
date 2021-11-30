@@ -83,7 +83,6 @@ export default class NotificationItem extends React.Component {
       !prevProps.activeNotificationData &&
       this.props.activeNotificationData
     ) {
-      // console.log(this.props.activeNotificationData)
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
