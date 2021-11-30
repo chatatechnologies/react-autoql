@@ -98,7 +98,7 @@ export default class NotificationFeed extends React.Component {
         let notificationList = _cloneDeep(this.state.notificationList)
         let nextOffset = this.state.nextOffset
         let pagination = this.state.pagination
-
+        
         if (_get(data, 'items.length')) {
           notificationList = [...notificationList, ...data.items]
           nextOffset = this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT

@@ -316,7 +316,6 @@ export default class NotificationItem extends React.Component {
   renderNotificationContent = (notification) => {
     const queryTitle = notification.data_return_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
-
     let queryResponse
     if (_get(this.props.activeNotificationData, 'error')) {
       queryResponse = this.props.activeNotificationData.error
