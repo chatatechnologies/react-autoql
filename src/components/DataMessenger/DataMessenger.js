@@ -9,7 +9,6 @@ import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-// import { throttle, debounce } from 'throttle-debounce'
 
 import {
   authenticationType,
@@ -818,7 +817,7 @@ export default class DataMessenger extends React.Component {
           position="bottom" // preferred position
           content={
             <div>
-              {process.env.NODE_ENV === 'development' && 
+              {window.location.href.includes('chata-ai-test-page') && 
                 <div className="clear-messages-confirm-popover">
                   <div
                     className="react-autoql-menu-text"
@@ -878,7 +877,7 @@ export default class DataMessenger extends React.Component {
             data-tip={lang.dataMessengerOptions}
             data-for="react-autoql-header-tooltip"
           >
-            <Icon type="menu" />
+            <Icon type="trash" />
           </button>
         </Popover>
       )
@@ -1071,7 +1070,7 @@ export default class DataMessenger extends React.Component {
           </div>
         )}
         <div className="chat-bar-container">
-          {this.state.conditions && (
+          {/* {this.state.conditions && (
             <React.Fragment>
               <div id="conditionListContent" className="condition-list-display">
                 <h5>Content:</h5>
@@ -1102,7 +1101,7 @@ export default class DataMessenger extends React.Component {
                 <Icon type="lock" /> Conditions
               </span>
             </React.Fragment>
-          )}
+          )} */}
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}

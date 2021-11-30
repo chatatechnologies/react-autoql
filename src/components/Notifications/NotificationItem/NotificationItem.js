@@ -83,6 +83,7 @@ export default class NotificationItem extends React.Component {
       !prevProps.activeNotificationData &&
       this.props.activeNotificationData
     ) {
+      // console.log(this.props.activeNotificationData)
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
@@ -316,7 +317,6 @@ export default class NotificationItem extends React.Component {
   renderNotificationContent = (notification) => {
     const queryTitle = notification.data_return_query
     const queryTitleCapitalized = capitalizeFirstChar(queryTitle)
-
     let queryResponse
     if (_get(this.props.activeNotificationData, 'error')) {
       queryResponse = this.props.activeNotificationData.error

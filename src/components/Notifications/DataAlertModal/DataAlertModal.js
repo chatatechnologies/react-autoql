@@ -599,7 +599,7 @@ export default class DataAlertModal extends React.Component {
             isDeletingDataAlert: false,
             isConfirmDeleteModalVisible: false,
           })
-          this.props.onDelete()
+          this.props.onDelete(dataAlertId)
           this.props.onClose(false)
         })
         .catch((error) => {

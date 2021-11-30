@@ -79,7 +79,9 @@ export default class DataAlerts extends React.Component {
     ) {
       this.getDataAlerts()
     }
-    if (!_isEqual(this.state.projectAlertsList, prevState.projectAlertsList)) {
+    if (
+      !_isEqual(this.state.projectAlertsList, prevState.projectAlertsList) || 
+      !_isEqual(this.state.customAlertsList, prevState.customAlertsList)) {
       this.getDataAlerts()
     }
   }

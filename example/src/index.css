@@ -19,7 +19,7 @@ body {
 }
 
 .test-page-container input {
-  max-width: 200px;
+  min-width: 250px;
 }
 
 .ui-overlay {
