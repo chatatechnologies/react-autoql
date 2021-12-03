@@ -380,19 +380,24 @@ export default class QueryInput extends React.Component {
             </div>
           )}
           {this.props.enableVoiceRecord && (
-            <SpeechToTextBtn
-              onTranscriptChange={this.onTranscriptChange}
-              onFinalTranscript={this.onFinalTranscript}
-              themeConfig={this.props.themeConfig}
-              authentication={getAuthentication(this.props.authentication)}
-            />
-            // KEEP THIS FOR NOW
-            // <SpeechToTextButtonBrowser
-            //   onTranscriptChange={this.onTranscriptChange}
-            //   onFinalTranscript={this.onFinalTranscript}
-            //   themeConfig={this.props.themeConfig}
-            //   authentication={getAuthentication(this.props.authentication)}
-            // />
+            <>
+            {/* Keep for now */}
+            {/* {window.location.href.includes('chata-ai-test-page.herokuapp') || window.location.href.includes('localhost')? 
+              <SpeechToTextBtn
+                onTranscriptChange={this.onTranscriptChange}
+                onFinalTranscript={this.onFinalTranscript}
+                themeConfig={this.props.themeConfig}
+                authentication={getAuthentication(this.props.authentication)}
+              />
+            : */}
+              <SpeechToTextButtonBrowser
+                onTranscriptChange={this.onTranscriptChange}
+                onFinalTranscript={this.onFinalTranscript}
+                themeConfig={this.props.themeConfig}
+                authentication={getAuthentication(this.props.authentication)}
+              />
+            {/* } */}
+            </>
           )}
         </div>
       </ErrorBoundary>

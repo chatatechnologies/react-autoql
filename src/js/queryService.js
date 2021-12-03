@@ -149,12 +149,7 @@ export const runQueryOnly = ({
   source,
   AutoAEId,
 } = {}) => {
-  let url;
-  if(window.location.href.includes('localhost') || window.location.href.includes('chata-ai-test-page')) {
-    url = `${domain}/autoql/api/v2/query?key=${apiKey}`
-  } else {
-    url = `${domain}/autoql/api/v1/query?key=${apiKey}`
-  }
+  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
   const data = {
