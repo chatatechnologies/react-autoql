@@ -704,6 +704,7 @@ export default class Input extends React.Component {
         _get(response, 'data.data.columns.length') > 0,
       showSQLButton:
         isDataResponse && getAutoQLConfig(this.props.autoQLConfig).debug,
+      showSaveAsCSVButton: isDataResponse && getAutoQLConfig(this.props.autoQLConfig).enableCSVDownload,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:

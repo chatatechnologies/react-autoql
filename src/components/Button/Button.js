@@ -20,6 +20,7 @@ export default class Button extends React.Component {
     onClick: PropTypes.func,
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
+    multiline: PropTypes.bool,
     tooltip: PropTypes.string,
   }
 
@@ -28,6 +29,7 @@ export default class Button extends React.Component {
     loading: false,
     size: 'large',
     disabled: false,
+    multiline: false,
     tooltip: undefined,
     onClick: () => {},
   }
@@ -76,6 +78,7 @@ export default class Button extends React.Component {
           ${size}
           ${isDisabled ? ' disabled' : ''}`}
           data-test="react-autoql-btn"
+          data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}
           data-tip={this.props.tooltip}
