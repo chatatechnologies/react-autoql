@@ -131,6 +131,7 @@ export default class App extends Component {
     enableVoiceRecord: true,
     enableSlackSharing: !isProd(),
     enableTeamsSharing: !isProd(),
+    enableCSVDownload: false,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
@@ -211,6 +212,7 @@ export default class App extends Component {
       enableTeamsSharing: this.state.enableTeamsSharing,
       debug: this.state.debug,
       test: this.state.test,
+      enableCSVDownload: this.state.enableCSVDownload,
     }
   }
 
@@ -1079,6 +1081,11 @@ export default class App extends Component {
         {this.createBooleanRadioGroup(
           'Enable MS Teams Sharing',
           'enableTeamsSharing',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Enable CSV Download',
+          'enableCSVDownload',
           [true, false]
         )}
         {this.createBooleanRadioGroup(

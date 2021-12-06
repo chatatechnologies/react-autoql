@@ -45,6 +45,7 @@ export default class DataAlerts extends React.Component {
     themeConfig: themeConfigDefault,
     showCreateAlertBtn: false,
     onErrorCallback: () => {},
+    onAlertInitializationCallback: () => {}
   }
 
   state = {
@@ -343,22 +344,24 @@ export default class DataAlerts extends React.Component {
                       )}
                       {this.hasError(notification) ? (
                         <React.Fragment>
-                          <Button
-                            type="primary"
-                            className="react-autoql-re-initialize-btn"
-                            tooltip="Please re-initialize data alert"
-                            onClick={() =>
-                              this.props.handleInitialize(
-                                notification,
-                                this.props.selectedDemoProjectId,
-                                this.props.authentication
-                              )
-                            }
-                          >
-                            <span className="react-autoql-re-initialize-btn-text">
-                              Re-Initialize
-                            </span>
-                          </Button>
+                            <Button
+                              type="primary"
+                              tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
+                              multiline
+                              className="react-autoql-re-initialize-btn"
+                              onClick={() => {
+                                this.props.onAlertInitializationCallback(
+                                  notification,
+                                  this.props.selectedDemoProjectId,
+                                  this.props.authentication
+                                )
+                                this.getDataAlerts()
+                              }}
+                            >
+                              <span className="react-autoql-re-initialize-btn-text">
+                                <Icon type="warning-triangle" />{' '} Resend
+                              </span>
+                            </Button>
                           <Checkbox
                             themeConfig={getThemeConfig(this.props.themeConfig)}
                             type="switch"
