@@ -329,7 +329,7 @@ describe('formatElement', () => {
 
   describe('PERCENT type', () => {
     test('defaults to 2 decimals', () => {
-      const element = 0.23
+      const element = 23.00
       const column = { type: 'PERCENT' }
       expect(formatElement({ element, column })).toEqual('23.00%')
     })
