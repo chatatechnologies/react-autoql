@@ -201,7 +201,6 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     case 'PERCENT': {
       if (Number(d)) {
         let p = Number(d) / 100;
-        console.log(p)
         formattedLabel = Numbro(p).format({
           output: 'percent',
           mantissa: 0,
