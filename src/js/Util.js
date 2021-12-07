@@ -200,7 +200,8 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     // }
     case 'PERCENT': {
       if (Number(d)) {
-        formattedLabel = Numbro(d).format({
+        let p = Number(d) / 100;
+        formattedLabel = Numbro(p).format({
           output: 'percent',
           mantissa: 0,
         })
@@ -315,7 +316,8 @@ export const formatElement = ({
         // }
         case 'PERCENT': {
           if (Number(element)) {
-            formattedElement = Numbro(element).format('0.00%')
+            let p = Number(element) / 100;
+            formattedElement = Numbro(p).format('0.00%')
 
             if (htmlElement) {
               htmlElement.classList.add(
