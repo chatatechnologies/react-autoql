@@ -57,7 +57,7 @@ export default class NotificationFeed extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
-    autoChartAggregations: true,
+    autoChartAggregations: false,
     showCreateAlertBtn: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},

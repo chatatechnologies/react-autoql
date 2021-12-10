@@ -833,7 +833,6 @@ export default class DataMessenger extends React.Component {
         <Popover
           isOpen={this.state.isOptionsDropdownOpen}
           onClickOutside={() => {
-            console.log(this.state.isOptionsDropdownOpen)
             this.setState({ isOptionsDropdownOpen: false })
           }}
           position="bottom" // preferred position
