@@ -63,7 +63,7 @@ export default class NotificationItem extends React.Component {
     themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
-    autoChartAggregations: true,
+    autoChartAggregations: false,
     onRuleFetchCallback: () => {},
     onExpandCallback: () => {},
     onDismissCallback: () => {},
@@ -86,8 +86,8 @@ export default class NotificationItem extends React.Component {
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
-      this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse)
-      const displayType = this.supportedDisplayTypes.includes('column')
+      this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse, undefined, true)
+      const displayType = this.props.autoChartAggregations && this.supportedDisplayTypes.includes('column')
         ? 'column'
         : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
       this.setState({ displayType })
