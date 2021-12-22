@@ -590,18 +590,16 @@ export default class DataAlertModal extends React.Component {
       this.setState({
         isDeletingDataAlert: true,
       })
-
       deleteDataAlert(
         dataAlertId,
-        this.props.activeAlertType,
-        this.props.authObject
+        getAuthentication(this.props.authentication)
       )
         .then(() => {
           this.setState({
             isDeletingDataAlert: false,
             isConfirmDeleteModalVisible: false,
           })
-          this.props.handleAlertDeletedByWidget()
+          this.props.onDelete(dataAlertId)
           this.props.onClose(false)
         })
         .catch((error) => {

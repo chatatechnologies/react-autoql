@@ -149,7 +149,7 @@ export const runQueryOnly = ({
   source,
   AutoAEId,
 } = {}) => {
-  const url = `${domain}/autoql/api/v2/query?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
   const data = {

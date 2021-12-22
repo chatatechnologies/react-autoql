@@ -12,6 +12,7 @@ import {
   MdInfoOutline,
   MdPlayCircleOutline,
   MdLock,
+  MdLockOpen,
 } from 'react-icons/md'
 import {
   FiBell,
@@ -365,6 +366,10 @@ export default class Icon extends React.Component {
       }
       case 'trash': {
         icon = <FiTrash2 />
+        break
+      }
+      case 'unlock': {
+        icon = <MdLockOpen />
         break
       }
       case 'warning': {

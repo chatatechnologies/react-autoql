@@ -131,6 +131,7 @@ export default class App extends Component {
     enableVoiceRecord: true,
     enableSlackSharing: !isProd(),
     enableTeamsSharing: !isProd(),
+    enableCSVDownload: false,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
@@ -155,7 +156,7 @@ export default class App extends Component {
     quantityDecimals: undefined,
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
-    comparisonDisplay: true,
+    // comparisonDisplay: true, // hang onto for now: See QueryOutput line 1250-1255 for details
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     monthFormat: 'MMM YYYY',
     dayFormat: 'll',
@@ -211,6 +212,7 @@ export default class App extends Component {
       enableTeamsSharing: this.state.enableTeamsSharing,
       debug: this.state.debug,
       test: this.state.test,
+      enableCSVDownload: this.state.enableCSVDownload,
     }
   }
 
@@ -220,7 +222,8 @@ export default class App extends Component {
       languageCode: this.state.languageCode,
       currencyDecimals: this.state.currencyDecimals,
       quantityDecimals: this.state.quantityDecimals,
-      comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
+      // hang onto for now. See QueryOutput line 1250-1255 for details
+      // comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
       monthYearFormat: this.state.monthFormat,
       dayMonthYearFormat: this.state.dayFormat,
     }
@@ -1082,6 +1085,11 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
+          'Enable CSV Download',
+          'enableCSVDownload',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
           'Debug Mode - Show copy to SQL button in message toolbar',
           'debug',
           [true, false]
@@ -1318,11 +1326,6 @@ export default class App extends Component {
           }}
           value={this.state.maxMessages}
         />
-        {this.createBooleanRadioGroup(
-          'Display comparisons as Percent',
-          'comparisonDisplay',
-          [true, false]
-        )}
         {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
           'enableExploreQueriesTab',
@@ -1823,6 +1826,7 @@ export default class App extends Component {
           authentication={this.getAuthProp()}
           themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}
+          showCreateAlertBtn
         />
       </div>
     )

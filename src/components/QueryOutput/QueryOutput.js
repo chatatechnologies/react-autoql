@@ -1246,16 +1246,23 @@ export default class QueryOutput extends React.Component {
       return null
     }
     const formattedColumns = columns.map((col, i) => {
+
+      /**
+       * EDIT:
+       * We no longer want to default to one over the other. Howeever, 
+       * I would like to hang onto this code for now incase we do want to
+       * include either/or in some cases in the future
+       */
       // Regardless of the BE response, we want to default to percent
-      if (
-        (col.type === 'RATIO' || col.type === 'NUMBER') &&
-        _get(
-          getDataFormatting(this.props.dataFormatting),
-          'comparisonDisplay'
-        ) === 'PERCENT'
-      ) {
-        col.type = 'PERCENT'
-      }
+      // if (
+      //   (col.type === 'RATIO' || col.type === 'NUMBER') &&
+      //   _get(
+      //     getDataFormatting(this.props.dataFormatting),
+      //     'comparisonDisplay'
+      //   ) === 'PERCENT'
+      // ) {
+      //   col.type = 'PERCENT'
+      // }
 
       col.field = `${i}`
       col.title = col.display_name

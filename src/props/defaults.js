@@ -25,6 +25,7 @@ export const autoQLConfigDefault = {
   enableNotifications: false,
   enableSlackSharing: true,
   enableTeamsSharing: true,
+  enableCSVDownload: false,
 }
 
 export const themeConfigDefault = {

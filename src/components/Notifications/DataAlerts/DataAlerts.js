@@ -45,6 +45,7 @@ export default class DataAlerts extends React.Component {
     themeConfig: themeConfigDefault,
     showCreateAlertBtn: false,
     onErrorCallback: () => {},
+    onAlertInitializationCallback: () => {}
   }
 
   state = {
@@ -79,7 +80,9 @@ export default class DataAlerts extends React.Component {
     ) {
       this.getDataAlerts()
     }
-    if (!_isEqual(this.state.projectAlertsList, prevState.projectAlertsList)) {
+    if (
+      !_isEqual(this.state.projectAlertsList, prevState.projectAlertsList) || 
+      !_isEqual(this.state.customAlertsList, prevState.customAlertsList)) {
       this.getDataAlerts()
     }
   }
@@ -96,12 +99,8 @@ export default class DataAlerts extends React.Component {
       .then((response) => {
         this._isMounted &&
           this.setState({
-            customAlertsList: [],
-            projectAlertsList: response.data.items.filter((al) =>
-              _.find(al.projects, (p) => {
-                return p.id === this.props.selectedDemoProjectId
-              })
-            ),
+            customAlertsList: _get(response, 'data.custom_alerts'),
+            projectAlertsList: _get(response, 'data.project_alerts'),
           })
       })
       .catch((error) => {
@@ -166,19 +165,13 @@ export default class DataAlerts extends React.Component {
 
     let listType =
       dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
-    let newProjects = dataAlert.projects.map((p) => {
-      if (p.id === this.props.selectedDemoProjectId) {
-        p.status = newStatus
-      }
-      return p
-    })
 
     const oldList = _cloneDeep(this.state[listType])
     const newList = this.state[listType].map((n) => {
       if (dataAlert.id === n.id) {
         return {
           ...n,
-          projects: newProjects,
+          status: newStatus,
         }
       }
       return n
@@ -257,17 +250,16 @@ export default class DataAlerts extends React.Component {
     })
   }
 
+  /**
+   * This function needs to be updated
+   * @param {*} dataAlert
+   * @returns
+   */
   hasError = (dataAlert) => {
     return (
-      dataAlert.projects.map(
-        (p) => p.id === this.props.selectedDemoProjectId
-      )[0].status === 'GENERAL_ERROR' ||
-      dataAlert.projects.map(
-        (p) => p.id === this.props.selectedDemoProjectId
-      )[0].status === 'EVALUATION_ERROR' ||
-      dataAlert.projects.map(
-        (p) => p.id === this.props.selectedDemoProjectId
-      )[0].status === 'DATA_RETURN_ERROR'
+      dataAlert.status === 'GENERAL_ERROR' ||
+      dataAlert.status === 'EVALUATION_ERROR' ||
+      dataAlert.status === 'DATA_RETURN_ERROR'
     )
   }
 
@@ -293,125 +285,116 @@ export default class DataAlerts extends React.Component {
             'Choose from a range of ready-to-use Alerts that have been set up for you'
           )}
         <div className="react-autoql-notification-settings-container">
-          {list.map((notification, i) => {
-            return (
-              <div
-                key={`react-autoql-notification-setting-item-${i}`}
-                className={`react-autoql-notification-setting-item ${notification.type}`}
-              >
-                <div className="react-autoql-notification-setting-item-header">
-                  <div className="react-autoql-notification-setting-display-name">
-                    <span className="react-autoql-notification-setting-display-name-title">
-                      <span>
-                        {this.hasError(notification) && (
-                          <Icon
-                            type="warning-triangle"
-                            className="react-autoql-notification-error-status-icon"
-                            onClick={() => this.goToErrorFeedback(notification)}
-                            data-for="react-autoql-notification-settings-tooltip"
-                            data-tip="There was a problem with this Data Alert. Click for more information."
-                            warning
-                          />
-                        )}
-                        {notification.title}
+          {list &&
+            list.map((notification, i) => {
+              return (
+                <div
+                  key={`react-autoql-notification-setting-item-${i}`}
+                  className={`react-autoql-notification-setting-item ${notification.type}`}
+                >
+                  <div className="react-autoql-notification-setting-item-header">
+                    <div className="react-autoql-notification-setting-display-name">
+                      <span className="react-autoql-notification-setting-display-name-title">
+                        <span>
+                          {this.hasError(notification) && (
+                            <Icon
+                              type="warning-triangle"
+                              className="react-autoql-notification-error-status-icon"
+                              onClick={() =>
+                                this.goToErrorFeedback(notification)
+                              }
+                              data-for="react-autoql-notification-settings-tooltip"
+                              data-tip="There was a problem with this Data Alert. Click for more information."
+                              warning
+                            />
+                          )}
+                          {notification.title}
+                        </span>
                       </span>
-                    </span>
-                    <span className="react-autoql-notification-setting-display-name-message">
-                      {notification.message && (
-                        <span> - {notification.message}</span>
+                      <span className="react-autoql-notification-setting-display-name-message">
+                        {notification.message && (
+                          <span> - {notification.message}</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="react-autoql-notification-setting-actions">
+                      {notification.type === 'CUSTOM' && (
+                        <Icon
+                          className="react-autoql-notification-action-btn"
+                          type="edit"
+                          data-for="react-autoql-notification-settings-tooltip"
+                          data-tip="Edit Data Alert"
+                          onClick={(e) => {
+                            if (notification.type === 'CUSTOM') {
+                              this.onEditClick(e, notification)
+                            }
+                          }}
+                        />
                       )}
-                    </span>
-                  </div>
-                  <div className="react-autoql-notification-setting-actions">
-                    {notification.type === 'CUSTOM' && (
-                      <Icon
-                        className="react-autoql-notification-action-btn"
-                        type="edit"
-                        data-for="react-autoql-notification-settings-tooltip"
-                        data-tip="Edit Data Alert"
-                        onClick={(e) => {
-                          if (notification.type === 'CUSTOM') {
-                            this.onEditClick(e, notification)
-                          }
-                        }}
-                      />
-                    )}
-                    {notification.reset_date && (
-                      <Icon
-                        className="reset-period-info-icon"
-                        data-tip={`This Alert has been triggered. Scanning will resume on ${formatResetDate(
-                          notification
-                        )} (${notification.time_zone})`}
-                        data-for="react-autoql-notification-settings-tooltip"
-                        onClick={() => this.goToScheduleStep(notification)}
-                        type="hour-glass"
-                      />
-                    )}
-                    {this.hasError(notification) ? (
-                      <React.Fragment>
-                        <Button
-                          type="primary"
-                          className="react-autoql-re-initialize-btn"
-                          tooltip="Please re-initialize data alert"
-                          onClick={() =>
-                            this.props.handleInitialize(
-                              notification,
-                              this.props.selectedDemoProjectId,
-                              this.props.authentication
-                            )
-                          }
-                        >
-                          <span className="react-autoql-re-initialize-btn-text">
-                            Re-Initialize
-                          </span>
-                        </Button>
+                      {notification.reset_date && (
+                        <Icon
+                          className="reset-period-info-icon"
+                          data-tip={`This Alert has been triggered. Scanning will resume on ${formatResetDate(
+                            notification
+                          )} (${notification.time_zone})`}
+                          data-for="react-autoql-notification-settings-tooltip"
+                          onClick={() => this.goToScheduleStep(notification)}
+                          type="hour-glass"
+                        />
+                      )}
+                      {this.hasError(notification) ? (
+                        <React.Fragment>
+                            <Button
+                              type="primary"
+                              tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
+                              multiline
+                              className="react-autoql-re-initialize-btn"
+                              onClick={() => {
+                                this.props.onAlertInitializationCallback(
+                                  notification,
+                                  this.props.selectedDemoProjectId,
+                                  this.props.authentication
+                                )
+                                this.getDataAlerts()
+                              }}
+                            >
+                              <span className="react-autoql-re-initialize-btn-text">
+                                <Icon type="warning-triangle" />{' '} Resend
+                              </span>
+                            </Button>
+                          <Checkbox
+                            themeConfig={getThemeConfig(this.props.themeConfig)}
+                            type="switch"
+                            className="react-autoql-notification-disable-checkbox"
+                          />
+                        </React.Fragment>
+                      ) : (
                         <Checkbox
                           themeConfig={getThemeConfig(this.props.themeConfig)}
                           type="switch"
-                          className="react-autoql-notification-disable-checkbox"
+                          checked={
+                            notification.status === 'ACTIVE' ||
+                            notification.status === 'WAITING'
+                          }
+                          className="react-autoql-notification-enable-checkbox"
+                          onClick={(e) => e.stopPropagation()}
+                          data-tip={
+                            notification.status === 'ACTIVE' ||
+                            notification.status === 'WAITING'
+                          }
+                          data-for="react-autoql-notification-settings-tooltip"
+                          onChange={(e) => {
+                            this.onEnableSwitchChange(e, notification)
+                            ReactTooltip.hide()
+                            ReactTooltip.rebuild()
+                          }}
                         />
-                      </React.Fragment>
-                    ) : (
-                      <Checkbox
-                        themeConfig={getThemeConfig(this.props.themeConfig)}
-                        type="switch"
-                        checked={
-                          notification.projects &&
-                          notification.projects.filter(
-                            (p) =>
-                              (p.status === 'ACTIVE' &&
-                                p.id === this.props.selectedDemoProjectId) ||
-                              (p.status === 'WAITING' &&
-                                p.id === this.props.selectedDemoProjectId)
-                          ).length > 0
-                        }
-                        className="react-autoql-notification-enable-checkbox"
-                        onClick={(e) => e.stopPropagation()}
-                        data-tip={
-                          notification.projects &&
-                          notification.projects.filter(
-                            (p) =>
-                              (p.status === 'ACTIVE' &&
-                                p.id === this.props.selectedDemoProjectId) ||
-                              (p.status === 'WAITING' &&
-                                p.id === this.props.selectedDemoProjectId)
-                          ).length > 0
-                            ? 'Turn Data Alert off'
-                            : 'Turn Data Alert on'
-                        }
-                        data-for="react-autoql-notification-settings-tooltip"
-                        onChange={(e) => {
-                          this.onEnableSwitchChange(e, notification)
-                          ReactTooltip.hide()
-                          ReactTooltip.rebuild()
-                        }}
-                      />
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
         </div>
       </div>
     )

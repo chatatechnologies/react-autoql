@@ -9,7 +9,6 @@ import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-// import { throttle, debounce } from 'throttle-debounce'
 
 import {
   authenticationType,
@@ -172,12 +171,11 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    // fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-    //   (response) => {
-    //     console.log(_get(response, 'data.data.data'))
-    //     this.setState({ conditions: _get(response, 'data.data.data') })
-    //   }
-    // )
+    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      (response) => {
+        this.setState({ conditions: _get(response, 'data.data.data') })
+      }
+    )
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -813,9 +811,30 @@ export default class DataMessenger extends React.Component {
   renderOptionsDropdown = () => {
     if (this.state.activePage === 'data-messenger') {
       return (
+        <>
+        <div id="condition-dropdown" style={{justifyContent: 'left', position: 'absolute', right: 30}}>
+        {window.location.href.includes('localhost') || window.location.href.includes('chata-ai-test-page') ? 
+          <button
+            id="condition-dropdown"
+            onClick={() => {
+              this.setState({
+                isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen,
+              })
+            }}
+            className="react-autoql-drawer-header-btn clear-all"
+            data-tip={lang.dataMessengerOptions}
+            data-for="react-autoql-header-tooltip"
+          >
+            <Icon type={_get(this.state.conditions, 'length') > 0 ? "lock" : "unlock"} />
+          </button>
+          : <span />
+        }
+        </div>
         <Popover
           isOpen={this.state.isOptionsDropdownOpen}
-          onClickOutside={() => this.setState({ isOptionsDropdownOpen: false })}
+          onClickOutside={() => {
+            this.setState({ isOptionsDropdownOpen: false })
+          }}
           position="bottom" // preferred position
           content={
             <div>
@@ -878,9 +897,10 @@ export default class DataMessenger extends React.Component {
             data-tip={lang.dataMessengerOptions}
             data-for="react-autoql-header-tooltip"
           >
-            <Icon type="menu" />
+            <Icon type="trash" />
           </button>
         </Popover>
+        </>
       )
     }
   }
@@ -911,8 +931,8 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.props.onHandleClick()
               this.setState({ isConditionLockingMenuOpen: false })
+              this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
             data-tip={lang.closeDataMessenger}
@@ -924,25 +944,11 @@ export default class DataMessenger extends React.Component {
         <Popover
           containerStyle={this.getConditionMenuPosition()}
           isOpen={this.state.isConditionLockingMenuOpen}
-          onClickOutside={(e) => {
-            if (
-              _get(e, 'target.innerText') !== lang.openConditionLocking &&
-              !_includes(
-                _get(e, 'target.className'),
-                'react-autosuggest__suggestion'
-              ) &&
-              !_includes(
-                _get(e, 'target.className'),
-                'condition-list-container'
-              )
-            ) {
-              this.setState({ isConditionLockingMenuOpen: false })
-            }
-          }}
           position="bottom"
           padding={2}
           align="center"
           content={
+            <div id="condition-menu-dropdown" style={{ display: 'block' }}>
             <ConditionLockMenu
               authentication={getAuthentication(
                 getAuthentication(this.props.authentication)
@@ -962,6 +968,7 @@ export default class DataMessenger extends React.Component {
                 this.setState({ isConditionLockingMenuOpen: false })
               }}
             />
+            </div>
           }
         >
           <div className="react-autoql-header-center-container">
@@ -1071,38 +1078,6 @@ export default class DataMessenger extends React.Component {
           </div>
         )}
         <div className="chat-bar-container">
-          {this.state.conditions && (
-            <React.Fragment>
-              <div id="conditionListContent" className="condition-list-display">
-                <h5>Content:</h5>
-                <ul>
-                  <li>thing 1</li>
-                  <li>thing 2</li>
-                </ul>
-              </div>
-              <span
-                className="condition-list-container"
-                onMouseEnter={() =>
-                  (document.getElementById(
-                    'conditionListContent'
-                  ).style.display = 'block')
-                }
-                onMouseLeave={() =>
-                  (document.getElementById(
-                    'conditionListContent'
-                  ).style.display = 'none')
-                }
-                onClick={() => {
-                  this.setState({
-                    isConditionLockingMenuOpen: true,
-                    isOptionsDropdownOpen: false,
-                  })
-                }}
-              >
-                <Icon type="lock" /> Conditions
-              </span>
-            </React.Fragment>
-          )}
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
