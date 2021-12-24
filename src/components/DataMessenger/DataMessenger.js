@@ -171,11 +171,19 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-      (response) => {
-        this.setState({ conditions: _get(response, 'data.data.data') })
-      }
-    )
+    try{
+      fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+        (response) => {
+          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+          this.setState({ conditions: {
+            persistent: _get(response, 'data.data.data'),
+            session: sessionConditions,
+          } })
+        }
+      )
+    } catch(e) {
+      console.error(e)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -208,6 +216,18 @@ export default class DataMessenger extends React.Component {
       const prevTheme = getThemeConfig(prevProps.themeConfig).theme
       if (thisTheme && thisTheme !== prevTheme) {
         setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
+      }
+
+      if(this.state.isConditionLockingMenuOpen !== prevState.isConditionLockingMenuOpen) {
+        fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+          (response) => {
+            var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+            this.setState({ conditions: {
+              persistent: _get(response, 'data.data.data'),
+              session: sessionConditions,
+            } })
+          }
+        )
       }
     } catch (error) {
       console.error(error)
@@ -825,7 +845,12 @@ export default class DataMessenger extends React.Component {
             data-tip={lang.dataMessengerOptions}
             data-for="react-autoql-header-tooltip"
           >
-            <Icon type={_get(this.state.conditions, 'length') > 0 ? "lock" : "unlock"} />
+            <Icon type={
+              _get(this.state.conditions, 'persistent.length') > 0 || 
+              _get(this.state.conditions, 'session.length') > 0 
+              ? "lock" : "unlock"
+              } 
+            />
           </button>
           : <span />
         }
@@ -919,12 +944,6 @@ export default class DataMessenger extends React.Component {
     return <div className="header-title">{title}</div>
   }
 
-  renderShowSuccessMessage = () => (
-    <div id="condition-lock-snackbar-success">
-      <Icon type="check" /> Conditions Applied
-    </div>
-  )
-
   renderHeaderContent = () => {
     return (
       <Fragment>
@@ -955,16 +974,7 @@ export default class DataMessenger extends React.Component {
               )}
               containerWidth={this.getDrawerWidth()}
               isOpen={this.state.isConditionLockingMenuOpen}
-              onClose={(isSaved) => {
-                if (isSaved) {
-                  var el = document.getElementById(
-                    'condition-lock-snackbar-success'
-                  )
-                  el.className = 'show'
-                  setTimeout(() => {
-                    el.className = el.className.replace('show', '')
-                  }, 3000)
-                }
+              onClose={() => {
                 this.setState({ isConditionLockingMenuOpen: false })
               }}
             />
@@ -973,7 +983,6 @@ export default class DataMessenger extends React.Component {
         >
           <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
-            {this.renderShowSuccessMessage()}
           </div>
         </Popover>
         <div className="react-autoql-header-right-container">
