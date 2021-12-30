@@ -158,9 +158,6 @@ export default class ConditionLockMenu extends React.Component {
   handlePersistConditionToggle = (item) => {
     var index = this.state.selectedConditions.findIndex(condition => condition.key === item.key);
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-    // setTimeout(() => {
-      // ReactTooltip.rebuild()
-    // }, 100)
 
     if (index === -1){
       // handle error
@@ -333,7 +330,7 @@ export default class ConditionLockMenu extends React.Component {
               </div>
             ) : (
               <div>
-                <div style={{ minHeight: 100 }}>
+                <div style={{ minHeight: 150 }}>
                   <table className="condition-table">
                     <thead>
                       <tr>

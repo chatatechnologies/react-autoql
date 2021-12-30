@@ -49,7 +49,9 @@ export default class NotificationIcon extends React.Component {
 
   componentDidMount = async () => {
     this._isMounted = true
-    this.subscribeToNotificationCount()
+    // TEMP disable polling while in dev because annoying.
+    // IF you see this in PR, please flag to uncomment.
+    // this.subscribeToNotificationCount()
   }
 
   componentWillUnmount = () => {

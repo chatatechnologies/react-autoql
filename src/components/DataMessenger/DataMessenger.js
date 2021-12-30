@@ -866,23 +866,6 @@ export default class DataMessenger extends React.Component {
               <div className="clear-messages-confirm-popover">
                 <div
                   className="react-autoql-menu-text"
-                  onClick={() => {
-                    this.setState({
-                      isConditionLockingMenuOpen: true,
-                      isOptionsDropdownOpen: false,
-                    })
-                  }}
-                >
-                  <Icon type="lock" />
-                  <span style={{ marginLeft: 5 }}>
-                    {lang.openConditionLocking}
-                  </span>
-                </div>
-              </div>
-              <hr style={{ padding: 0, marginTop: 0, marginBottom: 0 }} />
-              <div className="clear-messages-confirm-popover">
-                <div
-                  className="react-autoql-menu-text"
                   onClick={this.handleClearQueriesDropdown}
                 >
                   <Icon type="trash" />
@@ -1072,6 +1055,11 @@ export default class DataMessenger extends React.Component {
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
+                  onConditionClickCallback={() => {
+                    this.setState({
+                      isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen
+                    })
+                  }}
                 />
               )
             })}

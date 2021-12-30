@@ -17,7 +17,7 @@
   background-color: inherit;
   text-align: left;
   font-size: 14px;
-  height: 100%;
+  height: 95%;
   width: 100%;
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
@@ -289,4 +289,17 @@
 }
 .context-menu-list li:hover {
   background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.05));
+}
+
+.condition-link {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--react-autoql-accent-color);
+}
+
+.condition-lock-reverse-translation {
+  color: var(--react-autoql-text-color-primary);
 }
