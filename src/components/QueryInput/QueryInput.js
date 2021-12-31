@@ -31,7 +31,7 @@ import {
 } from '../../js/queryService'
 
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
-import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
+// import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import { QueryInputWithValidation } from '../QueryInputWithValidation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'

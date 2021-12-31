@@ -586,6 +586,7 @@ export default class QueryValidationMessage extends React.Component {
     return (
       <Fragment>
         <ContentEditable
+          data-test="safetynet-input-bar"
           id={this.COMPONENT_KEY}
           ref={(ref) => (this.inputRef = ref)}
           innerRef={this.contentEditable}

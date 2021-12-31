@@ -20,6 +20,7 @@ import { getAuthentication } from '../../props/defaults'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Button } from '../Button'
 
 import './ConditionLockMenu.scss'
 
@@ -411,9 +412,15 @@ export default class ConditionLockMenu extends React.Component {
               </div>
             )}
           </div>
-          <button style={{ float: 'right', marginRight: 10, marginBottom: -40 }} onClick={() => {
-            this.props.onClose()
-          }}>Done</button>
+          <Button 
+            size="small"
+            style={{ float: 'right', marginRight: 10, marginBottom: -40 }} 
+            onClick={() => {
+              this.props.onClose()
+            }}
+          >
+            Done
+          </Button>
         </div>
       </ErrorBoundary>
     )
