@@ -1009,3 +1009,20 @@ export const awaitTimeout = (delay, cb = () => {}) => {
     }, delay)
   )
 }
+
+export const setCaretPosition = (elemId, caretPos) => {
+  const elem = document.getElementById(elemId)
+
+  if (elem != null) {
+    if (elem.createTextRange) {
+      const range = elem.createTextRange()
+      range.move('character', caretPos)
+      range.select()
+    } else {
+      if (elem.selectionStart) {
+        elem.focus()
+        elem.setSelectionRange(caretPos, caretPos)
+      } else elem.focus()
+    }
+  }
+}

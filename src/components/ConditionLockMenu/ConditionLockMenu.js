@@ -4,8 +4,8 @@ import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
 import uuid from 'uuid'
 import _get from 'lodash.get'
-import _includes from 'lodash.includes'
-import _has from 'lodash.has'
+import _uniq from 'lodash.uniq'
+import _some from 'lodash.some'
 import ReactTooltip from 'react-tooltip'
 
 import { authenticationType } from '../../props/types'
@@ -20,6 +20,7 @@ import { getAuthentication } from '../../props/defaults'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Button } from '../Button'
 
 import './ConditionLockMenu.scss'
 
@@ -62,29 +63,25 @@ export default class ConditionLockMenu extends React.Component {
               lock_flag: conditions[i].lock_flag,
             })
           }
-          this.setState({ selectedConditions: array, inputValue: '' })
+          if(JSON.parse(sessionStorage.getItem("conditions")) !== null) {
+            var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+            for (let i = 0; i < sessionConditions.length; i++) {
+              array.push({
+                id: sessionConditions[i].id,
+                keyword: sessionConditions[i].value,
+                value: sessionConditions[i].value,
+                show_message: sessionConditions[i].show_message,
+                key: sessionConditions[i].key,
+                lock_flag: sessionConditions[i].lock_flag,
+              })
+            }
+          }
+          this.setState({ selectedConditions: array.sort(), inputValue: '' })
         }
       )
     } catch (error) {
       console.error(error)
     }
-  }
-
-  /**
-   * format suggestions
-   *
-   * @param {*} value
-   * @returns
-   */
-  getSuggestions = (value) => {
-    const inputValue = value.trim().toLowerCase()
-    const inputLength = inputValue.length
-
-    return inputLength === 0
-      ? []
-      : languages.filter(
-          (lang) => lang.name.toLowerCase().slice(0, inputLength) === inputValue
-        )
   }
 
   /**
@@ -95,19 +92,31 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
-    array.push({
-      keyword: suggestion.name.keyword,
-      value: suggestion.name.keyword,
-      show_message: suggestion.name.show_message,
-      key: suggestion.name.canonical,
-      lock_flag: suggestion.name.lock_flag,
-    })
-    this.setState({ selectedConditions: array, inputValue: '' })
-  }
 
-  renderSuggestion = (suggestion) => (
-    <div>{_get(suggestion, 'name.keyword')}</div>
-  )
+    if(array.some(item => item.key === suggestion.name.canonical)){
+      var el = document.getElementById(
+        'condition-selection-error'
+      )
+      el.className = 'show'
+      setTimeout(() => {
+        el.className = el.className.replace('show', '')
+      }, 3000)
+      this.setState({ inputValue: '' })
+    } else {
+      array.push({
+        keyword: suggestion.name.keyword,
+        value: suggestion.name.keyword,
+        show_message: suggestion.name.show_message,
+        key: suggestion.name.canonical,
+        lock_flag: 1 // persist by default
+      })
+      this.setState({ selectedConditions: array, inputValue: '' })
+      setConditions({
+        ...getAuthentication(this.props.authentication),
+        conditions: array,
+      })
+    }
+  }
 
   onInputChange = (e) => {
     if (e.keyCode === 38 || e.keyCode === 40) {
@@ -125,37 +134,58 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} item
    */
   removeCondition = (item, index) => {
-    let isSaved
-    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-      (response) => {
-        _get(response, 'data.data.data').map((r) => {
-          if (_includes(r, item.id)) {
-            isSaved = true
-          }
-        })
-        if (isSaved) {
-          unsetCondition({
-            ...getAuthentication(this.props.authentication),
-            condition: item,
-          })
-        }
-        const array = this.state.selectedConditions
-        array.splice(index, 1)
-        this.setState({ selectedConditions: array })
-      }
-    )
+    var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+    var sessionIndex = sessionConditions.findIndex(condition => condition.key === item.key)
+    
+    if(sessionIndex !== -1) {
+      sessionConditions.splice(sessionIndex, 1)
+      sessionStorage.setItem('conditions', JSON.stringify(sessionConditions));
+    } else {
+      unsetCondition({
+        ...getAuthentication(this.props.authentication),
+        condition: item,
+      })
+    }
+
+    const array = this.state.selectedConditions
+    array.splice(index, 1)
+    this.setState({ selectedConditions: array })
   }
 
   /**
    * WIP: Session Locking
    * @param {*} item
    */
-  // handleConditionCheckbox = (item) => {
-  //   sessionStorage.setItem(item)
-  //   this.setState(prevState => ({
-  //     selectedConditions: prevState.selectedConditions.map(el => (el.key === item.key ? { ...el, lock_flag = 0 } : el))
-  //   }))
-  // }
+  handlePersistConditionToggle = (item) => {
+    var index = this.state.selectedConditions.findIndex(condition => condition.key === item.key);
+    var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+
+    if (index === -1){
+      // handle error
+    } else {
+        this.setState({
+          selectedConditions: [
+            ...this.state.selectedConditions.slice(0,index),
+            Object.assign({}, this.state.selectedConditions[index], item.lock_flag === 1 ? this.state.selectedConditions[index].lock_flag = 0 : this.state.selectedConditions[index].lock_flag = 1),
+            ...this.state.selectedConditions.slice(index+1)
+          ]
+        }, () => {
+          setConditions({
+            ...getAuthentication(this.props.authentication),
+            conditions: this.state.selectedConditions,
+          })
+          if(item.lock_flag === 0) {
+            if(sessionConditions == null) sessionConditions = [];
+            sessionConditions.push(item);
+            sessionStorage.setItem("conditions", JSON.stringify(sessionConditions));
+          } else {
+            var sessionIndex = sessionConditions.findIndex(condition => condition.key === item.key)
+            sessionConditions.splice(sessionIndex, 1)
+            sessionStorage.setItem('conditions', JSON.stringify(sessionConditions));
+          }
+      });
+    }
+  }
 
   onSuggestionsFetchRequested = ({ value }) => {
     if (this.autoCompleteTimer) {
@@ -204,6 +234,13 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
+
+  renderShowSuccessMessage = () => (
+    <div id="condition-selection-error">
+      <Icon type="warning" /> This condition has already been applied.
+    </div>
+  )
+
   renderAcceptConditionsButton = () => (
     <div
       key="accept-conditions-btn"
@@ -238,6 +275,7 @@ export default class ConditionLockMenu extends React.Component {
           className="react-autoql-condition-lock-menu"
           style={{ width: containerWidth }}
         >
+          {this.renderShowSuccessMessage()}
           <div className="react-autoql-condition-lock-header">
             <div className="autoql-condition-locking-menu-container">
               <button
@@ -259,7 +297,14 @@ export default class ConditionLockMenu extends React.Component {
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
                 getSuggestionValue={this.getSuggestionValue}
                 renderSuggestion={(suggestion) => (
-                  <Fragment>{suggestion.name.keyword}</Fragment>
+                  <Fragment>
+                    <table>
+                      <tr>
+                        <td style={{ width: 300 }}>{suggestion.name.keyword}</td>
+                        <td style={{ width: 300 }}>{suggestion.name.show_message}</td>
+                      </tr>
+                    </table>
+                  </Fragment>
                 )}
                 inputProps={{
                   onChange: this.onInputChange,
@@ -276,7 +321,7 @@ export default class ConditionLockMenu extends React.Component {
                 <p>
                   Condition locking is a tool to help you track a condition
                   across many queries. This is useful if you want to focus on a
-                  specific location or timeframe but don't want to have to type
+                  specific location, vendor or item without the need to type
                   it out for every query.
                 </p>
                 <p>
@@ -286,28 +331,51 @@ export default class ConditionLockMenu extends React.Component {
               </div>
             ) : (
               <div>
-                <div style={{ minHeight: 100 }}>
+                <div style={{ minHeight: 150 }}>
                   <table className="condition-table">
                     <thead>
-                      <th scope="col">Condition</th>
-                      <th scope="col">Category</th>
-                      <th
-                        scope="col"
-                        style={{
-                          display: 'table-cell',
-                          verticalAlign: 'middle',
-                          textAlign: 'right',
-                        }}
-                      >
-                        Actions
-                      </th>
+                      <tr>
+                        <th scope="col">Condition</th>
+                        <th scope="col">Column</th>
+                        <th scope="col">State</th>
+                        <th
+                          scope="col"
+                          style={{
+                            display: 'table-cell',
+                            verticalAlign: 'middle',
+                            textAlign: 'right',
+                          }}
+                        >
+                          Action
+                        </th>
+                      </tr>
                     </thead>
                     <tbody>
                       {this.state.selectedConditions.map((item, index) => {
                         return (
-                          <tr key={index}>
+                          <tr key={index} onClick={() => this.handlePersistConditionToggle(item, index)}>
                             <td>{item.keyword}</td>
                             <td>{item.show_message}</td>
+                            <td>
+                              <ReactTooltip
+                                className="react-autoql-chart-tooltip"
+                                id="condition-lock-persist"
+                                effect="solid"
+                                html
+                                getContent={() => {
+                                  return item.lock_flag 
+                                  ? 'Condition will be stored and available to you every time you come back' 
+                                  : 'Condtition will be locked for this session only'
+                                }}
+                              />
+                                <span 
+                                  data-tip
+                                  data-for="condition-lock-persist"
+                                >
+                                  <Icon type={"lock"} style={{ color: item.lock_flag === 1 ? '#2aca4d' : '#ffcc00' }} />
+                                  {item.lock_flag ? 'Persistent' : 'Session'}
+                                </span>
+                            </td>
                             <td
                               style={{
                                 display: 'table-cell',
@@ -315,23 +383,6 @@ export default class ConditionLockMenu extends React.Component {
                                 textAlign: 'right',
                               }}
                             >
-                              <ReactTooltip
-                                className="react-autoql-chart-tooltip"
-                                id="condition-lock-persist"
-                                effect="solid"
-                                html
-                              />
-                              {/* WIP Session Locking */}
-                              {/* {item.lock_flag ? 'Persistent' : 'Session'}
-                            <input
-                              type="checkbox"
-                              data-tip="Lock this condition across sessions"
-                              data-for="condition-lock-persist"
-                              checked={item.lock_flag}
-                              onChange={(e) => {
-                                this.handleConditionCheckbox(e, item)
-                              }}
-                            ></input> */}
                               <ReactTooltip
                                 className="react-autoql-chart-tooltip"
                                 id="react-autoql-remove-condition"
@@ -360,8 +411,16 @@ export default class ConditionLockMenu extends React.Component {
                 </div>
               </div>
             )}
-            {this.renderAcceptConditionsButton()}
           </div>
+          <Button 
+            size="small"
+            style={{ float: 'right', marginRight: 10, marginBottom: -40 }} 
+            onClick={() => {
+              this.props.onClose()
+            }}
+          >
+            Done
+          </Button>
         </div>
       </ErrorBoundary>
     )

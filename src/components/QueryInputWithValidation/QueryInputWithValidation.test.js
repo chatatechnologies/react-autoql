@@ -1,9 +1,9 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-
+// import axios from 'axios'
 import { findByTestAttr } from '../../../test/testUtils'
-import QueryInput from './QueryInput'
-import LocalStorageMock from '../../../test/localStorageMock'
+import QueryInputWithValidation from './QueryInputWithValidation'
+// import LocalStorageMock from '../../../test/localStorageMock'
 
 const defaultProps = {}
 
@@ -17,30 +17,30 @@ beforeAll(() => {
 })
 
 const setup = (props = {}, state = null) => {
-  // const setupProps = { ...defaultProps, ...props }
-  // const wrapper = shallow(<QueryInput {...setupProps} />)
-  // if (state) {
-  //   wrapper.setState(state)
-  // }
-  // return wrapper
+  const setupProps = { ...defaultProps, ...props }
+  const wrapper = shallow(<QueryInputWithValidation {...setupProps} />)
+  if (state) {
+    wrapper.setState(state)
+  }
+  return wrapper
 }
 
 describe('renders correctly', () => {
-  // test('renders correctly with required props', () => {
-  //   const wrapper = setup()
-  //   const queryInputComponent = findByTestAttr(wrapper, 'chat-bar')
-  //   expect(queryInputComponent.exists()).toBe(true)
-  // })
+  test('renders correctly with required props', () => {
+    const wrapper = setup()
+    const queryInputComponent = findByTestAttr(wrapper, 'safetynet-input-bar')
+    expect(queryInputComponent.exists()).toBe(true)
+  })
 })
 
 describe('validation call', () => {
   test('should call validation when prop is set to true', () => {
     // const queryResponse = {}
-    // axios.get.mockImplementation(() => Promise.resolve(queryResponse))
+    // // axios.get.mockImplementation(() => Promise.resolve(queryResponse))
     // const users = [{name: 'Bob'}];
     // const resp = {data: users};
     // axios.get.mockResolvedValue(resp);
-    // or you could use the following depending on your use case:
+    // // or you could use the following depending on your use case:
     // axios.get.mockImplementation(() => Promise.resolve(resp))
     // return Users.all().then(data => expect(data).toEqual(users));
   })

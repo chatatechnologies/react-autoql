@@ -144,7 +144,7 @@ export default class App extends Component {
     isEditing: false,
     debug: true,
     test: !isProd(),
-    demo: getStoredProp('demo') == 'true',
+    demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
     projectId: getStoredProp('customer-id') || '',
@@ -1155,7 +1155,7 @@ export default class App extends Component {
         <h4>Format for Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank">
+          <a href="https://devhints.io/moment" target="_blank" rel="noopener noreferrer">
             View the cheat sheet
           </a>
         </h6>
@@ -1169,7 +1169,7 @@ export default class App extends Component {
         <h4>Format for Day, Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank">
+          <a href="https://devhints.io/moment" target="_blank"  rel="noopener noreferrer">
             View the cheat sheet
           </a>
         </h6>
