@@ -97,7 +97,7 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
-  SAFETYNET_KEY = uuid.v4()
+  QUERY_VALIDATION_KEY = uuid.v4()
 
   static propTypes = {
     queryResponse: shape({}),
@@ -1942,7 +1942,7 @@ export default class QueryOutput extends React.Component {
       return (
         <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.SAFETYNET_KEY}
+          key={this.QUERY_VALIDATION_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>
             this.onSuggestionClick({
