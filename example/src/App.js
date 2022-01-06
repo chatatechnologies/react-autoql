@@ -144,7 +144,7 @@ export default class App extends Component {
     isEditing: false,
     debug: true,
     test: !isProd(),
-    demo: getStoredProp('demo') == 'true',
+    demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
     projectId: getStoredProp('customer-id') || '',
@@ -156,7 +156,7 @@ export default class App extends Component {
     quantityDecimals: undefined,
     fontFamily: 'sans-serif',
     runDashboardAutomatically: false,
-    comparisonDisplay: true,
+    // comparisonDisplay: true, // hang onto for now: See QueryOutput line 1250-1255 for details
     chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
     monthFormat: 'MMM YYYY',
     dayFormat: 'll',
@@ -222,7 +222,8 @@ export default class App extends Component {
       languageCode: this.state.languageCode,
       currencyDecimals: this.state.currencyDecimals,
       quantityDecimals: this.state.quantityDecimals,
-      comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
+      // hang onto for now. See QueryOutput line 1250-1255 for details
+      // comparisonDisplay: this.state.comparisonDisplay ? 'PERCENT' : 'RATIO',
       monthYearFormat: this.state.monthFormat,
       dayMonthYearFormat: this.state.dayFormat,
     }
@@ -1154,7 +1155,7 @@ export default class App extends Component {
         <h4>Format for Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank">
+          <a href="https://devhints.io/moment" target="_blank" rel="noopener noreferrer">
             View the cheat sheet
           </a>
         </h6>
@@ -1168,7 +1169,7 @@ export default class App extends Component {
         <h4>Format for Day, Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank">
+          <a href="https://devhints.io/moment" target="_blank"  rel="noopener noreferrer">
             View the cheat sheet
           </a>
         </h6>
@@ -1325,11 +1326,6 @@ export default class App extends Component {
           }}
           value={this.state.maxMessages}
         />
-        {this.createBooleanRadioGroup(
-          'Display comparisons as Percent',
-          'comparisonDisplay',
-          [true, false]
-        )}
         {this.createBooleanRadioGroup(
           'Enable Explore Queries Tab',
           'enableExploreQueriesTab',

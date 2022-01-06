@@ -97,7 +97,7 @@ String.prototype.toProperCase = function() {
 
 export default class QueryOutput extends React.Component {
   supportedDisplayTypes = []
-  SAFETYNET_KEY = uuid.v4()
+  QUERY_VALIDATION_KEY = uuid.v4()
 
   static propTypes = {
     queryResponse: shape({}),
@@ -130,6 +130,7 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
+    onConditionClickCallback: func
   }
 
   static defaultProps = {
@@ -166,6 +167,7 @@ export default class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
+    onConditionClickCallback: () => {}
   }
 
   state = {
@@ -1246,16 +1248,23 @@ export default class QueryOutput extends React.Component {
       return null
     }
     const formattedColumns = columns.map((col, i) => {
+
+      /**
+       * EDIT:
+       * We no longer want to default to one over the other. Howeever, 
+       * I would like to hang onto this code for now incase we do want to
+       * include either/or in some cases in the future
+       */
       // Regardless of the BE response, we want to default to percent
-      if (
-        (col.type === 'RATIO' || col.type === 'NUMBER') &&
-        _get(
-          getDataFormatting(this.props.dataFormatting),
-          'comparisonDisplay'
-        ) === 'PERCENT'
-      ) {
-        col.type = 'PERCENT'
-      }
+      // if (
+      //   (col.type === 'RATIO' || col.type === 'NUMBER') &&
+      //   _get(
+      //     getDataFormatting(this.props.dataFormatting),
+      //     'comparisonDisplay'
+      //   ) === 'PERCENT'
+      // ) {
+      //   col.type = 'PERCENT'
+      // }
 
       col.field = `${i}`
       col.title = col.display_name
@@ -1704,20 +1713,22 @@ export default class QueryOutput extends React.Component {
 
     if (this.state.displayType === 'pivot_table') {
       return (
-        <ChataTable
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.pivotTableID}
-          ref={(ref) => (this.pivotTableRef = ref)}
-          columns={this.pivotTableColumns}
-          data={this.pivotTableData}
-          onCellClick={this.processCellClick}
-          headerFilters={this.pivotHeaderFilters}
-          onFilterCallback={this.onTableFilter}
-          setFilterTagsCallback={this.props.setFilterTagsCallback}
-          enableColumnHeaderContextMenu={
-            this.props.enableColumnHeaderContextMenu
-          }
-        />
+        <ErrorBoundary>
+          <ChataTable
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            key={this.pivotTableID}
+            ref={(ref) => (this.pivotTableRef = ref)}
+            columns={this.pivotTableColumns}
+            data={this.pivotTableData}
+            onCellClick={this.processCellClick}
+            headerFilters={this.pivotHeaderFilters}
+            onFilterCallback={this.onTableFilter}
+            setFilterTagsCallback={this.props.setFilterTagsCallback}
+            enableColumnHeaderContextMenu={
+              this.props.enableColumnHeaderContextMenu
+            }
+          />
+        </ErrorBoundary>
       )
     }
 
@@ -1931,7 +1942,7 @@ export default class QueryOutput extends React.Component {
       return (
         <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.SAFETYNET_KEY}
+          key={this.QUERY_VALIDATION_KEY}
           response={this.props.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>
             this.onSuggestionClick({
@@ -2070,6 +2081,47 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  /**
+   *
+   * Apply conditions to queries that contain them and
+   * display value label names in reverse translation.
+   * It also adjusts query content size to accomodate text.
+   * 
+   * @returns reverse translation of the query including a 
+   * all applied conditions
+   */
+   renderReverseTranslation = () => {
+    const { queryResponse } = this.props
+    const id = `reverse-translation-${this.COMPONENT_KEY}`
+    const responseContainer = document.getElementById(
+      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
+    )
+    if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
+
+      // make room in response container for reverse translation text
+      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)) {
+        if(responseContainer.childNodes[0].classList && 
+          responseContainer.childNodes[0].classList.contains('single-value-response')) {
+            responseContainer.style.height = `calc(110% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+        } else {
+          responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+        }
+      }
+
+      return (
+        <span id={id}>
+          <strong>Interpreted as:{' '}</strong>
+          <span
+            onClick={() => this.props.onConditionClickCallback()}
+            className="condition-lock-reverse-translation"
+            dangerouslySetInnerHTML={{
+              __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
+            }}
+          />
+        </span>)
+    }
+  }
+
   render = () => {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
@@ -2111,6 +2163,7 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
+        {this.renderReverseTranslation()}
         {this.renderContextMenu()}
       </ErrorBoundary>
     )

@@ -200,7 +200,8 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     // }
     case 'PERCENT': {
       if (Number(d)) {
-        formattedLabel = Numbro(d).format({
+        let p = Number(d) / 100;
+        formattedLabel = Numbro(p).format({
           output: 'percent',
           mantissa: 0,
         })
@@ -315,7 +316,8 @@ export const formatElement = ({
         // }
         case 'PERCENT': {
           if (Number(element)) {
-            formattedElement = Numbro(element).format('0.00%')
+            let p = Number(element) / 100;
+            formattedElement = Numbro(p).format('0.00%')
 
             if (htmlElement) {
               htmlElement.classList.add(
@@ -465,7 +467,6 @@ export const supportsPieChart = (columns, chartData) => {
   if (shouldPlotMultiSeries(columns)) {
     return false
   }
-
   if (chartData) {
     // Pie charts really shouldn't have any more than 6 slices
     return chartData.length < 7
@@ -474,12 +475,11 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getSupportedDisplayTypes = (response, chartData) => {
+export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieChart) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
     }
-
     // There should be 3 types: data, suggestion, help
     const displayType = response.data.data.display_type
 
@@ -526,7 +526,7 @@ export const getSupportedDisplayTypes = (response, chartData) => {
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (supportsPieChart(columns, chartData)) {
+      if (supportsPieChart(columns, chartData) && !shouldExcludePieChart) {
         supportedDisplayTypes.push('pie')
       }
 
@@ -1008,4 +1008,21 @@ export const awaitTimeout = (delay, cb = () => {}) => {
       resolve()
     }, delay)
   )
+}
+
+export const setCaretPosition = (elemId, caretPos) => {
+  const elem = document.getElementById(elemId)
+
+  if (elem != null) {
+    if (elem.createTextRange) {
+      const range = elem.createTextRange()
+      range.move('character', caretPos)
+      range.select()
+    } else {
+      if (elem.selectionStart) {
+        elem.focus()
+        elem.setSelectionRange(caretPos, caretPos)
+      } else elem.focus()
+    }
+  }
 }
