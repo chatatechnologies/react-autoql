@@ -545,6 +545,10 @@ export default class QueryValidationMessage extends React.Component {
       return
     }
 
+    if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
+      this.getPlainTextFromHTML(localStorage.getItem('inputValue'))
+    }
+
     if (e.key == 'Tab') {
       e.preventDefault()
       // loop through options for word from validation
@@ -602,7 +606,7 @@ export default class QueryValidationMessage extends React.Component {
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
-          autoFocus="true"
+          autoFocus={true}
           html={html}
         />
 

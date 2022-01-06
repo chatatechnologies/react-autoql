@@ -334,7 +334,6 @@ export default class ConditionLockMenu extends React.Component {
                 <div style={{ minHeight: 150 }}>
                   <table className="condition-table">
                     <thead>
-                      <tr>
                         <th scope="col">Condition</th>
                         <th scope="col">Column</th>
                         <th scope="col">State</th>
@@ -348,7 +347,6 @@ export default class ConditionLockMenu extends React.Component {
                         >
                           Action
                         </th>
-                      </tr>
                     </thead>
                     <tbody>
                       {this.state.selectedConditions.map((item, index) => {

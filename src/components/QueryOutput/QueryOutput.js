@@ -2088,33 +2088,37 @@ export default class QueryOutput extends React.Component {
    * It also adjusts query content size to accomodate text.
    * 
    * @returns reverse translation of the query including a 
-   * list of applied conditions
+   * all applied conditions
    */
-   renderLockedConditions = () => {
+   renderReverseTranslation = () => {
     const { queryResponse } = this.props
+    const id = `reverse-translation-${this.COMPONENT_KEY}`
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
     )
+    if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
 
-    if (responseContainer &&
-      _get(queryResponse, 'data.data.condition_filter.length') > 0 && 
-      _get(queryResponse, 'data.data.condition_filter').some((v) => _get(queryResponse, 'data.data.interpretation').includes(v))) {
-
-      if(responseContainer.childNodes[0].classList && 
-        responseContainer.childNodes[0].classList.contains('single-value-response')) {
-          responseContainer.style.height = "75%"
-      } else {
-        responseContainer.style.height = "98%"
+      // make room in response container for reverse translation text
+      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)) {
+        if(responseContainer.childNodes[0].classList && 
+          responseContainer.childNodes[0].classList.contains('single-value-response')) {
+            responseContainer.style.height = `calc(110% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+        } else {
+          responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+        }
       }
 
       return (
-        <span
-          onClick={() => this.props.onConditionClickCallback()}
-          className="condition-lock-reverse-translation"
-          dangerouslySetInnerHTML={{
-            __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
-          }}
-        ></span>)
+        <span id={id}>
+          <strong>Interpreted as:{' '}</strong>
+          <span
+            onClick={() => this.props.onConditionClickCallback()}
+            className="condition-lock-reverse-translation"
+            dangerouslySetInnerHTML={{
+              __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
+            }}
+          />
+        </span>)
     }
   }
 
@@ -2159,7 +2163,7 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {this.renderLockedConditions()}
+        {this.renderReverseTranslation()}
         {this.renderContextMenu()}
       </ErrorBoundary>
     )

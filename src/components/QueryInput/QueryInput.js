@@ -34,6 +34,7 @@ import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonB
 // import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import { QueryInputWithValidation } from '../QueryInputWithValidation'
+import Autosuggest from 'react-autosuggest'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './QueryInput.scss'
@@ -388,39 +389,52 @@ export default class QueryInput extends React.Component {
           }`}
           data-test="chat-bar"
         >
-          {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
-            //   <Autosuggest
-            //   className="auto-complete-chata"
-            //   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-            //   onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-            //   getSuggestionValue={this.userSelectedSuggestionHandler}
-            //   suggestions={this.state.suggestions}
-            //   ref={(ref) => {
-            //     this.autoSuggest = ref
-            //   }}
-            //   renderSuggestion={(suggestion) => (
-            //     <Fragment>{suggestion.name}</Fragment>
-            //   )}
-            //   inputProps={inputProps}
-            // />
-            <QueryInputWithValidation
-              authentication={getAuthentication(this.props.authentication)}
-              themeConfig={getThemeConfig(this.props.themeConfig)}
-              ref={(ref) => (this.queryValidationInputRef = ref)}
-              key={this.state.queryValidationComponentId}
-              response={this.state.queryValidationResponse}
-              placeholder={this.props.placeholder}
-              disabled={this.props.isDisabled}
-              showChataIcon={this.props.showChataIcon}
-              showLoadingDots={this.props.showLoadingDots}
-              submitQuery={this.submitQuery}
-              onQueryValidationSelectOption={(query) => {
-                this.setState({ inputValue: query })
-                this.focus()
-              }}
-            />
-          ) : (
-            <div className="react-autoql-chatbar-input-container">
+          <div className="react-autoql-chatbar-input-container">
+            {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
+              <Autosuggest
+                lassName="auto-complete-chata"
+                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                getSuggestionValue={this.userSelectedSuggestionHandler}
+                suggestions={this.state.suggestions}
+                ref={(ref) => {
+                  this.autoSuggest = ref
+                }}
+                renderSuggestion={(suggestion) => (
+                  <Fragment>{suggestion.name}</Fragment>
+                )}
+                inputProps={{
+                  className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
+                    this.props.showChataIcon ? ' left-padding' : ''
+                  }`,
+                  placeholder: this.props.placeholder || 'Type your queries here',
+                  disabled: this.props.isDisabled,
+                  onChange: this.onInputChange,
+                  onKeyPress: this.onKeyPress,
+                  onKeyDown: this.onKeyDown,
+                  value: this.state.inputValue,
+                  onFocus: this.moveCaretAtEnd,
+                  autoFocus: true
+                }}
+              />
+              // <QueryInputWithValidation
+              //   authentication={getAuthentication(this.props.authentication)}
+              //   themeConfig={getThemeConfig(this.props.themeConfig)}
+              //   ref={(ref) => (this.queryValidationInputRef = ref)}
+              //   key={this.state.queryValidationComponentId}
+              //   response={this.state.queryValidationResponse}
+              //   placeholder={this.props.placeholder}
+              //   disabled={this.props.isDisabled}
+              //   showChataIcon={this.props.showChataIcon}
+              //   showLoadingDots={this.props.showLoadingDots}
+              //   submitQuery={this.submitQuery}
+              //   onKeyDown={this.onKeyDown}
+              //   onQueryValidationSelectOption={(query) => {
+              //     this.setState({ inputValue: query })
+              //     this.focus()
+              //   }}
+              // />
+            ) : (
               <input
                 className={`react-autoql-chatbar-input${
                   this.props.showChataIcon ? ' left-padding' : ''
@@ -436,8 +450,8 @@ export default class QueryInput extends React.Component {
                 onFocus={this.moveCaretAtEnd}
                 autoFocus
               />
-            </div>
           )}
+          </div>
           {this.props.showChataIcon && (
             <div className="chat-bar-input-icon">
               <Icon type="react-autoql-bubbles-outlined" />
