@@ -93,7 +93,7 @@ export default class ConditionLockMenu extends React.Component {
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
 
-    if(array.some(item => item.key === suggestion.name.canonical)){
+    if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       var el = document.getElementById(
         'condition-selection-error'
       )
@@ -157,7 +157,7 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} item
    */
   handlePersistConditionToggle = (item) => {
-    var index = this.state.selectedConditions.findIndex(condition => condition.key === item.key);
+    var index = this.state.selectedConditions.findIndex(condition => condition.id === item.id);
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
 
     if (index === -1){
@@ -166,7 +166,10 @@ export default class ConditionLockMenu extends React.Component {
         this.setState({
           selectedConditions: [
             ...this.state.selectedConditions.slice(0,index),
-            Object.assign({}, this.state.selectedConditions[index], item.lock_flag === 1 ? this.state.selectedConditions[index].lock_flag = 0 : this.state.selectedConditions[index].lock_flag = 1),
+            Object.assign({}, 
+              this.state.selectedConditions[index], item.lock_flag === 1 
+              ? this.state.selectedConditions[index].lock_flag = 0 
+              : this.state.selectedConditions[index].lock_flag = 1),
             ...this.state.selectedConditions.slice(index+1)
           ]
         }, () => {
@@ -179,7 +182,7 @@ export default class ConditionLockMenu extends React.Component {
             sessionConditions.push(item);
             sessionStorage.setItem("conditions", JSON.stringify(sessionConditions));
           } else {
-            var sessionIndex = sessionConditions.findIndex(condition => condition.key === item.key)
+            var sessionIndex = sessionConditions.findIndex(condition => condition.id === item.id)
             sessionConditions.splice(sessionIndex, 1)
             sessionStorage.setItem('conditions', JSON.stringify(sessionConditions));
           }
@@ -355,7 +358,8 @@ export default class ConditionLockMenu extends React.Component {
                             <td>{item.keyword}</td>
                             <td>{item.show_message}</td>
                             <td>
-                              <ReactTooltip
+                              {/* This was behaving strangely so disabling for now */}
+                              {/* <ReactTooltip
                                 className="react-autoql-chart-tooltip"
                                 id="condition-lock-persist"
                                 effect="solid"
@@ -365,7 +369,7 @@ export default class ConditionLockMenu extends React.Component {
                                   ? 'Condition will be stored and available to you every time you come back' 
                                   : 'Condtition will be locked for this session only'
                                 }}
-                              />
+                              /> */}
                                 <span 
                                   data-tip
                                   data-for="condition-lock-persist"

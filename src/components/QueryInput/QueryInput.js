@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import { bool, string, func } from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
@@ -23,18 +23,19 @@ import {
 
 import { setCSSVars } from '../../js/Util'
 
+import { Icon } from '../Icon'
 import {
   runQuery,
   runQueryOnly,
   fetchAutocomplete,
   runQueryValidation,
 } from '../../js/queryService'
+import Autosuggest from 'react-autosuggest'
+// import { QueryInputWithValidation } from '../QueryInputWithValidation'
 
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 // import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
-import { QueryInputWithValidation } from '../QueryInputWithValidation'
-import Autosuggest from 'react-autosuggest'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './QueryInput.scss'
@@ -148,6 +149,7 @@ export default class QueryInput extends React.Component {
 
     this.setState({
       isQueryRunning: true,
+      inputValue: '',
       suggestions: [],
       queryValidationResponse: undefined,
       queryValidationComponentId: uuid.v4(),
@@ -232,9 +234,9 @@ export default class QueryInput extends React.Component {
   }
 
   focus = () => {
-    if (this.queryValidationInputRef) {
-      this.queryValidationInputRef.focus()
-    }
+    // if (this.queryValidationInputRef) {
+    //   this.queryValidationInputRef.focus()
+    // }
     if (this.inputRef) {
       this.inputRef.focus()
     } else {
@@ -337,8 +339,8 @@ export default class QueryInput extends React.Component {
   }
 
   onInputChange = (e) => {
-    this.runQueryValidation({ text: e.target.value })
-
+    //WIP
+    // this.runQueryValidation({ text: e.target.value })
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
@@ -359,26 +361,6 @@ export default class QueryInput extends React.Component {
   }
 
   render = () => {
-    const inputProps = {
-      className: `${
-        this.UNIQUE_ID
-      } input-and-validation-shared-class chata-chatbar-input-only${
-        this.props.showChataIcon ? ' left-padding' : ''
-      }`,
-      placeholder: this.props.placeholder || 'Type your queries here',
-      disabled: this.props.isDisabled,
-      onChange: this.onInputChange,
-      onKeyPress: this.onKeyPress,
-      value: this.state.inputValue,
-      onFocus: this.moveCaretAtEnd,
-      spellCheck: false,
-      autoComplete: 'off',
-      autoCorrect: 'off',
-      autoCapitalize: 'off',
-      autoFocus: true,
-      style: { color: 'transparent', pointerEvents: 'none' },
-    }
-
     return (
       <ErrorBoundary>
         <div
@@ -389,52 +371,53 @@ export default class QueryInput extends React.Component {
           }`}
           data-test="chat-bar"
         >
-          <div className="react-autoql-chatbar-input-container">
-            {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
-              <Autosuggest
-                lassName="auto-complete-chata"
-                onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-                onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-                getSuggestionValue={this.userSelectedSuggestionHandler}
-                suggestions={this.state.suggestions}
-                ref={(ref) => {
-                  this.autoSuggest = ref
-                }}
-                renderSuggestion={(suggestion) => (
-                  <Fragment>{suggestion.name}</Fragment>
-                )}
-                inputProps={{
-                  className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
-                    this.props.showChataIcon ? ' left-padding' : ''
-                  }`,
-                  placeholder: this.props.placeholder || 'Type your queries here',
-                  disabled: this.props.isDisabled,
-                  onChange: this.onInputChange,
-                  onKeyPress: this.onKeyPress,
-                  onKeyDown: this.onKeyDown,
-                  value: this.state.inputValue,
-                  onFocus: this.moveCaretAtEnd,
-                  autoFocus: true
-                }}
-              />
-              // <QueryInputWithValidation
-              //   authentication={getAuthentication(this.props.authentication)}
-              //   themeConfig={getThemeConfig(this.props.themeConfig)}
-              //   ref={(ref) => (this.queryValidationInputRef = ref)}
-              //   key={this.state.queryValidationComponentId}
-              //   response={this.state.queryValidationResponse}
-              //   placeholder={this.props.placeholder}
-              //   disabled={this.props.isDisabled}
-              //   showChataIcon={this.props.showChataIcon}
-              //   showLoadingDots={this.props.showLoadingDots}
-              //   submitQuery={this.submitQuery}
-              //   onKeyDown={this.onKeyDown}
-              //   onQueryValidationSelectOption={(query) => {
-              //     this.setState({ inputValue: query })
-              //     this.focus()
-              //   }}
-              // />
-            ) : (
+          {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
+            <Autosuggest
+              className="auto-complete-chata"
+              onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+              onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+              getSuggestionValue={this.userSelectedSuggestionHandler}
+              suggestions={this.state.suggestions}
+              ref={(ref) => {
+                this.autoSuggest = ref
+              }}
+              renderSuggestion={(suggestion) => (
+                <Fragment>{suggestion.name}</Fragment>
+              )}
+              inputProps={{
+                className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
+                  this.props.showChataIcon ? ' left-padding' : ''
+                }`,
+                placeholder: this.props.placeholder || 'Type your queries here',
+                disabled: this.props.isDisabled,
+                onChange: this.onInputChange,
+                onKeyPress: this.onKeyPress,
+                onKeyDown: this.onKeyDown,
+                value: this.state.inputValue,
+                onFocus: this.moveCaretAtEnd,
+                autoFocus: true,
+              }}
+            />
+            // WIP
+            // <QueryInputWithValidation
+            //     authentication={getAuthentication(this.props.authentication)}
+            //     themeConfig={getThemeConfig(this.props.themeConfig)}
+            //     ref={(ref) => (this.queryValidationInputRef = ref)}
+            //     key={this.state.queryValidationComponentId}
+            //     response={this.state.queryValidationResponse}
+            //     placeholder={this.props.placeholder}
+            //     disabled={this.props.isDisabled}
+            //     showChataIcon={this.props.showChataIcon}
+            //     showLoadingDots={this.props.showLoadingDots}
+            //     submitQuery={this.submitQuery}
+            //     onKeyDown={this.onKeyDown}
+            //     onQueryValidationSelectOption={(query) => {
+            //       this.setState({ inputValue: query })
+            //       this.focus()
+            //     }}
+            //   />
+          ) : (
+            <div className="react-autoql-chatbar-input-container">
               <input
                 className={`react-autoql-chatbar-input${
                   this.props.showChataIcon ? ' left-padding' : ''
@@ -450,8 +433,8 @@ export default class QueryInput extends React.Component {
                 onFocus={this.moveCaretAtEnd}
                 autoFocus
               />
+            </div>
           )}
-          </div>
           {this.props.showChataIcon && (
             <div className="chat-bar-input-icon">
               <Icon type="react-autoql-bubbles-outlined" />
@@ -463,24 +446,19 @@ export default class QueryInput extends React.Component {
             </div>
           )}
           {this.props.enableVoiceRecord && (
-            <>
-            {/* Keep for now */}
-            {/* {window.location.href.includes('chata-ai-test-page.herokuapp') || window.location.href.includes('localhost')? 
-              <SpeechToTextBtn
-                onTranscriptChange={this.onTranscriptChange}
-                onFinalTranscript={this.onFinalTranscript}
-                themeConfig={this.props.themeConfig}
-                authentication={getAuthentication(this.props.authentication)}
-              />
-            : */}
-              <SpeechToTextButtonBrowser
-                onTranscriptChange={this.onTranscriptChange}
-                onFinalTranscript={this.onFinalTranscript}
-                themeConfig={this.props.themeConfig}
-                authentication={getAuthentication(this.props.authentication)}
-              />
-            {/* } */}
-            </>
+            // KEEP THIS FOR NOW
+            // <SpeechToTextBtn
+            //   onTranscriptChange={this.onTranscriptChange}
+            //   onFinalTranscript={this.onFinalTranscript}
+            //   themeConfig={this.props.themeConfig}
+            //   authentication={getAuthentication(this.props.authentication)}
+            // />
+            <SpeechToTextButtonBrowser
+              onTranscriptChange={this.onTranscriptChange}
+              onFinalTranscript={this.onFinalTranscript}
+              themeConfig={this.props.themeConfig}
+              authentication={getAuthentication(this.props.authentication)}
+            />
           )}
         </div>
       </ErrorBoundary>
