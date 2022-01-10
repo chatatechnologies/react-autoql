@@ -4,8 +4,6 @@ import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
 import uuid from 'uuid'
 import _get from 'lodash.get'
-import _uniq from 'lodash.uniq'
-import _some from 'lodash.some'
 import ReactTooltip from 'react-tooltip'
 
 import { authenticationType } from '../../props/types'
