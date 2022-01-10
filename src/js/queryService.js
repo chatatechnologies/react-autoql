@@ -475,8 +475,6 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     columns: array,
   }
 
-  console.log(data)
-
   return axios
     .put(url, data, config)
     .then((response) => Promise.resolve(response))
