@@ -86,6 +86,7 @@
     "lodash.some": "^4.6.0",
     "lodash.uniq": "^4.5.0",
     "make-coverage-badge": "^1.2.0",
+    "moment": "^2.29.1",
     "moment-timezone": "^0.5.32",
     "numbro": "^2.2.0",
     "parse-num": "^1.0.0",

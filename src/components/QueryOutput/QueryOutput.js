@@ -6,6 +6,8 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import moment from 'moment'
+import momentTZ from 'moment-timezone'
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -2108,17 +2110,22 @@ export default class QueryOutput extends React.Component {
         }
       }
 
+      // WIP regex works but formatting is showing invalid date
+      let reverseTranslation = 
+        _get(queryResponse, 'data.data.interpretation')
+        .replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')
+        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g, moment.utc('$&').format('lll').toString())
+
       return (
-        <span id={id}>
+        <div id={id} className="condition-lock-reverse-translation">
           <strong>Interpreted as:{' '}</strong>
           <span
             onClick={() => this.props.onConditionClickCallback()}
-            className="condition-lock-reverse-translation"
             dangerouslySetInnerHTML={{
-              __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
+              __html: `${reverseTranslation}`
             }}
           />
-        </span>)
+        </div>)
     }
   }
 

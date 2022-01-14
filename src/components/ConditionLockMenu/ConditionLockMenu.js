@@ -320,7 +320,7 @@ export default class ConditionLockMenu extends React.Component {
             {_get(this.state.selectedConditions, 'length') === 0 ? (
               <div className="empty-condition-list">
                 <p>
-                  Condition locking is a tool to help you track a condition
+                  Filter locking is a tool to help you track a condition
                   across many queries. This is useful if you want to focus on a
                   specific location, vendor or item without the need to type
                   it out for every query.
@@ -335,7 +335,7 @@ export default class ConditionLockMenu extends React.Component {
                 <div style={{ minHeight: 150 }}>
                   <table className="condition-table">
                     <thead>
-                        <th scope="col">Condition</th>
+                        <th scope="col">Filter</th>
                         <th scope="col">Column</th>
                         <th scope="col">State</th>
                         <th
@@ -364,7 +364,7 @@ export default class ConditionLockMenu extends React.Component {
                                 html
                                 getContent={() => {
                                   return item.lock_flag 
-                                  ? 'Condition will be stored and available to you every time you come back' 
+                                  ? 'Filter will be stored and available to you every time you come back' 
                                   : 'Condtition will be locked for this session only'
                                 }}
                               /> */}
