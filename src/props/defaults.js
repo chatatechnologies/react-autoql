@@ -18,6 +18,7 @@ export const autoQLConfigDefault = {
   debug: false,
   test: false,
   enableAutocomplete: true,
+  disableQueryInterpretation: false,
   enableQueryValidation: true,
   enableQuerySuggestions: true,
   enableColumnVisibilityManager: true,

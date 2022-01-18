@@ -254,6 +254,8 @@ export default class ChatMessage extends React.Component {
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
+            disableQueryInterpretation={this.props.disableQueryInterpretation}
+            disableFilterLocking={this.props.disableFilterLocking}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })

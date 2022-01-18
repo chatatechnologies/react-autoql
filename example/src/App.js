@@ -121,6 +121,8 @@ export default class App extends Component {
     userDisplayName: 'Nikki',
     introMessage: undefined,
     enableAutocomplete: true,
+    disableQueryInterpretation: false,
+    disableFilterLocking: false,
     enableQueryValidation: true,
     enableQuerySuggestions: true,
     enableDrilldowns: true,
@@ -204,6 +206,8 @@ export default class App extends Component {
     return {
       enableQueryValidation: this.state.enableQueryValidation,
       enableAutocomplete: this.state.enableAutocomplete,
+      disableQueryInterpretation: this.state.disableQueryInterpretation,
+      disableFilterLocking: this.state.disableFilterLocking,
       enableDrilldowns: this.state.enableDrilldowns,
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
@@ -1048,6 +1052,16 @@ export default class App extends Component {
         {this.createBooleanRadioGroup(
           'Enable Autocomplete',
           'enableAutocomplete',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Disable Filter Locking',
+          'disableFilterLocking',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Disable Query Interpretation',
+          'disableQueryInterpretation',
           [true, false]
         )}
         {this.createBooleanRadioGroup(

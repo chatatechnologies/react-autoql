@@ -7,7 +7,6 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import moment from 'moment'
-import momentTZ from 'moment-timezone'
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -132,7 +131,9 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
-    onConditionClickCallback: func
+    onConditionClickCallback: func,
+    isDashboardQuery: bool,
+    disableQueryInterpretation: bool,
   }
 
   static defaultProps = {
@@ -160,6 +161,8 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
+    isDashboardQuery: false,
+    disableFilterLocking: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -2170,7 +2173,10 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {this.renderReverseTranslation()}
+        {!this.props.isDashboardQuery && !getAutoQLConfig(this.props.autoQLConfig).disableQueryInterpretation 
+          ? this.renderReverseTranslation() 
+          : null
+        }
         {this.renderContextMenu()}
       </ErrorBoundary>
     )

@@ -278,21 +278,34 @@ export default class ConditionLockMenu extends React.Component {
         >
           {this.renderShowSuccessMessage()}
           <div className="react-autoql-condition-lock-header">
-            <div className="autoql-condition-locking-menu-container">
+            <div className="react-autoql-filter-locking-title-container">
+              <h3>Filter Locking</h3>
               <button
                 onClick={() => {
                   this.props.onClose()
                 }}
                 className="autoql-close-button"
-                data-tip={lang.closeConditionLocking}
+                data-tip={lang.closeFilterLocking}
                 data-for="react-autoql-header-tooltip"
               >
                 <Icon type="close" />
               </button>
+            </div>
+          {_get(this.state.selectedConditions, 'length') === 0 ? (
+            <div className="react-autoql-filter-locking-empty-list">
+              <Icon type="info" />
+              <p>
+                Filters can be applied to narrow down your query results. Locking a 
+                filter ensures that only the specific data you wish to see is returned.
+              </p>
+            </div>
+          ) : null}
+            <div className="autoql-condition-locking-menu-container">
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
                 }}
+                highlightFirstSuggestion
                 suggestions={this.state.suggestions}
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
@@ -301,8 +314,8 @@ export default class ConditionLockMenu extends React.Component {
                   <Fragment>
                     <table>
                       <tr>
-                        <td style={{ width: 300 }}>{suggestion.name.keyword}</td>
-                        <td style={{ width: 300 }}>{suggestion.name.show_message}</td>
+                        <td className="autoql-condition-locking-menu-list-item">{suggestion.name.keyword}</td>
+                        <td style={{ float: 'right' }} className="autoql-condition-locking-menu-list-item">{suggestion.name.show_message}</td>
                       </tr>
                     </table>
                   </Fragment>
@@ -310,7 +323,7 @@ export default class ConditionLockMenu extends React.Component {
                 inputProps={{
                   onChange: this.onInputChange,
                   value: this.state.inputValue,
-                  placeholder: 'Search for a condition.',
+                  placeholder: 'Search & select a filter',
                   className: 'react-autoql-condition-locking-input',
                 }}
               />
@@ -319,12 +332,6 @@ export default class ConditionLockMenu extends React.Component {
           <div className="condition-list">
             {_get(this.state.selectedConditions, 'length') === 0 ? (
               <div className="empty-condition-list">
-                <p>
-                  Filter locking is a tool to help you track a condition
-                  across many queries. This is useful if you want to focus on a
-                  specific location, vendor or item without the need to type
-                  it out for every query.
-                </p>
                 <p>
                   You currently have no conditions locked. Use the search bar to
                   find a condition you would like to track.
@@ -412,15 +419,17 @@ export default class ConditionLockMenu extends React.Component {
               </div>
             )}
           </div>
-          <Button 
-            size="small"
-            style={{ float: 'right', marginRight: 10, marginBottom: -40 }} 
-            onClick={() => {
-              this.props.onClose()
-            }}
-          >
-            Done
-          </Button>
+          <div className="react-autoql-condition-lock-menu-footer">
+            <Button 
+              size="small"
+              style={{ float: 'right', marginRight: 6 }} 
+              onClick={() => {
+                this.props.onClose()
+              }}
+            >
+              Done
+            </Button>
+          </div>
         </div>
       </ErrorBoundary>
     )
