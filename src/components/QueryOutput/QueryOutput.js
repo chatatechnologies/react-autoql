@@ -6,6 +6,7 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import moment from 'moment'
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -130,7 +131,9 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
-    onConditionClickCallback: func
+    onConditionClickCallback: func,
+    isDashboardQuery: bool,
+    enableQueryInterpretation: bool,
   }
 
   static defaultProps = {
@@ -158,6 +161,8 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
+    isDashboardQuery: false,
+    enableFilterLocking: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -2099,26 +2104,32 @@ export default class QueryOutput extends React.Component {
     if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
 
       // make room in response container for reverse translation text
-      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)) {
+      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)
+        && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
         if(responseContainer.childNodes[0].classList && 
           responseContainer.childNodes[0].classList.contains('single-value-response')) {
-            responseContainer.style.height = `calc(110% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+            responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
         } else {
           responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
         }
       }
 
+      // WIP regex works but formatting is showing invalid date
+      let reverseTranslation = 
+        _get(queryResponse, 'data.data.interpretation')
+        .replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')
+        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g, moment.utc('$&').format('lll').toString())
+
       return (
-        <span id={id}>
+        <div id={id} className="condition-lock-reverse-translation">
           <strong>Interpreted as:{' '}</strong>
           <span
             onClick={() => this.props.onConditionClickCallback()}
-            className="condition-lock-reverse-translation"
             dangerouslySetInnerHTML={{
-              __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
+              __html: `${reverseTranslation}`
             }}
           />
-        </span>)
+        </div>)
     }
   }
 
@@ -2163,7 +2174,10 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {this.renderReverseTranslation()}
+        {!this.props.isDashboardQuery && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation 
+          ? this.renderReverseTranslation() 
+          : null
+        }
         {this.renderContextMenu()}
       </ErrorBoundary>
     )

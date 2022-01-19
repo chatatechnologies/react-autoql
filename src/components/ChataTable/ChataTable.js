@@ -173,7 +173,7 @@ export default class ChataTable extends React.Component {
               options={options}
               data-custom-attr="test-custom-attribute"
               className="react-autoql-table"
-              height="100%"
+              height="98%"
               clipboard
               download
             />
