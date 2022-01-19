@@ -1398,7 +1398,8 @@ export default class DataMessenger extends React.Component {
    * three times when first opened, then a number more times with each and every query 
    * being made.
    * 
-   * This function removes unnecessary duplicate instances of the Data Messenger Drawer.
+   * This function removes unnecessary duplicate instances of the Data Messenger Drawer
+   * and should help improve performance a bit by reducing the amount of renders.
    * 
    * https://stackoverflow.com/questions/57946748/remove-duplicate-dom-element-javascript-not-jquery
    */
