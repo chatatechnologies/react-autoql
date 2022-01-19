@@ -86,6 +86,7 @@
 }
 .chat-single-message-container.response .chat-message-bubble:not(.text) {
   min-width: 125px;
+  padding-bottom: 15px;
 }
 .chat-single-message-container.request .chat-message-bubble {
   background: var(--react-autoql-accent-color);

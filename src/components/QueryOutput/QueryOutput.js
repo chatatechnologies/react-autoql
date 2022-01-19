@@ -133,7 +133,7 @@ export default class QueryOutput extends React.Component {
     onSupportedDisplayTypesChange: func,
     onConditionClickCallback: func,
     isDashboardQuery: bool,
-    disableQueryInterpretation: bool,
+    enableQueryInterpretation: bool,
   }
 
   static defaultProps = {
@@ -162,7 +162,7 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
     isDashboardQuery: false,
-    disableFilterLocking: false,
+    enableFilterLocking: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -2104,10 +2104,11 @@ export default class QueryOutput extends React.Component {
     if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
 
       // make room in response container for reverse translation text
-      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)) {
+      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)
+        && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
         if(responseContainer.childNodes[0].classList && 
           responseContainer.childNodes[0].classList.contains('single-value-response')) {
-            responseContainer.style.height = `calc(110% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
+            responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
         } else {
           responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
         }
@@ -2173,7 +2174,7 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {!this.props.isDashboardQuery && !getAutoQLConfig(this.props.autoQLConfig).disableQueryInterpretation 
+        {!this.props.isDashboardQuery && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation 
           ? this.renderReverseTranslation() 
           : null
         }

@@ -78,10 +78,8 @@
 }
 
 .react-autoql-condition-lock-menu-footer {
-  position: absolute;
   bottom: 0;
   right: 0;
-  margin-bottom: 4px;
 }
 
 .react-autoql-accept-conditions-button {
@@ -118,6 +116,7 @@
   padding: 0;
   margin: 0 auto;
   overflow-y: scroll;
+  min-height: 182px;
 }
 .condition-list-item {
   cursor: pointer;

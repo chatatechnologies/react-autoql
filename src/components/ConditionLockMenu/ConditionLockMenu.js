@@ -133,7 +133,7 @@ export default class ConditionLockMenu extends React.Component {
    */
   removeCondition = (item, index) => {
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-    var sessionIndex = sessionConditions.findIndex(condition => condition.key === item.key)
+    var sessionIndex = sessionConditions.findIndex(condition => _get(condition, 'key') === _get(item, 'key'))
     
     if(sessionIndex !== -1) {
       sessionConditions.splice(sessionIndex, 1)
