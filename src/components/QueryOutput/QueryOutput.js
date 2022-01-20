@@ -2114,11 +2114,22 @@ export default class QueryOutput extends React.Component {
         }
       }
 
-      // WIP regex works but formatting is showing invalid date
-      let reverseTranslation = 
+      // manipulate interpretation string to properly format various substrings
+      var reverseTranslation = 
         _get(queryResponse, 'data.data.interpretation')
-        .replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')
-        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g, moment.utc('$&').format('lll').toString())
+        .replace(/'([^']*\w+)'/gi, (output) => {
+          const text = output.replace(/'/g, '')
+          if(_get(queryResponse, 'data.data.condition_filter').includes(text)) {
+            return `<a class="react-autoql-condition-link-filtered"><span class="material-icons react-autoql-custom-icon">
+            lock
+            </span>${' '}${text}</a>`
+          } else {
+            return `<a class="react-autoql-condition-link">${text}</a>`
+          }
+        })
+        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
+          return moment.utc(output).format('lll').toString()
+        })
 
       return (
         <div id={id} className="condition-lock-reverse-translation">
