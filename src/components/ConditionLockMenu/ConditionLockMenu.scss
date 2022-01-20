@@ -104,6 +104,11 @@
 .react-autoql-condition-lock-menu-footer {
   bottom: 0;
   right: 0;
+
+  button {
+    float: right;
+    margin: 6px !important;
+  }
 }
 
 .react-autoql-accept-conditions-button {
