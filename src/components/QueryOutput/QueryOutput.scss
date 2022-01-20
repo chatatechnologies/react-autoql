@@ -1,3 +1,6 @@
+// required for reverse translation
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
 .react-autoql-response-content-container:not(.html-content) {
   position: relative;
   display: flex;
@@ -292,13 +295,40 @@
   background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.05));
 }
 
-.condition-link {
+.react-autoql-condition-link {
   background: none !important;
   border: none;
   padding: 0 !important;
   text-decoration: underline;
+  white-space: nowrap;
   cursor: pointer;
   color: var(--react-autoql-accent-color);
+}
+.react-autoql-condition-link-filtered {
+  border: 1px;
+  border-radius: 5px;
+  padding: 2px 4px 2px 4px !important;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: var(--react-autoql-accent-color) !important;
+  color: white;
+
+  .react-autoql-custom-icon {
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  &:hover {
+    color: var(--react-autoql-hover-color);
+    padding: 4px;
+    font-size: 15px;
+
+    .react-autoql-custom-icon {
+      font-size: 15px;
+      margin-top: -2px;
+    }
+  }
 }
 
 .condition-lock-reverse-translation {
