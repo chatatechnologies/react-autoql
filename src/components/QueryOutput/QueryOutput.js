@@ -2114,10 +2114,11 @@ export default class QueryOutput extends React.Component {
         }
       }
 
+      // (["'])(?:(?=(\\?))\2.)*?\1 /'([^']*\w+)'/gi
       // manipulate interpretation string to properly format various substrings
       var reverseTranslation = 
         _get(queryResponse, 'data.data.interpretation')
-        .replace(/'([^']*\w+)'/gi, (output) => {
+        .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
           const text = output.replace(/'/g, '')
           if(_get(queryResponse, 'data.data.condition_filter').includes(text)) {
             return `<a class="react-autoql-condition-link-filtered"><span class="material-icons react-autoql-custom-icon">
