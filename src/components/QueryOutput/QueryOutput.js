@@ -2114,6 +2114,7 @@ export default class QueryOutput extends React.Component {
         }
       }
 
+      // (["'])(?:(?=(\\?))\2.)*?\1 /'([^']*\w+)'/gi
       // manipulate interpretation string to properly format various substrings
       var reverseTranslation = 
         _get(queryResponse, 'data.data.interpretation')
