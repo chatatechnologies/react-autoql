@@ -305,28 +305,26 @@
   color: var(--react-autoql-accent-color);
 }
 .react-autoql-condition-link-filtered {
-  border: 1px;
+  border: 1px solid var(--react-autoql-accent-color) !important;
   border-radius: 5px;
   padding: 2px 4px 2px 4px !important;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  background-color: var(--react-autoql-accent-color) !important;
-  color: white;
+  color: var(--react-autoql-accent-color);
 
   .react-autoql-custom-icon {
     font-size: 14px;
     vertical-align: middle;
+    margin-top: -4px;
   }
 
   &:hover {
-    color: var(--react-autoql-hover-color);
     padding: 4px;
-    font-size: 15px;
+    font-weight: 600;
 
     .react-autoql-custom-icon {
-      font-size: 15px;
-      margin-top: -2px;
+      font-weight: 600;
     }
   }
 }
