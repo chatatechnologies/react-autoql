@@ -127,7 +127,7 @@ export default class App extends Component {
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
-    enableNotificationsTab: true,
+    enableNotificationsTab: false,
     enableNotifications: true,
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,

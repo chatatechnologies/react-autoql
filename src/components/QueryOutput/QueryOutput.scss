@@ -303,6 +303,11 @@
   white-space: nowrap;
   cursor: pointer;
   color: var(--react-autoql-accent-color);
+
+  &:hover {
+    padding: 4px;
+    font-weight: 600;
+  }
 }
 .react-autoql-condition-link-filtered {
   border: 1px solid var(--react-autoql-accent-color) !important;
@@ -333,6 +338,6 @@
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
-  padding: 2px 6px 2px 6px;
+  padding: 4px 6px 4px 6px;
   margin: 2px;
 }
