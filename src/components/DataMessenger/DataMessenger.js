@@ -191,7 +191,6 @@ export default class DataMessenger extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    this.removeDuplicateMessengerInstance()
     try {
       setTimeout(() => {
         ReactTooltip.rebuild()
