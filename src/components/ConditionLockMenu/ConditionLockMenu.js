@@ -48,6 +48,10 @@ export default class ConditionLockMenu extends React.Component {
     isFetchingConditions: false,
     isShowingInfo: false,
     isShowingSettingInfo: false,
+    showMessage: {
+      type: 'unlock',
+      message: 'filter removed'
+    }
   }
 
   componentDidMount = () => {
@@ -104,14 +108,7 @@ export default class ConditionLockMenu extends React.Component {
     let array = this.state.selectedConditions
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
-      var el = document.getElementById(
-        'condition-selection-error'
-      )
-      el.className = 'show'
-      setTimeout(() => {
-        el.className = el.className.replace('show', '')
-      }, 3000)
-      this.setState({ inputValue: '' })
+      this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
         keyword: suggestion.name.keyword,
@@ -144,8 +141,11 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} item
    */
   removeCondition = (item, index) => {
-    var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-    var sessionIndex = sessionConditions.findIndex(condition => _get(condition, 'key') === _get(item, 'key'))
+    const sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+    let sessionIndex;
+    if(sessionConditions) {
+      sessionIndex = sessionConditions.findIndex(condition => _get(condition, 'key') === _get(item, 'key'))
+    }
     
     if(sessionIndex !== -1 && sessionIndex !== undefined && sessionIndex !== null) {
       sessionConditions.splice(sessionIndex, 1)
@@ -160,6 +160,7 @@ export default class ConditionLockMenu extends React.Component {
     const array = this.state.selectedConditions
     array.splice(index, 1)
     this.setState({ selectedConditions: array })
+    this.handleShowMessage('unlock', 'Filter removed.')
   }
 
   /**
@@ -219,7 +220,7 @@ export default class ConditionLockMenu extends React.Component {
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
 
-            if (i === 4) {
+            if (i === 5) {
               break
             }
           }
@@ -247,10 +248,30 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
+  handleShowMessage(type, message) {
+    var el = document.getElementById(
+      'react-autoql-condition-show-message'
+    )
+    el.className = 'show'
+    el.style.animation = 'none';
+    setTimeout(function() {
+        el.style.animation = '';
+    }, 10);
+    setTimeout(() => {
+      el.className = el.className.replace('show', '')
+    }, 3000)
+    this.setState({ 
+      inputValue: '',
+      showMessage: {
+        type: type,
+        message: message
+      } 
+    })
+  }
 
   renderShowMessage = () => (
-    <div id="condition-selection-error">
-      <Icon type="warning" /> This condition has already been applied.
+    <div id="react-autoql-condition-show-message">
+      <Icon type={this.state.showMessage.type} /> {this.state.showMessage.message}
     </div>
   )
 
@@ -438,7 +459,7 @@ export default class ConditionLockMenu extends React.Component {
                                   paddingLeft: 5,
                                   color: 'red',
                                 }}
-                                data-tip="Remove this condition"
+                                data-tip="Remove filter"
                                 data-for="react-autoql-remove-condition"
                                 type="trash"
                                 onClick={() =>
