@@ -85,6 +85,7 @@ export default class DataMessenger extends React.Component {
     defaultTab: string,
     autoChartAggregations: bool,
     enableQueryInterpretation: bool,
+    defaultShowInterpretation: bool,
     enableFilterLocking: bool,
 
     // Callbacks
@@ -126,6 +127,7 @@ export default class DataMessenger extends React.Component {
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
     enableQueryInterpretation: false,
+    defaultShowInterpretation: false,
     enableFilterLocking: false,
 
     // Callbacks
