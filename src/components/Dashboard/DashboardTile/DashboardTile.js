@@ -941,6 +941,7 @@ export default class DashboardTile extends React.Component {
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--react-autoql-background-color-primary'
                 )}
+                isDashboardQuery={true}
                 onDisplayTypeUpdate={() => {
                   // This is necessary to update the toolbar with the newly rendered QueryOutput
                   setTimeout(() => {

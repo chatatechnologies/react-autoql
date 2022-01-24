@@ -1,32 +1,3 @@
-#condition-lock-snackbar-success {
-  visibility: hidden;
-  min-width: 200px;
-  line-height: 1 !important;
-  font-size: 14px !important;
-  background-color: var(--react-autoql-background-color-secondary);
-  color: var(--react-autoql-success-color);
-  text-align: center;
-  border-radius: 4px;
-  padding: 6px;
-  position: fixed;
-  display: block;
-  z-index: 999999999;
-  transform: translateX(-10%);
-  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
-}
-
-.autoql-condition-locking-menu-container
-  .react-autosuggest__suggestions-container--open {
-  transform: translateX(8%);
-  width: 90% !important;
-}
-
-#condition-lock-snackbar-success.show {
-  visibility: visible;
-  // -webkit-animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
-  animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
-}
-
 .react-autoql-drawer {
   font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
@@ -124,7 +95,6 @@
 .react-autoql-drawer .chat-bar-container {
   position: relative;
   padding: 10px;
-  padding-top: 30px;
 }
 
 .react-autoql-drawer .chat-drawer-chat-bar {
@@ -355,6 +325,7 @@
 .react-autoql-condition-lock-menu {
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-primary);
+  min-height: 300px;
 }
 
 .react-tiny-popover-container {
@@ -609,17 +580,6 @@
   }
   100% {
     transform: translateY(0%);
-  }
-}
-
-@keyframes snackbarFadein {
-  from {
-    top: 30px;
-    opacity: 0;
-  }
-  to {
-    top: 60px;
-    opacity: 1;
   }
 }
 

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
+import _ from 'lodash'
 
 var autoCompleteCall = null
 
@@ -151,6 +152,20 @@ export const runQueryOnly = ({
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
+  const sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+  let conditions = {};
+
+  if(sessionConditions !== null) {
+    for (let i = 0; i < sessionConditions.length; i++) {
+      if(Object.keys(conditions).some(item => item === sessionConditions[i].key)){
+        var item = Object.keys(conditions).find(key => key === sessionConditions[i].key)
+        conditions[item].push(sessionConditions[i].value)
+      } else {
+        conditions[sessionConditions[i].key] = [sessionConditions[i].value]
+      }
+
+    }
+  }
 
   const data = {
     text: query,
@@ -158,6 +173,7 @@ export const runQueryOnly = ({
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
+    session_locked_conditions: conditions,
   }
 
   if (!query || !query.trim()) {
@@ -412,9 +428,9 @@ export const fetchValueLabelAutocomplete = ({
 }
 
 export const fetchConditions = ({ apiKey, token, domain } = {}) => {
-  if (!domain || !apiKey || !token) {
-    return Promise.reject(new Error('Unauthenticated'))
-  }
+  // if (!domain || !apiKey || !token) {
+  //   return Promise.reject(new Error('Unauthenticated'))
+  // }
 
   const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
 
@@ -449,8 +465,7 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     array.push({
       key: obj.key,
       keyword: obj.keyword,
-      // lock_flag: obj.lock_flag,
-      lock_flag: 1,
+      lock_flag: obj.lock_flag,
       show_message: obj.show_message,
       value: obj.value,
     })

@@ -1,0 +1,43 @@
+.query-input-with-validation {
+  display: inline-block;
+  padding: 10px;
+  padding-left: 20px;
+  margin: 10px;
+  height: 42px;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--react-autoql-background-color-primary);
+  letter-spacing: 0.05em;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: text;
+
+  .validation-selector-element {
+    border-bottom: 1px dashed var(--react-autoql-accent-color);
+  }
+
+  &.left-padding {
+    padding-left: 54px;
+  }
+
+  border-radius: 24px;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  color: var(--react-autoql-text-color-primary, #5d5d5d);
+  outline: none !important;
+
+  &:disabled {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  &:not(:disabled):hover,
+  &:not(:disabled):focus {
+    box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.query-input-with-validation:empty:before {
+  content: attr(data-placeholder);
+  opacity: 0.6;
+}

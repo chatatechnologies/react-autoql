@@ -84,6 +84,9 @@ export default class DataMessenger extends React.Component {
     enableDynamicCharting: bool,
     defaultTab: string,
     autoChartAggregations: bool,
+    enableQueryInterpretation: bool,
+    defaultShowInterpretation: bool,
+    enableFilterLocking: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -123,6 +126,9 @@ export default class DataMessenger extends React.Component {
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
+    enableQueryInterpretation: false,
+    defaultShowInterpretation: false,
+    enableFilterLocking: false,
 
     // Callbacks
     onHandleClick: () => {},
@@ -171,11 +177,19 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-      (response) => {
-        this.setState({ conditions: _get(response, 'data.data.data') })
-      }
-    )
+    try{
+      fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+        (response) => {
+          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+          this.setState({ conditions: {
+            persistent: _get(response, 'data.data.data'),
+            session: sessionConditions,
+          } })
+        }
+      )
+    } catch(e) {
+      console.error(e)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -208,6 +222,18 @@ export default class DataMessenger extends React.Component {
       const prevTheme = getThemeConfig(prevProps.themeConfig).theme
       if (thisTheme && thisTheme !== prevTheme) {
         setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
+      }
+
+      if(this.state.isConditionLockingMenuOpen !== prevState.isConditionLockingMenuOpen) {
+        fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+          (response) => {
+            var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+            this.setState({ conditions: {
+              persistent: _get(response, 'data.data.data'),
+              session: sessionConditions,
+            } })
+          }
+        )
       }
     } catch (error) {
       console.error(error)
@@ -813,7 +839,9 @@ export default class DataMessenger extends React.Component {
       return (
         <>
         <div id="condition-dropdown" style={{justifyContent: 'left', position: 'absolute', right: 30}}>
-        {window.location.href.includes('localhost') || window.location.href.includes('chata-ai-test-page') ? 
+        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking 
+          && (window.location.href.includes('localhost') 
+            || window.location.href.includes('chata-ai-test-page')) ? 
           <button
             id="condition-dropdown"
             onClick={() => {
@@ -822,10 +850,15 @@ export default class DataMessenger extends React.Component {
               })
             }}
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip={lang.dataMessengerOptions}
+            data-tip={lang.openFilterLocking}
             data-for="react-autoql-header-tooltip"
           >
-            <Icon type={_get(this.state.conditions, 'length') > 0 ? "lock" : "unlock"} />
+            <Icon type={
+              _get(this.state.conditions, 'persistent.length') > 0 || 
+              _get(this.state.conditions, 'session.length') > 0 
+              ? "lock" : "unlock"
+              } 
+            />
           </button>
           : <span />
         }
@@ -877,7 +910,7 @@ export default class DataMessenger extends React.Component {
               })
             }
             className="react-autoql-drawer-header-btn clear-all"
-            data-tip={lang.dataMessengerOptions}
+            data-tip={lang.clearDataResponses}
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="trash" />
@@ -902,12 +935,6 @@ export default class DataMessenger extends React.Component {
     return <div className="header-title">{title}</div>
   }
 
-  renderShowSuccessMessage = () => (
-    <div id="condition-lock-snackbar-success">
-      <Icon type="check" /> Conditions Applied
-    </div>
-  )
-
   renderHeaderContent = () => {
     return (
       <Fragment>
@@ -924,44 +951,39 @@ export default class DataMessenger extends React.Component {
             <Icon type="close" />
           </button>
         </div>
-        <Popover
-          containerStyle={this.getConditionMenuPosition()}
-          isOpen={this.state.isConditionLockingMenuOpen}
-          position="bottom"
-          padding={2}
-          align="center"
-          content={
-            <div id="condition-menu-dropdown" style={{ display: 'block' }}>
-            <ConditionLockMenu
-              authentication={getAuthentication(
-                getAuthentication(this.props.authentication)
-              )}
-              containerWidth={this.getDrawerWidth()}
-              isOpen={this.state.isConditionLockingMenuOpen}
-              onClose={(isSaved) => {
-                if (isSaved) {
-                  var el = document.getElementById(
-                    'condition-lock-snackbar-success'
-                  )
-                  el.className = 'show'
-                  setTimeout(() => {
-                    el.className = el.className.replace('show', '')
-                  }, 3000)
-                }
-                this.setState({ isConditionLockingMenuOpen: false })
-              }}
-            />
-            </div>
-          }
-        >
-          <div className="react-autoql-header-center-container">
+        {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking 
+        ? <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
-            {this.renderShowSuccessMessage()}
           </div>
-        </Popover>
+        : <Popover
+            containerStyle={this.getConditionMenuPosition()}
+            isOpen={this.state.isConditionLockingMenuOpen}
+            position="bottom"
+            padding={2}
+            align="center"
+            content={
+              <div id="condition-menu-dropdown" style={{ display: 'block' }}>
+              <ConditionLockMenu
+                authentication={getAuthentication(
+                  getAuthentication(this.props.authentication)
+                )}
+                containerWidth={this.getDrawerWidth()}
+                isOpen={this.state.isConditionLockingMenuOpen}
+                onClose={() => {
+                  this.setState({ isConditionLockingMenuOpen: false })
+                }}
+              />
+              </div>
+            }
+          >
+            <div className="react-autoql-header-center-container">
+              {this.renderHeaderTitle()}
+            </div>
+          </Popover>
+        }
         <div className="react-autoql-header-right-container">
           {this.renderOptionsDropdown()}
-        </div>
+        </div> 
       </Fragment>
     )
   }
@@ -1046,6 +1068,11 @@ export default class DataMessenger extends React.Component {
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
+                  onConditionClickCallback={() => {
+                    this.setState({
+                      isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen
+                    })
+                  }}
                 />
               )
             })}
@@ -1365,6 +1392,24 @@ export default class DataMessenger extends React.Component {
         initialQuery={this.state.activeQuery}
       />
     )
+  }
+
+  /**
+   * For some indiscernible reason, the Data Messenger drawer duplicates itself in the DOM.
+   * three times when first opened, then a number more times with each and every query 
+   * being made.
+   * 
+   * This function removes unnecessary duplicate instances of the Data Messenger Drawer
+   * and should help improve performance a bit by reducing the amount of renders.
+   * 
+   * https://stackoverflow.com/questions/57946748/remove-duplicate-dom-element-javascript-not-jquery
+   */
+  removeDuplicateMessengerInstance() {
+    const instance = {};
+    for (const item of document.querySelectorAll('.ReactModalPortal')) {
+        if (instance[item]) item.parentNode.removeChild(item);
+        else instance[item] = true;
+    }
   }
 
   render = () => {

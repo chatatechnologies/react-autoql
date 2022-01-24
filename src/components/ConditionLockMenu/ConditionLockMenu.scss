@@ -1,7 +1,50 @@
+.react-autoql-filter-locking-title-container {
+  display: inline-block;
+  width: 100%;
+  padding-top: 4px;
+  padding-left: 6px;
+  h3 {
+    width: 95%;
+    float: left;
+    color: var(--react-autoql-text-color-primary);
+    margin-bottom: 0;
+
+    span {
+      color: var(--react-autoql-accent-color);
+    }
+  }
+  button {
+    width: 5%;
+    float: right;
+    :hover {
+      cursor: pointer;
+      color: var(--react-autoql-hover-color);
+    }
+  }
+}
+
+.react-autoql-filter-locking-empty-list {
+  color: var(--react-autoql-text-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
+  border-radius: 5px;
+  padding: 2px 6px 2px 6px;
+  margin: 4px 10px 4px 10px;
+  display: inline-block;
+
+  span {
+    color: var(--react-autoql-accent-color);
+  }
+  p {
+    width: 96%;
+    float: right;
+    margin-bottom: 0;
+  }
+}
+
 .react-autoql-condition-locking-input {
   padding: 5px;
   padding-left: 20px;
-  margin: 10px;
+  margin: 8px;
   height: 32px;
   box-sizing: border-box;
   border-radius: 24px;
@@ -9,13 +52,17 @@
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
-  width: calc(100% - 60px);
+  width: calc(100% - 20px);
   font-family: inherit;
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
   background: var(--react-autoql-background-color-primary);
   color: #5d5d5d;
+}
+
+.react-autoql-condition-locking-input:hover {
+  box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 
 .condition-table {
@@ -32,6 +79,36 @@
   padding: 4px;
   margin: 0 10px 0 10px;
   font-weight: 800;
+
+  span {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+.condition-table .condition-table-list-item {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.react-autoql-condition-lock-menu-footer {
+  bottom: 0;
+  right: 0;
+
+  button {
+    float: right;
+    margin: 6px !important;
+  }
+}
+
+.react-autoql-condition-lock-menu-footer {
+  bottom: 0;
+  right: 0;
+
+  button {
+    float: right;
+    margin: 6px !important;
+  }
 }
 
 .react-autoql-accept-conditions-button {
@@ -67,7 +144,19 @@
 .condition-list {
   padding: 0;
   margin: 0 auto;
+  overflow-y: scroll;
+  min-height: 182px;
 }
+
+.condition-list-loading-container {
+  display: flex;
+  height: 180px;
+  width: 100%;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
 .condition-list-item {
   cursor: pointer;
   padding: 4px;
@@ -84,8 +173,12 @@
 }
 .empty-condition-list {
   text-align: center;
-  padding: 4px;
-  margin: 0 20px 0 20px;
+  padding: 20px;
+  height: 140px;
+  p {
+    margin-top: 20px !important;
+    vertical-align: middle;
+  }
 }
 
 .autoql-close-button {
@@ -111,8 +204,12 @@
 
 .autoql-condition-locking-menu-container
   .react-autosuggest__suggestions-container--open {
+  background-color: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
   position: absolute;
-  // bottom: unset;
+  top: unset;
+  bottom: unset;
   overflow-y: scroll !important;
   padding-top: 5px;
   padding-bottom: 5px;
@@ -123,20 +220,18 @@
   z-index: 2;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
   text-align: left;
-  width: 95%;
-  top: 35px;
   border-radius: 4px;
-  margin: 10px auto;
+  margin: -8px auto;
   height: auto;
-  max-height: 50vh;
-  overflow-y: auto;
+  max-height: 80vh;
+  overflow-y: scroll !important;
+  transform: translateX(4%);
+  width: 92% !important;
 }
 
-.autoql-condition-locking-menu-container
-  .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-background-color-primary);
-  border: 1px solid var(--react-autoql-border-color);
-  color: var(--react-autoql-text-color-primary);
+.autoql-condition-locking-menu-list {
+  table-layout: fixed;
+  width: 100%;
 }
 
 .autoql-condition-locking-menu-container .react-autosuggest__suggestion {
@@ -170,4 +265,74 @@
   padding: 10px 0 0 10px;
   font-size: 12px;
   color: #777;
+}
+
+.react-autoql-filter-setting-info-card {
+  color: var(--react-autoql-text-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
+  border-radius: 5px;
+  padding: 2px 6px 2px 6px;
+  margin: 4px 10px 4px 10px;
+  display: inline-block;
+  position: absolute;
+  top: 40px;
+  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+
+  p {
+    margin-bottom: 0 !important;
+
+    span {
+      color: var(--react-autoql-accent-color);
+    }
+  }
+}
+
+#react-autoql-condition-show-message {
+  visibility: hidden;
+  min-width: 200px;
+  line-height: 1 !important;
+  font-size: 14px !important;
+  background-color: var(--react-autoql-background-color-secondary);
+  text-align: center;
+  border-radius: 4px;
+  padding: 6px;
+  position: fixed;
+  top: 20px;
+  display: block;
+  z-index: 999999999;
+  transform: translateX(85%);
+  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
+
+  span {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+#react-autoql-condition-show-message.show {
+  visibility: visible;
+  // -webkit-animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
+  animation: snackbarFadein 1s, snackbarFadeout 1s 2s;
+}
+
+@keyframes snackbarFadein {
+  from {
+    top: 0;
+    opacity: 0;
+  }
+  to {
+    top: 20px;
+    opacity: 1;
+  }
+}
+
+@keyframes snackbarFadeout {
+  from {
+    top: 20px;
+    opacity: 1;
+  }
+  to {
+    top: 0;
+    opacity: 0;
+  }
 }

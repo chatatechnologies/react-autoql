@@ -71,6 +71,7 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onConditionClickCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -98,6 +99,7 @@ export default class ChatMessage extends React.Component {
     autoChartAggregations: true,
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
+    onConditionClickCallback: () => {}
   }
 
   state = {
@@ -252,10 +254,15 @@ export default class ChatMessage extends React.Component {
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
+            enableQueryInterpretation={this.props.enableQueryInterpretation}
+            enableFilterLocking={this.props.enableFilterLocking}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
               }
+            }}
+            onConditionClickCallback={() => {
+              this.props.onConditionClickCallback()
             }}
           />
         </React.Fragment>
@@ -428,7 +435,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.type === 'text' || this.state.displayType === 'html') {
       return undefined
     } else if (chartHeight) {
-      return chartHeight + 40
+      return chartHeight + 120
     }
 
     return '85%'
@@ -450,39 +457,11 @@ export default class ChatMessage extends React.Component {
     }
   }
 
-  /**
-   * ** WIP **
-   *
-   * Apply conditions to queries that contain them.
-   * @returns a list of conditions
-   */
-  renderLockedConditions = () => {
-    const { response } = this.props
-    const numRows = _get(response, 'data.data.rows.length')
-    const maxRowLimit = _get(response, 'data.data.row_limit')
-
-    if (_get(response, 'data.data.persistent_locked_conditions.length') > 0) {
-      return (
-        <Icon
-          type="lock"
-          className={
-            maxRowLimit &&
-            numRows === maxRowLimit &&
-            !this.allColumnsAreHidden()
-              ? 'condition-info-icon-left-align'
-              : 'condition-info-icon'
-          }
-          data-tip={response.data.data.persistent_locked_conditions}
-          data-for="chart-element-tooltip"
-        />
-      )
-    }
-  }
-
   render = () => {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
     const maxMessageHeight = this.getMaxMessageheight()
+
     return (
       <ErrorBoundary>
         <div
@@ -520,7 +499,6 @@ export default class ChatMessage extends React.Component {
             {this.props.isDataMessengerOpen && this.renderRightToolbar()}
             {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
             {this.renderDataLimitWarning()}
-            {this.renderLockedConditions()}
           </div>
         </div>
       </ErrorBoundary>
