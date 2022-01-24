@@ -1071,7 +1071,6 @@ export default class App extends Component {
           'defaultShowInterpretation',
           [true, false]
         )}
-        {/* defaultShowInterpretation */}
         {this.createBooleanRadioGroup(
           'Enable Query Validation',
           'enableQueryValidation',

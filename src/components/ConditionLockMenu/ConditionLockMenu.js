@@ -317,7 +317,7 @@ export default class ConditionLockMenu extends React.Component {
                   type="info" 
                   onMouseEnter={() => setTimeout(() => {
                     this.setState({ isShowingInfo: true })
-                  }, 1000)} 
+                  }, 800)} 
                   onMouseLeave={() => this.setState({ isShowingInfo: false })} 
                 />
               </h3>

@@ -2094,7 +2094,6 @@ export default class QueryOutput extends React.Component {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
     )
-    console.log(e)
     // make room in response container for reverse translation text
     if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)
     && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
