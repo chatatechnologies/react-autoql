@@ -6,6 +6,8 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import moment from 'moment'
+import { Collapse } from 'react-collapse';
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -130,7 +132,10 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
-    onConditionClickCallback: func
+    onConditionClickCallback: func,
+    isDashboardQuery: bool,
+    enableQueryInterpretation: bool,
+    defaultShowInterpretation: bool,
   }
 
   static defaultProps = {
@@ -158,6 +163,8 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
+    isDashboardQuery: false,
+    enableFilterLocking: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -176,6 +183,7 @@ export default class QueryOutput extends React.Component {
     suggestionSelection: this.props.selectedSuggestion,
     QandAResponseCorrect: false,
     QandASuggestions: [],
+    isShowingInterpretation: false,
   }
 
   componentDidMount = () => {
@@ -202,6 +210,7 @@ export default class QueryOutput extends React.Component {
 
       // Set the initial display type based on prop value, response, and supported display types
       this.setState({
+        isShowingInterpretation: getAutoQLConfig(this.props.autoQLConfig).defaultShowInterpretation,
         displayType: isDisplayTypeValid(
           this.props.queryResponse,
           this.props.displayType
@@ -2081,6 +2090,21 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  handleShowHide = (e) => {
+    const responseContainer = document.getElementById(
+      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
+    )
+    // make room in response container for reverse translation text
+    if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)
+    && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
+      if(e.isFullyOpened) {
+        responseContainer.style.height = `calc(100% - ${e.contentHeight}px)`
+      } else {
+        responseContainer.style.height = `calc(100% - 26px)`
+      }
+    }
+  }
+
   /**
    *
    * Apply conditions to queries that contain them and
@@ -2096,29 +2120,63 @@ export default class QueryOutput extends React.Component {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
     )
-    if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
 
-      // make room in response container for reverse translation text
-      if(document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)) {
-        if(responseContainer.childNodes[0].classList && 
-          responseContainer.childNodes[0].classList.contains('single-value-response')) {
-            responseContainer.style.height = `calc(110% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
-        } else {
-          responseContainer.style.height = `calc(100% - ${document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`).offsetHeight}px)`
-        }
-      }
+    if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
+      // manipulate interpretation string to properly format various substrings
+      var reverseTranslation = 
+        _get(queryResponse, 'data.data.interpretation')
+        .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
+          const text = output.replace(/'/g, '')
+          if(_get(queryResponse, 'data.data.condition_filter').includes(text)) {
+            return `
+              <a class="react-autoql-condition-link-filtered">
+                <span class="material-icons react-autoql-custom-icon">lock</span>
+                ${' '}${text}
+              </a>
+            `
+          } else {
+            return `<a class="react-autoql-condition-link">${text}</a>`
+          }
+        })
+        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
+          return moment.utc(output).format('lll').toString()
+        })
 
       return (
-        <span id={id}>
-          <strong>Interpreted as:{' '}</strong>
-          <span
-            onClick={() => this.props.onConditionClickCallback()}
-            className="condition-lock-reverse-translation"
-            dangerouslySetInnerHTML={{
-              __html: `${_get(queryResponse, 'data.data.interpretation').replace(/'([^']*\w+)'/g, '<a class="condition-link">$1</a>')}`
-            }}
-          />
-        </span>)
+        <div id={id} className="condition-lock-reverse-translation">
+          <span style={{ float: 'left', minHeight: 20 }} onClick={() => {
+            this.setState({ 
+              isShowingInterpretation: !this.state.isShowingInterpretation 
+              })
+          }}>
+              <ReactTooltip
+                className="react-autoql-drawer-tooltip"
+                id="react-autoql-interpretation"
+                effect="solid"
+                delayShow={500}
+                place="top"
+              />
+              <Icon 
+                type="info" 
+                data-tip="Show query interpretation"
+                data-for="react-autoql-interpretation"
+              />{' '}
+          </span>
+          <Collapse 
+            onRest={this.handleShowHide} 
+            onWork={this.handleShowHide} 
+            isOpened={this.state.isShowingInterpretation}
+          >
+              <strong>Interpreted as:{' '}</strong>
+              <span
+                onClick={() => this.props.onConditionClickCallback()}
+                dangerouslySetInnerHTML={{
+                  __html: `${reverseTranslation}`
+                }}
+              />
+          </Collapse>
+        </div>
+      )
     }
   }
 
@@ -2163,7 +2221,10 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {this.renderReverseTranslation()}
+        {!this.props.isDashboardQuery && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation 
+          ? this.renderReverseTranslation() 
+          : null
+        }
         {this.renderContextMenu()}
       </ErrorBoundary>
     )

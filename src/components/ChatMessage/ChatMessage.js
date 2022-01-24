@@ -254,6 +254,8 @@ export default class ChatMessage extends React.Component {
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
+            enableQueryInterpretation={this.props.enableQueryInterpretation}
+            enableFilterLocking={this.props.enableFilterLocking}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
@@ -433,7 +435,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.type === 'text' || this.state.displayType === 'html') {
       return undefined
     } else if (chartHeight) {
-      return chartHeight + 40
+      return chartHeight + 120
     }
 
     return '85%'
