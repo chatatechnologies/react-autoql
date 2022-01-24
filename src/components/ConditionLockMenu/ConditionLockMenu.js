@@ -315,7 +315,9 @@ export default class ConditionLockMenu extends React.Component {
               <h3>Filter Locking {' '} 
                 <Icon 
                   type="info" 
-                  onMouseEnter={() => this.setState({ isShowingInfo: true })} 
+                  onMouseEnter={() => setTimeout(() => {
+                    this.setState({ isShowingInfo: true })
+                  }, 800)} 
                   onMouseLeave={() => this.setState({ isShowingInfo: false })} 
                 />
               </h3>
@@ -374,7 +376,7 @@ export default class ConditionLockMenu extends React.Component {
                   <p>
                   <Icon type="info" />{' '}<strong>Persistent</strong> filters remain locked at all times, unless the filter is removed.
                     <br /> 
-                  <Icon type="info" />{' '}<strong>Session-specific</strong> filters remain locked until you end your browser session.
+                  <Icon type="info" />{' '}<strong>Session</strong> filters remain locked until you end your browser session.
                   </p>
                 </div>
               ) : null}
@@ -402,7 +404,9 @@ export default class ConditionLockMenu extends React.Component {
                           Setting
                           <Icon 
                             type="info" 
-                            onMouseEnter={() => this.setState({ isShowingSettingInfo: true })} 
+                            onMouseEnter={() => setTimeout(() => {
+                              this.setState({ isShowingInfo: true })
+                            }, 800)}  
                             onMouseLeave={() => this.setState({ isShowingSettingInfo: false })} 
                           />
                         </th>
@@ -438,7 +442,7 @@ export default class ConditionLockMenu extends React.Component {
                                     height={18}
                                     width={34}
                                   />{' '}
-                                  {item.lock_flag ? 'Persistent' : 'Session-specific'}
+                                  {item.lock_flag ? 'Persistent' : 'Session'}
                                 </span>
                             </td>
                             <td

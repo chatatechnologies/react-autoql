@@ -122,6 +122,7 @@ export default class App extends Component {
     introMessage: undefined,
     enableAutocomplete: true,
     enableQueryInterpretation: true,
+    defaultShowInterpretation: true,
     enableFilterLocking: true,
     enableQueryValidation: true,
     enableQuerySuggestions: true,
@@ -207,6 +208,7 @@ export default class App extends Component {
       enableQueryValidation: this.state.enableQueryValidation,
       enableAutocomplete: this.state.enableAutocomplete,
       enableQueryInterpretation: this.state.enableQueryInterpretation,
+      defaultShowInterpretation: this.state.defaultShowInterpretation,
       enableFilterLocking: this.state.enableFilterLocking,
       enableDrilldowns: this.state.enableDrilldowns,
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
@@ -1062,6 +1064,11 @@ export default class App extends Component {
         {this.createBooleanRadioGroup(
           'Enable Query Interpretation',
           'enableQueryInterpretation',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
+          'Show Expanded Interpretation By Default',
+          'defaultShowInterpretation',
           [true, false]
         )}
         {this.createBooleanRadioGroup(
