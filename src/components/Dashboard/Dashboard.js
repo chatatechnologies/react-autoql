@@ -470,6 +470,7 @@ class Dashboard extends React.Component {
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           queryResponse={this.state.activeDrilldownResponse}
           renderTooltips={false}
+          isDashboardQuery={true}
           autoChartAggregations={this.props.autoChartAggregations}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
@@ -495,6 +496,7 @@ class Dashboard extends React.Component {
               dataFormatting={getDataFormatting(this.props.dataFormatting)}
               queryResponse={this.state.activeDrilldownResponse}
               renderTooltips={false}
+              isDashboardQuery={true}
               autoChartAggregations={this.props.autoChartAggregations}
               backgroundColor={document.documentElement.style.getPropertyValue(
                 '--react-autoql-background-color-primary'
@@ -547,7 +549,7 @@ class Dashboard extends React.Component {
       const tile = this.props.tiles.find(
         (tile) => tile.i === this.state.activeDrilldownTile
       )
-
+      
       let title
       let queryResponse
       let displayType
@@ -558,7 +560,7 @@ class Dashboard extends React.Component {
         displayType = tile.secondDisplayType
         dataConfig = tile.secondDataConfig
       } else if (tile && !this.state.isDrilldownSecondHalf) {
-        title = tile.query
+        title = tile.title
         queryResponse = tile.queryResponse
         displayType = tile.displayType
         dataConfig = tile.dataConfig
@@ -608,6 +610,7 @@ class Dashboard extends React.Component {
                         queryResponse={queryResponse}
                         displayType={displayType}
                         dataConfig={dataConfig}
+                        isDashboardQuery={true}
                         autoChartAggregations={this.props.autoChartAggregations}
                         onDataClick={(drilldownData, queryID) => {
                           this.startDrilldown(drilldownData, queryID, tile.i)
