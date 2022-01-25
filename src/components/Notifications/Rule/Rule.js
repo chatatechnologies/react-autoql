@@ -340,7 +340,7 @@ export default class Rule extends React.Component {
       case 'LESS_THAN': {
         return '<'
       }
-      case 'EQUALS': {
+      case 'EQUALS_TO': {
         return '='
       }
       case 'EXISTS': {
@@ -432,7 +432,7 @@ export default class Rule extends React.Component {
             options={[
               { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
               { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
-              { value: 'EQUALS', label: '=', tooltip: 'Equals' },
+              { value: 'EQUALS_TO', label: '=', tooltip: 'EQUALS_TO' },
               {
                 value: 'EXISTS',
                 label: <span>&#8707;</span>,
