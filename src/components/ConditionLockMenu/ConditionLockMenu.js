@@ -317,7 +317,7 @@ export default class ConditionLockMenu extends React.Component {
                   type="info" 
                   onMouseEnter={() => setTimeout(() => {
                     this.setState({ isShowingInfo: true })
-                  }, 800)} 
+                  }, 300)} 
                   onMouseLeave={() => this.setState({ isShowingInfo: false })} 
                 />
               </h3>
@@ -332,16 +332,16 @@ export default class ConditionLockMenu extends React.Component {
                 <Icon type="close" />
               </button>
             </div>
-            {this.state.isShowingInfo || (!this.state.isFetchingConditions && _get(this.state.selectedConditions, 'length') === 0) ? (
-              <div className="react-autoql-filter-locking-empty-list">
-                <Icon type="info" />
-                <p>
-                  Filters can be applied to narrow down your query results. Locking a 
-                  filter ensures that only the specific data you wish to see is returned.
-                </p>
-              </div>
-            ) : null}
             <div className="autoql-condition-locking-menu-container">
+              {this.state.isShowingInfo ? (
+                <div className="react-autoql-filter-locking-empty-list">
+                  <Icon type="info" />
+                  <p>
+                    Filters can be applied to narrow down your query results. Locking a 
+                    filter ensures that only the specific data you wish to see is returned.
+                  </p>
+                </div>
+              ) : null}
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
@@ -405,8 +405,8 @@ export default class ConditionLockMenu extends React.Component {
                           <Icon 
                             type="info" 
                             onMouseEnter={() => setTimeout(() => {
-                              this.setState({ isShowingInfo: true })
-                            }, 800)}  
+                              this.setState({ isShowingSettingInfo: true })
+                            }, 300)}  
                             onMouseLeave={() => this.setState({ isShowingSettingInfo: false })} 
                           />
                         </th>
