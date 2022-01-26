@@ -2139,7 +2139,7 @@ export default class QueryOutput extends React.Component {
           }
         })
         .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
-          return moment.utc(output).format('lll').toString()
+          return moment.utc(output).format('ll').toString()
         })
 
       return (

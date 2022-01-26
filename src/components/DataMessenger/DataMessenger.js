@@ -813,6 +813,7 @@ export default class DataMessenger extends React.Component {
                         style={{ fontSize: '19px' }}
                         overflowCount={9}
                         useDot
+                        isAlreadyMountedInDOM={React.isValidElement(<NotificationIcon />)}
                         onNewNotification={() => {
                           // If a new notification is detected, refresh the list
                           if (
