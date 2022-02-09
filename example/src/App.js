@@ -1865,6 +1865,7 @@ export default class App extends Component {
           themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}
           showCreateAlertBtn
+          onSuccessAlert={this.onSuccess}
         />
       </div>
     )
