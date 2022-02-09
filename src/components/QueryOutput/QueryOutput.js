@@ -7,7 +7,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import moment from 'moment'
-import { Collapse } from 'react-collapse';
+import { UnmountClosed } from 'react-collapse';
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -2163,9 +2163,8 @@ export default class QueryOutput extends React.Component {
                 data-for="react-autoql-interpretation"
               />{' '}
           </span>
-          <Collapse 
+          <UnmountClosed 
             onRest={this.handleShowHide} 
-            onWork={this.handleShowHide} 
             isOpened={this.state.isShowingInterpretation}
           >
               <strong>Interpreted as:{' '}</strong>
@@ -2175,7 +2174,7 @@ export default class QueryOutput extends React.Component {
                   __html: `${reverseTranslation}`
                 }}
               />
-          </Collapse>
+          </UnmountClosed>
         </div>
       )
     }
@@ -2185,15 +2184,17 @@ export default class QueryOutput extends React.Component {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
     )
+    const translationContainer = document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`)
 
     let height = 0
     let width = 0
 
     if (responseContainer) {
       height =
-        responseContainer.clientHeight -
-        getPadding(responseContainer).top -
-        getPadding(responseContainer).bottom
+          responseContainer.clientHeight -
+          getPadding(responseContainer).top -
+          getPadding(responseContainer).bottom
+
       width =
         responseContainer.clientWidth -
         getPadding(responseContainer).left -
@@ -2201,7 +2202,11 @@ export default class QueryOutput extends React.Component {
     }
 
     if (this.props.height) {
-      height = this.props.height
+      if(translationContainer && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
+        height = this.props.height - translationContainer.offsetHeight
+      } else {
+        height = this.props.height
+      }
     }
 
     if (this.props.width) {
