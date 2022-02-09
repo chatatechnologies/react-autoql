@@ -1176,7 +1176,11 @@ export default class App extends Component {
         <h4>Format for Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://devhints.io/moment"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             View the cheat sheet
           </a>
         </h6>
@@ -1190,7 +1194,11 @@ export default class App extends Component {
         <h4>Format for Day, Month, Year</h4>
         <h6>
           Don't know the syntax for formats?{' '}
-          <a href="https://devhints.io/moment" target="_blank"  rel="noopener noreferrer">
+          <a
+            href="https://devhints.io/moment"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             View the cheat sheet
           </a>
         </h6>
@@ -1243,6 +1251,14 @@ export default class App extends Component {
             this.setState({ inputPlaceholder: e.target.value })
           }}
           value={this.state.inputPlaceholder}
+        />
+        <h4>Query Input Value</h4>
+        <Input
+          type="text"
+          onChange={(e) => {
+            this.setState({ inputValue: e.target.value })
+          }}
+          value={this.state.inputValue}
         />
         {this.createBooleanRadioGroup(
           'Clear All Messages on Close',
@@ -1369,6 +1385,7 @@ export default class App extends Component {
   renderDataMessenger = () => {
     return (
       <DataMessenger
+        inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
