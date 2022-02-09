@@ -46,6 +46,8 @@ import {
   AiOutlineBook,
   AiFillCaretRight,
   AiFillCaretLeft,
+  AiFillCaretDown,
+  AiFillCaretUp,
   AiOutlineEdit,
   AiOutlineBulb,
   AiOutlineQuestionCircle,
@@ -134,6 +136,14 @@ export default class Icon extends React.Component {
       }
       case 'caret-left': {
         icon = <AiFillCaretLeft />
+        break
+      }
+      case 'caret-down': {
+        icon = <AiFillCaretDown />
+        break
+      }
+      case 'caret-up': {
+        icon = <AiFillCaretUp />
         break
       }
       case 'react-autoql-bubbles': {

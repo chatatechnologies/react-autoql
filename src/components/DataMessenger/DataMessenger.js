@@ -235,6 +235,11 @@ export default class DataMessenger extends React.Component {
           }
         )
       }
+
+      if(this.state.activePage !== prevState.activePage) {
+        this.setState({ isConditionLockingMenuOpen: false })
+      }
+
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -470,6 +475,7 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.props.onMaskClick()
+      this.setState({ isConditionLockingMenuOpen: false })
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
