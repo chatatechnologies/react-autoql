@@ -32,7 +32,7 @@ export default class Rating extends React.PureComponent {
     })
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentDidUpdate(nextProps) {
     if (nextProps.rating === undefined) {
       this.setState({
         rating: nextProps.rating,

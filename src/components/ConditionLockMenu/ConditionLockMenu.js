@@ -217,6 +217,7 @@ export default class ConditionLockMenu extends React.Component {
           let suggestionsMatchArray = []
           autoCompleteArray = []
           suggestionsMatchArray = body.matches
+          
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
 
@@ -225,7 +226,9 @@ export default class ConditionLockMenu extends React.Component {
             }
           }
 
-          sortingArray.sort((a, b) => b.length - a.length)
+          sortingArray.sort((a, b) => {
+            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+          })
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
               name: sortingArray[idx],
@@ -390,8 +393,7 @@ export default class ConditionLockMenu extends React.Component {
             {_get(this.state.selectedConditions, 'length') === 0 ? (
               <div className="empty-condition-list">
                 <p>
-                  You currently have no conditions locked. Use the search bar to
-                  find a condition you would like to track.
+                  <i>{lang.noFiltersLocked}</i>
                 </p>
               </div>
             ) : (

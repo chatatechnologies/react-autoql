@@ -2127,7 +2127,8 @@ export default class QueryOutput extends React.Component {
         _get(queryResponse, 'data.data.interpretation')
         .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
           const text = output.replace(/'/g, '')
-          if(_get(queryResponse, 'data.data.condition_filter').includes(text)) {
+          if(_get(queryResponse, 'data.data.persistent_locked_conditions').includes(text) 
+            || _get(queryResponse, 'data.data.session_locked_conditions').includes(text)) {
             return `
               <a class="react-autoql-condition-link-filtered">
                 <span class="material-icons react-autoql-custom-icon">lock</span>
@@ -2147,7 +2148,7 @@ export default class QueryOutput extends React.Component {
           <span style={{ float: 'left', minHeight: 20 }} onClick={() => {
             this.setState({ 
               isShowingInterpretation: !this.state.isShowingInterpretation 
-              })
+            })
           }}>
               <ReactTooltip
                 className="react-autoql-drawer-tooltip"
@@ -2157,8 +2158,8 @@ export default class QueryOutput extends React.Component {
                 place="top"
               />
               <Icon 
-                type="info" 
-                data-tip="Show query interpretation"
+                type={this.state.isShowingInterpretation ? 'caret-down' : 'caret-right' } 
+                data-tip={this.state.isShowingInterpretation ? "Hide query interpretation" : "Show query interpretation" } 
                 data-for="react-autoql-interpretation"
               />{' '}
           </span>
