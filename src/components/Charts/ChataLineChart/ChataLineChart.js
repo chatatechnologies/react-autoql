@@ -111,7 +111,6 @@ export default class ChataLineChart extends Component {
 
     // Get max and min values from all series
     const { minValue, maxValue } = getMinAndMaxValues(data)
-
     const xScale = this.xScale
       .domain(data.map((d) => d[labelValue]))
       .range([leftMargin, width - rightMargin])
