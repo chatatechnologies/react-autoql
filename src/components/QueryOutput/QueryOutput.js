@@ -2150,27 +2150,33 @@ export default class QueryOutput extends React.Component {
 
       return (
         <div id={id} className="condition-lock-reverse-translation">
-          <span style={{ float: 'left', minHeight: 20 }} onClick={() => {
-            this.setState({ 
-              isShowingInterpretation: !this.state.isShowingInterpretation 
-            })
-          }}>
-              <ReactTooltip
+          {/* TEMP DISABLE SHOW/HIDE CAPABILITY */}
+          <span 
+            style={{ float: 'left', minHeight: 20 }} 
+            // onClick={() => {
+            //   this.setState({ 
+            //     isShowingInterpretation: !this.state.isShowingInterpretation 
+            //   })
+            // }}
+          >
+              {/* <ReactTooltip
                 className="react-autoql-drawer-tooltip"
                 id="react-autoql-interpretation"
                 effect="solid"
                 delayShow={500}
                 place="top"
-              />
+              /> */}
               <Icon 
-                type={this.state.isShowingInterpretation ? 'caret-down' : 'caret-right' } 
-                data-tip={this.state.isShowingInterpretation ? "Hide query interpretation" : "Show query interpretation" } 
-                data-for="react-autoql-interpretation"
+                // type={this.state.isShowingInterpretation ? 'caret-down' : 'caret-right' } 
+                // data-tip={this.state.isShowingInterpretation ? "Hide query interpretation" : "Show query interpretation" } 
+                type='info'
+                // data-for="react-autoql-interpretation"
               />{' '}
           </span>
           <UnmountClosed 
             onRest={this.handleShowHide} 
-            isOpened={this.state.isShowingInterpretation}
+            isOpened={true}
+            // isOpened={this.state.isShowingInterpretation}
           >
               <strong>Interpreted as:{' '}</strong>
               <span
