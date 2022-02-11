@@ -112,6 +112,10 @@ export default class ChataChart extends Component {
       this.updateMargins()
     }
 
+    if(!_isEqual(this.props.isShowingInterpretation, prevProps.isShowingInterpretation)) {
+      this.updateMargins()
+    }
+
     if (
       this.props.type &&
       this.props.type !== prevProps.type &&

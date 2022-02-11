@@ -846,9 +846,7 @@ export default class DataMessenger extends React.Component {
       return (
         <>
         <div id="condition-dropdown" style={{justifyContent: 'left', position: 'absolute', right: 30}}>
-        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking 
-          && (window.location.href.includes('localhost') 
-            || window.location.href.includes('chata-ai-test-page')) ? 
+        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking ? 
           <button
             id="condition-dropdown"
             onClick={() => {

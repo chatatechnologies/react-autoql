@@ -492,7 +492,7 @@ export default class ConditionLockMenu extends React.Component {
                 this.props.onClose()
               }}
             >
-              Done
+              Continue
             </Button>
           </div>
         </div>
