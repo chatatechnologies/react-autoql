@@ -173,9 +173,6 @@ export default class ConditionLockMenu extends React.Component {
     var index = this.state.selectedConditions.findIndex(condition => condition.id === item.id);
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
 
-    console.log(item)
-    console.log(index)
-
     if (index === -1){
       // handle error
     } else {
