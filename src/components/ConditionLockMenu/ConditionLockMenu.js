@@ -106,11 +106,13 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
+    let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
+        id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
@@ -170,6 +172,9 @@ export default class ConditionLockMenu extends React.Component {
   handlePersistConditionToggle = (item) => {
     var index = this.state.selectedConditions.findIndex(condition => condition.id === item.id);
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+
+    console.log(item)
+    console.log(index)
 
     if (index === -1){
       // handle error
@@ -403,7 +408,7 @@ export default class ConditionLockMenu extends React.Component {
                     <thead>
                         <th scope="col">Filter</th>
                         <th scope="col" style={{ minWidth: 154 }}>
-                          Setting
+                          Settings
                           <Icon 
                             type="info" 
                             onMouseEnter={() => setTimeout(() => {
