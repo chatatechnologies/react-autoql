@@ -263,7 +263,7 @@ export default class RuleSimple extends React.Component {
       case 'LESS_THAN': {
         return '<'
       }
-      case 'EQUALS': {
+      case 'EQUAL_TO': {
         return '='
       }
       case 'EXISTS': {
@@ -326,7 +326,7 @@ export default class RuleSimple extends React.Component {
         options={[
           { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
           { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },
-          { value: 'EQUALS', label: '=', tooltip: 'Equals' },
+          { value: 'EQUAL_TO', label: '=', tooltip: 'EQUAL_TO' },
           {
             value: 'EXISTS',
             label: 'Exists',

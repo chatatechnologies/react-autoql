@@ -31,6 +31,7 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    isAlreadyMountedInDOM: PropTypes.bool
   }
 
   static defaultProps = {
@@ -41,6 +42,7 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: true,
     onNewNotification: () => {},
     onErrorCallback: () => {},
+    isAlreadyMountedInDOM: false,
   }
 
   state = {
@@ -49,7 +51,18 @@ export default class NotificationIcon extends React.Component {
 
   componentDidMount = async () => {
     this._isMounted = true
-    this.subscribeToNotificationCount()
+
+    /**
+     * If Data Messenger has enableNotificationsTab = true and
+     * the NotificationIcon is also present, subscribeToNotificationCount()
+     * will occasionally trigger an infinite loop.
+     * 
+     * Data Messenger will first check to see that the NotificationIcon
+     * isn't already present before triggering this function inside.
+     */
+    if(!this.props.isAlreadyMountedInDOM) {
+      this.subscribeToNotificationCount()
+    }
   }
 
   componentWillUnmount = () => {

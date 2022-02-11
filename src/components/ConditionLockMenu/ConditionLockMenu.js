@@ -106,11 +106,13 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
+    let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
+        id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
@@ -217,6 +219,7 @@ export default class ConditionLockMenu extends React.Component {
           let suggestionsMatchArray = []
           autoCompleteArray = []
           suggestionsMatchArray = body.matches
+          
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
 
@@ -225,7 +228,9 @@ export default class ConditionLockMenu extends React.Component {
             }
           }
 
-          sortingArray.sort((a, b) => b.length - a.length)
+          sortingArray.sort((a, b) => {
+            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+          })
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
               name: sortingArray[idx],
@@ -317,7 +322,7 @@ export default class ConditionLockMenu extends React.Component {
                   type="info" 
                   onMouseEnter={() => setTimeout(() => {
                     this.setState({ isShowingInfo: true })
-                  }, 800)} 
+                  }, 300)} 
                   onMouseLeave={() => this.setState({ isShowingInfo: false })} 
                 />
               </h3>
@@ -332,16 +337,16 @@ export default class ConditionLockMenu extends React.Component {
                 <Icon type="close" />
               </button>
             </div>
-            {this.state.isShowingInfo || (!this.state.isFetchingConditions && _get(this.state.selectedConditions, 'length') === 0) ? (
-              <div className="react-autoql-filter-locking-empty-list">
-                <Icon type="info" />
-                <p>
-                  Filters can be applied to narrow down your query results. Locking a 
-                  filter ensures that only the specific data you wish to see is returned.
-                </p>
-              </div>
-            ) : null}
             <div className="autoql-condition-locking-menu-container">
+              {this.state.isShowingInfo ? (
+                <div className="react-autoql-filter-locking-empty-list">
+                  <Icon type="info" />
+                  <p>
+                    Filters can be applied to narrow down your query results. Locking a 
+                    filter ensures that only the specific data you wish to see is returned.
+                  </p>
+                </div>
+              ) : null}
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
@@ -390,8 +395,7 @@ export default class ConditionLockMenu extends React.Component {
             {_get(this.state.selectedConditions, 'length') === 0 ? (
               <div className="empty-condition-list">
                 <p>
-                  You currently have no conditions locked. Use the search bar to
-                  find a condition you would like to track.
+                  <i>{lang.noFiltersLocked}</i>
                 </p>
               </div>
             ) : (
@@ -401,12 +405,12 @@ export default class ConditionLockMenu extends React.Component {
                     <thead>
                         <th scope="col">Filter</th>
                         <th scope="col" style={{ minWidth: 154 }}>
-                          Setting
+                          Settings
                           <Icon 
                             type="info" 
                             onMouseEnter={() => setTimeout(() => {
-                              this.setState({ isShowingInfo: true })
-                            }, 800)}  
+                              this.setState({ isShowingSettingInfo: true })
+                            }, 300)}  
                             onMouseLeave={() => this.setState({ isShowingSettingInfo: false })} 
                           />
                         </th>
@@ -490,7 +494,7 @@ export default class ConditionLockMenu extends React.Component {
                 this.props.onClose()
               }}
             >
-              Done
+              Continue
             </Button>
           </div>
         </div>

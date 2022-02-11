@@ -235,6 +235,11 @@ export default class DataMessenger extends React.Component {
           }
         )
       }
+
+      if(this.state.activePage !== prevState.activePage) {
+        this.setState({ isConditionLockingMenuOpen: false })
+      }
+
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -470,6 +475,7 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.props.onMaskClick()
+      this.setState({ isConditionLockingMenuOpen: false })
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -813,6 +819,7 @@ export default class DataMessenger extends React.Component {
                         style={{ fontSize: '19px' }}
                         overflowCount={9}
                         useDot
+                        isAlreadyMountedInDOM={React.isValidElement(<NotificationIcon />)}
                         onNewNotification={() => {
                           // If a new notification is detected, refresh the list
                           if (
@@ -839,9 +846,7 @@ export default class DataMessenger extends React.Component {
       return (
         <>
         <div id="condition-dropdown" style={{justifyContent: 'left', position: 'absolute', right: 30}}>
-        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking 
-          && (window.location.href.includes('localhost') 
-            || window.location.href.includes('chata-ai-test-page')) ? 
+        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking ? 
           <button
             id="condition-dropdown"
             onClick={() => {
