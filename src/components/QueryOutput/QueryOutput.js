@@ -295,6 +295,10 @@ export default class QueryOutput extends React.Component {
         disableScroll.off()
       }
 
+      if(prevState.isShowingInterpretation !== this.state.isShowingInterpretation) {
+        this.forceUpdate()
+      }
+
       if (this.props.optionsToolbarRef) {
         this.props.optionsToolbarRef._isMounted &&
           this.props.optionsToolbarRef.forceUpdate()
@@ -1781,6 +1785,7 @@ export default class QueryOutput extends React.Component {
           columns={this.chartTableColumns}
           height={height}
           width={width}
+          isShowingInterpretation={this.state.isShowingInterpretation}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -2202,8 +2207,15 @@ export default class QueryOutput extends React.Component {
     }
 
     if (this.props.height) {
-      if(translationContainer && getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation) {
-        height = this.props.height - translationContainer.offsetHeight
+      if(translationContainer && 
+        getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation && 
+        this.state.isShowingInterpretation) {
+          
+        if(this.state.isShowingInterpretation) {
+          height = this.props.height - translationContainer.offsetHeight - 20
+        } else {
+          height = this.props.height - translationContainer.offsetHeight - 40
+        }
       } else {
         height = this.props.height
       }
