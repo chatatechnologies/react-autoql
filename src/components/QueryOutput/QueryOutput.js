@@ -2149,7 +2149,7 @@ export default class QueryOutput extends React.Component {
         })
 
       return (
-        <div id={id} className="condition-lock-reverse-translation">
+        <div id={id} className="react-autoql-condition-lock-reverse-translation">
           {/* TEMP DISABLE SHOW/HIDE CAPABILITY */}
           <span 
             style={{ float: 'left', minHeight: 20 }} 
