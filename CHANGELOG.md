@@ -1,3 +1,11 @@
+## [3.3.3](https://github.com/chatatechnologies/react-autoql/compare/v3.3.2...v3.3.3) (2022-02-11)
+
+
+### Bug Fixes
+
+* data alerts initialization and csv download prop ([13b43d3](https://github.com/chatatechnologies/react-autoql/commit/13b43d3395d194546758548d238cdce2930613bf))
+* data alerts initialization and csv download prop ([#262](https://github.com/chatatechnologies/react-autoql/issues/262)) ([66ef9c9](https://github.com/chatatechnologies/react-autoql/commit/66ef9c937051cca53ef4ef0a6c4f0e05cb25d24e))
+
 ## [3.3.2](https://github.com/chatatechnologies/react-autoql/compare/v3.3.1...v3.3.2) (2021-11-22)
 
 

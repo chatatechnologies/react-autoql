@@ -73,6 +73,7 @@
   max-height: 100vh !important; // this safety net forces progressive rendering
   overflow-y: scroll;
   scrollbar-width: none;
+  margin-bottom: 0 !important;
 }
 .react-autoql-response-content-container.table::-webkit-scrollbar {
   width: 0;
@@ -299,20 +300,16 @@
   background: none !important;
   border: none;
   padding: 0 !important;
-  text-decoration: underline;
+  text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
   color: var(--react-autoql-accent-color);
 
   &:hover {
-    padding: 4px;
-    font-weight: 600;
+    opacity: 0.9;
   }
 }
 .react-autoql-condition-link-filtered {
-  border: 1px solid var(--react-autoql-accent-color) !important;
-  border-radius: 5px;
-  padding: 2px 4px 2px 4px !important;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -325,20 +322,21 @@
   }
 
   &:hover {
-    padding: 4px;
-    font-weight: 600;
+    opacity: 0.9;
+    border: none !important;
 
     .react-autoql-custom-icon {
-      font-weight: 600;
+      opacity: 0.9;
     }
   }
 }
 
-.condition-lock-reverse-translation {
+.react-autoql-condition-lock-reverse-translation {
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
   padding: 4px 6px 4px 6px;
   margin: 2px;
   min-height: 26px;
+  min-width: 300px;
 }

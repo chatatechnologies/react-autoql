@@ -246,6 +246,10 @@ export default class DataMessenger extends React.Component {
           })
         })
       }
+
+      if (this.state.activePage !== prevState.activePage) {
+        this.setState({ isConditionLockingMenuOpen: false })
+      }
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -481,6 +485,7 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.props.onMaskClick()
+      this.setState({ isConditionLockingMenuOpen: false })
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -857,9 +862,7 @@ export default class DataMessenger extends React.Component {
             style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
           >
             {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-              .enableFilterLocking &&
-            (window.location.href.includes('localhost') ||
-              window.location.href.includes('chata-ai-test-page')) ? (
+              .enableFilterLocking ? (
               <button
                 id="condition-dropdown"
                 onClick={() => {
@@ -1139,7 +1142,6 @@ export default class DataMessenger extends React.Component {
             hideInput={this.props.hideInput}
             source={['data_messenger']}
             AutoAEId={this.props.AutoAEId}
-            inputValue={this.props.inputValue}
           />
         </div>
       </Fragment>

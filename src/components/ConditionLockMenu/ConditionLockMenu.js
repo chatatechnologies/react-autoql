@@ -106,11 +106,13 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
+    let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
+        id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
@@ -161,6 +163,7 @@ export default class ConditionLockMenu extends React.Component {
     array.splice(index, 1)
     this.setState({ selectedConditions: array })
     this.handleShowMessage('unlock', 'Filter removed.')
+    ReactTooltip.hide()
   }
 
   /**
@@ -217,6 +220,7 @@ export default class ConditionLockMenu extends React.Component {
           let suggestionsMatchArray = []
           autoCompleteArray = []
           suggestionsMatchArray = body.matches
+          
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
 
@@ -225,7 +229,9 @@ export default class ConditionLockMenu extends React.Component {
             }
           }
 
-          sortingArray.sort((a, b) => b.length - a.length)
+          sortingArray.sort((a, b) => {
+            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+          })
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
               name: sortingArray[idx],
@@ -312,7 +318,7 @@ export default class ConditionLockMenu extends React.Component {
           {this.renderShowMessage()}
           <div className="react-autoql-condition-lock-header">
             <div className="react-autoql-filter-locking-title-container">
-              <h3>Filter Locking {' '} 
+              <h3 className="react-autoql-filter-locking-title">{lang.filterLockingTitle} {' '} 
                 <Icon 
                   type="info" 
                   onMouseEnter={() => setTimeout(() => {
@@ -383,25 +389,24 @@ export default class ConditionLockMenu extends React.Component {
             </div>
           </div>
          {this.state.isFetchingConditions ? 
-          <div className="condition-list-loading-container">
+          <div className="react-autoql-condition-list-loading-container">
             <LoadingDots />
           </div> 
-          : <div className="condition-list">
+          : <div className="react-autoql-condition-list">
             {_get(this.state.selectedConditions, 'length') === 0 ? (
-              <div className="empty-condition-list">
+              <div className="react-autoql-empty-condition-list">
                 <p>
-                  You currently have no conditions locked. Use the search bar to
-                  find a condition you would like to track.
+                  <i>{lang.noFiltersLocked}</i>
                 </p>
               </div>
             ) : (
               <div>
                 <div style={{ minHeight: 150 }}>
-                  <table className="condition-table">
+                  <table className="react-autoql-condition-table">
                     <thead>
                         <th scope="col">Filter</th>
                         <th scope="col" style={{ minWidth: 154 }}>
-                          Setting
+                          Settings
                           <Icon 
                             type="info" 
                             onMouseEnter={() => setTimeout(() => {
@@ -424,7 +429,7 @@ export default class ConditionLockMenu extends React.Component {
                       {this.state.selectedConditions.map((item, index) => {
                         return (
                           <tr key={index}>
-                            <td className="condition-table-list-item">
+                            <td className="react-autoql-condition-table-list-item">
                               {item.keyword}{' '}{`(${item.show_message})`}
                             </td>
                             <td>
@@ -490,7 +495,7 @@ export default class ConditionLockMenu extends React.Component {
                 this.props.onClose()
               }}
             >
-              Done
+              Continue
             </Button>
           </div>
         </div>

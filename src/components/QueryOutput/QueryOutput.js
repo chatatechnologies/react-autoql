@@ -7,7 +7,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import moment from 'moment'
-import { Collapse } from 'react-collapse'
+import { UnmountClosed } from 'react-collapse'
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -294,6 +294,12 @@ export default class QueryOutput extends React.Component {
         disableScroll.on()
       } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
         disableScroll.off()
+      }
+
+      if (
+        prevState.isShowingInterpretation !== this.state.isShowingInterpretation
+      ) {
+        this.forceUpdate()
       }
 
       if (this.props.optionsToolbarRef) {
@@ -1781,6 +1787,7 @@ export default class QueryOutput extends React.Component {
           columns={this.chartTableColumns}
           height={height}
           width={width}
+          isShowingInterpretation={this.state.isShowingInterpretation}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -2129,7 +2136,13 @@ export default class QueryOutput extends React.Component {
         .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
           const text = output.replace(/'/g, '')
           if (
-            _get(queryResponse, 'data.data.condition_filter').includes(text)
+            _get(
+              queryResponse,
+              'data.data.persistent_locked_conditions'
+            ).includes(text) ||
+            _get(queryResponse, 'data.data.session_locked_conditions').includes(
+              text
+            )
           ) {
             return `
               <a class="react-autoql-condition-link-filtered">
@@ -2149,32 +2162,37 @@ export default class QueryOutput extends React.Component {
         })
 
       return (
-        <div id={id} className="condition-lock-reverse-translation">
+        <div
+          id={id}
+          className="react-autoql-condition-lock-reverse-translation"
+        >
+          {/* TEMP DISABLE SHOW/HIDE CAPABILITY */}
           <span
             style={{ float: 'left', minHeight: 20 }}
-            onClick={() => {
-              this.setState({
-                isShowingInterpretation: !this.state.isShowingInterpretation,
-              })
-            }}
+            // onClick={() => {
+            //   this.setState({
+            //     isShowingInterpretation: !this.state.isShowingInterpretation
+            //   })
+            // }}
           >
-            <ReactTooltip
-              className="react-autoql-drawer-tooltip"
-              id="react-autoql-interpretation"
-              effect="solid"
-              delayShow={500}
-              place="top"
-            />
+            {/* <ReactTooltip
+                className="react-autoql-drawer-tooltip"
+                id="react-autoql-interpretation"
+                effect="solid"
+                delayShow={500}
+                place="top"
+              /> */}
             <Icon
+              // type={this.state.isShowingInterpretation ? 'caret-down' : 'caret-right' }
+              // data-tip={this.state.isShowingInterpretation ? "Hide query interpretation" : "Show query interpretation" }
               type="info"
-              data-tip="Show query interpretation"
-              data-for="react-autoql-interpretation"
+              // data-for="react-autoql-interpretation"
             />{' '}
           </span>
-          <Collapse
+          <UnmountClosed
             onRest={this.handleShowHide}
-            onWork={this.handleShowHide}
-            isOpened={this.state.isShowingInterpretation}
+            isOpened={true}
+            // isOpened={this.state.isShowingInterpretation}
           >
             <strong>Interpreted as: </strong>
             <span
@@ -2183,7 +2201,7 @@ export default class QueryOutput extends React.Component {
                 __html: `${reverseTranslation}`,
               }}
             />
-          </Collapse>
+          </UnmountClosed>
         </div>
       )
     }
@@ -2192,6 +2210,9 @@ export default class QueryOutput extends React.Component {
   render = () => {
     const responseContainer = document.getElementById(
       `react-autoql-response-content-container-${this.COMPONENT_KEY}`
+    )
+    const translationContainer = document.getElementById(
+      `reverse-translation-${this.COMPONENT_KEY}`
     )
 
     let height = 0
@@ -2202,6 +2223,7 @@ export default class QueryOutput extends React.Component {
         responseContainer.clientHeight -
         getPadding(responseContainer).top -
         getPadding(responseContainer).bottom
+
       width =
         responseContainer.clientWidth -
         getPadding(responseContainer).left -
@@ -2209,7 +2231,19 @@ export default class QueryOutput extends React.Component {
     }
 
     if (this.props.height) {
-      height = this.props.height
+      if (
+        translationContainer &&
+        getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+        this.state.isShowingInterpretation
+      ) {
+        if (this.state.isShowingInterpretation) {
+          height = this.props.height - translationContainer.offsetHeight - 20
+        } else {
+          height = this.props.height - translationContainer.offsetHeight - 40
+        }
+      } else {
+        height = this.props.height
+      }
     }
 
     if (this.props.width) {
