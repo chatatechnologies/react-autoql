@@ -8,6 +8,9 @@
     float: left;
     color: var(--react-autoql-text-color-primary);
     margin-bottom: 0;
+    display: block;
+    font-size: 1.17em !important;
+    font-weight: bold;
 
     span {
       color: var(--react-autoql-accent-color);
@@ -61,24 +64,28 @@
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  background: var(--react-autoql-background-color-primary);
-  color: #5d5d5d;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+
+  &::placeholder {
+    color: var(--react-autoql-text-color-placeholder) !important;
+  }
 }
 
 .react-autoql-condition-locking-input:hover {
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 }
 
-.condition-table {
+.react-autoql-condition-table {
   min-width: 95%;
   margin: 10px auto;
 }
 
-.condition-table thead {
+.react-autoql-condition-table thead {
   padding-left: 10px;
 }
 
-.condition-table th {
+.react-autoql-condition-table th {
   text-align: left;
   padding: 4px;
   margin: 0 10px 0 10px;
@@ -89,7 +96,7 @@
   }
 }
 
-.condition-table .condition-table-list-item {
+.react-autoql-condition-table .react-autoql-condition-table-list-item {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -131,28 +138,21 @@
   }
 }
 
-.condition-table tr {
-  cursor: pointer;
-  &:hover {
-    background: var(--react-autoql-accent-color);
-    color: white;
-  }
-}
-.condition-table td {
+.react-autoql-condition-table td {
   text-align: left;
   padding: 4px;
   margin: 0 10px 0 10px;
   padding-left: 10px;
 }
 
-.condition-list {
+.react-autoql-condition-list {
   padding: 0;
   margin: 0 auto;
   overflow-y: scroll;
   min-height: 182px;
 }
 
-.condition-list-loading-container {
+.react-autoql-condition-list-loading-container {
   display: flex;
   height: 180px;
   width: 100%;
@@ -161,21 +161,7 @@
   justify-content: center;
 }
 
-.condition-list-item {
-  cursor: pointer;
-  padding: 4px;
-  margin: 0 10px 0 10px;
-  display: flex;
-  justify-content: space-between;
-  border-radius: 2px;
-  padding-left: 10px;
-
-  &:hover {
-    background: var(--react-autoql-accent-color);
-    color: white;
-  }
-}
-.empty-condition-list {
+.react-autoql-empty-condition-list {
   text-align: center;
   padding: 20px;
   height: 140px;

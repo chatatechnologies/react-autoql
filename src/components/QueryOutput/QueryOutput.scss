@@ -73,6 +73,7 @@
   max-height: 100vh !important; // this safety net forces progressive rendering
   overflow-y: scroll;
   scrollbar-width: none;
+  margin-bottom: 0 !important;
 }
 .react-autoql-response-content-container.table::-webkit-scrollbar {
   width: 0;
@@ -330,7 +331,7 @@
   }
 }
 
-.condition-lock-reverse-translation {
+.react-autoql-condition-lock-reverse-translation {
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;

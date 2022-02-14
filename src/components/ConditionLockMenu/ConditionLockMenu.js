@@ -163,6 +163,7 @@ export default class ConditionLockMenu extends React.Component {
     array.splice(index, 1)
     this.setState({ selectedConditions: array })
     this.handleShowMessage('unlock', 'Filter removed.')
+    ReactTooltip.hide()
   }
 
   /**
@@ -317,7 +318,7 @@ export default class ConditionLockMenu extends React.Component {
           {this.renderShowMessage()}
           <div className="react-autoql-condition-lock-header">
             <div className="react-autoql-filter-locking-title-container">
-              <h3>Filter Locking {' '} 
+              <h3 className="react-autoql-filter-locking-title">{lang.filterLockingTitle} {' '} 
                 <Icon 
                   type="info" 
                   onMouseEnter={() => setTimeout(() => {
@@ -388,12 +389,12 @@ export default class ConditionLockMenu extends React.Component {
             </div>
           </div>
          {this.state.isFetchingConditions ? 
-          <div className="condition-list-loading-container">
+          <div className="react-autoql-condition-list-loading-container">
             <LoadingDots />
           </div> 
-          : <div className="condition-list">
+          : <div className="react-autoql-condition-list">
             {_get(this.state.selectedConditions, 'length') === 0 ? (
-              <div className="empty-condition-list">
+              <div className="react-autoql-empty-condition-list">
                 <p>
                   <i>{lang.noFiltersLocked}</i>
                 </p>
@@ -401,7 +402,7 @@ export default class ConditionLockMenu extends React.Component {
             ) : (
               <div>
                 <div style={{ minHeight: 150 }}>
-                  <table className="condition-table">
+                  <table className="react-autoql-condition-table">
                     <thead>
                         <th scope="col">Filter</th>
                         <th scope="col" style={{ minWidth: 154 }}>
@@ -428,7 +429,7 @@ export default class ConditionLockMenu extends React.Component {
                       {this.state.selectedConditions.map((item, index) => {
                         return (
                           <tr key={index}>
-                            <td className="condition-table-list-item">
+                            <td className="react-autoql-condition-table-list-item">
                               {item.keyword}{' '}{`(${item.show_message})`}
                             </td>
                             <td>
