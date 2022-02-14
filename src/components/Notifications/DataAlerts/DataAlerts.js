@@ -38,6 +38,7 @@ export default class DataAlerts extends React.Component {
     themeConfig: themeConfigType,
     onErrorCallback: PropTypes.func,
     showCreateAlertBtn: PropTypes.bool,
+    onSuccessAlert: PropTypes.func,
   }
 
   static defaultProps = {
@@ -45,7 +46,8 @@ export default class DataAlerts extends React.Component {
     themeConfig: themeConfigDefault,
     showCreateAlertBtn: false,
     onErrorCallback: () => {},
-    onAlertInitializationCallback: () => {}
+    onAlertInitializationCallback: () => {},
+    onSuccessAlert: () => {},
   }
 
   state = {
@@ -81,8 +83,9 @@ export default class DataAlerts extends React.Component {
       this.getDataAlerts()
     }
     if (
-      !_isEqual(this.state.projectAlertsList, prevState.projectAlertsList) || 
-      !_isEqual(this.state.customAlertsList, prevState.customAlertsList)) {
+      !_isEqual(this.state.projectAlertsList, prevState.projectAlertsList) ||
+      !_isEqual(this.state.customAlertsList, prevState.customAlertsList)
+    ) {
       this.getDataAlerts()
     }
   }
@@ -143,7 +146,7 @@ export default class DataAlerts extends React.Component {
         newDataAlertList.unshift(_get(dataAlertResponse, 'data.data'))
       }
     }
-
+    this.props.onSuccessAlert('Notification created!')
     this.setState({
       isEditModalVisible: false,
       customAlertsList: newDataAlertList,
@@ -344,24 +347,24 @@ export default class DataAlerts extends React.Component {
                       )}
                       {this.hasError(notification) ? (
                         <React.Fragment>
-                            <Button
-                              type="primary"
-                              tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
-                              multiline
-                              className="react-autoql-re-initialize-btn"
-                              onClick={() => {
-                                this.props.onAlertInitializationCallback(
-                                  notification,
-                                  this.props.selectedDemoProjectId,
-                                  this.props.authentication
-                                )
-                                this.getDataAlerts()
-                              }}
-                            >
-                              <span className="react-autoql-re-initialize-btn-text">
-                                <Icon type="warning-triangle" />{' '} Resend
-                              </span>
-                            </Button>
+                          <Button
+                            type="primary"
+                            tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
+                            multiline
+                            className="react-autoql-re-initialize-btn"
+                            onClick={() => {
+                              this.props.onAlertInitializationCallback(
+                                notification,
+                                this.props.selectedDemoProjectId,
+                                this.props.authentication
+                              )
+                              this.getDataAlerts()
+                            }}
+                          >
+                            <span className="react-autoql-re-initialize-btn-text">
+                              <Icon type="warning-triangle" /> Resend
+                            </span>
+                          </Button>
                           <Checkbox
                             themeConfig={getThemeConfig(this.props.themeConfig)}
                             type="switch"

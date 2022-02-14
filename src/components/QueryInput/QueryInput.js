@@ -59,6 +59,7 @@ export default class QueryInput extends React.Component {
     autoCompletePlacement: string,
     showLoadingDots: bool,
     showChataIcon: bool,
+    inputValue: string,
   }
 
   static defaultProps = {
@@ -72,6 +73,8 @@ export default class QueryInput extends React.Component {
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
+    isBackButtonClicked: false,
+    inputValue: undefined,
     source: [],
     onSubmit: () => {},
     onResponseCallback: () => {},
@@ -96,6 +99,12 @@ export default class QueryInput extends React.Component {
       )
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
+    }
+    if (
+      this.props.inputValue &&
+      this.props.inputValue !== prevProps.inputValue
+    ) {
+      this.setState({ inputValue: this.props.inputValue })
     }
   }
 
@@ -352,6 +361,10 @@ export default class QueryInput extends React.Component {
       // User clicked on autosuggest item
       this.submitQuery({ queryText: this.userSelectedValue })
     }
+
+    if (this.props.isBackButtonClicked) {
+      this.setState({ inputValue: '' })
+    }
   }
 
   moveCaretAtEnd = (e) => {
@@ -389,16 +402,18 @@ export default class QueryInput extends React.Component {
                   className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
                     this.props.showChataIcon ? ' left-padding' : ''
                   }`,
-                  placeholder: this.props.placeholder || 'Type your queries here',
+                  placeholder:
+                    this.props.placeholder || 'Type your queries here',
                   disabled: this.props.isDisabled,
                   onChange: this.onInputChange,
                   onKeyPress: this.onKeyPress,
                   onKeyDown: this.onKeyDown,
                   value: this.state.inputValue,
                   onFocus: this.moveCaretAtEnd,
-                  autoFocus: true
+                  autoFocus: true,
                 }}
               />
+            ) : (
               // <QueryInputWithValidation
               //   authentication={getAuthentication(this.props.authentication)}
               //   themeConfig={getThemeConfig(this.props.themeConfig)}
@@ -416,7 +431,6 @@ export default class QueryInput extends React.Component {
               //     this.focus()
               //   }}
               // />
-            ) : (
               <input
                 className={`react-autoql-chatbar-input${
                   this.props.showChataIcon ? ' left-padding' : ''
@@ -432,7 +446,7 @@ export default class QueryInput extends React.Component {
                 onFocus={this.moveCaretAtEnd}
                 autoFocus
               />
-          )}
+            )}
           </div>
           {this.props.showChataIcon && (
             <div className="chat-bar-input-icon">
