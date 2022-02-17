@@ -289,42 +289,39 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
-  onEnterFilterInfo = (e) => {
-    setTimeout(() => {
-      this.setState({ 
-        isShowingInfo: true,
-        isShowingSettingInfo: false 
-      })
-    }, 500)
-    e.preventDefault();
-    e.stopPropagation();
+  timer;
+  onEnterFilterHeaderInfo = (e) => {
+    var el = document.getElementById(
+      'react-autoql-filter-description-id'
+    )
+    this.timer = setTimeout(() => {
+      el.className = 'show'
+    }, 500);
   }
 
-  onLeaveFilterInfo = (e) => {
-    this.setState({ 
-      isShowingInfo: false,
-      isShowingSettingInfo: false
-    })
-    e.preventDefault();
+  onLeaveFilterHeaderInfo = (e) => {
+    var el = document.getElementById(
+      'react-autoql-filter-description-id'
+    )
+    el.className = el.className.replace('show', '')
+    clearTimeout(this.timer)
   }
 
   onEnterFilterSettingInfo = (e) => {
-    setTimeout(() => {
-      this.setState({ 
-        isShowingInfo: false,
-        isShowingSettingInfo: true 
-      })
-    }, 500)
-    e.preventDefault();
-    e.stopPropagation();
+    var el = document.getElementById(
+      'react-autoql-filter-setting-info-card'
+    )
+    this.timer = setTimeout(() => {
+      el.className = 'show'
+    }, 500);
   }
 
   onLeaveFilterSettingInfo = (e) => {
-    this.setState({ 
-      isShowingInfo: false,
-      isShowingSettingInfo: false 
-    })
-    e.preventDefault();
+    var el = document.getElementById(
+      'react-autoql-filter-setting-info-card'
+    )
+    el.className = el.className.replace('show', '')
+    clearTimeout(this.timer)
   }
 
   animateInputTextAndSubmit = (text) => {
@@ -392,8 +389,8 @@ export default class ConditionLockMenu extends React.Component {
                 <Icon 
                   type="info" 
                   ref={this.mouseInfoRef}
-                  onMouseEnter={this.onEnterFilterInfo.bind(this)} 
-                  onMouseOut={this.onLeaveFilterInfo.bind(this)} 
+                  onMouseEnter={this.onEnterFilterHeaderInfo} 
+                  onMouseLeave={this.onLeaveFilterHeaderInfo} 
                 />
               </h3>
               <button
@@ -408,15 +405,13 @@ export default class ConditionLockMenu extends React.Component {
               </button>
             </div>
             <div className="autoql-condition-locking-menu-container">
-              {this.state.isShowingInfo ? (
-                <div className="react-autoql-filter-locking-description">
+                <div id="react-autoql-filter-description-id" >
                   <Icon type="info" />
                   <p className="react-autoql-filter-info-text">
                     Filters can be applied to narrow down your query results. Locking a 
                     filter ensures that only the specific data you wish to see is returned.
                   </p>
                 </div>
-              ) : null}
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
@@ -448,15 +443,13 @@ export default class ConditionLockMenu extends React.Component {
                   id: 'react-autoql-filter-menu-input',
                 }}
               />
-              {this.state.isShowingSettingInfo ? (
-                <div className="react-autoql-filter-setting-info-card">
+                <div id="react-autoql-filter-setting-info-card">
                   <p className="react-autoql-filter-info-text">
                   <Icon type="info" />{' '}<strong>Persistent</strong> filters remain locked at all times, unless the filter is removed.
                     <br /> 
                   <Icon type="info" />{' '}<strong>Session</strong> filters remain locked until you end your browser session.
                   </p>
                 </div>
-              ) : null}
             </div>
           </div>
          {this.state.isFetchingConditions ? 
@@ -479,13 +472,15 @@ export default class ConditionLockMenu extends React.Component {
                         <th scope="col">Filter</th>
                         <th 
                           scope="col" 
-                          style={{ minWidth: 154 }}
-                          ref={this.mouseSettingRef}
-                          onMouseEnter={this.onEnterFilterSettingInfo.bind(this)}  
-                          onMouseOut={this.onLeaveFilterSettingInfo.bind(this)} 
+                          style={{ minWidth: 154 }} 
                         >
-                          Settings {' '}
-                          <Icon type="info" />
+                            Settings
+                            <Icon
+                              type="info"
+                              ref={this.mouseSettingRef}
+                              onMouseEnter={this.onEnterFilterSettingInfo}  
+                              onMouseLeave={this.onLeaveFilterSettingInfo}
+                              />
                         </th>
                         <th
                           scope="col"
