@@ -92,10 +92,9 @@ export default class ConditionLockMenu extends React.Component {
               })
             }
           }
-          if(this.props.initFilterText) {
+          if(this.props.initFilterText && this.props.initFilterText !== '') {
             this.setState({ 
               selectedConditions: array.sort(), 
-              // inputValue: this.props.initFilterText,
               isFetchingConditions: false,
             })
             this.animateInputTextAndSubmit(this.props.initFilterText)

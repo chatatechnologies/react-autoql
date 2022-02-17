@@ -237,7 +237,10 @@ export default class DataMessenger extends React.Component {
       }
 
       if(this.state.activePage !== prevState.activePage) {
-        this.setState({ isConditionLockingMenuOpen: false })
+        this.setState({ 
+          isConditionLockingMenuOpen: false,
+          selectedValueLabel: undefined 
+        })
       }
 
     } catch (error) {
@@ -475,7 +478,10 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.props.onMaskClick()
-      this.setState({ isConditionLockingMenuOpen: false })
+      this.setState({ 
+        isConditionLockingMenuOpen: false,
+        selectedValueLabel: undefined
+      })
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -852,6 +858,7 @@ export default class DataMessenger extends React.Component {
             onClick={() => {
               this.setState({
                 isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen,
+                selectedValueLabel: undefined
               })
             }}
             className="react-autoql-drawer-header-btn clear-all"
@@ -946,7 +953,10 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.setState({ isConditionLockingMenuOpen: false })
+              this.setState({ 
+                isConditionLockingMenuOpen: false,
+                selectedValueLabel: undefined
+              })
               this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
@@ -991,7 +1001,10 @@ export default class DataMessenger extends React.Component {
                 isOpen={this.state.isConditionLockingMenuOpen}
                 initFilterText={this.state.selectedValueLabel}
                 onClose={() => {
-                  this.setState({ isConditionLockingMenuOpen: false })
+                  this.setState({ 
+                    isConditionLockingMenuOpen: false,
+                    selectedValueLabel: undefined
+                  })
                 }}
               />
               </div>
@@ -1096,7 +1109,7 @@ export default class DataMessenger extends React.Component {
                       })
                     }
                     this.setState({
-                      isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen
+                      isConditionLockingMenuOpen: true
                     })
                   }}
                 />
