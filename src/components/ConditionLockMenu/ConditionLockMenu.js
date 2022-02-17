@@ -137,6 +137,8 @@ export default class ConditionLockMenu extends React.Component {
       setConditions({
         ...getAuthentication(this.props.authentication),
         conditions: array,
+      }).then(() => {
+        this.handleShowMessage('lock', `${suggestion.name.keyword} has been locked`)
       })
     }
   }
