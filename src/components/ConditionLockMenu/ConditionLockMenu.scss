@@ -27,7 +27,8 @@
   }
 }
 
-.react-autoql-filter-locking-description {
+#react-autoql-filter-description-id {
+  visibility: hidden;
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
@@ -47,6 +48,11 @@
     float: right;
     margin-bottom: 0;
   }
+}
+
+#react-autoql-filter-description-id.show {
+  visibility: visible;
+  animation: fadeIn 1s;
 }
 
 .react-autoql-condition-locking-input {
@@ -94,6 +100,7 @@
 
   span {
     color: var(--react-autoql-accent-color);
+    padding: 5px;
   }
 }
 
@@ -259,7 +266,8 @@
   color: #777;
 }
 
-.react-autoql-filter-setting-info-card {
+#react-autoql-filter-setting-info-card {
+  visibility: hidden;
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
@@ -281,6 +289,11 @@
       color: var(--react-autoql-accent-color);
     }
   }
+}
+
+#react-autoql-filter-setting-info-card.show {
+  visibility: visible;
+  animation: fadeIn 1s;
 }
 
 #react-autoql-condition-show-message {
@@ -330,5 +343,16 @@
   to {
     top: 0;
     opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -20%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
