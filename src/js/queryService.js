@@ -428,9 +428,9 @@ export const fetchValueLabelAutocomplete = ({
 }
 
 export const fetchConditions = ({ apiKey, token, domain } = {}) => {
-  // if (!domain || !apiKey || !token) {
-  //   return Promise.reject(new Error('Unauthenticated'))
-  // }
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
 
   const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
 

@@ -8,6 +8,7 @@
     float: left;
     color: var(--react-autoql-text-color-primary);
     margin-bottom: 0;
+    margin-top: 0;
     display: block;
     font-size: 1.17em !important;
     font-weight: bold;
@@ -26,7 +27,7 @@
   }
 }
 
-.react-autoql-filter-locking-empty-list {
+.react-autoql-filter-locking-description {
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
@@ -64,11 +65,11 @@
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
   &::placeholder {
-    color: var(--react-autoql-text-color-placeholder) !important;
+    color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
   }
 }
 
@@ -100,6 +101,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  max-width: 32vw;
 }
 
 .react-autoql-condition-lock-menu-footer {
@@ -294,7 +296,8 @@
   top: 20px;
   display: block;
   z-index: 999999999;
-  transform: translateX(85%);
+  left: 50%;
+  transform: translate(-50%, -50%);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
 
   span {

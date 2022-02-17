@@ -2135,13 +2135,13 @@ export default class QueryOutput extends React.Component {
           if(_get(queryResponse, 'data.data.persistent_locked_conditions').includes(text) 
             || _get(queryResponse, 'data.data.session_locked_conditions').includes(text)) {
             return `
-              <a class="react-autoql-condition-link-filtered">
+              <a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link-filtered test">
                 <span class="material-icons react-autoql-custom-icon">lock</span>
                 ${' '}${text}
               </a>
             `
           } else {
-            return `<a class="react-autoql-condition-link">${text}</a>`
+            return `<a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link test">${text}</a>`
           }
         })
         .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
@@ -2180,7 +2180,7 @@ export default class QueryOutput extends React.Component {
           >
               <strong>Interpreted as:{' '}</strong>
               <span
-                onClick={() => this.props.onConditionClickCallback()}
+                onClick={(e) => this.props.onConditionClickCallback(e)}
                 dangerouslySetInnerHTML={{
                   __html: `${reverseTranslation}`
                 }}
