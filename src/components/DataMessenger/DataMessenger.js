@@ -5,7 +5,6 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
-import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -148,6 +147,7 @@ export default class DataMessenger extends React.Component {
     lastMessageId: undefined,
     isOptionsDropdownOpen: false,
     isConditionLockingMenuOpen: false,
+    selectedValueLabel: undefined,
     conditions: undefined,
     messages: [],
 
@@ -247,8 +247,11 @@ export default class DataMessenger extends React.Component {
         })
       }
 
-      if (this.state.activePage !== prevState.activePage) {
-        this.setState({ isConditionLockingMenuOpen: false })
+      if(this.state.activePage !== prevState.activePage) {
+        this.setState({ 
+          isConditionLockingMenuOpen: false,
+          selectedValueLabel: undefined 
+        })
       }
     } catch (error) {
       console.error(error)
@@ -485,7 +488,10 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.props.onMaskClick()
-      this.setState({ isConditionLockingMenuOpen: false })
+      this.setState({ 
+        isConditionLockingMenuOpen: false,
+        selectedValueLabel: undefined
+      })
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -858,13 +864,13 @@ export default class DataMessenger extends React.Component {
       return (
         <>
           <div
-            id="condition-dropdown"
+            id="react-autoql-filter-menu-dropdown"
             style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
           >
             {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
               .enableFilterLocking ? (
               <button
-                id="condition-dropdown"
+                id="react-autoql-filter-menu-dropdown-button"
                 onClick={() => {
                   this.setState({
                     isConditionLockingMenuOpen: !this.state
@@ -966,7 +972,10 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.setState({ isConditionLockingMenuOpen: false })
+              this.setState({ 
+                isConditionLockingMenuOpen: false,
+                selectedValueLabel: undefined
+              })
               this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
@@ -985,21 +994,40 @@ export default class DataMessenger extends React.Component {
           <Popover
             containerStyle={this.getConditionMenuPosition()}
             isOpen={this.state.isConditionLockingMenuOpen}
+            onClickOutside={(e) => {
+              /**
+               * Because the popover anchor is over the header title instead of the button,
+               * the button is considered part of an "outside" event.
+               * 
+               * This is a hacky solution, but it works.
+               */
+              if(_get(e, 'target.id') !== 'react-autoql-interpreted-value-label' &&
+                _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown-button' &&
+                _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-filter-table-row' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon') {
+                this.setState({ isConditionLockingMenuOpen: false })
+              }
+            }}
             position="bottom"
             padding={2}
             align="center"
             content={
               <div id="condition-menu-dropdown" style={{ display: 'block' }}>
-                <ConditionLockMenu
-                  authentication={getAuthentication(
-                    getAuthentication(this.props.authentication)
-                  )}
-                  containerWidth={this.getDrawerWidth()}
-                  isOpen={this.state.isConditionLockingMenuOpen}
-                  onClose={() => {
-                    this.setState({ isConditionLockingMenuOpen: false })
-                  }}
-                />
+              <ConditionLockMenu
+                authentication={getAuthentication(
+                  getAuthentication(this.props.authentication)
+                )}
+                containerWidth={this.getDrawerWidth()}
+                isOpen={this.state.isConditionLockingMenuOpen}
+                initFilterText={this.state.selectedValueLabel}
+                onClose={() => {
+                  this.setState({ 
+                    isConditionLockingMenuOpen: false,
+                    selectedValueLabel: undefined
+                  })
+                }}
+              />
               </div>
             }
           >
@@ -1095,10 +1123,14 @@ export default class DataMessenger extends React.Component {
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
-                  onConditionClickCallback={() => {
+                  onConditionClickCallback={(e) => {
+                    if(_get(e, 'target.classList.value').includes('react-autoql-condition-link')) {
+                      this.setState({
+                        selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
+                      })
+                    }
                     this.setState({
-                      isConditionLockingMenuOpen: !this.state
-                        .isConditionLockingMenuOpen,
+                      isConditionLockingMenuOpen: true
                     })
                   }}
                 />

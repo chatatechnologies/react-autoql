@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React, { Fragment, createRef } from 'react'
 import PropTypes from 'prop-types'
 import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
@@ -28,16 +28,22 @@ let autoCompleteArray = []
 
 export default class ConditionLockMenu extends React.Component {
   UNIQUE_ID = uuid.v4()
+  mouseInfoRef = createRef();
+  mouseSettingRef = createRef();
   static propTypes = {
     containerWidth: PropTypes.number,
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
     authentication: authenticationType,
+    initFilterText: PropTypes.string,
   }
 
   static defaultProps = {
     containerWidth: undefined,
     onClose: () => {},
+    isOpen: false,
+    authentication: undefined,
+    initFilterText: undefined,
   }
 
   state = {
@@ -86,11 +92,19 @@ export default class ConditionLockMenu extends React.Component {
               })
             }
           }
-          this.setState({ 
-            selectedConditions: array.sort(), 
-            inputValue: '',
-            isFetchingConditions: false,
-          })
+          if(this.props.initFilterText && this.props.initFilterText !== '') {
+            this.setState({ 
+              selectedConditions: array.sort(), 
+              isFetchingConditions: false,
+            })
+            this.animateInputTextAndSubmit(this.props.initFilterText)
+          } else {
+            this.setState({ 
+              selectedConditions: array.sort(), 
+              inputValue: '',
+              isFetchingConditions: false,
+            })
+          }
         }
       )
     } catch (error) {
@@ -275,6 +289,62 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
+  onEnterFilterInfo = (e) => {
+    setTimeout(() => {
+      this.setState({ 
+        isShowingInfo: true,
+        isShowingSettingInfo: false 
+      })
+    }, 500)
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  onLeaveFilterInfo = (e) => {
+    this.setState({ 
+      isShowingInfo: false,
+      isShowingSettingInfo: false
+    })
+    e.preventDefault();
+  }
+
+  onEnterFilterSettingInfo = (e) => {
+    setTimeout(() => {
+      this.setState({ 
+        isShowingInfo: false,
+        isShowingSettingInfo: true 
+      })
+    }, 500)
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  onLeaveFilterSettingInfo = (e) => {
+    this.setState({ 
+      isShowingInfo: false,
+      isShowingSettingInfo: false 
+    })
+    e.preventDefault();
+  }
+
+  animateInputTextAndSubmit = (text) => {
+    if (typeof text === 'string' && _get(text, 'length')) {
+      for (let i = 1; i <= text.length; i++) {
+        setTimeout(() => {
+          this.setState({
+            inputValue: text.slice(0, i),
+          })
+          if (i === text.length) {
+            setTimeout(() => {
+              const input = document.querySelector('#react-autoql-filter-menu-input');
+              input.focus();
+            }, 300)
+          }
+        }, i * 50)
+      }
+    }
+  }
+
   renderShowMessage = () => (
     <div id="react-autoql-condition-show-message">
       <Icon type={this.state.showMessage.type} /> {this.state.showMessage.message}
@@ -321,10 +391,9 @@ export default class ConditionLockMenu extends React.Component {
               <h3 className="react-autoql-filter-locking-title">{lang.filterLockingTitle} {' '} 
                 <Icon 
                   type="info" 
-                  onMouseEnter={() => setTimeout(() => {
-                    this.setState({ isShowingInfo: true })
-                  }, 300)} 
-                  onMouseLeave={() => this.setState({ isShowingInfo: false })} 
+                  ref={this.mouseInfoRef}
+                  onMouseEnter={this.onEnterFilterInfo.bind(this)} 
+                  onMouseOut={this.onLeaveFilterInfo.bind(this)} 
                 />
               </h3>
               <button
@@ -340,9 +409,9 @@ export default class ConditionLockMenu extends React.Component {
             </div>
             <div className="autoql-condition-locking-menu-container">
               {this.state.isShowingInfo ? (
-                <div className="react-autoql-filter-locking-empty-list">
+                <div className="react-autoql-filter-locking-description">
                   <Icon type="info" />
-                  <p>
+                  <p className="react-autoql-filter-info-text">
                     Filters can be applied to narrow down your query results. Locking a 
                     filter ensures that only the specific data you wish to see is returned.
                   </p>
@@ -352,6 +421,7 @@ export default class ConditionLockMenu extends React.Component {
                 ref={(ref) => {
                   this.autoSuggest = ref
                 }}
+                id='react-autoql-filter-menu-input'
                 highlightFirstSuggestion
                 suggestions={this.state.suggestions}
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -359,11 +429,11 @@ export default class ConditionLockMenu extends React.Component {
                 getSuggestionValue={this.getSuggestionValue}
                 renderSuggestion={(suggestion) => (
                   <Fragment>
-                    <table className="autoql-condition-locking-menu-list">
-                      <tbody>
-                        <tr>
-                          <td style={{ width: 300 }}>{suggestion.name.keyword}</td>
-                          <td>{suggestion.name.show_message}</td>
+                    <table id="react-autoql-filter-table" className="autoql-condition-locking-menu-list">
+                      <tbody id="react-autoql-filter-table-body">
+                        <tr id="react-autoql-filter-table-row">
+                          <td id="react-autoql-filter-table-data" style={{ width: 300 }}>{suggestion.name.keyword}</td>
+                          <td id="react-autoql-filter-table-data">{suggestion.name.show_message}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -375,11 +445,12 @@ export default class ConditionLockMenu extends React.Component {
                   disabled: this.state.isFetchingConditions,
                   placeholder: 'Search & select a filter',
                   className: 'react-autoql-condition-locking-input',
+                  id: 'react-autoql-filter-menu-input',
                 }}
               />
               {this.state.isShowingSettingInfo ? (
                 <div className="react-autoql-filter-setting-info-card">
-                  <p>
+                  <p className="react-autoql-filter-info-text">
                   <Icon type="info" />{' '}<strong>Persistent</strong> filters remain locked at all times, unless the filter is removed.
                     <br /> 
                   <Icon type="info" />{' '}<strong>Session</strong> filters remain locked until you end your browser session.
@@ -404,16 +475,17 @@ export default class ConditionLockMenu extends React.Component {
                 <div style={{ minHeight: 150 }}>
                   <table className="react-autoql-condition-table">
                     <thead>
+                      <tr>
                         <th scope="col">Filter</th>
-                        <th scope="col" style={{ minWidth: 154 }}>
-                          Settings
-                          <Icon 
-                            type="info" 
-                            onMouseEnter={() => setTimeout(() => {
-                              this.setState({ isShowingSettingInfo: true })
-                            }, 300)}  
-                            onMouseLeave={() => this.setState({ isShowingSettingInfo: false })} 
-                          />
+                        <th 
+                          scope="col" 
+                          style={{ minWidth: 154 }}
+                          ref={this.mouseSettingRef}
+                          onMouseEnter={this.onEnterFilterSettingInfo.bind(this)}  
+                          onMouseOut={this.onLeaveFilterSettingInfo.bind(this)} 
+                        >
+                          Settings {' '}
+                          <Icon type="info" />
                         </th>
                         <th
                           scope="col"
@@ -424,6 +496,7 @@ export default class ConditionLockMenu extends React.Component {
                           }}
                         >
                         </th>
+                      </tr>
                     </thead>
                     <tbody>
                       {this.state.selectedConditions.map((item, index) => {
@@ -464,6 +537,7 @@ export default class ConditionLockMenu extends React.Component {
                                 html
                               />
                               <Icon
+                                id="react-autoql-remove-filtered-condition-icon"
                                 style={{
                                   paddingLeft: 5,
                                   color: 'red',
