@@ -426,14 +426,12 @@ export default class ConditionLockMenu extends React.Component {
                 getSuggestionValue={this.getSuggestionValue}
                 renderSuggestion={(suggestion) => (
                   <Fragment>
-                    <table id="react-autoql-filter-table" className="autoql-condition-locking-menu-list">
-                      <tbody id="react-autoql-filter-table-body">
-                        <tr id="react-autoql-filter-table-row">
-                          <td id="react-autoql-filter-table-data" style={{ width: 300 }}>{suggestion.name.keyword}</td>
-                          <td id="react-autoql-filter-table-data">{suggestion.name.show_message}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <span id="react-autoql-filter-table" className="autoql-condition-locking-menu-list">
+                      <tr id="react-autoql-filter-table-row">
+                        <td id="react-autoql-filter-table-data" style={{ width: 300 }}>{suggestion.name.keyword}</td>
+                        <td id="react-autoql-filter-table-data">{suggestion.name.show_message}</td>
+                      </tr>
+                    </span>
                   </Fragment>
                 )}
                 inputProps={{
@@ -467,15 +465,15 @@ export default class ConditionLockMenu extends React.Component {
               </div>
             ) : (
               <div>
-                <div style={{ minHeight: 150 }}>
+                <div>
                   <table className="react-autoql-condition-table">
                     <thead>
                       <tr>
-                        <th scope="col">Filter</th>
                         <th 
-                          scope="col" 
-                          style={{ minWidth: 154 }} 
-                        >
+                          scope="col">
+                            Filter
+                        </th>
+                        <th scope="col" >
                             Settings
                             <Icon
                               type="info"
@@ -490,6 +488,7 @@ export default class ConditionLockMenu extends React.Component {
                             display: 'table-cell',
                             verticalAlign: 'middle',
                             textAlign: 'right',
+                            width: '35px'
                           }}
                         >
                         </th>
@@ -521,10 +520,12 @@ export default class ConditionLockMenu extends React.Component {
                                 </span>
                             </td>
                             <td
+                              id="react-autoql-remove-filter-container"
                               style={{
                                 display: 'table-cell',
                                 verticalAlign: 'middle',
                                 textAlign: 'right',
+                                width: '35px'
                               }}
                             >
                               <ReactTooltip
@@ -538,6 +539,7 @@ export default class ConditionLockMenu extends React.Component {
                                 style={{
                                   paddingLeft: 5,
                                   color: 'red',
+                                  cursor: 'pointer'
                                 }}
                                 data-tip="Remove filter"
                                 data-for="react-autoql-remove-condition"

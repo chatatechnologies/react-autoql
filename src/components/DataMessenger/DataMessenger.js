@@ -995,9 +995,13 @@ export default class DataMessenger extends React.Component {
             containerStyle={this.getConditionMenuPosition()}
             isOpen={this.state.isConditionLockingMenuOpen}
             onClickOutside={(e) => {
+              // console.log(e)
+              // console.log(e.target.parentElement)
+              // console.log(e.target.parentElement.parentElement)
               /**
                * Because the popover anchor is over the header title instead of the button,
-               * the button is considered part of an "outside" event.
+               * the button is considered part of an "outside" event. This also includes
+               * some elements inside of the popover as well for some reason.
                * 
                * This is a hacky solution, but it works.
                */
@@ -1005,7 +1009,8 @@ export default class DataMessenger extends React.Component {
                 _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown-button' &&
                 _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown' &&
                 _get(e, 'target.parentElement.id') !== 'react-autoql-filter-table-row' &&
-                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon') {
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filter-container') {
                 this.setState({ isConditionLockingMenuOpen: false })
               }
             }}

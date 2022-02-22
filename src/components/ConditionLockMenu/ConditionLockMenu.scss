@@ -1,3 +1,7 @@
+.react-autoql-condition-lock-menu {
+  min-width: 400px !important;
+}
+
 .react-autoql-filter-locking-title-container {
   display: inline-block;
   width: 100%;
@@ -86,29 +90,19 @@
 .react-autoql-condition-table {
   min-width: 95%;
   margin: 10px auto;
+  table-layout: fixed;
 }
 
 .react-autoql-condition-table thead {
   padding-left: 10px;
-}
-
-.react-autoql-condition-table th {
-  text-align: left;
-  padding: 4px;
-  margin: 0 10px 0 10px;
-  font-weight: 800;
-
-  span {
-    color: var(--react-autoql-accent-color);
-    padding: 5px;
-  }
+  display: table-header-group;
 }
 
 .react-autoql-condition-table .react-autoql-condition-table-list-item {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  max-width: 32vw;
+  width: 22vw !important;
 }
 
 .react-autoql-condition-lock-menu-footer {
@@ -157,8 +151,39 @@
 .react-autoql-condition-list {
   padding: 0;
   margin: 0 auto;
-  overflow-y: scroll;
   min-height: 182px;
+  overflow: none;
+}
+
+.react-autoql-condition-list .react-autoql-condition-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 4px;
+  padding-left: 10px;
+  margin: 0 10px 0 10px;
+  font-weight: 800;
+  width: 22vh;
+
+  span {
+    color: var(--react-autoql-accent-color);
+    padding: 5px;
+  }
+}
+.react-autoql-condition-list .react-autoql-condition-table tbody {
+  display: block;
+  overflow-y: scroll;
+  max-height: 260px;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.react-autoql-condition-list .react-autoql-condition-table tr {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .react-autoql-condition-list-loading-container {
