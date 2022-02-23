@@ -2145,13 +2145,13 @@ export default class QueryOutput extends React.Component {
             )
           ) {
             return `
-              <a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link-filtered test">
+              <a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link-filtered">
                 <span class="material-icons react-autoql-custom-icon">lock</span>
                 ${' '}${text}
               </a>
             `
           } else {
-            return `<a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link test">${text}</a>`
+            return `<a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link">${text}</a>`
           }
         })
         .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {

@@ -316,6 +316,16 @@
   }
 }
 
+.react-autoql-highlight-row {
+  background-color: var(--react-autoql-accent-color);
+  color: white;
+  animation-name: highlightIn, highlightOut;
+  animation-duration: 400ms, 400ms;
+  animation-delay: 0ms, 1500ms;
+  animation-timing-function: ease-in, ease-out;
+  animation-iteration-count: 1, 1;
+}
+
 #react-autoql-filter-setting-info-card.show {
   visibility: visible;
   animation: fadeIn 1s;
@@ -379,5 +389,26 @@
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes highlightOut {
+  100% {
+    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-text-color-primary);
+  }
+  0% {
+    background-color: var(--react-autoql-accent-color);
+    color: white;
+  }
+}
+@keyframes highlightIn {
+  100% {
+    background-color: var(--react-autoql-accent-color);
+    color: white;
+  }
+  0% {
+    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-text-color-primary);
   }
 }

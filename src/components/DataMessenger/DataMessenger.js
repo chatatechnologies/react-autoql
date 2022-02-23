@@ -487,11 +487,10 @@ export default class DataMessenger extends React.Component {
       return
     }
     if (this.props.onMaskClick) {
-      this.props.onMaskClick()
       this.setState({ 
         isConditionLockingMenuOpen: false,
         selectedValueLabel: undefined
-      })
+      }, this.props.onMaskClick())
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -972,10 +971,6 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.setState({ 
-                isConditionLockingMenuOpen: false,
-                selectedValueLabel: undefined
-              })
               this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
@@ -986,7 +981,7 @@ export default class DataMessenger extends React.Component {
           </button>
         </div>
         {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-          .enableFilterLocking ? (
+          .enableFilterLocking && this.state.isConditionLockingMenuOpen ? (
           <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
           </div>
@@ -995,9 +990,6 @@ export default class DataMessenger extends React.Component {
             containerStyle={this.getConditionMenuPosition()}
             isOpen={this.state.isConditionLockingMenuOpen}
             onClickOutside={(e) => {
-              // console.log(e)
-              // console.log(e.target.parentElement)
-              // console.log(e.target.parentElement.parentElement)
               /**
                * Because the popover anchor is over the header title instead of the button,
                * the button is considered part of an "outside" event. This also includes
@@ -1129,14 +1121,22 @@ export default class DataMessenger extends React.Component {
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
                   onConditionClickCallback={(e) => {
+                    this.setState({
+                      isConditionLockingMenuOpen: true
+                    })
+                    // if(_get(e, 'target.classList.value').includes('react-autoql-condition-link-filtered')) {
+                    //   console.log(e)
+                    //   console.log(_get(e, 'target'))
+                    //   console.log(_get(e, 'target.innerText'))
+
+                    //   // _get(e, 'target.innerText').replace('lock ', '').trim()
+
+                    // } else 
                     if(_get(e, 'target.classList.value').includes('react-autoql-condition-link')) {
                       this.setState({
                         selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
                       })
                     }
-                    this.setState({
-                      isConditionLockingMenuOpen: true
-                    })
                   }}
                 />
               )
@@ -1515,7 +1515,13 @@ export default class DataMessenger extends React.Component {
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
             onMaskClick={this.handleMaskClick}
-            onHandleClick={this.props.onHandleClick}
+            onHandleClick={() => {
+              this.setState({ 
+                isConditionLockingMenuOpen: false,
+                selectedValueLabel: undefined
+              },this.props.onHandleClick)
+            }
+            }
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}
             level={this.props.shiftScreen ? 'all' : null}

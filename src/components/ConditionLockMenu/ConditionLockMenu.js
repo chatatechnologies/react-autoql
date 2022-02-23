@@ -97,6 +97,12 @@ export default class ConditionLockMenu extends React.Component {
               selectedConditions: array.sort(), 
               isFetchingConditions: false,
             })
+            for(let i = 0; i < array.length; i++) {
+              if(array[i].keyword === this.props.initFilterText) {
+                this.handleHighlightFilterRow(i)
+                return
+              }
+            }
             this.animateInputTextAndSubmit(this.props.initFilterText)
           } else {
             this.setState({ 
@@ -291,8 +297,20 @@ export default class ConditionLockMenu extends React.Component {
     })
   }
 
+  handleHighlightFilterRow(index) {
+    var el = document.getElementById(
+      `react-autoql-condition-table-list-item-${index}`
+    )
+    if(el) {
+      el.className = 'react-autoql-highlight-row'
+      setTimeout(() => {
+        el.className = el.className.replace('react-autoql-highlight-row', '')
+      }, 1800)
+    }
+  }
+
   timer;
-  onEnterFilterHeaderInfo = (e) => {
+  onEnterFilterHeaderInfo = () => {
     var el = document.getElementById(
       'react-autoql-filter-description-id'
     )
@@ -301,7 +319,7 @@ export default class ConditionLockMenu extends React.Component {
     }, 500);
   }
 
-  onLeaveFilterHeaderInfo = (e) => {
+  onLeaveFilterHeaderInfo = () => {
     var el = document.getElementById(
       'react-autoql-filter-description-id'
     )
@@ -309,7 +327,7 @@ export default class ConditionLockMenu extends React.Component {
     clearTimeout(this.timer)
   }
 
-  onEnterFilterSettingInfo = (e) => {
+  onEnterFilterSettingInfo = () => {
     var el = document.getElementById(
       'react-autoql-filter-setting-info-card'
     )
@@ -318,7 +336,7 @@ export default class ConditionLockMenu extends React.Component {
     }, 500);
   }
 
-  onLeaveFilterSettingInfo = (e) => {
+  onLeaveFilterSettingInfo = () => {
     var el = document.getElementById(
       'react-autoql-filter-setting-info-card'
     )
@@ -497,7 +515,7 @@ export default class ConditionLockMenu extends React.Component {
                     <tbody>
                       {this.state.selectedConditions.map((item, index) => {
                         return (
-                          <tr key={index}>
+                          <tr key={index} id={`react-autoql-condition-table-list-item-${index}`}>
                             <td className="react-autoql-condition-table-list-item">
                               {item.keyword}{' '}{`(${item.show_message})`}
                             </td>
