@@ -487,11 +487,10 @@ export default class DataMessenger extends React.Component {
       return
     }
     if (this.props.onMaskClick) {
-      this.props.onMaskClick()
       this.setState({ 
         isConditionLockingMenuOpen: false,
         selectedValueLabel: undefined
-      })
+      }, this.props.onMaskClick())
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -972,10 +971,6 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.setState({ 
-                isConditionLockingMenuOpen: false,
-                selectedValueLabel: undefined
-              })
               this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
@@ -986,7 +981,7 @@ export default class DataMessenger extends React.Component {
           </button>
         </div>
         {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-          .enableFilterLocking ? (
+          .enableFilterLocking && this.state.isConditionLockingMenuOpen ? (
           <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
           </div>
@@ -997,7 +992,8 @@ export default class DataMessenger extends React.Component {
             onClickOutside={(e) => {
               /**
                * Because the popover anchor is over the header title instead of the button,
-               * the button is considered part of an "outside" event.
+               * the button is considered part of an "outside" event. This also includes
+               * some elements inside of the popover as well for some reason.
                * 
                * This is a hacky solution, but it works.
                */
@@ -1005,7 +1001,8 @@ export default class DataMessenger extends React.Component {
                 _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown-button' &&
                 _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown' &&
                 _get(e, 'target.parentElement.id') !== 'react-autoql-filter-table-row' &&
-                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon') {
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filter-container') {
                 this.setState({ isConditionLockingMenuOpen: false })
               }
             }}
@@ -1129,9 +1126,7 @@ export default class DataMessenger extends React.Component {
                         selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
                       })
                     }
-                    this.setState({
-                      isConditionLockingMenuOpen: true
-                    })
+                    this.setState({ isConditionLockingMenuOpen: true })
                   }}
                 />
               )
@@ -1510,7 +1505,13 @@ export default class DataMessenger extends React.Component {
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
             onMaskClick={this.handleMaskClick}
-            onHandleClick={this.props.onHandleClick}
+            onHandleClick={() => {
+              this.setState({ 
+                isConditionLockingMenuOpen: false,
+                selectedValueLabel: undefined
+              },this.props.onHandleClick)
+            }
+            }
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}
             level={this.props.shiftScreen ? 'all' : null}
