@@ -1121,22 +1121,12 @@ export default class DataMessenger extends React.Component {
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
                   onConditionClickCallback={(e) => {
-                    this.setState({
-                      isConditionLockingMenuOpen: true
-                    })
-                    // if(_get(e, 'target.classList.value').includes('react-autoql-condition-link-filtered')) {
-                    //   console.log(e)
-                    //   console.log(_get(e, 'target'))
-                    //   console.log(_get(e, 'target.innerText'))
-
-                    //   // _get(e, 'target.innerText').replace('lock ', '').trim()
-
-                    // } else 
                     if(_get(e, 'target.classList.value').includes('react-autoql-condition-link')) {
                       this.setState({
                         selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
                       })
                     }
+                    this.setState({ isConditionLockingMenuOpen: true })
                   }}
                 />
               )

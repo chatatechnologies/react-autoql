@@ -487,11 +487,10 @@ export default class ConditionLockMenu extends React.Component {
                   <table className="react-autoql-condition-table">
                     <thead>
                       <tr>
-                        <th 
-                          scope="col">
+                        <th>
                             Filter
                         </th>
-                        <th scope="col" >
+                        <th>
                             Settings
                             <Icon
                               type="info"
@@ -501,7 +500,6 @@ export default class ConditionLockMenu extends React.Component {
                               />
                         </th>
                         <th
-                          scope="col"
                           style={{
                             display: 'table-cell',
                             verticalAlign: 'middle',
