@@ -45,7 +45,7 @@ export const fetchNotificationCount = ({
     },
   })
 
-  const url = `${domain}/autoql/api/v1/data-alerts/notifications/summary/poll?key=${apiKey}&unacknowledged=${unacknowledged}`
+  const url = `${domain}/autoql/api/v1/data-alerts/notifications/summary?key=${apiKey}&unacknowledged=${unacknowledged}`
 
   const config = {
     timeout: 180000,

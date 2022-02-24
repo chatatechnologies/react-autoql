@@ -49,6 +49,7 @@ export default class NotificationIcon extends React.Component {
     count: 0,
   }
 
+  timerID;
   componentDidMount = async () => {
     this._isMounted = true
 
@@ -67,6 +68,7 @@ export default class NotificationIcon extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    clearInterval(this.timerID);
   }
 
   getNotificationCount = (currentCount) => {
@@ -90,7 +92,12 @@ export default class NotificationIcon extends React.Component {
 
   subscribeToNotificationCount = (count) => {
     if (this._isMounted) {
-      this.getNotificationCount(count)
+      /**
+       * For short polling notifications, we needed to set the interval on FE side.
+       * Interval set to trigger every 90 seconds. 
+       */
+      this.timerID = setInterval(() => {
+          this.getNotificationCount(count)
         .then((newCount) => {
           // Got a new count, now we want to reconnect
           this.subscribeToNotificationCount(newCount)
@@ -103,6 +110,7 @@ export default class NotificationIcon extends React.Component {
             )
             console.error(error)
             this.props.onErrorCallback(error)
+            clearInterval(this.timerID);
             return
           } else if (_get(error, 'response.status') == 504) {
             // Timed out because there were no changes
@@ -116,6 +124,7 @@ export default class NotificationIcon extends React.Component {
           }
           this.FAILED_POLL_ATTEMPTS += 1
         })
+      }, 90 * 1000); 
     }
   }
 
