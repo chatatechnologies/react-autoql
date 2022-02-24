@@ -112,7 +112,12 @@ export default class ChataChart extends Component {
       this.updateMargins()
     }
 
-    if(!_isEqual(this.props.isShowingInterpretation, prevProps.isShowingInterpretation)) {
+    if (
+      !_isEqual(
+        this.props.isShowingInterpretation,
+        prevProps.isShowingInterpretation
+      )
+    ) {
       this.updateMargins()
     }
 
@@ -543,7 +548,7 @@ export default class ChataChart extends Component {
     } = this.state
 
     return (
-      <div>
+      <div id="chata-chart-popover">
         <div className="axis-selector-container">
           {!!currencySelectorState.length && (
             <Fragment>
