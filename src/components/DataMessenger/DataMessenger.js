@@ -146,7 +146,7 @@ export default class DataMessenger extends React.Component {
 
     lastMessageId: undefined,
     isOptionsDropdownOpen: false,
-    isConditionLockingMenuOpen: false,
+    isFilterLockingMenuOpen: false,
     selectedValueLabel: undefined,
     conditions: undefined,
     messages: [],
@@ -229,8 +229,8 @@ export default class DataMessenger extends React.Component {
       }
 
       if (
-        this.state.isConditionLockingMenuOpen !==
-        prevState.isConditionLockingMenuOpen
+        this.state.isFilterLockingMenuOpen !==
+        prevState.isFilterLockingMenuOpen
       ) {
         fetchConditions({
           ...getAuthentication(this.props.authentication),
@@ -249,7 +249,7 @@ export default class DataMessenger extends React.Component {
 
       if(this.state.activePage !== prevState.activePage) {
         this.setState({ 
-          isConditionLockingMenuOpen: false,
+          isFilterLockingMenuOpen: false,
           selectedValueLabel: undefined 
         })
       }
@@ -414,7 +414,7 @@ export default class DataMessenger extends React.Component {
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
       isOptionsDropdownOpen: false,
-      isConditionLockingMenuOpen: false,
+      isFilterLockingMenuOpen: false,
     })
   }
 
@@ -488,7 +488,7 @@ export default class DataMessenger extends React.Component {
     }
     if (this.props.onMaskClick) {
       this.setState({ 
-        isConditionLockingMenuOpen: false,
+        isFilterLockingMenuOpen: false,
         selectedValueLabel: undefined
       }, this.props.onMaskClick())
     }
@@ -744,7 +744,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  getConditionMenuPosition = () => {
+  getFilterMenuPosition = () => {
     switch (this.getPlacementProp()) {
       case 'right':
         return {
@@ -872,8 +872,8 @@ export default class DataMessenger extends React.Component {
                 id="react-autoql-filter-menu-dropdown-button"
                 onClick={() => {
                   this.setState({
-                    isConditionLockingMenuOpen: !this.state
-                      .isConditionLockingMenuOpen,
+                    isFilterLockingMenuOpen: !this.state
+                      .isFilterLockingMenuOpen,
                   })
                 }}
                 className="react-autoql-drawer-header-btn clear-all"
@@ -981,14 +981,14 @@ export default class DataMessenger extends React.Component {
           </button>
         </div>
         {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-          .enableFilterLocking && this.state.isConditionLockingMenuOpen ? (
+          .enableFilterLocking && this.state.isFilterLockingMenuOpen ? (
           <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
           </div>
         ) : (
           <Popover
-            containerStyle={this.getConditionMenuPosition()}
-            isOpen={this.state.isConditionLockingMenuOpen}
+            containerStyle={this.getFilterMenuPosition()}
+            isOpen={this.state.isFilterLockingMenuOpen}
             onClickOutside={(e) => {
               /**
                * Because the popover anchor is over the header title instead of the button,
@@ -1002,8 +1002,11 @@ export default class DataMessenger extends React.Component {
                 _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown' &&
                 _get(e, 'target.parentElement.id') !== 'react-autoql-filter-table-row' &&
                 _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
-                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filter-container') {
-                this.setState({ isConditionLockingMenuOpen: false })
+                _get(e, 'target.parentElement.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filter-container' &&
+                !_get(e, 'target.classList.value').includes('react-autoql-drawer-resize-handle')) {
+
+                  this.setState({ isFilterLockingMenuOpen: false })
               }
             }}
             position="bottom"
@@ -1016,11 +1019,11 @@ export default class DataMessenger extends React.Component {
                   getAuthentication(this.props.authentication)
                 )}
                 containerWidth={this.getDrawerWidth()}
-                isOpen={this.state.isConditionLockingMenuOpen}
+                isOpen={this.state.isFilterLockingMenuOpen}
                 initFilterText={this.state.selectedValueLabel}
                 onClose={() => {
                   this.setState({ 
-                    isConditionLockingMenuOpen: false,
+                    isFilterLockingMenuOpen: false,
                     selectedValueLabel: undefined
                   })
                 }}
@@ -1126,7 +1129,7 @@ export default class DataMessenger extends React.Component {
                         selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
                       })
                     }
-                    this.setState({ isConditionLockingMenuOpen: true })
+                    this.setState({ isFilterLockingMenuOpen: true })
                   }}
                 />
               )
@@ -1507,7 +1510,7 @@ export default class DataMessenger extends React.Component {
             onMaskClick={this.handleMaskClick}
             onHandleClick={() => {
               this.setState({ 
-                isConditionLockingMenuOpen: false,
+                isFilterLockingMenuOpen: false,
                 selectedValueLabel: undefined
               },this.props.onHandleClick)
             }
