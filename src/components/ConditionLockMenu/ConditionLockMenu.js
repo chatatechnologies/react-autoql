@@ -487,9 +487,7 @@ export default class ConditionLockMenu extends React.Component {
                   <table className="react-autoql-condition-table">
                     <thead>
                       <tr>
-                        <th>
-                            Filter
-                        </th>
+                        <th style={{ width: '60%' }}>Filter</th>
                         <th>
                             Settings
                             <Icon
