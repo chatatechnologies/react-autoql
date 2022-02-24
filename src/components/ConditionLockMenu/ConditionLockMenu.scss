@@ -1,3 +1,7 @@
+.react-autoql-condition-lock-menu {
+  min-width: 400px !important;
+}
+
 .react-autoql-filter-locking-title-container {
   display: inline-block;
   width: 100%;
@@ -8,6 +12,7 @@
     float: left;
     color: var(--react-autoql-text-color-primary);
     margin-bottom: 0;
+    margin-top: 0;
     display: block;
     font-size: 1.17em !important;
     font-weight: bold;
@@ -26,7 +31,8 @@
   }
 }
 
-.react-autoql-filter-locking-empty-list {
+#react-autoql-filter-description-id {
+  visibility: hidden;
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
@@ -48,6 +54,11 @@
   }
 }
 
+#react-autoql-filter-description-id.show {
+  visibility: visible;
+  animation: fadeIn 1s;
+}
+
 .react-autoql-condition-locking-input {
   padding: 5px;
   padding-left: 20px;
@@ -64,11 +75,11 @@
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
   &::placeholder {
-    color: var(--react-autoql-text-color-placeholder) !important;
+    color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
   }
 }
 
@@ -79,27 +90,21 @@
 .react-autoql-condition-table {
   min-width: 95%;
   margin: 10px auto;
+  table-layout: fixed;
 }
 
 .react-autoql-condition-table thead {
   padding-left: 10px;
-}
-
-.react-autoql-condition-table th {
-  text-align: left;
-  padding: 4px;
-  margin: 0 10px 0 10px;
-  font-weight: 800;
-
-  span {
-    color: var(--react-autoql-accent-color);
-  }
+  display: table-header-group;
+  width: 100%;
+  flex: 1 1 auto;
 }
 
 .react-autoql-condition-table .react-autoql-condition-table-list-item {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  width: 60%;
 }
 
 .react-autoql-condition-lock-menu-footer {
@@ -138,18 +143,58 @@
   }
 }
 
-.react-autoql-condition-table td {
-  text-align: left;
-  padding: 4px;
-  margin: 0 10px 0 10px;
-  padding-left: 10px;
-}
-
 .react-autoql-condition-list {
   padding: 0;
   margin: 0 auto;
-  overflow-y: scroll;
   min-height: 182px;
+}
+
+tbody::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+}
+
+tbody::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.react-autoql-condition-list .react-autoql-condition-table thead {
+  text-align: left;
+  width: 100%;
+  margin: 0 10px 0 10px;
+  font-weight: 800;
+
+  span {
+    color: var(--react-autoql-accent-color);
+    padding: 5px;
+  }
+}
+.react-autoql-condition-list .react-autoql-condition-table tbody {
+  display: block;
+  overflow-y: scroll;
+  max-height: 260px;
+  width: 100%;
+  flex: 1 1 auto;
+  padding-left: 10px;
+}
+
+.react-autoql-condition-list .react-autoql-condition-table tr {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.react-autoql-condition-list .react-autoql-condition-table th {
+  display: table-cell;
+  padding-left: 10px;
+}
+
+.react-autoql-condition-list td {
+  display: table-cell;
+  padding: 2px;
+  padding-left: 10px;
 }
 
 .react-autoql-condition-list-loading-container {
@@ -257,7 +302,8 @@
   color: #777;
 }
 
-.react-autoql-filter-setting-info-card {
+#react-autoql-filter-setting-info-card {
+  visibility: hidden;
   color: var(--react-autoql-text-color-primary);
   background-color: var(--react-autoql-background-color-secondary);
   border-radius: 5px;
@@ -281,6 +327,21 @@
   }
 }
 
+.react-autoql-highlight-row {
+  background-color: var(--react-autoql-accent-color);
+  color: white;
+  animation-name: highlightIn, highlightOut;
+  animation-duration: 400ms, 400ms;
+  animation-delay: 0ms, 1500ms;
+  animation-timing-function: ease-in, ease-out;
+  animation-iteration-count: 1, 1;
+}
+
+#react-autoql-filter-setting-info-card.show {
+  visibility: visible;
+  animation: fadeIn 1s;
+}
+
 #react-autoql-condition-show-message {
   visibility: hidden;
   min-width: 200px;
@@ -294,7 +355,8 @@
   top: 20px;
   display: block;
   z-index: 999999999;
-  transform: translateX(85%);
+  left: 50%;
+  transform: translate(-50%, -50%);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
 
   span {
@@ -304,7 +366,6 @@
 
 #react-autoql-condition-show-message.show {
   visibility: visible;
-  // -webkit-animation: snackbarFadein 0.5s, snackbarFadeout 0.5s 2.5s;
   animation: snackbarFadein 1s, snackbarFadeout 1s 2s;
 }
 
@@ -327,5 +388,37 @@
   to {
     top: 0;
     opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -20%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes highlightOut {
+  100% {
+    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-text-color-primary);
+  }
+  0% {
+    background-color: var(--react-autoql-accent-color);
+    color: white;
+  }
+}
+@keyframes highlightIn {
+  100% {
+    background-color: var(--react-autoql-accent-color);
+    color: white;
+  }
+  0% {
+    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-text-color-primary);
   }
 }

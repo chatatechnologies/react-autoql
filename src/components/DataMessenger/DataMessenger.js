@@ -5,7 +5,6 @@ import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
-import _includes from 'lodash.includes'
 import _has from 'lodash.has'
 import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -147,7 +146,8 @@ export default class DataMessenger extends React.Component {
 
     lastMessageId: undefined,
     isOptionsDropdownOpen: false,
-    isConditionLockingMenuOpen: false,
+    isFilterLockingMenuOpen: false,
+    selectedValueLabel: undefined,
     conditions: undefined,
     messages: [],
 
@@ -177,17 +177,21 @@ export default class DataMessenger extends React.Component {
     }
 
     // WIP
-    try{
+    try {
       fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
         (response) => {
-          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-          this.setState({ conditions: {
-            persistent: _get(response, 'data.data.data'),
-            session: sessionConditions,
-          } })
+          var sessionConditions = JSON.parse(
+            sessionStorage.getItem('conditions')
+          )
+          this.setState({
+            conditions: {
+              persistent: _get(response, 'data.data.data'),
+              session: sessionConditions,
+            },
+          })
         }
       )
-    } catch(e) {
+    } catch (e) {
       console.error(e)
     }
   }
@@ -224,22 +228,31 @@ export default class DataMessenger extends React.Component {
         setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       }
 
-      if(this.state.isConditionLockingMenuOpen !== prevState.isConditionLockingMenuOpen) {
-        fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-          (response) => {
-            var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-            this.setState({ conditions: {
+      if (
+        this.state.isFilterLockingMenuOpen !==
+        prevState.isFilterLockingMenuOpen
+      ) {
+        fetchConditions({
+          ...getAuthentication(this.props.authentication),
+        }).then((response) => {
+          var sessionConditions = JSON.parse(
+            sessionStorage.getItem('conditions')
+          )
+          this.setState({
+            conditions: {
               persistent: _get(response, 'data.data.data'),
               session: sessionConditions,
-            } })
-          }
-        )
+            },
+          })
+        })
       }
 
       if(this.state.activePage !== prevState.activePage) {
-        this.setState({ isConditionLockingMenuOpen: false })
+        this.setState({ 
+          isFilterLockingMenuOpen: false,
+          selectedValueLabel: undefined 
+        })
       }
-
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -401,7 +414,7 @@ export default class DataMessenger extends React.Component {
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
       isOptionsDropdownOpen: false,
-      isConditionLockingMenuOpen: false,
+      isFilterLockingMenuOpen: false,
     })
   }
 
@@ -474,8 +487,10 @@ export default class DataMessenger extends React.Component {
       return
     }
     if (this.props.onMaskClick) {
-      this.props.onMaskClick()
-      this.setState({ isConditionLockingMenuOpen: false })
+      this.setState({ 
+        isFilterLockingMenuOpen: false,
+        selectedValueLabel: undefined
+      }, this.props.onMaskClick())
     }
     if (this.props.onHandleClick) {
       this.props.onHandleClick()
@@ -729,7 +744,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  getConditionMenuPosition = () => {
+  getFilterMenuPosition = () => {
     switch (this.getPlacementProp()) {
       case 'right':
         return {
@@ -819,7 +834,9 @@ export default class DataMessenger extends React.Component {
                         style={{ fontSize: '19px' }}
                         overflowCount={9}
                         useDot
-                        isAlreadyMountedInDOM={React.isValidElement(<NotificationIcon />)}
+                        isAlreadyMountedInDOM={React.isValidElement(
+                          <NotificationIcon />
+                        )}
                         onNewNotification={() => {
                           // If a new notification is detected, refresh the list
                           if (
@@ -845,82 +862,90 @@ export default class DataMessenger extends React.Component {
     if (this.state.activePage === 'data-messenger') {
       return (
         <>
-        <div id="condition-dropdown" style={{justifyContent: 'left', position: 'absolute', right: 30}}>
-        {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking ? 
-          <button
-            id="condition-dropdown"
-            onClick={() => {
-              this.setState({
-                isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen,
-              })
-            }}
-            className="react-autoql-drawer-header-btn clear-all"
-            data-tip={lang.openFilterLocking}
-            data-for="react-autoql-header-tooltip"
+          <div
+            id="react-autoql-filter-menu-dropdown"
+            style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
           >
-            <Icon type={
-              _get(this.state.conditions, 'persistent.length') > 0 || 
-              _get(this.state.conditions, 'session.length') > 0 
-              ? "lock" : "unlock"
-              } 
-            />
-          </button>
-          : <span />
-        }
-        </div>
-        <Popover
-          isOpen={this.state.isOptionsDropdownOpen}
-          onClickOutside={() => {
-            this.setState({ isOptionsDropdownOpen: false })
-          }}
-          position="bottom" // preferred position
-          content={
-            <div>
-              <div className="clear-messages-confirm-popover">
-                <div
-                  className="react-autoql-menu-text"
-                  onClick={this.handleClearQueriesDropdown}
-                >
-                  <Icon type="trash" />
-                  <span style={{ marginLeft: 5 }}>
-                    {lang.clearDataResponses}
-                  </span>
-                </div>
-                <div id="clear-queries-dropdown" style={{ display: 'none' }}>
-                  <Button
-                    type="default"
-                    size="small"
-                    onClick={() =>
-                      this.setState({ isOptionsDropdownOpen: false })
-                    }
+            {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
+              .enableFilterLocking ? (
+              <button
+                id="react-autoql-filter-menu-dropdown-button"
+                onClick={() => {
+                  this.setState({
+                    isFilterLockingMenuOpen: !this.state
+                      .isFilterLockingMenuOpen,
+                  })
+                }}
+                className="react-autoql-drawer-header-btn clear-all"
+                data-tip={lang.openFilterLocking}
+                data-for="react-autoql-header-tooltip"
+              >
+                <Icon
+                  type={
+                    _get(this.state.conditions, 'persistent.length') > 0 ||
+                    _get(this.state.conditions, 'session.length') > 0
+                      ? 'lock'
+                      : 'unlock'
+                  }
+                />
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+          <Popover
+            isOpen={this.state.isOptionsDropdownOpen}
+            onClickOutside={() => {
+              this.setState({ isOptionsDropdownOpen: false })
+            }}
+            position="bottom" // preferred position
+            content={
+              <div>
+                <div className="clear-messages-confirm-popover">
+                  <div
+                    className="react-autoql-menu-text"
+                    onClick={this.handleClearQueriesDropdown}
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => this.clearMessages()}
-                  >
-                    Clear
-                  </Button>
+                    <Icon type="trash" />
+                    <span style={{ marginLeft: 5 }}>
+                      {lang.clearDataResponses}
+                    </span>
+                  </div>
+                  <div id="clear-queries-dropdown" style={{ display: 'none' }}>
+                    <Button
+                      type="default"
+                      size="small"
+                      onClick={() =>
+                        this.setState({ isOptionsDropdownOpen: false })
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => this.clearMessages()}
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          }
-        >
-          <button
-            onClick={() =>
-              this.setState({
-                isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
-              })
             }
-            className="react-autoql-drawer-header-btn clear-all"
-            data-tip={lang.clearDataResponses}
-            data-for="react-autoql-header-tooltip"
           >
-            <Icon type="trash" />
-          </button>
-        </Popover>
+            <button
+              onClick={() =>
+                this.setState({
+                  isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
+                })
+              }
+              className="react-autoql-drawer-header-btn clear-all"
+              data-tip={lang.clearDataResponses}
+              data-for="react-autoql-header-tooltip"
+            >
+              <Icon type="trash" />
+            </button>
+          </Popover>
         </>
       )
     }
@@ -946,7 +971,6 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.setState({ isConditionLockingMenuOpen: false })
               this.props.onHandleClick()
             }}
             className="react-autoql-drawer-header-btn close"
@@ -956,13 +980,35 @@ export default class DataMessenger extends React.Component {
             <Icon type="close" />
           </button>
         </div>
-        {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableFilterLocking 
-        ? <div className="react-autoql-header-center-container">
+        {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
+          .enableFilterLocking && this.state.isFilterLockingMenuOpen ? (
+          <div className="react-autoql-header-center-container">
             {this.renderHeaderTitle()}
           </div>
-        : <Popover
-            containerStyle={this.getConditionMenuPosition()}
-            isOpen={this.state.isConditionLockingMenuOpen}
+        ) : (
+          <Popover
+            containerStyle={this.getFilterMenuPosition()}
+            isOpen={this.state.isFilterLockingMenuOpen}
+            onClickOutside={(e) => {
+              /**
+               * Because the popover anchor is over the header title instead of the button,
+               * the button is considered part of an "outside" event. This also includes
+               * some elements inside of the popover as well for some reason.
+               * 
+               * This is a hacky solution, but it works.
+               */
+              if(_get(e, 'target.id') !== 'react-autoql-interpreted-value-label' &&
+                _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown-button' &&
+                _get(e, 'target.parentElement.parentElement.parentElement.id') !== 'react-autoql-filter-menu-dropdown' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-filter-table-row' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
+                _get(e, 'target.parentElement.parentElement.id') !== 'react-autoql-remove-filtered-condition-icon' &&
+                _get(e, 'target.parentElement.id') !== 'react-autoql-remove-filter-container' &&
+                !_get(e, 'target.classList.value').includes('react-autoql-drawer-resize-handle')) {
+
+                  this.setState({ isFilterLockingMenuOpen: false })
+              }
+            }}
             position="bottom"
             padding={2}
             align="center"
@@ -973,9 +1019,13 @@ export default class DataMessenger extends React.Component {
                   getAuthentication(this.props.authentication)
                 )}
                 containerWidth={this.getDrawerWidth()}
-                isOpen={this.state.isConditionLockingMenuOpen}
+                isOpen={this.state.isFilterLockingMenuOpen}
+                initFilterText={this.state.selectedValueLabel}
                 onClose={() => {
-                  this.setState({ isConditionLockingMenuOpen: false })
+                  this.setState({ 
+                    isFilterLockingMenuOpen: false,
+                    selectedValueLabel: undefined
+                  })
                 }}
               />
               </div>
@@ -985,10 +1035,10 @@ export default class DataMessenger extends React.Component {
               {this.renderHeaderTitle()}
             </div>
           </Popover>
-        }
+        )}
         <div className="react-autoql-header-right-container">
           {this.renderOptionsDropdown()}
-        </div> 
+        </div>
       </Fragment>
     )
   }
@@ -1073,10 +1123,13 @@ export default class DataMessenger extends React.Component {
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
-                  onConditionClickCallback={() => {
-                    this.setState({
-                      isConditionLockingMenuOpen: !this.state.isConditionLockingMenuOpen
-                    })
+                  onConditionClickCallback={(e) => {
+                    if(_get(e, 'target.classList.value').includes('react-autoql-condition-link')) {
+                      this.setState({
+                        selectedValueLabel: _get(e, 'target.innerText').replace('lock ', '').trim()
+                      })
+                    }
+                    this.setState({ isFilterLockingMenuOpen: true })
                   }}
                 />
               )
@@ -1401,19 +1454,19 @@ export default class DataMessenger extends React.Component {
 
   /**
    * For some indiscernible reason, the Data Messenger drawer duplicates itself in the DOM.
-   * three times when first opened, then a number more times with each and every query 
+   * three times when first opened, then a number more times with each and every query
    * being made.
-   * 
+   *
    * This function removes unnecessary duplicate instances of the Data Messenger Drawer
    * and should help improve performance a bit by reducing the amount of renders.
-   * 
+   *
    * https://stackoverflow.com/questions/57946748/remove-duplicate-dom-element-javascript-not-jquery
    */
   removeDuplicateMessengerInstance() {
-    const instance = {};
+    const instance = {}
     for (const item of document.querySelectorAll('.ReactModalPortal')) {
-        if (instance[item]) item.parentNode.removeChild(item);
-        else instance[item] = true;
+      if (instance[item]) item.parentNode.removeChild(item)
+      else instance[item] = true
     }
   }
 
@@ -1455,7 +1508,13 @@ export default class DataMessenger extends React.Component {
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
             onMaskClick={this.handleMaskClick}
-            onHandleClick={this.props.onHandleClick}
+            onHandleClick={() => {
+              this.setState({ 
+                isFilterLockingMenuOpen: false,
+                selectedValueLabel: undefined
+              },this.props.onHandleClick)
+            }
+            }
             afterVisibleChange={this.props.onVisibleChange}
             handler={this.getHandlerProp()}
             level={this.props.shiftScreen ? 'all' : null}

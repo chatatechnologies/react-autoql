@@ -112,7 +112,12 @@ export default class ChataChart extends Component {
       this.updateMargins()
     }
 
-    if(!_isEqual(this.props.isShowingInterpretation, prevProps.isShowingInterpretation)) {
+    if (
+      !_isEqual(
+        this.props.isShowingInterpretation,
+        prevProps.isShowingInterpretation
+      )
+    ) {
       this.updateMargins()
     }
 
@@ -184,10 +189,12 @@ export default class ChataChart extends Component {
       n.getComputedTextLength()
     )
     let leftMargin = Math.ceil(maxYLabelWidth) + 55 // margin to include axis label
+    if (isNaN(leftMargin)) {
+      leftMargin = 96 // if there is no yAxisLabels, set leftMargin to default value as 96
+    }
     if (xAxisBBox.width > this.props.width) {
       leftMargin += xAxisBBox.width - this.props.width
     }
-
     return { leftMargin }
   }
 
@@ -236,17 +243,17 @@ export default class ChataChart extends Component {
       _get(this.props.dataConfig, 'numberColumnIndices'),
       this.props.type
     )
-
     if (legendLocation === 'bottom' && _get(legendBBox, 'height')) {
       bottomLegendMargin = legendBBox.height + 10
     }
-
     const xAxis = select(this.chartRef)
       .select('.axis-Bottom')
       .node()
     const xAxisBBox = xAxis ? xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 40 // margin to include axis label
-
+    if (xAxisBBox.height === 0) {
+      bottomMargin = 463 // if no xAxisBBox available, set bottomMarigin to default as 463
+    }
     // only for bar charts (vertical grid lines mess with the axis size)
     if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
       const innerTickSize =
@@ -541,7 +548,7 @@ export default class ChataChart extends Component {
     } = this.state
 
     return (
-      <div>
+      <div id="chata-chart-popover">
         <div className="axis-selector-container">
           {!!currencySelectorState.length && (
             <Fragment>

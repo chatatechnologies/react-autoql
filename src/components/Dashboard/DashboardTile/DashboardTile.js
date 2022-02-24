@@ -935,6 +935,7 @@ export default class DashboardTile extends React.Component {
                 dataFormatting={getDataFormatting(this.props.dataFormatting)}
                 renderTooltips={false}
                 autoSelectQueryValidationSuggestion={false}
+                isDashboardQuery={true}
                 autoChartAggregations={this.props.autoChartAggregations}
                 renderSuggestionsAsDropdown={this.props.tile.h < 4}
                 enableDynamicCharting={this.props.enableDynamicCharting}

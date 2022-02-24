@@ -99,7 +99,7 @@ export default class ChatMessage extends React.Component {
     autoChartAggregations: true,
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
-    onConditionClickCallback: () => {}
+    onConditionClickCallback: () => {},
   }
 
   state = {
@@ -261,8 +261,8 @@ export default class ChatMessage extends React.Component {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
               }
             }}
-            onConditionClickCallback={() => {
-              this.props.onConditionClickCallback()
+            onConditionClickCallback={(e) => {
+              this.props.onConditionClickCallback(e)
             }}
           />
         </React.Fragment>
@@ -284,7 +284,7 @@ export default class ChatMessage extends React.Component {
         messageElement.style.height = `${messageElement.offsetHeight + 35}px`
         this.scrollIntoView()
       } else {
-        messageElement.style.maxHeight = '85%'
+        messageElement.style.maxHeight = '90%'
         messageElement.style.height = `${messageElement.offsetHeights}px`
       }
     } catch (error) {
