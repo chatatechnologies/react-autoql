@@ -4,10 +4,10 @@ import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import Switch from 'react-switch'
 
-import { authenticationType } from '../../props/types'
 import {
   fetchValueLabelAutocomplete,
   setConditions,
@@ -15,12 +15,15 @@ import {
   fetchConditions,
 } from '../../js/queryService'
 
-import { getAuthentication } from '../../props/defaults'
+import { authenticationType, themeConfigType } from '../../props/types'
+import { getAuthentication,  getThemeConfig, themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
+import { accentColorAssist } from './helpers'
 
 import './ConditionLockMenu.scss'
 
@@ -36,6 +39,7 @@ export default class ConditionLockMenu extends React.Component {
     onClose: PropTypes.func,
     authentication: authenticationType,
     initFilterText: PropTypes.string,
+    themeConfig: themeConfigType,
   }
 
   static defaultProps = {
@@ -44,6 +48,7 @@ export default class ConditionLockMenu extends React.Component {
     isOpen: false,
     authentication: undefined,
     initFilterText: undefined,
+    themeConfig: themeConfigDefault,
   }
 
   state = {
@@ -118,6 +123,17 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
+  componentDidUpdate = (prevProps, predState) => {
+    if (
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
+    }
+  }
+
   handleFetchFilteredList() {
     fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
       (response) => {
@@ -163,13 +179,11 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
-    // let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
-        // id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
@@ -533,8 +547,8 @@ export default class ConditionLockMenu extends React.Component {
                                   <Switch 
                                     onChange={() => this.handlePersistConditionToggle(item, index)} 
                                     checked={item.lock_flag}
-                                    onColor="#86d3ff"
-                                    onHandleColor="#2693e6"
+                                    onColor={accentColorAssist(getThemeConfig(this.props.themeConfig).accentColor, 180)}
+                                    onHandleColor={getThemeConfig(getThemeConfig(this.props.themeConfig)).accentColor}
                                     uncheckedIcon={false}
                                     checkedIcon={false}
                                     boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"

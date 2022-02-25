@@ -1019,6 +1019,7 @@ export default class DataMessenger extends React.Component {
                 )}
                 containerWidth={this.getDrawerWidth()}
                 isOpen={this.state.isFilterLockingMenuOpen}
+                themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
                 initFilterText={this.state.selectedValueLabel}
                 onClose={() => {
                   this.setState({ 
