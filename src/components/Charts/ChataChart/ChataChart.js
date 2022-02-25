@@ -515,7 +515,10 @@ export default class ChataChart extends Component {
 
   renderStringColumnSelectorContent = () => {
     return (
-      <div className="axis-selector-container">
+      <div
+        className="axis-selector-container"
+        id="string-column-selector-content"
+      >
         <ul className="axis-selector-content">
           {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
             return (
@@ -719,7 +722,7 @@ export default class ChataChart extends Component {
     }
 
     return (
-      <div className="axis-selector-container">
+      <div className="axis-selector-container" id="legend-selector-content">
         <ul className="axis-selector-content">
           {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
             return (
