@@ -176,7 +176,6 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    // WIP
     try {
       fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
         (response) => {
@@ -1020,6 +1019,7 @@ export default class DataMessenger extends React.Component {
                 )}
                 containerWidth={this.getDrawerWidth()}
                 isOpen={this.state.isFilterLockingMenuOpen}
+                themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
                 initFilterText={this.state.selectedValueLabel}
                 onClose={() => {
                   this.setState({ 

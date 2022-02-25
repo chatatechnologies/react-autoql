@@ -4,10 +4,10 @@ import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import Switch from 'react-switch'
 
-import { authenticationType } from '../../props/types'
 import {
   fetchValueLabelAutocomplete,
   setConditions,
@@ -15,12 +15,15 @@ import {
   fetchConditions,
 } from '../../js/queryService'
 
-import { getAuthentication } from '../../props/defaults'
+import { authenticationType, themeConfigType } from '../../props/types'
+import { getAuthentication,  getThemeConfig, themeConfigDefault } from '../../props/defaults'
+import { setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
+import { accentColorAssist } from './helpers'
 
 import './ConditionLockMenu.scss'
 
@@ -36,6 +39,7 @@ export default class ConditionLockMenu extends React.Component {
     onClose: PropTypes.func,
     authentication: authenticationType,
     initFilterText: PropTypes.string,
+    themeConfig: themeConfigType,
   }
 
   static defaultProps = {
@@ -44,6 +48,7 @@ export default class ConditionLockMenu extends React.Component {
     isOpen: false,
     authentication: undefined,
     initFilterText: undefined,
+    themeConfig: themeConfigDefault,
   }
 
   state = {
@@ -118,6 +123,54 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
+  componentDidUpdate = (prevProps, predState) => {
+    if (
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
+    }
+  }
+
+  handleFetchFilteredList() {
+    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      (response) => {
+        let conditions = _get(response, 'data.data.data')
+        let array = [];
+        for (let i = 0; i < conditions.length; i++) {
+          array.push({
+            id: conditions[i].id,
+            keyword: conditions[i].value,
+            value: conditions[i].value,
+            show_message: conditions[i].show_message,
+            key: conditions[i].key,
+            lock_flag: conditions[i].lock_flag,
+          })
+        }
+        if(JSON.parse(sessionStorage.getItem("conditions")) !== null) {
+          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+          for (let i = 0; i < sessionConditions.length; i++) {
+            array.push({
+              id: sessionConditions[i].id,
+              keyword: sessionConditions[i].value,
+              value: sessionConditions[i].value,
+              show_message: sessionConditions[i].show_message,
+              key: sessionConditions[i].key,
+              lock_flag: sessionConditions[i].lock_flag,
+            })
+          }
+        }
+          let sortedArray = array.sort()
+          this.setState({ 
+            selectedConditions: sortedArray, 
+            inputValue: '',
+            isFetchingConditions: false,
+          })
+       })
+  }
+
   /**
    * When suggestion is clicked, Autosuggest populates the input
    * based on the clicked suggestion. Teach Autosuggest how to calculate the
@@ -126,25 +179,24 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
-    let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
-        id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
         key: suggestion.name.canonical,
         lock_flag: 1 // persist by default
       })
-      this.setState({ selectedConditions: array, inputValue: '' })
+      this.setState({ inputValue: '' })
       setConditions({
         ...getAuthentication(this.props.authentication),
         conditions: array,
       }).then(() => {
         this.handleShowMessage('lock', `${suggestion.name.keyword} has been locked`)
+        this.handleFetchFilteredList()
       })
     }
   }
@@ -183,7 +235,7 @@ export default class ConditionLockMenu extends React.Component {
 
     const array = this.state.selectedConditions
     array.splice(index, 1)
-    this.setState({ selectedConditions: array })
+    // this.setState({ selectedConditions: array })
     this.handleShowMessage('unlock', 'Filter removed.')
     ReactTooltip.hide()
   }
@@ -368,31 +420,6 @@ export default class ConditionLockMenu extends React.Component {
     </div>
   )
 
-  renderAcceptConditionsButton = () => (
-    <div
-      key="accept-conditions-btn"
-      className="react-autoql-accept-conditions-button"
-    >
-      <span
-        onClick={() => {
-          setConditions({
-            ...getAuthentication(this.props.authentication),
-            conditions: this.state.selectedConditions,
-          })
-            .then(() => {
-              this.props.onClose(true)
-            })
-            .catch((e) => {
-              //WIP showErrorMessage
-              console.error(e)
-            })
-        }}
-      >
-        <Icon type="lock" style={{ verticalAlign: 'middle' }} /> Save
-      </span>
-    </div>
-  )
-
   render = () => {
     const { containerWidth } = this.props
 
@@ -520,8 +547,8 @@ export default class ConditionLockMenu extends React.Component {
                                   <Switch 
                                     onChange={() => this.handlePersistConditionToggle(item, index)} 
                                     checked={item.lock_flag}
-                                    onColor="#86d3ff"
-                                    onHandleColor="#2693e6"
+                                    onColor={accentColorAssist(getThemeConfig(this.props.themeConfig).accentColor, 180)}
+                                    onHandleColor={getThemeConfig(getThemeConfig(this.props.themeConfig)).accentColor}
                                     uncheckedIcon={false}
                                     checkedIcon={false}
                                     boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
