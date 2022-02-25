@@ -118,6 +118,43 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
+  handleFetchFilteredList() {
+    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      (response) => {
+        let conditions = _get(response, 'data.data.data')
+        let array = [];
+        for (let i = 0; i < conditions.length; i++) {
+          array.push({
+            id: conditions[i].id,
+            keyword: conditions[i].value,
+            value: conditions[i].value,
+            show_message: conditions[i].show_message,
+            key: conditions[i].key,
+            lock_flag: conditions[i].lock_flag,
+          })
+        }
+        if(JSON.parse(sessionStorage.getItem("conditions")) !== null) {
+          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+          for (let i = 0; i < sessionConditions.length; i++) {
+            array.push({
+              id: sessionConditions[i].id,
+              keyword: sessionConditions[i].value,
+              value: sessionConditions[i].value,
+              show_message: sessionConditions[i].show_message,
+              key: sessionConditions[i].key,
+              lock_flag: sessionConditions[i].lock_flag,
+            })
+          }
+        }
+          let sortedArray = array.sort()
+          this.setState({ 
+            selectedConditions: sortedArray, 
+            inputValue: '',
+            isFetchingConditions: false,
+          })
+       })
+  }
+
   /**
    * When suggestion is clicked, Autosuggest populates the input
    * based on the clicked suggestion. Teach Autosuggest how to calculate the
@@ -126,25 +163,26 @@ export default class ConditionLockMenu extends React.Component {
    */
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
-    let tempId = uuid.v4()
+    // let tempId = uuid.v4()
 
     if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
       this.handleShowMessage('warning', 'This condition has already been applied.')
     } else {
       array.push({
-        id: tempId,
+        // id: tempId,
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
         key: suggestion.name.canonical,
         lock_flag: 1 // persist by default
       })
-      this.setState({ selectedConditions: array, inputValue: '' })
+      this.setState({ inputValue: '' })
       setConditions({
         ...getAuthentication(this.props.authentication),
         conditions: array,
       }).then(() => {
         this.handleShowMessage('lock', `${suggestion.name.keyword} has been locked`)
+        this.handleFetchFilteredList()
       })
     }
   }
@@ -183,7 +221,7 @@ export default class ConditionLockMenu extends React.Component {
 
     const array = this.state.selectedConditions
     array.splice(index, 1)
-    this.setState({ selectedConditions: array })
+    // this.setState({ selectedConditions: array })
     this.handleShowMessage('unlock', 'Filter removed.')
     ReactTooltip.hide()
   }
@@ -365,31 +403,6 @@ export default class ConditionLockMenu extends React.Component {
   renderShowMessage = () => (
     <div id="react-autoql-condition-show-message">
       <Icon type={this.state.showMessage.type} /> {this.state.showMessage.message}
-    </div>
-  )
-
-  renderAcceptConditionsButton = () => (
-    <div
-      key="accept-conditions-btn"
-      className="react-autoql-accept-conditions-button"
-    >
-      <span
-        onClick={() => {
-          setConditions({
-            ...getAuthentication(this.props.authentication),
-            conditions: this.state.selectedConditions,
-          })
-            .then(() => {
-              this.props.onClose(true)
-            })
-            .catch((e) => {
-              //WIP showErrorMessage
-              console.error(e)
-            })
-        }}
-      >
-        <Icon type="lock" style={{ verticalAlign: 'middle' }} /> Save
-      </span>
     </div>
   )
 

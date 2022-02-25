@@ -176,7 +176,6 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    // WIP
     try {
       fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
         (response) => {
