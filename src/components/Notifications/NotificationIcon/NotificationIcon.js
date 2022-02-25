@@ -96,6 +96,7 @@ export default class NotificationIcon extends React.Component {
        * For short polling notifications, we needed to set the interval on FE side.
        * Interval set to trigger every 90 seconds. 
        */
+      if(this.timerID) { clearInterval(this.timerID); }
       this.timerID = setInterval(() => {
           this.getNotificationCount(count)
         .then((newCount) => {
@@ -110,8 +111,11 @@ export default class NotificationIcon extends React.Component {
             )
             console.error(error)
             this.props.onErrorCallback(error)
+
             clearInterval(this.timerID);
-            return
+            
+            throw new Error(error)
+
           } else if (_get(error, 'response.status') == 504) {
             // Timed out because there were no changes
             // Let's connect again
