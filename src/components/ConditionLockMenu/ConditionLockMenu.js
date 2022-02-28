@@ -74,6 +74,7 @@ export default class ConditionLockMenu extends React.Component {
         (response) => {
           let conditions = _get(response, 'data.data.data')
           let array = this.state.selectedConditions
+
           for (let i = 0; i < conditions.length; i++) {
             array.push({
               id: conditions[i].id,
@@ -97,9 +98,13 @@ export default class ConditionLockMenu extends React.Component {
               })
             }
           }
+          
+          array.sort((a, b) => {
+            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+          })
           if(this.props.initFilterText && this.props.initFilterText !== '') {
             this.setState({ 
-              selectedConditions: array.sort(), 
+              selectedConditions: array, 
               isFetchingConditions: false,
             })
             for(let i = 0; i < array.length; i++) {
@@ -111,7 +116,7 @@ export default class ConditionLockMenu extends React.Component {
             this.animateInputTextAndSubmit(this.props.initFilterText)
           } else {
             this.setState({ 
-              selectedConditions: array.sort(), 
+              selectedConditions: array, 
               inputValue: '',
               isFetchingConditions: false,
             })
@@ -139,6 +144,7 @@ export default class ConditionLockMenu extends React.Component {
       (response) => {
         let conditions = _get(response, 'data.data.data')
         let array = [];
+
         for (let i = 0; i < conditions.length; i++) {
           array.push({
             id: conditions[i].id,
@@ -162,12 +168,15 @@ export default class ConditionLockMenu extends React.Component {
             })
           }
         }
-          let sortedArray = array.sort()
-          this.setState({ 
-            selectedConditions: sortedArray, 
-            inputValue: '',
-            isFetchingConditions: false,
-          })
+        
+        array.sort((a, b) => {
+          return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+        })
+        this.setState({ 
+          selectedConditions: array, 
+          inputValue: '',
+          isFetchingConditions: false,
+        })
        })
   }
 
@@ -264,6 +273,8 @@ export default class ConditionLockMenu extends React.Component {
           setConditions({
             ...getAuthentication(this.props.authentication),
             conditions: this.state.selectedConditions,
+          }).then(() => {
+            this.handleFetchFilteredList()
           })
           if(item.lock_flag === 0) {
             if(sessionConditions == null) sessionConditions = [];
