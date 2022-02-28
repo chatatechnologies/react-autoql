@@ -144,7 +144,6 @@ export default class ConditionLockMenu extends React.Component {
       (response) => {
         let conditions = _get(response, 'data.data.data')
         let array = [];
-
         for (let i = 0; i < conditions.length; i++) {
           array.push({
             id: conditions[i].id,
