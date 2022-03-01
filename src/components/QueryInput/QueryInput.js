@@ -100,10 +100,7 @@ export default class QueryInput extends React.Component {
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
-    if (
-      this.props.inputValue &&
-      this.props.inputValue !== prevProps.inputValue
-    ) {
+    if (this.props.inputValue !== prevProps.inputValue) {
       this.setState({ inputValue: this.props.inputValue })
     }
   }
