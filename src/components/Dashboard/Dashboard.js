@@ -432,7 +432,6 @@ class Dashboard extends React.Component {
       if (!drilldownData || !drilldownData.data) {
         return
       }
-
       this.setState({
         isDrilldownModalVisible: true,
         isDrilldownSecondHalf: isSecondHalf,
@@ -440,7 +439,6 @@ class Dashboard extends React.Component {
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
       })
-
       this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
     }
   }
@@ -451,6 +449,7 @@ class Dashboard extends React.Component {
     const displayType = this.state.isDrilldownSecondHalf
       ? tile.secondDisplayType
       : tile.displayType
+
     return CHART_TYPES.includes(displayType)
   }
 
@@ -549,7 +548,7 @@ class Dashboard extends React.Component {
       const tile = this.props.tiles.find(
         (tile) => tile.i === this.state.activeDrilldownTile
       )
-      
+
       let title
       let queryResponse
       let displayType

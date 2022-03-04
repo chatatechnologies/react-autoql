@@ -1055,7 +1055,10 @@ export default class DashboardTile extends React.Component {
     )
       ? this.props.secondDisplayType
       : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
-
+    this.props.setParamsForTile(
+      { secondDisplayType: displayType },
+      this.props.tile.i
+    )
     return this.renderQueryOutput({
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.COMPONENT_KEY}`,
