@@ -133,7 +133,7 @@ export default class ChataColumnChart extends Component {
         <Axes
           themeConfig={themeConfig}
           scales={{ xScale, yScale }}
-          xCol={columns[0]}
+          xCol={columns[stringColumnIndex]}
           yCol={columns[numberColumnIndex]}
           margins={{
             left: leftMargin,
