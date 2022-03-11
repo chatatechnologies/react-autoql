@@ -42,7 +42,7 @@
   display: flex;
   justify-content: flex-start;
   padding-left: 20px;
-
+  min-height: 200px;
   animation: scale-up-bl 0.6s ease;
 }
 .chat-single-message-container.request {
