@@ -33,8 +33,9 @@ export default class ConditionLockMenu extends React.Component {
   UNIQUE_ID = uuid.v4()
   mouseInfoRef = createRef();
   mouseSettingRef = createRef();
+  
   static propTypes = {
-    containerWidth: PropTypes.number,
+    containerWidth: PropTypes.string,
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
     authentication: authenticationType,
@@ -248,10 +249,6 @@ export default class ConditionLockMenu extends React.Component {
     ReactTooltip.hide()
   }
 
-  /**
-   * WIP: Session Locking
-   * @param {*} item
-   */
   handlePersistConditionToggle = (item) => {
     var index = this.state.selectedConditions.findIndex(condition => condition.id === item.id);
     var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
@@ -436,6 +433,7 @@ export default class ConditionLockMenu extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          data-test="react-autoql-filter-menu-container"
           className="react-autoql-condition-lock-menu"
           style={{ width: containerWidth }}
         >

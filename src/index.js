@@ -3,6 +3,7 @@ export * from './components/QueryInput'
 export * from './components/Dashboard'
 export * from './components/QueryOutput'
 export * from './components/SpeechToTextButton'
+export * from './components/ConditionLockMenu'
 export {
   NotificationIcon,
   NotificationFeed,

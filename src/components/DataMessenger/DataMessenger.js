@@ -1014,6 +1014,8 @@ export default class DataMessenger extends React.Component {
             content={
               <div id="condition-menu-dropdown" style={{ display: 'block' }}>
               <ConditionLockMenu
+                data-test="react-autoql-filter-menu"
+                id="react-autoql-filter-menu"
                 authentication={getAuthentication(
                   getAuthentication(this.props.authentication)
                 )}
