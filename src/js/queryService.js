@@ -152,18 +152,23 @@ export const runQueryOnly = ({
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
-  const sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-  let conditions = {};
+  const sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
+  let conditions = {}
 
-  if(sessionConditions !== null) {
+  if (sessionConditions !== null) {
     for (let i = 0; i < sessionConditions.length; i++) {
-      if(Object.keys(conditions).some(item => item === sessionConditions[i].key)){
-        var item = Object.keys(conditions).find(key => key === sessionConditions[i].key)
+      if (
+        Object.keys(conditions).some(
+          (item) => item === sessionConditions[i].key
+        )
+      ) {
+        var item = Object.keys(conditions).find(
+          (key) => key === sessionConditions[i].key
+        )
         conditions[item].push(sessionConditions[i].value)
       } else {
         conditions[sessionConditions[i].key] = [sessionConditions[i].value]
       }
-
     }
   }
 
@@ -255,39 +260,32 @@ export const runQuery = ({
     }
   }
 
-  // temp ignore validation for these projects
-  if (
-    id !== 'accounting-demo' &&
-    id !== 'operational-demo' &&
-    id !== 'stockmarket-demo'
-  ) {
-    if (enableQueryValidation && !skipQueryValidation && !isQandA) {
-      return runQueryValidation({
-        text: query,
-        domain,
-        apiKey,
-        token,
+  if (enableQueryValidation && !skipQueryValidation && !isQandA) {
+    return runQueryValidation({
+      text: query,
+      domain,
+      apiKey,
+      token,
+    })
+      .then((response) => {
+        if (failedValidation(response)) {
+          return Promise.resolve(response)
+        }
+        return runQueryOnly({
+          query,
+          userSelection,
+          debug,
+          test,
+          domain,
+          apiKey,
+          token,
+          source,
+          AutoAEId,
+        })
       })
-        .then((response) => {
-          if (failedValidation(response)) {
-            return Promise.resolve(response)
-          }
-          return runQueryOnly({
-            query,
-            userSelection,
-            debug,
-            test,
-            domain,
-            apiKey,
-            token,
-            source,
-            AutoAEId,
-          })
-        })
-        .catch((error) => {
-          return Promise.reject(error)
-        })
-    }
+      .catch((error) => {
+        return Promise.reject(error)
+      })
   }
 
   return runQueryOnly({

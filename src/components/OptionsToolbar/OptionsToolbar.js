@@ -66,7 +66,11 @@ export default class Input extends React.Component {
     onColumnVisibilitySave: () => {},
   }
 
-  state = { isHideColumnsModalVisible: false, isSettingColumnVisibility: false }
+  state = {
+    isHideColumnsModalVisible: false,
+    isSettingColumnVisibility: false,
+    reportProblemMessage: undefined,
+  }
 
   componentDidMount = () => {
     this._isMounted = true
@@ -383,22 +387,32 @@ export default class Input extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           isVisible={this.state.activeMenu === 'other-problem'}
           onClose={() => {
-            this.setState({ activeMenu: undefined })
+            this.setState({
+              activeMenu: undefined,
+              reportProblemMessage: undefined,
+            })
           }}
           onConfirm={() => {
-            this.reportQueryProblem(this.reportProblemMessage)
-            this.reportProblemMessage = undefined
+            this.reportQueryProblem(this.state.reportProblemMessage)
+            this.setState({
+              reportProblemMessage: undefined,
+            })
           }}
           confirmLoading={this.state.isReportingProblem}
           title="Report a Problem"
           enableBodyScroll={true}
           width="600px"
           confirmText="Report"
+          confirmDisabled={this.state.reportProblemMessage ? false : true}
         >
           Please tell us more about the problem you are experiencing:
           <textarea
             className="report-problem-text-area"
-            onChange={(e) => (this.reportProblemMessage = e.target.value)}
+            onChange={(e) =>
+              this.setState({
+                reportProblemMessage: e.target.value,
+              })
+            }
           />
         </Modal>
       </ErrorBoundary>
@@ -704,7 +718,9 @@ export default class Input extends React.Component {
         _get(response, 'data.data.columns.length') > 0,
       showSQLButton:
         isDataResponse && getAutoQLConfig(this.props.autoQLConfig).debug,
-      showSaveAsCSVButton: isDataResponse && getAutoQLConfig(this.props.autoQLConfig).enableCSVDownload,
+      showSaveAsCSVButton:
+        isDataResponse &&
+        getAutoQLConfig(this.props.autoQLConfig).enableCSVDownload,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:
