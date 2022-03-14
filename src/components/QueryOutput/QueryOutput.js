@@ -1320,7 +1320,7 @@ export default class QueryOutput extends React.Component {
       col.headerFilterFunc = this.setFilterFunction(col)
 
       // Allow proper chronological sorting for date strings
-      col.sorter = this.setSorterFunction(col)
+      // col.sorter = this.setSorterFunction(col)
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {
@@ -2194,13 +2194,13 @@ export default class QueryOutput extends React.Component {
             isOpened={true}
             // isOpened={this.state.isShowingInterpretation}
           >
-              <strong>Interpreted as:{' '}</strong>
-              <span
-                onClick={(e) => this.props.onConditionClickCallback(e)}
-                dangerouslySetInnerHTML={{
-                  __html: `${reverseTranslation}`
-                }}
-              />
+            <strong>Interpreted as: </strong>
+            <span
+              onClick={(e) => this.props.onConditionClickCallback(e)}
+              dangerouslySetInnerHTML={{
+                __html: `${reverseTranslation}`,
+              }}
+            />
           </UnmountClosed>
         </div>
       )
