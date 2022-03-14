@@ -6,7 +6,6 @@ export function accentColorAssist(col,amt) {
     }
 
     var num = parseInt(col,16);
-
     var r = (num >> 16) + amt;
 
     if ( r > 255 ) r = 255;
