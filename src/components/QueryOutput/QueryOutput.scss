@@ -71,7 +71,6 @@
 
 .react-autoql-response-content-container.table {
   max-height: 100vh !important; // this safety net forces progressive rendering
-  height: calc(100% - 44px) !important;
   overflow-y: scroll;
   scrollbar-width: none;
   margin-bottom: 0 !important;
