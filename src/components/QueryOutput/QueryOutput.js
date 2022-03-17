@@ -1803,7 +1803,6 @@ export default class QueryOutput extends React.Component {
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
