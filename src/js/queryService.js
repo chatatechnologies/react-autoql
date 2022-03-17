@@ -1,6 +1,5 @@
 import axios from 'axios'
 import _get from 'lodash.get'
-import _ from 'lodash'
 
 var autoCompleteCall = null
 
