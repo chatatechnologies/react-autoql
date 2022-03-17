@@ -310,10 +310,7 @@ export default class App extends Component {
   }
 
   fetchNotificationData = (notificationId) => {
-    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${
-      this.state.apiKey
-    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${this.state.apiKey
-      }`
+    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${this.state.apiKey}`
     const token = getStoredProp('jwtToken')
 
     const config = {}
