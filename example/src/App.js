@@ -143,7 +143,7 @@ export default class App extends Component {
     lightAccentColor: '#26a7df',
     darkAccentColor: '#26a7df',
     dashboardBackground: '#fafafa',
-    maxMessages: 12,
+    maxMessages: 20,
     isEditing: false,
     debug: true,
     test: !isProd(),
