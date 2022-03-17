@@ -5,7 +5,6 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
-import _ from 'lodash'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
