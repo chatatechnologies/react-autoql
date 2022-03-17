@@ -426,9 +426,20 @@ export default class QueryOutput extends React.Component {
 
     // Finally if all else fails, just compare the 2 values directly
     if (!aDate || !bDate) {
+      //If one is a YYYY-WW
+      if (a.includes('W')) {
+        let aDateYear = a.substring(0, 4)
+        let bDateYear = b.substring(0, 4)
+        if (aDateYear !== bDateYear) {
+          return bDateYear - aDateYear
+        } else {
+          let aDateWeek = a.substring(6, 8)
+          let bDateWeek = b.substring(6, 8)
+          return bDateWeek - aDateWeek
+        }
+      }
       return b - a
     }
-
     return bDate - aDate
   }
 
@@ -1320,7 +1331,7 @@ export default class QueryOutput extends React.Component {
       col.headerFilterFunc = this.setFilterFunction(col)
 
       // Allow proper chronological sorting for date strings
-      col.sorter = this.setSorterFunction(col)
+      // col.sorter = this.setSorterFunction(col)
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {
@@ -1415,7 +1426,6 @@ export default class QueryOutput extends React.Component {
           title: 'Month',
           name: 'Month',
           field: '0',
-          // sorter: 'date',
           frozen: true,
           visible: true,
         },
@@ -1793,7 +1803,6 @@ export default class QueryOutput extends React.Component {
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           dataConfig={_cloneDeep(this.dataConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
@@ -2194,13 +2203,13 @@ export default class QueryOutput extends React.Component {
             isOpened={true}
             // isOpened={this.state.isShowingInterpretation}
           >
-              <strong>Interpreted as:{' '}</strong>
-              <span
-                onClick={(e) => this.props.onConditionClickCallback(e)}
-                dangerouslySetInnerHTML={{
-                  __html: `${reverseTranslation}`
-                }}
-              />
+            <strong>Interpreted as: </strong>
+            <span
+              onClick={(e) => this.props.onConditionClickCallback(e)}
+              dangerouslySetInnerHTML={{
+                __html: `${reverseTranslation}`,
+              }}
+            />
           </UnmountClosed>
         </div>
       )
