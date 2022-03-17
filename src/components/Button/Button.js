@@ -10,7 +10,7 @@ import './Button.scss'
 
 const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
-
+//test
 export default class Button extends React.Component {
   COMPONENT_KEY = `react-autoql-btn-${uuid.v4()}`
 
