@@ -426,9 +426,20 @@ export default class QueryOutput extends React.Component {
 
     // Finally if all else fails, just compare the 2 values directly
     if (!aDate || !bDate) {
+      //If one is a YYYY-WW
+      if (a.includes('W')) {
+        let aDateYear = a.substring(0, 4)
+        let bDateYear = b.substring(0, 4)
+        if (aDateYear !== bDateYear) {
+          return bDateYear - aDateYear
+        } else {
+          let aDateWeek = a.substring(6, 8)
+          let bDateWeek = b.substring(6, 8)
+          return bDateWeek - aDateWeek
+        }
+      }
       return b - a
     }
-
     return bDate - aDate
   }
 
@@ -1415,7 +1426,6 @@ export default class QueryOutput extends React.Component {
           title: 'Month',
           name: 'Month',
           field: '0',
-          // sorter: 'date',
           frozen: true,
           visible: true,
         },
