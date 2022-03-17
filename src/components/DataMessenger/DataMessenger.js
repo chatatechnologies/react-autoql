@@ -45,7 +45,7 @@ import {
   fetchQueryTips,
   fetchConditions,
 } from '../../js/queryService'
-import { ConditionLockMenu } from '../ConditionLockMenu'
+import { FilterLockMenu } from '../FilterLockMenu'
 
 // Styles
 import 'rc-drawer/assets/index.css'
@@ -1013,7 +1013,7 @@ export default class DataMessenger extends React.Component {
             align="center"
             content={
               <div id="condition-menu-dropdown" style={{ display: 'block' }}>
-              <ConditionLockMenu
+              <FilterLockMenu
                 data-test="react-autoql-filter-menu"
                 id="react-autoql-filter-menu"
                 authentication={getAuthentication(

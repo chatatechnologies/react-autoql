@@ -25,11 +25,11 @@ import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
 import { accentColorAssist } from './helpers'
 
-import './ConditionLockMenu.scss'
+import './FilterLockMenu.scss'
 
 let autoCompleteArray = []
 
-export default class ConditionLockMenu extends React.Component {
+export default class FilterLockMenu extends React.Component {
   UNIQUE_ID = uuid.v4()
   mouseInfoRef = createRef();
   mouseSettingRef = createRef();

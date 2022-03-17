@@ -2,7 +2,7 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 
 import { checkProps } from '../../../test/testUtils'
-import { ConditionLockMenu } from './' 
+import { FilterLockMenu } from '.' 
 
 const defaultProps = {
   containerWidth: '500px',
@@ -16,7 +16,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<ConditionLockMenu {...setupProps} />)
+  const wrapper = shallow(<FilterLockMenu {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -26,7 +26,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with only token prop', () => {
     const wrapper = shallow(
-      <ConditionLockMenu authentication={{ token: 'token' }} />
+      <FilterLockMenu authentication={{ token: 'token' }} />
     )
     expect(wrapper.exists()).toBe(true)
   })
@@ -38,12 +38,12 @@ describe('renders correctly', () => {
 
 describe('props', () => {
   test('does not throw warning with expected props', () => {
-    checkProps(ConditionLockMenu, defaultProps)
+    checkProps(FilterLockMenu, defaultProps)
   })
   
   describe('containerWidth', () => {
     test('containerWidth is applied', () => {
-      const html = mount(<ConditionLockMenu containerWidth={"500px"} />)
+      const html = mount(<FilterLockMenu containerWidth={"500px"} />)
       const menu = html.find('#react-autoql-filter-menu')
       expect(menu.exists()).toBe(false)
     })
@@ -80,10 +80,6 @@ describe('props', () => {
     test('does not render with initFilterText 300', () => {
       const wrapper = setup({ isOpen: true, initFilterText: 300 })
       expect(wrapper.instance().props.initFilterText).toEqual(300)
-    })
-    test('does not render with initFilterText 300', () => {
-      const wrapper = setup({ isOpen: true, initFilterText: true })
-      expect(wrapper.instance().props.initFilterText).toEqual(true)
     })
   })
 })
