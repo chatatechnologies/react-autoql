@@ -6,6 +6,7 @@ import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
 import image from '@rollup/plugin-image'
 import replace from '@rollup/plugin-replace'
+import analyze from 'rollup-plugin-analyzer'
 
 import pkg from './package.json'
 
@@ -47,7 +48,8 @@ const common = {
       // plugins: [nodeResolve()],
       exclude: 'node_modules/**',
     }),
-    production && terser(),
+    terser(),
+    analyze()
   ],
   external: makeExternalPredicate(external),
 }
