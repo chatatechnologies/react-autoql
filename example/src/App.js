@@ -312,7 +312,8 @@ export default class App extends Component {
   fetchNotificationData = (notificationId) => {
     const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${
       this.state.apiKey
-    }`
+    const url = `${getBaseUrl()}/api/v1/rule-notifications/${notificationId}?key=${this.state.apiKey
+      }`
     const token = getStoredProp('jwtToken')
 
     const config = {}
@@ -905,7 +906,7 @@ export default class App extends Component {
               }}
               onBlur={(e) => setStoredProp('customer-id', e.target.value)}
               value={this.state.projectId}
-              // autoComplete="on"
+            // autoComplete="on"
             />
           </Form.Item>
           {!this.state.isQandA && (
@@ -921,7 +922,7 @@ export default class App extends Component {
                 }}
                 onBlur={(e) => setStoredProp('user-id', e.target.value)}
                 value={this.state.displayName}
-                // autoComplete="on"
+              // autoComplete="on"
               />
             </Form.Item>
           )}
@@ -937,7 +938,7 @@ export default class App extends Component {
               }}
               onBlur={(e) => setStoredProp('api-key', e.target.value)}
               value={this.state.apiKey}
-              // autoComplete="on"
+            // autoComplete="on"
             />
           </Form.Item>
           {!this.state.isQandA && (
@@ -956,7 +957,7 @@ export default class App extends Component {
                   }}
                   onBlur={(e) => setStoredProp('domain-url', e.target.value)}
                   value={this.state.domain}
-                  // autoComplete="on"
+                // autoComplete="on"
                 />
               </Form.Item>
               <Form.Item
@@ -971,7 +972,7 @@ export default class App extends Component {
                     this.setState({ email: e.target.value })
                   }}
                   value={this.state.email}
-                  // autoComplete="on"
+                // autoComplete="on"
                 />
               </Form.Item>
               <Form.Item
@@ -987,7 +988,7 @@ export default class App extends Component {
                     this.setState({ password: e.target.value })
                   }}
                   value={this.state.password}
-                  // autoComplete="on"
+                // autoComplete="on"
                 />
               </Form.Item>
             </>
@@ -1401,8 +1402,8 @@ export default class App extends Component {
         showHandle={this.state.showHandle}
         placement={
           this.state.currentPage === 'drawer' ||
-          this.state.currentPage === 'dashboard' ||
-          this.state.currentPage === 'speech'
+            this.state.currentPage === 'dashboard' ||
+            this.state.currentPage === 'speech'
             ? this.state.placement
             : 'bottom'
         }

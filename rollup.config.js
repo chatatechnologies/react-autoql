@@ -30,6 +30,9 @@ const makeExternalPredicate = (externalArr) => {
 
 const common = {
   input: 'src/index.js',
+  treeshake: {
+    moduleSideEffects: false,
+  },
   plugins: [
     resolve(),
     replace({
@@ -40,7 +43,7 @@ const common = {
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
       extract: true,
-      minimize: false,
+      minimize: true,
     }),
     image(),
     svg(),
