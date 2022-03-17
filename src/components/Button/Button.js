@@ -7,7 +7,7 @@ import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Button.scss'
-//test1
+//test12
 const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
 
