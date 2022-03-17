@@ -81,5 +81,9 @@ describe('props', () => {
       const wrapper = setup({ isOpen: true, initFilterText: 300 })
       expect(wrapper.instance().props.initFilterText).toEqual(300)
     })
+    test('does not render with initFilterText 300', () => {
+      const wrapper = setup({ isOpen: true, initFilterText: true })
+      expect(wrapper.instance().props.initFilterText).toEqual(true)
+    })
   })
 })
