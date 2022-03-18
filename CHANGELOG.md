@@ -1,3 +1,17 @@
+## [3.3.4](https://github.com/chatatechnologies/react-autoql/compare/v3.3.3...v3.3.4) (2022-02-28)
+
+
+### Bug Fixes
+
+* **chatachart:** add two id ([afd5326](https://github.com/chatatechnologies/react-autoql/commit/afd5326b00f1352a1a9c9486f8d383dceba90fe5))
+* **component:** fixed chart x-axis won't rotate issue. Fixed css style ([3ebe65d](https://github.com/chatatechnologies/react-autoql/commit/3ebe65d8f2e6f16c59bfb2439ec826852c1049c5))
+* **dataalerts:** added an onSuccessAlert func prop ([fb35375](https://github.com/chatatechnologies/react-autoql/commit/fb35375e3868627f23a2486451256f433eb53d5d))
+* **filter locking:** style improvements and bug fixes ([#293](https://github.com/chatatechnologies/react-autoql/issues/293)) ([d74929e](https://github.com/chatatechnologies/react-autoql/commit/d74929e2350eb773f594839d67df61f11e712551))
+* **notificationicon:** set notification check to short polling ([#299](https://github.com/chatatechnologies/react-autoql/issues/299)) ([2cc49b5](https://github.com/chatatechnologies/react-autoql/commit/2cc49b5eb3ff8418d42b4842f80d666f5a5d7373))
+* **package.json:** change to react-autoql": "file:../", ([ce08dc7](https://github.com/chatatechnologies/react-autoql/commit/ce08dc7077f83183d5d2c9dc26f16fb8288e8771))
+* add a id to be used by webapp ([5b8db65](https://github.com/chatatechnologies/react-autoql/commit/5b8db6593bdf3b73c176d0458051e8859fb784bc))
+* added a prop valueInput in QueryInput component ([94418dc](https://github.com/chatatechnologies/react-autoql/commit/94418dc487d3c992dd43a65bc583c848ce6e983d))
+
 ## [3.3.3](https://github.com/chatatechnologies/react-autoql/compare/v3.3.2...v3.3.3) (2022-02-11)
 
 
