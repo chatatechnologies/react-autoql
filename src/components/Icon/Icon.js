@@ -55,7 +55,6 @@ import {
 } from 'react-icons/ai'
 import { FaMicrophoneAlt } from 'react-icons/fa'
 import { GoReport } from 'react-icons/go'
-import chataBubblesSVG from '../../images/chata-bubbles.svg'
 import {
   bubblesIcon,
   bubblesIconFilled,
@@ -144,18 +143,6 @@ export default class Icon extends React.Component {
       }
       case 'caret-up': {
         icon = <AiFillCaretUp />
-        break
-      }
-      case 'react-autoql-bubbles': {
-        icon = (
-          <img
-            className="react-autoql-bubbles-icon"
-            src={chataBubblesSVG}
-            alt="chata.ai"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
         break
       }
       case 'react-autoql-bubbles-outlined': {
