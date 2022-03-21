@@ -15,10 +15,14 @@ import {
   AiOutlineFileText,
   AiOutlineMenu,
   AiOutlineQuestionCircle,
-  BiLineChart,
-  BsArrowBarDown,
-  BsArrowBarUp,
-  FaMicrophoneAlt,
+} from 'react-icons/ai'
+
+import { BiLineChart } from 'react-icons/bi'
+
+import { BsArrowBarDown, BsArrowBarUp } from 'react-icons/bs'
+
+import { FaMicrophoneAlt } from 'react-icons/fa'
+import {
   FiAlertTriangle,
   FiArrowLeft,
   FiBell,
@@ -36,11 +40,18 @@ import {
   FiSend,
   FiSettings,
   FiTrash2,
-  GoReport,
+} from 'react-icons/fi'
+
+import { GoReport } from 'react-icons/go'
+
+import {
   IoIosCloseCircleOutline,
   IoIosGlobe,
   IoIosHourglass,
   IoIosSearch,
+} from 'react-icons/io'
+
+import {
   MdClose,
   MdContentCopy,
   MdError,
@@ -48,8 +59,9 @@ import {
   MdLock,
   MdLockOpen,
   MdPlayCircleOutline,
-  TiSortNumerically,
-} from '@react-icons/all-files'
+} from 'react-icons/md'
+
+import { TiSortNumerically } from 'react-icons/ti'
 
 import {
   bubblesIcon,
