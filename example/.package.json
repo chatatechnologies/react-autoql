@@ -19,7 +19,7 @@
   },
   "scripts": {
     "preinstall": "npx penv $NODE_ENV",
-    "start": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
+    "start": "export PORT=3001 npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
     "dev": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
     "build": "SKIP_PREFLIGHT_CHECK=true react-app-rewired build && compress-cra",
     "test": "react-app-rewired test",
