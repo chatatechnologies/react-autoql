@@ -5,8 +5,10 @@ import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
 import image from '@rollup/plugin-image'
-import replace from '@rollup/plugin-replace'
-import analyze from 'rollup-plugin-analyzer'
+import analyzer from 'rollup-plugin-analyzer'
+import gzipPlugin from 'rollup-plugin-gzip'
+import { visualizer } from 'rollup-plugin-visualizer'
+import bundleSize from 'rollup-plugin-bundle-size'
 
 import pkg from './package.json'
 
@@ -30,29 +32,39 @@ const makeExternalPredicate = (externalArr) => {
 
 const common = {
   input: 'src/index.js',
-  treeshake: {
-    moduleSideEffects: false,
-  },
   plugins: [
     resolve(),
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('development'),
-      preventAssignment: true,
-    }),
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
       extract: true,
-      minimize: true,
+      minimize: false,
     }),
     image(),
     svg(),
     babel({
-      // plugins: [nodeResolve()],
+      plugins: [
+        // [nodeResolve()],
+        // [
+        //   'import',
+        //   {
+        //     libraryName: '@react-icons',
+        //     camel2DashComponentName: false,
+        //     transformToDefaultImport: false,
+        //     customName: require('path').resolve(__dirname, './react-icons.js'),
+        //   },
+        //   '@react-icons',
+        // ],
+      ],
       exclude: 'node_modules/**',
     }),
     terser(),
-    analyze()
+    gzipPlugin(),
+    visualizer(),
+    analyzer({
+      limit: 10,
+    }),
+    bundleSize(),
   ],
   external: makeExternalPredicate(external),
 }
@@ -63,17 +75,13 @@ const outputs = [
   //   format: 'cjs',
   //   plugins: [
   //     resolve(),
-  //     // postcss({
-  //     //   plugins: [autoprefixer],
-  //     //   extensions: ['.css']
-  //     // }),
   //     css({ output: 'bundle.cjs.css' }),
   //     svg(),
   //     babel({
   //       plugins: ['external-helpers'],
-  //       exclude: 'node_modules/**'
-  //     })
-  //   ]
+  //       exclude: 'node_modules/**',
+  //     }),
+  //   ],
   // },
   {
     file: `${dist}/${bundle}.esm.js`,

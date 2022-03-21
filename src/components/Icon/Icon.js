@@ -3,58 +3,54 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Icons
-import { BsArrowBarUp, BsArrowBarDown } from 'react-icons/bs'
-import { BiLineChart } from 'react-icons/bi'
 import {
-  MdClose,
-  MdError,
-  MdContentCopy,
-  MdInfoOutline,
-  MdPlayCircleOutline,
-  MdLock,
-  MdLockOpen,
-} from 'react-icons/md'
-import {
+  AiFillCaretDown,
+  AiFillCaretLeft,
+  AiFillCaretRight,
+  AiFillCaretUp,
+  AiOutlineBook,
+  AiOutlineBulb,
+  AiOutlineDashboard,
+  AiOutlineEdit,
+  AiOutlineFileText,
+  AiOutlineMenu,
+  AiOutlineQuestionCircle,
+  BiLineChart,
+  BsArrowBarDown,
+  BsArrowBarUp,
+  FaMicrophoneAlt,
+  FiAlertTriangle,
+  FiArrowLeft,
   FiBell,
   FiBellOff,
   FiCalendar,
-  FiPlus,
-  FiDatabase,
-  FiFilter,
   FiCheck,
+  FiDatabase,
+  FiDownload,
   FiEye,
-  FiTrash2,
-  FiAlertTriangle,
+  FiFilter,
   FiMoreHorizontal,
   FiMoreVertical,
-  FiDownload,
-  FiSettings,
-  FiSend,
-  FiArrowLeft,
   FiPauseCircle,
-} from 'react-icons/fi'
-import {
-  IoIosSearch,
-  IoIosGlobe,
+  FiPlus,
+  FiSend,
+  FiSettings,
+  FiTrash2,
+  GoReport,
   IoIosCloseCircleOutline,
+  IoIosGlobe,
   IoIosHourglass,
-} from 'react-icons/io'
-import { TiSortNumerically } from 'react-icons/ti'
-import {
-  AiOutlineDashboard,
-  AiOutlineFileText,
-  AiOutlineBook,
-  AiFillCaretRight,
-  AiFillCaretLeft,
-  AiFillCaretDown,
-  AiFillCaretUp,
-  AiOutlineEdit,
-  AiOutlineBulb,
-  AiOutlineQuestionCircle,
-  AiOutlineMenu,
-} from 'react-icons/ai'
-import { FaMicrophoneAlt } from 'react-icons/fa'
-import { GoReport } from 'react-icons/go'
+  IoIosSearch,
+  MdClose,
+  MdContentCopy,
+  MdError,
+  MdInfoOutline,
+  MdLock,
+  MdLockOpen,
+  MdPlayCircleOutline,
+  TiSortNumerically,
+} from '@react-icons/all-files'
+
 import {
   bubblesIcon,
   bubblesIconFilled,

@@ -6,8 +6,8 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import moment from 'moment'
 import { UnmountClosed } from 'react-collapse'
+import dayjs from '../../js/dayjsWithPlugins'
 
 // change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
 import HTMLRenderer from 'react-html-renderer'
@@ -39,8 +39,6 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-
-import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -2164,10 +2162,9 @@ export default class QueryOutput extends React.Component {
           }
         })
         .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
-          return moment
-            .utc(output)
+          return dayjs(output)
+            .utc()
             .format('ll')
-            .toString()
         })
 
       return (
