@@ -44,7 +44,7 @@ import './DashboardTile.scss'
 
 let autoCompleteArray = []
 
-export default class DashboardTile extends React.Component {
+class DashboardTile extends React.Component {
   COMPONENT_KEY = uuid.v4()
   autoCompleteTimer = undefined
 
@@ -942,7 +942,6 @@ export default class DashboardTile extends React.Component {
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--react-autoql-background-color-primary'
                 )}
-                isDashboardQuery={true}
                 onDisplayTypeUpdate={() => {
                   // This is necessary to update the toolbar with the newly rendered QueryOutput
                   setTimeout(() => {
@@ -1190,7 +1189,6 @@ export default class DashboardTile extends React.Component {
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
-          data-test="react-autoql-dashboard-tile"
           {...propsToPassToDragHandle}
         >
           {this.props.children}
@@ -1217,3 +1215,11 @@ export default class DashboardTile extends React.Component {
     )
   }
 }
+
+// React-Grid-Layout needs the forwarded original ref
+// we can forward our own ref down to DashboardTile as a prop
+export default React.forwardRef((props, ref) => (
+  <div ref={ref} data-test="react-autoql-dashboard-tile">
+    <DashboardTile {...props} ref={props.tileRef} />
+  </div>
+))

@@ -144,6 +144,7 @@ class Dashboard extends React.Component {
     ) {
       // Do not scroll to the bottom if new tile is added because of undo
       if (
+        this.props.isEditing &&
         prevProps.tiles.length < this.props.tiles.length &&
         !this.state.justPerformedUndo
       ) {
@@ -718,7 +719,7 @@ class Dashboard extends React.Component {
             className={`react-autoql-dashboard-tile${
               this.state.isDragging ? ' dragging' : ''
             } ${tile.i}`}
-            ref={(ref) => (this.tileRefs[tile.key] = ref)}
+            tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
