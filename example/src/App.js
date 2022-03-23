@@ -1395,10 +1395,15 @@ export default class App extends Component {
         key={this.state.componentKey}
         AutoAEId={this.state.componentKey}
         isVisible={this.state.isVisible}
-        onHandleClick={() =>
-          this.setState({ isVisible: !this.state.isVisible })
-        }
-        onMaskClick={() => this.setState({ isVisible: false })}
+        // deprecated in v4
+        // onHandleClick={() =>
+        //   this.setState({ isVisible: !this.state.isVisible })
+        // }
+        maskClosable
+        // deprecated in v4
+        // onMaskClick={() => {
+        //   this.setState({ isVisible: false })
+        // }}
         showHandle={this.state.showHandle}
         placement={
           this.state.currentPage === 'drawer' ||

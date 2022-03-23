@@ -58,7 +58,7 @@ const common = {
       ],
       exclude: 'node_modules/**',
     }),
-    terser(),
+    // terser(),
     gzipPlugin(),
     visualizer(),
     analyzer({

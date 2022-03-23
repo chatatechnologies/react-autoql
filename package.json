@@ -78,7 +78,7 @@
     "moment-timezone": "^0.5.32",
     "parse-num": "^1.0.0",
     "prop-types": "^15.7.2",
-    "rc-drawer": "^1.10.1",
+    "rc-drawer": "^4.4.3",
     "react-autosuggest": "^9.4.3",
     "react-collapse": "^5.1.1",
     "react-contenteditable": "^3.3.5",
@@ -106,14 +106,13 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.16.0",
+    "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.16.0",
     "@babel/plugin-syntax-object-rest-spread": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.16.0",
     "@babel/preset-env": "^7.16.0",
     "@babel/preset-react": "^7.16.0",
-    "babel-plugin-import": "^1.13.3",
-    "@babel/core": "^7.16.0",
-    "@babel/plugin-transform-runtime": "^7.16.0",
     "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.0.6",
@@ -127,6 +126,7 @@
     "axios-mock-adapter": "^1.18.1",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.4.2",
+    "babel-plugin-import": "^1.13.3",
     "babel-preset-es2015-rollup": "^3.0.0",
     "check-prop-types": "^1.1.2",
     "cz-conventional-changelog": "^3.2.0",
@@ -151,8 +151,6 @@
     "postcss-prefixer": "^2.1.2",
     "prettier-eslint": "^8.8.2",
     "prettier-eslint-cli": "^4.7.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
     "react-test-renderer": "^16.11.0",
     "rimraf": "^2.7.1",
     "rollup": "^2.59.0",
@@ -172,8 +170,8 @@
     "watch": "^1.0.2"
   },
   "peerDependencies": {
-    "react": ">=16.2",
-    "react-dom": ">=16.13.1"
+    "react": ">=16.9.0",
+    "react-dom": ">=16.9.0"
   },
   "resolutions": {
     "**/**/fsevents": "^1.2.9"
