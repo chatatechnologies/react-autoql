@@ -128,6 +128,21 @@ class Dashboard extends React.Component {
       this.setStyles()
     }
 
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(prevProps, prevProps)) {
+    //   console.log(
+    //     'PROPS were not equal!! Re-rendering',
+    //     _reduce(
+    //       this.props,
+    //       function(result, value, key) {
+    //         return _isEqual(value, prevProps[key]) ? result : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    //   return true
+    // }
+
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (
       prevProps.isEditing &&
@@ -159,6 +174,9 @@ class Dashboard extends React.Component {
 
   componentWillUnmount = () => {
     window.removeEventListener('resize', this.onWindowResize)
+    clearTimeout(this.scrollToNewTileTimeout)
+    clearTimeout(this.stopDraggingTimeout)
+    clearTimeout(this.drillingDownTimeout)
   }
 
   setStyles = () => {
@@ -234,7 +252,7 @@ class Dashboard extends React.Component {
   }
 
   scrollToNewTile = () => {
-    setTimeout(() => {
+    this.scrollToNewTileTimeout = setTimeout(() => {
       if (this.ref) {
         this.ref.scrollIntoView(false)
       }
@@ -257,7 +275,7 @@ class Dashboard extends React.Component {
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
-      setTimeout(() => {
+      this.stopDraggingTimeout = setTimeout(() => {
         this.setState({
           isDragging: false,
         })
@@ -400,7 +418,7 @@ class Dashboard extends React.Component {
 
       const drilldownResponse = filterDataForDrilldown(queryResponse, data)
 
-      setTimeout(() => {
+      this.drillingDownTimeout = setTimeout(() => {
         this.setState({
           isDrilldownRunning: false,
           activeDrilldownResponse: drilldownResponse,

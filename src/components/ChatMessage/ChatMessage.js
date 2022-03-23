@@ -128,13 +128,8 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
-    if (this.scrollIntoViewTimeout) {
-      clearTimeout(this.scrollIntoViewTimeout)
-    }
-
-    if (this.setTableMessageHeightsTimeout) {
-      clearTimeout(this.setTableMessageHeightsTimeout)
-    }
+    clearTimeout(this.scrollIntoViewTimeout)
+    clearTimeout(this.setTableMessageHeightsTimeout)
   }
 
   setTableMessageHeights = () => {

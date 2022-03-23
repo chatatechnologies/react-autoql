@@ -313,6 +313,7 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+    clearTimeout(this.tableFilterTimeout)
   }
 
   hasError = (response) => {
@@ -655,7 +656,7 @@ export default class QueryOutput extends React.Component {
       _get(this.tableRef, 'ref.table')
     ) {
       this.headerFilters = filters
-      setTimeout(() => {
+      this.tableFilterTimeout = setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
           const newTableData = tableRef.getData('active')
@@ -672,7 +673,7 @@ export default class QueryOutput extends React.Component {
       _get(this.pivotTableRef, 'ref.table')
     ) {
       this.pivotHeaderFilters = filters
-      setTimeout(() => {
+      this.tableFilterTimeout = setTimeout(() => {
         const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
         if (pivotTableRef) {
           const newTableData = pivotTableRef.getData('active')

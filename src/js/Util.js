@@ -983,13 +983,32 @@ export const isTableResponse = (response, displayType) => {
   )
 }
 
-export const awaitTimeout = (delay, cb = () => {}) => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      cb()
-      resolve()
-    }, delay)
-  )
+export class AwaitTimeout {
+  constructor(delay, callback = () => {}) {
+    this.delay = delay
+    this.callback = callback
+  }
+
+  start = () => {
+    this.timeoutPromise = new Promise((resolve) => {
+      this.timeout = setTimeout(() => {
+        this.callback()
+        resolve()
+      }, this.delay)
+      return this.timeout
+    })
+    return this.timeoutPromise
+  }
+
+  cancel = () => {
+    if (this.timeoutPromise) {
+      this.timeoutPromise.reject
+    }
+    if (this.timeout) {
+      clearTimeout(this.timeout)
+    }
+    return
+  }
 }
 
 export const setCaretPosition = (elemId, caretPos) => {
