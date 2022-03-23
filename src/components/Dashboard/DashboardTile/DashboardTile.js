@@ -4,6 +4,8 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import _omit from 'lodash.omit'
+import _functions from 'lodash.functions'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
@@ -116,8 +118,8 @@ class DashboardTile extends React.Component {
 
     if (
       !_isEqual(
-        _.omit(thisPropsFiltered, _.functions(thisPropsFiltered)),
-        _.omit(nextPropsFiltered, _.functions(nextPropsFiltered))
+        _omit(thisPropsFiltered, _functions(thisPropsFiltered)),
+        _omit(nextPropsFiltered, _functions(nextPropsFiltered))
       )
     ) {
       // Keep this for a deep compare to debug
