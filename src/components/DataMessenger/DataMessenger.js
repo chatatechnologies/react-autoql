@@ -168,7 +168,7 @@ export default class DataMessenger extends React.Component {
       window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-      setTimeout(() => {
+      this.tooltipRebuildTimeout = setTimeout(() => {
         ReactTooltip.rebuild()
       }, 100)
     } catch (error) {
@@ -264,27 +264,14 @@ export default class DataMessenger extends React.Component {
       document.removeEventListener('keydown', this.escFunction, false)
       window.removeEventListener('resize', this.onWindowResize)
 
-      if (this.scrollToBottomTimeout) {
-        clearTimeout(this.scrollToBottomTimeout)
-      }
-      if (this.windowResizeTimer) {
-        clearTimeout(this.windowResizeTimer)
-      }
-      if (this.responseTimeout) {
-        clearTimeout(this.responseTimeout)
-      }
-      if (this.feedbackTimeout) {
-        clearTimeout(this.feedbackTimeout)
-      }
-      if (this.animateTextTimeout) {
-        clearTimeout(this.animateTextTimeout)
-      }
-      if (this.exploreQueriesTimeout) {
-        clearTimeout(this.exploreQueriesTimeout)
-      }
-      if (this.executeQueryTimeout) {
-        clearTimeout(this.executeQueryTimeout)
-      }
+      clearTimeout(this.scrollToBottomTimeout)
+      clearTimeout(this.windowResizeTimer)
+      clearTimeout(this.responseTimeout)
+      clearTimeout(this.feedbackTimeout)
+      clearTimeout(this.animateTextTimeout)
+      clearTimeout(this.exploreQueriesTimeout)
+      clearTimeout(this.executeQueryTimeout)
+      clearTimeout(this.tooltipRebuildTimeout)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -869,8 +856,7 @@ export default class DataMessenger extends React.Component {
             id="react-autoql-filter-menu-dropdown"
             style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
           >
-            {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-              .enableFilterLocking ? (
+            {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? (
               <button
                 id="react-autoql-filter-menu-dropdown-button"
                 onClick={() => {
