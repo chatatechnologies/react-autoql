@@ -8,9 +8,7 @@ import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { UnmountClosed } from 'react-collapse'
 import dayjs from '../../js/dayjsWithPlugins'
-
-// change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
-import HTMLRenderer from 'react-html-renderer'
+import parse from 'html-react-parser'
 
 import { scaleOrdinal } from 'd3-scale'
 import {
@@ -1901,16 +1899,18 @@ export default class QueryOutput extends React.Component {
 
   renderHTMLMessage = (queryResponse) => {
     if (_get(queryResponse, 'data.data.answer', null) !== null) {
-      return (
-        <HTMLRenderer
-          html={_get(queryResponse, 'data.data.answer')}
-          components={{
-            a: (props) => {
-              return <a {...props} target="_blank" />
-            },
-          }}
-        />
-      )
+      return parse(_get(queryResponse, 'data.data.answer'), {
+        replace: (domNode) => {
+          if (domNode.name === 'a') {
+            const props = domNode.attribs || {}
+            return (
+              <a {...props} target="_blank">
+                {domNode.children}
+              </a>
+            )
+          }
+        },
+      })
     } else {
       return (
         <span>

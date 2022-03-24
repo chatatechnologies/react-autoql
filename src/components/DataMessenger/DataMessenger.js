@@ -176,23 +176,19 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    try {
-      fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-        (response) => {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          this.setState({
-            conditions: {
-              persistent: _get(response, 'data.data.data'),
-              session: sessionConditions,
-            },
-          })
-        }
-      )
-    } catch (e) {
-      console.error(e)
-    }
+    fetchConditions(getAuthentication(this.props.authentication))
+      .then((response) => {
+        var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
+        this.setState({
+          conditions: {
+            persistent: _get(response, 'data.data.data'),
+            session: sessionConditions,
+          },
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -233,19 +229,22 @@ export default class DataMessenger extends React.Component {
       if (
         this.state.isFilterLockingMenuOpen !== prevState.isFilterLockingMenuOpen
       ) {
-        fetchConditions({
-          ...getAuthentication(this.props.authentication),
-        }).then((response) => {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          this.setState({
-            conditions: {
-              persistent: _get(response, 'data.data.data'),
-              session: sessionConditions,
-            },
+        fetchConditions(getAuthentication(this.props.authentication))
+          .then((response) => {
+            var sessionConditions = JSON.parse(
+              sessionStorage.getItem('conditions')
+            )
+            this.setState({
+              conditions: {
+                persistent: _get(response, 'data.data.data'),
+                session: sessionConditions,
+              },
+            })
           })
-        })
+          .catch((error) => {
+            console.log('CAUGHT ERROR')
+            console.error(error)
+          })
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -484,7 +483,7 @@ export default class DataMessenger extends React.Component {
   }
 
   onDrawerChange = (isOpen) => {
-    this.props.onVisibleChange(isOpen)
+    // this.props.onVisibleChange(isOpen)
 
     if (!isOpen) {
       this.setState({
@@ -1217,7 +1216,7 @@ export default class DataMessenger extends React.Component {
     const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
-      ...getAuthentication(getAuthentication(this.props.authentication)),
+      ...getAuthentication(this.props.authentication),
       keywords,
       pageSize,
       pageNumber,
@@ -1334,9 +1333,7 @@ export default class DataMessenger extends React.Component {
     return (
       <NotificationFeed
         ref={(ref) => (this.notificationListRef = ref)}
-        authentication={getAuthentication(
-          getAuthentication(this.props.authentication)
-        )}
+        authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         onExpandCallback={this.props.onNotificationExpandCallback}
         onCollapseCallback={this.props.onNotificationCollapseCallback}
@@ -1462,9 +1459,7 @@ export default class DataMessenger extends React.Component {
   renderDataAlertModal = () => {
     return (
       <DataAlertModal
-        authentication={getAuthentication(
-          getAuthentication(this.props.authentication)
-        )}
+        authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
