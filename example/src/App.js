@@ -1386,6 +1386,14 @@ export default class App extends Component {
   renderDataMessenger = () => {
     return (
       <DataMessenger
+        // --- Deprecated in v4 ----
+        // isVisible={this.state.isVisible}
+        // onHandleClick={() =>
+        //   this.setState({ isVisible: !this.state.isVisible })
+        // }
+        // onMaskClick={() => {
+        //   this.setState({ isVisible: false })
+        // }}
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
         authentication={this.getAuthProp()}
@@ -1394,16 +1402,7 @@ export default class App extends Component {
         themeConfig={this.getThemeConfigProp()}
         key={this.state.componentKey}
         AutoAEId={this.state.componentKey}
-        isVisible={this.state.isVisible}
-        // deprecated in v4
-        // onHandleClick={() =>
-        //   this.setState({ isVisible: !this.state.isVisible })
-        // }
         maskClosable
-        // deprecated in v4
-        // onMaskClick={() => {
-        //   this.setState({ isVisible: false })
-        // }}
         showHandle={this.state.showHandle}
         placement={
           this.state.currentPage === 'drawer' ||

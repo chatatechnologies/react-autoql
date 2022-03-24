@@ -242,7 +242,6 @@ export default class DataMessenger extends React.Component {
             })
           })
           .catch((error) => {
-            console.log('CAUGHT ERROR')
             console.error(error)
           })
       }
