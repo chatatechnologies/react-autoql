@@ -20,7 +20,7 @@ import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, awaitTimeout } from '../../../js/Util.js'
+import { svgToPng, AwaitTimeout } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
@@ -34,7 +34,6 @@ import {
 import {
   themeConfigDefault,
   dataFormattingDefault,
-  getDataFormatting,
   getThemeConfig,
 } from '../../../props/defaults'
 import _isEqual from 'lodash.isequal'
@@ -132,6 +131,18 @@ export default class ChataChart extends Component {
 
     if (!_isEqual(this.props.columns, prevProps.columns)) {
       this.setNumberColumnSelectorState()
+    }
+  }
+
+  componentWillUnmount = () => {
+    clearTimeout(this.loadingTimeout)
+
+    if (this.leftTopMarginUpdate) {
+      this.leftTopMarginUpdate.cancel()
+    }
+
+    if (this.rightBottomMarginUpdate) {
+      this.rightBottomMarginUpdate.cancel()
     }
   }
 
@@ -271,27 +282,39 @@ export default class ChataChart extends Component {
   updateMargins = (delay = 0) => {
     this.setState({ isLoading: true })
     try {
-      awaitTimeout(delay, () => {
+      this.leftTopMarginUpdate = new AwaitTimeout(delay, () => {
         const newLeftMargin = this.getNewLeftMargin()
         const newTopMargin = this.getNewTopMargin()
         this.setState({
           ...newLeftMargin,
           ...newTopMargin,
         })
-      }).then(() => {
-        awaitTimeout(delay, () => {
-          const newRightMargin = this.getNewRightMargin()
-          const newBottomMargin = this.getNewBottomMargin()
-          this.setState({
-            ...newRightMargin,
-            ...newBottomMargin,
-          })
-        }).then(() => {
-          setTimeout(() => {
-            this.setState({ isLoading: false })
-          }, 0)
-        })
       })
+      this.leftTopMarginUpdate
+        .start()
+        .then(() => {
+          this.rightBottomMarginUpdate = new AwaitTimeout(delay, () => {
+            const newRightMargin = this.getNewRightMargin()
+            const newBottomMargin = this.getNewBottomMargin()
+            this.setState({
+              ...newRightMargin,
+              ...newBottomMargin,
+            })
+          })
+          this.rightBottomMarginUpdate
+            .start()
+            .then(() => {
+              this.loadingTimeout = setTimeout(() => {
+                this.setState({ isLoading: false })
+              }, 0)
+            })
+            .catch(() => {
+              clearTimeout(this.loadingTimeout)
+            })
+        })
+        .catch((error) => {
+          console.error(error)
+        })
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)

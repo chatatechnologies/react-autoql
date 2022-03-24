@@ -13,6 +13,7 @@ import {
   DataAlerts,
   Icon as ChataIcon,
 } from 'react-autoql'
+
 import uuid from 'uuid'
 import { sortable } from 'react-sortable'
 
@@ -1385,6 +1386,14 @@ export default class App extends Component {
   renderDataMessenger = () => {
     return (
       <DataMessenger
+        // --- Deprecated in v4 ----
+        // isVisible={this.state.isVisible}
+        // onHandleClick={() =>
+        //   this.setState({ isVisible: !this.state.isVisible })
+        // }
+        // onMaskClick={() => {
+        //   this.setState({ isVisible: false })
+        // }}
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
         authentication={this.getAuthProp()}
@@ -1393,11 +1402,7 @@ export default class App extends Component {
         themeConfig={this.getThemeConfigProp()}
         key={this.state.componentKey}
         AutoAEId={this.state.componentKey}
-        isVisible={this.state.isVisible}
-        onHandleClick={() =>
-          this.setState({ isVisible: !this.state.isVisible })
-        }
-        onMaskClick={() => this.setState({ isVisible: false })}
+        maskClosable
         showHandle={this.state.showHandle}
         placement={
           this.state.currentPage === 'drawer' ||

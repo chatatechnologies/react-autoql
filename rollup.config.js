@@ -5,7 +5,10 @@ import svg from 'rollup-plugin-svg'
 import autoprefixer from 'autoprefixer'
 import postcss from 'rollup-plugin-postcss'
 import image from '@rollup/plugin-image'
-import replace from '@rollup/plugin-replace'
+import analyzer from 'rollup-plugin-analyzer'
+import gzipPlugin from 'rollup-plugin-gzip'
+import { visualizer } from 'rollup-plugin-visualizer'
+import bundleSize from 'rollup-plugin-bundle-size'
 
 import pkg from './package.json'
 
@@ -31,10 +34,6 @@ const common = {
   input: 'src/index.js',
   plugins: [
     resolve(),
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('development'),
-      preventAssignment: true,
-    }),
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
@@ -44,74 +43,25 @@ const common = {
     image(),
     svg(),
     babel({
-      // plugins: [nodeResolve()],
       exclude: 'node_modules/**',
+      ignore: ['./example'],
     }),
-    production && terser(),
+    terser(),
+    gzipPlugin(),
+    visualizer(),
+    analyzer({
+      limit: 10,
+    }),
+    bundleSize(),
   ],
   external: makeExternalPredicate(external),
 }
 
 const outputs = [
-  // {
-  //   file: `${dist}/${bundle}.cjs.js`,
-  //   format: 'cjs',
-  //   plugins: [
-  //     resolve(),
-  //     // postcss({
-  //     //   plugins: [autoprefixer],
-  //     //   extensions: ['.css']
-  //     // }),
-  //     css({ output: 'bundle.cjs.css' }),
-  //     svg(),
-  //     babel({
-  //       plugins: ['external-helpers'],
-  //       exclude: 'node_modules/**'
-  //     })
-  //   ]
-  // },
   {
     file: `${dist}/${bundle}.esm.js`,
     format: 'esm', // use ES modules to support tree-shaking
   },
-  // {
-  //   name: 'ChataAI',
-  //   file: `${dist}/${bundle}.umd.js`,
-  //   format: 'umd',
-  //   globals: {
-  //     react: 'React',
-  //     'prop-types': 'PropTypes',
-  //     'rc-drawer': 'Drawer',
-  //     uuid: 'uuid',
-  //     'react-custom-scrollbars': 'Scrollbars',
-  //     axios: 'axios',
-  //     'react-autosuggest': 'Autosuggest',
-  //     'react-speech-recognition': 'SpeechRecognition',
-  //     'react-tabulator': 'reactTabulator',
-  //     'rc-drawer/assets/index.css': 'rcStyles',
-  //     'react-tooltip': 'ReactTooltip',
-  //     'react-icons/md': 'md',
-  //     'react-icons/io': 'io',
-  //     'react-icons/fa': 'fa',
-  //     numbro: 'Numbro',
-  //     dayjs: 'dayjs',
-  //     'd3-selection': 'd3Selection',
-  //     'd3-axis': 'd3Axis',
-  //     'd3-scale': 'd3Scale',
-  //     'd3-array': 'd3Array',
-  //     'd3-shape': 'd3Shape',
-  //     'd3-collection': 'd3Collection',
-  //     'd3-interpolate': 'd3Interpolate',
-  //     'd3-svg-legend': 'd3SVGLegend',
-  //     'react-grid-layout': 'RGL',
-  //     'react-grid-layout/css/styles.css': 'gridLayoutStyles',
-  //     'react-tiny-popover': 'Popver',
-  //     'disable-scroll': 'disableScroll',
-  //     'lodash.get': '_get',
-  //     'lodash.isequal': '_isEqual',
-  //     'lodash.clonedeep': '_cloneDeep'
-  //   }
-  // }
 ]
 
 export default outputs.map((output) => ({

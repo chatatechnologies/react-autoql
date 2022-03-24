@@ -6,11 +6,9 @@ import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import moment from 'moment'
 import { UnmountClosed } from 'react-collapse'
-
-// change to better maintained html-react-parser (https://www.npmjs.com/package/html-react-parser)
-import HTMLRenderer from 'react-html-renderer'
+import dayjs from '../../js/dayjsWithPlugins'
+import parse from 'html-react-parser'
 
 import { scaleOrdinal } from 'd3-scale'
 import {
@@ -39,8 +37,6 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-
-import dayjs from '../../js/dayjsWithPlugins'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
@@ -315,6 +311,7 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+    clearTimeout(this.tableFilterTimeout)
   }
 
   hasError = (response) => {
@@ -657,7 +654,7 @@ export default class QueryOutput extends React.Component {
       _get(this.tableRef, 'ref.table')
     ) {
       this.headerFilters = filters
-      setTimeout(() => {
+      this.tableFilterTimeout = setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
           const newTableData = tableRef.getData('active')
@@ -674,7 +671,7 @@ export default class QueryOutput extends React.Component {
       _get(this.pivotTableRef, 'ref.table')
     ) {
       this.pivotHeaderFilters = filters
-      setTimeout(() => {
+      this.tableFilterTimeout = setTimeout(() => {
         const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
         if (pivotTableRef) {
           const newTableData = pivotTableRef.getData('active')
@@ -1902,16 +1899,18 @@ export default class QueryOutput extends React.Component {
 
   renderHTMLMessage = (queryResponse) => {
     if (_get(queryResponse, 'data.data.answer', null) !== null) {
-      return (
-        <HTMLRenderer
-          html={_get(queryResponse, 'data.data.answer')}
-          components={{
-            a: (props) => {
-              return <a {...props} target="_blank" />
-            },
-          }}
-        />
-      )
+      return parse(_get(queryResponse, 'data.data.answer'), {
+        replace: (domNode) => {
+          if (domNode.name === 'a') {
+            const props = domNode.attribs || {}
+            return (
+              <a {...props} target="_blank">
+                {domNode.children}
+              </a>
+            )
+          }
+        },
+      })
     } else {
       return (
         <span>
@@ -2164,10 +2163,9 @@ export default class QueryOutput extends React.Component {
           }
         })
         .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
-          return moment
-            .utc(output)
+          return dayjs(output)
+            .utc()
             .format('ll')
-            .toString()
         })
 
       return (

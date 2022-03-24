@@ -2,9 +2,9 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
+import _isEmpty from 'lodash.isempty'
 import uuid from 'uuid'
 import ReactTooltip from 'react-tooltip'
-import _ from 'lodash'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -143,7 +143,7 @@ export default class DataAlertModal extends React.Component {
   initializeFields = () => {
     // If we are editing an existing notification
     // Fill the fields with the current settings
-    if (!_.isEmpty(this.props.currentDataAlert)) {
+    if (!_isEmpty(this.props.currentDataAlert)) {
       const notification = this.props.currentDataAlert
       this.setState({
         titleInput: notification.title,
@@ -665,7 +665,7 @@ export default class DataAlertModal extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
           titleIcon={
-            !_.isEmpty(this.props.currentDataAlert) ? (
+            !_isEmpty(this.props.currentDataAlert) ? (
               <Icon type="edit" />
             ) : (
               <span />

@@ -5,8 +5,7 @@ import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
-import sqlFormatter from 'sql-formatter'
-
+import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
@@ -670,7 +669,7 @@ export default class Input extends React.Component {
           <div className="copy-sql-modal-content">
             <textarea
               className="copy-sql-formatted-text"
-              value={`${sqlFormatter.format(sql)}`}
+              value={`${format(sql)}`}
               disabled
             />
             <Button
