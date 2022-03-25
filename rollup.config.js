@@ -15,7 +15,7 @@ import pkg from './package.json'
 const dist = 'dist'
 const bundle = 'autoql'
 
-const production = process.env.NODE_ENV !== 'dev'
+const development = process.env.NODE_ENV === 'dev'
 
 const external = [
   ...Object.keys(pkg.peerDependencies || {}),
@@ -48,11 +48,12 @@ const common = {
     }),
     terser(),
     gzipPlugin(),
-    visualizer(),
-    analyzer({
-      limit: 10,
-    }),
-    bundleSize(),
+    development && visualizer(),
+    development && bundleSize(),
+    development &&
+      analyzer({
+        limit: 10,
+      }),
   ],
   external: makeExternalPredicate(external),
 }
