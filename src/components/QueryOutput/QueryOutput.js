@@ -437,7 +437,7 @@ export default class QueryOutput extends React.Component {
           return bDateWeek - aDateWeek
         }
       }
-      //If one is a weekday
+      //If one is one of a weekday
       else {
         const days = [
           {
