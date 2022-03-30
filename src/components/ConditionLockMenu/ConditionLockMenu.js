@@ -347,18 +347,12 @@ export default class ConditionLockMenu extends React.Component {
       })
         .then((response) => {
           const body = _get(response, 'data.data')
-
           const sortingArray = []
           let suggestionsMatchArray = []
           autoCompleteArray = []
           suggestionsMatchArray = body.matches
-
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
-
-            if (i === 5) {
-              break
-            }
           }
 
           sortingArray.sort((a, b) => {
