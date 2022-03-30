@@ -281,6 +281,8 @@ tbody::-webkit-scrollbar-thumb {
   margin: 0;
   padding: 0;
   list-style-type: none;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .autoql-condition-locking-menu-container .react-autosuggest__suggestion {
