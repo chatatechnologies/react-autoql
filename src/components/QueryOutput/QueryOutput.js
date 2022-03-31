@@ -75,7 +75,11 @@ import {
   isColumnDateType,
 } from './columnHelpers.js'
 
-import { sendSuggestion, fetchQandASuggestions } from '../../js/queryService'
+import {
+  sendSuggestion,
+  fetchQandASuggestions,
+  exportCSV,
+} from '../../js/queryService'
 
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
@@ -324,6 +328,33 @@ export default class QueryOutput extends React.Component {
       console.warn('Invalid reference ID provided for error')
     }
     return true
+  }
+
+  downloadCSVFromTable = () => {
+    if (_get(this.tableRef, 'ref.table')) {
+      _get(this.tableRef, 'ref.table').download('csv', 'export.csv', {
+        delimiter: ',',
+      })
+    }
+  }
+
+  downloadCSVFromAPI = () => {
+    exportCSV({
+      queryId: this.queryID,
+      ...getAuthentication(this.props.authentication),
+    })
+      .then((response) => {
+        console.log(response.filename)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('export.csv')
+        document.body.appendChild(link)
+        link.click()
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   isDataConfigValid = (dataConfig) => {
@@ -1767,6 +1798,7 @@ export default class QueryOutput extends React.Component {
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
           setFilterTagsCallback={this.props.setFilterTagsCallback}
+          downloadCSVCallback={this.downloadCSVFromAPI}
           // We don't want to skip rendering it because we need to
           // access the table ref for showing the columns if the
           // col visibility is changed
