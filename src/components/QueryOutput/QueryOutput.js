@@ -1776,6 +1776,7 @@ export default class QueryOutput extends React.Component {
             onCellClick={this.processCellClick}
             headerFilters={this.pivotHeaderFilters}
             onFilterCallback={this.onTableFilter}
+            downloadCSVCallback={this.downloadCSVFromTable}
             setFilterTagsCallback={this.props.setFilterTagsCallback}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
