@@ -79,6 +79,8 @@ import { sendSuggestion, fetchQandASuggestions } from '../../js/queryService'
 
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
+import { weekdays } from 'moment-timezone'
+import WeekSelect from '../DateSelect/WeekSelect/WeekSelect'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -424,7 +426,7 @@ export default class QueryOutput extends React.Component {
     // Finally if all else fails, just compare the 2 values directly
     if (!aDate || !bDate) {
       //If one is a YYYY-WW
-      if (a.includes('W')) {
+      if (a.includes('-W')) {
         let aDateYear = a.substring(0, 4)
         let bDateYear = b.substring(0, 4)
         if (aDateYear !== bDateYear) {
@@ -435,7 +437,62 @@ export default class QueryOutput extends React.Component {
           return bDateWeek - aDateWeek
         }
       }
-      return b - a
+      //If one is one of a weekday
+      else {
+        const days = [
+          {
+            description: 'Sunday',
+            value: 1,
+            label: 'S',
+          },
+          {
+            description: 'Monday',
+            value: 2,
+            label: 'M',
+          },
+          {
+            description: 'Tuesday',
+            value: 3,
+            label: 'T',
+          },
+          {
+            description: 'Wednesday',
+            value: 4,
+            label: 'W',
+          },
+          {
+            description: 'Thursday',
+            value: 5,
+            label: 'T',
+          },
+          {
+            description: 'Friday',
+            value: 6,
+            label: 'F',
+          },
+          {
+            description: 'Saturday',
+            value: 7,
+            label: 'S',
+          },
+        ]
+        let aWeekDay = null
+        let bWeekDay = null
+        days.forEach((weekdays) => {
+          if (a.trim() === weekdays.description) {
+            return (aWeekDay = weekdays.value)
+          }
+        })
+        days.forEach((weekdays) => {
+          if (b.trim() === weekdays.description) {
+            return (bWeekDay = weekdays.value)
+          }
+        })
+        if (aWeekDay === null || bWeekDay === null) {
+          return b - a
+        }
+        return bWeekDay - aWeekDay
+      }
     }
     return bDate - aDate
   }
@@ -1248,7 +1305,7 @@ export default class QueryOutput extends React.Component {
 
   setSorterFunction = (col) => {
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
-      return (a, b) => this.dateSortFn(a, b)
+      return (a, b) => this.dateSortFn(b, a)
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
       // certain columns. This explicitly sets the sorter so
@@ -1320,7 +1377,7 @@ export default class QueryOutput extends React.Component {
       col.headerFilterFunc = this.setFilterFunction(col)
 
       // Allow proper chronological sorting for date strings
-      // col.sorter = this.setSorterFunction(col)
+      col.sorter = this.setSorterFunction(col)
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {

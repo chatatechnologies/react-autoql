@@ -602,7 +602,7 @@ class Dashboard extends React.Component {
             })
           }}
         >
-          {this.state.isDrilldownRunning && (
+          {this.state.isDrilldownModalVisible && (
             <Fragment>
               {tile &&
                 this.shouldShowOriginalQuery(tile) &&
