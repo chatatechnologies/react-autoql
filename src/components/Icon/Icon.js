@@ -15,6 +15,8 @@ import {
   AiOutlineFileText,
   AiOutlineMenu,
   AiOutlineQuestionCircle,
+  AiOutlineFullscreen,
+  AiOutlineFullscreenExit,
 } from 'react-icons/ai'
 
 import { BiLineChart } from 'react-icons/bi'
@@ -59,6 +61,7 @@ import {
   MdLock,
   MdLockOpen,
   MdPlayCircleOutline,
+  MdMaximize,
 } from 'react-icons/md'
 
 import { TiSortNumerically } from 'react-icons/ti'
@@ -175,6 +178,10 @@ export default class Icon extends React.Component {
       }
       case 'close': {
         icon = <MdClose />
+        break
+      }
+      case 'maximize': {
+        icon = <AiOutlineFullscreen />
         break
       }
       case 'close-circle': {

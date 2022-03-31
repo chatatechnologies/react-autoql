@@ -137,25 +137,23 @@ export default class DataMessenger extends React.Component {
 
   state = {
     hasError: false,
-
     isVisible: false,
     activePage: this.props.defaultTab,
     width: this.props.width,
     height: this.props.height,
     isResizing: false,
-
     lastMessageId: undefined,
     isOptionsDropdownOpen: false,
     isFilterLockingMenuOpen: false,
     selectedValueLabel: undefined,
     conditions: undefined,
     messages: [],
-
     queryTipsList: undefined,
     queryTipsLoading: false,
     queryTipsError: false,
     queryTipsTotalPages: undefined,
     queryTipsCurrentPage: 1,
+    isSizeMaximum: false,
   }
 
   componentDidMount = () => {
@@ -201,7 +199,9 @@ export default class DataMessenger extends React.Component {
         // Update the component so that the message sizes autoadjust again
         this.forceUpdate()
       }
-
+      if (this.state.isSizeMaximum !== prevState.isSizeMaximum) {
+        this.forceUpdate()
+      }
       if (this.state.isVisible && !prevState.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
@@ -954,6 +954,12 @@ export default class DataMessenger extends React.Component {
   }
 
   renderHeaderContent = () => {
+    const maxWidth =
+      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
+      45
+    const maxHeight =
+      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
+      45
     return (
       <Fragment>
         <div className="react-autoql-header-left-container">
@@ -967,6 +973,21 @@ export default class DataMessenger extends React.Component {
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
+          </button>
+          <button
+            id="maximize"
+            onClick={() => {
+              this.setState({
+                width: maxWidth,
+                height: maxHeight,
+                isSizeMaximum: true,
+              })
+            }}
+            className="react-autoql-drawer-header-btn maximize"
+            data-tip={lang.maxmizeDataMessenger}
+            data-for="react-autoql-header-tooltip"
+          >
+            <Icon type="maximize" />
           </button>
         </div>
         {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
@@ -1332,6 +1353,9 @@ export default class DataMessenger extends React.Component {
 
   resizeDrawer = (e) => {
     const self = this
+    self.setState({
+      isSizeMaximum: false,
+    })
     const placement = this.getPlacementProp()
     const maxWidth =
       Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -

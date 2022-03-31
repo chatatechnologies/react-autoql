@@ -16,6 +16,7 @@ export const lang = new LocalizedStrings({
     noFiltersLocked: 'No Filters are locked yet',
     clearDataResponses: 'Clear all queries & responses',
     closeDataMessenger: 'Close Data Messenger',
+    maxmizeDataMessenger: 'Maxmize Data Messenger',
     searchQueries: 'Search relevant queries by topic',
     discoverPrompt:
       'Discover what you can ask by entering a topic in the search bar above. Simply click on any of the returned options to run the query in Data Messenger.',
@@ -57,6 +58,7 @@ export const lang = new LocalizedStrings({
     noFiltersLocked: 'Ningún filtro está bloqueado todavía',
     clearDataResponses: 'Borrar todas las consultas y respuestas',
     closeDataMessenger: 'Cerrar Data mesenger',
+    maxmizeDataMessenger: 'Maximiser le messager de données',
     searchQueries: 'Buscar consultas relevantes por tema',
     discoverPrompt:
       'Descubre lo que puede preguntar ingresando un tema en la barra de búsqueda de arriba. Da clic en cualquiera de las opciones devueltas para ejecutar la consulta en Data Messenger.',
