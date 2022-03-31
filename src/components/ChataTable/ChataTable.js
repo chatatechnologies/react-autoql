@@ -33,7 +33,6 @@ export default class ChataTable extends React.Component {
     setFilterTagsCallback: () => {},
     onFilterCallback: () => {},
     onCellClick: () => {},
-    downloadCSVCallback: () => {},
   }
 
   state = {
@@ -106,28 +105,6 @@ export default class ChataTable extends React.Component {
     if (this.ref && this.ref.table) {
       this.ref.table.copyToClipboard('active', true)
     }
-  }
-
-  saveAsCSV = () => {
-    this.props.downloadCSVCallback()
-  }
-
-  getBase64Data = () => {
-    if (this.ref && this.ref.table) {
-      const data = this.ref.table.getData()
-      const columns = this.ref.table.getColumnDefinitions()
-      const columnNames = columns.map((col) => col.title)
-      data.unshift(columnNames)
-
-      const csvContent =
-        // We may want to specify this information in the future
-        // "data:text/csv;charset=utf-8," +
-        data.map((row) => row.join(',')).join('\n')
-      const encodedContent = btoa(csvContent)
-      return Promise.resolve(encodedContent)
-    }
-
-    return Promise.reject()
   }
 
   render = () => {
