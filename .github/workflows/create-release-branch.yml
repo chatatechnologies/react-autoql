@@ -1,8 +1,10 @@
 name: Create Branch
 
-on:
-  pull_request:
-    types: [closed]
+# on:
+#   pull_request:
+#     types: [closed]
+
+on: [pull_request]
 
 jobs:
   create_release_branch:
