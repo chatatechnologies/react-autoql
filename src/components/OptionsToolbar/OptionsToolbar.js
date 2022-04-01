@@ -26,12 +26,12 @@ import {
   themeConfigType,
 } from '../../props/types'
 import {
+  themeConfigDefault,
+  getThemeConfig,
+  getAutoQLConfig,
+  getAuthentication,
   autoQLConfigDefault,
   authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-  getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
