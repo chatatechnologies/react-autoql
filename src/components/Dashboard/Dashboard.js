@@ -18,10 +18,10 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
 import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
 import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
   themeConfigType,
+  dataFormattingType,
+  autoQLConfigType,
+  authenticationType,
 } from '../../props/types'
 import {
   authenticationDefault,
