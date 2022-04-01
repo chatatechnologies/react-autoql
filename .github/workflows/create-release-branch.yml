@@ -24,3 +24,4 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
           git commit -m "test commit message" --allow-empty
+          git push
