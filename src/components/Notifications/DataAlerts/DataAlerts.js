@@ -5,7 +5,6 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import uuid from 'uuid'
-import _ from 'lodash'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
@@ -299,18 +298,27 @@ export default class DataAlerts extends React.Component {
                     <div className="react-autoql-notification-setting-display-name">
                       <span className="react-autoql-notification-setting-display-name-title">
                         <span>
-                          {this.hasError(notification) && (
-                            <Icon
-                              type="warning-triangle"
-                              className="react-autoql-notification-error-status-icon"
-                              onClick={() =>
-                                this.goToErrorFeedback(notification)
-                              }
-                              data-for="react-autoql-notification-settings-tooltip"
-                              data-tip="There was a problem with this Data Alert. Click for more information."
-                              warning
-                            />
-                          )}
+                          {this.hasError(notification) &&
+                            (notification.type === 'CUSTOM' ? (
+                              <Icon
+                                type="warning-triangle"
+                                className="react-autoql-notification-error-status-icon"
+                                onClick={() =>
+                                  this.goToErrorFeedback(notification)
+                                }
+                                data-for="react-autoql-notification-settings-tooltip"
+                                data-tip="There was a problem with this Data Alert. Click for more information."
+                                warning
+                              />
+                            ) : (
+                              <Icon
+                                type="warning-triangle"
+                                id="react-autoql-notification-error-status-icon-PROJECT"
+                                data-for="react-autoql-notification-settings-tooltip"
+                                data-tip="There was a problem with this Data Alert. For more information, please contact your system administrator."
+                                warning
+                              />
+                            ))}
                           {notification.title}
                         </span>
                       </span>
@@ -347,24 +355,27 @@ export default class DataAlerts extends React.Component {
                       )}
                       {this.hasError(notification) ? (
                         <React.Fragment>
-                          <Button
-                            type="primary"
-                            tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
-                            multiline
-                            className="react-autoql-re-initialize-btn"
-                            onClick={() => {
-                              this.props.onAlertInitializationCallback(
-                                notification,
-                                this.props.selectedDemoProjectId,
-                                this.props.authentication
-                              )
-                              this.getDataAlerts()
-                            }}
-                          >
-                            <span className="react-autoql-re-initialize-btn-text">
-                              <Icon type="warning-triangle" /> Resend
-                            </span>
-                          </Button>
+                          {notification.type === 'CUSTOM' ? (
+                            <Button
+                              type="primary"
+                              tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
+                              multiline
+                              className="react-autoql-re-initialize-btn"
+                              onClick={() => {
+                                this.props.onAlertInitializationCallback(
+                                  notification,
+                                  this.props.selectedDemoProjectId,
+                                  this.props.authentication
+                                )
+                                this.getDataAlerts()
+                              }}
+                            >
+                              <span className="react-autoql-re-initialize-btn-text">
+                                <Icon type="warning-triangle" /> Resend
+                              </span>
+                            </Button>
+                          ) : null}
+
                           <Checkbox
                             themeConfig={getThemeConfig(this.props.themeConfig)}
                             type="switch"

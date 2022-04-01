@@ -12,7 +12,7 @@
 #       - restore_cache:
 #           key: v1-deps-{{ checksum "package-lock.json" }}
 #       - run: npm i
-#       - run: npm i react react-dom
+#       - run: npm i react@16.9.0 react-dom@16.9.0
 #       - save_cache:
 #           key: v1-deps-{{ checksum "package-lock.json" }}
 #           paths:
@@ -21,27 +21,26 @@
 #           name: Run Tests
 #           no_output_timeout: 60m
 #           command: npm run test -- --maxWorkers=4
-
-#   test-and-release:
-#     executor:
-#       name: node/default
-#       tag: '14.5.0'
-#     resource_class: xlarge
-#     steps:
-#       - checkout
-#       - restore_cache:
-#           key: v1-deps-{{ checksum "package-lock.json" }}
-#       - run: npm i
-#       - run: npm i react react-dom
-#       - save_cache:
-#           key: v1-deps-{{ checksum "package-lock.json" }}
-#           paths:
-#             - node_modules
-#       - run:
-#           name: Run Tests
-#           no_output_timeout: 60m
-#           command: npm run test -- --maxWorkers=4
-#       - run: npx semantic-release
+# test-and-release:
+#   executor:
+#     name: node/default
+#     tag: '14.5.0'
+#   resource_class: xlarge
+#   steps:
+#     - checkout
+#     - restore_cache:
+#         key: v1-deps-{{ checksum "package-lock.json" }}
+#     - run: npm i
+#     - run: npm i react react-dom
+#     - save_cache:
+#         key: v1-deps-{{ checksum "package-lock.json" }}
+#         paths:
+#           - node_modules
+#     - run:
+#         name: Run Tests
+#         no_output_timeout: 60m
+#         command: npm run test -- --maxWorkers=4
+#     - run: npx semantic-release
 
 # workflows:
 #   build-and-test:
@@ -50,9 +49,9 @@
 #           filters:
 #             branches:
 #               ignore: master
-#   test-and-release:
-#     jobs:
-#       - test-and-release:
-#           filters:
-#             branches:
-#               only: master
+# test-and-release:
+#   jobs:
+#     - test-and-release:
+#         filters:
+#           branches:
+#             only: master

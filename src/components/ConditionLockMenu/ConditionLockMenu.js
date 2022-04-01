@@ -16,7 +16,11 @@ import {
 } from '../../js/queryService'
 
 import { authenticationType, themeConfigType } from '../../props/types'
-import { getAuthentication,  getThemeConfig, themeConfigDefault } from '../../props/defaults'
+import {
+  getAuthentication,
+  getThemeConfig,
+  themeConfigDefault,
+} from '../../props/defaults'
 import { setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
@@ -31,11 +35,11 @@ let autoCompleteArray = []
 
 export default class ConditionLockMenu extends React.Component {
   UNIQUE_ID = uuid.v4()
-  mouseInfoRef = createRef();
-  mouseSettingRef = createRef();
-  
+  mouseInfoRef = createRef()
+  mouseSettingRef = createRef()
+
   static propTypes = {
-    containerWidth: PropTypes.string,
+    containerWidth: PropTypes.number,
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
     authentication: authenticationType,
@@ -62,8 +66,8 @@ export default class ConditionLockMenu extends React.Component {
     isShowingSettingInfo: false,
     showMessage: {
       type: 'unlock',
-      message: 'filter removed'
-    }
+      message: 'filter removed',
+    },
   }
 
   componentDidMount = () => {
@@ -71,7 +75,7 @@ export default class ConditionLockMenu extends React.Component {
       this.setState({
         isFetchingConditions: true,
       })
-      fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+      fetchConditions(getAuthentication(this.props.authentication)).then(
         (response) => {
           let conditions = _get(response, 'data.data.data')
           let array = this.state.selectedConditions
@@ -86,8 +90,10 @@ export default class ConditionLockMenu extends React.Component {
               lock_flag: conditions[i].lock_flag,
             })
           }
-          if(JSON.parse(sessionStorage.getItem("conditions")) !== null) {
-            var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+          if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
+            var sessionConditions = JSON.parse(
+              sessionStorage.getItem('conditions')
+            )
             for (let i = 0; i < sessionConditions.length; i++) {
               array.push({
                 id: sessionConditions[i].id,
@@ -99,25 +105,29 @@ export default class ConditionLockMenu extends React.Component {
               })
             }
           }
-          
+
           array.sort((a, b) => {
-            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+            return a.keyword.toUpperCase() < b.keyword.toUpperCase()
+              ? -1
+              : a.keyword > b.keyword
+              ? 1
+              : 0
           })
-          if(this.props.initFilterText && this.props.initFilterText !== '') {
-            this.setState({ 
-              selectedConditions: array, 
+          if (this.props.initFilterText && this.props.initFilterText !== '') {
+            this.setState({
+              selectedConditions: array,
               isFetchingConditions: false,
             })
-            for(let i = 0; i < array.length; i++) {
-              if(array[i].keyword === this.props.initFilterText) {
+            for (let i = 0; i < array.length; i++) {
+              if (array[i].keyword === this.props.initFilterText) {
                 this.handleHighlightFilterRow(i)
                 return
               }
             }
             this.animateInputTextAndSubmit(this.props.initFilterText)
           } else {
-            this.setState({ 
-              selectedConditions: array, 
+            this.setState({
+              selectedConditions: array,
               inputValue: '',
               isFetchingConditions: false,
             })
@@ -141,10 +151,10 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   handleFetchFilteredList() {
-    fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
+    fetchConditions(getAuthentication(this.props.authentication)).then(
       (response) => {
         let conditions = _get(response, 'data.data.data')
-        let array = [];
+        let array = []
         for (let i = 0; i < conditions.length; i++) {
           array.push({
             id: conditions[i].id,
@@ -155,8 +165,10 @@ export default class ConditionLockMenu extends React.Component {
             lock_flag: conditions[i].lock_flag,
           })
         }
-        if(JSON.parse(sessionStorage.getItem("conditions")) !== null) {
-          var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+        if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
+          var sessionConditions = JSON.parse(
+            sessionStorage.getItem('conditions')
+          )
           for (let i = 0; i < sessionConditions.length; i++) {
             array.push({
               id: sessionConditions[i].id,
@@ -168,16 +180,21 @@ export default class ConditionLockMenu extends React.Component {
             })
           }
         }
-        
+
         array.sort((a, b) => {
-          return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+          return a.keyword.toUpperCase() < b.keyword.toUpperCase()
+            ? -1
+            : a.keyword > b.keyword
+            ? 1
+            : 0
         })
-        this.setState({ 
-          selectedConditions: array, 
+        this.setState({
+          selectedConditions: array,
           inputValue: '',
           isFetchingConditions: false,
         })
-       })
+      }
+    )
   }
 
   /**
@@ -189,22 +206,34 @@ export default class ConditionLockMenu extends React.Component {
   getSuggestionValue = (suggestion) => {
     let array = this.state.selectedConditions
 
-    if(array.some(item => item.key === suggestion.name.canonical && item.value === suggestion.name.keyword)){
-      this.handleShowMessage('warning', 'This condition has already been applied.')
+    if (
+      array.some(
+        (item) =>
+          item.key === suggestion.name.canonical &&
+          item.value === suggestion.name.keyword
+      )
+    ) {
+      this.handleShowMessage(
+        'warning',
+        'This condition has already been applied.'
+      )
     } else {
       array.push({
         keyword: suggestion.name.keyword,
         value: suggestion.name.keyword,
         show_message: suggestion.name.show_message,
         key: suggestion.name.canonical,
-        lock_flag: 1 // persist by default
+        lock_flag: 1, // persist by default
       })
       this.setState({ inputValue: '' })
       setConditions({
         ...getAuthentication(this.props.authentication),
         conditions: array,
       }).then(() => {
-        this.handleShowMessage('lock', `${suggestion.name.keyword} has been locked`)
+        this.handleShowMessage(
+          'lock',
+          `${suggestion.name.keyword} has been locked`
+        )
         this.handleFetchFilteredList()
       })
     }
@@ -226,15 +255,21 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} item
    */
   removeCondition = (item, index) => {
-    const sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
-    let sessionIndex;
-    if(sessionConditions) {
-      sessionIndex = sessionConditions.findIndex(condition => _get(condition, 'key') === _get(item, 'key'))
+    const sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
+    let sessionIndex
+    if (sessionConditions) {
+      sessionIndex = sessionConditions.findIndex(
+        (condition) => _get(condition, 'key') === _get(item, 'key')
+      )
     }
-    
-    if(sessionIndex !== -1 && sessionIndex !== undefined && sessionIndex !== null) {
+
+    if (
+      sessionIndex !== -1 &&
+      sessionIndex !== undefined &&
+      sessionIndex !== null
+    ) {
       sessionConditions.splice(sessionIndex, 1)
-      sessionStorage.setItem('conditions', JSON.stringify(sessionConditions));
+      sessionStorage.setItem('conditions', JSON.stringify(sessionConditions))
     } else {
       unsetCondition({
         ...getAuthentication(this.props.authentication),
@@ -250,38 +285,54 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   handlePersistConditionToggle = (item) => {
-    var index = this.state.selectedConditions.findIndex(condition => condition.id === item.id);
-    var sessionConditions = JSON.parse(sessionStorage.getItem("conditions"));
+    var index = this.state.selectedConditions.findIndex(
+      (condition) => condition.id === item.id
+    )
+    var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
 
-    if (index === -1){
+    if (index === -1) {
       // handle error
     } else {
-        this.setState({
+      this.setState(
+        {
           selectedConditions: [
-            ...this.state.selectedConditions.slice(0,index),
-            Object.assign({}, 
-              this.state.selectedConditions[index], item.lock_flag === 1 
-              ? this.state.selectedConditions[index].lock_flag = 0 
-              : this.state.selectedConditions[index].lock_flag = 1),
-            ...this.state.selectedConditions.slice(index+1)
-          ]
-        }, () => {
+            ...this.state.selectedConditions.slice(0, index),
+            Object.assign(
+              {},
+              this.state.selectedConditions[index],
+              item.lock_flag === 1
+                ? (this.state.selectedConditions[index].lock_flag = 0)
+                : (this.state.selectedConditions[index].lock_flag = 1)
+            ),
+            ...this.state.selectedConditions.slice(index + 1),
+          ],
+        },
+        () => {
           setConditions({
             ...getAuthentication(this.props.authentication),
             conditions: this.state.selectedConditions,
           }).then(() => {
             this.handleFetchFilteredList()
           })
-          if(item.lock_flag === 0) {
-            if(sessionConditions == null) sessionConditions = [];
-            sessionConditions.push(item);
-            sessionStorage.setItem("conditions", JSON.stringify(sessionConditions));
+          if (item.lock_flag === 0) {
+            if (sessionConditions == null) sessionConditions = []
+            sessionConditions.push(item)
+            sessionStorage.setItem(
+              'conditions',
+              JSON.stringify(sessionConditions)
+            )
           } else {
-            var sessionIndex = sessionConditions.findIndex(condition => condition.id === item.id)
+            var sessionIndex = sessionConditions.findIndex(
+              (condition) => condition.id === item.id
+            )
             sessionConditions.splice(sessionIndex, 1)
-            sessionStorage.setItem('conditions', JSON.stringify(sessionConditions));
+            sessionStorage.setItem(
+              'conditions',
+              JSON.stringify(sessionConditions)
+            )
           }
-      });
+        }
+      )
     }
   }
 
@@ -296,22 +347,20 @@ export default class ConditionLockMenu extends React.Component {
       })
         .then((response) => {
           const body = _get(response, 'data.data')
-
           const sortingArray = []
           let suggestionsMatchArray = []
           autoCompleteArray = []
           suggestionsMatchArray = body.matches
-          
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
-
-            if (i === 5) {
-              break
-            }
           }
 
           sortingArray.sort((a, b) => {
-            return (a.keyword.toUpperCase() < b.keyword.toUpperCase()) ? -1 : (a.keyword > b.keyword) ? 1 : 0;
+            return a.keyword.toUpperCase() < b.keyword.toUpperCase()
+              ? -1
+              : a.keyword > b.keyword
+              ? 1
+              : 0
           })
           for (let idx = 0; idx < sortingArray.length; idx++) {
             const anObject = {
@@ -336,23 +385,21 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   handleShowMessage(type, message) {
-    var el = document.getElementById(
-      'react-autoql-condition-show-message'
-    )
+    var el = document.getElementById('react-autoql-condition-show-message')
     el.className = 'show'
-    el.style.animation = 'none';
+    el.style.animation = 'none'
     setTimeout(function() {
-        el.style.animation = '';
-    }, 10);
+      el.style.animation = ''
+    }, 10)
     setTimeout(() => {
       el.className = el.className.replace('show', '')
     }, 3000)
-    this.setState({ 
+    this.setState({
       inputValue: '',
       showMessage: {
         type: type,
-        message: message
-      } 
+        message: message,
+      },
     })
   }
 
@@ -360,7 +407,7 @@ export default class ConditionLockMenu extends React.Component {
     var el = document.getElementById(
       `react-autoql-condition-table-list-item-${index}`
     )
-    if(el) {
+    if (el) {
       el.className = 'react-autoql-highlight-row'
       setTimeout(() => {
         el.className = el.className.replace('react-autoql-highlight-row', '')
@@ -368,37 +415,29 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
-  timer;
+  timer
   onEnterFilterHeaderInfo = () => {
-    var el = document.getElementById(
-      'react-autoql-filter-description-id'
-    )
+    var el = document.getElementById('react-autoql-filter-description-id')
     this.timer = setTimeout(() => {
       el.className = 'show'
-    }, 500);
+    }, 500)
   }
 
   onLeaveFilterHeaderInfo = () => {
-    var el = document.getElementById(
-      'react-autoql-filter-description-id'
-    )
+    var el = document.getElementById('react-autoql-filter-description-id')
     el.className = el.className.replace('show', '')
     clearTimeout(this.timer)
   }
 
   onEnterFilterSettingInfo = () => {
-    var el = document.getElementById(
-      'react-autoql-filter-setting-info-card'
-    )
+    var el = document.getElementById('react-autoql-filter-setting-info-card')
     this.timer = setTimeout(() => {
       el.className = 'show'
-    }, 500);
+    }, 500)
   }
 
   onLeaveFilterSettingInfo = () => {
-    var el = document.getElementById(
-      'react-autoql-filter-setting-info-card'
-    )
+    var el = document.getElementById('react-autoql-filter-setting-info-card')
     el.className = el.className.replace('show', '')
     clearTimeout(this.timer)
   }
@@ -412,8 +451,10 @@ export default class ConditionLockMenu extends React.Component {
           })
           if (i === text.length) {
             setTimeout(() => {
-              const input = document.querySelector('#react-autoql-filter-menu-input');
-              input.focus();
+              const input = document.querySelector(
+                '#react-autoql-filter-menu-input'
+              )
+              input.focus()
             }, 300)
           }
         }, i * 50)
@@ -423,7 +464,8 @@ export default class ConditionLockMenu extends React.Component {
 
   renderShowMessage = () => (
     <div id="react-autoql-condition-show-message">
-      <Icon type={this.state.showMessage.type} /> {this.state.showMessage.message}
+      <Icon type={this.state.showMessage.type} />{' '}
+      {this.state.showMessage.message}
     </div>
   )
 
@@ -440,12 +482,13 @@ export default class ConditionLockMenu extends React.Component {
           {this.renderShowMessage()}
           <div className="react-autoql-condition-lock-header">
             <div className="react-autoql-filter-locking-title-container">
-              <h3 className="react-autoql-filter-locking-title">{lang.filterLockingTitle} {' '} 
-                <Icon 
-                  type="info" 
+              <h3 className="react-autoql-filter-locking-title">
+                {lang.filterLockingTitle}{' '}
+                <Icon
+                  type="info"
                   ref={this.mouseInfoRef}
-                  onMouseEnter={this.onEnterFilterHeaderInfo} 
-                  onMouseLeave={this.onLeaveFilterHeaderInfo} 
+                  onMouseEnter={this.onEnterFilterHeaderInfo}
+                  onMouseLeave={this.onLeaveFilterHeaderInfo}
                 />
               </h3>
               <button
@@ -460,18 +503,19 @@ export default class ConditionLockMenu extends React.Component {
               </button>
             </div>
             <div className="autoql-condition-locking-menu-container">
-                <div id="react-autoql-filter-description-id" >
-                  <Icon type="info" />
-                  <p className="react-autoql-filter-info-text">
-                    Filters can be applied to narrow down your query results. Locking a 
-                    filter ensures that only the specific data you wish to see is returned.
-                  </p>
-                </div>
+              <div id="react-autoql-filter-description-id">
+                <Icon type="info" />
+                <p className="react-autoql-filter-info-text">
+                  Filters can be applied to narrow down your query results.
+                  Locking a filter ensures that only the specific data you wish
+                  to see is returned.
+                </p>
+              </div>
               <Autosuggest
                 ref={(ref) => {
                   this.autoSuggest = ref
                 }}
-                id='react-autoql-filter-menu-input'
+                id="react-autoql-filter-menu-input"
                 highlightFirstSuggestion
                 suggestions={this.state.suggestions}
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -479,10 +523,20 @@ export default class ConditionLockMenu extends React.Component {
                 getSuggestionValue={this.getSuggestionValue}
                 renderSuggestion={(suggestion) => (
                   <Fragment>
-                    <span id="react-autoql-filter-table" className="autoql-condition-locking-menu-list">
+                    <span
+                      id="react-autoql-filter-table"
+                      className="autoql-condition-locking-menu-list"
+                    >
                       <tr id="react-autoql-filter-table-row">
-                        <td id="react-autoql-filter-table-data" style={{ width: 300 }}>{suggestion.name.keyword}</td>
-                        <td id="react-autoql-filter-table-data">{suggestion.name.show_message}</td>
+                        <td
+                          id="react-autoql-filter-table-data"
+                          style={{ width: 300 }}
+                        >
+                          {suggestion.name.keyword}
+                        </td>
+                        <td id="react-autoql-filter-table-data">
+                          {suggestion.name.show_message}
+                        </td>
                       </tr>
                     </span>
                   </Fragment>
@@ -496,67 +550,85 @@ export default class ConditionLockMenu extends React.Component {
                   id: 'react-autoql-filter-menu-input',
                 }}
               />
-                <div id="react-autoql-filter-setting-info-card">
-                  <p className="react-autoql-filter-info-text">
-                  <Icon type="info" />{' '}<strong>Persistent</strong> filters remain locked at all times, unless the filter is removed.
-                    <br /> 
-                  <Icon type="info" />{' '}<strong>Session</strong> filters remain locked until you end your browser session.
-                  </p>
-                </div>
-            </div>
-          </div>
-         {this.state.isFetchingConditions ? 
-          <div className="react-autoql-condition-list-loading-container">
-            <LoadingDots />
-          </div> 
-          : <div className="react-autoql-condition-list">
-            {_get(this.state.selectedConditions, 'length') === 0 ? (
-              <div className="react-autoql-empty-condition-list">
-                <p>
-                  <i>{lang.noFiltersLocked}</i>
+              <div id="react-autoql-filter-setting-info-card">
+                <p className="react-autoql-filter-info-text">
+                  <Icon type="info" /> <strong>Persistent</strong> filters
+                  remain locked at all times, unless the filter is removed.
+                  <br />
+                  <Icon type="info" /> <strong>Session</strong> filters remain
+                  locked until you end your browser session.
                 </p>
               </div>
-            ) : (
-              <div>
+            </div>
+          </div>
+          {this.state.isFetchingConditions ? (
+            <div className="react-autoql-condition-list-loading-container">
+              <LoadingDots />
+            </div>
+          ) : (
+            <div className="react-autoql-condition-list">
+              {_get(this.state.selectedConditions, 'length') === 0 ? (
+                <div className="react-autoql-empty-condition-list">
+                  <p>
+                    <i>{lang.noFiltersLocked}</i>
+                  </p>
+                </div>
+              ) : (
                 <div>
-                  <table className="react-autoql-condition-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '60%' }}>Filter</th>
-                        <th>
+                  <div>
+                    <table className="react-autoql-condition-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '60%' }}>Filter</th>
+                          <th>
                             Settings
                             <Icon
                               type="info"
                               ref={this.mouseSettingRef}
-                              onMouseEnter={this.onEnterFilterSettingInfo}  
+                              onMouseEnter={this.onEnterFilterSettingInfo}
                               onMouseLeave={this.onLeaveFilterSettingInfo}
-                              />
-                        </th>
-                        <th
-                          style={{
-                            display: 'table-cell',
-                            verticalAlign: 'middle',
-                            textAlign: 'right',
-                            width: '35px'
-                          }}
-                        >
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {this.state.selectedConditions.map((item, index) => {
-                        return (
-                          <tr key={index} id={`react-autoql-condition-table-list-item-${index}`}>
-                            <td className="react-autoql-condition-table-list-item">
-                              {item.keyword}{' '}{`(${item.show_message})`}
-                            </td>
-                            <td>
+                            />
+                          </th>
+                          <th
+                            style={{
+                              display: 'table-cell',
+                              verticalAlign: 'middle',
+                              textAlign: 'right',
+                              width: '35px',
+                            }}
+                          ></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {this.state.selectedConditions.map((item, index) => {
+                          return (
+                            <tr
+                              key={index}
+                              id={`react-autoql-condition-table-list-item-${index}`}
+                            >
+                              <td className="react-autoql-condition-table-list-item">
+                                {item.keyword} {`(${item.show_message})`}
+                              </td>
+                              <td>
                                 <span>
-                                  <Switch 
-                                    onChange={() => this.handlePersistConditionToggle(item, index)} 
+                                  <Switch
+                                    onChange={() =>
+                                      this.handlePersistConditionToggle(
+                                        item,
+                                        index
+                                      )
+                                    }
                                     checked={item.lock_flag}
-                                    onColor={accentColorAssist(getThemeConfig(this.props.themeConfig).accentColor, 180)}
-                                    onHandleColor={getThemeConfig(getThemeConfig(this.props.themeConfig)).accentColor}
+                                    onColor={accentColorAssist(
+                                      getThemeConfig(this.props.themeConfig)
+                                        .accentColor,
+                                      180
+                                    )}
+                                    onHandleColor={
+                                      getThemeConfig(
+                                        getThemeConfig(this.props.themeConfig)
+                                      ).accentColor
+                                    }
                                     uncheckedIcon={false}
                                     checkedIcon={false}
                                     boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
@@ -567,50 +639,50 @@ export default class ConditionLockMenu extends React.Component {
                                   />{' '}
                                   {item.lock_flag ? 'Persistent' : 'Session'}
                                 </span>
-                            </td>
-                            <td
-                              id="react-autoql-remove-filter-container"
-                              style={{
-                                display: 'table-cell',
-                                verticalAlign: 'middle',
-                                textAlign: 'right',
-                                width: '35px'
-                              }}
-                            >
-                              <ReactTooltip
-                                className="react-autoql-chart-tooltip"
-                                id="react-autoql-remove-condition"
-                                effect="solid"
-                                html
-                              />
-                              <Icon
-                                id="react-autoql-remove-filtered-condition-icon"
+                              </td>
+                              <td
+                                id="react-autoql-remove-filter-container"
                                 style={{
-                                  paddingLeft: 5,
-                                  color: 'red',
-                                  cursor: 'pointer'
+                                  display: 'table-cell',
+                                  verticalAlign: 'middle',
+                                  textAlign: 'right',
+                                  width: '35px',
                                 }}
-                                data-tip="Remove filter"
-                                data-for="react-autoql-remove-condition"
-                                type="trash"
-                                onClick={() =>
-                                  this.removeCondition(item, index)
-                                }
-                              />
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                    <tfoot></tfoot>
-                  </table>
+                              >
+                                <ReactTooltip
+                                  className="react-autoql-chart-tooltip"
+                                  id="react-autoql-remove-condition"
+                                  effect="solid"
+                                  html
+                                />
+                                <Icon
+                                  id="react-autoql-remove-filtered-condition-icon"
+                                  style={{
+                                    paddingLeft: 5,
+                                    color: 'red',
+                                    cursor: 'pointer',
+                                  }}
+                                  data-tip="Remove filter"
+                                  data-for="react-autoql-remove-condition"
+                                  type="trash"
+                                  onClick={() =>
+                                    this.removeCondition(item, index)
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot></tfoot>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-         }
+              )}
+            </div>
+          )}
           <div className="react-autoql-condition-lock-menu-footer">
-            <Button 
+            <Button
               size="small"
               disabled={this.state.isFetchingConditions}
               onClick={() => {

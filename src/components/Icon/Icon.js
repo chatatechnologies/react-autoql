@@ -3,59 +3,66 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Icons
-import { BsArrowBarUp, BsArrowBarDown } from 'react-icons/bs'
+import {
+  AiFillCaretDown,
+  AiFillCaretLeft,
+  AiFillCaretRight,
+  AiFillCaretUp,
+  AiOutlineBook,
+  AiOutlineBulb,
+  AiOutlineDashboard,
+  AiOutlineEdit,
+  AiOutlineFileText,
+  AiOutlineMenu,
+  AiOutlineQuestionCircle,
+} from 'react-icons/ai'
+
 import { BiLineChart } from 'react-icons/bi'
+
+import { BsArrowBarDown, BsArrowBarUp } from 'react-icons/bs'
+
+import { FaMicrophoneAlt } from 'react-icons/fa'
 import {
-  MdClose,
-  MdError,
-  MdContentCopy,
-  MdInfoOutline,
-  MdPlayCircleOutline,
-  MdLock,
-  MdLockOpen,
-} from 'react-icons/md'
-import {
+  FiAlertTriangle,
+  FiArrowLeft,
   FiBell,
   FiBellOff,
   FiCalendar,
-  FiPlus,
-  FiDatabase,
-  FiFilter,
   FiCheck,
+  FiDatabase,
+  FiDownload,
   FiEye,
-  FiTrash2,
-  FiAlertTriangle,
+  FiFilter,
   FiMoreHorizontal,
   FiMoreVertical,
-  FiDownload,
-  FiSettings,
-  FiSend,
-  FiArrowLeft,
   FiPauseCircle,
+  FiPlus,
+  FiSend,
+  FiSettings,
+  FiTrash2,
 } from 'react-icons/fi'
-import {
-  IoIosSearch,
-  IoIosGlobe,
-  IoIosCloseCircleOutline,
-  IoIosHourglass,
-} from 'react-icons/io'
-import { TiSortNumerically } from 'react-icons/ti'
-import {
-  AiOutlineDashboard,
-  AiOutlineFileText,
-  AiOutlineBook,
-  AiFillCaretRight,
-  AiFillCaretLeft,
-  AiFillCaretDown,
-  AiFillCaretUp,
-  AiOutlineEdit,
-  AiOutlineBulb,
-  AiOutlineQuestionCircle,
-  AiOutlineMenu,
-} from 'react-icons/ai'
-import { FaMicrophoneAlt } from 'react-icons/fa'
+
 import { GoReport } from 'react-icons/go'
-import chataBubblesSVG from '../../images/chata-bubbles.svg'
+
+import {
+  IoIosCloseCircleOutline,
+  IoIosGlobe,
+  IoIosHourglass,
+  IoIosSearch,
+} from 'react-icons/io'
+
+import {
+  MdClose,
+  MdContentCopy,
+  MdError,
+  MdInfoOutline,
+  MdLock,
+  MdLockOpen,
+  MdPlayCircleOutline,
+} from 'react-icons/md'
+
+import { TiSortNumerically } from 'react-icons/ti'
+
 import {
   bubblesIcon,
   bubblesIconFilled,
@@ -144,18 +151,6 @@ export default class Icon extends React.Component {
       }
       case 'caret-up': {
         icon = <AiFillCaretUp />
-        break
-      }
-      case 'react-autoql-bubbles': {
-        icon = (
-          <img
-            className="react-autoql-bubbles-icon"
-            src={chataBubblesSVG}
-            alt="chata.ai"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
         break
       }
       case 'react-autoql-bubbles-outlined': {

@@ -44,7 +44,7 @@ export default class ChataTable extends React.Component {
     this.TABLE_CONTAINER_ID = uuid.v4()
 
     setCSSVars(getThemeConfig(this.props.themeConfig))
-    setTimeout(() => {
+    this.setTableHeaderValues = setTimeout(() => {
       this.setInitialHeaderFilters()
       this.props.setFilterTagsCallback()
     }, 100)
@@ -81,6 +81,10 @@ export default class ChataTable extends React.Component {
     ) {
       setCSSVars(getThemeConfig(this.props.themeConfig))
     }
+  }
+
+  componentWillUnmount = () => {
+    clearTimeout(this.setTableHeaderValues)
   }
 
   setInitialHeaderFilters = () => {

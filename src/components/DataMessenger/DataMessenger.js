@@ -62,7 +62,6 @@ export default class DataMessenger extends React.Component {
     // UI
     placement: string,
     maskClosable: bool,
-    isVisible: bool,
     width: oneOfType([string, number]),
     height: oneOfType([string, number]),
     showHandle: bool,
@@ -139,6 +138,7 @@ export default class DataMessenger extends React.Component {
   state = {
     hasError: false,
 
+    isVisible: false,
     activePage: this.props.defaultTab,
     width: this.props.width,
     height: this.props.height,
@@ -168,7 +168,7 @@ export default class DataMessenger extends React.Component {
       window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-      setTimeout(() => {
+      this.tooltipRebuildTimeout = setTimeout(() => {
         ReactTooltip.rebuild()
       }, 100)
     } catch (error) {
@@ -176,23 +176,19 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    try {
-      fetchConditions({ ...getAuthentication(this.props.authentication) }).then(
-        (response) => {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          this.setState({
-            conditions: {
-              persistent: _get(response, 'data.data.data'),
-              session: sessionConditions,
-            },
-          })
-        }
-      )
-    } catch (e) {
-      console.error(e)
-    }
+    fetchConditions(getAuthentication(this.props.authentication))
+      .then((response) => {
+        var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
+        this.setState({
+          conditions: {
+            persistent: _get(response, 'data.data.data'),
+            session: sessionConditions,
+          },
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -206,15 +202,15 @@ export default class DataMessenger extends React.Component {
         this.forceUpdate()
       }
 
-      if (this.props.isVisible && !prevProps.isVisible) {
+      if (this.state.isVisible && !prevState.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
         }
       }
 
       if (
-        !this.props.isVisible &&
-        prevProps.isVisible &&
+        !this.state.isVisible &&
+        prevState.isVisible &&
         this.props.clearOnClose
       ) {
         this.clearMessages()
@@ -233,19 +229,21 @@ export default class DataMessenger extends React.Component {
       if (
         this.state.isFilterLockingMenuOpen !== prevState.isFilterLockingMenuOpen
       ) {
-        fetchConditions({
-          ...getAuthentication(this.props.authentication),
-        }).then((response) => {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          this.setState({
-            conditions: {
-              persistent: _get(response, 'data.data.data'),
-              session: sessionConditions,
-            },
+        fetchConditions(getAuthentication(this.props.authentication))
+          .then((response) => {
+            var sessionConditions = JSON.parse(
+              sessionStorage.getItem('conditions')
+            )
+            this.setState({
+              conditions: {
+                persistent: _get(response, 'data.data.data'),
+                session: sessionConditions,
+              },
+            })
           })
-        })
+          .catch((error) => {
+            console.error(error)
+          })
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -265,27 +263,14 @@ export default class DataMessenger extends React.Component {
       document.removeEventListener('keydown', this.escFunction, false)
       window.removeEventListener('resize', this.onWindowResize)
 
-      if (this.scrollToBottomTimeout) {
-        clearTimeout(this.scrollToBottomTimeout)
-      }
-      if (this.windowResizeTimer) {
-        clearTimeout(this.windowResizeTimer)
-      }
-      if (this.responseTimeout) {
-        clearTimeout(this.responseTimeout)
-      }
-      if (this.feedbackTimeout) {
-        clearTimeout(this.feedbackTimeout)
-      }
-      if (this.animateTextTimeout) {
-        clearTimeout(this.animateTextTimeout)
-      }
-      if (this.exploreQueriesTimeout) {
-        clearTimeout(this.exploreQueriesTimeout)
-      }
-      if (this.executeQueryTimeout) {
-        clearTimeout(this.executeQueryTimeout)
-      }
+      clearTimeout(this.scrollToBottomTimeout)
+      clearTimeout(this.windowResizeTimer)
+      clearTimeout(this.responseTimeout)
+      clearTimeout(this.feedbackTimeout)
+      clearTimeout(this.animateTextTimeout)
+      clearTimeout(this.exploreQueriesTimeout)
+      clearTimeout(this.executeQueryTimeout)
+      clearTimeout(this.tooltipRebuildTimeout)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -304,7 +289,7 @@ export default class DataMessenger extends React.Component {
   }
 
   escFunction = (event) => {
-    if (this.props.isVisible && event.keyCode === 27) {
+    if (this.state.isVisible && event.keyCode === 27) {
       // todo: add this functionality back
       // cancelQuery()
     }
@@ -426,7 +411,7 @@ export default class DataMessenger extends React.Component {
       return (
         <div
           className={`drawer-handle
-            ${this.props.isVisible ? ' hide' : ''}
+            ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
           style={this.props.handleStyles}
         >
@@ -483,21 +468,17 @@ export default class DataMessenger extends React.Component {
     return 'right'
   }
 
-  handleMaskClick = () => {
-    if (this.props.maskClosable === false) {
-      return
-    }
-    if (this.props.onMaskClick) {
-      this.setState(
-        {
-          isFilterLockingMenuOpen: false,
-          selectedValueLabel: undefined,
-        },
-        this.props.onMaskClick()
-      )
-    }
-    if (this.props.onHandleClick) {
-      this.props.onHandleClick()
+  onDrawerChange = (isOpen) => {
+    // this.props.onVisibleChange(isOpen)
+
+    if (!isOpen) {
+      this.setState({
+        isFilterLockingMenuOpen: false,
+        selectedValueLabel: undefined,
+        isVisible: false,
+      })
+    } else {
+      this.setState({ isVisible: true })
     }
   }
 
@@ -780,7 +761,7 @@ export default class DataMessenger extends React.Component {
   renderTabs = () => {
     const page = this.state.activePage
 
-    if (this.props.isVisible) {
+    if (this.state.isVisible) {
       return (
         <div className={`data-messenger-tab-container ${this.props.placement}`}>
           <div
@@ -874,8 +855,7 @@ export default class DataMessenger extends React.Component {
             id="react-autoql-filter-menu-dropdown"
             style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
           >
-            {getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
-              .enableFilterLocking ? (
+            {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? (
               <button
                 id="react-autoql-filter-menu-dropdown-button"
                 onClick={() => {
@@ -979,7 +959,8 @@ export default class DataMessenger extends React.Component {
         <div className="react-autoql-header-left-container">
           <button
             onClick={() => {
-              this.props.onHandleClick()
+              this.dmRef.setState({ open: false })
+              this.setState({ isVisible: false })
             }}
             className="react-autoql-drawer-header-btn close"
             data-tip={lang.closeDataMessenger}
@@ -1121,7 +1102,7 @@ export default class DataMessenger extends React.Component {
                     getThemeConfig(this.props.themeConfig)
                   )}
                   scrollRef={this.messengerScrollComponent}
-                  isDataMessengerOpen={this.props.isVisible}
+                  isDataMessengerOpen={this.state.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   processDrilldown={(drilldownData, queryID) =>
@@ -1220,7 +1201,7 @@ export default class DataMessenger extends React.Component {
     const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
-      ...getAuthentication(getAuthentication(this.props.authentication)),
+      ...getAuthentication(this.props.authentication),
       keywords,
       pageSize,
       pageNumber,
@@ -1337,9 +1318,7 @@ export default class DataMessenger extends React.Component {
     return (
       <NotificationFeed
         ref={(ref) => (this.notificationListRef = ref)}
-        authentication={getAuthentication(
-          getAuthentication(this.props.authentication)
-        )}
+        authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         onExpandCallback={this.props.onNotificationExpandCallback}
         onCollapseCallback={this.props.onNotificationCollapseCallback}
@@ -1410,7 +1389,7 @@ export default class DataMessenger extends React.Component {
 
   renderResizeHandle = () => {
     const self = this
-    if (this.props.isVisible) {
+    if (this.state.isVisible) {
       const placement = this.getPlacementProp()
       return (
         <div
@@ -1465,9 +1444,7 @@ export default class DataMessenger extends React.Component {
   renderDataAlertModal = () => {
     return (
       <DataAlertModal
-        authentication={getAuthentication(
-          getAuthentication(this.props.authentication)
-        )}
+        authentication={getAuthentication(this.props.authentication)}
         themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
@@ -1531,26 +1508,17 @@ export default class DataMessenger extends React.Component {
           {this.renderTooltips()}
           {setLanguage()}
           <Drawer
+            ref={(ref) => (this.dmRef = ref)}
             data-test="react-autoql-drawer-test"
             className={`react-autoql-drawer
               ${this.state.isResizing ? ' disable-selection' : ''}
-              ${this.props.isVisible ? ' open' : ' closed'}`}
-            open={this.props.isVisible}
+              ${this.state.isVisible ? ' open' : ' closed'}`}
             showMask={this.props.showMask}
             placement={this.getPlacementProp()}
             width={this.getDrawerWidth()}
             height={this.getDrawerHeight()}
-            onMaskClick={this.handleMaskClick}
-            onHandleClick={() => {
-              this.setState(
-                {
-                  isFilterLockingMenuOpen: false,
-                  selectedValueLabel: undefined,
-                },
-                this.props.onHandleClick
-              )
-            }}
-            afterVisibleChange={this.props.onVisibleChange}
+            onChange={this.onDrawerChange}
+            maskClosable={true}
             handler={this.getHandlerProp()}
             level={this.props.shiftScreen ? 'all' : null}
             keyboard={false}

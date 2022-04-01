@@ -1,4 +1,3 @@
-import Numbro from 'numbro'
 import _get from 'lodash.get'
 import dayjs from './dayjsWithPlugins'
 
@@ -147,14 +146,12 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     case 'DOLLAR_AMT': {
       if (Number(d) || Number(d) === 0) {
         const currency = currencyCode || 'USD'
-        // const sigDigs = String(parseInt(d)).length
         try {
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: `${currency}`,
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-            // maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (error) {
           console.error(error)
@@ -163,7 +160,6 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-            // maximumSignificantDigits: sigDigs
           }).format(d)
         }
       }
@@ -171,9 +167,7 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     }
     case 'QUANTITY': {
       if (Number(d)) {
-        formattedLabel = Numbro(d).format({
-          thousandSeparated: true,
-        })
+        formattedLabel = new Intl.NumberFormat(languageCode).format(d)
       }
       break
     }
@@ -185,26 +179,14 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       formattedLabel = formatStringDate(d, config)
       break
     }
-    // case 'DATE_MONTH': {
-    //   // This will be a string of the month number ie. "2", "12"
-    //   const monthNumber = Number(d)
-    //   if (monthNumber && MONTH_NAMES[monthNumber]) {
-    //     formattedLabel = MONTH_NAMES[monthNumber]
-    //   }
-    //   break
-    // }
-    // case 'DATE_YEAR': {
-    //   // This should always be a string of the year number ie. "2019"
-    //   formattedLabel = Number(d)
-    //   break
-    // }
     case 'PERCENT': {
       if (Number(d)) {
-        let p = Number(d) / 100;
-        formattedLabel = Numbro(p).format({
-          output: 'percent',
-          mantissa: 0,
-        })
+        let p = Number(d) / 100
+        formattedLabel = new Intl.NumberFormat(languageCode, {
+          style: 'percent',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(p)
       }
       break
     }
@@ -277,12 +259,15 @@ export const formatElement = ({
             quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
           if (Number(element)) {
-            formattedElement = Numbro(element).format({
-              thousandSeparated: true,
-              mantissa:
-                Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0,
-            })
+            const numDecimals =
+              Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
+
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              minimumFractionDigits: numDecimals,
+              maximumFractionDigits: numDecimals,
+            }).format(element)
           }
+
           break
         }
         case 'DATE': {
@@ -293,31 +278,24 @@ export const formatElement = ({
           formattedElement = formatStringDate(element, config)
           break
         }
-        // case 'DATE_MONTH': {
-        //   // This will be a string of the month number ie. "2", "12"
-        //   const monthNumber = Number(element)
-        //   if (monthNumber && MONTH_NAMES[monthNumber]) {
-        //     formattedElement = MONTH_NAMES[monthNumber]
-        //   }
-        //   break
-        // }
         case 'RATIO': {
           if (Number(element)) {
-            formattedElement = Numbro(element).format('0.0000')
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              minimumFractionDigits: 4,
+              maximumFractionDigits: 4,
+            }).format(element)
           }
           break
         }
-        // This is for ratios. Not sure why it isn't RATIO
-        // case 'NUMBER': {
-        //   if (Number(element)) {
-        //     formattedElement = Numbro(element).format('0.0000')
-        //   }
-        //   break
-        // }
         case 'PERCENT': {
           if (Number(element)) {
-            let p = Number(element) / 100;
-            formattedElement = Numbro(p).format('0.00%')
+            let p = Number(element) / 100
+
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              style: 'percent',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(p)
 
             if (htmlElement) {
               htmlElement.classList.add(
@@ -475,7 +453,11 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieChart) => {
+export const getSupportedDisplayTypes = (
+  response,
+  chartData,
+  shouldExcludePieChart
+) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -1001,13 +983,32 @@ export const isTableResponse = (response, displayType) => {
   )
 }
 
-export const awaitTimeout = (delay, cb = () => {}) => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      cb()
-      resolve()
-    }, delay)
-  )
+export class AwaitTimeout {
+  constructor(delay, callback = () => {}) {
+    this.delay = delay
+    this.callback = callback
+  }
+
+  start = () => {
+    this.timeoutPromise = new Promise((resolve) => {
+      this.timeout = setTimeout(() => {
+        this.callback()
+        resolve()
+      }, this.delay)
+      return this.timeout
+    })
+    return this.timeoutPromise
+  }
+
+  cancel = () => {
+    if (this.timeoutPromise) {
+      this.timeoutPromise.reject
+    }
+    if (this.timeout) {
+      clearTimeout(this.timeout)
+    }
+    return
+  }
 }
 
 export const setCaretPosition = (elemId, caretPos) => {

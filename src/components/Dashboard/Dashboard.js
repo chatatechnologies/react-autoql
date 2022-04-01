@@ -128,6 +128,21 @@ class Dashboard extends React.Component {
       this.setStyles()
     }
 
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(prevProps, prevProps)) {
+    //   console.log(
+    //     'PROPS were not equal!! Re-rendering',
+    //     _reduce(
+    //       this.props,
+    //       function(result, value, key) {
+    //         return _isEqual(value, prevProps[key]) ? result : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    //   return true
+    // }
+
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (
       prevProps.isEditing &&
@@ -144,6 +159,7 @@ class Dashboard extends React.Component {
     ) {
       // Do not scroll to the bottom if new tile is added because of undo
       if (
+        this.props.isEditing &&
         prevProps.tiles.length < this.props.tiles.length &&
         !this.state.justPerformedUndo
       ) {
@@ -158,6 +174,9 @@ class Dashboard extends React.Component {
 
   componentWillUnmount = () => {
     window.removeEventListener('resize', this.onWindowResize)
+    clearTimeout(this.scrollToNewTileTimeout)
+    clearTimeout(this.stopDraggingTimeout)
+    clearTimeout(this.drillingDownTimeout)
   }
 
   setStyles = () => {
@@ -233,7 +252,7 @@ class Dashboard extends React.Component {
   }
 
   scrollToNewTile = () => {
-    setTimeout(() => {
+    this.scrollToNewTileTimeout = setTimeout(() => {
       if (this.ref) {
         this.ref.scrollIntoView(false)
       }
@@ -256,7 +275,7 @@ class Dashboard extends React.Component {
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
-      setTimeout(() => {
+      this.stopDraggingTimeout = setTimeout(() => {
         this.setState({
           isDragging: false,
         })
@@ -399,7 +418,7 @@ class Dashboard extends React.Component {
 
       const drilldownResponse = filterDataForDrilldown(queryResponse, data)
 
-      setTimeout(() => {
+      this.drillingDownTimeout = setTimeout(() => {
         this.setState({
           isDrilldownRunning: false,
           activeDrilldownResponse: drilldownResponse,
@@ -480,6 +499,7 @@ class Dashboard extends React.Component {
         />
       )
     }
+
     return (
       <div className="react-autoql-dashboard-drilldown-table">
         {this.state.isDrilldownRunning ? (
@@ -582,59 +602,65 @@ class Dashboard extends React.Component {
             })
           }}
         >
-          <Fragment>
-            {tile &&
-              this.shouldShowOriginalQuery(tile) &&
-              !this.state.isDrilldownChartHidden && (
-                <SplitterLayout
-                  vertical={true}
-                  percentage={true}
-                  secondaryInitialSize={50}
-                  primaryMinSize={this.state.isDrilldownChartHidden ? 0 : 35}
-                  onDragEnd={() => {
-                    this.setState({})
-                  }}
-                >
-                  <div className="react-autoql-dashboard-drilldown-original">
-                    {!this.state.isDrilldownChartHidden && (
-                      <QueryOutput
-                        authentication={getAuthentication(
-                          this.props.authentication
-                        )}
-                        autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-                        themeConfig={getThemeConfig(this.props.themeConfig)}
-                        dataFormatting={getDataFormatting(
-                          this.props.dataFormatting
-                        )}
-                        queryResponse={queryResponse}
-                        displayType={displayType}
-                        dataConfig={dataConfig}
-                        isDashboardQuery={true}
-                        autoChartAggregations={this.props.autoChartAggregations}
-                        onDataClick={(drilldownData, queryID) => {
-                          this.startDrilldown(drilldownData, queryID, tile.i)
-                        }}
-                        activeChartElementKey={
-                          this.state.activeDrilldownChartElementKey
-                        }
-                        backgroundColor={document.documentElement.style.getPropertyValue(
-                          '--react-autoql-background-color-primary'
-                        )}
-                      />
-                    )}
-                    {this.renderChartCollapseBtn('bottom')}
-                  </div>
-                  {this.renderDrilldownTable()}
-                </SplitterLayout>
-              )}
-            {this.shouldShowOriginalQuery(tile) &&
-              this.state.isDrilldownChartHidden &&
-              this.renderChartCollapseBtn('top')}
-            {(!this.shouldShowOriginalQuery(tile) ||
-              (this.shouldShowOriginalQuery(tile) &&
-                this.state.isDrilldownChartHidden)) &&
-              this.renderDrilldownTable()}
-          </Fragment>
+          {this.state.isDrilldownModalVisible && (
+            <Fragment>
+              {tile &&
+                this.shouldShowOriginalQuery(tile) &&
+                !this.state.isDrilldownChartHidden && (
+                  <SplitterLayout
+                    vertical={true}
+                    percentage={true}
+                    secondaryInitialSize={50}
+                    primaryMinSize={this.state.isDrilldownChartHidden ? 0 : 35}
+                    onDragEnd={() => {
+                      this.setState({})
+                    }}
+                  >
+                    <div className="react-autoql-dashboard-drilldown-original">
+                      {!this.state.isDrilldownChartHidden && (
+                        <QueryOutput
+                          authentication={getAuthentication(
+                            this.props.authentication
+                          )}
+                          autoQLConfig={getAutoQLConfig(
+                            this.props.autoQLConfig
+                          )}
+                          themeConfig={getThemeConfig(this.props.themeConfig)}
+                          dataFormatting={getDataFormatting(
+                            this.props.dataFormatting
+                          )}
+                          queryResponse={queryResponse}
+                          displayType={displayType}
+                          dataConfig={dataConfig}
+                          isDashboardQuery={true}
+                          autoChartAggregations={
+                            this.props.autoChartAggregations
+                          }
+                          onDataClick={(drilldownData, queryID) => {
+                            this.startDrilldown(drilldownData, queryID, tile.i)
+                          }}
+                          activeChartElementKey={
+                            this.state.activeDrilldownChartElementKey
+                          }
+                          backgroundColor={document.documentElement.style.getPropertyValue(
+                            '--react-autoql-background-color-primary'
+                          )}
+                        />
+                      )}
+                      {this.renderChartCollapseBtn('bottom')}
+                    </div>
+                    {this.renderDrilldownTable()}
+                  </SplitterLayout>
+                )}
+              {this.shouldShowOriginalQuery(tile) &&
+                this.state.isDrilldownChartHidden &&
+                this.renderChartCollapseBtn('top')}
+              {(!this.shouldShowOriginalQuery(tile) ||
+                (this.shouldShowOriginalQuery(tile) &&
+                  this.state.isDrilldownChartHidden)) &&
+                this.renderDrilldownTable()}
+            </Fragment>
+          )}
         </Modal>
       )
     } catch (error) {
@@ -718,7 +744,7 @@ class Dashboard extends React.Component {
             className={`react-autoql-dashboard-tile${
               this.state.isDragging ? ' dragging' : ''
             } ${tile.i}`}
-            ref={(ref) => (this.tileRefs[tile.key] = ref)}
+            tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
