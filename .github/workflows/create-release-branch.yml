@@ -16,6 +16,8 @@ jobs:
         with:
           branch: 'release-candidate'
       - uses: actions/checkout@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           ref: release-candidate
       - run: git commit -m "test commit message" --allow-empty
