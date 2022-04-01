@@ -20,4 +20,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           ref: release-candidate
-      - run: git commit -m "test commit message" --allow-empty
+      - run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git commit -m "test commit message" --allow-empty
