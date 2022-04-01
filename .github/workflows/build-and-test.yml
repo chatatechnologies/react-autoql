@@ -1,15 +1,15 @@
-name: build-and-test
+# name: build-and-test
 
-on: [pull_request]
+# on: [pull_request]
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14.5.0
-      - run: npm ci
-      - run: npm i react@16.9.0 react-dom@16.9.0
-      - run: npm test
+# jobs:
+#   build-and-test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#       - uses: actions/setup-node@v3
+#         with:
+#           node-version: 14.5.0
+#       - run: npm ci
+#       - run: npm i react@16.9.0 react-dom@16.9.0
+#       - run: npm test
