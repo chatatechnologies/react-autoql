@@ -15,13 +15,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           branch: 'release-candidate'
-      - uses: actions/checkout@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: checkout
+        uses: actions/checkout@v3
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           ref: release-candidate
-      - run: |
+      - name: save current date
+        run: date > date.log
+      - name: set up git config
+        run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-          git commit -m "test commit message" --allow-empty
+      - name: commit
+        run: |
+          git add date.log
+          git commit -m "test commit message"
           git push
