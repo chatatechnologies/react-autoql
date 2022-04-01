@@ -31,8 +31,8 @@ import errorMessages from '../../js/errorMessages'
 import { lang, setLanguage } from '../../js/Localization'
 
 // Components
-import { Icon } from '../Icon'
 import { QueryInput } from '../QueryInput'
+import { Icon } from '../Icon'
 import { ChatMessage } from '../ChatMessage'
 import { Button } from '../Button'
 import { QueryTipsTab } from '../QueryTipsTab'
