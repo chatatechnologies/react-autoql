@@ -24,14 +24,14 @@ import {
   authenticationType,
 } from '../../props/types'
 import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
   themeConfigDefault,
-  getAuthentication,
+  getThemeConfig,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
+  getAuthentication,
+  dataFormattingDefault,
+  autoQLConfigDefault,
+  authenticationDefault,
 } from '../../props/defaults'
 import { OptionsToolbar } from '../OptionsToolbar'
 import 'react-grid-layout/css/styles.css'
