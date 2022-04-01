@@ -17,18 +17,25 @@ jobs:
           branch: 'release-candidate'
       - name: checkout
         uses: actions/checkout@v3
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           ref: release-candidate
-      - name: save current date
-        run: date > date.log
+      # - name: save current date
+      #   run: date > date.log
       - name: set up git config
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-      - name: commit
+      # - name: commit
+      #   run: |
+      #     git add date.log
+      #     git commit -m "test commit message"
+      #     git push
+      - name: release
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14.5.0
         run: |
-          git add date.log
-          git commit -m "test commit message"
-          git push
+          npm ci
+          npm i react@16.9.0 react-dom@16.9.0
+          npm test
+          npx semantic-release -d
