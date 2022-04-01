@@ -10,10 +10,10 @@ import { Scrollbars } from 'react-custom-scrollbars'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
   themeConfigType,
+  dataFormattingType,
+  autoQLConfigType,
+  authenticationType,
 } from '../../props/types'
 import {
   authenticationDefault,
