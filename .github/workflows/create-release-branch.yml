@@ -1,12 +1,13 @@
 name: Create Branch
 
-on:
-  pull_request:
-    types: [closed]
+# on:
+#   pull_request:
+#     types: [closed]
+on: [pull_request]
 
 jobs:
   create_release_branch:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: peterjgrainger/action-create-branch@v2.0.1
@@ -14,3 +15,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           branch: 'release-candidate'
+      - uses: actions/checkout@v3
+        with:
+          ref: release-candidate
+      - run: git commit -m "test commit message" --allow-empty
