@@ -541,7 +541,7 @@ describe('getDefaultDisplayType', () => {
     expect(getDefaultDisplayType(sampleListResponse, true)).toEqual('table')
   })
 
-  test('returns "table" for single value response', () => {
+  test('returns "single-value" for single value response', () => {
     expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual(
       'single-value'
     )
