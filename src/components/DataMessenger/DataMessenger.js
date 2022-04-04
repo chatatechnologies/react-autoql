@@ -407,9 +407,10 @@ export default class DataMessenger extends React.Component {
     this.setState({
       width: isFullScreen ? this.props.width : maxWidth,
       height: isFullScreen ? this.props.height : maxHeight,
-      isSizeMaximum: isFullScreen ? true : false,
+      isSizeMaximum: isFullScreen ? false : true,
     })
   }
+
   getHandlerProp = () => {
     if (this.props.customHandle !== undefined) {
       return this.props.customHandle
