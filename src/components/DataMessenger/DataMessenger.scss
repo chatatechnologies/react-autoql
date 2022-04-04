@@ -73,6 +73,11 @@
     height: 25px;
     padding-top: 3px;
   }
+  &.minimize span.react-autoql-icon svg {
+    width: 25px;
+    height: 25px;
+    padding-top: 3px;
+  }
   &.clear-all {
     position: absolute;
     right: 10px;
@@ -159,6 +164,9 @@
   outline: none !important;
 }
 #maximize {
+  margin-left: 0px;
+}
+#minimize {
   margin-left: 0px;
 }
 .react-autoql-drawer .chat-header-container button:hover {
