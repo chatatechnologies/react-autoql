@@ -543,7 +543,7 @@ describe('getDefaultDisplayType', () => {
 
   test('returns "table" for single value response', () => {
     expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual(
-      'table'
+      'single-value'
     )
   })
 
@@ -563,6 +563,10 @@ describe('getDefaultDisplayType', () => {
     expect(getDefaultDisplayType(responseTestCases[5], true)).toEqual(
       'suggestion'
     )
+  })
+
+  test('returns "text" as default', () => {
+    expect(getDefaultDisplayType(responseTestCases[2], true)).toEqual('text')
   })
 })
 

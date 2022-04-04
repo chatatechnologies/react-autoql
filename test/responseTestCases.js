@@ -1,14 +1,14 @@
 export default [
-  // empty response
+  // 0. empty response
   { data: {} },
-  // only display type returned, nothing else
+  // 1. only display type returned, nothing else
   {
     data: {
       data: { display_type: 'table' },
     },
   },
   {
-    // no data and no display type
+    // 2. no data and no display type
     data: {
       data: {
         columns: [],
@@ -22,7 +22,7 @@ export default [
     },
   },
   {
-    // valid pivot data response
+    // 3. valid pivot data response
     data: {
       data: {
         columns: [
@@ -55,7 +55,7 @@ export default [
     },
   },
   {
-    // valid help response
+    // 4. valid help response
     data: {
       data: {
         columns: [
@@ -81,7 +81,7 @@ export default [
     },
   },
   {
-    // valid suggestion response
+    // 5. valid suggestion response
     data: {
       data: {
         columns: [
@@ -108,7 +108,7 @@ export default [
     },
   },
   {
-    // valid validation response single suggestion
+    // 6. valid validation response single suggestion
     data: {
       full_suggestion: [
         {
@@ -123,7 +123,7 @@ export default [
     },
   },
   {
-    // display type that we dont understand
+    // 7. display type that we dont understand
     data: {
       data: {
         columns: [

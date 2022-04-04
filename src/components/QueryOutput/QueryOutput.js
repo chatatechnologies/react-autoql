@@ -634,8 +634,8 @@ export default class QueryOutput extends React.Component {
         }}
       >
         {formatElement({
-          element: this.tableData[0],
-          column: this.tableColumns[0],
+          element: _get(this.props.queryResponse, 'data.data.rows[0][0]'),
+          column: _get(this.props.queryResponse, 'data.data.columns[0]'),
           config: getDataFormatting(this.props.dataFormatting),
         })}
       </a>
@@ -1777,11 +1777,6 @@ export default class QueryOutput extends React.Component {
       return 'Error: There was no data supplied for this table'
     }
 
-    if (this.tableData.length === 1 && this.tableData[0].length === 1) {
-      // This is a single cell of data
-      return this.renderSingleValueResponse()
-    }
-
     if (this.state.displayType === 'pivot_table') {
       return (
         <ErrorBoundary>
@@ -1901,7 +1896,6 @@ export default class QueryOutput extends React.Component {
     if (_get(queryResponse, 'data.message')) {
       // Response is not a suggestion list, but no query data object was provided
       // There is no valid query data. This is an error. Return message from UMS
-      console.warn('Warning: No response data supplied')
       return this.renderMessage(queryResponse.data)
     }
 
@@ -2043,6 +2037,8 @@ export default class QueryOutput extends React.Component {
     if (displayType && data) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
+      } else if (displayType === 'single-value') {
+        return this.renderSingleValueResponse()
       } else if (isTableType(displayType)) {
         return this.renderTable()
       } else if (isChartType(displayType)) {

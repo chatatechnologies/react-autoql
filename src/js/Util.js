@@ -480,6 +480,10 @@ export const getSupportedDisplayTypes = (
       return []
     }
 
+    if (isSingleValueResponse(response)) {
+      return ['single-value']
+    }
+
     if (supportsRegularPivotTable(columns)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
@@ -555,6 +559,10 @@ export const getSupportedDisplayTypes = (
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
+  if (displayType === 'text' && _get(response, 'data.message')) {
+    return true
+  }
+
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = supportedDisplayTypes.includes(displayType)
   if (!isValid) {
@@ -590,6 +598,10 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return responseDisplayType
   }
 
+  if (supportedDisplayTypes.length === 1) {
+    return supportedDisplayTypes[0]
+  }
+
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
     let displayType = 'pivot_table'
@@ -603,8 +615,11 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // If there is no display type in the response, default to regular table
-  if (!responseDisplayType || responseDisplayType === 'data') {
+  // If there is no display type in the response, but there is tabular data, default to regular table
+  if (
+    (!responseDisplayType && hasData(response)) ||
+    responseDisplayType === 'data'
+  ) {
     let displayType = 'table'
 
     if (defaultToChart) {
@@ -616,8 +631,8 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // Default to table type
-  return 'table'
+  // Default to plain text
+  return 'text'
 }
 
 export const getGroupBysFromPivotTable = (
@@ -969,6 +984,17 @@ export const isSingleValueResponse = (response) => {
     _get(response, 'data.data.rows.length') === 1 &&
     _get(response, 'data.data.rows[0].length') === 1
   )
+}
+
+export const hasData = (response) => {
+  if (!response) {
+    return false
+  }
+
+  const hasData =
+    _get(response, 'data.data.rows.length') &&
+    _get(response, 'data.data.rows.length')
+  return hasData
 }
 
 export const isTableResponse = (response, displayType) => {
