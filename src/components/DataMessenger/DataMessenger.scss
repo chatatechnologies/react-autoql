@@ -54,9 +54,6 @@
   width: 100px;
 }
 
-// .react-autoql-chart-tooltip {
-// }
-
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   line-height: 1em;
   font-weight: normal;
@@ -68,16 +65,13 @@
     height: 30px;
     padding-top: 3px;
   }
-  &.maximize span.react-autoql-icon svg {
+  &.screen-mode span.react-autoql-icon svg {
     width: 25px;
     height: 25px;
     padding-top: 3px;
+    margin-left: 0px;
   }
-  &.minimize span.react-autoql-icon svg {
-    width: 25px;
-    height: 25px;
-    padding-top: 3px;
-  }
+
   &.clear-all {
     position: absolute;
     right: 10px;

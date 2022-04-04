@@ -403,7 +403,20 @@ export default class DataMessenger extends React.Component {
       isFilterLockingMenuOpen: false,
     })
   }
-
+  enterFullScreen = (maxWidth, maxHeight) => {
+    this.setState({
+      width: maxWidth,
+      height: maxHeight,
+      isSizeMaximum: true,
+    })
+  }
+  exitFullScreen = (defaultWidth, defaultHeight) => {
+    this.setState({
+      width: defaultWidth,
+      height: defaultHeight,
+      isSizeMaximum: false,
+    })
+  }
   getHandlerProp = () => {
     if (this.props.customHandle !== undefined) {
       return this.props.customHandle
@@ -979,15 +992,8 @@ export default class DataMessenger extends React.Component {
           </button>
           {this.state.width !== maxWidth ? (
             <button
-              id="maximize"
-              onClick={() => {
-                this.setState({
-                  width: maxWidth,
-                  height: maxHeight,
-                  isSizeMaximum: true,
-                })
-              }}
-              className="react-autoql-drawer-header-btn maximize"
+              onClick={() => this.enterFullScreen(maxWidth, maxHeight)}
+              className="react-autoql-drawer-header-btn screen-mode"
               data-tip={lang.maximizeDataMessenger}
               data-for="react-autoql-header-tooltip"
             >
@@ -995,15 +1001,8 @@ export default class DataMessenger extends React.Component {
             </button>
           ) : (
             <button
-              id="minimize"
-              onClick={() => {
-                this.setState({
-                  width: defaultWidth,
-                  height: defaultHeight,
-                  isSizeMaximum: false,
-                })
-              }}
-              className="react-autoql-drawer-header-btn minimize"
+              onClick={() => this.exitFullScreen(defaultWidth, defaultHeight)}
+              className="react-autoql-drawer-header-btn screen-mode"
               data-tip={lang.minimizeDataMessenger}
               data-for="react-autoql-header-tooltip"
             >
