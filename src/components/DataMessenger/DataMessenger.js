@@ -403,18 +403,11 @@ export default class DataMessenger extends React.Component {
       isFilterLockingMenuOpen: false,
     })
   }
-  enterFullScreen = (maxWidth, maxHeight) => {
+  toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
     this.setState({
-      width: maxWidth,
-      height: maxHeight,
-      isSizeMaximum: true,
-    })
-  }
-  exitFullScreen = () => {
-    this.setState({
-      width: this.props.width,
-      height: this.props.height,
-      isSizeMaximum: false,
+      width: isFullScreen ? this.props.width : maxWidth,
+      height: isFullScreen ? this.props.height : maxHeight,
+      isSizeMaximum: isFullScreen ? true : false,
     })
   }
   getHandlerProp = () => {
@@ -990,10 +983,8 @@ export default class DataMessenger extends React.Component {
           </button>
 
           <button
-            onClick={
-              isFullScreen
-                ? this.exitFullScreen
-                : () => this.enterFullScreen(maxWidth, maxHeight)
+            onClick={() =>
+              this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)
             }
             className="react-autoql-drawer-header-btn screen-mode"
             data-tip={
