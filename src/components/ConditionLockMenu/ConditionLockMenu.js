@@ -609,7 +609,7 @@ export default class ConditionLockMenu extends React.Component {
                               <td className="react-autoql-condition-table-list-item">
                                 {item.keyword} {`(${item.show_message})`}
                               </td>
-                              <td>
+                              <td id="react-autoql-condition-table-settings">
                                 <span>
                                   <Switch
                                     onChange={() =>
@@ -640,15 +640,7 @@ export default class ConditionLockMenu extends React.Component {
                                   {item.lock_flag ? 'Persistent' : 'Session'}
                                 </span>
                               </td>
-                              <td
-                                id="react-autoql-remove-filter-container"
-                                style={{
-                                  display: 'table-cell',
-                                  verticalAlign: 'middle',
-                                  textAlign: 'right',
-                                  width: '35px',
-                                }}
-                              >
+                              <td id="react-autoql-remove-filter-container">
                                 <ReactTooltip
                                   className="react-autoql-chart-tooltip"
                                   id="react-autoql-remove-condition"
