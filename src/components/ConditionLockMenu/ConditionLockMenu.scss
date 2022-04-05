@@ -195,6 +195,13 @@ tbody::-webkit-scrollbar-thumb {
   display: table-cell;
   padding: 2px;
   padding-left: 10px;
+  vertical-align: middle;
+}
+#react-autoql-remove-filter-container {
+  width: 35px;
+}
+#react-autoql-condition-table-settings {
+  width: 110px;
 }
 
 .react-autoql-condition-list-loading-container {
