@@ -29,11 +29,11 @@ import { Icon } from '../Icon'
 import { OptionsToolbar } from '../OptionsToolbar'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { CHART_TYPES } from '../../js/Constants.js'
 import {
   getDefaultDisplayType,
-  isTableType,
+  isChartType,
   getSupportedDisplayTypes,
+  areAllColumnsHidden,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -42,6 +42,10 @@ import './ChatMessage.scss'
 export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
   filtering = false
+
+  PIE_CHART_HEIGHT = 330
+  MESSAGE_HEIGHT_MARGINS = 40
+  MESSAGE_WIDTH_MARGINS = 40
 
   static propTypes = {
     authentication: authenticationType,
@@ -206,7 +210,7 @@ export default class ChatMessage extends React.Component {
   }
 
   renderContent = (chartWidth, chartHeight) => {
-    const { response, content, type } = this.props
+    const { response, content } = this.props
     if (content) {
       return content
     } else if (_get(response, 'status') === 401) {
@@ -230,9 +234,10 @@ export default class ChatMessage extends React.Component {
             setFilterTagsCallback={this.setFilterTags}
             hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
-            height={chartHeight}
-            width={chartWidth}
+            height={isChartType(this.state.displayType) && chartHeight}
+            width={isChartType(this.state.displayType) && chartWidth}
             demo={getAuthentication(this.props.authentication).demo}
+            onColumnsUpdate={this.props.onQueryResponseColumnsChange}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
@@ -279,8 +284,8 @@ export default class ChatMessage extends React.Component {
         messageElement.style.height = `${messageElement.offsetHeight + 35}px`
         this.scrollIntoView()
       } else {
-        messageElement.style.maxHeight = '90%'
-        messageElement.style.height = `${messageElement.offsetHeights}px`
+        messageElement.style.maxHeight = '85%'
+        messageElement.style.height = `${messageElement.offsetHeight}px`
       }
     } catch (error) {
       console.error(error)
@@ -293,16 +298,6 @@ export default class ChatMessage extends React.Component {
     return (
       _get(response, 'data.data.rows.length') === 1 &&
       _get(response, 'data.data.rows[0].length') === 1
-    )
-  }
-
-  isTableResponse = () => {
-    return (
-      this.props.isResponse &&
-      !this.isSingleValueResponse() &&
-      this.props.type !== 'text' &&
-      _get(this.props.response, 'data.data.rows.length', 0) > 0 &&
-      isTableType(this.state.displayType)
     )
   }
 
@@ -328,7 +323,9 @@ export default class ChatMessage extends React.Component {
           }
           onFilterCallback={this.toggleTableFilter}
           onColumnVisibilitySave={() => {
-            this.forceUpdate()
+            this.setState({
+              displayType: getDefaultDisplayType(this.props.response),
+            })
           }}
         />
       )
@@ -384,38 +381,23 @@ export default class ChatMessage extends React.Component {
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 85% of chat height minus message margins
     }
 
-    if (this.state.displayType === 'pie' && chartHeight > 330) {
-      chartHeight = 330
+    if (
+      this.state.displayType === 'pie' &&
+      chartHeight > this.PIE_CHART_HEIGHT
+    ) {
+      chartHeight = this.PIE_CHART_HEIGHT
     }
 
     return { chartWidth, chartHeight }
   }
 
-  allColumnsAreHidden = () => {
-    if (this.responseRef) {
-      return this.responseRef.areAllColumnsHidden()
-    }
-
-    return false
-  }
-
   getMessageHeight = () => {
     let messageHeight = 'unset'
 
-    if (
-      this.state.displayType === 'table' &&
-      this.isTableResponse() &&
-      this.TABLE_CONTAINER_HEIGHT
-    ) {
-      if (this.allColumnsAreHidden()) {
-        // Allow space for the error message in case the table is small
-        messageHeight = 210
-      } else {
-        messageHeight = this.TABLE_CONTAINER_HEIGHT + 40
-      }
+    if (this.state.displayType === 'table' && this.TABLE_CONTAINER_HEIGHT) {
+      messageHeight = this.TABLE_CONTAINER_HEIGHT + this.MESSAGE_HEIGHT_MARGINS
     } else if (
       this.state.displayType === 'pivot_table' &&
-      this.isTableResponse() &&
       this.PIVOT_TABLE_CONTAINER_HEIGHT
     ) {
       messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
@@ -425,13 +407,17 @@ export default class ChatMessage extends React.Component {
   }
 
   getMaxMessageheight = () => {
-    const { chartHeight } = this.getChartDimensions()
-
-    if (this.props.type === 'text' || this.state.displayType === 'html') {
+    if (
+      this.props.type === 'text' ||
+      ['text', 'html'].includes(this.state.displayType)
+    ) {
       return undefined
-    } else if (chartHeight) {
-      return chartHeight + 120
     }
+
+    // const chartHeight = _get(this.getChartDimensions(), 'chartHeight')
+    // if (chartHeight) {
+    //   return chartHeight + 120
+    // }
 
     return '85%'
   }
@@ -440,7 +426,11 @@ export default class ChatMessage extends React.Component {
     const numRows = _get(this.props, 'response.data.data.rows.length')
     const maxRowLimit = _get(this.props, 'response.data.data.row_limit')
 
-    if (maxRowLimit && numRows === maxRowLimit && !this.allColumnsAreHidden()) {
+    if (
+      maxRowLimit &&
+      numRows === maxRowLimit &&
+      !areAllColumnsHidden(this.props.response)
+    ) {
       return (
         <Icon
           type="warning"
@@ -462,7 +452,8 @@ export default class ChatMessage extends React.Component {
         <div
           id={`message-${this.props.id}`}
           className={`chat-single-message-container
-          ${this.props.isResponse ? ' response' : ' request'}`}
+            ${this.props.isResponse ? ' response' : ' request'}
+`}
           style={{
             maxHeight: maxMessageHeight,
             height: messageHeight,
@@ -471,24 +462,10 @@ export default class ChatMessage extends React.Component {
         >
           <div
             className={`chat-message-bubble
-            ${CHART_TYPES.includes(this.state.displayType) ? ' full-width' : ''}
-          ${this.props.type === 'text' ? ' text' : ''}
-            ${this.props.isActive ? ' active' : ''}`}
-            style={{
-              minWidth:
-                (this.isTableResponse() &&
-                  this.state.supportedDisplayTypes.length >= 4) ||
-                (this.props.response &&
-                  this.props.response.data &&
-                  this.props.response.data.data &&
-                  this.props.response.data.data.columns &&
-                  _get(this.props.response, 'data.data.columns').every(
-                    (col) => !col.visible
-                  )) ||
-                this.allColumnsAreHidden()
-                  ? '400px'
-                  : undefined,
-            }}
+              ${isChartType(this.state.displayType) ? ' full-width' : ''}
+              ${this.props.type === 'text' ? ' text' : ''}
+              ${this.state.displayType}
+              ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent(chartWidth, chartHeight)}
             {this.props.isDataMessengerOpen && this.renderRightToolbar()}

@@ -590,10 +590,7 @@ export default class DataAlertModal extends React.Component {
       this.setState({
         isDeletingDataAlert: true,
       })
-      deleteDataAlert(
-        dataAlertId,
-        getAuthentication(this.props.authentication)
-      )
+      deleteDataAlert(dataAlertId, getAuthentication(this.props.authentication))
         .then(() => {
           this.setState({
             isDeletingDataAlert: false,
@@ -713,13 +710,16 @@ export default class DataAlertModal extends React.Component {
             </div>
           }
         >
-          <div className="notification-modal-content">
-            <Steps
-              themeConfig={getThemeConfig(this.props.themeConfig)}
-              ref={(r) => (this.stepsRef = r)}
-              steps={steps}
-            />
-          </div>
+          {this.props.isVisible &
+          (
+            <div className="notification-modal-content">
+              <Steps
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                ref={(r) => (this.stepsRef = r)}
+                steps={steps}
+              />
+            </div>
+          )}
         </Modal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}

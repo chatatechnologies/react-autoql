@@ -1,4 +1,5 @@
 import _get from 'lodash.get'
+import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
@@ -453,6 +454,16 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
+export const getVisibleColumns = (response) => {
+  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+}
+
+export const areAllColumnsHidden = (response) => {
+  const hasColumns = _get(response, 'data.data.columns.length')
+  const visibleColumns = getVisibleColumns(response)
+  return hasColumns && !visibleColumns.length
+}
+
 export const getSupportedDisplayTypes = (
   response,
   chartData,
@@ -473,11 +484,11 @@ export const getSupportedDisplayTypes = (
       return [displayType]
     }
 
-    const columns = _get(response, 'data.data.columns')
     const rows = _get(response, 'data.data.rows', [])
+    const columns = getVisibleColumns(response)
 
-    if (!columns || !rows) {
-      return []
+    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+      return ['text']
     }
 
     if (isSingleValueResponse(response)) {
@@ -995,18 +1006,6 @@ export const hasData = (response) => {
     _get(response, 'data.data.rows.length') &&
     _get(response, 'data.data.rows.length')
   return hasData
-}
-
-export const isTableResponse = (response, displayType) => {
-  if (!response) {
-    return false
-  }
-
-  return (
-    !isSingleValueResponse(response) &&
-    _get(response, 'data.data.rows.length', 0) > 0 &&
-    isTableType(displayType)
-  )
 }
 
 export class AwaitTimeout {
