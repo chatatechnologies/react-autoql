@@ -49,10 +49,9 @@
   animation: fadeIn 0.3s;
 }
 .react-autoql-drawer .react-autoql-header-left-container {
+  display: flex;
+  justify-content: left;
   width: 100px;
-}
-
-.react-autoql-chart-tooltip {
 }
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
@@ -66,6 +65,13 @@
     height: 30px;
     padding-top: 3px;
   }
+  &.screen-mode span.react-autoql-icon svg {
+    width: 25px;
+    height: 25px;
+    padding-top: 3px;
+    margin-left: 0px;
+  }
+
   &.clear-all {
     position: absolute;
     right: 10px;
@@ -151,6 +157,7 @@
   cursor: pointer;
   outline: none !important;
 }
+
 .react-autoql-drawer .chat-header-container button:hover {
   opacity: 0.7;
 }

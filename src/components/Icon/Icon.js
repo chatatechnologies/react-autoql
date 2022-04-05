@@ -40,6 +40,8 @@ import {
   FiSend,
   FiSettings,
   FiTrash2,
+  FiMaximize,
+  FiMinimize,
 } from 'react-icons/fi'
 
 import { GoReport } from 'react-icons/go'
@@ -177,6 +179,15 @@ export default class Icon extends React.Component {
         icon = <MdClose />
         break
       }
+      case 'maximize': {
+        icon = <FiMaximize />
+        break
+      }
+      case 'minimize': {
+        icon = <FiMinimize />
+        break
+      }
+
       case 'close-circle': {
         icon = <IoIosCloseCircleOutline />
         break
