@@ -16,7 +16,11 @@ import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { setColumnVisibility, reportProblem } from '../../js/queryService'
+import {
+  setColumnVisibility,
+  reportProblem,
+  exportCSV,
+} from '../../js/queryService'
 import { CHART_TYPES } from '../../js/Constants.js'
 import { isTableResponse, setCSSVars } from '../../js/Util'
 import {
@@ -207,10 +211,27 @@ export default class Input extends React.Component {
     }
   }
 
-  saveTableAsCSV = () => {
-    if (this.props.responseRef) {
-      this.props.responseRef.saveTableAsCSV()
-    }
+  exportTableAsCSV = () => {
+    const queryId = _get(
+      this.props.responseRef,
+      'props.queryResponse.data.data.query_id'
+    )
+
+    exportCSV({
+      queryId,
+      ...getAuthentication(this.props.authentication),
+    })
+      .then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'export.csv')
+        document.body.appendChild(link)
+        link.click()
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   saveChartAsPNG = () => {
@@ -478,7 +499,7 @@ export default class Input extends React.Component {
             <li
               onClick={() => {
                 this.setState({ activeMenu: undefined })
-                this.saveTableAsCSV()
+                this.exportTableAsCSV()
               }}
             >
               <Icon

@@ -302,6 +302,25 @@ export const runQuery = ({
   })
 }
 
+export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+  const url = `${domain}/autoql/api/v1/query/${queryId}/export?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    responseType: 'blob',
+  }
+
+  return axios
+    .post(url, {}, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response')))
+}
+
 export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
   if (!text) {
     return Promise.reject(new Error('No text supplied'))
