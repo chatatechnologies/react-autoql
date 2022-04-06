@@ -317,7 +317,12 @@ export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
 
   return axios
     .post(url, {}, config)
-    .then((response) => Promise.resolve(response))
+    .then((response) => {
+      console.log('-----------csv export response headers---------')
+      console.log(response.headers)
+      console.log('-----------------------------------------------')
+      return Promise.resolve(response)
+    })
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
