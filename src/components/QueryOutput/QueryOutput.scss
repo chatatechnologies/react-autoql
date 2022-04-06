@@ -9,8 +9,6 @@
   align-items: center;
   background-color: inherit;
   font-size: 14px;
-  height: 100%;
-  width: 100%;
   overflow: hidden;
   color: var(--react-autoql-text-color-primary);
 }
@@ -20,6 +18,8 @@
   overflow-y: scroll;
   scrollbar-width: none;
   margin-bottom: 0 !important;
+  height: 100%;
+  width: 100%;
 }
 .react-autoql-response-content-container.table::-webkit-scrollbar {
   width: 0;

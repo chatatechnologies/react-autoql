@@ -34,6 +34,7 @@ import {
   isChartType,
   getSupportedDisplayTypes,
   areAllColumnsHidden,
+  isTableType,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -46,6 +47,7 @@ export default class ChatMessage extends React.Component {
   PIE_CHART_HEIGHT = 330
   MESSAGE_HEIGHT_MARGINS = 40
   MESSAGE_WIDTH_MARGINS = 40
+  ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
   static propTypes = {
     authentication: authenticationType,
@@ -128,7 +130,6 @@ export default class ChatMessage extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.hide()
-    this.props.scrollToBottom()
   }
 
   componentWillUnmount = () => {
@@ -170,7 +171,6 @@ export default class ChatMessage extends React.Component {
   scrollIntoView = () => {
     this.scrollIntoViewTimeout = setTimeout(() => {
       const element = document.getElementById(`message-${this.props.id}`)
-
       if (!this.isScrolledIntoView(element)) {
         this.scrollIntoViewTimer = element.scrollIntoView({
           block: 'end',
@@ -203,12 +203,6 @@ export default class ChatMessage extends React.Component {
     this.setState({ supportedDisplayTypes })
   }
 
-  setFilterTags = () => {
-    if (this.optionsToolbarRef) {
-      this.optionsToolbarRef.setFilterTags({ isFilteringTable: false })
-    }
-  }
-
   renderContent = (chartWidth, chartHeight) => {
     const { response, content } = this.props
     if (content) {
@@ -231,7 +225,6 @@ export default class ChatMessage extends React.Component {
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            setFilterTagsCallback={this.setFilterTags}
             hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
             height={isChartType(this.state.displayType) && chartHeight}
@@ -271,34 +264,10 @@ export default class ChatMessage extends React.Component {
     return errorMessages.GENERAL_QUERY
   }
 
-  toggleTableFilter = (isFiltering) => {
-    // We want to do this without updating the component for performance reasons
-    // and so the component doesnt re-render and reset scroll values
-    try {
-      const messageElement = document.querySelector(
-        `#message-${this.props.id}.response`
-      )
-
-      if (isFiltering) {
-        messageElement.style.maxHeight = 'calc(85% + 35px)'
-        messageElement.style.height = `${messageElement.offsetHeight + 35}px`
-        this.scrollIntoView()
-      } else {
-        messageElement.style.maxHeight = '85%'
-        messageElement.style.height = `${messageElement.offsetHeight}px`
-      }
-    } catch (error) {
-      console.error(error)
-      this.props.onErrorCallback(error)
+  toggleTableFilter = ({ isFilteringTable }) => {
+    if (this.responseRef) {
+      this.responseRef.toggleTableFilter({ isFilteringTable })
     }
-  }
-
-  isSingleValueResponse = () => {
-    const { response } = this.props
-    return (
-      _get(response, 'data.data.rows.length') === 1 &&
-      _get(response, 'data.data.rows[0].length') === 1
-    )
   }
 
   renderRightToolbar = () => {
@@ -321,7 +290,7 @@ export default class ChatMessage extends React.Component {
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
           }
-          onFilterCallback={this.toggleTableFilter}
+          onFilterClick={this.toggleTableFilter}
           onColumnVisibilitySave={() => {
             this.setState({
               displayType: getDefaultDisplayType(this.props.response),
@@ -336,8 +305,7 @@ export default class ChatMessage extends React.Component {
 
   onDisplayTypeChange = (displayType) => {
     // Reset table filters when display type is changed
-    this.toggleTableFilter(false)
-    this.setFilterTags()
+    this.toggleTableFilter({ isFilteringTable: false })
     if (this.optionsToolbarRef) {
       this.optionsToolbarRef.filtering = false
     }
@@ -372,15 +340,14 @@ export default class ChatMessage extends React.Component {
   }
 
   getChartDimensions = () => {
-    let chartWidth = 0
-    let chartHeight = 0
+    let chartWidth = undefined
+    let chartHeight = undefined
     const chatContainer = document.querySelector('.chat-message-container')
 
     if (chatContainer) {
       chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
       chartHeight = 0.85 * chatContainer.clientHeight - 40 // 85% of chat height minus message margins
     }
-
     if (
       this.state.displayType === 'pie' &&
       chartHeight > this.PIE_CHART_HEIGHT

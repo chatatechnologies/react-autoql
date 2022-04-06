@@ -711,6 +711,17 @@ export default class QueryOutput extends React.Component {
     this.props.onDataClick(drilldownData, this.queryID, activeKey)
   }
 
+  toggleTableFilter = ({ isFilteringTable }) => {
+    if (this.state.displayType === 'table') {
+      this.tableRef && this.tableRef.toggleTableFilter({ isFilteringTable })
+    }
+
+    if (this.state.displayType === 'pivot_table') {
+      this.pivotTableRef &&
+        this.pivotTableRef.toggleTableFilter({ isFilteringTable })
+    }
+  }
+
   onTableFilter = async (filters) => {
     if (
       this.state.displayType === 'table' &&
@@ -1788,7 +1799,6 @@ export default class QueryOutput extends React.Component {
             onCellClick={this.processCellClick}
             headerFilters={this.pivotHeaderFilters}
             onFilterCallback={this.onTableFilter}
-            setFilterTagsCallback={this.props.setFilterTagsCallback}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1808,7 +1818,6 @@ export default class QueryOutput extends React.Component {
           onCellClick={this.processCellClick}
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
-          setFilterTagsCallback={this.props.setFilterTagsCallback}
         />
       </Fragment>
     )

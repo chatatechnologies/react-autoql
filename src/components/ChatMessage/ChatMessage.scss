@@ -1,6 +1,7 @@
 .chat-single-message-container {
   transition: background-color 0.2s ease;
   padding-top: 6px;
+  max-height: 85%;
 
   &:first-of-type {
     margin-top: 10px;

@@ -55,7 +55,7 @@ export default class Input extends React.Component {
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
-    onFilterCallback: PropTypes.func,
+    onFilterClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -69,7 +69,7 @@ export default class Input extends React.Component {
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
-    onFilterCallback: () => {},
+    onFilterClick: () => {},
     onColumnVisibilitySave: () => {},
   }
 
@@ -115,86 +115,9 @@ export default class Input extends React.Component {
     }
   }
 
-  setFilterTags = ({ isFilteringTable } = {}) => {
-    const displayType = _get(this.props.responseRef, 'state.displayType')
-    const tableRef =
-      displayType === 'pivot_table'
-        ? _get(this.props.responseRef, 'pivotTableRef.ref.table')
-        : _get(this.props.responseRef, 'tableRef.ref.table')
-
-    if (!tableRef) {
-      return
-    }
-
-    const queryOutputId = this.props.responseRef.COMPONENT_KEY
-    const filterValues = tableRef.getHeaderFilters()
-
-    if (filterValues) {
-      filterValues.forEach((filter) => {
-        try {
-          const existingFilterTag = document.querySelector(
-            `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
-          )
-
-          if (!isFilteringTable) {
-            // Only add a filter tag if there isn't already one there
-            if (!existingFilterTag) {
-              const filterTagEl = document.createElement('span')
-              filterTagEl.innerText = 'F'
-              filterTagEl.setAttribute('class', 'filter-tag')
-
-              const columnTitleEl = document.querySelector(
-                `#react-autoql-response-content-container-${queryOutputId} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
-              )
-              columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
-            }
-          } else if (isFilteringTable && existingFilterTag) {
-            existingFilterTag.parentNode.removeChild(existingFilterTag)
-          }
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-        }
-      })
-    }
-  }
-
   toggleTableFilter = () => {
     this.filtering = !this.filtering
-    this.props.onFilterCallback(this.filtering)
-    const queryOutputId = _get(this.props.responseRef, 'COMPONENT_KEY')
-
-    try {
-      const filterHeaderElements = document.querySelectorAll(
-        `#react-autoql-response-content-container-${queryOutputId} .react-autoql-table .tabulator-header-filter`
-      )
-      const colHeaderElements = document.querySelectorAll(
-        `#react-autoql-response-content-container-${queryOutputId} .react-autoql-table .tabulator-col`
-      )
-
-      if (this.filtering) {
-        filterHeaderElements.forEach((element) => {
-          element.style.display = 'inline-block'
-        })
-
-        colHeaderElements.forEach((element) => {
-          element.style.height = '72px !important'
-        })
-        this.setFilterTags({ isFilteringTable: true })
-      } else {
-        filterHeaderElements.forEach((element) => {
-          element.style.display = 'none'
-        })
-
-        colHeaderElements.forEach((element) => {
-          element.style.height = '37px !important'
-        })
-        this.setFilterTags({ isFilteringTable: false })
-      }
-    } catch (error) {
-      console.error(error)
-      this.props.onErrorCallback(error)
-    }
+    this.props.onFilterClick({ isFilteringTable: this.filtering })
   }
 
   setTemporaryState = (key, value, duration) => {
