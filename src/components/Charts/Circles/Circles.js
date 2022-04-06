@@ -46,7 +46,7 @@ export default class Circles extends Component {
             }`}
             cx={xScale(d.label) + xScale.bandwidth() / 2}
             cy={yScale(cell.label) + yScale.bandwidth() / 2}
-            r={cell.value < 0 ? 0 : radiusScale(cell.value)}
+            r={cell.value < 0 ? 0 : radiusScale(cell.value) / 2}
             onClick={() => {
               this.setState({
                 activeKey: `${cell.label}-${d.label}`,
