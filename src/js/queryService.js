@@ -302,10 +302,13 @@ export const runQuery = ({
   })
 }
 
-export const exportCSV = (
-  { queryId, domain, apiKey, token } = {},
-  onDownloadPercentage
-) => {
+export const exportCSV = ({
+  queryId,
+  domain,
+  apiKey,
+  token,
+  csvProgressCallback,
+} = {}) => {
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
@@ -317,11 +320,12 @@ export const exportCSV = (
     },
     responseType: 'blob',
     onDownloadProgress: (progressEvent) => {
-      let percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
-      )
-      console.log('download progress:', percentCompleted)
-      onDownloadPercentage(percentCompleted)
+      if (csvProgressCallback) {
+        let percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        )
+        csvProgressCallback(percentCompleted)
+      }
     },
   }
 

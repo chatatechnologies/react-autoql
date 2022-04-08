@@ -53,8 +53,7 @@ export default class Input extends React.Component {
     deleteMessageCallback: PropTypes.func,
     onFilterCallback: PropTypes.func,
     onResponseCallback: PropTypes.func,
-    onCSVDownloading: PropTypes.func,
-    setCSVDownloadPercentage: PropTypes.func,
+    onCSVExportClick: PropTypes.func,
   }
 
   static defaultProps = {
@@ -71,8 +70,6 @@ export default class Input extends React.Component {
     onFilterCallback: () => {},
     onColumnVisibilitySave: () => {},
     onResponseCallback: () => {},
-    onCSVDownloading: () => {},
-    setCSVDownloadPercentage: () => {},
   }
 
   state = {
@@ -218,40 +215,18 @@ export default class Input extends React.Component {
       this.setTemporaryState('copiedTable', false, 1000)
     }
   }
-  setCSVDownloadPercentage = (percentCompleted) => {
-    this.setState({
-      percentage: percentCompleted,
-    })
-    this.props.setCSVDownloadPercentage(percentCompleted)
-    console.log('222', this.state.percentage)
-  }
+
   exportTableAsCSV = () => {
     const queryId = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.query_id'
     )
-    const queryText = _get(
-      this.props.responseRef,
-      'props.queryResponse.data.data.text'
-    )
-    console.log(
-      _get(this.props.responseRef, 'props.queryResponse.data.data.text')
-    )
-    console.log('percentage', this.state.percentage)
-    this.props.onCSVDownloading(this.state.percentage, queryText)
-    this.setState({ isCSVDownloading: true })
-    exportCSV(
-      {
-        queryId,
-        ...getAuthentication(this.props.authentication),
-      },
-      this.setCSVDownloadPercentage
-    )
+
+    exportCSV({
+      queryId,
+      ...getAuthentication(this.props.authentication),
+    })
       .then((response) => {
-        console.log('percentage', this.state.percentage)
-        this.props.onResponseCallback(response)
-        this.setState({ isCSVDownloading: false })
-        console.log('response', response)
         const url = window.URL.createObjectURL(new Blob([response.data]))
         const link = document.createElement('a')
         link.href = url
@@ -529,7 +504,22 @@ export default class Input extends React.Component {
             <li
               onClick={() => {
                 this.setState({ activeMenu: undefined })
-                this.exportTableAsCSV()
+                // Only use this different behaviour for Data Messenger
+                // Export directly from here if using this component
+                // outside of Data Messenger
+                if (this.props.onCSVExportClick) {
+                  const queryId = _get(
+                    this.props.responseRef,
+                    'props.queryResponse.data.data.query_id'
+                  )
+                  const queryText = _get(
+                    this.props.responseRef,
+                    'props.queryResponse.data.data.text'
+                  )
+                  this.props.onCSVExportClick(queryId, queryText)
+                } else {
+                  this.exportTableAsCSV()
+                }
               }}
               style={
                 this.state.isCSVDownloading

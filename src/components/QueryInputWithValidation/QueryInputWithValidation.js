@@ -428,10 +428,6 @@ export default class QueryValidationMessage extends React.Component {
           this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) &&
           _get(response, 'data.data.replacements.length')
         ) {
-          console.log(
-            'these were the replacements:',
-            _get(response, 'data.data.replacements')
-          )
           this.initializeQueryValidationOptions(_cloneDeep(response.data))
         }
       })

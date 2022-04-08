@@ -509,17 +509,6 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onCSVDownloading = (CSVpercentage, queryText) => {
-    this.addResponseMessage({
-      content: `Hang on while we download your file... downloading`,
-    })
-    this.setState({
-      isCSVDownloading: true,
-      downloadingQuery: queryText,
-      percentage: CSVpercentage,
-    })
-  }
-
   onSuggestionClick = ({
     query,
     userSelection,
@@ -543,47 +532,10 @@ export default class DataMessenger extends React.Component {
     return !!_get(response, 'config.onDownloadProgress')
   }
   onResponse = (response, query) => {
-    console.log('query', query)
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
         content: 'I want to make sure I understood your query. Did you mean:',
       })
-    }
-    if (this.getIsDownloadingCSVResponse(response)) {
-      let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
-      const CSVtotal_rows = _get(response, 'headers.total_rows')
-      const CSVreturned_rows = _get(response, 'headers.returned_rows')
-      let CSVexportLimit = _get(response, 'headers.export_limit')
-      if (CSVFileSizeMb && CSVexportLimit) {
-        CSVFileSizeMb = parseInt(CSVFileSizeMb)
-        CSVexportLimit = parseInt(CSVexportLimit)
-      }
-      console.log('546', CSVFileSizeMb)
-      console.log('547', CSVexportLimit)
-      this.addResponseMessage({
-        content: (
-          <>
-            Your file has been created with the query{' '}
-            <b>
-              <i>{this.state.downloadingQuery}</i>
-            </b>
-            .
-            {CSVFileSizeMb >= CSVexportLimit ? (
-              <>
-                <br />
-                <p>
-                  Sorry, the file is too large. We can only download around{' '}
-                  {CSVexportLimit}Mb size CSV file at this time.
-                </p>
-                <p>The total rows are {CSVtotal_rows}.</p>
-                <p>We capped {CSVreturned_rows} rows in the file.</p>
-              </>
-            ) : null}
-          </>
-        ),
-      })
-      this.setState({ isCSVDownloading: false })
-      return
     }
     if (_has(_get(response, 'data.data'), 'authorization_url')) {
       this.addResponseMessage({
@@ -714,7 +666,13 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createMessage = ({ response, content, query }) => {
+  createMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+  }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
@@ -725,6 +683,8 @@ export default class DataMessenger extends React.Component {
       id,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
+      isCSVProgressMessage,
+      queryId,
     }
   }
 
@@ -748,8 +708,15 @@ export default class DataMessenger extends React.Component {
     })
   }
 
-  addResponseMessage = ({ response, content, query }) => {
+  addResponseMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+  }) => {
     let currentMessages = this.state.messages
+
     if (
       this.props.maxMessages > 1 &&
       this.state.messages.length === this.props.maxMessages
@@ -764,14 +731,24 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
     } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
-      console.log('here')
       message = this.createErrorMessage()
+    } else if (isCSVProgressMessage) {
+      message = this.createMessage({
+        content,
+        query,
+        isCSVProgressMessage,
+        queryId,
+      })
     } else if (!response && !content) {
-      console.log('here')
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage({ response, content, query })
+      message = this.createMessage({
+        response,
+        content,
+        query,
+      })
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
@@ -1184,10 +1161,14 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  queryId={message.queryId}
+                  queryText={message.query}
                   scrollRef={this.messengerScrollComponent}
                   isDataMessengerOpen={this.state.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
                   processDrilldown={(drilldownData, queryID) =>
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
@@ -1205,7 +1186,6 @@ export default class DataMessenger extends React.Component {
                     _get(message, 'response.data.data.display_type')
                   }
                   onResponseCallback={this.onResponse}
-                  onCSVDownloading={this.onCSVDownloading}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}
@@ -1234,7 +1214,7 @@ export default class DataMessenger extends React.Component {
               )
             })}
         </Scrollbars>
-        {(this.state.isChataThinking || this.state.isCSVDownloading) && (
+        {this.state.isChataThinking && (
           <div className="response-loading-container">
             <div className="response-loading">
               <div />
