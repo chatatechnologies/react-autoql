@@ -347,7 +347,6 @@ export default class DataMessenger extends React.Component {
 
   createTopicsMessage = () => {
     const enableExploreQueries = this.props.enableExploreQueriesTab
-    const isQandA = _get(this.props.authentication, 'isQandA')
 
     const topics = this.props.queryQuickStartTopics.map((topic) => {
       return {
@@ -376,14 +375,14 @@ export default class DataMessenger extends React.Component {
                   })
                 }}
                 onSeeMoreClick={
-                  enableExploreQueries && !isQandA
+                  enableExploreQueries
                     ? (label) => this.runTopicInExporeQueries(label)
                     : undefined
                 }
               />
             }
           </div>
-          {enableExploreQueries && !isQandA && (
+          {enableExploreQueries && (
             <div>
               {lang.use}{' '}
               <span
@@ -411,13 +410,6 @@ export default class DataMessenger extends React.Component {
       ? `${this.props.introMessage}`
       : `Hi ${this.props.userDisplayName ||
           'there'}! Let’s dive into your data. What can I help you discover today?`
-
-    if (_get(this.props.authentication, 'isQandA')) {
-      introMessageContent = this.props.introMessage
-        ? `${this.props.introMessage}`
-        : `Hi ${this.props.userDisplayName ||
-            'there'}! What can I help you with today?`
-    }
 
     let introMessages = [
       this.createIntroMessage({
@@ -1546,7 +1538,6 @@ export default class DataMessenger extends React.Component {
             {this.props.resizable && this.renderResizeHandle()}
             {(this.props.enableExploreQueriesTab ||
               this.props.enableNotificationsTab) &&
-              !_get(this.props.authentication, 'isQandA') &&
               this.renderTabs()}
             <div className="react-autoql-drawer-content-container">
               <div className="chat-header-container">

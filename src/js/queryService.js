@@ -69,76 +69,8 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
-export const fetchQandASuggestions = ({ queryID, projectID, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers/suggestions?key=${apiKey}`
-  const data = {
-    query_id: queryID,
-    project_id: projectID,
-  }
-  const config = {}
-
-  return axios
-    .post(url, data, config)
-    .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
-        throw new Error('Parse error')
-      }
-
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      if (error.message === 'Parse error') {
-        return Promise.reject({ error: 'Parse error' })
-      }
-      if (error.response === 401 || !_get(error, 'response.data')) {
-        return Promise.reject({ error: 'Unauthenticated' })
-      }
-      return Promise.reject(_get(error, 'response'))
-    })
-}
-
-/**
- * This function is for AutoAE Queries
- * @param {*} param0
- * @returns
- */
-export const runQandAQuery = ({ query, projectID, AutoAEId, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers?key=${apiKey}`
-  const data = {
-    query,
-    project_id: projectID,
-  }
-  const config = {
-    headers: {
-      'AutoAE-Session-ID': AutoAEId,
-    },
-  }
-
-  return axios
-    .post(url, data, config)
-    .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
-        throw new Error('Parse error')
-      }
-
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      if (error.message === 'Parse error') {
-        return Promise.reject({ error: 'Parse error' })
-      }
-      if (error.response === 401 || !_get(error, 'response.data')) {
-        return Promise.reject({ error: 'Unauthenticated' })
-      }
-      return Promise.reject(_get(error, 'response'))
-    })
-}
-
 export const runQueryOnly = ({
   query,
-  isQandA,
   projectID,
   userSelection,
   debug,
@@ -184,10 +116,6 @@ export const runQueryOnly = ({
     return Promise.reject({ error: 'No query supplied' })
   }
 
-  if (isQandA) {
-    return runQandAQuery({ query, projectID, AutoAEId, apiKey })
-  }
-
   if (!apiKey || !domain || !token) {
     return Promise.reject({ error: 'Unauthenticated' })
   }
@@ -231,7 +159,6 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
-  isQandA,
   projectID,
   userSelection,
   debug,
@@ -259,7 +186,7 @@ export const runQuery = ({
     }
   }
 
-  if (enableQueryValidation && !skipQueryValidation && !isQandA) {
+  if (enableQueryValidation && !skipQueryValidation) {
     return runQueryValidation({
       text: query,
       domain,
@@ -289,7 +216,6 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
-    isQandA,
     projectID,
     userSelection,
     debug,
@@ -549,12 +475,11 @@ export const sendSuggestion = ({
   apiKey,
   domain,
   token,
-  isQandA,
 }) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
   const data = { suggestion }
 
-  if (!isQandA && (!token || !domain || !apiKey)) {
+  if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 

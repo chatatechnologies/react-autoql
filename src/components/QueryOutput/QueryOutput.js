@@ -76,7 +76,7 @@ import {
   isColumnDateType,
 } from './columnHelpers.js'
 
-import { sendSuggestion, fetchQandASuggestions } from '../../js/queryService'
+import { sendSuggestion } from '../../js/queryService'
 
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
@@ -140,8 +140,6 @@ export default class QueryOutput extends React.Component {
       displayType,
       tableFilters: [],
       suggestionSelection: props.selectedSuggestion,
-      QandAResponseCorrect: false,
-      QandASuggestions: [],
       isShowingInterpretation,
     }
   }
@@ -583,7 +581,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderSuggestionMessage = (suggestions, queryId, isQandA) => {
+  renderSuggestionMessage = (suggestions, queryId) => {
     let suggestionListMessage
 
     try {
@@ -623,7 +621,6 @@ export default class QueryOutput extends React.Component {
                           isButtonClick: true,
                           source: 'suggestion',
                           queryId,
-                          isQandA: isQandA,
                         })
                       }
                       className="react-autoql-suggestion-btn"
@@ -1720,7 +1717,6 @@ export default class QueryOutput extends React.Component {
     isButtonClick,
     skipQueryValidation,
     source,
-    isQandA,
   }) => {
     // Only call suggestion endpoint if clicked from suggestion list, not query validation
     if (!userSelection) {
@@ -1745,7 +1741,6 @@ export default class QueryOutput extends React.Component {
           isButtonClick,
           skipQueryValidation,
           source,
-          isQandA: isQandA,
         })
       }
       if (this.props.queryInputRef) {
