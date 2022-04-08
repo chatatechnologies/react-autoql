@@ -511,7 +511,7 @@ export default class DataMessenger extends React.Component {
 
   onCSVDownloading = (CSVpercentage, queryText) => {
     this.addResponseMessage({
-      content: `Hang on while we download your file... downloading %${this.state.CSVDownloadPercentage}`,
+      content: `Hang on while we download your file... downloading`,
     })
     this.setState({
       isCSVDownloading: true,
@@ -1195,7 +1195,6 @@ export default class DataMessenger extends React.Component {
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
                   content={message.content}
-                  updatedContent={this.state.CSVDownloadPercentage}
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
                   dataFormatting={getDataFormatting(
