@@ -52,6 +52,9 @@ export default class Input extends React.Component {
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
     onFilterCallback: PropTypes.func,
+    onResponseCallback: PropTypes.func,
+    onCSVDownloading: PropTypes.func,
+    setCSVDownloadPercentage: PropTypes.func,
   }
 
   static defaultProps = {
@@ -67,12 +70,17 @@ export default class Input extends React.Component {
     deleteMessageCallback: () => {},
     onFilterCallback: () => {},
     onColumnVisibilitySave: () => {},
+    onResponseCallback: () => {},
+    onCSVDownloading: () => {},
+    setCSVDownloadPercentage: () => {},
   }
 
   state = {
     isHideColumnsModalVisible: false,
     isSettingColumnVisibility: false,
     reportProblemMessage: undefined,
+    isCSVDownloading: false,
+    percentage: 0,
   }
 
   componentDidMount = () => {
@@ -210,18 +218,40 @@ export default class Input extends React.Component {
       this.setTemporaryState('copiedTable', false, 1000)
     }
   }
-
+  setCSVDownloadPercentage = (percentCompleted) => {
+    this.setState({
+      percentage: percentCompleted,
+    })
+    this.props.setCSVDownloadPercentage(percentCompleted)
+    console.log('222', this.state.percentage)
+  }
   exportTableAsCSV = () => {
     const queryId = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.query_id'
     )
-
-    exportCSV({
-      queryId,
-      ...getAuthentication(this.props.authentication),
-    })
+    const queryText = _get(
+      this.props.responseRef,
+      'props.queryResponse.data.data.text'
+    )
+    console.log(
+      _get(this.props.responseRef, 'props.queryResponse.data.data.text')
+    )
+    console.log('percentage', this.state.percentage)
+    this.props.onCSVDownloading(this.state.percentage, queryText)
+    this.setState({ isCSVDownloading: true })
+    exportCSV(
+      {
+        queryId,
+        ...getAuthentication(this.props.authentication),
+      },
+      this.setCSVDownloadPercentage
+    )
       .then((response) => {
+        console.log('percentage', this.state.percentage)
+        this.props.onResponseCallback(response)
+        this.setState({ isCSVDownloading: false })
+        console.log('response', response)
         const url = window.URL.createObjectURL(new Blob([response.data]))
         const link = document.createElement('a')
         link.href = url
@@ -501,6 +531,14 @@ export default class Input extends React.Component {
                 this.setState({ activeMenu: undefined })
                 this.exportTableAsCSV()
               }}
+              style={
+                this.state.isCSVDownloading
+                  ? {
+                      pointerEvents: 'none', //This makes it not clickable
+                      opacity: 0.6, //This grays it out to look disabled
+                    }
+                  : null
+              }
             >
               <Icon
                 type="download"
@@ -508,7 +546,9 @@ export default class Input extends React.Component {
                   marginRight: '7px',
                 }}
               />
-              Download as CSV
+              {this.state.isCSVDownloading
+                ? 'CSV file downloading...'
+                : 'Download as CSV'}
             </li>
           )}
           {shouldShowButton.showSaveAsPNGButton && (

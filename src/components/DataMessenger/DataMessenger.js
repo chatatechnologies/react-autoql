@@ -154,6 +154,8 @@ export default class DataMessenger extends React.Component {
     queryTipsTotalPages: undefined,
     queryTipsCurrentPage: 1,
     isSizeMaximum: false,
+
+    updatedContent: undefined,
   }
 
   componentDidMount = () => {
@@ -507,6 +509,17 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
+  onCSVDownloading = (CSVpercentage, queryText) => {
+    this.addResponseMessage({
+      content: `Hang on while we download your file... downloading %${this.state.CSVDownloadPercentage}`,
+    })
+    this.setState({
+      isCSVDownloading: true,
+      downloadingQuery: queryText,
+      percentage: CSVpercentage,
+    })
+  }
+
   onSuggestionClick = ({
     query,
     userSelection,
@@ -526,12 +539,51 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-
+  getIsDownloadingCSVResponse = (response) => {
+    return !!_get(response, 'config.onDownloadProgress')
+  }
   onResponse = (response, query) => {
+    console.log('query', query)
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
         content: 'I want to make sure I understood your query. Did you mean:',
       })
+    }
+    if (this.getIsDownloadingCSVResponse(response)) {
+      let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
+      const CSVtotal_rows = _get(response, 'headers.total_rows')
+      const CSVreturned_rows = _get(response, 'headers.returned_rows')
+      let CSVexportLimit = _get(response, 'headers.export_limit')
+      if (CSVFileSizeMb && CSVexportLimit) {
+        CSVFileSizeMb = parseInt(CSVFileSizeMb)
+        CSVexportLimit = parseInt(CSVexportLimit)
+      }
+      console.log('546', CSVFileSizeMb)
+      console.log('547', CSVexportLimit)
+      this.addResponseMessage({
+        content: (
+          <>
+            Your file has been created with the query{' '}
+            <b>
+              <i>{this.state.downloadingQuery}</i>
+            </b>
+            .
+            {CSVFileSizeMb >= CSVexportLimit ? (
+              <>
+                <br />
+                <p>
+                  Sorry, the file is too large. We can only download around{' '}
+                  {CSVexportLimit}Mb size CSV file at this time.
+                </p>
+                <p>The total rows are {CSVtotal_rows}.</p>
+                <p>We capped {CSVreturned_rows} rows in the file.</p>
+              </>
+            ) : null}
+          </>
+        ),
+      })
+      this.setState({ isCSVDownloading: false })
+      return
     }
     if (_has(_get(response, 'data.data'), 'authorization_url')) {
       this.addResponseMessage({
@@ -712,8 +764,10 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage(errorMessages.UNAUTHENTICATED)
     } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
+      console.log('here')
       message = this.createErrorMessage()
     } else if (!response && !content) {
+      console.log('here')
       message = this.createErrorMessage()
     } else {
       message = this.createMessage({ response, content, query })
@@ -1141,6 +1195,7 @@ export default class DataMessenger extends React.Component {
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
                   content={message.content}
+                  updatedContent={this.state.CSVDownloadPercentage}
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
                   dataFormatting={getDataFormatting(
@@ -1150,6 +1205,8 @@ export default class DataMessenger extends React.Component {
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
                   }
+                  onResponseCallback={this.onResponse}
+                  onCSVDownloading={this.onCSVDownloading}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}
@@ -1178,7 +1235,7 @@ export default class DataMessenger extends React.Component {
               )
             })}
         </Scrollbars>
-        {this.state.isChataThinking && (
+        {(this.state.isChataThinking || this.state.isCSVDownloading) && (
           <div className="response-loading-container">
             <div className="response-loading">
               <div />

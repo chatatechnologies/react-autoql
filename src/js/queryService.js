@@ -302,7 +302,10 @@ export const runQuery = ({
   })
 }
 
-export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
+export const exportCSV = (
+  { queryId, domain, apiKey, token } = {},
+  onDownloadPercentage
+) => {
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
@@ -313,14 +316,23 @@ export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
       Authorization: `Bearer ${token}`,
     },
     responseType: 'blob',
+    onDownloadProgress: (progressEvent) => {
+      let percentCompleted = Math.round(
+        (progressEvent.loaded * 100) / progressEvent.total
+      )
+      console.log('download progress:', percentCompleted)
+      onDownloadPercentage(percentCompleted)
+    },
   }
 
   return axios
     .post(url, {}, config)
     .then((response) => {
       console.log('-----------csv export response headers---------')
+      console.log('response', response)
       console.log(response.headers)
       console.log('-----------------------------------------------')
+
       return Promise.resolve(response)
     })
     .catch((error) => Promise.reject(_get(error, 'response')))

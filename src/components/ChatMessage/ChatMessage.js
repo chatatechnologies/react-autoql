@@ -48,7 +48,6 @@ export default class ChatMessage extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     themeConfig: themeConfigType,
-
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
@@ -72,6 +71,8 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
+    onResponseCallback: PropTypes.func,
+    onCSVDownloading: PropTypes.func,
   }
 
   static defaultProps = {
@@ -100,6 +101,8 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onConditionClickCallback: () => {},
+    onResponseCallback: () => {},
+    onCSVDownloading: () => {},
   }
 
   state = {
@@ -110,6 +113,7 @@ export default class ChatMessage extends React.Component {
     supportedDisplayTypes: getSupportedDisplayTypes(this.props.response),
     isSettingColumnVisibility: false,
     activeMenu: undefined,
+    CSVDownloadPercentage: 0,
   }
 
   componentDidMount = () => {
@@ -162,6 +166,13 @@ export default class ChatMessage extends React.Component {
 
     return false
   }
+  setCSVDownloadPercentage = (percentCompleted) => {
+    this.setState({
+      CSVDownloadPercentage: percentCompleted,
+    })
+
+    console.log('515', this.state.CSVDownloadPercentage)
+  }
 
   scrollIntoView = () => {
     this.scrollIntoViewTimeout = setTimeout(() => {
@@ -207,7 +218,15 @@ export default class ChatMessage extends React.Component {
 
   renderContent = (chartWidth, chartHeight) => {
     const { response, content, type } = this.props
+    console.log('I am rerendering!', content)
+    if (this.state.CSVDownloadPercentage > 0) {
+      console.log('224', this.state.CSVDownloadPercentage)
+      return this.state.CSVDownloadPercentage
+    }
     if (content) {
+      console.log('224', content)
+      console.log('223', this.state.CSVDownloadPercentage)
+
       return content
     } else if (_get(response, 'status') === 401) {
       return errorMessages.UNAUTHENTICATED
@@ -263,6 +282,7 @@ export default class ChatMessage extends React.Component {
         </React.Fragment>
       )
     }
+    console.log(268)
     return errorMessages.GENERAL_QUERY
   }
 
@@ -330,6 +350,9 @@ export default class ChatMessage extends React.Component {
           onColumnVisibilitySave={() => {
             this.forceUpdate()
           }}
+          onResponseCallback={this.props.onResponseCallback}
+          onCSVDownloading={this.props.onCSVDownloading}
+          setCSVDownloadPercentage={this.setCSVDownloadPercentage}
         />
       )
     }
@@ -456,7 +479,7 @@ export default class ChatMessage extends React.Component {
     const { chartWidth, chartHeight } = this.getChartDimensions()
     const messageHeight = this.getMessageHeight()
     const maxMessageHeight = this.getMaxMessageheight()
-
+    console.log('csvValue', this.state.CSVDownloadPercentage)
     return (
       <ErrorBoundary>
         <div
