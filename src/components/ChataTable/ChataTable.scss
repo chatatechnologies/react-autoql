@@ -49,7 +49,6 @@
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
 .react-autoql-table .tabulator-tableHolder {
-  max-height: calc(100% - 38px) !important;
   background-color: inherit;
 }
 .react-autoql-table.tabulator
@@ -102,11 +101,6 @@
   width: 7px;
   height: 7px;
   transition: all 0.3s ease;
-}
-.react-autoql-table.tabulator .tabulator-tableHolder {
-  min-height: calc(100% - 40px) !important;
-  height: calc(100% - 40px) !important;
-  max-height: calc(100% - 40px) !important;
 }
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,

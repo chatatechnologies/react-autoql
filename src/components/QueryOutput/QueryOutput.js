@@ -116,7 +116,7 @@ export default class QueryOutput extends React.Component {
     }
 
     // Set the initial display type based on prop value, response, and supported display types
-    this.displayType = isDisplayTypeValid(
+    const displayType = isDisplayTypeValid(
       props.queryResponse,
       props.displayType
     )
@@ -130,14 +130,14 @@ export default class QueryOutput extends React.Component {
     setCSSVars(getThemeConfig(props.themeConfig))
 
     // --------- generate data before mount --------
-    this.generateAllData(props.queryResponse, this.displayType)
+    this.generateAllData(props.queryResponse, displayType)
     // -------------------------------------------
 
     const isShowingInterpretation = getAutoQLConfig(props.autoQLConfig)
       .defaultShowInterpretation
 
     this.state = {
-      displayType: this.displayType,
+      displayType,
       tableFilters: [],
       suggestionSelection: props.selectedSuggestion,
       QandAResponseCorrect: false,
@@ -220,10 +220,15 @@ export default class QueryOutput extends React.Component {
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
     onConditionClickCallback: () => {},
+    onRecommendedDisplayType: () => {},
   }
 
   componentDidMount = () => {
     try {
+      this.responseContainer = document.getElementById(
+        `react-autoql-response-content-container-${this.COMPONENT_KEY}`
+      )
+
       if (this.props.optionsToolbarRef) {
         this.props.optionsToolbarRef.forceUpdate()
       }
@@ -234,6 +239,14 @@ export default class QueryOutput extends React.Component {
       console.error(error)
       this.props.onErrorCallback(error)
     }
+  }
+
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
+    }
+
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -267,14 +280,14 @@ export default class QueryOutput extends React.Component {
       }
 
       if (this.props.queryResponse && !prevProps.queryResponse) {
-        this.setResponseData(this.state.displayType)
+        this.setResponseData(this.props.displayType)
         this.forceUpdate()
       }
 
       // Initial display type has been determined, set the table and chart data now
-      if (!prevState.displayType && this.state.displayType) {
+      if (!prevProps.displayType && this.props.displayType) {
         this.props.onDisplayTypeUpdate()
-        this.setResponseData(this.state.displayType)
+        this.setResponseData(this.props.displayType)
         this.forceUpdate()
         ReactTooltip.hide()
       }
@@ -284,12 +297,19 @@ export default class QueryOutput extends React.Component {
       if (
         this.props.displayType &&
         this.props.displayType !== prevProps.displayType &&
-        this.supportedDisplayTypes &&
-        this.supportedDisplayTypes.includes(this.props.displayType)
+        !isDisplayTypeValid(this.queryResponse, this.props.displayType)
+      ) {
+        const recommendedDisplayType = getDefaultDisplayType(
+          this.queryResponse,
+          props.autoChartAggregations
+        )
+        this.props.onRecommendedDisplayType(recommendedDisplayType)
+      } else if (
+        this.props.displayType &&
+        this.props.displayType !== prevProps.displayType
       ) {
         this.tableID = uuid.v4()
         this.pivotTableID = uuid.v4()
-        this.setState({ displayType: this.props.displayType })
       }
 
       // Do not allow scrolling while the context menu is open
@@ -318,6 +338,8 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
+    this.responseContainer = undefined
+    this.translationContainer = undefined
     clearTimeout(this.tableFilterTimeout)
   }
 
@@ -408,14 +430,10 @@ export default class QueryOutput extends React.Component {
     // Initialize ID's of tables
     this.tableID = uuid.v4()
     this.pivotTableID = uuid.v4()
+    this.queryID = _get(this.queryResponse, 'data.data.query_id')
+    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
 
-    const { displayType } = this.state
-    const { queryResponse } = this
-
-    this.queryID = _get(queryResponse, 'data.data.query_id')
-    this.interpretation = _get(queryResponse, 'data.data.interpretation')
-
-    this.generateAllData(queryResponse, displayType)
+    this.generateAllData(this.queryResponse, this.props.displayType)
   }
 
   shouldGeneratePivotData = () => {
@@ -543,10 +561,10 @@ export default class QueryOutput extends React.Component {
     let filteredResponse = this.queryResponse.data.data.rows.filter(
       (row) => row[0] !== null
     )
-    const data = this.sortTableDataByDate(filteredResponse)
-    this.tableData = data
 
-    this.numberOfTableRows = _get(data, 'length', 0)
+    this.tableData = this.sortTableDataByDate(filteredResponse)
+
+    this.numberOfTableRows = _get(this.tableData, 'length', 0)
     this.setColumnIndices()
   }
 
@@ -657,23 +675,23 @@ export default class QueryOutput extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.state.displayType === 'table' && this.tableRef) {
+    if (this.props.displayType === 'table' && this.tableRef) {
       this.tableRef.copyToClipboard()
-    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef) {
+    } else if (this.props.displayType === 'pivot_table' && this.pivotTableRef) {
       this.pivotTableRef.copyToClipboard()
     }
   }
 
   getBase64Data = () => {
-    if (this.chartRef && isChartType(this.state.displayType)) {
+    if (this.chartRef && isChartType(this.props.displayType)) {
       return this.chartRef.getBase64Data().then((data) => {
         const trimmedData = data.split(',')[1]
         return Promise.resolve(trimmedData)
       })
-    } else if (this.tableRef && this.state.displayType === 'table') {
+    } else if (this.tableRef && this.props.displayType === 'table') {
       const data = this.tableRef.getBase64Data()
       return Promise.resolve(data)
-    } else if (this.pivotTableRef && this.state.displayType === 'pivot_table') {
+    } else if (this.pivotTableRef && this.props.displayType === 'pivot_table') {
       const data = this.pivotTableRef.getBase64Data()
       return Promise.resolve(data)
     }
@@ -692,7 +710,7 @@ export default class QueryOutput extends React.Component {
       this.setState({ isContextMenuOpen: false })
     } else {
       const drilldownData = { supportedByAPI: true, data: undefined }
-      if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
+      if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
         drilldownData.data = getGroupBysFromPivotTable(
           cell,
           this.tableColumns,
@@ -712,11 +730,11 @@ export default class QueryOutput extends React.Component {
   }
 
   toggleTableFilter = ({ isFilteringTable }) => {
-    if (this.state.displayType === 'table') {
+    if (this.props.displayType === 'table') {
       this.tableRef && this.tableRef.toggleTableFilter({ isFilteringTable })
     }
 
-    if (this.state.displayType === 'pivot_table') {
+    if (this.props.displayType === 'pivot_table') {
       this.pivotTableRef &&
         this.pivotTableRef.toggleTableFilter({ isFilteringTable })
     }
@@ -724,7 +742,7 @@ export default class QueryOutput extends React.Component {
 
   onTableFilter = async (filters) => {
     if (
-      this.state.displayType === 'table' &&
+      this.props.displayType === 'table' &&
       _get(this.tableRef, 'ref.table')
     ) {
       this.headerFilters = filters
@@ -741,7 +759,7 @@ export default class QueryOutput extends React.Component {
         }
       }, 500)
     } else if (
-      this.state.displayType === 'pivot_table' &&
+      this.props.displayType === 'pivot_table' &&
       _get(this.pivotTableRef, 'ref.table')
     ) {
       this.pivotHeaderFilters = filters
@@ -756,7 +774,7 @@ export default class QueryOutput extends React.Component {
   }
 
   onLegendClick = (d) => {
-    if (this.state.displayType === 'pie') {
+    if (this.props.displayType === 'pie') {
       this.onPieChartLegendClick(d)
     } else {
       const newChartData = this.chartData.map((data) => {
@@ -902,13 +920,13 @@ export default class QueryOutput extends React.Component {
       this.supportedDisplayTypes = supportedDisplayTypes
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
-      if (!this.supportedDisplayTypes.includes(this.state.displayType)) {
-        this.setState({
-          displayType: getDefaultDisplayType(
+      if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
+        this.props.onRecommendedDisplayType(
+          getDefaultDisplayType(
             this.queryResponse,
             this.props.autoChartAggregations
-          ),
-        })
+          )
+        )
       }
     }
   }
@@ -1544,7 +1562,8 @@ export default class QueryOutput extends React.Component {
       this.supportedDisplayTypes.filter(
         (displayType) => displayType !== 'pivot_table'
       )
-      this.setState({ displayType: 'table' })
+
+      this.props.onRecommendedDisplayType('table')
     }
   }
 
@@ -1782,12 +1801,12 @@ export default class QueryOutput extends React.Component {
   renderTable = () => {
     if (
       !this.tableData ||
-      (this.state.displayType === 'pivot_table' && !this.pivotTableData)
+      (this.props.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
       return 'Error: There was no data supplied for this table'
     }
 
-    if (this.state.displayType === 'pivot_table') {
+    if (this.props.displayType === 'pivot_table') {
       return (
         <ErrorBoundary>
           <ChataTable
@@ -1823,7 +1842,7 @@ export default class QueryOutput extends React.Component {
     )
   }
 
-  renderChart = (width, height, displayType) => {
+  renderChart = (displayType) => {
     if (!this.chartData) {
       return 'Error: There was no data supplied for this chart'
     }
@@ -1833,12 +1852,12 @@ export default class QueryOutput extends React.Component {
         <ChataChart
           themeConfig={getThemeConfig(this.props.themeConfig)}
           ref={(ref) => (this.chartRef = ref)}
-          type={displayType || this.state.displayType}
+          type={displayType || this.props.displayType}
           data={this.chartData}
           tableColumns={this.tableColumns}
           columns={this.chartTableColumns}
-          height={height}
-          width={width}
+          height={this.props.height}
+          width={this.props.width}
           isShowingInterpretation={this.state.isShowingInterpretation}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
@@ -1973,29 +1992,11 @@ export default class QueryOutput extends React.Component {
     return null
   }
 
-  renderResponse = (width, height) => {
-    const { displayType } = this.state
-    const { queryResponse } = this
+  renderResponse = () => {
+    const { displayType } = this.props
 
-    if (
-      _get(getAuthentication(this.props.authentication), 'isQandA') &&
-      this.state.QandASuggestions.length !== 0
-    ) {
-      return this.renderSuggestionMessage(
-        this.state.QandASuggestions,
-        _get(queryResponse, 'data.data.query_id'),
-        true
-      )
-    }
-
-    if (displayType === 'html') {
-      return this.renderHTMLMessage(queryResponse)
-    }
-
-    const data = _get(queryResponse, 'data.data.rows')
-
-    if (this.hasError(queryResponse)) {
-      return this.renderError(queryResponse)
+    if (this.hasError(this.queryResponse)) {
+      return this.renderError(this.queryResponse)
     }
 
     // This is used for "Thank you for your feedback" response
@@ -2005,16 +2006,16 @@ export default class QueryOutput extends React.Component {
     }
 
     // If "items" are returned in response it is a list of suggestions
-    const isSuggestionList = !!_get(queryResponse, 'data.data.items')
+    const isSuggestionList = !!_get(this.queryResponse, 'data.data.items')
     if (isSuggestionList) {
       return this.renderSuggestionMessage(
-        queryResponse.data.data.items,
-        queryResponse.data.data.query_id
+        this.queryResponse.data.data.items,
+        this.queryResponse.data.data.query_id
       )
     }
 
     // Query validation was triggered, display query validation message
-    if (_get(queryResponse, 'data.data.replacements')) {
+    if (_get(this.queryResponse, 'data.data.replacements')) {
       return (
         <QueryValidationMessage
           themeConfig={getThemeConfig(this.props.themeConfig)}
@@ -2039,11 +2040,11 @@ export default class QueryOutput extends React.Component {
     }
 
     // This is not technically an error. There is just no data in the DB
-    if (!_get(data, 'length')) {
-      return this.replaceErrorTextWithLinks(queryResponse.data.message)
+    if (!_get(this.queryResponse, 'data.data.rows.length')) {
+      return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
     }
 
-    if (displayType && data) {
+    if (displayType && !!_get(this.queryResponse, 'data.data.rows')) {
       if (displayType === 'help') {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
@@ -2053,78 +2054,17 @@ export default class QueryOutput extends React.Component {
       } else if (isTableType(displayType)) {
         return this.renderTable()
       } else if (isChartType(displayType)) {
-        return this.renderChart(width, height)
+        return this.renderChart()
       }
 
       console.warn(
-        `display type not recognized: ${this.state.displayType} - rendering as plain text`
+        `display type not recognized: ${this.props.displayType} - rendering as plain text`
       )
       return this.renderMessage(
-        `display type not recognized: ${this.state.displayType}`
+        `display type not recognized: ${this.props.displayType}`
       )
     }
     return null
-  }
-
-  renderQandAResponseConfirmation = () => {
-    const { queryResponse, authentication } = this.props
-    if (
-      _get(queryResponse, 'status') === 200 &&
-      _get(queryResponse, 'data.data.answer') !==
-        "Oops, I'm not sure if I got that right. Could you try asking a different way?"
-    ) {
-      return (
-        <React.Fragment>
-          <br />
-          <br />
-          <div>
-            Does this answer your question?{' '}
-            <a
-              role="button"
-              onClick={() => {
-                this.setState({ QandAResponseCorrect: true })
-              }}
-            >
-              Yes
-            </a>
-            /
-            <a
-              role="button"
-              onClick={() =>
-                fetchQandASuggestions({
-                  queryID: _get(queryResponse, 'data.data.query_id'),
-                  projectID: _get(
-                    getAuthentication(authentication),
-                    'projectID'
-                  ),
-                  apiKey: _get(getAuthentication(authentication), 'apiKey'),
-                }).then((response) => {
-                  let array = []
-                  _get(response, 'data.data').map((item) => {
-                    array.push(item.question)
-                  })
-                  this.setState({ QandASuggestions: array })
-                  return this.renderResponse()
-                })
-              }
-            >
-              No
-            </a>
-            ?
-            {this.state.QandAResponseCorrect && (
-              <p style={{ marginTop: 6 }}>
-                <Icon
-                  type="check"
-                  className="qanda-positive-feedback-checkmark"
-                  size={20}
-                />
-                Thank you for your feedback!
-              </p>
-            )}
-          </div>
-        </React.Fragment>
-      )
-    }
   }
 
   renderContextMenuContent = ({
@@ -2166,18 +2106,15 @@ export default class QueryOutput extends React.Component {
   }
 
   handleShowHide = (e) => {
-    const responseContainer = document.getElementById(
-      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
-    )
     // make room in response container for reverse translation text
     if (
       document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`) &&
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
     ) {
       if (e.isFullyOpened) {
-        responseContainer.style.height = `calc(100% - ${e.contentHeight}px)`
+        this.responseContainer.style.height = `calc(100% - ${e.contentHeight}px)`
       } else {
-        responseContainer.style.height = `calc(100% - 26px)`
+        this.responseContainer.style.height = `calc(100% - 26px)`
       }
     }
   }
@@ -2192,25 +2129,28 @@ export default class QueryOutput extends React.Component {
    * all applied conditions
    */
   renderReverseTranslation = () => {
-    const { queryResponse } = this
     const id = `reverse-translation-${this.COMPONENT_KEY}`
-    const responseContainer = document.getElementById(
-      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
-    )
 
-    if (responseContainer && _get(queryResponse, 'data.data.interpretation')) {
+    if (
+      this.responseContainer &&
+      _get(this.queryResponse, 'data.data.interpretation')
+    ) {
       // manipulate interpretation string to properly format various substrings
-      var reverseTranslation = _get(queryResponse, 'data.data.interpretation')
+      var reverseTranslation = _get(
+        this.queryResponse,
+        'data.data.interpretation'
+      )
         .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
           const text = output.replace(/'/g, '')
           if (
             _get(
-              queryResponse,
+              this.queryResponse,
               'data.data.persistent_locked_conditions'
             ).includes(text) ||
-            _get(queryResponse, 'data.data.session_locked_conditions').includes(
-              text
-            )
+            _get(
+              this.queryResponse,
+              'data.data.session_locked_conditions'
+            ).includes(text)
           ) {
             return `
               <a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link-filtered">
@@ -2275,47 +2215,45 @@ export default class QueryOutput extends React.Component {
   }
 
   render = () => {
-    const responseContainer = document.getElementById(
-      `react-autoql-response-content-container-${this.COMPONENT_KEY}`
-    )
-    const translationContainer = document.getElementById(
-      `reverse-translation-${this.COMPONENT_KEY}`
-    )
+    // this.translationContainer = document.getElementById(
+    //   `reverse-translation-${this.COMPONENT_KEY}`
+    // )
 
-    let height = 0
-    let width = 0
+    // let height = 0
+    // let width = 0
 
-    if (responseContainer) {
-      height =
-        responseContainer.clientHeight -
-        getPadding(responseContainer).top -
-        getPadding(responseContainer).bottom
+    // if (this.responseContainer) {
+    //   height =
+    //     this.responseContainer.clientHeight -
+    //     getPadding(this.responseContainer).top -
+    //     getPadding(this.responseContainer).bottom
 
-      width =
-        responseContainer.clientWidth -
-        getPadding(responseContainer).left -
-        getPadding(responseContainer).right
-    }
+    //   width =
+    //     this.responseContainer.clientWidth -
+    //     getPadding(this.responseContainer).left -
+    //     getPadding(this.responseContainer).right
+    // }
 
-    if (this.props.height) {
-      if (
-        translationContainer &&
-        getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-        this.state.isShowingInterpretation
-      ) {
-        if (this.state.isShowingInterpretation) {
-          height = this.props.height - translationContainer.offsetHeight - 20
-        } else {
-          height = this.props.height - translationContainer.offsetHeight - 40
-        }
-      } else {
-        height = this.props.height
-      }
-    }
+    // if (this.props.height) {
+    // if (
+    //   translationContainer &&
+    //   getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+    //   this.state.isShowingInterpretation
+    // ) {
+    //   if (this.state.isShowingInterpretation) {
+    //     height = this.props.height - translationContainer.offsetHeight - 20
+    //   } else {
+    //     height = this.props.height - translationContainer.offsetHeight - 40
+    //   }
+    // } else {
+    //   height = this.props.height
+    // }
+    //   height = this.props.height
+    // }
 
-    if (this.props.width) {
-      width = this.props.width
-    }
+    // if (this.props.width) {
+    //   width = this.props.width
+    // }
 
     return (
       <ErrorBoundary>
@@ -2324,17 +2262,17 @@ export default class QueryOutput extends React.Component {
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
           className={`react-autoql-response-content-container
-          ${isTableType(this.state.displayType) ? 'table' : ''}`}
+          ${isTableType(this.props.displayType) ? 'table' : ''}`}
         >
-          {this.renderResponse(width, height)}
-          {_get(getAuthentication(this.props.authentication), 'isQandA') &&
-            this.renderQandAResponseConfirmation()}
+          {this.renderResponse()}
         </div>
-        {!this.props.isDashboardQuery &&
-        getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
-          ? this.renderReverseTranslation()
-          : null}
-        {this.renderContextMenu()}
+        {
+          // !this.props.isDashboardQuery &&
+          // getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
+          //   ? this.renderReverseTranslation()
+          //   : null}
+          // {this.renderContextMenu()
+        }
       </ErrorBoundary>
     )
   }

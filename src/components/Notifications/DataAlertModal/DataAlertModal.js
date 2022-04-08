@@ -710,8 +710,7 @@ export default class DataAlertModal extends React.Component {
             </div>
           }
         >
-          {this.props.isVisible &
-          (
+          {this.props.isVisible && (
             <div className="notification-modal-content">
               <Steps
                 themeConfig={getThemeConfig(this.props.themeConfig)}

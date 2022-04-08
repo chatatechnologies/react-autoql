@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
+import _isEmpty from 'lodash.isempty'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -52,6 +53,41 @@ import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
 export default class DataMessenger extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.minWidth = 400
+    this.minHeight = 400
+    this.DATA_MESSENGER_ID = uuid.v4()
+    this.HEADER_THICKNESS = 70
+    this.setMaxWidthAndHeightFromDocument()
+    setCSSVars(getThemeConfig(this.props.themeConfig))
+
+    this.state = {
+      hasError: false,
+
+      isVisible: false,
+      activePage: this.props.defaultTab,
+      width: this.props.width,
+      height: this.props.height,
+      isResizing: false,
+      placement: this.getPlacementProp(props.placement),
+
+      lastMessageId: undefined,
+      isOptionsDropdownOpen: false,
+      isFilterLockingMenuOpen: false,
+      selectedValueLabel: undefined,
+      conditions: undefined,
+      messages: [],
+
+      queryTipsList: undefined,
+      queryTipsLoading: false,
+      queryTipsError: false,
+      queryTipsTotalPages: undefined,
+      queryTipsCurrentPage: 1,
+    }
+  }
+
   static propTypes = {
     // Global
     authentication: authenticationType,
@@ -135,32 +171,8 @@ export default class DataMessenger extends React.Component {
     onSuccessAlert: () => {},
   }
 
-  state = {
-    hasError: false,
-
-    isVisible: false,
-    activePage: this.props.defaultTab,
-    width: this.props.width,
-    height: this.props.height,
-    isResizing: false,
-
-    lastMessageId: undefined,
-    isOptionsDropdownOpen: false,
-    isFilterLockingMenuOpen: false,
-    selectedValueLabel: undefined,
-    conditions: undefined,
-    messages: [],
-
-    queryTipsList: undefined,
-    queryTipsLoading: false,
-    queryTipsError: false,
-    queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 1,
-  }
-
   componentDidMount = () => {
     try {
-      setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
       this.setintroMessages()
 
       // Listen for esc press to cancel queries while they are running
@@ -171,6 +183,11 @@ export default class DataMessenger extends React.Component {
       this.tooltipRebuildTimeout = setTimeout(() => {
         ReactTooltip.rebuild()
       }, 100)
+
+      this.setState({
+        containerHeight: this.getScrollContainerHeight(),
+        containerWidth: this.getScrollContainerWidth(),
+      })
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -193,19 +210,24 @@ export default class DataMessenger extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     try {
+      const nextState = {}
+
       setTimeout(() => {
         ReactTooltip.rebuild()
       }, 1000)
 
-      if (!this.state.isWindowResizing && prevState.isWindowResizing) {
-        // Update the component so that the message sizes autoadjust again
-        this.forceUpdate()
+      if (this.props.placement !== prevProps.placement) {
+        nextState.placement = this.getPlacementProp(this.props.placement)
+        nextState.containerHeight = this.getScrollContainerHeight()
+        nextState.containerWidth = this.getScrollContainerWidth()
       }
 
       if (this.state.isVisible && !prevState.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
         }
+        nextState.containerHeight = this.getScrollContainerHeight()
+        nextState.containerWidth = this.getScrollContainerWidth()
       }
 
       if (
@@ -219,11 +241,10 @@ export default class DataMessenger extends React.Component {
         this.setintroMessages()
       }
 
-      const thisTheme = getThemeConfig(getThemeConfig(this.props.themeConfig))
-        .theme
+      const thisTheme = getThemeConfig(this.props.themeConfig).theme
       const prevTheme = getThemeConfig(prevProps.themeConfig).theme
       if (thisTheme && thisTheme !== prevTheme) {
-        setCSSVars(getThemeConfig(getThemeConfig(this.props.themeConfig)))
+        setCSSVars(getThemeConfig(this.props.themeConfig))
       }
 
       if (
@@ -234,12 +255,10 @@ export default class DataMessenger extends React.Component {
             var sessionConditions = JSON.parse(
               sessionStorage.getItem('conditions')
             )
-            this.setState({
-              conditions: {
-                persistent: _get(response, 'data.data.data'),
-                session: sessionConditions,
-              },
-            })
+            nextState.conditions = {
+              persistent: _get(response, 'data.data.data'),
+              session: sessionConditions,
+            }
           })
           .catch((error) => {
             console.error(error)
@@ -247,9 +266,13 @@ export default class DataMessenger extends React.Component {
       }
 
       if (this.state.activePage !== prevState.activePage) {
+        nextState.isFilterLockingMenuOpen = false
+        nextState.selectedValueLabel = undefined
+      }
+
+      if (!_isEmpty(nextState)) {
         this.setState({
-          isFilterLockingMenuOpen: false,
-          selectedValueLabel: undefined,
+          ...nextState,
         })
       }
     } catch (error) {
@@ -271,15 +294,32 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.tooltipRebuildTimeout)
+
+      this.acc = undefined
+      this.containerElement = undefined
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
     }
   }
 
+  setMaxWidthAndHeightFromDocument = () => {
+    this.maxWidth =
+      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
+      45
+    this.maxHeight =
+      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
+      45
+  }
+
   onWindowResize = () => {
     if (!this.state.isWindowResizing) {
-      this.setState({ isWindowResizing: true })
+      setMaxWidthAndHeightFromDocument()
+      this.setState({
+        isWindowResizing: true,
+        containerHeight: this.getScrollContainerHeight(),
+        containerWidth: this.getScrollContainerWidth(),
+      })
     }
 
     clearTimeout(this.windowResizeTimer)
@@ -432,20 +472,14 @@ export default class DataMessenger extends React.Component {
   }
 
   getDrawerHeight = () => {
-    if (
-      this.getPlacementProp() === 'right' ||
-      this.getPlacementProp() === 'left'
-    ) {
+    if (this.state.placement === 'right' || this.state.placement === 'left') {
       return null
     }
     return this.state.height
   }
 
   getDrawerWidth = () => {
-    if (
-      this.getPlacementProp() === 'right' ||
-      this.getPlacementProp() === 'left'
-    ) {
+    if (this.state.placement === 'right' || this.state.placement === 'left') {
       return this.state.width
     }
     return null
@@ -595,13 +629,12 @@ export default class DataMessenger extends React.Component {
         return
       }
 
-      const { data } = drilldownData
       this.setState({ isChataThinking: true })
 
-      if (!drilldownData.supportedByAPI) {
-        this.runFilterDrilldown(data, messageId)
+      if (!drilldownData.data.supportedByAPI) {
+        this.runFilterDrilldown(drilldownData.data, messageId)
       } else {
-        this.runDrilldownFromAPI(data, queryID)
+        this.runDrilldownFromAPI(drilldownData.data, queryID)
       }
     }
   }
@@ -718,7 +751,7 @@ export default class DataMessenger extends React.Component {
   }
 
   handleClearQueriesDropdown = () => {
-    var acc = document.getElementById('clear-queries-dropdown')
+    this.acc = document.getElementById('clear-queries-dropdown')
     if (acc.style.display === 'block') {
       acc.style.display = 'none'
     } else {
@@ -727,7 +760,7 @@ export default class DataMessenger extends React.Component {
   }
 
   getFilterMenuPosition = () => {
-    switch (this.getPlacementProp()) {
+    switch (this.state.placement) {
       case 'right':
         return {
           transform: 'translate(1%, -3%)',
@@ -1095,7 +1128,6 @@ export default class DataMessenger extends React.Component {
                     themeConfig={getThemeConfig(
                       getThemeConfig(this.props.themeConfig)
                     )}
-                    scrollRef={this.messengerScrollComponent}
                     isDataMessengerOpen={this.state.isVisible}
                     setActiveMessage={this.setActiveMessage}
                     isActive={this.state.activeMessageId === message.id}
@@ -1125,6 +1157,8 @@ export default class DataMessenger extends React.Component {
                     enableDynamicCharting={this.props.enableDynamicCharting}
                     onNoneOfTheseClick={this.onNoneOfTheseClick}
                     autoChartAggregations={this.props.autoChartAggregations}
+                    messageContainerHeight={this.state.containerHeight}
+                    messageContainerWidth={this.state.containerWidth}
                     onConditionClickCallback={(e) => {
                       if (
                         _get(e, 'target.classList.value').includes(
@@ -1190,10 +1224,8 @@ export default class DataMessenger extends React.Component {
   fetchQueryTipsList = (keywords, pageNumber, skipQueryValidation) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
-    const containerElement = document.querySelector(
-      '.query-tips-page-container'
-    )
-    const pageSize = Math.floor((containerElement.clientHeight - 150) / 50)
+    this.containerElement = document.querySelector('.query-tips-page-container')
+    const pageSize = Math.floor((this.containerElement.clientHeight - 150) / 50)
 
     fetchQueryTips({
       ...getAuthentication(this.props.authentication),
@@ -1326,60 +1358,86 @@ export default class DataMessenger extends React.Component {
   }
 
   resizeDrawer = (e) => {
-    const self = this
-    const placement = this.getPlacementProp()
-    const maxWidth =
-      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
-      45
-    const maxHeight =
-      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
-      45
+    const { placement } = this.state
 
     if (placement === 'right') {
-      const offset = _get(self.state.startingResizePosition, 'x') - e.pageX
-      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
-      if (newWidth > maxWidth) newWidth = maxWidth
+      const offset = _get(this.state.startingResizePosition, 'x') - e.pageX
+      let newWidth = _get(this.state.startingResizePosition, 'width') + offset
+      if (newWidth > this.maxWidth) newWidth = this.maxWidth
+      if (newWidth < this.minWidth) newWidth = this.minWidth
       if (Number(newWidth)) {
-        self.setState({
+        this.setState({
           width: newWidth,
+          containerWidth: newWidth,
         })
       }
     } else if (placement === 'left') {
-      const offset = e.pageX - _get(self.state.startingResizePosition, 'x')
-      let newWidth = _get(self.state.startingResizePosition, 'width') + offset
-      if (newWidth > maxWidth) newWidth = maxWidth
+      const offset = e.pageX - _get(this.state.startingResizePosition, 'x')
+      let newWidth = _get(this.state.startingResizePosition, 'width') + offset
+      if (newWidth > this.maxWidth) newWidth = this.maxWidth
+      if (newWidth < this.minWidth) newWidth = this.minWidth
       if (Number(newWidth)) {
-        self.setState({
+        this.setState({
           width: newWidth,
+          containerWidth: newWidth,
         })
       }
     } else if (placement === 'bottom') {
-      const offset = _get(self.state.startingResizePosition, 'y') - e.pageY
-      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
-      if (newHeight > maxHeight) newHeight = maxHeight
+      const offset = _get(this.state.startingResizePosition, 'y') - e.pageY
+      let newHeight = _get(this.state.startingResizePosition, 'height') + offset
+      if (newHeight > this.maxHeight) newHeight = this.maxHeight
+      if (newHeight < this.minHeight) newHeight = this.minHeight
       if (Number(newHeight)) {
-        self.setState({
+        this.setState({
           height: newHeight,
+          containerHeight: newHeight,
         })
       }
     } else if (placement === 'top') {
-      const offset = e.pageY - _get(self.state.startingResizePosition, 'y')
-      let newHeight = _get(self.state.startingResizePosition, 'height') + offset
-      if (newHeight > maxHeight) newHeight = maxHeight
+      const offset = e.pageY - _get(this.state.startingResizePosition, 'y')
+      let newHeight = _get(this.state.startingResizePosition, 'height') + offset
+      if (newHeight > this.maxHeight) newHeight = this.maxHeight
+      if (newHeight < this.minHeight) newHeight = this.minHeight
       if (Number(newHeight)) {
-        self.setState({
+        this.setState({
           height: newHeight,
+          containerHeight: newHeight,
         })
       }
     }
   }
 
+  getScrollContainerHeight = () => {
+    if (this.messengerScrollComponent) {
+      return this.messengerScrollComponent.getClientHeight()
+    }
+  }
+
+  getScrollContainerWidth = () => {
+    if (this.messengerScrollComponent) {
+      return this.messengerScrollComponent.getClientWidth()
+    }
+  }
+
   stopResizingDrawer = () => {
-    this.setState({
-      isResizing: false,
-    })
-    window.removeEventListener('mousemove', this.resizeDrawer)
-    window.removeEventListener('mouseup', this.stopResizingDrawer)
+    if (this.state.placement === 'right' || this.state.placement === 'left') {
+      this.setState({
+        isResizing: false,
+        containerWidth: this.state.width,
+      })
+    } else if (
+      this.state.placement === 'top' ||
+      this.state.placement === 'bottom'
+    ) {
+      this.setState({
+        isResizing: false,
+        containerHeight: this.state.height,
+      })
+    }
+
+    document.removeEventListener('mousemove', this.resizeDrawer)
+    document.removeEventListener('mouseup', this.stopResizingDrawer)
+    document.removeEventListener('mouseleave', this.stopResizingDrawer)
   }
 
   renderResizeHandle = () => {
@@ -1399,8 +1457,9 @@ export default class DataMessenger extends React.Component {
                 height: this.state.height,
               },
             })
-            window.addEventListener('mousemove', self.resizeDrawer)
-            window.addEventListener('mouseup', self.stopResizingDrawer)
+            document.addEventListener('mousemove', self.resizeDrawer)
+            document.addEventListener('mouseup', self.stopResizingDrawer)
+            document.addEventListener('mouseleave', self.stopResizingDrawer)
           }}
         />
       )
@@ -1457,44 +1516,9 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  /**
-   * For some indiscernible reason, the Data Messenger drawer duplicates itself in the DOM.
-   * three times when first opened, then a number more times with each and every query
-   * being made.
-   *
-   * This function removes unnecessary duplicate instances of the Data Messenger Drawer
-   * and should help improve performance a bit by reducing the amount of renders.
-   *
-   * https://stackoverflow.com/questions/57946748/remove-duplicate-dom-element-javascript-not-jquery
-   */
-  removeDuplicateMessengerInstance() {
-    const instance = {}
-    for (const item of document.querySelectorAll('.ReactModalPortal')) {
-      if (instance[item]) item.parentNode.removeChild(item)
-      else instance[item] = true
-    }
-  }
-
   render = () => {
     if (this.state.hasError) {
       return null
-    }
-    let chartToolTipElement = document.getElementById('chart-element-tooltip')
-    const dataMessenger = document.getElementsByClassName(
-      'drawer-content-wrapper'
-    )[0]
-
-    if (
-      chartToolTipElement &&
-      dataMessenger &&
-      (this.props.placement !== 'top' || this.props.placement !== 'bottom')
-    ) {
-      if (_get(dataMessenger, 'style.width')) {
-        chartToolTipElement.style.maxWidth = `${_get(
-          dataMessenger,
-          'style.width'
-        ).match(/\d+/g)[0] - 75}px`
-      }
     }
 
     return (
@@ -1504,6 +1528,7 @@ export default class DataMessenger extends React.Component {
           {setLanguage()}
           <Drawer
             ref={(ref) => (this.dmRef = ref)}
+            id={`react-autoql-drawer-${this.DATA_MESSENGER_ID}`}
             data-test="react-autoql-drawer-test"
             className={`react-autoql-drawer
               ${this.state.isResizing ? ' disable-selection' : ''}

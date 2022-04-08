@@ -39,6 +39,7 @@ export default class ChataTable extends React.Component {
     columns: undefined,
     onFilterCallback: () => {},
     onCellClick: () => {},
+    onErrorCallback: () => {},
   }
 
   state = {
@@ -88,6 +89,7 @@ export default class ChataTable extends React.Component {
 
   componentWillUnmount = () => {
     clearTimeout(this.setTableHeaderValues)
+    this.existingFilterTag = undefined
   }
 
   setInitialHeaderFilters = () => {
@@ -99,8 +101,6 @@ export default class ChataTable extends React.Component {
   }
 
   cellClick = (e, cell) => {
-    // e.preventDefault()
-    // e.stopPropagation()
     this.props.onCellClick(cell)
   }
 
@@ -116,13 +116,13 @@ export default class ChataTable extends React.Component {
     if (filterValues) {
       filterValues.forEach((filter) => {
         try {
-          const existingFilterTag = document.querySelector(
+          this.existingFilterTag = document.querySelector(
             `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .filter-tag`
           )
 
           if (!isFilteringTable) {
             // Only add a filter tag if there isn't already one there
-            if (!existingFilterTag) {
+            if (!this.existingFilterTag) {
               const filterTagEl = document.createElement('span')
               filterTagEl.innerText = 'F'
               filterTagEl.setAttribute('class', 'filter-tag')
@@ -132,8 +132,10 @@ export default class ChataTable extends React.Component {
               )
               columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
             }
-          } else if (isFilteringTable && existingFilterTag) {
-            existingFilterTag.parentNode.removeChild(existingFilterTag)
+          } else if (isFilteringTable && this.existingFilterTag) {
+            this.existingFilterTag.parentNode.removeChild(
+              this.existingFilterTag
+            )
           }
         } catch (error) {
           console.error(error)
@@ -143,32 +145,86 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  selectTableElements = () => {
+    const filterHeaderElems = document.querySelectorAll(
+      `#react-autoql-table-${this.TABLE_ID} .tabulator-header-filter`
+    )
+    const colHeaderElements = document.querySelectorAll(
+      `#react-autoql-table-${this.TABLE_ID} .tabulator-col`
+    )
+    const tableContainer = document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID}`
+    )
+    const tableBody = document.querySelector(
+      `#react-autoql-table-container-${this.TABLE_ID} .tabulator-tableHolder`
+    )
+
+    return {
+      filterHeaderElems,
+      colHeaderElements,
+      tableContainer,
+      tableBody,
+    }
+  }
+
+  showFilterFields = () => {
+    const {
+      filterHeaderElems,
+      colHeaderElements,
+      tableContainer,
+      tableBody,
+    } = this.selectTableElements()
+
+    this.prevContainerHeight = tableContainer.style.height
+    this.prevElemDisplay = _get(filterHeaderElems, '[0].style.display')
+    this.prevElemHeight = _get(colHeaderElements, '[0].style.height')
+    const containerHeight = `${tableContainer.offsetHeight}px`
+
+    this.applyStyleToElement(tableContainer, 'height', containerHeight)
+    this.applyStylesToArray(filterHeaderElems, 'display', 'inline')
+    this.applyStylesToArray(colHeaderElements, 'height', '72px !important')
+    this.applyStyleToElement(tableBody, 'min-height', 'calc(100%-74px)')
+    this.applyStyleToElement(tableBody, 'height', 'calc(100%-74px)')
+    this.applyStyleToElement(tableBody, 'max-height', 'calc(100%-74px)')
+  }
+
+  hideFilterFields = () => {
+    const {
+      filterHeaderElems,
+      colHeaderElements,
+      tableContainer,
+      tableBody,
+    } = this.selectTableElements()
+
+    this.applyStyleToElement(tableContainer, 'height', this.prevContainerHeight)
+    this.applyStylesToArray(filterHeaderElems, 'display', this.prevElemDisplay)
+    this.applyStylesToArray(colHeaderElements, 'height', this.prevElemHeight)
+    this.applyStyleToElement(tableBody, 'min-height', 'calc(100%-40px)')
+    this.applyStyleToElement(tableBody, 'height', 'calc(100%-40px)')
+    this.applyStyleToElement(tableBody, 'max-height', 'calc(100%-40px)')
+  }
+
+  applyStyleToElement = (element, styleAttribute, styleValue) => {
+    if (element) {
+      element.style[styleAttribute] = styleValue
+    }
+  }
+
+  applyStylesToArray = (elementArray, styleAttribute, styleValue) => {
+    if (_get(elementArray, 'length')) {
+      elementArray.forEach((element) => {
+        this.applyStyleToElement(element, styleAttribute, styleValue)
+      })
+    }
+  }
+
   toggleTableFilter = ({ isFilteringTable }) => {
     try {
-      const filterHeaderElements = document.querySelectorAll(
-        `#react-autoql-table-${this.TABLE_ID} .tabulator-header-filter`
-      )
-      const colHeaderElements = document.querySelectorAll(
-        `#react-autoql-table-${this.TABLE_ID} .tabulator-col`
-      )
-
       if (isFilteringTable) {
-        filterHeaderElements.forEach((element) => {
-          element.style.display = 'inline-block'
-        })
-
-        colHeaderElements.forEach((element) => {
-          element.style.height = '72px !important'
-        })
+        this.showFilterFields()
         this.setFilterTags({ isFilteringTable: true })
       } else {
-        filterHeaderElements.forEach((element) => {
-          element.style.display = 'none'
-        })
-
-        colHeaderElements.forEach((element) => {
-          element.style.height = '37px !important'
-        })
+        this.hideFilterFields()
         this.setFilterTags({ isFilteringTable: false })
       }
     } catch (error) {

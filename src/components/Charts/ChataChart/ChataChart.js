@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { max } from 'd3-array'
@@ -36,7 +37,6 @@ import {
   dataFormattingDefault,
   getThemeConfig,
 } from '../../../props/defaults'
-import _isEqual from 'lodash.isequal'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -46,7 +46,19 @@ export default class ChataChart extends Component {
     super(props)
     const { chartColors } = props.themeConfig
 
+    this.CHART_ID = uuid.v4()
     this.colorScale = scaleOrdinal().range(chartColors)
+    this.width = props.width
+    this.height = props.height
+
+    this.state = {
+      ...this.getNumberColumnSelectorState(props),
+      leftMargin: 50,
+      rightMargin: 10,
+      topMargin: 10,
+      bottomMargin: 100,
+      bottomLegendMargin: 0,
+    }
   }
 
   DEFAULT_MARGINS = {
@@ -69,6 +81,7 @@ export default class ChataChart extends Component {
     height: PropTypes.number.isRequired,
     onLegendClick: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
+    isResizing: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -78,28 +91,22 @@ export default class ChataChart extends Component {
 
     tableColumns: [],
     enableDynamicCharting: true,
+    isResizing: false,
     onLegendClick: () => {},
   }
 
-  state = {
-    leftMargin: 50,
-    rightMargin: 10,
-    topMargin: 10,
-    bottomMargin: 100,
-    bottomLegendMargin: 0,
-
-    currencySelectorState: [],
-    quantitySelectorState: [],
-    ratioSelectorState: [],
-  }
-
   componentDidMount = () => {
-    this.CHART_ID = uuid.v4()
     if (this.props.type !== 'pie') {
       this.updateMargins()
     }
+  }
 
-    this.setNumberColumnSelectorState()
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (nextProps.isResizing && this.props.isResizing) {
+      return false
+    }
+
+    return true
   }
 
   componentDidUpdate = (prevProps) => {
@@ -146,9 +153,9 @@ export default class ChataChart extends Component {
     }
   }
 
-  setNumberColumnSelectorState = () => {
-    const { columns } = this.props
-    const { numberColumnIndices } = this.props.dataConfig
+  getNumberColumnSelectorState = (props) => {
+    const { columns } = props
+    const { numberColumnIndices } = props.dataConfig
 
     if (!columns || !numberColumnIndices) {
       return
@@ -174,12 +181,16 @@ export default class ChataChart extends Component {
       }
     })
 
-    this.setState({
+    return {
       activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
       ratioSelectorState: ratioItems,
-    })
+    }
+  }
+
+  setNumberColumnSelectorState = () => {
+    this.setState(this.getNumberColumnSelectorState(this.props))
   }
 
   getNewLeftMargin = () => {
@@ -189,14 +200,14 @@ export default class ChataChart extends Component {
     // see if .react-autoql-axes is further left, and move that much to the right
     // then there is no need to calculate text lengths
 
-    const xAxis = select(this.chartRef)
+    this.xAxis = select(this.chartRef)
       .select('.axis-Bottom')
       .node()
-    const xAxisBBox = xAxis ? xAxis.getBBox() : {}
-    const yAxisLabels = select(this.chartRef)
+    const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
+    this.yAxisLabels = select(this.chartRef)
       .select('.axis-Left')
       .selectAll('text')
-    const maxYLabelWidth = max(yAxisLabels.nodes(), (n) =>
+    const maxYLabelWidth = max(this.yAxisLabels.nodes(), (n) =>
       n.getComputedTextLength()
     )
     let leftMargin = Math.ceil(maxYLabelWidth) + 55 // margin to include axis label
@@ -290,17 +301,18 @@ export default class ChataChart extends Component {
           ...newTopMargin,
         })
       })
+      this.rightBottomMarginUpdate = new AwaitTimeout(delay, () => {
+        const newRightMargin = this.getNewRightMargin()
+        const newBottomMargin = this.getNewBottomMargin()
+        this.setState({
+          ...newRightMargin,
+          ...newBottomMargin,
+        })
+      })
+
       this.leftTopMarginUpdate
         .start()
         .then(() => {
-          this.rightBottomMarginUpdate = new AwaitTimeout(delay, () => {
-            const newRightMargin = this.getNewRightMargin()
-            const newBottomMargin = this.getNewBottomMargin()
-            this.setState({
-              ...newRightMargin,
-              ...newBottomMargin,
-            })
-          })
           this.rightBottomMarginUpdate
             .start()
             .then(() => {
@@ -423,7 +435,6 @@ export default class ChataChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
     const {
@@ -434,7 +445,7 @@ export default class ChataChart extends Component {
       legendColumnIndex,
     } = this.props.dataConfig
 
-    const filteredSeriesData = this.getFilteredSeriesData(data)
+    const filteredSeriesData = this.getFilteredSeriesData(this.props.data)
 
     let innerPadding = this.INNER_PADDING
     if (numberColumnIndices.length > 1) {
@@ -925,6 +936,17 @@ export default class ChataChart extends Component {
   )
 
   render = () => {
+    if (this.props.isResizing) {
+      return (
+        <div
+          style={{
+            width: this.props.width,
+            height: this.props.height,
+          }}
+        />
+      )
+    }
+
     let chart
 
     switch (this.props.type) {

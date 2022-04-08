@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
@@ -49,6 +49,24 @@ export default class ChatMessage extends React.Component {
   MESSAGE_WIDTH_MARGINS = 40
   ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
+  constructor(props) {
+    super(props)
+
+    const displayType = getDefaultDisplayType(
+      props.response,
+      props.autoChartAggregations
+    )
+
+    this.state = {
+      supportedDisplayTypes: getSupportedDisplayTypes(props.response),
+      chartHeight: this.getChartHeight(displayType),
+      chartWidth: this.getChartWidth(),
+      isSettingColumnVisibility: false,
+      activeMenu: undefined,
+      displayType,
+    }
+  }
+
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -78,6 +96,8 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
+    messageContainerHeight: PropTypes.number,
+    messageContainerWidth: PropTypes.number,
   }
 
   static defaultProps = {
@@ -103,54 +123,38 @@ export default class ChatMessage extends React.Component {
     isResizing: false,
     enableDynamicCharting: true,
     autoChartAggregations: true,
+    messageContainerHeight: undefined,
+    messageContainerWidth: undefined,
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onConditionClickCallback: () => {},
   }
 
-  state = {
-    displayType: getDefaultDisplayType(
-      this.props.response,
-      this.props.autoChartAggregations
-    ),
-    supportedDisplayTypes: getSupportedDisplayTypes(this.props.response),
-    isSettingColumnVisibility: false,
-    activeMenu: undefined,
-  }
-
   componentDidMount = () => {
     this.setTableMessageHeightsTimeout = setTimeout(() => {
-      this.setTableMessageHeights()
-      // If we scroll to the bottom after the second update
-      // it should be rendered enough so it scrolls all the
-      // way to the bottom
-      this.forceUpdate(this.props.scrollToBottom)
+      this.props.scrollToBottom()
     }, 0)
+
+    this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
+    this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      prevProps.messageContainerHeight !== this.props.messageContainerHeight ||
+      prevProps.messageContainerWidth !== this.props.messageContainerWidth ||
+      this.state.displayType !== prevState.displayType
+    ) {
+      this.setState({
+        chartHeight: this.getChartHeight(this.state.displayType),
+        chartWidth: this.getChartWidth(),
+      })
+    }
     ReactTooltip.hide()
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.scrollIntoViewTimeout)
-    clearTimeout(this.setTableMessageHeightsTimeout)
-  }
-
-  setTableMessageHeights = () => {
-    // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
-    this.TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
-      _get(this.responseRef, 'numberOfTableRows')
-    )
-    this.PIVOT_TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
-      _get(this.responseRef, 'numberOfPivotTableRows')
-    )
-  }
-
-  getHeightOfTableFromRows = (rows) => {
-    // This is hacky but it eliminates the jumpy bug
-    // 39px per row, 81px leftover for padding and headers
-    return rows * 39 + 81
   }
 
   isScrolledIntoView = (elem) => {
@@ -177,15 +181,6 @@ export default class ChatMessage extends React.Component {
           inline: 'nearest',
           behavior: 'smooth',
         })
-        // If it didnt work the first time, it probably needs slightly more time
-        this.scrollIntoViewTimer = setTimeout(() => {
-          const newElement = document.getElementById(`message-${this.props.id}`)
-          newElement.scrollIntoView({
-            block: 'end',
-            inline: 'nearest',
-            behavior: 'smooth',
-          })
-        }, 300)
       }
     }, 0)
   }
@@ -203,21 +198,20 @@ export default class ChatMessage extends React.Component {
     this.setState({ supportedDisplayTypes })
   }
 
-  renderContent = (chartWidth, chartHeight) => {
-    const { response, content } = this.props
-    if (content) {
-      return content
-    } else if (_get(response, 'status') === 401) {
+  renderContent = () => {
+    if (this.props.content) {
+      return this.props.content
+    } else if (_get(this.props.response, 'status') === 401) {
       return errorMessages.UNAUTHENTICATED
-    } else if (response) {
+    } else if (this.props.response) {
       return (
-        <React.Fragment>
+        <Fragment>
           <QueryOutput
             ref={(ref) => (this.responseRef = ref)}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             onDataClick={this.props.processDrilldown}
-            queryResponse={response}
+            queryResponse={this.props.response}
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}
             isQueryRunning={this.props.isChataThinking}
@@ -227,8 +221,16 @@ export default class ChatMessage extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
-            height={isChartType(this.state.displayType) && chartHeight}
-            width={isChartType(this.state.displayType) && chartWidth}
+            height={
+              isChartType(this.state.displayType)
+                ? this.state.chartHeight
+                : undefined
+            }
+            width={
+              isChartType(this.state.displayType)
+                ? this.state.chartWidth
+                : undefined
+            }
             demo={getAuthentication(this.props.authentication).demo}
             onColumnsUpdate={this.props.onQueryResponseColumnsChange}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
@@ -248,6 +250,7 @@ export default class ChatMessage extends React.Component {
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
             enableQueryInterpretation={this.props.enableQueryInterpretation}
+            onRecommendedDisplayType={this.switchView}
             enableFilterLocking={this.props.enableFilterLocking}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef) {
@@ -258,7 +261,7 @@ export default class ChatMessage extends React.Component {
               this.props.onConditionClickCallback(e)
             }}
           />
-        </React.Fragment>
+        </Fragment>
       )
     }
     return errorMessages.GENERAL_QUERY
@@ -339,54 +342,18 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  getChartDimensions = () => {
-    let chartWidth = undefined
-    let chartHeight = undefined
-    const chatContainer = document.querySelector('.chat-message-container')
-
-    if (chatContainer) {
-      chartWidth = chatContainer.clientWidth - 70 // 100% of chat width minus message margins minus chat container margins
-      chartHeight = 0.85 * chatContainer.clientHeight - 40 // 85% of chat height minus message margins
-    }
-    if (
-      this.state.displayType === 'pie' &&
-      chartHeight > this.PIE_CHART_HEIGHT
-    ) {
-      chartHeight = this.PIE_CHART_HEIGHT
-    }
-
-    return { chartWidth, chartHeight }
+  // TODO(Nikki): handle this in chatachart not here
+  getChartWidth = () => {
+    return this.props.messageContainerWidth - 70
   }
 
-  getMessageHeight = () => {
-    let messageHeight = 'unset'
-
-    if (this.state.displayType === 'table' && this.TABLE_CONTAINER_HEIGHT) {
-      messageHeight = this.TABLE_CONTAINER_HEIGHT + this.MESSAGE_HEIGHT_MARGINS
-    } else if (
-      this.state.displayType === 'pivot_table' &&
-      this.PIVOT_TABLE_CONTAINER_HEIGHT
-    ) {
-      messageHeight = this.PIVOT_TABLE_CONTAINER_HEIGHT
+  // TODO(Nikki): handle this in chatachart not here
+  getChartHeight = (displayType) => {
+    if (displayType === 'pie') {
+      return this.PIE_CHART_HEIGHT
     }
 
-    return messageHeight
-  }
-
-  getMaxMessageheight = () => {
-    if (
-      this.props.type === 'text' ||
-      ['text', 'html'].includes(this.state.displayType)
-    ) {
-      return undefined
-    }
-
-    // const chartHeight = _get(this.getChartDimensions(), 'chartHeight')
-    // if (chartHeight) {
-    //   return chartHeight + 120
-    // }
-
-    return '85%'
+    return 0.85 * this.props.messageContainerHeight - 40 // 85% of chat height minus message margins
   }
 
   renderDataLimitWarning = () => {
@@ -410,34 +377,31 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
-    const { chartWidth, chartHeight } = this.getChartDimensions()
-    const messageHeight = this.getMessageHeight()
-    const maxMessageHeight = this.getMaxMessageheight()
-
     return (
       <ErrorBoundary>
         <div
           id={`message-${this.props.id}`}
+          data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}
-`}
-          style={{
-            maxHeight: maxMessageHeight,
-            height: messageHeight,
-          }}
-          data-test="chat-message"
+          `}
         >
           <div
+            ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
               ${isChartType(this.state.displayType) ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
               ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
-            {this.renderContent(chartWidth, chartHeight)}
-            {this.props.isDataMessengerOpen && this.renderRightToolbar()}
-            {this.props.isDataMessengerOpen && this.renderLeftToolbar()}
-            {this.renderDataLimitWarning()}
+            {this.props.isDataMessengerOpen && this.renderContent()}
+            {this.props.isDataMessengerOpen && !this.props.isResizing && (
+              <Fragment>
+                {this.renderRightToolbar()}
+                {this.renderLeftToolbar()}
+                {this.renderDataLimitWarning()}
+              </Fragment>
+            )}
           </div>
         </div>
       </ErrorBoundary>

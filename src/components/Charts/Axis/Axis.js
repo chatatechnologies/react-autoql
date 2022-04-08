@@ -67,6 +67,15 @@ export default class Axis extends Component {
     this.renderAxis()
   }
 
+  componentWillUnmount = () => {
+    this.axisElement = undefined
+    this.legendBorder = undefined
+    this.legendClippingContainer = undefined
+    this.bottomLegendElement = undefined
+    this.rightLegendElement = undefined
+    this.legendSwatchElements = undefined
+  }
+
   styleLegendTitleNoBorder = (svg) => {
     svg
       .select('.legendTitle')
@@ -112,28 +121,29 @@ export default class Axis extends Component {
     legendElement.parentNode.appendChild(legendElement)
   }
 
-  removeOverlappingLegendLabels = () => {
-    const legendContainer = select(
-      `#legend-bounding-box-${this.LEGEND_ID}`
-    ).node()
+  // TODO: remove last visible legend label if it is cut off
+  // removeOverlappingLegendLabels = () => {
+  //   const legendContainer = select(
+  //     `#legend-bounding-box-${this.LEGEND_ID}`
+  //   ).node()
 
-    select(this.rightLegendElement)
-      .selectAll('.cell')
-      .attr('opacity', function(d) {
-        // todo: fix this so the bboxes are absolute and intersection is possible
-        // const tspanElement = select(this)
-        //   .select('tspan')
-        //   .node()
-        // const isOverflowing = doesElementOverflowContainer(
-        //   this,
-        //   legendContainer
-        // )
-        // if (isOverflowing) {
-        //   return 0
-        // }
-        // return 1
-      })
-  }
+  //   select(this.rightLegendElement)
+  //     .selectAll('.cell')
+  //     .attr('opacity', function(d) {
+  //       // todo: fix this so the bboxes are absolute and intersection is possible
+  //       // const tspanElement = select(this)
+  //       //   .select('tspan')
+  //       //   .node()
+  //       // const isOverflowing = doesElementOverflowContainer(
+  //       //   this,
+  //       //   legendContainer
+  //       // )
+  //       // if (isOverflowing) {
+  //       //   return 0
+  //       // }
+  //       // return 1
+  //     })
+  // }
 
   renderLegend = () => {
     try {
@@ -147,9 +157,9 @@ export default class Axis extends Component {
       const legendScale = this.getLegendScale()
 
       if (this.props.hasRightLegend) {
-        const svg = select(this.rightLegendElement)
+        this.legendSVG = select(this.rightLegendElement)
 
-        svg
+        this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '0.7')
@@ -175,13 +185,13 @@ export default class Axis extends Component {
           legendOrdinal.title(this.props.legendTitle).titleWidth(100)
         }
 
-        svg.call(legendOrdinal).style('font-family', 'inherit')
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
 
         if (this.props.legendTitle) {
           if (this.props.onLegendTitleClick) {
-            this.styleLegendTitleWithBorder(svg)
+            this.styleLegendTitleWithBorder(this.legendSVG)
           } else {
-            this.styleLegendTitleNoBorder(svg)
+            this.styleLegendTitleNoBorder(this.legendSVG)
           }
         }
 
@@ -191,10 +201,13 @@ export default class Axis extends Component {
           .node()
           .getBBox().width
         select(this.legendClippingContainer).attr('width', legendWidth + 30)
-        svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
+        this.legendSVG.attr(
+          'clip-path',
+          `url(#legend-clip-area-${this.LEGEND_ID})`
+        )
       } else if (this.props.hasBottomLegend) {
-        const svg = select(this.bottomLegendElement)
-        svg
+        this.legendSVG = select(this.bottomLegendElement)
+        this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '0.7')
@@ -217,7 +230,7 @@ export default class Axis extends Component {
             self.props.onLegendClick(d)
           })
 
-        svg.call(legendOrdinal).style('font-family', 'inherit')
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
       }
 
       this.applyStylesForHiddenSeries()
@@ -236,12 +249,12 @@ export default class Axis extends Component {
         })
         .map((l) => l.label)
 
-      const legendSwatchElements = document.querySelectorAll(
+      this.legendSwatchElements = document.querySelectorAll(
         `#${this.LEGEND_ID} .label`
       )
 
-      if (legendSwatchElements) {
-        legendSwatchElements.forEach((el) => {
+      if (this.legendSwatchElements) {
+        this.legendSwatchElements.forEach((el) => {
           let textStrings = []
           el.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
