@@ -134,6 +134,7 @@ export default class QueryOutput extends React.Component {
     isDashboardQuery: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
+    isTaskModule: bool,
   }
 
   static defaultProps = {
@@ -163,6 +164,7 @@ export default class QueryOutput extends React.Component {
     autoChartAggregations: true,
     isDashboardQuery: false,
     enableFilterLocking: false,
+    isTaskModule: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -1744,9 +1746,12 @@ export default class QueryOutput extends React.Component {
               <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
                 <span>{str}</span>
                 {index !== splitErrorMessage.length - 1 && (
-                  <a onClick={this.props.reportProblemCallback} href="#">
+                  <button
+                    className="report-like-text-button"
+                    onClick={this.props.reportProblemCallback}
+                  >
                     report
-                  </a>
+                  </button>
                 )}
               </span>
             )
@@ -2328,7 +2333,8 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {!this.props.isDashboardQuery &&
+        {!this.props.isTaskModule &&
+        !this.props.isDashboardQuery &&
         getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
           ? this.renderReverseTranslation()
           : null}
