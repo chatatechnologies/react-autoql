@@ -1813,6 +1813,7 @@ export default class QueryOutput extends React.Component {
             onCellClick={this.processCellClick}
             headerFilters={this.pivotHeaderFilters}
             onFilterCallback={this.onTableFilter}
+            isResizing={this.props.isResizing}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1832,6 +1833,7 @@ export default class QueryOutput extends React.Component {
           onCellClick={this.processCellClick}
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
+          isResizing={this.props.isResizing}
         />
       </Fragment>
     )

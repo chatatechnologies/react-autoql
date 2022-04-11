@@ -314,7 +314,7 @@ export default class DataMessenger extends React.Component {
 
   onWindowResize = () => {
     if (!this.state.isWindowResizing) {
-      setMaxWidthAndHeightFromDocument()
+      this.setMaxWidthAndHeightFromDocument()
       this.setState({
         isWindowResizing: true,
         containerHeight: this.getScrollContainerHeight(),
@@ -1103,72 +1103,70 @@ export default class DataMessenger extends React.Component {
             <div {...props} className="custom-scrollbar-container" />
           )}
         >
-          <div style={{ height: '100%' }}>
-            {this.state.messages.length > 0 &&
-              this.state.messages.map((message) => {
-                return (
-                  <ChatMessage
-                    key={message.id}
-                    id={message.id}
-                    isIntroMessage={message.isIntroMessage}
-                    authentication={getAuthentication(
-                      getAuthentication(this.props.authentication)
-                    )}
-                    autoQLConfig={getAutoQLConfig(
-                      getAutoQLConfig(this.props.autoQLConfig)
-                    )}
-                    themeConfig={getThemeConfig(
-                      getThemeConfig(this.props.themeConfig)
-                    )}
-                    isDataMessengerOpen={this.state.isVisible}
-                    setActiveMessage={this.setActiveMessage}
-                    isActive={this.state.activeMessageId === message.id}
-                    processDrilldown={(drilldownData, queryID) =>
-                      this.processDrilldown(drilldownData, queryID, message.id)
+          {this.state.messages.length > 0 &&
+            this.state.messages.map((message) => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  isIntroMessage={message.isIntroMessage}
+                  authentication={getAuthentication(
+                    getAuthentication(this.props.authentication)
+                  )}
+                  autoQLConfig={getAutoQLConfig(
+                    getAutoQLConfig(this.props.autoQLConfig)
+                  )}
+                  themeConfig={getThemeConfig(
+                    getThemeConfig(this.props.themeConfig)
+                  )}
+                  isDataMessengerOpen={this.state.isVisible}
+                  setActiveMessage={this.setActiveMessage}
+                  isActive={this.state.activeMessageId === message.id}
+                  processDrilldown={(drilldownData, queryID) =>
+                    this.processDrilldown(drilldownData, queryID, message.id)
+                  }
+                  isResponse={message.isResponse}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.onSuggestionClick}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  lastMessageId={this.state.lastMessageId}
+                  dataFormatting={getDataFormatting(
+                    getDataFormatting(this.props.dataFormatting)
+                  )}
+                  displayType={
+                    message.displayType ||
+                    _get(message, 'response.data.data.display_type')
+                  }
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent}
+                  isResizing={this.state.isResizing}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
+                  messageContainerHeight={this.state.containerHeight}
+                  messageContainerWidth={this.state.containerWidth}
+                  onConditionClickCallback={(e) => {
+                    if (
+                      _get(e, 'target.classList.value').includes(
+                        'react-autoql-condition-link'
+                      )
+                    ) {
+                      this.setState({
+                        selectedValueLabel: _get(e, 'target.innerText')
+                          .replace('lock ', '')
+                          .trim(),
+                      })
                     }
-                    isResponse={message.isResponse}
-                    isChataThinking={this.state.isChataThinking}
-                    onSuggestionClick={this.onSuggestionClick}
-                    content={message.content}
-                    scrollToBottom={this.scrollToBottom}
-                    lastMessageId={this.state.lastMessageId}
-                    dataFormatting={getDataFormatting(
-                      getDataFormatting(this.props.dataFormatting)
-                    )}
-                    displayType={
-                      message.displayType ||
-                      _get(message, 'response.data.data.display_type')
-                    }
-                    response={message.response}
-                    type={message.type}
-                    onErrorCallback={this.props.onErrorCallback}
-                    onSuccessAlert={this.props.onSuccessAlert}
-                    deleteMessageCallback={this.deleteMessage}
-                    scrollContainerRef={this.messengerScrollComponent}
-                    isResizing={this.state.isResizing}
-                    enableDynamicCharting={this.props.enableDynamicCharting}
-                    onNoneOfTheseClick={this.onNoneOfTheseClick}
-                    autoChartAggregations={this.props.autoChartAggregations}
-                    messageContainerHeight={this.state.containerHeight}
-                    messageContainerWidth={this.state.containerWidth}
-                    onConditionClickCallback={(e) => {
-                      if (
-                        _get(e, 'target.classList.value').includes(
-                          'react-autoql-condition-link'
-                        )
-                      ) {
-                        this.setState({
-                          selectedValueLabel: _get(e, 'target.innerText')
-                            .replace('lock ', '')
-                            .trim(),
-                        })
-                      }
-                      this.setState({ isFilterLockingMenuOpen: true })
-                    }}
-                  />
-                )
-              })}
-          </div>
+                    this.setState({ isFilterLockingMenuOpen: true })
+                  }}
+                />
+              )
+            })}
         </CustomScrollbars>
         {this.state.isChataThinking && (
           <div className="response-loading-container">
