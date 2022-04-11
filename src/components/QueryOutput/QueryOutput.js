@@ -134,6 +134,7 @@ export default class QueryOutput extends React.Component {
     isDashboardQuery: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
+    isTaskModule: bool,
   }
 
   static defaultProps = {
@@ -163,6 +164,7 @@ export default class QueryOutput extends React.Component {
     autoChartAggregations: true,
     isDashboardQuery: false,
     enableFilterLocking: false,
+    isTaskModule: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -2331,7 +2333,8 @@ export default class QueryOutput extends React.Component {
           {_get(getAuthentication(this.props.authentication), 'isQandA') &&
             this.renderQandAResponseConfirmation()}
         </div>
-        {!this.props.isDashboardQuery &&
+        {!this.props.isTaskModule &&
+        !this.props.isDashboardQuery &&
         getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
           ? this.renderReverseTranslation()
           : null}
