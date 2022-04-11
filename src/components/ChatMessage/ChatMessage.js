@@ -169,20 +169,19 @@ export default class ChatMessage extends React.Component {
     this.props.addMessageToDM({
       content: (
         <>
-          Your file has been created with the query{' '}
+          Your file has successfully been downloaded with the query{' '}
           <b>
-            <i>{this.props.query}</i>
+            <i>{this.props.queryText}</i>
           </b>
           .
           {CSVFileSizeMb >= CSVexportLimit ? (
             <>
               <br />
               <p>
-                Sorry, the file is too large. We can only download around{' '}
-                {CSVexportLimit}Mb size CSV file at this time.
+                WARNING: The file you’ve requested is larger than{' '}
+                {CSVexportLimit}. This exceeds the maximum download size and you
+                will only receive partial data.
               </p>
-              <p>The total rows are {CSVtotal_rows}.</p>
-              <p>We capped {CSVreturned_rows} rows in the file.</p>
             </>
           ) : null}
         </>
@@ -223,7 +222,7 @@ export default class ChatMessage extends React.Component {
 
   setCSVDownloadMessageContent = (percentCompleted) => {
     this.setState({
-      content: `Hang on while we download your file... downloading ${percentCompleted}%`,
+      content: `Fetching your file ... ${percentCompleted}%`,
     })
   }
 
@@ -381,7 +380,7 @@ export default class ChatMessage extends React.Component {
 
   onCSVExportClick = (queryId, query) => {
     this.props.addMessageToDM({
-      content: `Hang on while we download your file... downloading 0%`,
+      content: `Fetching your file ... 0%`,
       query,
       isCSVProgressMessage: true,
       queryId,
