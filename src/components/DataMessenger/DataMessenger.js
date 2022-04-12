@@ -156,6 +156,7 @@ export default class DataMessenger extends React.Component {
     isSizeMaximum: false,
 
     updatedContent: undefined,
+    hasCSVDownloaded: false,
   }
 
   componentDidMount = () => {
@@ -671,6 +672,7 @@ export default class DataMessenger extends React.Component {
     content,
     query,
     isCSVProgressMessage,
+    hasCSVDownloaded,
     queryId,
   }) => {
     const id = uuid.v4()
@@ -684,6 +686,7 @@ export default class DataMessenger extends React.Component {
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
       isCSVProgressMessage,
+      hasCSVDownloaded,
       queryId,
     }
   }
@@ -713,6 +716,7 @@ export default class DataMessenger extends React.Component {
     content,
     query,
     isCSVProgressMessage,
+    hasCSVDownloaded,
     queryId,
   }) => {
     let currentMessages = this.state.messages
@@ -737,8 +741,14 @@ export default class DataMessenger extends React.Component {
         content,
         query,
         isCSVProgressMessage,
+        hasCSVDownloaded,
         queryId,
       })
+      this.setState({
+        messages: [...currentMessages, message],
+        hasCSVDownloaded: true,
+      })
+      return
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
@@ -748,9 +758,17 @@ export default class DataMessenger extends React.Component {
         query,
       })
     }
-
+    if (this.state.hasCSVDownloaded) {
+      for (let i in currentMessages) {
+        if (currentMessages[i].hasCSVDownloaded === false) {
+          currentMessages[i].hasCSVDownloaded = true
+          currentMessages[i].content = 'Fetching your file ... 100%'
+        }
+      }
+    }
     this.setState({
       messages: [...currentMessages, message],
+      hasCSVDownloaded: false,
     })
   }
 
@@ -1162,6 +1180,7 @@ export default class DataMessenger extends React.Component {
                     getThemeConfig(this.props.themeConfig)
                   )}
                   isCSVProgressMessage={message.isCSVProgressMessage}
+                  hasCSVDownloaded={message.hasCSVDownloaded}
                   queryId={message.queryId}
                   queryText={message.query}
                   scrollRef={this.messengerScrollComponent}

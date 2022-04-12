@@ -125,7 +125,7 @@ export default class ChatMessage extends React.Component {
       this.forceUpdate(this.props.scrollToBottom)
     }, 0)
 
-    if (this.props.isCSVProgressMessage) {
+    if (this.props.isCSVProgressMessage && !this.props.hasCSVDownloaded) {
       exportCSV({
         queryId: this.props.queryId,
         ...getAuthentication(this.props.authentication),
@@ -383,6 +383,7 @@ export default class ChatMessage extends React.Component {
       content: `Fetching your file ... 0%`,
       query,
       isCSVProgressMessage: true,
+      hasCSVDownloaded: false,
       queryId,
     })
   }
