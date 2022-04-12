@@ -150,6 +150,10 @@ export default class ConditionLockMenu extends React.Component {
     }
   }
 
+  componentWillUnmount = () => {
+    this.inputElement = undefined
+  }
+
   handleFetchFilteredList() {
     fetchConditions(getAuthentication(this.props.authentication)).then(
       (response) => {
@@ -451,10 +455,12 @@ export default class ConditionLockMenu extends React.Component {
           })
           if (i === text.length) {
             setTimeout(() => {
-              const input = document.querySelector(
+              this.inputElement = document.querySelector(
                 '#react-autoql-filter-menu-input'
               )
-              input.focus()
+              if (this.inputElement) {
+                this.inputElement.focus()
+              }
             }, 300)
           }
         }, i * 50)
@@ -480,7 +486,12 @@ export default class ConditionLockMenu extends React.Component {
           style={{ width: containerWidth }}
         >
           {this.renderShowMessage()}
-          <div className="react-autoql-condition-lock-header">
+          <div
+            className="react-autoql-condition-lock-header"
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
             <div className="react-autoql-filter-locking-title-container">
               <h3 className="react-autoql-filter-locking-title">
                 {lang.filterLockingTitle}{' '}

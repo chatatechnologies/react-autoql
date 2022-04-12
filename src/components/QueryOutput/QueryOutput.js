@@ -82,6 +82,7 @@ import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 import { weekdays } from 'moment-timezone'
 import WeekSelect from '../DateSelect/WeekSelect/WeekSelect'
+import { ReverseTranslation } from '../ReverseTranslation'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -150,7 +151,6 @@ export default class QueryOutput extends React.Component {
     authentication: authenticationType,
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
-    authentication: authenticationType,
     dataFormatting: dataFormattingType,
     dataConfig: shape({}),
     onSuggestionClick: func,
@@ -175,7 +175,7 @@ export default class QueryOutput extends React.Component {
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
-    onConditionClickCallback: func,
+    onRTValueLabelClick: func,
     isDashboardQuery: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
@@ -185,7 +185,6 @@ export default class QueryOutput extends React.Component {
     authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
     autoQLConfig: autoQLConfigDefault,
-    authentication: authenticationDefault,
     dataFormatting: dataFormattingDefault,
     dataConfig: undefined,
 
@@ -217,7 +216,7 @@ export default class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
-    onConditionClickCallback: () => {},
+    onRTValueLabelClick: () => {},
     onRecommendedDisplayType: () => {},
   }
 
@@ -302,12 +301,6 @@ export default class QueryOutput extends React.Component {
           props.autoChartAggregations
         )
         this.props.onRecommendedDisplayType(recommendedDisplayType)
-      } else if (
-        this.props.displayType &&
-        this.props.displayType !== prevProps.displayType
-      ) {
-        this.tableID = uuid.v4()
-        this.pivotTableID = uuid.v4()
       }
 
       // Do not allow scrolling while the context menu is open
@@ -2102,113 +2095,22 @@ export default class QueryOutput extends React.Component {
     )
   }
 
-  handleShowHide = (e) => {
-    // make room in response container for reverse translation text
-    if (
-      document.getElementById(`reverse-translation-${this.COMPONENT_KEY}`) &&
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
-    ) {
-      if (e.isFullyOpened) {
-        this.responseContainer.style.height = `calc(100% - ${e.contentHeight}px)`
-      } else {
-        this.responseContainer.style.height = `calc(100% - 26px)`
-      }
-    }
-  }
-
-  /**
-   *
-   * Apply conditions to queries that contain them and
-   * display value label names in reverse translation.
-   * It also adjusts query content size to accomodate text.
-   *
-   * @returns reverse translation of the query including a
-   * all applied conditions
-   */
   renderReverseTranslation = () => {
-    const id = `reverse-translation-${this.COMPONENT_KEY}`
-
-    if (
-      this.responseContainer &&
-      _get(this.queryResponse, 'data.data.interpretation')
-    ) {
-      // manipulate interpretation string to properly format various substrings
-      var reverseTranslation = _get(
-        this.queryResponse,
-        'data.data.interpretation'
-      )
-        .replace(/(["'])(?:(?=(\\?))\2.)*?\1/gi, (output) => {
-          const text = output.replace(/'/g, '')
-          if (
-            _get(
-              this.queryResponse,
-              'data.data.persistent_locked_conditions'
-            ).includes(text) ||
-            _get(
-              this.queryResponse,
-              'data.data.session_locked_conditions'
-            ).includes(text)
-          ) {
-            return `
-              <a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link-filtered">
-                <span class="material-icons react-autoql-custom-icon">lock</span>
-                ${' '}${text}
-              </a>
-            `
-          } else {
-            return `<a id="react-autoql-interpreted-value-label" class="react-autoql-condition-link">${text}</a>`
-          }
-        })
-        .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/gi, (output) => {
-          return dayjs(output)
-            .utc()
-            .format('ll')
-        })
-
-      return (
-        <div
-          id={id}
-          className="react-autoql-condition-lock-reverse-translation"
-        >
-          {/* TEMP DISABLE SHOW/HIDE CAPABILITY */}
-          <span
-            style={{ float: 'left', minHeight: 20 }}
-            // onClick={() => {
-            //   this.setState({
-            //     isShowingInterpretation: !this.state.isShowingInterpretation
-            //   })
-            // }}
-          >
-            {/* <ReactTooltip
-                className="react-autoql-drawer-tooltip"
-                id="react-autoql-interpretation"
-                effect="solid"
-                delayShow={500}
-                place="top"
-              /> */}
-            <Icon
-              // type={this.state.isShowingInterpretation ? 'caret-down' : 'caret-right' }
-              // data-tip={this.state.isShowingInterpretation ? "Hide query interpretation" : "Show query interpretation" }
-              type="info"
-              // data-for="react-autoql-interpretation"
-            />{' '}
-          </span>
-          <UnmountClosed
-            onRest={this.handleShowHide}
-            isOpened={true}
-            // isOpened={this.state.isShowingInterpretation}
-          >
-            <strong>Interpreted as: </strong>
-            <span
-              onClick={(e) => this.props.onConditionClickCallback(e)}
-              dangerouslySetInnerHTML={{
-                __html: `${reverseTranslation}`,
-              }}
-            />
-          </UnmountClosed>
-        </div>
-      )
-    }
+    return (
+      <ReverseTranslation
+        authentication={this.props.authentication}
+        onValueLabelClick={this.props.onRTValueLabelClick}
+        appliedFilters={this.props.appliedFilters}
+        reverseTranslation={_get(
+          this.queryResponse,
+          'data.data.reverse_translation'
+        )}
+        interpretation={_get(
+          this.queryResponse,
+          'data.data.parsed_interpretation'
+        )}
+      />
+    )
   }
 
   render = () => {
@@ -2262,14 +2164,8 @@ export default class QueryOutput extends React.Component {
           ${isTableType(this.props.displayType) ? 'table' : ''}`}
         >
           {this.renderResponse()}
+          {this.renderReverseTranslation()}
         </div>
-        {
-          // !this.props.isDashboardQuery &&
-          // getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation
-          //   ? this.renderReverseTranslation()
-          //   : null}
-          // {this.renderContextMenu()
-        }
       </ErrorBoundary>
     )
   }

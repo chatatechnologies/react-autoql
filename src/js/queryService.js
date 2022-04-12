@@ -1,5 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
+import { constructRTArray } from './reverseTranslationHelpers'
 
 var autoCompleteCall = null
 
@@ -65,7 +66,9 @@ export const fetchSuggestions = ({
 
   return axios
     .get(relatedQueriesUrl, config)
-    .then((response) => Promise.resolve(response))
+    .then((response) => {
+      return Promise.resolve(response)
+    })
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
@@ -132,6 +135,11 @@ export const runQueryOnly = ({
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
         throw new Error('Parse error')
+      }
+
+      const reverseTranslation = constructRTArray(response)
+      if (reverseTranslation) {
+        response.data.data.reverse_translation = reverseTranslation
       }
 
       return Promise.resolve(response)
@@ -305,7 +313,13 @@ export const runDrilldown = ({
 
   return axios
     .post(url, requestData, config)
-    .then((response) => Promise.resolve(response))
+    .then((response) => {
+      const reverseTranslation = constructRTArray(response)
+      if (reverseTranslation) {
+        response.data.data.reverse_translation = reverseTranslation
+      }
+      return Promise.resolve(response)
+    })
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 

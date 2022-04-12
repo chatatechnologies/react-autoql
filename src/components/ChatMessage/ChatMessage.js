@@ -95,7 +95,7 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    onConditionClickCallback: PropTypes.func,
+    onRTValueLabelClick: PropTypes.func,
     messageContainerHeight: PropTypes.number,
     messageContainerWidth: PropTypes.number,
   }
@@ -127,7 +127,7 @@ export default class ChatMessage extends React.Component {
     messageContainerWidth: undefined,
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
-    onConditionClickCallback: () => {},
+    onRTValueLabelClick: () => {},
   }
 
   componentDidMount = () => {
@@ -221,6 +221,7 @@ export default class ChatMessage extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
+            appliedFilters={this.props.appliedFilters}
             height={
               isChartType(this.state.displayType)
                 ? this.state.chartHeight
@@ -252,13 +253,11 @@ export default class ChatMessage extends React.Component {
             enableQueryInterpretation={this.props.enableQueryInterpretation}
             onRecommendedDisplayType={this.switchView}
             enableFilterLocking={this.props.enableFilterLocking}
+            onRTValueLabelClick={this.props.onRTValueLabelClick}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
               }
-            }}
-            onConditionClickCallback={(e) => {
-              this.props.onConditionClickCallback(e)
             }}
           />
         </Fragment>

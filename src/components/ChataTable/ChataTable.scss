@@ -1,7 +1,7 @@
 .react-autoql-table-container {
   height: 100%;
   max-width: 100%;
-  min-height: 125px;
+
   background-color: inherit;
 }
 
@@ -60,6 +60,7 @@
 }
 
 .react-autoql-table-container.filtering {
+  min-height: 125px;
   .filter-tag {
     display: none;
   }
@@ -77,6 +78,7 @@
 }
 
 .react-autoql-table-container:not(.filtering) {
+  min-height: 90px;
   .react-autoql-table .tabulator-col {
     height: auto !important;
   }

@@ -267,12 +267,16 @@
   }
 }
 
-.react-autoql-condition-lock-reverse-translation {
-  color: var(--react-autoql-text-color-primary);
-  background-color: var(--react-autoql-background-color-secondary);
-  border-radius: 5px;
-  padding: 4px 6px 4px 6px;
-  margin: 2px;
-  min-height: 26px;
-  min-width: 300px;
+.react-autoql-reverse-translation-container {
+  margin-right: auto;
+  padding-top: 10px;
+  max-height: 150px;
+
+  .react-autoql-reverse-translation {
+    color: var(--react-autoql-text-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
+    border-radius: 5px;
+    padding: 5px 13px 5px 13px;
+    height: 100%;
+  }
 }

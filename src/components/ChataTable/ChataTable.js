@@ -100,7 +100,7 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
-    if (this.state.isFilteringTable !== prevState.isFilteringTable) {
+    if (!this.state.isFilteringTable && prevState.isFilteringTable) {
       try {
         this.setFilterTags({ isFilteringTable: this.state.isFilteringTable })
       } catch (error) {
@@ -113,8 +113,8 @@ export default class ChataTable extends React.Component {
   componentWillUnmount = () => {
     clearTimeout(this.setTableHeaderValues)
     clearTimeout(this.setDimensionsTimeout)
+    this.resetFilterTags()
     this.existingFilterTag = undefined
-    this.columnTitleEl = undefined
     this.filterTagElements = undefined
   }
 

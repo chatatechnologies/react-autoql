@@ -623,7 +623,7 @@ export default class DataMessenger extends React.Component {
 
       this.setState({ isChataThinking: true })
 
-      if (!drilldownData.data.supportedByAPI) {
+      if (!drilldownData.supportedByAPI) {
         this.runFilterDrilldown(drilldownData.data, messageId)
       } else {
         this.runDrilldownFromAPI(drilldownData.data, queryID)
@@ -673,7 +673,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createMessage = ({ response, content, query }) => {
+  createMessage = ({ response, content, query, appliedFilters }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
@@ -682,6 +682,7 @@ export default class DataMessenger extends React.Component {
       response,
       query,
       id,
+      appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
     }
@@ -727,7 +728,11 @@ export default class DataMessenger extends React.Component {
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
-      message = this.createMessage({ response, content, query })
+      const appliedFilters = [
+        ..._get(response, 'data.data.persistent_locked_conditions', []),
+        ..._get(response, 'data.data.session_locked_conditions', []),
+      ]
+      message = this.createMessage({ response, content, query, appliedFilters })
     }
     this.setState({
       messages: [...currentMessages, message],
@@ -744,10 +749,10 @@ export default class DataMessenger extends React.Component {
 
   handleClearQueriesDropdown = () => {
     this.acc = document.getElementById('clear-queries-dropdown')
-    if (acc.style.display === 'block') {
-      acc.style.display = 'none'
+    if (this.acc.style.display === 'block') {
+      this.acc.style.display = 'none'
     } else {
-      acc.style.display = 'block'
+      this.acc.style.display = 'block'
     }
   }
 
@@ -774,6 +779,13 @@ export default class DataMessenger extends React.Component {
       default:
       // code block
     }
+  }
+
+  onRTValueLabelClick = (text) => {
+    this.setState({
+      isFilterLockingMenuOpen: true,
+      selectedValueLabel: text,
+    })
   }
 
   renderTabs = () => {
@@ -876,7 +888,8 @@ export default class DataMessenger extends React.Component {
             {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? (
               <button
                 id="react-autoql-filter-menu-dropdown-button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation()
                   this.setState({
                     isFilterLockingMenuOpen: !this.state
                       .isFilterLockingMenuOpen,
@@ -997,36 +1010,7 @@ export default class DataMessenger extends React.Component {
             containerStyle={this.getFilterMenuPosition()}
             isOpen={this.state.isFilterLockingMenuOpen}
             onClickOutside={(e) => {
-              /**
-               * Because the popover anchor is over the header title instead of the button,
-               * the button is considered part of an "outside" event. This also includes
-               * some elements inside of the popover as well for some reason.
-               *
-               * This is a hacky solution, but it works.
-               */
-              if (
-                _get(e, 'target.id') !==
-                  'react-autoql-interpreted-value-label' &&
-                _get(
-                  e,
-                  'target.parentElement.parentElement.parentElement.id'
-                ) !== 'react-autoql-filter-menu-dropdown-button' &&
-                _get(
-                  e,
-                  'target.parentElement.parentElement.parentElement.id'
-                ) !== 'react-autoql-filter-menu-dropdown' &&
-                _get(e, 'target.parentElement.id') !==
-                  'react-autoql-filter-table-row' &&
-                _get(e, 'target.parentElement.id') !==
-                  'react-autoql-remove-filtered-condition-icon' &&
-                _get(e, 'target.parentElement.parentElement.id') !==
-                  'react-autoql-remove-filtered-condition-icon' &&
-                _get(e, 'target.parentElement.id') !==
-                  'react-autoql-remove-filter-container' &&
-                !_get(e, 'target.classList.value').includes(
-                  'react-autoql-drawer-resize-handle'
-                )
-              ) {
+              if (this.state.isFilterLockingMenuOpen) {
                 this.setState({ isFilterLockingMenuOpen: false })
               }
             }}
@@ -1150,20 +1134,8 @@ export default class DataMessenger extends React.Component {
                   autoChartAggregations={this.props.autoChartAggregations}
                   messageContainerHeight={this.state.containerHeight}
                   messageContainerWidth={this.state.containerWidth}
-                  onConditionClickCallback={(e) => {
-                    if (
-                      _get(e, 'target.classList.value').includes(
-                        'react-autoql-condition-link'
-                      )
-                    ) {
-                      this.setState({
-                        selectedValueLabel: _get(e, 'target.innerText')
-                          .replace('lock ', '')
-                          .trim(),
-                      })
-                    }
-                    this.setState({ isFilterLockingMenuOpen: true })
-                  }}
+                  onRTValueLabelClick={this.onRTValueLabelClick}
+                  appliedFilters={message.appliedFilters}
                 />
               )
             })}
