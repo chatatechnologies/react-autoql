@@ -100,6 +100,10 @@ export default class ChataTable extends React.Component {
       }, 0)
     }
 
+    if (this.props.isResizing) {
+      this.isResizing = true
+    }
+
     if (!this.state.isFilteringTable && prevState.isFilteringTable) {
       try {
         this.setFilterTags({ isFilteringTable: this.state.isFilteringTable })
@@ -181,9 +185,6 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     let styleHeight = _get(this.props, 'style.height')
-    if (this.tableHeight) {
-      styleHeight = this.tableHeight
-    }
 
     return (
       <ErrorBoundary>
@@ -195,7 +196,10 @@ export default class ChataTable extends React.Component {
           ${this.supportsDrilldown ? 'supports-drilldown' : ''}
           ${this.state.isFilteringTable ? ' filtering' : ''}
           ${this.props.isResizing ? ' resizing' : ''}`}
-          style={{ ...this.props.style, height: styleHeight }}
+          style={{
+            ...this.props.style,
+            flexBasis: `${this.tableHeight || styleHeight}px`,
+          }}
         >
           {this.props.data && this.props.columns && (
             <ReactTabulator

@@ -21,7 +21,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ReverseTranslation.scss'
 
-export default class ReverseTranslation extends React.PureComponent {
+export default class ReverseTranslation extends React.Component {
   constructor(props) {
     super(props)
 
@@ -56,6 +56,14 @@ export default class ReverseTranslation extends React.PureComponent {
     if (this.props.onValueLabelClick) {
       this.validateAndUpdateValueLabels()
     }
+  }
+
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
+    }
+
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {

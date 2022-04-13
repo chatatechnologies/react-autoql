@@ -204,7 +204,7 @@ export default class Axes extends React.Component {
     const yLabelHeight = _get(this.getBBoxFromRef(this.yLabelRef), 'height', 0)
 
     return (
-      <g className="react-autoql-axes" data-test="react-autoql-axes">
+      <g>
         <g>
           <text
             ref={(r) => (this.yLabelRef = r)}
@@ -236,8 +236,6 @@ export default class Axes extends React.Component {
             />
           )}
         </g>
-        <Axis {...xProps} />
-        <Axis {...yProps} />
         <g>
           <text
             ref={(r) => (this.xLabelRef = r)}
@@ -266,6 +264,10 @@ export default class Axes extends React.Component {
               rx="4"
             />
           )}
+        </g>
+        <g className="react-autoql-axes" data-test="react-autoql-axes">
+          <Axis {...xProps} />
+          <Axis {...yProps} />
         </g>
       </g>
     )

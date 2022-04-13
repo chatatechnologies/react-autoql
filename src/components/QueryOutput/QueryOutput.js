@@ -2101,13 +2101,10 @@ export default class QueryOutput extends React.Component {
         authentication={this.props.authentication}
         onValueLabelClick={this.props.onRTValueLabelClick}
         appliedFilters={this.props.appliedFilters}
+        isResizing={this.props.isResizing}
         reverseTranslation={_get(
           this.queryResponse,
           'data.data.reverse_translation'
-        )}
-        interpretation={_get(
-          this.queryResponse,
-          'data.data.parsed_interpretation'
         )}
       />
     )

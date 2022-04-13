@@ -4,6 +4,7 @@ export * from './components/Dashboard'
 export * from './components/QueryOutput'
 export * from './components/SpeechToTextButton'
 export * from './components/ConditionLockMenu'
+export * from './components/ReverseTranslation'
 export {
   NotificationIcon,
   NotificationFeed,

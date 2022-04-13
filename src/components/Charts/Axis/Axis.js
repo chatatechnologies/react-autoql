@@ -403,7 +403,7 @@ export default class Axis extends Component {
             }}
             id={this.LEGEND_ID}
             data-test="right-legend"
-            className="legendOrdinal"
+            className="legendOrdinal right-legend"
             transform={`translate(${this.props.width + 15}, ${
               this.props.legendTitle ? '30' : '25'
             })`}

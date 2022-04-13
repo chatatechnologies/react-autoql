@@ -1,7 +1,7 @@
 .react-autoql-table-container {
-  height: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
   max-width: 100%;
-
   background-color: inherit;
 }
 
@@ -54,6 +54,7 @@
 
 .react-autoql-table-container.resizing {
   width: 100vw;
+
   .react-autoql-table {
     display: none;
   }
