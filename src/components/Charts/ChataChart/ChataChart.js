@@ -48,6 +48,7 @@ export default class ChataChart extends Component {
 
     this.CHART_ID = uuid.v4()
     this.Y_AXIS_LABEL_WIDTH = 35
+
     this.colorScale = scaleOrdinal().range(chartColors)
     this.firstRender = true
 
@@ -55,7 +56,7 @@ export default class ChataChart extends Component {
       ...this.getNumberColumnSelectorState(props),
       leftMargin: 55,
       rightMargin: 10,
-      topMargin: 10,
+      topMargin: 20,
       bottomMargin: 100,
       bottomLegendMargin: 0,
       isLoading: true,
@@ -101,13 +102,6 @@ export default class ChataChart extends Component {
     if (this.props.type !== 'pie') {
       this.updateMargins()
     }
-
-    if (this.chartContainerRef) {
-      this.chartHeight = this.chartContainerRef.offsetHeight
-      this.chartWidth = this.chartContainerRef.offsetWidth
-    }
-
-    this.setState({ isLoading: false })
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -120,8 +114,9 @@ export default class ChataChart extends Component {
 
   componentDidUpdate = (prevProps) => {
     ReactTooltip.rebuild()
+
     if (!this.props.isResizing && prevProps.isResizing) {
-      this.updateHeightAndWidth()
+      this.updateMargins()
     }
     if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
       this.updateMargins()
@@ -131,7 +126,7 @@ export default class ChataChart extends Component {
       this.props.type !== prevProps.type &&
       this.props.type !== 'pie'
     ) {
-      this.updateHeightAndWidth()
+      this.updateMargins()
     }
     if (!_isEqual(this.props.columns, prevProps.columns)) {
       this.setNumberColumnSelectorState()
@@ -150,18 +145,7 @@ export default class ChataChart extends Component {
     }
 
     this.updateMarginTimeout = undefined
-    this.chartElement = undefined
-    this.yAxisLabels = undefined
-    this.xAxis = undefined
     this.axes = undefined
-  }
-
-  updateHeightAndWidth = () => {
-    if (this.chartContainerRef) {
-      this.chartHeight = this.chartContainerRef.offsetHeight
-      this.chartWidth = this.chartContainerRef.offsetWidth
-      this.updateMargins()
-    }
   }
 
   getNumberColumnSelectorState = (props) => {
@@ -204,69 +188,27 @@ export default class ChataChart extends Component {
     this.setState(this.getNumberColumnSelectorState(this.props))
   }
 
-  getNewLeftMargin = () => {
-    this.axes = document.querySelector(
-      `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
-    )
-    const axesBbox = this.axes ? this.axes.getBoundingClientRect() : {}
-    const axesLeft = axesBbox.x
-    const containerLeft = this.chartContainerRef.getBoundingClientRect().x
-
+  getNewLeftMargin = (chartContainerClientRect, axesBbox) => {
+    const containerLeft = chartContainerClientRect.x
+    const axesLeft = axesBbox.x + containerLeft
     let leftMargin = this.state.leftMargin
     leftMargin += containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH
-    return { leftMargin }
+    return leftMargin
   }
 
-  // Keep this in case we need it later
-  getNewTopMargin = () => {
-    const topMargin = 20
-    return { topMargin }
-  }
-
-  getNewRightMargin = () => {
+  getNewRightMargin = (chartContainerClientRect, axesBbox) => {
+    const axesLeft = axesBbox.x + chartContainerClientRect.x
+    const axesRight = axesLeft + axesBbox.width
+    const containerRight =
+      chartContainerClientRect.x + chartContainerClientRect.width
     let rightMargin = this.state.rightMargin
 
-    // If the non-rotated labels (on the right side) in the x axis exceed the width of the chart, use that instead
-    this.chartElement = select(this.chartRef)
-      .select('.react-autoql-axes')
-      .node()
+    rightMargin += axesRight - containerRight
 
-    const chartBBox = this.chartElement
-      ? this.chartElement.getBBox()
-      : undefined
-    if (chartBBox) {
-      rightMargin += chartBBox.width - this.chartContainerRef.offsetWidth + 20
-    }
-
-    // * This should be taken care of by the above code
-    // * but I want to keep it around for a bit longer
-    // const legend = select(this.chartRef)
-    //   .select('.legendOrdinal-container')
-    //   .node()
-    // const legendBBox = legend ? legend.getBBox() : undefined
-    // const legendLocation = getLegendLocation(this.props.data, this.props.type)
-    // if (legendLocation === 'right' && _get(legendBBox, 'width')) {
-    //   rightMargin += legendBBox.width
-    // }
-
-    return { rightMargin }
+    return rightMargin
   }
 
-  getNewRightMargin2 = () => {
-    let rightMargin = this.state.rightMargin
-    this.axes = document.querySelector(
-      `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
-    )
-    const axesBbox = this.axes.getBBox()
-    const axesWidth = axesBbox.width
-    const containerWidth =
-      this.chartContainerRef.offsetWidth - this.Y_AXIS_LABEL_WIDTH
-
-    rightMargin += axesWidth - containerWidth
-    return { rightMargin }
-  }
-
-  getNewBottomMargin = () => {
+  getNewBottomMargin = (chartContainerClientRect) => {
     let legendBBox
     const legend = select(this.chartRef)
       .select('.legendOrdinal')
@@ -292,50 +234,63 @@ export default class ChataChart extends Component {
     // only for bar charts (vertical grid lines mess with the axis size)
     if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
       const innerTickSize =
-        this.chartHeight - this.state.topMargin - this.state.bottomMargin
+        chartContainerClientRect.height -
+        this.state.topMargin -
+        this.state.bottomMargin
       bottomMargin = bottomMargin - innerTickSize + 10
     }
 
     return {
       bottomMargin: bottomMargin || this.state.bottomMargin,
       bottomLegendMargin,
-      // bottomLegendWidth
     }
+  }
+
+  // Keep this in case we need it later
+  getNewTopMargin = () => {
+    return this.state.topMargin
   }
 
   updateMargins = (delay = 0) => {
     this.setState({ isLoading: true })
     try {
-      this.leftTopMarginUpdate = new AwaitTimeout(delay, () => {
-        const newLeftMargin = this.getNewLeftMargin()
-        // const newTopMargin = this.getNewTopMargin()
+      this.marginUpdate = new AwaitTimeout(delay, () => {
+        this.axes = document.querySelector(
+          `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
+        )
+
+        if (!this.chartContainerRef || !this.axes) {
+          return
+        }
+
+        const chartContainerClientRect = this.chartContainerRef.getBoundingClientRect()
+        const axesBbox = this.axes.getBBox()
+
+        const leftMargin = this.getNewLeftMargin(
+          chartContainerClientRect,
+          axesBbox
+        )
+        const rightMargin = this.getNewRightMargin(
+          chartContainerClientRect,
+          axesBbox
+        )
+        const topMargin = this.getNewTopMargin()
+        const bottomMargin = this.getNewBottomMargin(chartContainerClientRect)
+
         this.setState({
-          ...newLeftMargin,
-          // ...newTopMargin,
-        })
-      })
-      this.rightBottomMarginUpdate = new AwaitTimeout(delay, () => {
-        const newRightMargin = this.getNewRightMargin2()
-        const newBottomMargin = this.getNewBottomMargin()
-        this.setState({
-          ...newRightMargin,
-          ...newBottomMargin,
+          leftMargin,
+          topMargin,
+          rightMargin,
+          ...bottomMargin,
         })
       })
 
-      this.leftTopMarginUpdate
+      this.marginUpdate
         .start()
         .then(() => {
-          this.rightBottomMarginUpdate
-            .start()
-            .then(() => {
-              this.loadingTimeout = setTimeout(() => {
-                this.setState({ isLoading: false })
-              }, 0)
-            })
-            .catch(() => {
-              clearTimeout(this.loadingTimeout)
-            })
+          this.loadingTimeout = setTimeout(() => {
+            this.setState({ isLoading: false })
+          }, 0)
         })
         .catch((error) => {
           console.error(error)
@@ -993,15 +948,21 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
-    const chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
+    this.chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
+    this.chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
+
+    if ((!this.chartHeight || !this.chartWidth) && this.chartPlaceholderRef) {
+      this.chartWidth = _get(this.chartPlaceholderRef, 'offsetWidth', 0)
+      this.chartHeight = _get(this.chartPlaceholderRef, 'offsetHeight', 0)
+    }
 
     if (this.props.isResizing) {
       return (
         <div
+          ref={(r) => (this.chartPlaceholderRef = r)}
           style={{
-            width: `${chartWidth}px`,
-            height: `${chartHeight}px`,
+            flexBasis: this.chartHeight ? `${this.chartHeight}px` : '100vh',
+            width: '100%',
           }}
         />
       )
@@ -1017,7 +978,7 @@ export default class ChataChart extends Component {
             this.state.isLoading ? 'loading' : ''
           }`}
           style={{
-            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
+            flexBasis: this.chartHeight ? `${this.chartHeight}px` : '100vh',
           }}
         >
           {!this.firstRender && (
@@ -1025,8 +986,8 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns="http://www.w3.org/2000/svg"
-                width={chartWidth}
-                height={chartHeight}
+                width={this.chartWidth}
+                height={this.chartHeight}
                 style={{
                   fontFamily: _get(
                     getThemeConfig(this.props.themeConfig),

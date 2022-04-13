@@ -61,6 +61,7 @@ export default class ChatMessage extends React.Component {
       supportedDisplayTypes: getSupportedDisplayTypes(props.response),
       chartHeight: this.getChartHeight(displayType),
       chartWidth: this.getChartWidth(),
+      isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
       displayType,
@@ -135,6 +136,11 @@ export default class ChatMessage extends React.Component {
       this.props.scrollToBottom()
     }, 0)
 
+    // Wait until message bubble animation finishes to render message
+    this.animationTimeout = setTimeout(() => {
+      this.setState({ isAnimatingMessageBubble: false })
+    }, 600)
+
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
     this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
   }
@@ -155,6 +161,7 @@ export default class ChatMessage extends React.Component {
 
   componentWillUnmount = () => {
     clearTimeout(this.scrollIntoViewTimeout)
+    clearTimeout(this.animationTimeout)
   }
 
   isScrolledIntoView = (elem) => {
@@ -243,7 +250,9 @@ export default class ChatMessage extends React.Component {
             renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
-            isResizing={this.props.isResizing}
+            isResizing={
+              this.props.isResizing || this.state.isAnimatingMessageBubble
+            }
             enableDynamicCharting={this.props.enableDynamicCharting}
             dataConfig={this.state.dataConfig}
             onDataConfigChange={this.updateDataConfig}
