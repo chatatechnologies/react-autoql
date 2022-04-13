@@ -36,7 +36,7 @@
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
-  color: #fff;
+  color:  var(--react-autoql-data-messenger-header-title-color);
   line-height: 60px;
   font-size: 18px;
   letter-spacing: 0.05em;
@@ -150,7 +150,7 @@
 .react-autoql-drawer .chat-header-container button {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--react-autoql-data-messenger-header-button-color);
   margin: 10px;
   margin-right: 0;
   font-size: 20px;
@@ -208,7 +208,7 @@
 
     &.default-logo {
       background-color: var(--react-autoql-accent-color, #26a7df);
-      color: #fff;
+      color: var(--react-autoql-data-messenger-button-logo-color);
 
       .react-autoql-bubbles-outlined {
         position: absolute;
@@ -425,7 +425,7 @@
     z-index: 1;
 
     background: var(--react-autoql-accent-color);
-    color: #fff;
+    color: var(--react-autoql-data-messenger-page-switcher-button-color);
     opacity: 1;
 
     font-size: 22px;

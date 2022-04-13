@@ -856,13 +856,53 @@ export const setCSSVars = (themeConfig) => {
     return
   }
 
-  const { theme, accentColor, fontFamily } = themeConfig
+  const {
+    theme,
+    accentColor,
+    fontFamily,
+    messageTextColor,
+    dataMessengerHeaderTitleColor,
+    dataMessengerHeaderButtonColor,
+    dataMessengerPageSwitcherButtonColor,
+    dataMessengerButtonLogoColor,
+    chatVoiceRecordButtonColor,
+    messageToolBarButtonColor,
+  } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
     themeStyles['accent-color'] = accentColor
   }
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
+  }
+  if (messageTextColor) {
+    themeStyles['message-text-color'] = messageTextColor
+  }
+  if (dataMessengerHeaderTitleColor) {
+    themeStyles[
+      'data-messenger-header-title-color'
+    ] = dataMessengerHeaderTitleColor
+  }
+  if (dataMessengerHeaderButtonColor) {
+    themeStyles[
+      'data-messenger-header-button-color'
+    ] = dataMessengerHeaderButtonColor
+  }
+  if (dataMessengerPageSwitcherButtonColor) {
+    themeStyles[
+      'data-messenger-page-switcher-button-color'
+    ] = dataMessengerPageSwitcherButtonColor
+  }
+  if (dataMessengerButtonLogoColor) {
+    themeStyles[
+      'data-messenger-button-logo-color'
+    ] = dataMessengerButtonLogoColor
+  }
+  if (chatVoiceRecordButtonColor) {
+    themeStyles['chat-voice-record-button-color'] = chatVoiceRecordButtonColor
+  }
+  if (messageToolBarButtonColor) {
+    themeStyles['message-toolbar-button-color'] = messageToolBarButtonColor
   }
 
   for (let property in themeStyles) {
