@@ -44,6 +44,21 @@ export default class ChatMessage extends React.Component {
   supportedDisplayTypes = []
   filtering = false
 
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      csvDownloadProgress: this.props.initialCSVDownloadProgress,
+      displayType: getDefaultDisplayType(
+        props.response,
+        props.autoChartAggregations
+      ),
+      supportedDisplayTypes: getSupportedDisplayTypes(props.response),
+      isSettingColumnVisibility: false,
+      activeMenu: undefined,
+    }
+  }
+
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -75,6 +90,7 @@ export default class ChatMessage extends React.Component {
     onResponseCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
     onCSVExportClick: PropTypes.func,
+    csvDownloadProgress: PropTypes.number,
   }
 
   static defaultProps = {
@@ -100,20 +116,11 @@ export default class ChatMessage extends React.Component {
     isResizing: false,
     enableDynamicCharting: true,
     autoChartAggregations: true,
+    csvDownloadProgress: undefined,
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onConditionClickCallback: () => {},
     onResponseCallback: () => {},
-  }
-
-  state = {
-    displayType: getDefaultDisplayType(
-      this.props.response,
-      this.props.autoChartAggregations
-    ),
-    supportedDisplayTypes: getSupportedDisplayTypes(this.props.response),
-    isSettingColumnVisibility: false,
-    activeMenu: undefined,
   }
 
   componentDidMount = () => {
@@ -125,11 +132,16 @@ export default class ChatMessage extends React.Component {
       this.forceUpdate(this.props.scrollToBottom)
     }, 0)
 
-    if (this.props.isCSVProgressMessage && !this.props.hasCSVDownloaded) {
+    if (
+      this.props.isCSVProgressMessage &&
+      typeof this.state.csvDownloadProgress === 'undefined'
+    ) {
+      this.props.setCSVDownloadProgress(this.props.id, 0, true)
       exportCSV({
         queryId: this.props.queryId,
         ...getAuthentication(this.props.authentication),
-        csvProgressCallback: this.setCSVDownloadMessageContent,
+        csvProgressCallback: (percentCompleted) =>
+          this.props.setCSVDownloadProgress(this.props.id, percentCompleted),
       })
         .then((response) => {
           const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -220,12 +232,6 @@ export default class ChatMessage extends React.Component {
     return false
   }
 
-  setCSVDownloadMessageContent = (percentCompleted) => {
-    this.setState({
-      content: `Fetching your file ... ${percentCompleted}%`,
-    })
-  }
-
   scrollIntoView = () => {
     this.scrollIntoViewTimeout = setTimeout(() => {
       const element = document.getElementById(`message-${this.props.id}`)
@@ -269,15 +275,15 @@ export default class ChatMessage extends React.Component {
   }
 
   renderCSVProgressMessage = () => {
-    if (this.state.content) {
-      return this.state.content
-    }
-    return this.props.content
+    return `Fetching your file ... ${this.state.csvDownloadProgress || 0}%`
   }
 
   renderContent = (chartWidth, chartHeight) => {
     const { response, content, isCSVProgressMessage } = this.props
-    if (isCSVProgressMessage) {
+    if (
+      isCSVProgressMessage ||
+      typeof this.state.csvDownloadProgress !== 'undefined'
+    ) {
       return this.renderCSVProgressMessage()
     } else if (content) {
       return content
@@ -383,7 +389,6 @@ export default class ChatMessage extends React.Component {
       content: `Fetching your file ... 0%`,
       query,
       isCSVProgressMessage: true,
-      hasCSVDownloaded: false,
       queryId,
     })
   }

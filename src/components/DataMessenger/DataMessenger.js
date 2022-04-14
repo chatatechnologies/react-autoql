@@ -52,6 +52,33 @@ import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
 export default class DataMessenger extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.csvProgressLog = {}
+    this.messageRefs = {}
+
+    this.state = {
+      hasError: false,
+      isVisible: false,
+      activePage: props.defaultTab,
+      width: props.width,
+      height: props.height,
+      isResizing: false,
+      lastMessageId: undefined,
+      isOptionsDropdownOpen: false,
+      isFilterLockingMenuOpen: false,
+      selectedValueLabel: undefined,
+      conditions: undefined,
+      messages: [],
+      queryTipsList: undefined,
+      queryTipsLoading: false,
+      queryTipsError: false,
+      queryTipsTotalPages: undefined,
+      queryTipsCurrentPage: 1,
+      isSizeMaximum: false,
+    }
+  }
   static propTypes = {
     // Global
     authentication: authenticationType,
@@ -133,30 +160,6 @@ export default class DataMessenger extends React.Component {
     onVisibleChange: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
-  }
-
-  state = {
-    hasError: false,
-    isVisible: false,
-    activePage: this.props.defaultTab,
-    width: this.props.width,
-    height: this.props.height,
-    isResizing: false,
-    lastMessageId: undefined,
-    isOptionsDropdownOpen: false,
-    isFilterLockingMenuOpen: false,
-    selectedValueLabel: undefined,
-    conditions: undefined,
-    messages: [],
-    queryTipsList: undefined,
-    queryTipsLoading: false,
-    queryTipsError: false,
-    queryTipsTotalPages: undefined,
-    queryTipsCurrentPage: 1,
-    isSizeMaximum: false,
-
-    updatedContent: undefined,
-    hasCSVDownloaded: false,
   }
 
   componentDidMount = () => {
@@ -672,7 +675,6 @@ export default class DataMessenger extends React.Component {
     content,
     query,
     isCSVProgressMessage,
-    hasCSVDownloaded,
     queryId,
   }) => {
     const id = uuid.v4()
@@ -686,7 +688,6 @@ export default class DataMessenger extends React.Component {
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
       isCSVProgressMessage,
-      hasCSVDownloaded,
       queryId,
     }
   }
@@ -706,6 +707,7 @@ export default class DataMessenger extends React.Component {
       id: uuid.v4(),
       isResponse: false,
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
@@ -716,7 +718,6 @@ export default class DataMessenger extends React.Component {
     content,
     query,
     isCSVProgressMessage,
-    hasCSVDownloaded,
     queryId,
   }) => {
     let currentMessages = this.state.messages
@@ -741,14 +742,8 @@ export default class DataMessenger extends React.Component {
         content,
         query,
         isCSVProgressMessage,
-        hasCSVDownloaded,
         queryId,
       })
-      this.setState({
-        messages: [...currentMessages, message],
-        hasCSVDownloaded: true,
-      })
-      return
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
@@ -758,17 +753,9 @@ export default class DataMessenger extends React.Component {
         query,
       })
     }
-    if (this.state.hasCSVDownloaded) {
-      for (let i in currentMessages) {
-        if (currentMessages[i].hasCSVDownloaded === false) {
-          currentMessages[i].hasCSVDownloaded = true
-          currentMessages[i].content = 'Fetching your file ... 100%'
-        }
-      }
-    }
+
     this.setState({
       messages: [...currentMessages, message],
-      hasCSVDownloaded: false,
     })
   }
 
@@ -1151,6 +1138,15 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
+  setCSVDownloadProgress = (id, percentCompleted) => {
+    this.csvProgressLog[id] = percentCompleted
+    if (this.messageRefs[id]) {
+      this.messageRefs[id].setState({
+        csvDownloadProgress: percentCompleted,
+      })
+    }
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -1169,6 +1165,7 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
                   isIntroMessage={message.isIntroMessage}
                   authentication={getAuthentication(
                     getAuthentication(this.props.authentication)
@@ -1180,7 +1177,8 @@ export default class DataMessenger extends React.Component {
                     getThemeConfig(this.props.themeConfig)
                   )}
                   isCSVProgressMessage={message.isCSVProgressMessage}
-                  hasCSVDownloaded={message.hasCSVDownloaded}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  setCSVDownloadProgress={this.setCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
                   scrollRef={this.messengerScrollComponent}
