@@ -77,6 +77,7 @@ export default class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       isFilterLockingMenuOpen: false,
       selectedValueLabel: undefined,
+      isSizeMaximum: false,
       conditions: undefined,
       messages: [],
 
@@ -221,7 +222,9 @@ export default class DataMessenger extends React.Component {
         nextState.containerHeight = this.getScrollContainerHeight()
         nextState.containerWidth = this.getScrollContainerWidth()
       }
-
+      if (this.state.isSizeMaximum !== prevState.isSizeMaximum) {
+        this.forceUpdate()
+      }
       if (this.state.isVisible && !prevState.isVisible) {
         if (this.queryInputRef) {
           this.queryInputRef.focus()
@@ -433,6 +436,13 @@ export default class DataMessenger extends React.Component {
       lastMessageId: introMessages[introMessages.length - 1].id,
       isOptionsDropdownOpen: false,
       isFilterLockingMenuOpen: false,
+    })
+  }
+  toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
+    this.setState({
+      width: isFullScreen ? this.props.width : maxWidth,
+      height: isFullScreen ? this.props.height : maxHeight,
+      isSizeMaximum: isFullScreen ? false : true,
     })
   }
 
@@ -985,6 +995,13 @@ export default class DataMessenger extends React.Component {
   }
 
   renderHeaderContent = () => {
+    const maxWidth =
+      Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
+      45
+    const maxHeight =
+      Math.max(document.documentElement.clientHeight, window.innerHeight || 0) -
+      45
+    const isFullScreen = this.state.width === maxWidth
     return (
       <Fragment>
         <div className="react-autoql-header-left-container">
@@ -998,6 +1015,21 @@ export default class DataMessenger extends React.Component {
             data-for="react-autoql-header-tooltip"
           >
             <Icon type="close" />
+          </button>
+
+          <button
+            onClick={() =>
+              this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)
+            }
+            className="react-autoql-drawer-header-btn screen-mode"
+            data-tip={
+              isFullScreen
+                ? lang.minimizeDataMessenger
+                : lang.maximizeDataMessenger
+            }
+            data-for="react-autoql-header-tooltip"
+          >
+            <Icon type={isFullScreen ? 'minimize' : 'maximize'} />
           </button>
         </div>
         {!getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig))
@@ -1331,6 +1363,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           width: newWidth,
           containerWidth: newWidth,
+          isSizeMaximum: false,
         })
       }
     } else if (placement === 'left') {
@@ -1342,6 +1375,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           width: newWidth,
           containerWidth: newWidth,
+          isSizeMaximum: false,
         })
       }
     } else if (placement === 'bottom') {
@@ -1353,6 +1387,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           height: newHeight,
           containerHeight: newHeight,
+          isSizeMaximum: false,
         })
       }
     } else if (placement === 'top') {
@@ -1364,6 +1399,7 @@ export default class DataMessenger extends React.Component {
         this.setState({
           height: newHeight,
           containerHeight: newHeight,
+          isSizeMaximum: false,
         })
       }
     }

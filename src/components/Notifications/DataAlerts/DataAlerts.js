@@ -355,7 +355,7 @@ export default class DataAlerts extends React.Component {
                       )}
                       {this.hasError(notification) ? (
                         <React.Fragment>
-                          {notification.type === 'CUSTOM' ? (
+                          {notification.type === 'CUSTOM' && (
                             <Button
                               type="primary"
                               tooltip="This Alert is no longer active. <br /> Click to re-initialze it."
@@ -374,7 +374,7 @@ export default class DataAlerts extends React.Component {
                                 <Icon type="warning-triangle" /> Resend
                               </span>
                             </Button>
-                          ) : null}
+                          )}
 
                           <Checkbox
                             themeConfig={getThemeConfig(this.props.themeConfig)}
