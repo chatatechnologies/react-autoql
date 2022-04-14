@@ -856,18 +856,7 @@ export const setCSSVars = (themeConfig) => {
     return
   }
 
-  const {
-    theme,
-    accentColor,
-    fontFamily,
-    messageTextColor,
-    dataMessengerHeaderTitleColor,
-    dataMessengerHeaderButtonColor,
-    dataMessengerPageSwitcherButtonColor,
-    dataMessengerButtonLogoColor,
-    chatVoiceRecordButtonColor,
-    messageToolBarButtonColor,
-  } = themeConfig
+  const { theme, accentColor, fontFamily, textColorSecondary } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
     themeStyles['accent-color'] = accentColor
@@ -875,34 +864,35 @@ export const setCSSVars = (themeConfig) => {
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
   }
-  if (messageTextColor) {
-    themeStyles['message-text-color'] = messageTextColor
-  }
-  if (dataMessengerHeaderTitleColor) {
-    themeStyles[
-      'data-messenger-header-title-color'
-    ] = dataMessengerHeaderTitleColor
-  }
-  if (dataMessengerHeaderButtonColor) {
-    themeStyles[
-      'data-messenger-header-button-color'
-    ] = dataMessengerHeaderButtonColor
-  }
-  if (dataMessengerPageSwitcherButtonColor) {
-    themeStyles[
-      'data-messenger-page-switcher-button-color'
-    ] = dataMessengerPageSwitcherButtonColor
-  }
-  if (dataMessengerButtonLogoColor) {
-    themeStyles[
-      'data-messenger-button-logo-color'
-    ] = dataMessengerButtonLogoColor
-  }
-  if (chatVoiceRecordButtonColor) {
-    themeStyles['chat-voice-record-button-color'] = chatVoiceRecordButtonColor
-  }
-  if (messageToolBarButtonColor) {
-    themeStyles['message-toolbar-button-color'] = messageToolBarButtonColor
+  if (textColorSecondary) {
+    themeStyles['text-color-secondary'] = textColorSecondary
+  } else {
+    let textColorSecondary = accentColor
+    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+
+    if (textColorSecondary.slice(0, 1) === '#') {
+      textColorSecondary = textColorSecondary.slice(1)
+    }
+
+    // If a three-character hexcode, make six-character
+    if (textColorSecondary.length === 3) {
+      textColorSecondary = textColorSecondary
+        .split('')
+        .map(function(textColorSecondary) {
+          return textColorSecondary + textColorSecondary
+        })
+        .join('')
+    }
+    // Convert to RGB value
+    let r = parseInt(textColorSecondary.substr(0, 2), 16)
+    let g = parseInt(textColorSecondary.substr(2, 2), 16)
+    let b = parseInt(textColorSecondary.substr(4, 2), 16)
+    // Get YIQ ratio
+    let yiq = (r * 299 + g * 587 + b * 114) / 1000
+    // Check contrast
+
+    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+    themeStyles['text-color-secondary'] = yiq >= 128 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {

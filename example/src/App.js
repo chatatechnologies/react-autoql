@@ -141,13 +141,7 @@ export default class App extends Component {
     height: 500,
     width: 550,
     title: 'Data Messenger',
-    messageTextColor: '#ffffff',
-    dataMessengerHeaderTitleColor: '#ffffff',
-    dataMessengerHeaderButtonColor: '#ffffff',
-    dataMessengerPageSwitcherButtonColor: '#ffffff',
-    dataMessengerButtonLogoColor: '#ffffff',
-    chatVoiceRecordButtonColor: '#ffffff',
-    messageToolBarButtonColor: '#26a7df',
+    textColorSecondary: '#ffffff',
     lightAccentColor: '#26a7df',
     darkAccentColor: '#26a7df',
     dashboardBackground: '#fafafa',
@@ -246,15 +240,7 @@ export default class App extends Component {
   getThemeConfigProp = () => {
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
-    let messageTextColor = this.state.messageTextColor
-    let dataMessengerHeaderTitleColor = this.state.dataMessengerHeaderTitleColor
-    let dataMessengerHeaderButtonColor = this.state
-      .dataMessengerHeaderButtonColor
-    let dataMessengerPageSwitcherButtonColor = this.state
-      .dataMessengerPageSwitcherButtonColor
-    let dataMessengerButtonLogoColor = this.state.dataMessengerButtonLogoColor
-    let chatVoiceRecordButtonColor = this.state.chatVoiceRecordButtonColor
-    let messageToolBarButtonColor = this.state.messageToolBarButtonColor
+    let textColorSecondary = this.state.textColorSecondary
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
@@ -319,13 +305,7 @@ export default class App extends Component {
       theme: this.state.theme,
       accentColor:
         this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
-      messageTextColor: messageTextColor,
-      dataMessengerHeaderTitleColor: dataMessengerHeaderTitleColor,
-      dataMessengerHeaderButtonColor: dataMessengerHeaderButtonColor,
-      dataMessengerPageSwitcherButtonColor: dataMessengerPageSwitcherButtonColor,
-      dataMessengerButtonLogoColor: dataMessengerButtonLogoColor,
-      chatVoiceRecordButtonColor: chatVoiceRecordButtonColor,
-      messageToolBarButtonColor: messageToolBarButtonColor,
+      textColorSecondary: textColorSecondary,
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
       titleColor: dashboardTitleColor,
@@ -1354,68 +1334,15 @@ export default class App extends Component {
           }}
           value={this.state.dashboardBackground}
         />
-        <h4>Message Text Color</h4>
+        <h4>Text/Icon Color</h4>
         <Input
           type="color"
           onChange={(e) => {
-            this.setState({ messageTextColor: e.target.value })
+            this.setState({ textColorSecondary: e.target.value })
           }}
-          value={this.state.messageTextColor}
+          value={this.state.textColorSecondary}
         />
-        <h4>Message Toolbar Button Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({ messageToolBarButtonColor: e.target.value })
-          }}
-          value={this.state.messageToolBarButtonColor}
-        />
-        <h4>Data Messenger Header Title Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({ dataMessengerHeaderTitleColor: e.target.value })
-          }}
-          value={this.state.dataMessengerHeaderTitleColor}
-        />
-        <h4>Data Messenger Header Button Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({ dataMessengerHeaderButtonColor: e.target.value })
-          }}
-          value={this.state.dataMessengerHeaderButtonColor}
-        />
-        <h4>Data Messenger Page Switcher Button Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({
-              dataMessengerPageSwitcherButtonColor: e.target.value,
-            })
-          }}
-          value={this.state.dataMessengerPageSwitcherButtonColor}
-        />
-        <h4>Data Messenger Button Logo Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({
-              dataMessengerButtonLogoColor: e.target.value,
-            })
-          }}
-          value={this.state.dataMessengerButtonLogoColor}
-        />
-        <h4>Chat Voice Record Button Color</h4>
-        <Input
-          type="color"
-          onChange={(e) => {
-            this.setState({
-              chatVoiceRecordButtonColor: e.target.value,
-            })
-          }}
-          value={this.state.chatVoiceRecordButtonColor}
-        />
+
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
