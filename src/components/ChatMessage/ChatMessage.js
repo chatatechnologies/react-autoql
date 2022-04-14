@@ -401,7 +401,7 @@ export default class ChatMessage extends React.Component {
               ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
-            {this.props.isDataMessengerOpen && this.renderContent()}
+            {this.renderContent()}
             {this.props.isDataMessengerOpen && !this.props.isResizing && (
               <Fragment>
                 {this.renderRightToolbar()}

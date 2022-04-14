@@ -45,17 +45,17 @@ export default class Bars extends Component {
   }
 
   render = () => {
-    const { scales, data, labelValue } = this.props
+    const { scales, labelValue } = this.props
     const { yScale } = scales
 
-    const numberOfSeries = data[0].cells.length
+    const numberOfSeries = this.props.data[0].cells.length
     const barHeight = yScale.bandwidth() / numberOfSeries
 
     // Loop through each data value to make each series
     const allBars = []
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
-        data.map((d, index) => {
+        this.props.data.map((d, index) => {
           const y0 = yScale(d[labelValue])
           const dY = i * barHeight
           const finalBarYPosition = y0 + dY

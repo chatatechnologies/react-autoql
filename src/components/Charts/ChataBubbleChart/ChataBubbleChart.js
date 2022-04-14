@@ -139,19 +139,22 @@ export default class ChataBubbleChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
-    const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
-    const minValue = min(data, (d) => min(d.cells, (cell) => cell.value))
+    const maxValue = max(this.props.data, (d) =>
+      max(d.cells, (cell) => cell.value)
+    )
+    const minValue = min(this.props.data, (d) =>
+      min(d.cells, (cell) => cell.value)
+    )
 
-    const uniqueXLabels = data.map((d) => d.label)
+    const uniqueXLabels = this.props.data.map((d) => d.label)
     const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([leftMargin, width - rightMargin])
       .paddingOuter(0.5)
 
-    const uniqueYLabels = data[0].cells.map((cell) => cell.label)
+    const uniqueYLabels = this.props.data[0].cells.map((cell) => cell.label)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
@@ -198,7 +201,7 @@ export default class ChataBubbleChart extends Component {
               bottom: bottomMargin,
               top: topMargin,
             }}
-            data={data}
+            data={this.props.data}
             columns={columns}
             minValue={minValue}
             maxValue={maxValue}

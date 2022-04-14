@@ -24,15 +24,15 @@ export default class Line extends Component {
   }
 
   makeLines = () => {
-    const { scales, data, labelValue } = this.props
+    const { scales, labelValue } = this.props
     const { xScale, yScale } = scales
 
-    const numberOfSeries = data[0].cells.length
+    const numberOfSeries = this.props.data[0].cells.length
     const allLines = []
 
     for (let series = 0; series < numberOfSeries; series++) {
-      data.forEach((d, i) => {
-        const d2 = data[i + 1]
+      this.props.data.forEach((d, i) => {
+        const d2 = this.props.data[i + 1]
         const xShift = xScale.bandwidth() / 2
         const minValue = yScale.domain()[0]
 
@@ -63,14 +63,14 @@ export default class Line extends Component {
   }
 
   makeDots = () => {
-    const { scales, data, labelValue } = this.props
+    const { scales, labelValue } = this.props
     const { xScale, yScale } = scales
 
-    const numberOfSeries = data[0].cells.length
+    const numberOfSeries = this.props.data[0].cells.length
     const allDots = []
 
     for (let series = 0; series < numberOfSeries; series++) {
-      data.forEach((d) => {
+      this.props.data.forEach((d) => {
         const xShift = xScale.bandwidth() / 2
         allDots.push(
           <circle
