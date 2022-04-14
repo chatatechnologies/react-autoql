@@ -856,7 +856,7 @@ export const setCSSVars = (themeConfig) => {
     return
   }
 
-  const { theme, accentColor, fontFamily, textColorSecondary } = themeConfig
+  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
     themeStyles['accent-color'] = accentColor
@@ -864,35 +864,35 @@ export const setCSSVars = (themeConfig) => {
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
   }
-  if (textColorSecondary) {
-    themeStyles['text-color-secondary'] = textColorSecondary
+  if (accentTextColor) {
+    themeStyles['accent-text-color'] = accentTextColor
   } else {
-    let textColorSecondary = accentColor
+    let accentTextColor = accentColor
     //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
 
-    if (textColorSecondary.slice(0, 1) === '#') {
-      textColorSecondary = textColorSecondary.slice(1)
+    if (accentTextColor.slice(0, 1) === '#') {
+      accentTextColor = accentTextColor.slice(1)
     }
 
     // If a three-character hexcode, make six-character
-    if (textColorSecondary.length === 3) {
-      textColorSecondary = textColorSecondary
+    if (accentTextColor.length === 3) {
+      accentTextColor = accentTextColor
         .split('')
-        .map(function(textColorSecondary) {
-          return textColorSecondary + textColorSecondary
+        .map(function(accentTextColor) {
+          return accentTextColor + accentTextColor
         })
         .join('')
     }
     // Convert to RGB value
-    let r = parseInt(textColorSecondary.substr(0, 2), 16)
-    let g = parseInt(textColorSecondary.substr(2, 2), 16)
-    let b = parseInt(textColorSecondary.substr(4, 2), 16)
+    let r = parseInt(accentTextColor.substr(0, 2), 16)
+    let g = parseInt(accentTextColor.substr(2, 2), 16)
+    let b = parseInt(accentTextColor.substr(4, 2), 16)
     // Get YIQ ratio
     let yiq = (r * 299 + g * 587 + b * 114) / 1000
     // Check contrast
 
     //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['text-color-secondary'] = yiq >= 128 ? 'black' : 'white'
+    themeStyles['accent-text-color'] = yiq >= 128 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {

@@ -89,7 +89,7 @@
 }
 .chat-single-message-container.request .chat-message-bubble {
   background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-text-color-secondary);
+  color: var(--react-autoql-accent-text-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 }
 /* Increase height of message to include table filters,
