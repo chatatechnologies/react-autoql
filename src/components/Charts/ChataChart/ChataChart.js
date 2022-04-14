@@ -47,8 +47,9 @@ export default class ChataChart extends Component {
     const { chartColors } = props.themeConfig
 
     this.CHART_ID = uuid.v4()
-    this.Y_AXIS_LABEL_WIDTH = 35
-    this.X_AXIS_LABEL_HEIGHT = 35
+    this.Y_AXIS_LABEL_WIDTH = 15
+    this.X_AXIS_LABEL_HEIGHT = 15
+    this.PADDING = 20
 
     this.colorScale = scaleOrdinal().range(chartColors)
     this.filteredSeriesData = this.getFilteredSeriesData(props.data)
@@ -56,12 +57,11 @@ export default class ChataChart extends Component {
 
     this.state = {
       ...this.getNumberColumnSelectorState(props),
-      leftMargin: 55,
-      rightMargin: 10,
-      topMargin: 20,
-      bottomMargin: 100,
+      leftMargin: this.PADDING,
+      rightMargin: this.PADDING,
+      topMargin: this.PADDING,
+      bottomMargin: this.PADDING,
       bottomLegendMargin: 0,
-      isLoading: true,
     }
   }
 
@@ -197,7 +197,8 @@ export default class ChataChart extends Component {
     const containerLeft = chartContainerBbox.x
     const axesLeft = axesBbox.x + containerLeft
     let leftMargin = this.state.leftMargin
-    leftMargin += containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH
+    leftMargin +=
+      containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH + this.PADDING
     return leftMargin
   }
 
@@ -207,7 +208,7 @@ export default class ChataChart extends Component {
     const containerRight = chartContainerBbox.x + chartContainerBbox.width
     let rightMargin = this.state.rightMargin
 
-    rightMargin += axesRight - containerRight
+    rightMargin += axesRight - containerRight + this.PADDING
 
     return rightMargin
   }

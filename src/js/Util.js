@@ -575,7 +575,7 @@ export const isDisplayTypeValid = (response, displayType) => {
   }
 
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
-  const isValid = supportedDisplayTypes.includes(displayType)
+  const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
     console.warn(
       'Warning: provided display type is not valid for this response data'

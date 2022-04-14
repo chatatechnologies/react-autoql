@@ -207,6 +207,7 @@ export default class QueryOutput extends React.Component {
     autoChartAggregations: true,
     isDashboardQuery: false,
     enableFilterLocking: false,
+    showQueryInterpretation: false,
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -1846,8 +1847,8 @@ export default class QueryOutput extends React.Component {
           data={this.chartData}
           tableColumns={this.tableColumns}
           columns={this.chartTableColumns}
-          height={this.props.height}
-          width={this.props.width}
+          height={this.props.height || 0}
+          width={this.props.width || 0}
           isShowingInterpretation={this.state.isShowingInterpretation}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
@@ -2112,46 +2113,6 @@ export default class QueryOutput extends React.Component {
   }
 
   render = () => {
-    // this.translationContainer = document.getElementById(
-    //   `reverse-translation-${this.COMPONENT_KEY}`
-    // )
-
-    // let height = 0
-    // let width = 0
-
-    // if (this.responseContainer) {
-    //   height =
-    //     this.responseContainer.clientHeight -
-    //     getPadding(this.responseContainer).top -
-    //     getPadding(this.responseContainer).bottom
-
-    //   width =
-    //     this.responseContainer.clientWidth -
-    //     getPadding(this.responseContainer).left -
-    //     getPadding(this.responseContainer).right
-    // }
-
-    // if (this.props.height) {
-    // if (
-    //   translationContainer &&
-    //   getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-    //   this.state.isShowingInterpretation
-    // ) {
-    //   if (this.state.isShowingInterpretation) {
-    //     height = this.props.height - translationContainer.offsetHeight - 20
-    //   } else {
-    //     height = this.props.height - translationContainer.offsetHeight - 40
-    //   }
-    // } else {
-    //   height = this.props.height
-    // }
-    //   height = this.props.height
-    // }
-
-    // if (this.props.width) {
-    //   width = this.props.width
-    // }
-
     return (
       <ErrorBoundary>
         <div
@@ -2162,7 +2123,10 @@ export default class QueryOutput extends React.Component {
           ${isTableType(this.props.displayType) ? 'table' : ''}`}
         >
           {this.renderResponse()}
-          {this.renderReverseTranslation()}
+          {getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+          this.props.showQueryInterpretation
+            ? this.renderReverseTranslation()
+            : null}
         </div>
       </ErrorBoundary>
     )
