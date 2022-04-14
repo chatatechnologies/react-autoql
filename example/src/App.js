@@ -141,6 +141,7 @@ export default class App extends Component {
     height: 500,
     width: 550,
     title: 'Data Messenger',
+    accentTextColor: '#ffffff',
     lightAccentColor: '#26a7df',
     darkAccentColor: '#26a7df',
     dashboardBackground: '#fafafa',
@@ -239,6 +240,7 @@ export default class App extends Component {
   getThemeConfigProp = () => {
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
+    let accentTextColor = this.state.accentTextColor
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
@@ -303,6 +305,7 @@ export default class App extends Component {
       theme: this.state.theme,
       accentColor:
         this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
+      accentTextColor: accentTextColor,
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
       titleColor: dashboardTitleColor,
@@ -1331,6 +1334,15 @@ export default class App extends Component {
           }}
           value={this.state.dashboardBackground}
         />
+        <h4>Text/Icon Color</h4>
+        <Input
+          type="color"
+          onChange={(e) => {
+            this.setState({ accentTextColor: e.target.value })
+          }}
+          value={this.state.accentTextColor}
+        />
+
         <h4>Light Theme Accent Color</h4>
         <h5>
           For production version, the user will just choose "accentColor" and it
