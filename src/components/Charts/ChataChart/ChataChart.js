@@ -542,6 +542,9 @@ export default class ChataChart extends Component {
       <div
         className="axis-selector-container"
         id="string-column-selector-content"
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
       >
         <ul className="axis-selector-content">
           {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
@@ -575,7 +578,12 @@ export default class ChataChart extends Component {
     } = this.state
 
     return (
-      <div id="chata-chart-popover">
+      <div
+        id="chata-chart-popover"
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
         <div className="axis-selector-container">
           {!!currencySelectorState.length && (
             <Fragment>
@@ -746,7 +754,13 @@ export default class ChataChart extends Component {
     }
 
     return (
-      <div className="axis-selector-container" id="legend-selector-content">
+      <div
+        className="axis-selector-container"
+        id="legend-selector-content"
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
         <ul className="axis-selector-content">
           {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
             return (

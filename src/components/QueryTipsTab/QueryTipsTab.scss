@@ -109,7 +109,7 @@
     border-radius: 50%;
     outline: none;
     a {
-      color: #fff;
+      color:  var(--react-autoql-accent-text-color);
     }
   }
 
@@ -127,7 +127,7 @@
     position: absolute;
     font-size: 18px;
     a {
-      color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-primary);
     }
   }
   .pagination-previous {
