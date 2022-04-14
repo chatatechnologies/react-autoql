@@ -136,7 +136,7 @@ export default class ChatMessage extends React.Component {
       this.props.scrollToBottom()
     }, 0)
 
-    // Wait until message bubble animation finishes to render message
+    // Wait until message bubble animation finishes to show query output content
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
     }, 600)
@@ -250,9 +250,8 @@ export default class ChatMessage extends React.Component {
             renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
-            isResizing={
-              this.props.isResizing || this.state.isAnimatingMessageBubble
-            }
+            isResizing={this.props.isResizing}
+            isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
             dataConfig={this.state.dataConfig}
             onDataConfigChange={this.updateDataConfig}

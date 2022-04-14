@@ -1859,6 +1859,7 @@ export default class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
+          isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
         />
       </ErrorBoundary>

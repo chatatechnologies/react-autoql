@@ -3,7 +3,7 @@
 
 import React from 'react'
 import { mount, shallow } from 'enzyme'
-import { scaleLinear, scaleBand } from 'd3-scale'
+import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale'
 
 import Axes from './Axes'
 
@@ -11,19 +11,15 @@ import { findByTestAttr, ignoreConsoleErrors } from '../../../../test/testUtils'
 
 var yLabelRef
 
-const xScale = scaleLinear()
-  .domain([0, 100])
-  .range([0, 300])
-  .nice()
+const defaultProps = Axes.defaultProps
 
-const yScale = scaleBand()
-  .domain([50, 2, 35, 87])
-  .range([0, 300])
-
-const defaultProps = {
-  scales: { xScale, yScale },
+const exampleProps = {
   height: 300,
   width: 300,
+  scales: {
+    xScale: scaleLinear(),
+    yScale: scaleOrdinal(),
+  },
 }
 
 const setup = (props = {}, state = null) => {
@@ -39,7 +35,9 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     ignoreConsoleErrors(() => {
-      const wrapper = setup()
+      const wrapper = setup({
+        ...exampleProps,
+      })
       const axesComponent = findByTestAttr(wrapper, 'react-autoql-axes')
       expect(axesComponent.exists()).toBe(true)
     })
@@ -50,6 +48,7 @@ describe('after mount', () => {
   describe('renders axis labels correctly', () => {
     describe('short titles', () => {
       const wrapper = setup({
+        ...exampleProps,
         xCol: { title: 'x title test' },
         yCol: { title: 'y title test' },
       })
@@ -72,6 +71,7 @@ describe('after mount', () => {
 
     describe('long titles', () => {
       const wrapper = setup({
+        ...exampleProps,
         xCol: { title: 'x title test loooong title to test ellipsis overflow' },
         yCol: { title: 'y title test loooong title to test ellipsis overflow' },
       })
@@ -94,6 +94,7 @@ describe('after mount', () => {
 
     describe('renders dropdowns correctly', () => {
       const wrapper = setup({
+        ...exampleProps,
         xCol: { title: 'x title test' },
         yCol: { title: 'y title test' },
         hasXDropdown: true,
@@ -150,6 +151,7 @@ describe('after mount', () => {
         test('calls onXAxisClick when provided', () => {
           const onXAxisClick = jest.fn()
           const wrapper = setup({
+            ...exampleProps,
             xCol: { title: 'x title test' },
             yCol: { title: 'y title test' },
             hasXDropdown: true,
@@ -173,6 +175,7 @@ describe('after mount', () => {
         test('calls onYAxisClick when provided', () => {
           const onYAxisClick = jest.fn()
           const wrapper = setup({
+            ...exampleProps,
             xCol: { title: 'x title test' },
             yCol: { title: 'y title test' },
             hasXDropdown: true,
