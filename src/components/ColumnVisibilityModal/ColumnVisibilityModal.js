@@ -22,25 +22,13 @@ export default class ColumnVisibilityModal extends React.Component {
   }
 
   state = {
-    columns: this.props.columns.map((col) => {
-      return {
-        ...col,
-        content: col.title,
-        checked: col.visible,
-      }
-    }),
+    columns: this.props.columns,
   }
 
   componentDidUpdate = (prevProps) => {
     if (this.props.isVisible && !prevProps.isVisible) {
       this.setState({
-        columns: this.props.columns.map((col) => {
-          return {
-            ...col,
-            content: col.title,
-            checked: col.visible,
-          }
-        }),
+        columns: this.props.columns,
       })
     }
   }
@@ -51,18 +39,7 @@ export default class ColumnVisibilityModal extends React.Component {
         themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
-        onConfirm={() =>
-          this.props.onConfirm(
-            this.state.columns.map((col) => {
-              return {
-                ...col,
-                visible: col.checked,
-                content: undefined,
-                checked: undefined,
-              }
-            })
-          )
-        }
+        onConfirm={() => this.props.onConfirm(this.state.columns)}
         title="Show/Hide Columns"
         enableBodyScroll={true}
         width="600px"

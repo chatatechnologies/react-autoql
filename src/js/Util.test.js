@@ -35,7 +35,11 @@ const sampleListResponse = {
   data: {
     data: {
       display_type: 'data',
-      columns: [{ type: 'STRING' }, { type: 'STRING' }, { type: 'QUANTITY' }],
+      columns: [
+        { type: 'STRING', is_visible: true },
+        { type: 'STRING', is_visible: true },
+        { type: 'QUANTITY', is_visible: true },
+      ],
       rows: [
         ['Nikki', 'Moore', 100],
         ['John', 'Deer', 350],
@@ -47,7 +51,7 @@ const sampleSingleValueResponse = {
   data: {
     data: {
       display_type: 'data',
-      columns: [{ type: 'STRING' }],
+      columns: [{ type: 'STRING', is_visible: true }],
       rows: [['Nikki']],
     },
   },
@@ -57,7 +61,10 @@ const sampleSingleGroupableResponse = {
   data: {
     data: {
       display_type: 'data',
-      columns: [{ type: 'STRING', groupable: true }, { type: 'QUANTITY' }],
+      columns: [
+        { type: 'STRING', groupable: true, is_visible: true },
+        { type: 'QUANTITY', is_visible: true },
+      ],
       rows: [
         ['Nikki', 100],
         ['John', 350],
@@ -71,9 +78,9 @@ const sampleDoubleGroupableResponse = {
     data: {
       display_type: 'data',
       columns: [
-        { type: 'STRING', groupable: true },
-        { type: 'STRING', groupable: true },
-        { type: 'QUANTITY' },
+        { type: 'STRING', groupable: true, is_visible: true },
+        { type: 'STRING', groupable: true, is_visible: true },
+        { type: 'QUANTITY', is_visible: true },
       ],
       rows: [
         ['Nikki', 'Moore', 100],
@@ -329,7 +336,7 @@ describe('formatElement', () => {
 
   describe('PERCENT type', () => {
     test('defaults to 2 decimals', () => {
-      const element = 23.00
+      const element = 23.0
       const column = { type: 'PERCENT' }
       expect(formatElement({ element, column })).toEqual('23.00%')
     })
@@ -354,10 +361,10 @@ describe('formatElement', () => {
 describe('getColumnTypeAmounts', () => {
   test('works when all types are provided', () => {
     const columns = [
-      { type: 'QUANTITY' },
-      { type: 'DOLLAR_AMT' },
-      { type: 'STRING' },
-      { type: 'RATIO' },
+      { type: 'QUANTITY', is_visible: true },
+      { type: 'DOLLAR_AMT', is_visible: true },
+      { type: 'STRING', is_visible: true },
+      { type: 'RATIO', is_visible: true },
     ]
     expect(getColumnTypeAmounts(columns)).toEqual({
       amountOfNumberColumns: 3,
@@ -369,19 +376,19 @@ describe('getColumnTypeAmounts', () => {
 describe('getNumberOfGroupables', () => {
   test('correct with 0 groupables', () => {
     const columns = [
-      { groupable: false },
-      { groupable: false },
-      { groupable: false },
-      { groupable: false },
+      { groupable: false, is_visible: true },
+      { groupable: false, is_visible: true },
+      { groupable: false, is_visible: true },
+      { groupable: false, is_visible: true },
     ]
     expect(getNumberOfGroupables(columns)).toEqual(0)
   })
   test('correct with 2 groupables', () => {
     const columns = [
-      { groupable: false },
-      { groupable: false },
-      { groupable: true },
-      { groupable: true },
+      { groupable: false, is_visible: true },
+      { groupable: false, is_visible: true },
+      { groupable: true, is_visible: true },
+      { groupable: true, is_visible: true },
     ]
     expect(getNumberOfGroupables(columns)).toEqual(2)
   })
@@ -445,19 +452,19 @@ describe('supportsRegularPivotTable', () => {
 describe('supports2DCharts', () => {
   test('true case', () => {
     const columns = [
-      { type: 'QUANTITY' },
-      { type: 'DOLLAR_AMT' },
-      { type: 'STRING' },
-      { type: 'STRING' },
+      { type: 'QUANTITY', is_visible: true },
+      { type: 'DOLLAR_AMT', is_visible: true },
+      { type: 'STRING', is_visible: true },
+      { type: 'STRING', is_visible: true },
     ]
     expect(supports2DCharts(columns)).toBeTruthy()
   })
   test('false case', () => {
     const columns = [
-      { type: 'QUANTITY' },
-      { type: 'QUANTITY' },
-      { type: 'QUANTITY' },
-      { type: 'QUANTITY' },
+      { type: 'QUANTITY', is_visible: true },
+      { type: 'QUANTITY', is_visible: true },
+      { type: 'QUANTITY', is_visible: true },
+      { type: 'QUANTITY', is_visible: true },
     ]
     expect(supports2DCharts(columns)).toBeFalsy()
   })
@@ -469,7 +476,10 @@ describe('getSupportedDisplayTypes', () => {
       data: {
         data: {
           display_type: 'data',
-          columns: [{ type: 'STRING' }, { type: 'STRING' }],
+          columns: [
+            { type: 'STRING', is_visible: true },
+            { type: 'STRING', is_visible: true },
+          ],
           rows: [
             ['Nikki', 'Moore'],
             ['John', 'Deer'],
@@ -487,9 +497,9 @@ describe('getSupportedDisplayTypes', () => {
         data: {
           display_type: 'data',
           columns: [
-            { type: 'STRING' },
-            { type: 'STRING' },
-            { type: 'QUANTITY' },
+            { type: 'STRING', is_visible: true },
+            { type: 'STRING', is_visible: true },
+            { type: 'QUANTITY', is_visible: true },
           ],
           rows: [
             ['Nikki', 'Moore', 100],
@@ -541,9 +551,9 @@ describe('getDefaultDisplayType', () => {
     expect(getDefaultDisplayType(sampleListResponse, true)).toEqual('table')
   })
 
-  test('returns "table" for single value response', () => {
+  test('returns "single-value" for single value response', () => {
     expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual(
-      'table'
+      'single-value'
     )
   })
 
@@ -563,6 +573,10 @@ describe('getDefaultDisplayType', () => {
     expect(getDefaultDisplayType(responseTestCases[5], true)).toEqual(
       'suggestion'
     )
+  })
+
+  test('returns "text" as default', () => {
+    expect(getDefaultDisplayType(responseTestCases[2], true)).toEqual('text')
   })
 })
 

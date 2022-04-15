@@ -25,7 +25,7 @@ export default class Circles extends Component {
   }
 
   render = () => {
-    const { scales, data } = this.props
+    const { scales } = this.props
     const { xScale, yScale } = scales
 
     const radiusScale = scaleLinear()
@@ -33,7 +33,7 @@ export default class Circles extends Component {
       .range([0, Math.min(xScale.bandwidth(), yScale.bandwidth())])
 
     const circles = []
-    data.forEach((d) => {
+    this.props.data.forEach((d) => {
       d.cells.forEach((cell) => {
         circles.push(
           <circle

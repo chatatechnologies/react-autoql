@@ -1,6 +1,7 @@
 .chat-single-message-container {
   transition: background-color 0.2s ease;
   padding-top: 6px;
+  max-height: 85%;
 
   &:first-of-type {
     margin-top: 10px;
@@ -42,7 +43,6 @@
   display: flex;
   justify-content: flex-start;
   padding-left: 20px;
-  height: unset !important;
   animation: scale-up-bl 0.6s ease;
 }
 .chat-single-message-container.request {
@@ -91,11 +91,6 @@
   background: var(--react-autoql-accent-color);
   color: var(--react-autoql-accent-text-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-}
-/* Increase height of message to include table filters,
-so we dont have to redraw the whole table */
-.chat-single-message-container.response.filtering-table {
-  max-height: calc(85% + 35px) !important;
 }
 .chat-message-toolbar,
 .chat-message-toolbar.autoql-options-toolbar {

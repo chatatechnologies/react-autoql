@@ -97,14 +97,13 @@ export default class ChataStackedLineChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
     // Get max and min values from all series
-    const { max, min } = calculateMinAndMaxSums(data)
+    const { max, min } = calculateMinAndMaxSums(this.props.data)
 
     const xScale = this.xScale
-      .domain(data.map((d) => d.label))
+      .domain(this.props.data.map((d) => d.label))
       .range([leftMargin, width - rightMargin])
       .paddingInner(1)
       .paddingOuter(0)
@@ -114,9 +113,10 @@ export default class ChataStackedLineChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const labelArray = data.map((element) => element.label)
+    const labelArray = this.props.data.map((element) => element.label)
     const tickWidth = Math.abs(
-      xScale(_get(data, '[0].label')) - xScale(_get(data, '[1].label'))
+      xScale(_get(this.props.data, '[0].label')) -
+        xScale(_get(this.props.data, '[1].label'))
     )
     const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
@@ -161,7 +161,7 @@ export default class ChataStackedLineChart extends Component {
             bottom: bottomMargin,
             top: topMargin,
           }}
-          data={data}
+          data={this.props.data}
           width={width}
           height={height}
           onChartClick={onChartClick}

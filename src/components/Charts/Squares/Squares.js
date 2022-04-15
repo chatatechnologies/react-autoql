@@ -27,12 +27,12 @@ export default class Squares extends Component {
   }
 
   render = () => {
-    const { scales, data } = this.props
+    const { scales } = this.props
     const { xScale, yScale } = scales
 
     const squares = []
 
-    data.forEach((d) => {
+    this.props.data.forEach((d) => {
       d.cells.forEach((cell, i) => {
         const fillColor =
           cell.value >= 0

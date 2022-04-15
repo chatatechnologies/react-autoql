@@ -52,7 +52,7 @@ const defaultProps = {
   onErrorCallback: () => {},
   onNewNotificationCallback: () => {},
   deleteMessageCallback: () => {},
-  onFilterCallback: () => {},
+  onFilterClick: () => {},
 }
 
 const setup = (props = {}, state = null) => {

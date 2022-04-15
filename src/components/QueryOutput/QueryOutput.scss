@@ -1,7 +1,7 @@
 // required for reverse translation
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-.react-autoql-response-content-container:not(.html-content) {
+.react-autoql-response-content-container {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -9,64 +9,12 @@
   align-items: center;
   background-color: inherit;
   font-size: 14px;
+  overflow: hidden;
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
   height: 100%;
-  width: 100%;
-  overflow: hidden;
   color: var(--react-autoql-text-color-primary);
-}
-
-.react-autoql-response-content-container.html-content {
-  position: relative;
-  background-color: inherit;
-  text-align: left;
-  font-size: 14px;
-  height: 95%;
-  width: 100%;
-  overflow: hidden;
-  color: var(--react-autoql-text-color-primary);
-
-  table {
-    th {
-      border-bottom: 2px solid var(--react-autoql-border-color);
-    }
-    tr:not(:last-child) {
-      border-bottom: 1px solid var(--react-autoql-border-color);
-    }
-    td:not(:last-child) {
-      border-right: 1px solid var(--react-autoql-border-color);
-    }
-    th,
-    td {
-      padding: 5px 10px;
-    }
-  }
-
-  * {
-    font-size: inherit;
-  }
-
-  sup,
-  sub {
-    font-size: 10px;
-  }
-
-  > *:first-child {
-    margin-top: 0 !important;
-  }
-
-  > *:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  caption {
-    display: table-caption;
-    text-align: -webkit-center;
-    padding-top: unset;
-    padding-bottom: unset;
-    color: unset;
-    text-align: unset;
-    caption-side: unset;
-  }
 }
 
 .react-autoql-response-content-container.table {
@@ -74,6 +22,8 @@
   overflow-y: scroll;
   scrollbar-width: none;
   margin-bottom: 0 !important;
+  height: 100%;
+  width: 100%;
 }
 .react-autoql-response-content-container.table::-webkit-scrollbar {
   width: 0;
@@ -122,10 +72,6 @@
   margin-bottom: -3px;
   margin-right: 3px;
 }
-.qanda-positive-feedback-checkmark.react-autoql-icon svg {
-  color: var(--react-autoql-success-color);
-}
-
 .react-autoql-suggestion-message {
   height: 100%;
   width: 100%;
@@ -145,12 +91,6 @@
   font-size: inherit;
 }
 .no-columns-error-message {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
   text-align: center;
   padding: 20px;
   font-size: 13px;
@@ -331,14 +271,18 @@
   }
 }
 
-.react-autoql-condition-lock-reverse-translation {
-  color: var(--react-autoql-text-color-primary);
-  background-color: var(--react-autoql-background-color-secondary);
-  border-radius: 5px;
-  padding: 4px 6px 4px 6px;
-  margin: 2px;
-  min-height: 26px;
-  min-width: 300px;
+.react-autoql-reverse-translation-container {
+  margin-right: auto;
+  padding-top: 10px;
+  max-height: 150px;
+
+  .react-autoql-reverse-translation {
+    color: var(--react-autoql-text-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
+    border-radius: 5px;
+    padding: 5px 13px 5px 13px;
+    height: 100%;
+  }
 }
 
 .report-like-text-button {

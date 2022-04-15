@@ -138,18 +138,19 @@ export default class ChataHeatmapChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
-    const maxValue = max(data, (d) => max(d.cells, (cell) => cell.value))
+    const maxValue = max(this.props.data, (d) =>
+      max(d.cells, (cell) => cell.value)
+    )
 
-    const uniqueXLabels = data.map((d) => d.label)
+    const uniqueXLabels = this.props.data.map((d) => d.label)
     const xScale = this.xScale
       .domain(uniqueXLabels)
       .range([leftMargin + 10, width - rightMargin])
       .paddingInner(0.01)
 
-    const uniqueYLabels = data[0].cells.map((cell) => cell.label)
+    const uniqueYLabels = this.props.data[0].cells.map((cell) => cell.label)
     const yScale = this.yScale
       .domain(uniqueYLabels)
       .range([height - bottomMargin, topMargin])
@@ -197,7 +198,7 @@ export default class ChataHeatmapChart extends Component {
               bottom: bottomMargin,
               top: topMargin,
             }}
-            data={data}
+            data={this.props.data}
             columns={columns}
             legendColumn={legendColumn}
             maxValue={maxValue}
