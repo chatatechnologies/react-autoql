@@ -322,7 +322,21 @@ export const runDrilldown = ({
     })
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
-
+export const fetchTopics = ({ domain, token, apiKey } = {}) => {
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+  const url = `${domain}/autoql/api/v1/topic-set?key=${apiKey}`
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
 export const fetchAutocomplete = ({
   suggestion,
   domain,

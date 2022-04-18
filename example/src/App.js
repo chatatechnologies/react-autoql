@@ -175,7 +175,6 @@ export default class App extends Component {
     this.testAuthentication()
       .then(() => {
         this.fetchDashboards()
-        this.fetchTopics()
       })
       .catch(() => {
         this.logoutUser()
@@ -328,40 +327,6 @@ export default class App extends Component {
       })
   }
 
-  fetchTopics = async () => {
-    this.setState({ isFetchingTopics: true })
-
-    try {
-      const jwtToken = getStoredProp('jwtToken')
-      if (jwtToken) {
-        const baseUrl = getBaseUrl()
-
-        const url = `${baseUrl}/api/v1/topics?key=${this.state.apiKey}&project_id=${this.state.projectId}`
-        const topicsResponse = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-            'Integrator-Domain': this.state.domain,
-          },
-        })
-
-        this.setState({
-          componentKey: uuid.v4(),
-          topics: topicsResponse.data.items,
-          topicsError: false,
-          isFetchingTopics: false,
-        })
-      }
-    } catch (error) {
-      console.error(error)
-      this.setState({
-        componentKey: uuid.v4(),
-        topics: undefined,
-        topicsError: true,
-        isFetchingTopics: false,
-      })
-    }
-  }
-
   fetchDashboards = async () => {
     this.setState({
       isFetchingDashboard: true,
@@ -497,7 +462,6 @@ export default class App extends Component {
 
       message.success('Login Sucessful!', 0.8)
       this.fetchDashboards()
-      this.fetchTopics()
     } catch (error) {
       console.error(error)
       // Clear tokens

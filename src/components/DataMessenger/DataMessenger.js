@@ -44,6 +44,7 @@ import {
   runDrilldown,
   fetchQueryTips,
   fetchConditions,
+  fetchTopics,
 } from '../../js/queryService'
 import { ConditionLockMenu } from '../ConditionLockMenu'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -79,6 +80,7 @@ export default class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       isSizeMaximum: false,
       conditions: undefined,
+      topics: [],
       messages: [],
 
       queryTipsList: undefined,
@@ -203,6 +205,14 @@ export default class DataMessenger extends React.Component {
             session: sessionConditions,
           },
         })
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+    fetchTopics(getAuthentication(this.props.authentication))
+      .then((response) => {
+        this.setState({ topics: _get(response, 'data.data.topics') })
+        console.log(this.state.topics)
       })
       .catch((error) => {
         console.error(error)
@@ -351,7 +361,7 @@ export default class DataMessenger extends React.Component {
   createTopicsMessage = () => {
     const enableExploreQueries = this.props.enableExploreQueriesTab
 
-    const topics = this.props.queryQuickStartTopics.map((topic) => {
+    const topics = this.state.topics.map((topic) => {
       return {
         label: topic.topic,
         value: uuid.v4(),
@@ -909,6 +919,7 @@ export default class DataMessenger extends React.Component {
                 data-tip={lang.openFilterLocking}
                 data-for="react-autoql-header-tooltip"
               >
+                {/* {console.log(_get(this.state.conditions))} */}
                 <Icon
                   type={
                     _get(this.state.conditions, 'persistent.length') > 0 ||
