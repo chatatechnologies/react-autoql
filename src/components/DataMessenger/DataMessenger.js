@@ -211,14 +211,16 @@ export default class DataMessenger extends React.Component {
       fetchTopics(getAuthentication(this.props.authentication))
         .then((response) => {
           const topics = _get(response, 'data.data.topics')
-          const topicsMessageContent = this.createTopicsMessage(topics)
-          if (topicsMessageContent) {
-            const topicsMessage = this.createIntroMessage({
-              content: topicsMessageContent,
-            })
-            this.setState({
-              messages: [...this.state.messages, topicsMessage],
-            })
+          if (topics) {
+            const topicsMessageContent = this.createTopicsMessage(topics)
+            if (topicsMessageContent) {
+              const topicsMessage = this.createIntroMessage({
+                content: topicsMessageContent,
+              })
+              this.setState({
+                messages: [...this.state.messages, topicsMessage],
+              })
+            }
           }
         })
         .catch((error) => {
