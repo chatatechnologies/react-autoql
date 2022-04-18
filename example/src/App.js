@@ -1317,7 +1317,7 @@ export default class App extends Component {
         activeNotificationData={this.state.activeNotificationContent}
         defaultTab={this.state.defaultTab}
         autoChartAggregations={this.state.autoChartAggregations}
-        hasQueryTopics={true}
+        enableQueryQuickStartTopics={true}
       />
     )
   }

@@ -80,7 +80,6 @@ export default class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       isSizeMaximum: false,
       conditions: undefined,
-      isLoadedTopics: false,
       topics: [],
       messages: [],
 
@@ -125,7 +124,7 @@ export default class DataMessenger extends React.Component {
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
     enableFilterLocking: bool,
-    hasQueryTopics: bool,
+    enableQueryQuickStartTopics: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -168,7 +167,7 @@ export default class DataMessenger extends React.Component {
     enableQueryInterpretation: false,
     defaultShowInterpretation: false,
     enableFilterLocking: false,
-    hasQueryTopics: true,
+    enableQueryQuickStartTopics: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -179,6 +178,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     try {
+      this.setIntroMessages()
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
       window.addEventListener('resize', this.onWindowResize)
@@ -196,34 +196,40 @@ export default class DataMessenger extends React.Component {
       console.error(error)
       this.setState({ hasError: true })
     }
-    if (this.props.hasQueryTopics) {
-      fetchConditions(getAuthentication(this.props.authentication))
-        .then((response) => {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          this.setState({
-            conditions: {
-              persistent: _get(response, 'data.data.data'),
-              session: sessionConditions,
-            },
-          })
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    }
 
-    fetchTopics(getAuthentication(this.props.authentication))
+    fetchConditions(getAuthentication(this.props.authentication))
       .then((response) => {
+        var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
         this.setState({
-          isLoadedTopics: true,
-          topics: _get(response, 'data.data.topics'),
+          conditions: {
+            persistent: _get(response, 'data.data.data'),
+            session: sessionConditions,
+          },
         })
       })
       .catch((error) => {
         console.error(error)
       })
+
+    if (this.props.enableQueryQuickStartTopics) {
+      fetchTopics(getAuthentication(this.props.authentication))
+        .then((response) => {
+          this.setState({
+            topics: _get(response, 'data.data.topics'),
+          })
+          if (_get(this.state, 'topics.length') > 0) {
+            const topicsMessageContent = this.createTopicsMessage()
+            if (topicsMessageContent) {
+              this.state.messages.push(
+                this.createIntroMessage({ content: topicsMessageContent })
+              )
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -258,12 +264,7 @@ export default class DataMessenger extends React.Component {
         this.clearMessages()
       }
       if (this.state.messages.length === 0) {
-        const { isLoadedTopics } = this.state
-        if (isLoadedTopics) {
-          this.setintroMessages()
-        } else if (!this.props.hasQueryTopics) {
-          this.setintroMessages()
-        }
+        this.setIntroMessages()
       }
 
       const thisTheme = getThemeConfig(this.props.themeConfig).theme
@@ -429,7 +430,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  setintroMessages = () => {
+  setIntroMessages = () => {
     let introMessageContent = this.props.introMessage
       ? `${this.props.introMessage}`
       : `Hi ${this.props.userDisplayName ||
@@ -441,15 +442,6 @@ export default class DataMessenger extends React.Component {
         content: introMessageContent,
       }),
     ]
-
-    if (this.state.topics.length > 0) {
-      const topicsMessageContent = this.createTopicsMessage()
-      if (topicsMessageContent) {
-        introMessages.push(
-          this.createIntroMessage({ content: topicsMessageContent })
-        )
-      }
-    }
 
     this.setState({
       messages: introMessages,
@@ -666,7 +658,7 @@ export default class DataMessenger extends React.Component {
       this.queryInputRef.focus()
     }
 
-    this.setintroMessages()
+    this.setIntroMessages()
   }
 
   deleteMessage = (id) => {
