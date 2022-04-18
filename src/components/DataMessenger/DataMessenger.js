@@ -66,23 +66,19 @@ export default class DataMessenger extends React.Component {
 
     this.state = {
       hasError: false,
-
       isVisible: false,
       activePage: this.props.defaultTab,
       width: this.props.width,
       height: this.props.height,
       isResizing: false,
       placement: this.getPlacementProp(props.placement),
-
       lastMessageId: undefined,
       isOptionsDropdownOpen: false,
       isFilterLockingMenuOpen: false,
       selectedValueLabel: undefined,
       isSizeMaximum: false,
       conditions: undefined,
-      topics: [],
       messages: [],
-
       queryTipsList: undefined,
       queryTipsLoading: false,
       queryTipsError: false,
@@ -214,16 +210,15 @@ export default class DataMessenger extends React.Component {
     if (this.props.enableQueryQuickStartTopics) {
       fetchTopics(getAuthentication(this.props.authentication))
         .then((response) => {
-          this.setState({
-            topics: _get(response, 'data.data.topics'),
-          })
-          if (_get(this.state, 'topics.length') > 0) {
-            const topicsMessageContent = this.createTopicsMessage()
-            if (topicsMessageContent) {
-              this.state.messages.push(
-                this.createIntroMessage({ content: topicsMessageContent })
-              )
-            }
+          const topics = _get(response, 'data.data.topics')
+          const topicsMessageContent = this.createTopicsMessage(topics)
+          if (topicsMessageContent) {
+            const topicsMessage = this.createIntroMessage({
+              content: topicsMessageContent,
+            })
+            this.setState({
+              messages: [...this.state.messages, topicsMessage],
+            })
           }
         })
         .catch((error) => {
@@ -371,9 +366,9 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createTopicsMessage = () => {
+  createTopicsMessage = (response) => {
     const enableExploreQueries = this.props.enableExploreQueriesTab
-    const topics = this.state.topics.map((topic) => {
+    const topics = response.map((topic) => {
       return {
         label: topic.name,
         value: uuid.v4(),
