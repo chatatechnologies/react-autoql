@@ -1307,7 +1307,6 @@ export default class App extends Component {
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}
         inputPlaceholder={this.state.inputPlaceholder}
-        queryQuickStartTopics={this.state.topics}
         inputStyles
         handleStyles={{ right: '25px' }}
         enableDynamicCharting={this.state.enableDynamicCharting}
@@ -1318,6 +1317,7 @@ export default class App extends Component {
         activeNotificationData={this.state.activeNotificationContent}
         defaultTab={this.state.defaultTab}
         autoChartAggregations={this.state.autoChartAggregations}
+        hasQueryTopics={true}
       />
     )
   }
