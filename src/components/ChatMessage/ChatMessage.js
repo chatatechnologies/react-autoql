@@ -135,11 +135,12 @@ export default class ChatMessage extends React.Component {
   componentDidMount = () => {
     this.setTableMessageHeightsTimeout = setTimeout(() => {
       this.props.scrollToBottom()
-    }, 0)
+    }, 100)
 
     // Wait until message bubble animation finishes to show query output content
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
+      this.props.scrollToBottom()
     }, 600)
 
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
@@ -184,9 +185,11 @@ export default class ChatMessage extends React.Component {
 
   scrollIntoView = () => {
     this.scrollIntoViewTimeout = setTimeout(() => {
-      this.messageElement = document.getElementById(`message-${this.props.id}`)
-      if (!this.isScrolledIntoView(this.messageElement)) {
-        this.scrollIntoViewTimer = this.messageElement.scrollIntoView({
+      if (
+        this.messageContainerRef &&
+        !this.isScrolledIntoView(this.messageContainerRef)
+      ) {
+        this.scrollIntoViewTimer = this.messageContainerRef.scrollIntoView({
           block: 'end',
           inline: 'nearest',
           behavior: 'smooth',
@@ -392,6 +395,7 @@ export default class ChatMessage extends React.Component {
       <ErrorBoundary>
         <div
           id={`message-${this.props.id}`}
+          ref={(r) => (this.messageContainerRef = r)}
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}

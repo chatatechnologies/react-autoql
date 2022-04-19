@@ -614,7 +614,7 @@ export default class Input extends React.Component {
     )
   }
 
-  renderToolbar = (shouldShowButton, allColumnsHidden) => {
+  renderToolbar = (shouldShowButton) => {
     return (
       <ErrorBoundary>
         <div
@@ -641,7 +641,7 @@ export default class Input extends React.Component {
               data-for="react-autoql-toolbar-btn-tooltip"
               data-test="options-toolbar-col-vis"
             >
-              <Icon type="eye" showBadge={allColumnsHidden} />
+              <Icon type="eye" showBadge={this.areColumnsHidden()} />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
