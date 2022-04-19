@@ -691,7 +691,6 @@ export default class DataMessenger extends React.Component {
     query,
     isCSVProgressMessage,
     queryId,
-    query,
     appliedFilters,
   }) => {
     const id = uuid.v4()
