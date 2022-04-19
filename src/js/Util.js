@@ -805,29 +805,6 @@ export const calculateMinAndMaxSums = (data) => {
   }
 }
 
-export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
-  const tooltip = document.getElementById(id)
-  const prevText = tooltip.innerHTML
-
-  tooltip.innerHTML = text
-  if (tooltipShiftDistance) {
-    tooltip.style.left = `${Number(
-      tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-    ) + tooltipShiftDistance}px`
-  }
-
-  if (duration) {
-    setTimeout(() => {
-      tooltip.innerHTML = prevText
-      if (tooltipShiftDistance) {
-        tooltip.style.left = `${Number(
-          tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-        ) - tooltipShiftDistance}px`
-      }
-    }, duration)
-  }
-}
-
 export const getChartLabelTextWidthInPx = (text) => {
   try {
     const tempDiv = document.createElement('DIV')
@@ -1066,9 +1043,7 @@ export class AwaitTimeout {
   }
 }
 
-export const setCaretPosition = (elemId, caretPos) => {
-  const elem = document.getElementById(elemId)
-
+export const setCaretPosition = (elem, caretPos) => {
   if (elem != null) {
     if (elem.createTextRange) {
       const range = elem.createTextRange()
@@ -1080,5 +1055,19 @@ export const setCaretPosition = (elemId, caretPos) => {
         elem.setSelectionRange(caretPos, caretPos)
       } else elem.focus()
     }
+  }
+}
+
+export const removeFromDOM = (elem) => {
+  try {
+    if (_get(elem, 'length')) {
+      elem.forEach((el) => {
+        el.remove()
+      })
+    } else if (elem) {
+      elem.remove()
+    }
+  } catch (error) {
+    console.error(error)
   }
 }

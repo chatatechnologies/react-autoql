@@ -155,6 +155,7 @@ export default class Input extends React.Component {
         link.setAttribute('download', 'export.csv')
         document.body.appendChild(link)
         link.click()
+        document.body.removeChild(link)
       })
       .catch((error) => {
         console.error(error)

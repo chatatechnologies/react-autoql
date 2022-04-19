@@ -21,7 +21,7 @@ import {
   getThemeConfig,
   themeConfigDefault,
 } from '../../props/defaults'
-import { setCSSVars } from '../../js/Util'
+import { removeFromDOM, setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -151,7 +151,13 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this.inputElement = undefined
+    removeFromDOM(this.inputElement)
+    removeFromDOM(this.el1)
+    removeFromDOM(this.el2)
+    removeFromDOM(this.el3)
+    removeFromDOM(this.el4)
+    removeFromDOM(this.el5)
+    removeFromDOM(this.el6)
   }
 
   handleFetchFilteredList() {
@@ -389,14 +395,14 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   handleShowMessage(type, message) {
-    var el = document.getElementById('react-autoql-condition-show-message')
-    el.className = 'show'
-    el.style.animation = 'none'
-    setTimeout(function() {
-      el.style.animation = ''
+    this.el6 = document.getElementById('react-autoql-condition-show-message')
+    this.el6.className = 'show'
+    this.el6.style.animation = 'none'
+    setTimeout(() => {
+      this.el6.style.animation = ''
     }, 10)
     setTimeout(() => {
-      el.className = el.className.replace('show', '')
+      this.el6.className = this.el6.className.replace('show', '')
     }, 3000)
     this.setState({
       inputValue: '',
@@ -408,41 +414,43 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   handleHighlightFilterRow(index) {
-    var el = document.getElementById(
+    this.el1 = document.getElementById(
       `react-autoql-condition-table-list-item-${index}`
     )
-    if (el) {
-      el.className = 'react-autoql-highlight-row'
+    if (this.el1) {
+      this.el1.className = 'react-autoql-highlight-row'
       setTimeout(() => {
-        el.className = el.className.replace('react-autoql-highlight-row', '')
+        this.el1.className = this.el1.className.replace(
+          'react-autoql-highlight-row',
+          ''
+        )
       }, 1800)
     }
   }
 
-  timer
   onEnterFilterHeaderInfo = () => {
-    var el = document.getElementById('react-autoql-filter-description-id')
+    this.el2 = document.getElementById('react-autoql-filter-description-id')
     this.timer = setTimeout(() => {
-      el.className = 'show'
+      this.el2.className = 'show'
     }, 500)
   }
 
   onLeaveFilterHeaderInfo = () => {
-    var el = document.getElementById('react-autoql-filter-description-id')
-    el.className = el.className.replace('show', '')
+    this.el3 = document.getElementById('react-autoql-filter-description-id')
+    this.el3.className = this.el3.className.replace('show', '')
     clearTimeout(this.timer)
   }
 
   onEnterFilterSettingInfo = () => {
-    var el = document.getElementById('react-autoql-filter-setting-info-card')
+    this.el4 = document.getElementById('react-autoql-filter-setting-info-card')
     this.timer = setTimeout(() => {
-      el.className = 'show'
+      this.el4.className = 'show'
     }, 500)
   }
 
   onLeaveFilterSettingInfo = () => {
-    var el = document.getElementById('react-autoql-filter-setting-info-card')
-    el.className = el.className.replace('show', '')
+    this.el5 = document.getElementById('react-autoql-filter-setting-info-card')
+    this.el5.className = this.el5.className.replace('show', '')
     clearTimeout(this.timer)
   }
 

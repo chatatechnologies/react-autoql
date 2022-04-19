@@ -35,6 +35,7 @@ import {
   getSupportedDisplayTypes,
   areAllColumnsHidden,
   isTableType,
+  removeFromDOM,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -162,6 +163,8 @@ export default class ChatMessage extends React.Component {
   componentWillUnmount = () => {
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
+
+    removeFromDOM(this.messageElement)
   }
 
   isScrolledIntoView = (elem) => {
@@ -181,9 +184,9 @@ export default class ChatMessage extends React.Component {
 
   scrollIntoView = () => {
     this.scrollIntoViewTimeout = setTimeout(() => {
-      const element = document.getElementById(`message-${this.props.id}`)
-      if (!this.isScrolledIntoView(element)) {
-        this.scrollIntoViewTimer = element.scrollIntoView({
+      this.messageElement = document.getElementById(`message-${this.props.id}`)
+      if (!this.isScrolledIntoView(this.messageElement)) {
+        this.scrollIntoViewTimer = this.messageElement.scrollIntoView({
           block: 'end',
           inline: 'nearest',
           behavior: 'smooth',

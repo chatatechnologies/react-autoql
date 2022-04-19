@@ -2,6 +2,10 @@ import React, { Component } from 'react'
 import _get from 'lodash.get'
 
 export default class StackedColumns extends Component {
+  constructor(props) {
+    super(props)
+  }
+
   static propTypes = {}
 
   state = {
@@ -27,6 +31,7 @@ export default class StackedColumns extends Component {
   render = () => {
     const { scales } = this.props
     const { xScale, yScale } = scales
+    const xBandwidth = xScale.bandwidth()
 
     return (
       <g data-test="stacked-columns">
@@ -64,7 +69,7 @@ export default class StackedColumns extends Component {
                 }`}
                 x={xScale(d.label)}
                 y={y}
-                width={xScale.bandwidth()}
+                width={xBandwidth}
                 height={Math.abs(height)}
                 onClick={() => this.onColumnClick(d, i)}
                 data-tip={cell.tooltipData}

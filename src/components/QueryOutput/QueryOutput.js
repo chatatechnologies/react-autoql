@@ -63,6 +63,7 @@ import {
   getNumberOfGroupables,
   getPadding,
   areAllColumnsHidden,
+  removeFromDOM,
 } from '../../js/Util.js'
 
 import {
@@ -332,8 +333,10 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
-    this.responseContainer = undefined
-    this.translationContainer = undefined
+
+    removeFromDOM(this.responseContainer)
+    removeFromDOM(this.translationContainer)
+
     clearTimeout(this.tableFilterTimeout)
   }
 

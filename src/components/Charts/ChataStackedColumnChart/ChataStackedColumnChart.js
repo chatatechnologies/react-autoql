@@ -25,6 +25,9 @@ export default class ChataStackedColumnChart extends Component {
   constructor(props) {
     super(props)
     this.labelArray = props.data.map((element) => element.label)
+    const { max, min } = calculateMinAndMaxSums(props.data)
+    this.max = max
+    this.min = min
 
     this.state = {
       ...this.getNewState(props),
@@ -97,8 +100,6 @@ export default class ChataStackedColumnChart extends Component {
   }
 
   getNewState = (props) => {
-    const { max, min } = calculateMinAndMaxSums(props.data)
-
     const xScale = scaleBand()
       .domain(props.data.map((d) => d.label))
       .range([props.leftMargin, props.width - props.rightMargin])
@@ -106,7 +107,7 @@ export default class ChataStackedColumnChart extends Component {
       .paddingOuter(props.outerPadding)
 
     const yScale = scaleLinear()
-      .domain([min, max])
+      .domain([this.min, this.max])
       .range([props.height - props.bottomMargin, props.topMargin])
       .nice()
 
@@ -175,23 +176,22 @@ export default class ChataStackedColumnChart extends Component {
           }
           yAxisTitle={this.props.numberAxisTitle}
         />
-        {!(this.props.isResizing || this.props.isAnimatingContainer) && (
-          <StackedColumns
-            themeConfig={this.props.themeConfig}
-            scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
-            margins={{
-              left: this.props.leftMargin,
-              right: this.props.rightMargin,
-              bottom: this.props.bottomMargin,
-              top: this.props.topMargin,
-            }}
-            data={this.props.data}
-            width={this.props.width}
-            height={this.props.height}
-            onChartClick={this.props.onChartClick}
-            activeKey={this.props.activeChartElementKey}
-          />
-        )}
+        <StackedColumns
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
+          margins={{
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+          }}
+          data={this.props.data}
+          width={this.props.width}
+          height={this.props.height}
+          onChartClick={this.props.onChartClick}
+          activeKey={this.props.activeChartElementKey}
+          isResizing={this.props.isResizing || this.props.isAnimatingContainer}
+        />
       </g>
     )
   }

@@ -658,7 +658,6 @@ describe('getMinValueFromKeyValueObj', () => {
 })
 
 // export const calculateMinAndMaxSums = data
-// export const changeTooltipText = (id, text, tooltipShiftDistance, duration)
 // export const getChartLabelTextWidthInPx = text
 // export const getLongestLabelInPx = (labels, col, config)
 // export const shouldRotateLabels = (tickWidth, labels, col, config)

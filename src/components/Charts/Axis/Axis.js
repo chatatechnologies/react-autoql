@@ -9,7 +9,7 @@ import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
-import { formatChartLabel } from '../../../js/Util.js'
+import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
 
 import './Axis.scss'
 import { themeConfigType, dataFormattingType } from '../../../props/types.js'
@@ -68,12 +68,14 @@ export default class Axis extends Component {
   }
 
   componentWillUnmount = () => {
-    this.axisElement = undefined
-    this.legendBorder = undefined
-    this.legendClippingContainer = undefined
-    this.bottomLegendElement = undefined
-    this.rightLegendElement = undefined
-    this.legendSwatchElements = undefined
+    removeFromDOM(this.axisElement)
+    removeFromDOM(this.legendBorder)
+    removeFromDOM(this.legendElement)
+    removeFromDOM(this.legendClippingContainer)
+    removeFromDOM(this.bottomLegendElement)
+    removeFromDOM(this.rightLegendElement)
+    removeFromDOM(this.legendSwatchElements)
+    removeFromDOM(this.swatchElements)
   }
 
   styleLegendTitleNoBorder = (svg) => {
@@ -117,8 +119,8 @@ export default class Axis extends Component {
       .attr('rx', 4)
 
     // Move to front
-    const legendElement = select(this.legendBorder).node()
-    legendElement.parentNode.appendChild(legendElement)
+    this.legendElement = select(this.legendBorder).node()
+    this.legendElement.parentNode.appendChild(this.legendElement)
   }
 
   // TODO: remove last visible legend label if it is cut off
@@ -254,19 +256,19 @@ export default class Axis extends Component {
       )
 
       if (this.legendSwatchElements) {
-        this.legendSwatchElements.forEach((el) => {
+        this.legendSwatchElements.forEach((el, i) => {
           let textStrings = []
           el.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
           })
 
           const legendLabelText = textStrings.join(' ')
-          const swatchElement = el.parentElement.querySelector('.swatch')
+          this.swatchElements[i] = el.parentElement.querySelector('.swatch')
 
           if (legendLabelTexts.includes(legendLabelText)) {
-            swatchElement.style.opacity = 0.3
+            this.swatchElements[i].style.opacity = 0.3
           } else {
-            swatchElement.style.opacity = 1
+            this.swatchElements[i].style.opacity = 1
           }
         })
       }

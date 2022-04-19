@@ -26,7 +26,11 @@ import {
   getThemeConfig,
 } from '../../props/defaults'
 
-import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
+import {
+  setCSSVars,
+  filterDataForDrilldown,
+  removeFromDOM,
+} from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 import { lang, setLanguage } from '../../js/Localization'
 
@@ -298,8 +302,8 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.tooltipRebuildTimeout)
 
-      this.acc = undefined
-      this.containerElement = undefined
+      removeFromDOM(this.acc)
+      removeFromDOM(this.containerElement)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })

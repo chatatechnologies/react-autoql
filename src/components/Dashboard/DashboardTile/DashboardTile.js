@@ -23,6 +23,7 @@ import {
   getSupportedDisplayTypes,
   getDefaultDisplayType,
   isDisplayTypeValid,
+  removeFromDOM,
 } from '../../../js/Util'
 
 import {
@@ -163,6 +164,8 @@ class DashboardTile extends React.Component {
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
+
+    removeFromDOM(this.dashboardTileToolTipElement)
     // todo: Cancel all dashboard calls here
   }
 
@@ -1173,12 +1176,12 @@ class DashboardTile extends React.Component {
       onTouchEnd,
     }
 
-    let dashboardTileToolTipElement = document.getElementById(
+    this.dashboardTileToolTipElement = document.getElementById(
       'dashboard-data-limit-warning-tooltip'
     )
-    if (dashboardTileToolTipElement) {
+    if (this.dashboardTileToolTipElement) {
       if (_get(this.props, 'style.width')) {
-        dashboardTileToolTipElement.style.maxWidth = `${_get(
+        this.dashboardTileToolTipElement.style.maxWidth = `${_get(
           this.props,
           'style.width'
         ).match(/\d+/g)[0] - 75}px`
