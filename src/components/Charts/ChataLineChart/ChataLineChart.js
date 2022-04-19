@@ -106,13 +106,12 @@ export default class ChataLineChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
     // Get max and min values from all series
-    const { minValue, maxValue } = getMinAndMaxValues(data)
+    const { minValue, maxValue } = getMinAndMaxValues(this.props.data)
     const xScale = this.xScale
-      .domain(data.map((d) => d[labelValue]))
+      .domain(this.props.data.map((d) => d[labelValue]))
       .range([leftMargin, width - rightMargin])
       .paddingInner(innerPadding)
       .paddingOuter(0.1)
@@ -122,7 +121,7 @@ export default class ChataLineChart extends Component {
       .range([height - bottomMargin, topMargin])
       .nice()
 
-    const labelArray = data.map((element) => element[labelValue])
+    const labelArray = this.props.data.map((element) => element[labelValue])
     const tickWidth = getTickWidth(xScale, innerPadding)
     const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
     this.handleLabelRotation(tickWidth, labelArray)
@@ -169,7 +168,7 @@ export default class ChataLineChart extends Component {
             bottom: bottomMargin,
             top: topMargin,
           }}
-          data={data}
+          data={this.props.data}
           maxValue={maxValue}
           width={width}
           height={height}

@@ -1,4 +1,5 @@
 import _get from 'lodash.get'
+import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
@@ -453,6 +454,16 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
+export const getVisibleColumns = (response) => {
+  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+}
+
+export const areAllColumnsHidden = (response) => {
+  const hasColumns = _get(response, 'data.data.columns.length')
+  const visibleColumns = getVisibleColumns(response)
+  return hasColumns && !visibleColumns.length
+}
+
 export const getSupportedDisplayTypes = (
   response,
   chartData,
@@ -473,11 +484,15 @@ export const getSupportedDisplayTypes = (
       return [displayType]
     }
 
-    const columns = _get(response, 'data.data.columns')
     const rows = _get(response, 'data.data.rows', [])
+    const columns = getVisibleColumns(response)
 
-    if (!columns || rows.length <= 1) {
-      return []
+    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+      return ['text']
+    }
+
+    if (isSingleValueResponse(response)) {
+      return ['single-value']
     }
 
     if (supportsRegularPivotTable(columns)) {
@@ -555,8 +570,12 @@ export const getSupportedDisplayTypes = (
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
+  if (displayType === 'text' && _get(response, 'data.message')) {
+    return true
+  }
+
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
-  const isValid = supportedDisplayTypes.includes(displayType)
+  const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
     console.warn(
       'Warning: provided display type is not valid for this response data'
@@ -590,6 +609,10 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return responseDisplayType
   }
 
+  if (supportedDisplayTypes.length === 1) {
+    return supportedDisplayTypes[0]
+  }
+
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
     let displayType = 'pivot_table'
@@ -603,8 +626,11 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // If there is no display type in the response, default to regular table
-  if (!responseDisplayType || responseDisplayType === 'data') {
+  // If there is no display type in the response, but there is tabular data, default to regular table
+  if (
+    (!responseDisplayType && hasData(response)) ||
+    responseDisplayType === 'data'
+  ) {
     let displayType = 'table'
 
     if (defaultToChart) {
@@ -616,8 +642,8 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // Default to table type
-  return 'table'
+  // Default to plain text
+  return 'text'
 }
 
 export const getGroupBysFromPivotTable = (
@@ -856,13 +882,43 @@ export const setCSSVars = (themeConfig) => {
     return
   }
 
-  const { theme, accentColor, fontFamily } = themeConfig
+  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
     themeStyles['accent-color'] = accentColor
   }
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
+  }
+  if (accentTextColor) {
+    themeStyles['accent-text-color'] = accentTextColor
+  } else {
+    let accentTextColor = accentColor
+    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+
+    if (accentTextColor.slice(0, 1) === '#') {
+      accentTextColor = accentTextColor.slice(1)
+    }
+
+    // If a three-character hexcode, make six-character
+    if (accentTextColor.length === 3) {
+      accentTextColor = accentTextColor
+        .split('')
+        .map(function(accentTextColor) {
+          return accentTextColor + accentTextColor
+        })
+        .join('')
+    }
+    // Convert to RGB value
+    let r = parseInt(accentTextColor.substr(0, 2), 16)
+    let g = parseInt(accentTextColor.substr(2, 2), 16)
+    let b = parseInt(accentTextColor.substr(4, 2), 16)
+    // Get YIQ ratio
+    let yiq = (r * 299 + g * 587 + b * 114) / 1000
+    // Check contrast
+
+    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+    themeStyles['accent-text-color'] = yiq >= 128 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {
@@ -971,16 +1027,15 @@ export const isSingleValueResponse = (response) => {
   )
 }
 
-export const isTableResponse = (response, displayType) => {
+export const hasData = (response) => {
   if (!response) {
     return false
   }
 
-  return (
-    !isSingleValueResponse(response) &&
-    _get(response, 'data.data.rows.length', 0) > 0 &&
-    isTableType(displayType)
-  )
+  const hasData =
+    _get(response, 'data.data.rows.length') &&
+    _get(response, 'data.data.rows.length')
+  return hasData
 }
 
 export class AwaitTimeout {

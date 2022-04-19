@@ -177,6 +177,7 @@ class Dashboard extends React.Component {
     clearTimeout(this.scrollToNewTileTimeout)
     clearTimeout(this.stopDraggingTimeout)
     clearTimeout(this.drillingDownTimeout)
+    clearTimeout(this.animationTimeout)
   }
 
   setStyles = () => {
@@ -457,8 +458,16 @@ class Dashboard extends React.Component {
         activeDrilldownTile: tileId,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
+        isAnimatingModal: true,
       })
+
       this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
+
+      this.animationTimeout = setTimeout(() => {
+        this.setState({
+          isAnimatingModal: false,
+        })
+      }, 200)
     }
   }
 
@@ -479,27 +488,6 @@ class Dashboard extends React.Component {
   }
 
   renderDrilldownTable = () => {
-    const queryOutComponent = () => {
-      return (
-        <QueryOutput
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          dataFormatting={getDataFormatting(this.props.dataFormatting)}
-          queryResponse={this.state.activeDrilldownResponse}
-          renderTooltips={false}
-          isDashboardQuery={true}
-          autoChartAggregations={this.props.autoChartAggregations}
-          backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-background-color-primary'
-          )}
-          reportProblemCallback={this.reportProblemCallback}
-          ref={(ref) => (this.responseRef = ref)}
-          optionsToolbarRef={this.optionsToolbarRef}
-        />
-      )
-    }
-
     return (
       <div className="react-autoql-dashboard-drilldown-table">
         {this.state.isDrilldownRunning ? (
@@ -509,6 +497,8 @@ class Dashboard extends React.Component {
         ) : (
           <Fragment>
             <QueryOutput
+              ref={(r) => (this.drilldownTableRef = r)}
+              displayType="table"
               authentication={getAuthentication(this.props.authentication)}
               autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
               themeConfig={getThemeConfig(this.props.themeConfig)}
@@ -516,12 +506,12 @@ class Dashboard extends React.Component {
               queryResponse={this.state.activeDrilldownResponse}
               renderTooltips={false}
               isDashboardQuery={true}
+              isAnimatingContainer={this.state.isAnimatingModal}
               autoChartAggregations={this.props.autoChartAggregations}
               backgroundColor={document.documentElement.style.getPropertyValue(
                 '--react-autoql-background-color-primary'
               )}
               reportProblemCallback={this.reportProblemCallback}
-              ref={(ref) => (this.responseRef = ref)}
               optionsToolbarRef={this.optionsToolbarRef}
             />
             <div style={{ display: 'none' }}>
@@ -532,7 +522,7 @@ class Dashboard extends React.Component {
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessCallback}
                 ref={(r) => (this.optionsToolbarRef = r)}
-                responseRef={queryOutComponent()}
+                responseRef={this.drilldownTableRef}
               />
             </div>
           </Fragment>
@@ -579,7 +569,7 @@ class Dashboard extends React.Component {
         displayType = tile.secondDisplayType
         dataConfig = tile.secondDataConfig
       } else if (tile && !this.state.isDrilldownSecondHalf) {
-        title = tile.title
+        title = tile.title || tile.query
         queryResponse = tile.queryResponse
         displayType = tile.displayType
         dataConfig = tile.dataConfig
@@ -633,6 +623,7 @@ class Dashboard extends React.Component {
                           displayType={displayType}
                           dataConfig={dataConfig}
                           isDashboardQuery={true}
+                          isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }

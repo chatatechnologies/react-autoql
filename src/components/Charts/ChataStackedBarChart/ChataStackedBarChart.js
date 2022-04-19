@@ -12,12 +12,14 @@ import {
   themeConfigDefault,
   dataFormattingDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataStackedBarChart extends Component {
-  xScale = scaleLinear()
-  yScale = scaleBand()
+  constructor(props) {
+    super(props)
+
+    this.state = this.getNewState(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -53,12 +55,47 @@ export default class ChataStackedBarChart extends Component {
     onLabelChange: () => {},
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.width !== prevProps.width ||
+      this.props.height !== prevProps.height ||
+      this.props.leftMargin !== prevProps.leftMargin ||
+      this.props.rightMargin !== prevProps.rightMargin ||
+      this.props.topMargin !== prevProps.topMargin ||
+      this.props.bottomMargin !== prevProps.bottomMargin ||
+      this.props.numberColumnIndex !== prevProps.numberColumnIndex ||
+      this.props.innerPadding !== prevProps.innerPadding ||
+      this.props.outerPadding !== prevProps.outerPadding
+    ) {
+      this.setState({ ...this.getNewState(this.props) })
+    }
+
     if (
       typeof this.prevRotateLabels !== 'undefined' &&
       this.prevRotateLabels !== this.rotateLabels
     ) {
       this.props.onLabelChange()
+    }
+  }
+
+  getNewState = (props) => {
+    const { max, min } = calculateMinAndMaxSums(props.data)
+    return {
+      xScale: scaleLinear()
+        .domain([min, max])
+        .range([props.leftMargin, props.width - props.rightMargin])
+        .nice(),
+
+      yScale: scaleBand()
+        .domain(props.data.map((d) => d.label))
+        .range([props.height - props.bottomMargin, props.topMargin])
+        .paddingInner(props.innerPadding)
+        .paddingOuter(props.outerPadding),
+
+      yLabelArray: props.data.map((element) => element.label),
+      xLabelArray: props.data.map(
+        (element) => element.cells[props.numberColumnIndex]
+      ),
     }
   }
 
@@ -89,8 +126,6 @@ export default class ChataStackedBarChart extends Component {
       onLegendClick,
       tableColumns,
       legendColumn,
-      innerPadding,
-      outerPadding,
       bottomMargin,
       onChartClick,
       legendLabels,
@@ -103,35 +138,23 @@ export default class ChataStackedBarChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
-    // Get max and min values from all series
-    const { max, min } = calculateMinAndMaxSums(data)
-
-    const xScale = this.xScale
-      .domain([min, max])
-      .range([leftMargin, width - rightMargin])
-      .nice()
-
-    const yScale = this.yScale
-      .domain(data.map((d) => d.label))
-      .range([height - bottomMargin, topMargin])
-      .paddingInner(innerPadding)
-      .paddingOuter(outerPadding)
-
-    const yLabelArray = data.map((element) => element.label)
-    const xLabelArray = data.map((element) => element.cells[numberColumnIndex])
-    const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
-    const barHeight = height / data.length
-    const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
-    this.handleLabelRotation(tickWidth, xLabelArray)
+    const tickWidth =
+      (width - leftMargin - rightMargin) / this.state.xScale.ticks().length
+    const barHeight = height / this.props.data.length
+    const yTickValues = getTickValues(
+      barHeight,
+      this.props.height,
+      this.state.yLabelArray
+    )
+    this.handleLabelRotation(tickWidth, this.state.xLabelArray)
 
     return (
       <g data-test="react-autoql-stacked-bar-chart">
         <Axes
           themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
+          scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
           xCol={_get(tableColumns, `[${numberColumnIndex}]`)}
           yCol={columns[0]}
           margins={{
@@ -164,14 +187,14 @@ export default class ChataStackedBarChart extends Component {
         />
         <StackedBars
           themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
+          scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
           margins={{
             left: leftMargin,
             right: rightMargin,
             bottom: bottomMargin,
             top: topMargin,
           }}
-          data={data}
+          data={this.props.data}
           width={width}
           height={height}
           onChartClick={onChartClick}

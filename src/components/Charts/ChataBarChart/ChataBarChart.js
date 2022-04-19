@@ -81,7 +81,6 @@ export default class ChataBarChart extends Component {
       onLegendTitleClick,
       bottomLegendMargin,
       numberColumnIndex,
-      stringColumnIndex,
       numberAxisTitle,
       stringAxisTitle,
       dataFormatting,
@@ -103,11 +102,10 @@ export default class ChataBarChart extends Component {
       columns,
       height,
       width,
-      data,
     } = this.props
 
     // Get max and min values from all series
-    const { minValue, maxValue } = getMinAndMaxValues(data)
+    const { minValue, maxValue } = getMinAndMaxValues(this.props.data)
 
     const xScale = this.xScale
       .domain([minValue, maxValue])
@@ -115,15 +113,17 @@ export default class ChataBarChart extends Component {
       .nice()
 
     const yScale = this.yScale
-      .domain(data.map((d) => d[labelValue]))
+      .domain(this.props.data.map((d) => d[labelValue]))
       .range([height - bottomMargin, topMargin])
       .paddingInner(innerPadding)
       .paddingOuter(outerPadding)
 
-    const yLabelArray = data.map((element) => element[labelValue])
-    const xLabelArray = data.map((element) => element.cells[numberColumnIndex])
+    const yLabelArray = this.props.data.map((element) => element[labelValue])
+    const xLabelArray = this.props.data.map(
+      (element) => element.cells[numberColumnIndex]
+    )
     const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
-    const barHeight = height / data.length
+    const barHeight = height / this.props.data.length
     const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
     this.handleLabelRotation(tickWidth, xLabelArray)
 
@@ -170,7 +170,7 @@ export default class ChataBarChart extends Component {
               bottom: bottomMargin,
               top: topMargin,
             }}
-            data={data}
+            data={this.props.data}
             maxValue={maxValue}
             width={width}
             height={height}

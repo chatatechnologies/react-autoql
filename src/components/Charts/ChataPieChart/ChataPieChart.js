@@ -299,12 +299,12 @@ export default class Axis extends Component {
       .filter((l) => l.hidden)
       .map((l) => l.label)
 
-    const legendSwatchElements = document.querySelectorAll(
+    this.legendSwatchElements = document.querySelectorAll(
       `#${this.LEGEND_ID} .label tspan`
     )
 
-    if (legendSwatchElements) {
-      legendSwatchElements.forEach((el) => {
+    if (this.legendSwatchElements) {
+      this.legendSwatchElements.forEach((el) => {
         const swatchElement = el.parentElement.parentElement.querySelector(
           '.swatch'
         )
@@ -337,7 +337,6 @@ export default class Axis extends Component {
 
   renderPie = () => {
     const self = this
-    const { data } = this.props
 
     this.setPieRadius()
 
@@ -345,7 +344,7 @@ export default class Axis extends Component {
       .innerRadius(self.outerRadius * 1.1)
       .outerRadius(self.outerRadius * 1.1)
 
-    this.sortedData = data
+    this.sortedData = this.props.data
       .concat() // this copies the array so the original isn't mutated
       .sort(
         (a, b) => parseFloat(a.cells[0].value) - parseFloat(b.cells[0].value)

@@ -5,7 +5,7 @@ export default class StackedColumns extends Component {
   static propTypes = {}
 
   state = {
-    activeKey: this.props.activeKey
+    activeKey: this.props.activeKey,
   }
 
   getKey = (d, i) => {
@@ -16,17 +16,17 @@ export default class StackedColumns extends Component {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
   }
 
   render = () => {
-    const { scales, data } = this.props
+    const { scales } = this.props
     const { xScale, yScale } = scales
 
-    const stackedColumns = data.map(d => {
+    const stackedColumns = this.props.data.map((d) => {
       let runningPositiveSumObject = {}
       let runningNegativeSumObject = {}
 

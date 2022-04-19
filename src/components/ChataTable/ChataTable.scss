@@ -1,6 +1,8 @@
 .react-autoql-table-container {
-  height: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
   max-width: 100%;
+  width: 100%;
   background-color: inherit;
 }
 
@@ -44,14 +46,54 @@
   border-bottom: 1px solid var(--react-autoql-border-color);
 }
 .tabulator-cell:not(:first-child) {
-  // .tabulator-col:not(:first-child) {
   border-left: 1px solid !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
 .react-autoql-table .tabulator-tableHolder {
-  max-height: calc(100% - 38px) !important;
   background-color: inherit;
 }
+
+.react-autoql-table-container.resizing {
+  width: 100vw;
+
+  .react-autoql-table {
+    display: none;
+  }
+}
+
+.react-autoql-table-container.filtering {
+  min-height: 125px;
+  .filter-tag {
+    display: none;
+  }
+  .react-autoql-table .tabulator-col {
+    height: 72px !important;
+  }
+  .react-autoql-table .tabulator-header-filter {
+    display: inline;
+  }
+  .react-autoql-table .tabulator-tableHolder {
+    min-height: calc(100% - 74px) !important;
+    height: calc(100% - 74px) !important;
+    max-height: calc(100% - 74px) !important;
+  }
+}
+
+.react-autoql-table-container:not(.filtering) {
+  min-height: 90px;
+  .react-autoql-table .tabulator-col {
+    height: auto !important;
+  }
+  .react-autoql-table .tabulator-header-filter {
+    display: none;
+  }
+  .react-autoql-table .tabulator-tableHolder {
+    min-height: calc(100% - 40px) !important;
+    height: calc(100% - 40px) !important;
+    max-height: calc(100% - 40px) !important;
+  }
+}
+
 .react-autoql-table.tabulator
   .tabulator-header
   .tabulator-col
@@ -103,11 +145,6 @@
   height: 7px;
   transition: all 0.3s ease;
 }
-.react-autoql-table.tabulator .tabulator-tableHolder {
-  min-height: calc(100% - 40px) !important;
-  height: calc(100% - 40px) !important;
-  max-height: calc(100% - 40px) !important;
-}
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
@@ -127,19 +164,6 @@
 }
 .react-autoql-table .tabulator-header-filter input:focus {
   border: 1px solid #28a8e0;
-}
-/* These are necessary because we are always rendering the
-filter (just display: none when not used) instead of re-rendering
-the whole table when the filter button is clicked */
-.react-autoql-table-container:not(.filtering)
-  .react-autoql-table
-  .tabulator-header-filter {
-  display: none;
-}
-.react-autoql-table-container:not(.filtering)
-  .react-autoql-table
-  .tabulator-col {
-  height: auto !important;
 }
 .tabulator-table .tabulator-row .tabulator-cell {
   min-height: 38px;
