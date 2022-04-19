@@ -742,6 +742,8 @@ export default class QueryOutput extends React.Component {
       _get(this.tableRef, 'ref.table')
     ) {
       this.headerFilters = filters
+
+      clearTimeout(this.tableFilterTimeout)
       this.tableFilterTimeout = setTimeout(() => {
         const tableRef = _get(this.tableRef, 'ref.table')
         if (tableRef) {
@@ -759,6 +761,7 @@ export default class QueryOutput extends React.Component {
       _get(this.pivotTableRef, 'ref.table')
     ) {
       this.pivotHeaderFilters = filters
+      clearTimeout(this.tableFilterTimeout)
       this.tableFilterTimeout = setTimeout(() => {
         const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
         if (pivotTableRef) {

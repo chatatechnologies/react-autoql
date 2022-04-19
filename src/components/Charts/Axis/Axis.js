@@ -19,8 +19,13 @@ import {
 } from '../../../props/defaults.js'
 
 export default class Axis extends Component {
-  LEGEND_PADDING = 130
-  LEGEND_ID = `axis-${uuid.v4()}`
+  constructor(props) {
+    super(props)
+
+    this.LEGEND_PADDING = 130
+    this.LEGEND_ID = `axis-${uuid.v4()}`
+    this.swatchElements = []
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,

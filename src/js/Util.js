@@ -800,8 +800,8 @@ export const calculateMinAndMaxSums = (data) => {
   const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
 
   return {
-    max: maxValue,
-    min: minValue,
+    maxValue,
+    minValue,
   }
 }
 
@@ -839,8 +839,12 @@ export const getLongestLabelInPx = (labels, col, config) => {
   return max
 }
 
-export const shouldRotateLabels = (tickWidth, labels, col, config) => {
+export const shouldLabelsRotate = (tickWidth, labels, col, config) => {
   const labelWidth = getLongestLabelInPx(labels, col, config)
+  if (isNaN(tickWidth) || isNaN(labelWidth)) {
+    return undefined
+  }
+
   return tickWidth < labelWidth
 }
 
@@ -1023,6 +1027,7 @@ export class AwaitTimeout {
 
   start = () => {
     this.timeoutPromise = new Promise((resolve) => {
+      clearTimeout(this.timeout)
       this.timeout = setTimeout(() => {
         this.callback()
         resolve()
@@ -1064,7 +1069,7 @@ export const removeFromDOM = (elem) => {
       elem.forEach((el) => {
         el.remove()
       })
-    } else if (elem) {
+    } else if (elem && !Array.isArray(elem)) {
       elem.remove()
     }
   } catch (error) {
