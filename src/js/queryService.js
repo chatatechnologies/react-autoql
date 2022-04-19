@@ -72,6 +72,61 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
+export const runSubQuery = ({
+  queryId,
+  domain,
+  apiKey,
+  token,
+  debug,
+  page,
+} = {}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}/subquery?key=${apiKey}&page=${page}`
+
+  const data = {
+    translation: debug ? 'include' : 'exclude',
+  }
+
+  if (!queryId) {
+    return Promise.reject({ error: 'No query ID supplied' })
+  }
+
+  if (!apiKey || !domain || !token) {
+    return Promise.reject({ error: 'Unauthenticated' })
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .post(url, data, config)
+    .then((response) => {
+      if (response.data && typeof response.data === 'string') {
+        throw new Error('Parse error')
+      }
+
+      return Promise.resolve({ ..._get(response, 'data.data', {}), page })
+    })
+    .catch((error) => {
+      if (error.message === 'Parse error') {
+        return Promise.reject({ error: 'Parse error' })
+      }
+      if (error.response === 401 || !_get(error, 'response.data')) {
+        return Promise.reject({ error: 'Unauthenticated' })
+      }
+      if (
+        _get(error, 'response.data.reference_id') === '1.1.430' ||
+        _get(error, 'response.data.reference_id') === '1.1.431'
+      ) {
+        const queryId = _get(error, 'response.data.data.query_id')
+        return fetchSuggestions({ query, queryId, domain, apiKey, token })
+      }
+      return Promise.reject(_get(error, 'response'))
+    })
+}
+
 export const runQueryOnly = ({
   query,
   projectID,
@@ -82,7 +137,6 @@ export const runQueryOnly = ({
   apiKey,
   token,
   source,
-  AutoAEId,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
@@ -177,7 +231,6 @@ export const runQuery = ({
   token,
   source,
   skipQueryValidation,
-  AutoAEId,
 } = {}) => {
   // Temp for demo: decode token to get project id
   let id
@@ -214,7 +267,6 @@ export const runQuery = ({
           apiKey,
           token,
           source,
-          AutoAEId,
         })
       })
       .catch((error) => {
@@ -232,7 +284,6 @@ export const runQuery = ({
     domain,
     apiKey,
     source,
-    AutoAEId,
   })
 }
 

@@ -1813,6 +1813,7 @@ export default class QueryOutput extends React.Component {
             headerFilters={this.pivotHeaderFilters}
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
+            useInfiniteScroll={false}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1824,15 +1825,19 @@ export default class QueryOutput extends React.Component {
     return (
       <Fragment>
         <ChataTable
+          authentication={this.props.authentication}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           columns={this.tableColumns}
           data={this.tableData}
+          queryID={this.queryID}
           onCellClick={this.processCellClick}
           headerFilters={this.headerFilters}
           onFilterCallback={this.onTableFilter}
           isResizing={this.props.isResizing}
+          useInfiniteScroll={true}
+          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         />
       </Fragment>
     )

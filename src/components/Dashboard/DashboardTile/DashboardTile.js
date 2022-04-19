@@ -953,7 +953,7 @@ class DashboardTile extends React.Component {
                 {...queryOutputProps}
               />
             )}
-            {this.renderDataLimitWarning()}
+            {/* {this.renderDataLimitWarning()} */}
           </Fragment>
         )}
         {this.props.isEditing && (

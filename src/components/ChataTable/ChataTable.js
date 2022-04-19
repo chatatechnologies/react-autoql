@@ -8,11 +8,16 @@ import { ReactTabulator } from 'react-tabulator'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { setCSSVars, isAggregation } from '../../js/Util'
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+import {
+  themeConfigDefault,
+  getThemeConfig,
+  getAuthentication,
+} from '../../props/defaults'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
+import { runSubQuery } from '../../js/queryService'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -20,22 +25,55 @@ export default class ChataTable extends React.Component {
 
     this.TABLE_ID = uuid.v4()
     this.firstRender = true
+    this.hasSetInitialData = false
     this.ref = null
+    this.currentPage = 1
     this.filterTagElements = []
-
     this.supportsDrilldown = isAggregation(props.columns)
+    this.supportsInfiniteScroll = props.useInfiniteScroll && props.pageSize
+
     this.tableOptions = {
+      ajaxProgressiveLoad: this.supportsInfiniteScroll ? 'scroll' : undefined,
+      ajaxProgressiveLoadScrollMargin: 2000, // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
+      ajaxURL: 'https://required-placeholder-url.com',
+      ajaxRequestFunc: (url, config, params) => {
+        if (!this.hasSetInitialData) {
+          this.hasSetInitialData = true
+          return Promise.resolve({ rows: this.props.data, page: 1 })
+        }
+
+        return runSubQuery({
+          ...getAuthentication(props.authentication),
+          queryId: props.queryID,
+          page: this.currentPage + 1,
+        })
+      },
+      ajaxResponse: (url, params, response) => {
+        this.currentPage = response.page
+        const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+        const lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+
+        let modResponse = {}
+        modResponse.data = response.rows
+        modResponse.last_page = lastPage
+        return modResponse
+      },
+      ajaxError: (error) => {
+        console.error(error)
+      },
+      dataLoadError: (error) => {
+        console.error(error)
+      },
       layout: 'fitDataFill',
       textSize: '9px',
-      movableColumns: true,
-      progressiveRender: true,
-      progressiveRenderSize: 5,
-      progressiveRenderMargin: 100,
+      clipboard: true,
+      download: true,
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
         columnCalcs: false,
       },
+      cellClick: this.cellClick,
       dataFiltering: (filters) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
@@ -61,6 +99,8 @@ export default class ChataTable extends React.Component {
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
     isResizing: PropTypes.bool,
+    pageSize: PropTypes.number,
+    useInfiniteScroll: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -68,6 +108,8 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
+    pageSize: 0,
+    useInfiniteScroll: true,
     onFilterCallback: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
@@ -80,6 +122,10 @@ export default class ChataTable extends React.Component {
       this.setFilterTags({ isFilteringTable: false })
     }, 100)
   }
+
+  // shouldComponentUpdate = () => {
+  //   return false
+  // }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (
@@ -206,8 +252,7 @@ export default class ChataTable extends React.Component {
               ref={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
               columns={this.state.columns}
-              data={this.props.data}
-              cellClick={this.cellClick}
+              data={this.supportsInfiniteScroll ? [] : this.props.data}
               options={this.tableOptions}
               data-custom-attr="test-custom-attribute"
               className="react-autoql-table"

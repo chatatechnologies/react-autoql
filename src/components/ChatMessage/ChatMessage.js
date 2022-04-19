@@ -407,7 +407,7 @@ export default class ChatMessage extends React.Component {
               <Fragment>
                 {this.renderRightToolbar()}
                 {this.renderLeftToolbar()}
-                {this.renderDataLimitWarning()}
+                {/* {this.renderDataLimitWarning()} */}
               </Fragment>
             )}
           </div>
