@@ -44,6 +44,7 @@ import {
   runDrilldown,
   fetchQueryTips,
   fetchConditions,
+  fetchTopics,
 } from '../../js/queryService'
 import { ConditionLockMenu } from '../ConditionLockMenu'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -79,7 +80,6 @@ export default class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       conditions: undefined,
       messages: [],
-      isSizeMaximum: false,
       queryTipsList: undefined,
       queryTipsLoading: false,
       queryTipsError: false,
@@ -115,13 +115,14 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: bool,
     resizable: bool,
     inputPlaceholder: string,
-    queryQuickStartTopics: array,
+
     enableDynamicCharting: bool,
     defaultTab: string,
     autoChartAggregations: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
     enableFilterLocking: bool,
+    enableQueryQuickStartTopics: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -157,13 +158,14 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: undefined,
-    queryQuickStartTopics: undefined,
+
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
     enableQueryInterpretation: false,
     defaultShowInterpretation: false,
     enableFilterLocking: false,
+    enableQueryQuickStartTopics: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -174,8 +176,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     try {
-      this.setintroMessages()
-
+      this.setIntroMessages()
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
       window.addEventListener('resize', this.onWindowResize)
@@ -207,6 +208,27 @@ export default class DataMessenger extends React.Component {
       .catch((error) => {
         console.error(error)
       })
+
+    if (this.props.enableQueryQuickStartTopics) {
+      fetchTopics(getAuthentication(this.props.authentication))
+        .then((response) => {
+          const topics = _get(response, 'data.data.topics')
+          if (topics) {
+            const topicsMessageContent = this.createTopicsMessage(topics)
+            if (topicsMessageContent) {
+              const topicsMessage = this.createIntroMessage({
+                content: topicsMessageContent,
+              })
+              this.setState({
+                messages: [...this.state.messages, topicsMessage],
+              })
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -241,7 +263,7 @@ export default class DataMessenger extends React.Component {
         this.clearMessages()
       }
       if (this.state.messages.length === 0) {
-        this.setintroMessages()
+        this.setIntroMessages()
       }
 
       const thisTheme = getThemeConfig(this.props.themeConfig).theme
@@ -348,15 +370,14 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createTopicsMessage = () => {
+  createTopicsMessage = (response) => {
     const enableExploreQueries = this.props.enableExploreQueriesTab
-
-    const topics = this.props.queryQuickStartTopics.map((topic) => {
+    const topics = response.map((topic) => {
       return {
-        label: topic.topic,
+        label: topic.name,
         value: uuid.v4(),
         children: topic.queries.map((query) => ({
-          label: query,
+          label: query.query,
           value: uuid.v4(),
         })),
       }
@@ -408,7 +429,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  setintroMessages = () => {
+  setIntroMessages = () => {
     let introMessageContent = this.props.introMessage
       ? `${this.props.introMessage}`
       : `Hi ${this.props.userDisplayName ||
@@ -420,16 +441,6 @@ export default class DataMessenger extends React.Component {
         content: introMessageContent,
       }),
     ]
-
-    if (_get(this.props.queryQuickStartTopics, 'length')) {
-      const topicsMessageContent = this.createTopicsMessage()
-
-      if (topicsMessageContent) {
-        introMessages.push(
-          this.createIntroMessage({ content: topicsMessageContent })
-        )
-      }
-    }
 
     this.setState({
       messages: introMessages,
@@ -648,7 +659,7 @@ export default class DataMessenger extends React.Component {
       this.queryInputRef.focus()
     }
 
-    this.setintroMessages()
+    this.setIntroMessages()
   }
 
   deleteMessage = (id) => {
