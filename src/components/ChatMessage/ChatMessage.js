@@ -133,8 +133,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    clearTimeout(this.setTableMessageHeightsTimeout)
-    this.setTableMessageHeightsTimeout = setTimeout(() => {
+    this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
     }, 100)
 
@@ -171,10 +170,42 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
+    clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
+  }
 
-    removeFromDOM(this.messageElement)
+  onCSVExportFinish = (response, isPivotTable) => {
+    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
+    const CSVtotal_rows = _get(response, 'headers.total_rows')
+    const CSVreturned_rows = _get(response, 'headers.returned_rows')
+    let CSVexportLimit = _get(response, 'headers.export_limit')
+    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
+      CSVFileSizeMb = parseInt(CSVFileSizeMb)
+      CSVexportLimit = parseInt(CSVexportLimit)
+    }
+
+    this.props.addMessageToDM({
+      content: (
+        <>
+          Your file has successfully been downloaded with the query{' '}
+          <b>
+            <i>{this.props.queryText}</i>
+          </b>
+          .
+          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+            <>
+              <br />
+              <p>
+                WARNING: The file you’ve requested is larger than{' '}
+                {CSVexportLimit}. This exceeds the maximum download size and you
+                will only receive partial data.
+              </p>
+            </>
+          ) : null}
+        </>
+      ),
+    })
   }
 
   isScrolledIntoView = (elem) => {
@@ -219,6 +250,10 @@ export default class ChatMessage extends React.Component {
 
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
+  }
+
+  renderCSVProgressMessage = () => {
+    return `Fetching your file ... ${this.state.csvDownloadProgress || 0}%`
   }
 
   renderContent = () => {

@@ -77,6 +77,7 @@ export default class Input extends React.Component {
     isHideColumnsModalVisible: false,
     isSettingColumnVisibility: false,
     reportProblemMessage: undefined,
+    isCSVDownloading: false,
   }
 
   componentDidMount = () => {
