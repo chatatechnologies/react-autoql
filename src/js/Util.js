@@ -899,7 +899,7 @@ export const setCSSVars = (themeConfig) => {
     // Check contrast
 
     //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['accent-text-color'] = yiq >= 128 ? 'black' : 'white'
+    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {
