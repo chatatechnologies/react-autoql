@@ -92,6 +92,7 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.ref) {
+      clearTimeout(this.setDimensionsTimeout)
       this.setDimensionsTimeout = setTimeout(() => {
         const tableHeight = _get(this.ref, 'ref.offsetHeight')
         if (tableHeight) {

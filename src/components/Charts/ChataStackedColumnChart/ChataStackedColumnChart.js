@@ -8,7 +8,7 @@ import _isEqual from 'lodash.isequal'
 
 import {
   calculateMinAndMaxSums,
-  shouldRotateLabels,
+  shouldLabelsRotate,
   getTickWidth,
 } from '../../../js/Util'
 
@@ -24,11 +24,7 @@ import { themeConfigType, dataFormattingType } from '../../../props/types'
 export default class ChataStackedColumnChart extends Component {
   constructor(props) {
     super(props)
-    this.labelArray = props.data.map((element) => element.label)
-
-    this.state = {
-      ...this.getNewState(props),
-    }
+    this.setChartData(props)
   }
 
   static propTypes = {
@@ -65,80 +61,77 @@ export default class ChataStackedColumnChart extends Component {
     onLabelChange: () => {},
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (
-      this.state.tickWidth !== prevState.tickWidth ||
-      !_isEqual(this.props.columns[0], prevProps.columns[0])
-    ) {
-      const rotateLabels = shouldRotateLabels(
-        this.state.tickWidth,
-        this.labelArray,
-        this.props.columns[0],
-        getDataFormatting(this.props.dataFormatting)
-      )
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
 
-      if (rotateLabels !== prevState.rotateLabels) {
-        this.props.onLabelChange()
-        this.setState({ rotateLabels })
-      }
-    } else if (
-      this.props.width !== prevProps.width ||
-      this.props.height !== prevProps.height ||
-      this.props.leftMargin !== prevProps.leftMargin ||
-      this.props.rightMargin !== prevProps.rightMargin ||
-      this.props.topMargin !== prevProps.topMargin ||
-      this.props.bottomMargin !== prevProps.bottomMargin ||
-      this.props.numberColumnIndex !== prevProps.numberColumnIndex ||
-      this.props.innerPadding !== prevProps.innerPadding ||
-      this.props.outerPadding !== prevProps.outerPadding
-    ) {
-      this.setState({ ...this.getNewState(this.props) })
+  shouldComponentUpdate = () => {
+    return true
+  }
+
+  componentDidUpdate = () => {
+    if (this.didLabelsRotate()) {
+      this.props.onLabelChange()
     }
   }
 
-  getNewState = (props) => {
-    const { max, min } = calculateMinAndMaxSums(props.data)
+  didLabelsRotate = () => {
+    const rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.labelArray,
+      this.props.columns[0],
+      getDataFormatting(this.props.dataFormatting)
+    )
 
-    const xScale = scaleBand()
+    if (typeof rotateLabels !== 'undefined') {
+      this.prevRotateLabels = this.rotateLabels
+      this.rotateLabels = rotateLabels
+      return this.prevRotateLabels !== this.rotateLabels
+    }
+
+    return false
+  }
+
+  setChartData = (props) => {
+    const { maxValue, minValue } = calculateMinAndMaxSums(props.data)
+    this.maxValue = maxValue
+    this.minValue = minValue
+
+    this.xScale = scaleBand()
       .domain(props.data.map((d) => d.label))
       .range([props.leftMargin, props.width - props.rightMargin])
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
 
-    const yScale = scaleLinear()
-      .domain([min, max])
+    this.yScale = scaleLinear()
+      .domain([this.minValue, this.maxValue])
       .range([props.height - props.bottomMargin, props.topMargin])
       .nice()
 
-    const tickWidth = getTickWidth(xScale, props.innerPadding)
-    const xTickValues = getTickValues(tickWidth, props.width, this.labelArray)
+    this.labelArray = props.data.map((element) => element.label)
+    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
+    this.xTickValues = getTickValues(
+      this.tickWidth,
+      props.width,
+      this.labelArray
+    )
 
-    const rotateLabels = shouldRotateLabels(
-      tickWidth,
+    this.rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
       this.labelArray,
       props.columns[0],
       getDataFormatting(props.dataFormatting)
     )
-
-    return {
-      rotateLabels,
-      xTickValues,
-      tickWidth,
-      xScale,
-      yScale,
-    }
   }
 
   render = () => {
-    // if (this.props.isResizing || this.props.isAnimatingContainer) {
-    //   return null
-    // }
+    this.setChartData(this.props)
 
     return (
       <g data-test="react-autoql-stacked-column-chart">
         <Axes
           themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
           xCol={this.props.columns[0]}
           yCol={_get(
             this.props.tableColumns,
@@ -153,8 +146,8 @@ export default class ChataStackedColumnChart extends Component {
           }}
           width={this.props.width}
           height={this.props.height}
-          xTicks={this.state.xTickValues}
-          rotateLabels={this.state.rotateLabels}
+          xTicks={this.xTickValues}
+          rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
@@ -175,23 +168,22 @@ export default class ChataStackedColumnChart extends Component {
           }
           yAxisTitle={this.props.numberAxisTitle}
         />
-        {!(this.props.isResizing || this.props.isAnimatingContainer) && (
-          <StackedColumns
-            themeConfig={this.props.themeConfig}
-            scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
-            margins={{
-              left: this.props.leftMargin,
-              right: this.props.rightMargin,
-              bottom: this.props.bottomMargin,
-              top: this.props.topMargin,
-            }}
-            data={this.props.data}
-            width={this.props.width}
-            height={this.props.height}
-            onChartClick={this.props.onChartClick}
-            activeKey={this.props.activeChartElementKey}
-          />
-        )}
+        <StackedColumns
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          margins={{
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+          }}
+          data={this.props.data}
+          width={this.props.width}
+          height={this.props.height}
+          onChartClick={this.props.onChartClick}
+          activeKey={this.props.activeChartElementKey}
+          isResizing={this.props.isResizing || this.props.isAnimatingContainer}
+        />
       </g>
     )
   }

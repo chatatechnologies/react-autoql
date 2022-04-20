@@ -26,7 +26,11 @@ import {
   getThemeConfig,
 } from '../../props/defaults'
 
-import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
+import {
+  setCSSVars,
+  filterDataForDrilldown,
+  removeFromDOM,
+} from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 import { lang, setLanguage } from '../../js/Localization'
 
@@ -179,9 +183,11 @@ export default class DataMessenger extends React.Component {
       this.setIntroMessages()
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
+      document.addEventListener('visibilitychange', this.onWindowResize())
       window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
+      clearTimeout(this.tooltipRebuildTimeout)
       this.tooltipRebuildTimeout = setTimeout(() => {
         ReactTooltip.rebuild()
       }, 100)
@@ -320,8 +326,8 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.tooltipRebuildTimeout)
 
-      this.acc = undefined
-      this.containerElement = undefined
+      removeFromDOM(this.acc)
+      removeFromDOM(this.containerElement)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -339,17 +345,19 @@ export default class DataMessenger extends React.Component {
 
   onWindowResize = () => {
     if (!this.state.isWindowResizing) {
-      this.setMaxWidthAndHeightFromDocument()
       this.setState({
         isWindowResizing: true,
-        containerHeight: this.getScrollContainerHeight(),
-        containerWidth: this.getScrollContainerWidth(),
       })
     }
 
     clearTimeout(this.windowResizeTimer)
     this.windowResizeTimer = setTimeout(() => {
-      this.setState({ isWindowResizing: false })
+      this.setMaxWidthAndHeightFromDocument()
+      this.setState({
+        isWindowResizing: false,
+        containerHeight: this.getScrollContainerHeight(),
+        containerWidth: this.getScrollContainerWidth(),
+      })
     }, 300)
   }
 
@@ -628,6 +636,7 @@ export default class DataMessenger extends React.Component {
 
     const drilldownResponse = filterDataForDrilldown(response, drilldownData)
 
+    clearTimeout(this.responseTimeout)
     this.responseTimeout = setTimeout(() => {
       this.addResponseMessage({
         response: drilldownResponse,
@@ -1143,6 +1152,8 @@ export default class DataMessenger extends React.Component {
 
   onNoneOfTheseClick = () => {
     this.setState({ isChataThinking: true })
+
+    clearTimeout(this.feedbackTimeout)
     this.feedbackTimeout = setTimeout(() => {
       this.setState({ isChataThinking: false })
       this.addResponseMessage({ content: 'Thank you for your feedback' })
@@ -1221,7 +1232,9 @@ export default class DataMessenger extends React.Component {
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
                   scrollContainerRef={this.messengerScrollComponent}
-                  isResizing={this.state.isResizing}
+                  isResizing={
+                    this.state.isResizing || this.state.isWindowResizing
+                  }
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}
                   autoChartAggregations={this.props.autoChartAggregations}
@@ -1351,6 +1364,7 @@ export default class DataMessenger extends React.Component {
   animateQITextAndSubmit = (text) => {
     if (typeof text === 'string' && _get(text, 'length')) {
       for (let i = 1; i <= text.length; i++) {
+        clearTimeout(this.animateTextTimeout)
         this.animateTextTimeout = setTimeout(() => {
           this.setState({
             queryTipsInputValue: text.slice(0, i),
@@ -1365,6 +1379,8 @@ export default class DataMessenger extends React.Component {
 
   runTopicInExporeQueries = (topic) => {
     this.setState({ activePage: 'explore-queries' })
+
+    clearTimeout(this.exploreQueriesTimeout)
     this.exploreQueriesTimeout = setTimeout(() => {
       this.animateQITextAndSubmit(topic)
     }, 500)
@@ -1389,6 +1405,7 @@ export default class DataMessenger extends React.Component {
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })
+        clearTimeout(this.executeQueryTimeout)
         this.executeQueryTimeout = setTimeout(() => {
           this.onSuggestionClick({ query, source: 'explore_queries' })
         }, 500)

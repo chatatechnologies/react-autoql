@@ -83,7 +83,6 @@ export default class Input extends React.Component {
     isSettingColumnVisibility: false,
     reportProblemMessage: undefined,
     isCSVDownloading: false,
-    percentage: 0,
   }
 
   componentDidMount = () => {
@@ -162,6 +161,7 @@ export default class Input extends React.Component {
         link.setAttribute('download', 'export.csv')
         document.body.appendChild(link)
         link.click()
+        document.body.removeChild(link)
       })
       .catch((error) => {
         console.error(error)
@@ -654,7 +654,7 @@ export default class Input extends React.Component {
     )
   }
 
-  renderToolbar = (shouldShowButton, allColumnsHidden) => {
+  renderToolbar = (shouldShowButton) => {
     return (
       <ErrorBoundary>
         <div
@@ -681,7 +681,7 @@ export default class Input extends React.Component {
               data-for="react-autoql-toolbar-btn-tooltip"
               data-test="options-toolbar-col-vis"
             >
-              <Icon type="eye" showBadge={allColumnsHidden} />
+              <Icon type="eye" showBadge={this.areColumnsHidden()} />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (

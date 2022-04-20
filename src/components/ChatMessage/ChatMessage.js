@@ -35,6 +35,7 @@ import {
   getSupportedDisplayTypes,
   areAllColumnsHidden,
   isTableType,
+  removeFromDOM,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
@@ -144,9 +145,9 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    this.setTableMessageHeightsTimeout = setTimeout(() => {
+    this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
-    }, 0)
+    }, 100)
 
     if (
       this.props.isCSVProgressMessage &&
@@ -186,12 +187,21 @@ export default class ChatMessage extends React.Component {
     }
 
     // Wait until message bubble animation finishes to show query output content
+    clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
+      this.props.scrollToBottom()
     }, 600)
 
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
     this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
+  }
+
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
+    }
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -209,9 +219,9 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
-    clearTimeout(this.animationTimeout)
+    clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
-    clearTimeout(this.setTableMessageHeightsTimeout)
+    clearTimeout(this.animationTimeout)
   }
 
   onCSVExportFinish = (response, isPivotTable) => {
@@ -247,22 +257,37 @@ export default class ChatMessage extends React.Component {
     })
   }
 
-  exportCSVFn = () => {}
+  onCSVExportFinish = (response, isPivotTable) => {
+    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
+    const CSVtotal_rows = _get(response, 'headers.total_rows')
+    const CSVreturned_rows = _get(response, 'headers.returned_rows')
+    let CSVexportLimit = _get(response, 'headers.export_limit')
+    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
+      CSVFileSizeMb = parseInt(CSVFileSizeMb)
+      CSVexportLimit = parseInt(CSVexportLimit)
+    }
 
-  setTableMessageHeights = () => {
-    // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
-    this.TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
-      _get(this.responseRef, 'numberOfTableRows')
-    )
-    this.PIVOT_TABLE_CONTAINER_HEIGHT = this.getHeightOfTableFromRows(
-      _get(this.responseRef, 'numberOfPivotTableRows')
-    )
-  }
-
-  getHeightOfTableFromRows = (rows) => {
-    // This is hacky but it eliminates the jumpy bug
-    // 39px per row, 81px leftover for padding and headers
-    return rows * 39 + 81
+    this.props.addMessageToDM({
+      content: (
+        <>
+          Your file has successfully been downloaded with the query{' '}
+          <b>
+            <i>{this.props.queryText}</i>
+          </b>
+          .
+          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+            <>
+              <br />
+              <p>
+                WARNING: The file you’ve requested is larger than{' '}
+                {CSVexportLimit}. This exceeds the maximum download size and you
+                will only receive partial data.
+              </p>
+            </>
+          ) : null}
+        </>
+      ),
+    })
   }
 
   isScrolledIntoView = (elem) => {
@@ -283,9 +308,11 @@ export default class ChatMessage extends React.Component {
   scrollIntoView = () => {
     clearTimeout(this.scrollIntoViewTimeout)
     this.scrollIntoViewTimeout = setTimeout(() => {
-      const element = document.getElementById(`message-${this.props.id}`)
-      if (!this.isScrolledIntoView(element)) {
-        this.scrollIntoViewTimer = element.scrollIntoView({
+      if (
+        this.messageContainerRef &&
+        !this.isScrolledIntoView(this.messageContainerRef)
+      ) {
+        this.scrollIntoViewTimer = this.messageContainerRef.scrollIntoView({
           block: 'end',
           inline: 'nearest',
           behavior: 'smooth',
@@ -305,12 +332,6 @@ export default class ChatMessage extends React.Component {
 
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
-  }
-
-  setFilterTags = () => {
-    if (this.optionsToolbarRef) {
-      this.optionsToolbarRef.setFilterTags({ isFilteringTable: false })
-    }
   }
 
   renderCSVProgressMessage = () => {
@@ -519,6 +540,7 @@ export default class ChatMessage extends React.Component {
       <ErrorBoundary>
         <div
           id={`message-${this.props.id}`}
+          ref={(r) => (this.messageContainerRef = r)}
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}

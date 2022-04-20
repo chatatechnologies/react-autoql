@@ -253,6 +253,7 @@ class Dashboard extends React.Component {
   }
 
   scrollToNewTile = () => {
+    clearTimeout(this.scrollToNewTileTimeout)
     this.scrollToNewTileTimeout = setTimeout(() => {
       if (this.ref) {
         this.ref.scrollIntoView(false)
@@ -276,6 +277,7 @@ class Dashboard extends React.Component {
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
+      clearTimeout(this.stopDraggingTimeout)
       this.stopDraggingTimeout = setTimeout(() => {
         this.setState({
           isDragging: false,
@@ -419,6 +421,7 @@ class Dashboard extends React.Component {
 
       const drilldownResponse = filterDataForDrilldown(queryResponse, data)
 
+      clearTimeout(this.drillingDownTimeout)
       this.drillingDownTimeout = setTimeout(() => {
         this.setState({
           isDrilldownRunning: false,
@@ -463,6 +466,7 @@ class Dashboard extends React.Component {
 
       this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
 
+      clearTimeout(this.animationTimeout)
       this.animationTimeout = setTimeout(() => {
         this.setState({
           isAnimatingModal: false,
