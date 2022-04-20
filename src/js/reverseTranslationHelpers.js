@@ -8,11 +8,10 @@ export const constructRTArray = (response) => {
       return undefined
     }
 
-    const interpretationArray = _get(interpretation, '[0]', [])
     const reverseTranslationArray = []
 
-    if (interpretationArray.length) {
-      interpretationArray.forEach((chunk) => {
+    if (_get(interpretation, 'length')) {
+      interpretation.forEach((chunk) => {
         if (chunk.c_type === 'FILTER') {
           const chunkedFilterArray = parseFilterChunk(chunk)
           chunkedFilterArray.forEach((filterChunk) => {
