@@ -703,6 +703,7 @@ export default class DataMessenger extends React.Component {
     isCSVProgressMessage,
     queryId,
     appliedFilters,
+    linkedQueryResponseRef,
   }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
@@ -717,6 +718,7 @@ export default class DataMessenger extends React.Component {
       isResponse: true,
       isCSVProgressMessage,
       queryId,
+      linkedQueryResponseRef,
     }
   }
 
@@ -747,6 +749,7 @@ export default class DataMessenger extends React.Component {
     query,
     isCSVProgressMessage,
     queryId,
+    linkedQueryResponseRef,
   }) => {
     let currentMessages = this.state.messages
 
@@ -771,6 +774,7 @@ export default class DataMessenger extends React.Component {
         query,
         isCSVProgressMessage,
         queryId,
+        linkedQueryResponseRef,
       })
     } else if (!response && !content) {
       message = this.createErrorMessage()
@@ -1183,6 +1187,7 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
+                  linkedQueryResponseRef={message.linkedQueryResponseRef}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                   setCSVDownloadProgress={this.setCSVDownloadProgress}

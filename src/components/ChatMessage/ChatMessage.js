@@ -152,25 +152,37 @@ export default class ChatMessage extends React.Component {
       this.props.isCSVProgressMessage &&
       typeof this.state.csvDownloadProgress === 'undefined'
     ) {
-      this.props.setCSVDownloadProgress(this.props.id, 0, true)
-      exportCSV({
-        queryId: this.props.queryId,
-        ...getAuthentication(this.props.authentication),
-        csvProgressCallback: (percentCompleted) =>
-          this.props.setCSVDownloadProgress(this.props.id, percentCompleted),
-      })
-        .then((response) => {
-          const url = window.URL.createObjectURL(new Blob([response.data]))
-          const link = document.createElement('a')
-          link.href = url
-          link.setAttribute('download', 'export.csv')
-          document.body.appendChild(link)
-          link.click()
-          this.onCSVExportFinish(response)
+      this.props.setCSVDownloadProgress(this.props.id, 0)
+      const linkedQueryResponseRef = this.props.linkedQueryResponseRef
+      const queryDisplayType = _get(linkedQueryResponseRef, 'props.displayType')
+
+      if (queryDisplayType === 'pivot_table') {
+        if (_get(linkedQueryResponseRef, 'pivotTableRef')) {
+          linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
+            this.props.setCSVDownloadProgress(this.props.id, 100)
+            this.onCSVExportFinish(undefined, true)
+          })
+        }
+      } else {
+        exportCSV({
+          queryId: this.props.queryId,
+          ...getAuthentication(this.props.authentication),
+          csvProgressCallback: (percentCompleted) =>
+            this.props.setCSVDownloadProgress(this.props.id, percentCompleted),
         })
-        .catch((error) => {
-          console.error(error)
-        })
+          .then((response) => {
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', 'export.csv')
+            document.body.appendChild(link)
+            link.click()
+            this.onCSVExportFinish(response)
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+      }
     }
 
     // Wait until message bubble animation finishes to show query output content
@@ -202,12 +214,12 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.setTableMessageHeightsTimeout)
   }
 
-  onCSVExportFinish = (response) => {
+  onCSVExportFinish = (response, isPivotTable) => {
     let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
     const CSVtotal_rows = _get(response, 'headers.total_rows')
     const CSVreturned_rows = _get(response, 'headers.returned_rows')
     let CSVexportLimit = _get(response, 'headers.export_limit')
-    if (CSVFileSizeMb && CSVexportLimit) {
+    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
       CSVFileSizeMb = parseInt(CSVFileSizeMb)
       CSVexportLimit = parseInt(CSVexportLimit)
     }
@@ -220,7 +232,7 @@ export default class ChatMessage extends React.Component {
             <i>{this.props.queryText}</i>
           </b>
           .
-          {CSVFileSizeMb >= CSVexportLimit ? (
+          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
             <>
               <br />
               <p>
@@ -234,6 +246,8 @@ export default class ChatMessage extends React.Component {
       ),
     })
   }
+
+  exportCSVFn = () => {}
 
   setTableMessageHeights = () => {
     // We must explicitly set the height for tables, to avoid scroll jumping due to dynamic resizing
@@ -390,14 +404,15 @@ export default class ChatMessage extends React.Component {
       query,
       isCSVProgressMessage: true,
       queryId,
+      linkedQueryResponseRef: this.responseRef,
     })
   }
 
   renderRightToolbar = () => {
     if (
       this.props.isResponse &&
-      this.props.displayType !== 'help' &&
-      this.props.displayType !== 'suggestion'
+      this.state.displayType !== 'help' &&
+      this.state.displayType !== 'suggestion'
     ) {
       return (
         <OptionsToolbar
@@ -407,6 +422,7 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           responseRef={this.responseRef}
+          displayType={this.state.displayType}
           onCSVExportClick={this.onCSVExportClick}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}

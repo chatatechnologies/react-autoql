@@ -113,7 +113,7 @@ export default class Input extends React.Component {
   }
 
   onTableFilter = (newTableData) => {
-    const displayType = _get(this.props.responseRef, 'state.displayType')
+    const displayType = _get(this.props.responseRef, 'props.displayType')
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
@@ -145,7 +145,7 @@ export default class Input extends React.Component {
     }
   }
 
-  exportTableAsCSV = () => {
+  fetchCSVAndExport = () => {
     const queryId = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.query_id'
@@ -166,6 +166,33 @@ export default class Input extends React.Component {
       .catch((error) => {
         console.error(error)
       })
+  }
+
+  onCSVMenuButtonClick = () => {
+    this.setState({ activeMenu: undefined })
+    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const isPivotTable = displayType === 'pivot_table'
+
+    if (this.props.onCSVExportClick) {
+      // Only use this different behaviour for Data Messenger
+      // Export directly from here if using this component
+      // outside of Data Messenger
+      const queryId = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.query_id'
+      )
+      const queryText = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.text'
+      )
+      this.props.onCSVExportClick(queryId, queryText, isPivotTable)
+    } else if (isPivotTable) {
+      if (_get(this.props, 'responseRef.pivotTableRef')) {
+        this.props.responseRef.pivotTableRef.saveAsCSV()
+      }
+    } else {
+      this.fetchCSVAndExport()
+    }
   }
 
   saveChartAsPNG = () => {
@@ -411,25 +438,7 @@ export default class Input extends React.Component {
         <ul className="context-menu-list">
           {shouldShowButton.showSaveAsCSVButton && (
             <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                // Only use this different behaviour for Data Messenger
-                // Export directly from here if using this component
-                // outside of Data Messenger
-                if (this.props.onCSVExportClick) {
-                  const queryId = _get(
-                    this.props.responseRef,
-                    'props.queryResponse.data.data.query_id'
-                  )
-                  const queryText = _get(
-                    this.props.responseRef,
-                    'props.queryResponse.data.data.text'
-                  )
-                  this.props.onCSVExportClick(queryId, queryText)
-                } else {
-                  this.exportTableAsCSV()
-                }
-              }}
+              onClick={this.onCSVMenuButtonClick}
               style={
                 this.state.isCSVDownloading
                   ? {
@@ -742,7 +751,7 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const displayType = _get(this.props.responseRef, 'state.displayType')
+    const displayType = _get(this.props.responseRef, 'props.displayType')
     const isTable = isTableType(displayType)
     const isChart = isChartType(displayType)
     const response = _get(this.props.responseRef, 'props.queryResponse')

@@ -140,6 +140,16 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  saveAsCSV = () => {
+    if (this.ref && this.ref.table) {
+      this.ref.table.download('csv', 'export.csv', {
+        delimiter: ',',
+      })
+      return Promise.resolve()
+    }
+    return Promise.reject()
+  }
+
   resetFilterTags = () => {
     if (this.filterTagElements.length) {
       this.filterTagElements.forEach((filterTag) => {
