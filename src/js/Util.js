@@ -896,7 +896,6 @@ export const setCSSVars = (themeConfig) => {
     let b = parseInt(accentTextColor.substr(4, 2), 16)
     // Get YIQ ratio
     let yiq = (r * 299 + g * 587 + b * 114) / 1000
-    console.log('yiq', yiq)
     // Check contrast
 
     //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
