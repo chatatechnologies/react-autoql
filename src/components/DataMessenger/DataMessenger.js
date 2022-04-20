@@ -84,6 +84,7 @@ export default class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       conditions: undefined,
       messages: [],
+      topicsMessageContent: undefined,
       queryTipsList: undefined,
       queryTipsLoading: false,
       queryTipsError: false,
@@ -227,6 +228,7 @@ export default class DataMessenger extends React.Component {
               })
               this.setState({
                 messages: [...this.state.messages, topicsMessage],
+                topicsMessageContent: topicsMessageContent,
               })
             }
           }
@@ -449,7 +451,13 @@ export default class DataMessenger extends React.Component {
         content: introMessageContent,
       }),
     ]
-
+    if (this.state.topicsMessageContent) {
+      introMessages.push(
+        this.createIntroMessage({
+          content: this.state.topicsMessageContent,
+        })
+      )
+    }
     this.setState({
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
