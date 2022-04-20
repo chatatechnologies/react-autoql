@@ -1044,6 +1044,7 @@ class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
+        displayType,
       },
       showSplitViewBtn: !this.getIsSplitView(),
     })

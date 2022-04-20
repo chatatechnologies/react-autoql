@@ -48,6 +48,7 @@ import {
   runDrilldown,
   fetchQueryTips,
   fetchConditions,
+  fetchTopics,
 } from '../../js/queryService'
 import { ConditionLockMenu } from '../ConditionLockMenu'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -60,6 +61,8 @@ export default class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
+    this.csvProgressLog = {}
+    this.messageRefs = {}
     this.minWidth = 400
     this.minHeight = 400
     this.DATA_MESSENGER_ID = uuid.v4()
@@ -69,27 +72,24 @@ export default class DataMessenger extends React.Component {
 
     this.state = {
       hasError: false,
-
       isVisible: false,
-      activePage: this.props.defaultTab,
-      width: this.props.width,
-      height: this.props.height,
+      activePage: props.defaultTab,
+      width: props.width,
+      height: props.height,
       isResizing: false,
       placement: this.getPlacementProp(props.placement),
-
       lastMessageId: undefined,
       isOptionsDropdownOpen: false,
       isFilterLockingMenuOpen: false,
       selectedValueLabel: undefined,
-      isSizeMaximum: false,
       conditions: undefined,
       messages: [],
-
       queryTipsList: undefined,
       queryTipsLoading: false,
       queryTipsError: false,
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
+      isSizeMaximum: false,
     }
   }
 
@@ -119,13 +119,14 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: bool,
     resizable: bool,
     inputPlaceholder: string,
-    queryQuickStartTopics: array,
+
     enableDynamicCharting: bool,
     defaultTab: string,
     autoChartAggregations: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
     enableFilterLocking: bool,
+    enableQueryQuickStartTopics: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -161,13 +162,14 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: undefined,
-    queryQuickStartTopics: undefined,
+
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
     enableQueryInterpretation: false,
     defaultShowInterpretation: false,
     enableFilterLocking: false,
+    enableQueryQuickStartTopics: true,
 
     // Callbacks
     onHandleClick: () => {},
@@ -178,8 +180,7 @@ export default class DataMessenger extends React.Component {
 
   componentDidMount = () => {
     try {
-      this.setintroMessages()
-
+      this.setIntroMessages()
       // Listen for esc press to cancel queries while they are running
       document.addEventListener('keydown', this.escFunction, false)
       document.addEventListener('visibilitychange', this.onWindowResize())
@@ -213,6 +214,27 @@ export default class DataMessenger extends React.Component {
       .catch((error) => {
         console.error(error)
       })
+
+    if (this.props.enableQueryQuickStartTopics) {
+      fetchTopics(getAuthentication(this.props.authentication))
+        .then((response) => {
+          const topics = _get(response, 'data.data.topics')
+          if (topics) {
+            const topicsMessageContent = this.createTopicsMessage(topics)
+            if (topicsMessageContent) {
+              const topicsMessage = this.createIntroMessage({
+                content: topicsMessageContent,
+              })
+              this.setState({
+                messages: [...this.state.messages, topicsMessage],
+              })
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -247,7 +269,7 @@ export default class DataMessenger extends React.Component {
         this.clearMessages()
       }
       if (this.state.messages.length === 0) {
-        this.setintroMessages()
+        this.setIntroMessages()
       }
 
       const thisTheme = getThemeConfig(this.props.themeConfig).theme
@@ -356,15 +378,14 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createTopicsMessage = () => {
+  createTopicsMessage = (response) => {
     const enableExploreQueries = this.props.enableExploreQueriesTab
-
-    const topics = this.props.queryQuickStartTopics.map((topic) => {
+    const topics = response.map((topic) => {
       return {
-        label: topic.topic,
+        label: topic.name,
         value: uuid.v4(),
         children: topic.queries.map((query) => ({
-          label: query,
+          label: query.query,
           value: uuid.v4(),
         })),
       }
@@ -416,7 +437,7 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  setintroMessages = () => {
+  setIntroMessages = () => {
     let introMessageContent = this.props.introMessage
       ? `${this.props.introMessage}`
       : `Hi ${this.props.userDisplayName ||
@@ -428,16 +449,6 @@ export default class DataMessenger extends React.Component {
         content: introMessageContent,
       }),
     ]
-
-    if (_get(this.props.queryQuickStartTopics, 'length')) {
-      const topicsMessageContent = this.createTopicsMessage()
-
-      if (topicsMessageContent) {
-        introMessages.push(
-          this.createIntroMessage({ content: topicsMessageContent })
-        )
-      }
-    }
 
     this.setState({
       messages: introMessages,
@@ -556,7 +567,9 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-
+  getIsDownloadingCSVResponse = (response) => {
+    return !!_get(response, 'config.onDownloadProgress')
+  }
   onResponse = (response, query) => {
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
@@ -655,7 +668,7 @@ export default class DataMessenger extends React.Component {
       this.queryInputRef.focus()
     }
 
-    this.setintroMessages()
+    this.setIntroMessages()
   }
 
   deleteMessage = (id) => {
@@ -692,7 +705,15 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createMessage = ({ response, content, query, appliedFilters }) => {
+  createMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+    appliedFilters,
+    linkedQueryResponseRef,
+  }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
@@ -704,6 +725,9 @@ export default class DataMessenger extends React.Component {
       appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
+      isCSVProgressMessage,
+      queryId,
+      linkedQueryResponseRef,
     }
   }
 
@@ -722,13 +746,22 @@ export default class DataMessenger extends React.Component {
       id: uuid.v4(),
       isResponse: false,
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
   }
 
-  addResponseMessage = ({ response, content, query }) => {
+  addResponseMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+    linkedQueryResponseRef,
+  }) => {
     let currentMessages = this.state.messages
+
     if (
       this.props.maxMessages > 1 &&
       this.state.messages.length === this.props.maxMessages
@@ -744,6 +777,14 @@ export default class DataMessenger extends React.Component {
     } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
+    } else if (isCSVProgressMessage) {
+      message = this.createMessage({
+        content,
+        query,
+        isCSVProgressMessage,
+        queryId,
+        linkedQueryResponseRef,
+      })
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
@@ -753,6 +794,7 @@ export default class DataMessenger extends React.Component {
       ]
       message = this.createMessage({ response, content, query, appliedFilters })
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
@@ -1118,6 +1160,15 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
+  setCSVDownloadProgress = (id, percentCompleted) => {
+    this.csvProgressLog[id] = percentCompleted
+    if (this.messageRefs[id]) {
+      this.messageRefs[id].setState({
+        csvDownloadProgress: percentCompleted,
+      })
+    }
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -1136,6 +1187,7 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
                   isIntroMessage={message.isIntroMessage}
                   authentication={getAuthentication(
                     getAuthentication(this.props.authentication)
@@ -1146,9 +1198,17 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
+                  linkedQueryResponseRef={message.linkedQueryResponseRef}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  setCSVDownloadProgress={this.setCSVDownloadProgress}
+                  queryId={message.queryId}
+                  queryText={message.query}
+                  scrollRef={this.messengerScrollComponent}
                   isDataMessengerOpen={this.state.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
                   processDrilldown={(drilldownData, queryID) =>
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
@@ -1165,6 +1225,7 @@ export default class DataMessenger extends React.Component {
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
                   }
+                  onResponseCallback={this.onResponse}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}
