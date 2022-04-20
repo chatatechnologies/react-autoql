@@ -57,6 +57,8 @@ export default class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
+    this.csvProgressLog = {}
+    this.messageRefs = {}
     this.minWidth = 400
     this.minHeight = 400
     this.DATA_MESSENGER_ID = uuid.v4()
@@ -67,16 +69,15 @@ export default class DataMessenger extends React.Component {
     this.state = {
       hasError: false,
       isVisible: false,
-      activePage: this.props.defaultTab,
-      width: this.props.width,
-      height: this.props.height,
+      activePage: props.defaultTab,
+      width: props.width,
+      height: props.height,
       isResizing: false,
       placement: this.getPlacementProp(props.placement),
       lastMessageId: undefined,
       isOptionsDropdownOpen: false,
       isFilterLockingMenuOpen: false,
       selectedValueLabel: undefined,
-      isSizeMaximum: false,
       conditions: undefined,
       messages: [],
       queryTipsList: undefined,
@@ -84,6 +85,7 @@ export default class DataMessenger extends React.Component {
       queryTipsError: false,
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
+      isSizeMaximum: false,
     }
   }
 
@@ -557,7 +559,9 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-
+  getIsDownloadingCSVResponse = (response) => {
+    return !!_get(response, 'config.onDownloadProgress')
+  }
   onResponse = (response, query) => {
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
@@ -692,7 +696,15 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  createMessage = ({ response, content, query, appliedFilters }) => {
+  createMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+    appliedFilters,
+    linkedQueryResponseRef,
+  }) => {
     const id = uuid.v4()
     this.setState({ lastMessageId: id })
 
@@ -704,6 +716,9 @@ export default class DataMessenger extends React.Component {
       appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
+      isCSVProgressMessage,
+      queryId,
+      linkedQueryResponseRef,
     }
   }
 
@@ -722,13 +737,22 @@ export default class DataMessenger extends React.Component {
       id: uuid.v4(),
       isResponse: false,
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
   }
 
-  addResponseMessage = ({ response, content, query }) => {
+  addResponseMessage = ({
+    response,
+    content,
+    query,
+    isCSVProgressMessage,
+    queryId,
+    linkedQueryResponseRef,
+  }) => {
     let currentMessages = this.state.messages
+
     if (
       this.props.maxMessages > 1 &&
       this.state.messages.length === this.props.maxMessages
@@ -744,6 +768,14 @@ export default class DataMessenger extends React.Component {
     } else if (_get(response, 'error') === 'Parse error') {
       // Invalid response JSON
       message = this.createErrorMessage()
+    } else if (isCSVProgressMessage) {
+      message = this.createMessage({
+        content,
+        query,
+        isCSVProgressMessage,
+        queryId,
+        linkedQueryResponseRef,
+      })
     } else if (!response && !content) {
       message = this.createErrorMessage()
     } else {
@@ -753,6 +785,7 @@ export default class DataMessenger extends React.Component {
       ]
       message = this.createMessage({ response, content, query, appliedFilters })
     }
+
     this.setState({
       messages: [...currentMessages, message],
     })
@@ -1116,6 +1149,15 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
+  setCSVDownloadProgress = (id, percentCompleted) => {
+    this.csvProgressLog[id] = percentCompleted
+    if (this.messageRefs[id]) {
+      this.messageRefs[id].setState({
+        csvDownloadProgress: percentCompleted,
+      })
+    }
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -1134,6 +1176,7 @@ export default class DataMessenger extends React.Component {
                 <ChatMessage
                   key={message.id}
                   id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
                   isIntroMessage={message.isIntroMessage}
                   authentication={getAuthentication(
                     getAuthentication(this.props.authentication)
@@ -1144,9 +1187,17 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
+                  linkedQueryResponseRef={message.linkedQueryResponseRef}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  setCSVDownloadProgress={this.setCSVDownloadProgress}
+                  queryId={message.queryId}
+                  queryText={message.query}
+                  scrollRef={this.messengerScrollComponent}
                   isDataMessengerOpen={this.state.isVisible}
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
                   processDrilldown={(drilldownData, queryID) =>
                     this.processDrilldown(drilldownData, queryID, message.id)
                   }
@@ -1163,6 +1214,7 @@ export default class DataMessenger extends React.Component {
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
                   }
+                  onResponseCallback={this.onResponse}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}

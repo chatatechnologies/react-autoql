@@ -236,7 +236,13 @@ export const runQuery = ({
   })
 }
 
-export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
+export const exportCSV = ({
+  queryId,
+  domain,
+  apiKey,
+  token,
+  csvProgressCallback,
+} = {}) => {
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
@@ -247,6 +253,14 @@ export const exportCSV = ({ queryId, domain, apiKey, token } = {}) => {
       Authorization: `Bearer ${token}`,
     },
     responseType: 'blob',
+    onDownloadProgress: (progressEvent) => {
+      if (csvProgressCallback) {
+        let percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        )
+        csvProgressCallback(percentCompleted)
+      }
+    },
   }
 
   return axios
