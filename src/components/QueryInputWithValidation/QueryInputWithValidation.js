@@ -243,7 +243,7 @@ export default class QueryValidationMessage extends React.Component {
     this.setState(
       { selectedSuggestions: _cloneDeep(selectedSuggestions) },
       () => {
-        setCaretPosition(this.COMPONENT_KEY, 5)
+        setCaretPosition(this.inputRef, 5)
       }
     )
   }

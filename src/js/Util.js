@@ -800,31 +800,8 @@ export const calculateMinAndMaxSums = (data) => {
   const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
 
   return {
-    max: maxValue,
-    min: minValue,
-  }
-}
-
-export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
-  const tooltip = document.getElementById(id)
-  const prevText = tooltip.innerHTML
-
-  tooltip.innerHTML = text
-  if (tooltipShiftDistance) {
-    tooltip.style.left = `${Number(
-      tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-    ) + tooltipShiftDistance}px`
-  }
-
-  if (duration) {
-    setTimeout(() => {
-      tooltip.innerHTML = prevText
-      if (tooltipShiftDistance) {
-        tooltip.style.left = `${Number(
-          tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-        ) - tooltipShiftDistance}px`
-      }
-    }, duration)
+    maxValue,
+    minValue,
   }
 }
 
@@ -862,8 +839,12 @@ export const getLongestLabelInPx = (labels, col, config) => {
   return max
 }
 
-export const shouldRotateLabels = (tickWidth, labels, col, config) => {
+export const shouldLabelsRotate = (tickWidth, labels, col, config) => {
   const labelWidth = getLongestLabelInPx(labels, col, config)
+  if (isNaN(tickWidth) || isNaN(labelWidth)) {
+    return undefined
+  }
+
   return tickWidth < labelWidth
 }
 
@@ -1046,6 +1027,7 @@ export class AwaitTimeout {
 
   start = () => {
     this.timeoutPromise = new Promise((resolve) => {
+      clearTimeout(this.timeout)
       this.timeout = setTimeout(() => {
         this.callback()
         resolve()
@@ -1066,9 +1048,7 @@ export class AwaitTimeout {
   }
 }
 
-export const setCaretPosition = (elemId, caretPos) => {
-  const elem = document.getElementById(elemId)
-
+export const setCaretPosition = (elem, caretPos) => {
   if (elem != null) {
     if (elem.createTextRange) {
       const range = elem.createTextRange()
@@ -1080,5 +1060,19 @@ export const setCaretPosition = (elemId, caretPos) => {
         elem.setSelectionRange(caretPos, caretPos)
       } else elem.focus()
     }
+  }
+}
+
+export const removeFromDOM = (elem) => {
+  try {
+    if (_get(elem, 'length')) {
+      elem.forEach((el) => {
+        el.remove()
+      })
+    } else if (elem && !Array.isArray(elem)) {
+      elem.remove()
+    }
+  } catch (error) {
+    console.error(error)
   }
 }

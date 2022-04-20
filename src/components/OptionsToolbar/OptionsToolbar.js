@@ -21,12 +21,14 @@ import {
   reportProblem,
   exportCSV,
 } from '../../js/queryService'
+
 import {
   isTableType,
   setCSSVars,
   areAllColumnsHidden,
   isChartType,
 } from '../../js/Util'
+
 import {
   autoQLConfigType,
   authenticationType,
@@ -55,6 +57,8 @@ export default class Input extends React.Component {
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
+    onResponseCallback: PropTypes.func,
+    onCSVExportClick: PropTypes.func,
     onFilterClick: PropTypes.func,
   }
 
@@ -71,12 +75,14 @@ export default class Input extends React.Component {
     deleteMessageCallback: () => {},
     onFilterClick: () => {},
     onColumnVisibilitySave: () => {},
+    onResponseCallback: () => {},
   }
 
   state = {
     isHideColumnsModalVisible: false,
     isSettingColumnVisibility: false,
     reportProblemMessage: undefined,
+    isCSVDownloading: false,
   }
 
   componentDidMount = () => {
@@ -106,7 +112,7 @@ export default class Input extends React.Component {
   }
 
   onTableFilter = (newTableData) => {
-    const displayType = _get(this.props.responseRef, 'state.displayType')
+    const displayType = _get(this.props.responseRef, 'props.displayType')
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
@@ -138,7 +144,7 @@ export default class Input extends React.Component {
     }
   }
 
-  exportTableAsCSV = () => {
+  fetchCSVAndExport = () => {
     const queryId = _get(
       this.props.responseRef,
       'props.queryResponse.data.data.query_id'
@@ -155,10 +161,38 @@ export default class Input extends React.Component {
         link.setAttribute('download', 'export.csv')
         document.body.appendChild(link)
         link.click()
+        document.body.removeChild(link)
       })
       .catch((error) => {
         console.error(error)
       })
+  }
+
+  onCSVMenuButtonClick = () => {
+    this.setState({ activeMenu: undefined })
+    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const isPivotTable = displayType === 'pivot_table'
+
+    if (this.props.onCSVExportClick) {
+      // Only use this different behaviour for Data Messenger
+      // Export directly from here if using this component
+      // outside of Data Messenger
+      const queryId = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.query_id'
+      )
+      const queryText = _get(
+        this.props.responseRef,
+        'props.queryResponse.data.data.text'
+      )
+      this.props.onCSVExportClick(queryId, queryText, isPivotTable)
+    } else if (isPivotTable) {
+      if (_get(this.props, 'responseRef.pivotTableRef')) {
+        this.props.responseRef.pivotTableRef.saveAsCSV()
+      }
+    } else {
+      this.fetchCSVAndExport()
+    }
   }
 
   saveChartAsPNG = () => {
@@ -404,10 +438,15 @@ export default class Input extends React.Component {
         <ul className="context-menu-list">
           {shouldShowButton.showSaveAsCSVButton && (
             <li
-              onClick={() => {
-                this.setState({ activeMenu: undefined })
-                this.exportTableAsCSV()
-              }}
+              onClick={this.onCSVMenuButtonClick}
+              style={
+                this.state.isCSVDownloading
+                  ? {
+                      pointerEvents: 'none', //This makes it not clickable
+                      opacity: 0.6, //This grays it out to look disabled
+                    }
+                  : null
+              }
             >
               <Icon
                 type="download"
@@ -415,7 +454,9 @@ export default class Input extends React.Component {
                   marginRight: '7px',
                 }}
               />
-              Download as CSV
+              {this.state.isCSVDownloading
+                ? 'CSV file downloading...'
+                : 'Download as CSV'}
             </li>
           )}
           {shouldShowButton.showSaveAsPNGButton && (
@@ -613,7 +654,7 @@ export default class Input extends React.Component {
     )
   }
 
-  renderToolbar = (shouldShowButton, allColumnsHidden) => {
+  renderToolbar = (shouldShowButton) => {
     return (
       <ErrorBoundary>
         <div
@@ -640,7 +681,7 @@ export default class Input extends React.Component {
               data-for="react-autoql-toolbar-btn-tooltip"
               data-test="options-toolbar-col-vis"
             >
-              <Icon type="eye" showBadge={allColumnsHidden} />
+              <Icon type="eye" showBadge={this.areColumnsHidden()} />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
@@ -710,7 +751,7 @@ export default class Input extends React.Component {
   }
 
   render = () => {
-    const displayType = _get(this.props.responseRef, 'state.displayType')
+    const displayType = _get(this.props.responseRef, 'props.displayType')
     const isTable = isTableType(displayType)
     const isChart = isChartType(displayType)
     const response = _get(this.props.responseRef, 'props.queryResponse')

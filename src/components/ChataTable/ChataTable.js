@@ -138,6 +138,7 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.ref) {
+      clearTimeout(this.setDimensionsTimeout)
       this.setDimensionsTimeout = setTimeout(() => {
         const tableHeight = _get(this.ref, 'ref.offsetHeight')
         if (tableHeight) {
@@ -184,6 +185,16 @@ export default class ChataTable extends React.Component {
     if (this.ref && this.ref.table) {
       this.ref.table.copyToClipboard('active', true)
     }
+  }
+
+  saveAsCSV = () => {
+    if (this.ref && this.ref.table) {
+      this.ref.table.download('csv', 'export.csv', {
+        delimiter: ',',
+      })
+      return Promise.resolve()
+    }
+    return Promise.reject()
   }
 
   resetFilterTags = () => {

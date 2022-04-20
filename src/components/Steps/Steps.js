@@ -125,6 +125,7 @@ export default class Steps extends React.Component {
           contentContainer.style.height = `${this.getHeightOfStepContent(i)}px`
           // Set height back to auto after transition so it can
           // be dynamically adjusted when the content changes
+          clearTimeout(this.autoHideTimeout)
           this.autoHideTimeout = setTimeout(() => {
             const activeContentContainerAfterTransition = document.querySelector(
               `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`

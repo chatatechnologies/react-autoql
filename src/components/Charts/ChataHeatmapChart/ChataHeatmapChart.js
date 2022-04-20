@@ -5,7 +5,7 @@ import { max } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Squares } from '../Squares'
-import { shouldRotateLabels } from '../../../js/Util.js'
+import { shouldLabelsRotate } from '../../../js/Util.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
@@ -15,8 +15,10 @@ import {
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 
 export default class ChataHeatmapChart extends Component {
-  xScale = scaleBand()
-  yScale = scaleBand()
+  constructor(props) {
+    super(props)
+    this.setChartData(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -54,26 +56,60 @@ export default class ChataHeatmapChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
+
+  shouldComponentUpdate = () => {
+    return true
+  }
+
   componentDidUpdate = () => {
-    if (
-      typeof this.prevRotateLabels !== 'undefined' &&
-      this.prevRotateLabels !== this.rotateLabels
-    ) {
+    if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
   }
 
-  handleLabelRotation = (labelArray) => {
-    this.prevRotateLabels = this.rotateLabels
-    this.rotateLabels = shouldRotateLabels(
+  didLabelsRotate = () => {
+    const rotateLabels = shouldLabelsRotate(
       this.squareWidth,
-      labelArray,
+      this.uniqueXLabels,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
+
+    if (typeof rotateLabels !== 'undefined') {
+      this.prevRotateLabels = this.rotateLabels
+      this.rotateLabels = rotateLabels
+      return this.prevRotateLabels !== this.rotateLabels
+    }
+
+    return false
   }
 
-  getXTickValues = (labelArray) => {
+  setChartData = (props) => {
+    this.maxValue = max(this.props.data, (d) =>
+      max(d.cells, (cell) => cell.value)
+    )
+    this.uniqueXLabels = props.data.map((d) => d.label)
+    this.uniqueYLabels = this.props.data[0].cells.map((cell) => cell.label)
+
+    this.xScale = scaleBand()
+      .domain(this.uniqueXLabels)
+      .range([props.leftMargin + 10, props.width - props.rightMargin])
+      .paddingInner(0.01)
+
+    this.yScale = scaleBand()
+      .domain(this.uniqueYLabels)
+      .range([props.height - props.bottomMargin, props.topMargin])
+      .paddingInner(0.01)
+
+    this.squareWidth = this.xScale.bandwidth()
+    this.xTickValues = this.getXTickValues()
+    this.yTickValues = this.getYTickValues()
+  }
+
+  getXTickValues = () => {
     try {
       const interval = Math.ceil(
         (this.props.data.length * 16) / this.props.width
@@ -82,7 +118,7 @@ export default class ChataHeatmapChart extends Component {
 
       if (this.squareWidth < 16) {
         xTickValues = []
-        labelArray.forEach((label, index) => {
+        this.uniqueXLabels.forEach((label, index) => {
           if (index % interval === 0) {
             xTickValues.push(label)
           }
@@ -96,17 +132,17 @@ export default class ChataHeatmapChart extends Component {
     }
   }
 
-  getYTickValues = (uniqueYLabels) => {
-    this.squareHeight = this.props.height / uniqueYLabels.length
+  getYTickValues = () => {
+    this.squareHeight = this.props.height / this.uniqueYLabels.length
     const intervalHeight = Math.ceil(
-      (uniqueYLabels.length * 16) / this.props.height
+      (this.uniqueYLabels.length * 16) / this.props.height
     )
 
     try {
       let yTickValues
       if (this.squareHeight < 16) {
         yTickValues = []
-        uniqueYLabels.forEach((element, index) => {
+        this.uniqueYLabels.forEach((element, index) => {
           if (index % intervalHeight === 0) {
             yTickValues.push(element)
           }
@@ -121,45 +157,7 @@ export default class ChataHeatmapChart extends Component {
   }
 
   render = () => {
-    const {
-      activeChartElementKey,
-      dataFormatting,
-      onXAxisClick,
-      onYAxisClick,
-      legendColumn,
-      onChartClick,
-      bottomMargin,
-      rightMargin,
-      labelValueY,
-      labelValueX,
-      leftMargin,
-      topMargin,
-      dataValue,
-      columns,
-      height,
-      width,
-    } = this.props
-
-    const maxValue = max(this.props.data, (d) =>
-      max(d.cells, (cell) => cell.value)
-    )
-
-    const uniqueXLabels = this.props.data.map((d) => d.label)
-    const xScale = this.xScale
-      .domain(uniqueXLabels)
-      .range([leftMargin + 10, width - rightMargin])
-      .paddingInner(0.01)
-
-    const uniqueYLabels = this.props.data[0].cells.map((cell) => cell.label)
-    const yScale = this.yScale
-      .domain(uniqueYLabels)
-      .range([height - bottomMargin, topMargin])
-      .paddingInner(0.01)
-
-    this.squareWidth = xScale.bandwidth()
-    const xTickValues = this.getXTickValues(uniqueXLabels)
-    const yTickValues = this.getYTickValues(uniqueYLabels)
-    this.handleLabelRotation(uniqueXLabels)
+    this.setChartData(this.props)
 
     return (
       <g
@@ -168,49 +166,47 @@ export default class ChataHeatmapChart extends Component {
       >
         <Axes
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          scales={{ xScale, yScale }}
-          xCol={columns[0]}
-          yCol={legendColumn}
-          valueCol={columns[2]}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          xCol={this.props.columns[0]}
+          yCol={this.props.legendColumn}
+          valueCol={this.props.columns[2]}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
           }}
-          width={width}
-          height={height}
-          yTicks={yTickValues}
-          xTicks={xTickValues}
+          width={this.props.width}
+          height={this.props.height}
+          yTicks={this.yTickValues}
+          xTicks={this.xTickValues}
           yGridLines
-          dataFormatting={dataFormatting}
+          dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
-          onXAxisClick={onXAxisClick}
-          onYAxisClick={onYAxisClick}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
         />
-        {
-          <Squares
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            scales={{ xScale, yScale }}
-            margins={{
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-              top: topMargin,
-            }}
-            data={this.props.data}
-            columns={columns}
-            legendColumn={legendColumn}
-            maxValue={maxValue}
-            width={width}
-            height={height}
-            dataValue={dataValue}
-            labelValueX={labelValueX}
-            labelValueY={labelValueY}
-            onChartClick={onChartClick}
-            activeKey={activeChartElementKey}
-          />
-        }
+        <Squares
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          margins={{
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+          }}
+          data={this.props.data}
+          columns={this.props.columns}
+          legendColumn={this.props.legendColumn}
+          maxValue={this.maxValue}
+          width={this.props.width}
+          height={this.props.height}
+          dataValue={this.props.dataValue}
+          labelValueX={this.props.labelValueX}
+          labelValueY={this.props.labelValueY}
+          onChartClick={this.props.onChartClick}
+          activeKey={this.props.activeChartElementKey}
+        />
       </g>
     )
   }

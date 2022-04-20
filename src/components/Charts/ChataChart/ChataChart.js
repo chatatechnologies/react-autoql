@@ -110,24 +110,21 @@ export default class ChataChart extends Component {
     if (nextProps.isResizing && this.props.isResizing) {
       return false
     }
-
     return true
   }
 
   componentDidUpdate = (prevProps) => {
     ReactTooltip.rebuild()
 
-    if (
-      (!this.props.isResizing && prevProps.isResizing) ||
-      (!this.props.isAnimatingContainer && prevProps.isAnimatingContainer) ||
-      !_isEqual(this.props.dataConfig, prevProps.dataConfig)
-    ) {
-      this.updateMargins()
-    } else if (
-      this.props.type &&
-      this.props.type !== prevProps.type &&
-      this.props.type !== 'pie'
-    ) {
+    if (!this.props.isResizing && prevProps.isResizing) {
+      // Fill max message container after resize
+      // No need to update margins, they should stay the same
+      if (this.chartContainerRef) {
+        this.chartContainerRef.style.flexBasis = '100vh'
+        this.forceUpdate()
+      }
+    }
+    if (this.shouldUpdateMargins(prevProps)) {
       this.updateMargins()
     }
 
@@ -138,7 +135,6 @@ export default class ChataChart extends Component {
 
   componentWillUnmount = () => {
     clearTimeout(this.loadingTimeout)
-    clearTimeout(this.updateMarginsTimeout)
 
     if (this.leftTopMarginUpdate) {
       this.leftTopMarginUpdate.cancel()
@@ -151,6 +147,16 @@ export default class ChataChart extends Component {
     this.legend = undefined
     this.xAxis = undefined
     this.axes = undefined
+  }
+
+  shouldUpdateMargins = (prevProps) => {
+    return (
+      (!this.props.isAnimatingContainer && prevProps.isAnimatingContainer) ||
+      (this.props.type &&
+        this.props.type !== prevProps.type &&
+        this.props.type !== 'pie') ||
+      !_isEqual(this.props.dataConfig, prevProps.dataConfig)
+    )
   }
 
   getNumberColumnSelectorState = (props) => {
@@ -301,6 +307,7 @@ export default class ChataChart extends Component {
       this.marginUpdate
         .start()
         .then(() => {
+          clearTimeout(this.loadingTimeout)
           this.loadingTimeout = setTimeout(() => {
             this.setState({ isLoading: false })
           }, 0)

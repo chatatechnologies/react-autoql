@@ -35,22 +35,23 @@ import {
   getSupportedDisplayTypes,
   areAllColumnsHidden,
   isTableType,
+  removeFromDOM,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
+import { exportCSV } from '../../js/queryService'
 
 export default class ChatMessage extends React.Component {
-  supportedDisplayTypes = []
-  filtering = false
-
-  PIE_CHART_HEIGHT = 330
-  MESSAGE_HEIGHT_MARGINS = 40
-  MESSAGE_WIDTH_MARGINS = 40
-  ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
-
   constructor(props) {
     super(props)
+
+    this.supportedDisplayTypes = []
+    this.filtering = false
+    this.PIE_CHART_HEIGHT = 330
+    this.MESSAGE_HEIGHT_MARGINS = 40
+    this.MESSAGE_WIDTH_MARGINS = 40
+    this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
     const displayType = getDefaultDisplayType(
       props.response,
@@ -58,6 +59,11 @@ export default class ChatMessage extends React.Component {
     )
 
     this.state = {
+      csvDownloadProgress: this.props.initialCSVDownloadProgress,
+      displayType: getDefaultDisplayType(
+        props.response,
+        props.autoChartAggregations
+      ),
       supportedDisplayTypes: getSupportedDisplayTypes(props.response),
       chartHeight: this.getChartHeight(displayType),
       chartWidth: this.getChartWidth(),
@@ -73,7 +79,6 @@ export default class ChatMessage extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     themeConfig: themeConfigType,
-
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
@@ -96,6 +101,11 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onConditionClickCallback: PropTypes.func,
+    onResponseCallback: PropTypes.func,
+    addMessageToDM: PropTypes.func,
+    onCSVExportClick: PropTypes.func,
+    csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
     messageContainerHeight: PropTypes.number,
     messageContainerWidth: PropTypes.number,
@@ -107,10 +117,6 @@ export default class ChatMessage extends React.Component {
     dataFormatting: dataFormattingDefault,
     themeConfig: themeConfigDefault,
 
-    onSuggestionClick: () => {},
-    setActiveMessage: () => {},
-    onErrorCallback: () => {},
-    onSuccessAlert: () => {},
     isDataMessengerOpen: false,
     isIntroMessage: false,
     displayType: undefined,
@@ -124,25 +130,78 @@ export default class ChatMessage extends React.Component {
     isResizing: false,
     enableDynamicCharting: true,
     autoChartAggregations: true,
+    csvDownloadProgress: undefined,
     messageContainerHeight: undefined,
     messageContainerWidth: undefined,
+    onSuggestionClick: () => {},
+    setActiveMessage: () => {},
+    onErrorCallback: () => {},
+    onSuccessAlert: () => {},
+    onConditionClickCallback: () => {},
+    onResponseCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onRTValueLabelClick: () => {},
   }
 
   componentDidMount = () => {
-    this.setTableMessageHeightsTimeout = setTimeout(() => {
+    this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
-    }, 0)
+    }, 100)
+
+    if (
+      this.props.isCSVProgressMessage &&
+      typeof this.state.csvDownloadProgress === 'undefined'
+    ) {
+      this.props.setCSVDownloadProgress(this.props.id, 0)
+      const linkedQueryResponseRef = this.props.linkedQueryResponseRef
+      const queryDisplayType = _get(linkedQueryResponseRef, 'props.displayType')
+
+      if (queryDisplayType === 'pivot_table') {
+        if (_get(linkedQueryResponseRef, 'pivotTableRef')) {
+          linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
+            this.props.setCSVDownloadProgress(this.props.id, 100)
+            this.onCSVExportFinish(undefined, true)
+          })
+        }
+      } else {
+        exportCSV({
+          queryId: this.props.queryId,
+          ...getAuthentication(this.props.authentication),
+          csvProgressCallback: (percentCompleted) =>
+            this.props.setCSVDownloadProgress(this.props.id, percentCompleted),
+        })
+          .then((response) => {
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', 'export.csv')
+            document.body.appendChild(link)
+            link.click()
+            this.onCSVExportFinish(response)
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+      }
+    }
 
     // Wait until message bubble animation finishes to show query output content
+    clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
+      this.props.scrollToBottom()
     }, 600)
 
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
     this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
+  }
+
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
+    }
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -160,8 +219,75 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
+    clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
+  }
+
+  onCSVExportFinish = (response, isPivotTable) => {
+    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
+    const CSVtotal_rows = _get(response, 'headers.total_rows')
+    const CSVreturned_rows = _get(response, 'headers.returned_rows')
+    let CSVexportLimit = _get(response, 'headers.export_limit')
+    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
+      CSVFileSizeMb = parseInt(CSVFileSizeMb)
+      CSVexportLimit = parseInt(CSVexportLimit)
+    }
+
+    this.props.addMessageToDM({
+      content: (
+        <>
+          Your file has successfully been downloaded with the query{' '}
+          <b>
+            <i>{this.props.queryText}</i>
+          </b>
+          .
+          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+            <>
+              <br />
+              <p>
+                WARNING: The file you’ve requested is larger than{' '}
+                {CSVexportLimit}. This exceeds the maximum download size and you
+                will only receive partial data.
+              </p>
+            </>
+          ) : null}
+        </>
+      ),
+    })
+  }
+
+  onCSVExportFinish = (response, isPivotTable) => {
+    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
+    const CSVtotal_rows = _get(response, 'headers.total_rows')
+    const CSVreturned_rows = _get(response, 'headers.returned_rows')
+    let CSVexportLimit = _get(response, 'headers.export_limit')
+    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
+      CSVFileSizeMb = parseInt(CSVFileSizeMb)
+      CSVexportLimit = parseInt(CSVexportLimit)
+    }
+
+    this.props.addMessageToDM({
+      content: (
+        <>
+          Your file has successfully been downloaded with the query{' '}
+          <b>
+            <i>{this.props.queryText}</i>
+          </b>
+          .
+          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+            <>
+              <br />
+              <p>
+                WARNING: The file you’ve requested is larger than{' '}
+                {CSVexportLimit}. This exceeds the maximum download size and you
+                will only receive partial data.
+              </p>
+            </>
+          ) : null}
+        </>
+      ),
+    })
   }
 
   isScrolledIntoView = (elem) => {
@@ -180,10 +306,13 @@ export default class ChatMessage extends React.Component {
   }
 
   scrollIntoView = () => {
+    clearTimeout(this.scrollIntoViewTimeout)
     this.scrollIntoViewTimeout = setTimeout(() => {
-      const element = document.getElementById(`message-${this.props.id}`)
-      if (!this.isScrolledIntoView(element)) {
-        this.scrollIntoViewTimer = element.scrollIntoView({
+      if (
+        this.messageContainerRef &&
+        !this.isScrolledIntoView(this.messageContainerRef)
+      ) {
+        this.scrollIntoViewTimer = this.messageContainerRef.scrollIntoView({
           block: 'end',
           inline: 'nearest',
           behavior: 'smooth',
@@ -205,8 +334,17 @@ export default class ChatMessage extends React.Component {
     this.setState({ supportedDisplayTypes })
   }
 
+  renderCSVProgressMessage = () => {
+    return `Fetching your file ... ${this.state.csvDownloadProgress || 0}%`
+  }
+
   renderContent = () => {
-    if (this.props.content) {
+    if (
+      this.props.isCSVProgressMessage ||
+      typeof this.state.csvDownloadProgress !== 'undefined'
+    ) {
+      return this.renderCSVProgressMessage()
+    } else if (this.props.content) {
       return this.props.content
     } else if (_get(this.props.response, 'status') === 401) {
       return errorMessages.UNAUTHENTICATED
@@ -281,11 +419,21 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  onCSVExportClick = (queryId, query) => {
+    this.props.addMessageToDM({
+      content: `Fetching your file ... 0%`,
+      query,
+      isCSVProgressMessage: true,
+      queryId,
+      linkedQueryResponseRef: this.responseRef,
+    })
+  }
+
   renderRightToolbar = () => {
     if (
       this.props.isResponse &&
-      this.props.displayType !== 'help' &&
-      this.props.displayType !== 'suggestion'
+      this.state.displayType !== 'help' &&
+      this.state.displayType !== 'suggestion'
     ) {
       return (
         <OptionsToolbar
@@ -295,6 +443,8 @@ export default class ChatMessage extends React.Component {
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           responseRef={this.responseRef}
+          displayType={this.state.displayType}
+          onCSVExportClick={this.onCSVExportClick}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
           enableDeleteBtn={!this.props.isIntroMessage}
@@ -307,6 +457,7 @@ export default class ChatMessage extends React.Component {
               displayType: getDefaultDisplayType(this.props.response),
             })
           }}
+          onResponseCallback={this.props.onResponseCallback}
         />
       )
     }
@@ -389,6 +540,7 @@ export default class ChatMessage extends React.Component {
       <ErrorBoundary>
         <div
           id={`message-${this.props.id}`}
+          ref={(r) => (this.messageContainerRef = r)}
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}

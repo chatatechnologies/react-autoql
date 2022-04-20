@@ -5,7 +5,7 @@ import { StackedLines } from '../StackedLines'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { calculateMinAndMaxSums, shouldRotateLabels } from '../../../js/Util'
+import { calculateMinAndMaxSums, shouldLabelsRotate } from '../../../js/Util'
 import { getTickValues } from '../helpers'
 import { dataFormattingType, themeConfigType } from '../../../props/types'
 import {
@@ -16,8 +16,10 @@ import {
 } from '../../../props/defaults'
 
 export default class ChataStackedLineChart extends Component {
-  xScale = scaleBand()
-  yScale = scaleLinear()
+  constructor(props) {
+    super(props)
+    this.setChartData(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -53,120 +55,117 @@ export default class ChataStackedLineChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
+
+  shouldComponentUpdate = () => {
+    return true
+  }
+
   componentDidUpdate = () => {
-    if (
-      typeof this.prevRotateLabels !== 'undefined' &&
-      this.prevRotateLabels !== this.rotateLabels
-    ) {
+    if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
   }
 
-  handleLabelRotation = (tickWidth, labelArray) => {
-    this.prevRotateLabels = this.rotateLabels
-    this.rotateLabels = shouldRotateLabels(
-      tickWidth,
-      labelArray,
+  didLabelsRotate = () => {
+    const rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
+    )
+
+    if (typeof rotateLabels !== 'undefined') {
+      this.prevRotateLabels = this.rotateLabels
+      this.rotateLabels = rotateLabels
+      return this.prevRotateLabels !== this.rotateLabels
+    }
+
+    return false
+  }
+
+  setChartData = (props) => {
+    const { maxValue, minValue } = calculateMinAndMaxSums(props.data)
+    this.maxValue = maxValue
+    this.minValue = minValue
+
+    this.xScale = scaleBand()
+      .domain(props.data.map((d) => d.label))
+      .range([props.leftMargin, props.width - props.rightMargin])
+      .paddingInner(1)
+      .paddingOuter(0)
+
+    this.yScale = scaleLinear()
+      .domain([this.minValue, this.maxValue]) // do we want to deal with negative values for these visualizations?
+      .range([props.height - props.bottomMargin, props.topMargin])
+      .nice()
+
+    this.labelArray = props.data.map((element) => element.label)
+    this.tickWidth = Math.abs(
+      this.xScale(_get(props.data, '[0].label')) -
+        this.xScale(_get(props.data, '[1].label'))
+    )
+    this.xTickValues = getTickValues(
+      this.tickWidth,
+      props.width,
+      this.labelArray
     )
   }
 
   render = () => {
-    const {
-      onLegendTitleClick,
-      activeChartElementKey,
-      enableDynamicCharting,
-      bottomLegendMargin,
-      numberColumnIndex,
-      numberAxisTitle,
-      dataFormatting,
-      legendLocation,
-      onLegendClick,
-      tableColumns,
-      legendColumn,
-      bottomMargin,
-      onChartClick,
-      legendLabels,
-      onXAxisClick,
-      onYAxisClick,
-      themeConfig,
-      rightMargin,
-      leftMargin,
-      topMargin,
-      columns,
-      height,
-      width,
-    } = this.props
-
-    // Get max and min values from all series
-    const { max, min } = calculateMinAndMaxSums(this.props.data)
-
-    const xScale = this.xScale
-      .domain(this.props.data.map((d) => d.label))
-      .range([leftMargin, width - rightMargin])
-      .paddingInner(1)
-      .paddingOuter(0)
-
-    const yScale = this.yScale
-      .domain([min, max]) // do we want to deal with negative values for these visualizations?
-      .range([height - bottomMargin, topMargin])
-      .nice()
-
-    const labelArray = this.props.data.map((element) => element.label)
-    const tickWidth = Math.abs(
-      xScale(_get(this.props.data, '[0].label')) -
-        xScale(_get(this.props.data, '[1].label'))
-    )
-    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
-    this.handleLabelRotation(tickWidth, labelArray)
+    this.setChartData(this.props)
 
     return (
       <g data-test="react-autoql-stacked-line-chart">
         <Axes
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
-          xCol={columns[0]}
-          yCol={_get(tableColumns, `[${numberColumnIndex}]`)}
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          xCol={this.props.columns[0]}
+          yCol={_get(
+            this.props.tableColumns,
+            `[${this.props.numberColumnIndex}]`
+          )}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
-            bottomLegend: bottomLegendMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+            bottomLegend: this.props.bottomLegendMargin,
           }}
-          width={width}
-          height={height}
-          xTicks={xTickValues}
+          width={this.props.width}
+          height={this.props.height}
+          xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
-          dataFormatting={dataFormatting}
-          hasRightLegend={legendLocation === 'right'}
-          hasBottomLegend={legendLocation === 'bottom'}
-          legendLabels={legendLabels}
-          onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'title', 'Category')}
-          onLegendTitleClick={onLegendTitleClick}
+          dataFormatting={this.props.dataFormatting}
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          legendLabels={this.props.legendLabels}
+          onLegendClick={this.props.onLegendClick}
+          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
+          onLegendTitleClick={this.props.onLegendTitleClick}
           yGridLines
-          onXAxisClick={onXAxisClick}
-          onYAxisClick={onYAxisClick}
-          hasXDropdown={enableDynamicCharting}
-          yAxisTitle={numberAxisTitle}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          hasXDropdown={this.props.enableDynamicCharting}
+          yAxisTitle={this.props.numberAxisTitle}
         />
         <StackedLines
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
           }}
           data={this.props.data}
-          width={width}
-          height={height}
-          onChartClick={onChartClick}
-          activeKey={activeChartElementKey}
-          legendTitle={_get(legendColumn, 'title', 'Category')}
+          width={this.props.width}
+          height={this.props.height}
+          onChartClick={this.props.onChartClick}
+          activeKey={this.props.activeChartElementKey}
+          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
           minValue={0} // change to min if we want to account for negative values at some point
         />
       </g>

@@ -109,7 +109,6 @@ export default class QueryTipsTab extends React.Component {
             pageCount={this.props.totalPages}
             pageRangeDisplayed={1}
             forcePage={this.props.currentPage - 1} // it is 0 indexed
-            pageRangeDisplayed={1}
             marginPagesDisplayed={2}
             containerClassName={'pagination'}
             subContainerClassName={'pages pagination'}

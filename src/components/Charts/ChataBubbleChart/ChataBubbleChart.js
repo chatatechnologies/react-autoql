@@ -5,7 +5,7 @@ import { max, min } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
-import { shouldRotateLabels } from '../../../js/Util.js'
+import { shouldLabelsRotate } from '../../../js/Util.js'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -15,8 +15,10 @@ import {
 } from '../../../props/defaults'
 
 export default class ChataBubbleChart extends Component {
-  xScale = scaleBand()
-  yScale = scaleBand()
+  constructor(props) {
+    super(props)
+    this.setChartData(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -54,26 +56,59 @@ export default class ChataBubbleChart extends Component {
     onLabelChange: () => {},
   }
 
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
+
+  shouldComponentUpdate = () => {
+    return true
+  }
+
   componentDidUpdate = () => {
-    if (
-      typeof this.prevRotateLabels !== 'undefined' &&
-      this.prevRotateLabels !== this.rotateLabels
-    ) {
+    if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
   }
 
-  handleLabelRotation = (labelArray) => {
-    this.prevRotateLabels = this.rotateLabels
-    this.rotateLabels = shouldRotateLabels(
+  didLabelsRotate = () => {
+    const rotateLabels = shouldLabelsRotate(
       this.squareWidth,
-      labelArray,
+      this.uniqueXLabels,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
     )
+
+    if (typeof rotateLabels !== 'undefined') {
+      this.prevRotateLabels = this.rotateLabels
+      this.rotateLabels = rotateLabels
+      return this.prevRotateLabels !== this.rotateLabels
+    }
+
+    return false
   }
 
-  getXTickValues = (labelArray) => {
+  setChartData = (props) => {
+    this.maxValue = max(props.data, (d) => max(d.cells, (cell) => cell.value))
+    this.minValue = min(props.data, (d) => min(d.cells, (cell) => cell.value))
+    this.uniqueXLabels = props.data.map((d) => d.label)
+    this.uniqueYLabels = props.data[0].cells.map((cell) => cell.label)
+
+    this.xScale = scaleBand()
+      .domain(this.uniqueXLabels)
+      .range([props.leftMargin, props.width - props.rightMargin])
+      .paddingOuter(0.5)
+
+    this.yScale = scaleBand()
+      .domain(this.uniqueYLabels)
+      .range([props.height - props.bottomMargin, props.topMargin])
+
+    this.squareWidth = this.xScale.bandwidth()
+
+    this.xTickValues = this.getXTickValues()
+    this.yTickValues = this.getYTickValues()
+  }
+
+  getXTickValues = () => {
     try {
       const interval = Math.ceil(
         (this.props.data.length * 16) / this.props.width
@@ -82,7 +117,7 @@ export default class ChataBubbleChart extends Component {
 
       if (this.squareWidth < 16) {
         xTickValues = []
-        labelArray.forEach((label, index) => {
+        this.uniqueXLabels.forEach((label, index) => {
           if (index % interval === 0) {
             xTickValues.push(label)
           }
@@ -96,17 +131,17 @@ export default class ChataBubbleChart extends Component {
     }
   }
 
-  getYTickValues = (uniqueYLabels) => {
-    this.squareHeight = this.props.height / uniqueYLabels.length
+  getYTickValues = () => {
+    this.squareHeight = this.props.height / this.uniqueYLabels.length
     const intervalHeight = Math.ceil(
-      (uniqueYLabels.length * 16) / this.props.height
+      (this.uniqueYLabels.length * 16) / this.props.height
     )
 
     try {
       let yTickValues
       if (this.squareHeight < 16) {
         yTickValues = []
-        uniqueYLabels.forEach((element, index) => {
+        this.uniqueYLabels.forEach((element, index) => {
           if (index % intervalHeight === 0) {
             yTickValues.push(element)
           }
@@ -121,48 +156,7 @@ export default class ChataBubbleChart extends Component {
   }
 
   render = () => {
-    const {
-      activeChartElementKey,
-      dataFormatting,
-      onXAxisClick,
-      onYAxisClick,
-      legendColumn,
-      onChartClick,
-      bottomMargin,
-      rightMargin,
-      labelValueY,
-      labelValueX,
-      themeConfig,
-      leftMargin,
-      topMargin,
-      dataValue,
-      columns,
-      height,
-      width,
-    } = this.props
-
-    const maxValue = max(this.props.data, (d) =>
-      max(d.cells, (cell) => cell.value)
-    )
-    const minValue = min(this.props.data, (d) =>
-      min(d.cells, (cell) => cell.value)
-    )
-
-    const uniqueXLabels = this.props.data.map((d) => d.label)
-    const xScale = this.xScale
-      .domain(uniqueXLabels)
-      .range([leftMargin, width - rightMargin])
-      .paddingOuter(0.5)
-
-    const uniqueYLabels = this.props.data[0].cells.map((cell) => cell.label)
-    const yScale = this.yScale
-      .domain(uniqueYLabels)
-      .range([height - bottomMargin, topMargin])
-
-    this.squareWidth = xScale.bandwidth()
-    const xTickValues = this.getXTickValues(uniqueXLabels)
-    const yTickValues = this.getYTickValues(uniqueYLabels)
-    this.handleLabelRotation(uniqueXLabels)
+    this.setChartData(this.props)
 
     return (
       <g
@@ -171,50 +165,48 @@ export default class ChataBubbleChart extends Component {
       >
         <Axes
           themeConfig={getThemeConfig(this.props.themeConfig)}
-          scales={{ xScale, yScale }}
-          xCol={columns[0]}
-          yCol={legendColumn}
-          valueCol={columns[2]}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          xCol={this.props.columns[0]}
+          yCol={this.props.legendColumn}
+          valueCol={this.props.columns[2]}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
           }}
-          width={width}
-          height={height}
-          yTicks={yTickValues}
-          xTicks={xTickValues}
+          width={this.props.width}
+          height={this.props.height}
+          yTicks={this.yTickValues}
+          xTicks={this.xTickValues}
           yGridLines
-          dataFormatting={dataFormatting}
+          dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
-          onXAxisClick={onXAxisClick}
-          onYAxisClick={onYAxisClick}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
         />
-        {
-          <Circles
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            scales={{ xScale, yScale }}
-            margins={{
-              left: leftMargin,
-              right: rightMargin,
-              bottom: bottomMargin,
-              top: topMargin,
-            }}
-            data={this.props.data}
-            columns={columns}
-            minValue={minValue}
-            maxValue={maxValue}
-            legendColumn={legendColumn}
-            width={width}
-            height={height}
-            dataValue={dataValue}
-            labelValueX={labelValueX}
-            labelValueY={labelValueY}
-            onChartClick={onChartClick}
-            activeKey={activeChartElementKey}
-          />
-        }
+        <Circles
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          margins={{
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+          }}
+          data={this.props.data}
+          columns={this.props.columns}
+          minValue={this.minValue}
+          maxValue={this.maxValue}
+          legendColumn={this.props.legendColumn}
+          width={this.props.width}
+          height={this.props.height}
+          dataValue={this.props.dataValue}
+          labelValueX={this.props.labelValueX}
+          labelValueY={this.props.labelValueY}
+          onChartClick={this.props.onChartClick}
+          activeKey={this.props.activeChartElementKey}
+        />
       </g>
     )
   }
