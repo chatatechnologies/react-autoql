@@ -104,9 +104,9 @@ export default class Axis extends Component {
       .attr('class', 'react-autoql-axis-selector-arrow')
 
     // Add border that shows on hover
-    let titleBBox = {}
+    this.titleBBox = {}
     try {
-      titleBBox = svg
+      this.titleBBox = svg
         .select('.legendTitle')
         .node()
         .getBBox()

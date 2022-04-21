@@ -46,7 +46,7 @@ const common = {
       exclude: 'node_modules/**',
       ignore: ['./example'],
     }),
-    terser(),
+    // terser(),
     gzipPlugin(),
     development && visualizer(),
     development && bundleSize(),

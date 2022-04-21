@@ -131,7 +131,11 @@ export default class QueryTipsTab extends React.Component {
             this.queryTipsScrollComponent = c
           }}
         >
-          <div className="query-tips-page-container" data-test="query-tips-tab">
+          <div
+            ref={this.props.queryTipsPageRef}
+            className="query-tips-page-container"
+            data-test="query-tips-tab"
+          >
             <div
               className="react-autoql-chatbar-input-container"
               style={{ animation: 'slideDown 0.5s ease' }}
