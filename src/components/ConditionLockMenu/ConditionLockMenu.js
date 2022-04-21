@@ -151,7 +151,6 @@ export default class ConditionLockMenu extends React.Component {
   }
 
   componentWillUnmount = () => {
-    removeFromDOM(this.inputElement)
     removeFromDOM(this.el1)
     removeFromDOM(this.el2)
     removeFromDOM(this.el3)
