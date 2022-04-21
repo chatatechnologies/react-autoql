@@ -11,7 +11,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "watch 'npm run build' src",
+    "dev": "export NODE_ENV=dev && watch 'npm run build' src",
     "packexample": "cd example/package && npm pack ../..",
     "test": "NODE_ENV=test && jest --silent=false",
     "test:watch": "jest --watch",

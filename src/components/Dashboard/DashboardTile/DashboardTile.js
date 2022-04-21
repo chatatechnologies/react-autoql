@@ -165,7 +165,6 @@ class DashboardTile extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
 
-    removeFromDOM(this.dashboardTileToolTipElement)
     // todo: Cancel all dashboard calls here
   }
 
@@ -1175,18 +1174,6 @@ class DashboardTile extends React.Component {
       onMouseUp,
       onTouchStart,
       onTouchEnd,
-    }
-
-    this.dashboardTileToolTipElement = document.getElementById(
-      'dashboard-data-limit-warning-tooltip'
-    )
-    if (this.dashboardTileToolTipElement) {
-      if (_get(this.props, 'style.width')) {
-        this.dashboardTileToolTipElement.style.maxWidth = `${_get(
-          this.props,
-          'style.width'
-        ).match(/\d+/g)[0] - 75}px`
-      }
     }
 
     return (

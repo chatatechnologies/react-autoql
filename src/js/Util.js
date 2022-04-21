@@ -899,7 +899,7 @@ export const setCSSVars = (themeConfig) => {
     // Check contrast
 
     //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['accent-text-color'] = yiq >= 128 ? 'black' : 'white'
+    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {
@@ -1064,12 +1064,18 @@ export const setCaretPosition = (elem, caretPos) => {
 }
 
 export const removeFromDOM = (elem) => {
+  if (!elem) {
+    return
+  }
+
   try {
-    if (_get(elem, 'length')) {
+    if (typeof elem.forEach === 'function' && _get(elem, 'length')) {
       elem.forEach((el) => {
-        el.remove()
+        if (el && typeof el.remove === 'function') {
+          el.remove()
+        }
       })
-    } else if (elem && !Array.isArray(elem)) {
+    } else if (typeof elem.remove === 'function') {
       elem.remove()
     }
   } catch (error) {

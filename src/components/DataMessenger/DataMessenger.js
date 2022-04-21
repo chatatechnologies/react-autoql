@@ -84,6 +84,7 @@ export default class DataMessenger extends React.Component {
       selectedValueLabel: undefined,
       conditions: undefined,
       messages: [],
+      topicsMessageContent: undefined,
       queryTipsList: undefined,
       queryTipsLoading: false,
       queryTipsError: false,
@@ -227,6 +228,7 @@ export default class DataMessenger extends React.Component {
               })
               this.setState({
                 messages: [...this.state.messages, topicsMessage],
+                topicsMessageContent: topicsMessageContent,
               })
             }
           }
@@ -325,9 +327,6 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.tooltipRebuildTimeout)
-
-      removeFromDOM(this.acc)
-      removeFromDOM(this.containerElement)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -449,7 +448,13 @@ export default class DataMessenger extends React.Component {
         content: introMessageContent,
       }),
     ]
-
+    if (this.state.topicsMessageContent) {
+      introMessages.push(
+        this.createIntroMessage({
+          content: this.state.topicsMessageContent,
+        })
+      )
+    }
     this.setState({
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
@@ -809,11 +814,14 @@ export default class DataMessenger extends React.Component {
   }
 
   handleClearQueriesDropdown = () => {
-    this.acc = document.getElementById('clear-queries-dropdown')
-    if (this.acc.style.display === 'block') {
-      this.acc.style.display = 'none'
+    if (!this.clearQueriesDropdown) {
+      return
+    }
+
+    if (this.clearQueriesDropdown.style.display === 'block') {
+      this.clearQueriesDropdown.style.display = 'none'
     } else {
-      this.acc.style.display = 'block'
+      this.clearQueriesDropdown.style.display = 'block'
     }
   }
 
@@ -991,7 +999,11 @@ export default class DataMessenger extends React.Component {
                       {lang.clearDataResponses}
                     </span>
                   </div>
-                  <div id="clear-queries-dropdown" style={{ display: 'none' }}>
+                  <div
+                    ref={(r) => (this.clearQueriesDropdown = r)}
+                    id="clear-queries-dropdown"
+                    style={{ display: 'none' }}
+                  >
                     <Button
                       type="default"
                       size="small"
@@ -1292,8 +1304,11 @@ export default class DataMessenger extends React.Component {
   fetchQueryTipsList = (keywords, pageNumber, skipQueryValidation) => {
     this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
 
-    this.containerElement = document.querySelector('.query-tips-page-container')
-    const pageSize = Math.floor((this.containerElement.clientHeight - 150) / 50)
+    // todo: use infinite scroll to simplify this
+    let pageSize = 10
+    if (this.queryTipsPage) {
+      pageSize = Math.floor((this.queryTipsPage.clientHeight - 150) / 50)
+    }
 
     fetchQueryTips({
       ...getAuthentication(this.props.authentication),
@@ -1402,6 +1417,7 @@ export default class DataMessenger extends React.Component {
       queryTipsInputValue={this.state.queryTipsInputValue}
       totalPages={this.state.queryTipsTotalPages}
       currentPage={this.state.queryTipsCurrentPage}
+      queryTipsPageRef={(r) => (this.queryTipsPage = r)}
       onPageChange={this.onQueryTipsPageChange}
       executeQuery={(query) => {
         this.setState({ activePage: 'data-messenger' })

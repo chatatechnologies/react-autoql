@@ -355,7 +355,6 @@ export default class ChataChart extends Component {
         link.style.display = 'none'
         document.body.appendChild(link)
         link.click()
-        document.body.removeChild(link)
       })
       .catch((error) => {
         console.error(error)

@@ -226,10 +226,6 @@ export default class QueryOutput extends React.Component {
 
   componentDidMount = () => {
     try {
-      this.responseContainer = document.getElementById(
-        `react-autoql-response-content-container-${this.COMPONENT_KEY}`
-      )
-
       if (this.props.optionsToolbarRef) {
         this.props.optionsToolbarRef.forceUpdate()
       }
@@ -333,10 +329,6 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
-
-    removeFromDOM(this.responseContainer)
-    removeFromDOM(this.translationContainer)
-
     clearTimeout(this.tableFilterTimeout)
   }
 
@@ -2133,6 +2125,7 @@ export default class QueryOutput extends React.Component {
       <ErrorBoundary>
         <div
           key={this.COMPONENT_KEY}
+          ref={(r) => (this.responseContainerRef = r)}
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
           className={`react-autoql-response-content-container

@@ -161,7 +161,6 @@ export default class Input extends React.Component {
         link.setAttribute('download', 'export.csv')
         document.body.appendChild(link)
         link.click()
-        document.body.removeChild(link)
       })
       .catch((error) => {
         console.error(error)
@@ -216,7 +215,6 @@ export default class Input extends React.Component {
     document.body.appendChild(el)
     el.select()
     document.execCommand('copy')
-    document.body.removeChild(el)
     this.setTemporaryState('copiedSQL', true, 1000)
     this.props.onSuccessAlert(
       'Successfully copied generated query to clipboard!'
