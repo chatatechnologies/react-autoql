@@ -91,8 +91,6 @@ export default class Input extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
-
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }

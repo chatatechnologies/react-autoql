@@ -400,7 +400,6 @@ export default class DataAlerts extends React.Component {
                           onChange={(e) => {
                             this.onEnableSwitchChange(e, notification)
                             ReactTooltip.hide()
-                            ReactTooltip.rebuild()
                           }}
                         />
                       )}

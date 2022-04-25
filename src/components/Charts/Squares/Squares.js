@@ -12,6 +12,10 @@ export default class Squares extends Component {
     this.opacityScale = scaleLinear()
       .domain([0, this.props.maxValue])
       .range([0, 1])
+
+    this.state = {
+      activeKey: this.props.activeKey,
+    }
   }
 
   static propTypes = {
@@ -20,10 +24,6 @@ export default class Squares extends Component {
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
-  }
-
-  state = {
-    activeKey: this.props.activeKey,
   }
 
   render = () => {

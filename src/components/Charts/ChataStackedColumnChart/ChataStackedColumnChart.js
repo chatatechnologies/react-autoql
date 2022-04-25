@@ -17,14 +17,31 @@ import {
   themeConfigDefault,
   dataFormattingDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 
 export default class ChataStackedColumnChart extends Component {
   constructor(props) {
     super(props)
-    this.setChartData(props)
+
+    const { xScale, yScale, tickWidth, xTickValues } = this.getScaleData(props)
+
+    this.rotateLabels = shouldLabelsRotate(
+      tickWidth,
+      this.labelArray,
+      props.columns[0],
+      getDataFormatting(props.dataFormatting)
+    )
+
+    this.prevRotateLabels = this.rotateLabels
+    this.isFirstRender = true
+
+    this.state = {
+      xScale,
+      yScale,
+      tickWidth,
+      xTickValues,
+    }
   }
 
   static propTypes = {
@@ -69,15 +86,37 @@ export default class ChataStackedColumnChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
+    if (this.didDimensionsChange(prevProps)) {
+      this.setState({
+        ...this.getScaleData(this.props, prevProps),
+      })
+    }
+  }
+
+  didDimensionsChange = (prevProps) => {
+    return (
+      this.didChange('rightMargin', prevProps) ||
+      this.didChange('leftMargin', prevProps) ||
+      this.didChange('topMargin', prevProps) ||
+      this.didChange('bottomMargin', prevProps) ||
+      this.didChange('innerPadding', prevProps) ||
+      this.didChange('outerPadding', prevProps) ||
+      this.didChange('width', prevProps) ||
+      this.didChange('height', prevProps)
+    )
+  }
+
+  didChange = (propName, prevProps) => {
+    return this.props[propName] !== prevProps[propName]
   }
 
   didLabelsRotate = () => {
     const rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
+      this.state.tickWidth,
       this.labelArray,
       this.props.columns[0],
       getDataFormatting(this.props.dataFormatting)
@@ -92,46 +131,43 @@ export default class ChataStackedColumnChart extends Component {
     return false
   }
 
-  setChartData = (props) => {
-    const { maxValue, minValue } = calculateMinAndMaxSums(props.data)
-    this.maxValue = maxValue
-    this.minValue = minValue
+  getScaleData = (props, prevProps) => {
+    // If size of data didn't change, we don't need to re-calculate max/min
+    if (prevProps?.data?.length !== props?.data?.length) {
+      this.labelArray = props.data.map((element) => element.label)
+      const { maxValue, minValue } = calculateMinAndMaxSums(props.data)
+      this.maxValue = maxValue
+      this.minValue = minValue
+    }
 
-    this.xScale = scaleBand()
-      .domain(props.data.map((d) => d.label))
+    const xScale = scaleBand()
+      .domain(this.labelArray)
       .range([props.leftMargin, props.width - props.rightMargin])
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
 
-    this.yScale = scaleLinear()
+    const yScale = scaleLinear()
       .domain([this.minValue, this.maxValue])
       .range([props.height - props.bottomMargin, props.topMargin])
       .nice()
 
-    this.labelArray = props.data.map((element) => element.label)
-    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
-    this.xTickValues = getTickValues(
-      this.tickWidth,
-      props.width,
-      this.labelArray
-    )
+    const tickWidth = getTickWidth(xScale, props.innerPadding)
+    const xTickValues = getTickValues(tickWidth, props.width, this.labelArray)
 
-    this.rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.labelArray,
-      props.columns[0],
-      getDataFormatting(props.dataFormatting)
-    )
+    return {
+      xScale,
+      yScale,
+      tickWidth,
+      xTickValues,
+    }
   }
 
   render = () => {
-    this.setChartData(this.props)
-
     return (
       <g data-test="react-autoql-stacked-column-chart">
         <Axes
           themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          scales={{ xScale: this.state.xScale, yScale: this.state.yScale }}
           xCol={this.props.columns[0]}
           yCol={_get(
             this.props.tableColumns,
@@ -146,7 +182,7 @@ export default class ChataStackedColumnChart extends Component {
           }}
           width={this.props.width}
           height={this.props.height}
-          xTicks={this.xTickValues}
+          xTicks={this.state.xTickValues}
           rotateLabels={this.rotateLabels}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
@@ -168,22 +204,15 @@ export default class ChataStackedColumnChart extends Component {
           }
           yAxisTitle={this.props.numberAxisTitle}
         />
-        <StackedColumns
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-          }}
-          data={this.props.data}
-          width={this.props.width}
-          height={this.props.height}
-          onChartClick={this.props.onChartClick}
-          activeKey={this.props.activeChartElementKey}
-          isResizing={this.props.isResizing || this.props.isAnimatingContainer}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <StackedColumns
+            xScale={this.state.xScale}
+            yScale={this.state.yScale}
+            data={this.props.data}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

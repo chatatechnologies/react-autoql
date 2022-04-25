@@ -65,7 +65,6 @@ export default class Axis extends Component {
 
   componentDidUpdate = () => {
     this.renderPie()
-    ReactTooltip.rebuild()
   }
 
   componentWillUnmount = () => {

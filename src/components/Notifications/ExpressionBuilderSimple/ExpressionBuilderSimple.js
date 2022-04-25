@@ -86,8 +86,6 @@ export default class ExpressionBuilderSimple extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
-
     if (!_isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
       this.setState({ ...getInitialStateData(this.props.expression) })

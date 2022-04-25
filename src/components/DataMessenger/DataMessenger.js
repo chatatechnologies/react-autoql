@@ -182,16 +182,8 @@ export default class DataMessenger extends React.Component {
   componentDidMount = () => {
     try {
       this.setIntroMessages()
-      // Listen for esc press to cancel queries while they are running
-      document.addEventListener('keydown', this.escFunction, false)
-      document.addEventListener('visibilitychange', this.onWindowResize())
+      document.addEventListener('visibilitychange', this.onWindowResize)
       window.addEventListener('resize', this.onWindowResize)
-
-      // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
-      clearTimeout(this.tooltipRebuildTimeout)
-      this.tooltipRebuildTimeout = setTimeout(() => {
-        ReactTooltip.rebuild()
-      }, 100)
 
       this.setState({
         containerHeight: this.getScrollContainerHeight(),
@@ -242,10 +234,6 @@ export default class DataMessenger extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     try {
       const nextState = {}
-
-      setTimeout(() => {
-        ReactTooltip.rebuild()
-      }, 1000)
 
       if (this.props.placement !== prevProps.placement) {
         nextState.placement = this.getPlacementProp(this.props.placement)
@@ -316,7 +304,7 @@ export default class DataMessenger extends React.Component {
 
   componentWillUnmount() {
     try {
-      document.removeEventListener('keydown', this.escFunction, false)
+      document.removeEventListener('visibilitychange', this.onWindowResize)
       window.removeEventListener('resize', this.onWindowResize)
 
       clearTimeout(this.scrollToBottomTimeout)
@@ -326,11 +314,19 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.animateTextTimeout)
       clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
-      clearTimeout(this.tooltipRebuildTimeout)
+      clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
     }
+  }
+
+  rebuildTooltips = () => {
+    clearTimeout(this.rebuildTooltipsTimer)
+    this.rebuildTooltipsTimer = setTimeout(() => {
+      console.log('rebuilding tooltips 1')
+      ReactTooltip.rebuild()
+    }, 1000)
   }
 
   setMaxWidthAndHeightFromDocument = () => {
@@ -1230,6 +1226,7 @@ export default class DataMessenger extends React.Component {
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
+                  onQueryOutputUpdate={this.rebuildTooltips}
                   dataFormatting={getDataFormatting(
                     getDataFormatting(this.props.dataFormatting)
                   )}

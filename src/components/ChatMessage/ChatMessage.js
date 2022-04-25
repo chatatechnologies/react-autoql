@@ -367,6 +367,7 @@ export default class ChatMessage extends React.Component {
             hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
             appliedFilters={this.props.appliedFilters}
+            onUpdate={this.props.onQueryOutputUpdate}
             height={
               isChartType(this.state.displayType)
                 ? this.state.chartHeight

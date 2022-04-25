@@ -943,6 +943,7 @@ class DashboardTile extends React.Component {
                 autoChartAggregations={this.props.autoChartAggregations}
                 renderSuggestionsAsDropdown={this.props.tile.h < 4}
                 enableDynamicCharting={this.props.enableDynamicCharting}
+                onUpdate={this.props.onQueryOutputUpdate}
                 backgroundColor={document.documentElement.style.getPropertyValue(
                   '--react-autoql-background-color-primary'
                 )}

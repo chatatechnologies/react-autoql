@@ -181,6 +181,7 @@ export default class QueryOutput extends React.Component {
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
     isTaskModule: bool,
+    onUpdate: func,
   }
 
   static defaultProps = {
@@ -222,6 +223,7 @@ export default class QueryOutput extends React.Component {
     onColumnsUpdate: () => {},
     onRTValueLabelClick: () => {},
     onRecommendedDisplayType: () => {},
+    onUpdate: () => {},
   }
 
   componentDidMount = () => {
@@ -321,7 +323,7 @@ export default class QueryOutput extends React.Component {
           this.props.optionsToolbarRef.forceUpdate()
       }
 
-      ReactTooltip.rebuild()
+      this.props.onUpdate()
     } catch (error) {
       console.error(error)
     }
@@ -1227,6 +1229,7 @@ export default class QueryOutput extends React.Component {
           return chartDataObject
         }, {})
       )
+
       // Update supported display types after table data has been recalculated
       // there may be too many categories for a pie chart etc.
       this.setSupportedDisplayTypes(

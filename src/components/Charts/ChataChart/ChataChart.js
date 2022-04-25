@@ -114,8 +114,6 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    ReactTooltip.rebuild()
-
     if (!this.props.isResizing && prevProps.isResizing) {
       // Fill max message container after resize
       // No need to update margins, they should stay the same
@@ -124,6 +122,7 @@ export default class ChataChart extends Component {
         this.forceUpdate()
       }
     }
+
     if (this.shouldUpdateMargins(prevProps)) {
       this.updateMargins()
     }
@@ -276,6 +275,8 @@ export default class ChataChart extends Component {
   updateMargins = (delay = 0) => {
     this.setState({ isLoading: true })
     try {
+      this.marginAdjustmentFinished = true
+
       this.marginUpdate = new AwaitTimeout(delay, () => {
         this.axes = document.querySelector(
           `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
@@ -471,6 +472,7 @@ export default class ChataChart extends Component {
       leftMargin,
       isResizing: this.props.isResizing,
       isAnimatingContainer: this.props.isAnimatingContainer,
+      marginAdjustmentFinished: this.marginAdjustmentFinished,
       bottomLegendMargin,
       onChartClick,
       dataFormatting,

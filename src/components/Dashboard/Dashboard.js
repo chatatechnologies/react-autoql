@@ -175,9 +175,18 @@ class Dashboard extends React.Component {
   componentWillUnmount = () => {
     window.removeEventListener('resize', this.onWindowResize)
     clearTimeout(this.scrollToNewTileTimeout)
+    clearTimeout(this.rebuildTooltipsTimer)
     clearTimeout(this.stopDraggingTimeout)
     clearTimeout(this.drillingDownTimeout)
     clearTimeout(this.animationTimeout)
+  }
+
+  rebuildTooltips = () => {
+    clearTimeout(this.rebuildTooltipsTimer)
+    this.rebuildTooltipsTimer = setTimeout(() => {
+      console.log('rebuilding tooltips 2')
+      ReactTooltip.rebuild()
+    }, 1000)
   }
 
   setStyles = () => {
@@ -510,6 +519,7 @@ class Dashboard extends React.Component {
               queryResponse={this.state.activeDrilldownResponse}
               renderTooltips={false}
               isDashboardQuery={true}
+              onUpdate={this.rebuildTooltips}
               isAnimatingContainer={this.state.isAnimatingModal}
               autoChartAggregations={this.props.autoChartAggregations}
               backgroundColor={document.documentElement.style.getPropertyValue(
@@ -627,6 +637,7 @@ class Dashboard extends React.Component {
                           displayType={displayType}
                           dataConfig={dataConfig}
                           isDashboardQuery={true}
+                          onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
@@ -762,6 +773,7 @@ class Dashboard extends React.Component {
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
             isUnExecuted={this.state.isTileUnExecuted[tile.key]}
+            onQueryOutputUpdate={this.rebuildTooltips}
             onProcessTileCallback={(tileKey) => {
               this.setState((prevState) => ({
                 isTileUnExecuted: {
