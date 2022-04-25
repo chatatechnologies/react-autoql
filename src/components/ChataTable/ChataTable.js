@@ -18,6 +18,7 @@ import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
 import { runSubQuery } from '../../js/queryService'
+import { formatFiltersForAPI, formatSortersForAPI } from './tableHelpers'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -36,7 +37,12 @@ export default class ChataTable extends React.Component {
       ajaxProgressiveLoad: this.supportsInfiniteScroll ? 'scroll' : undefined,
       ajaxProgressiveLoadScrollMargin: 2000, // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
       ajaxURL: 'https://required-placeholder-url.com',
+      ajaxSorting: true,
+      ajaxFiltering: true,
       ajaxRequestFunc: (url, config, params) => {
+        const formattedSorters = formatSortersForAPI(params, this.ref)
+        const formattedFilters = formatFiltersForAPI(params, this.ref)
+
         if (!this.hasSetInitialData) {
           this.hasSetInitialData = true
           return Promise.resolve({ rows: this.props.data, page: 1 })
@@ -45,7 +51,9 @@ export default class ChataTable extends React.Component {
         return runSubQuery({
           ...getAuthentication(props.authentication),
           queryId: props.queryID,
-          page: this.currentPage + 1,
+          page: params.page,
+          sorters: formattedSorters,
+          filters: formattedFilters,
         })
       },
       ajaxResponse: (url, params, response) => {
@@ -74,6 +82,7 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       cellClick: this.cellClick,
+      dataSorting: (sorters) => {},
       dataFiltering: (filters) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
@@ -264,7 +273,7 @@ export default class ChataTable extends React.Component {
             <ReactTabulator
               ref={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
-              columns={this.state.columns}
+              columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
               options={this.tableOptions}
               data-custom-attr="test-custom-attribute"

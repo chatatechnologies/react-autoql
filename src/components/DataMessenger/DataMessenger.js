@@ -182,9 +182,7 @@ export default class DataMessenger extends React.Component {
   componentDidMount = () => {
     try {
       this.setIntroMessages()
-      // Listen for esc press to cancel queries while they are running
-      document.addEventListener('keydown', this.escFunction, false)
-      document.addEventListener('visibilitychange', this.onWindowResize())
+      document.addEventListener('visibilitychange', this.onWindowResize)
       window.addEventListener('resize', this.onWindowResize)
 
       // There is a bug with react tooltips where it doesnt bind properly right when the component mounts
@@ -316,8 +314,8 @@ export default class DataMessenger extends React.Component {
 
   componentWillUnmount() {
     try {
-      document.removeEventListener('keydown', this.escFunction, false)
       window.removeEventListener('resize', this.onWindowResize)
+      document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.scrollToBottomTimeout)
       clearTimeout(this.windowResizeTimer)

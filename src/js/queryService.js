@@ -79,11 +79,15 @@ export const runSubQuery = ({
   token,
   debug,
   page,
+  sorters,
+  filters,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/subquery?key=${apiKey}&page=${page}`
 
   const data = {
     translation: debug ? 'include' : 'exclude',
+    orders: sorters,
+    filters,
   }
 
   if (!queryId) {
