@@ -4,15 +4,32 @@ import _get from 'lodash.get'
 export default class StackedColumns extends Component {
   constructor(props) {
     super(props)
+
+    this.state = {
+      activeKey: this.props.activeKey,
+    }
   }
 
   static propTypes = {}
 
-  state = {
-    activeKey: this.props.activeKey,
-  }
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.activeKey !== nextProps.activeKey) {
+      return true
+    }
 
-  componentDidUpdate = () => {}
+    if (this.props.data?.length !== nextProps.data?.length) {
+      return true
+    }
+
+    if (
+      this.props.xScale !== nextProps.xScale ||
+      this.props.yScale !== nextProps.yScale
+    ) {
+      return true
+    }
+
+    return false
+  }
 
   getKey = (d, i) => {
     return `${d.label}-${d.cells[i].label}`
@@ -29,10 +46,6 @@ export default class StackedColumns extends Component {
   }
 
   render = () => {
-    const { scales } = this.props
-    const { xScale, yScale } = scales
-    const xBandwidth = xScale.bandwidth()
-
     return (
       <g data-test="stacked-columns">
         {this.props.data.map((d) => {
@@ -50,15 +63,17 @@ export default class StackedColumns extends Component {
               const nextSum = previousSum + value
               runningPositiveSumObject[d.label] = nextSum
 
-              height = Math.abs(yScale(value) - yScale(0)) - 0.5
-              y = yScale(nextSum) + 0.5
+              height =
+                Math.abs(this.props.yScale(value) - this.props.yScale(0)) - 0.5
+              y = this.props.yScale(nextSum) + 0.5
             } else {
               const previousSum = runningNegativeSumObject[d.label] || 0
               const nextSum = previousSum + value
               runningNegativeSumObject[d.label] = nextSum
 
-              height = Math.abs(yScale(value) - yScale(0)) - 0.5
-              y = yScale(previousSum) + 0.5
+              height =
+                Math.abs(this.props.yScale(value) - this.props.yScale(0)) - 0.5
+              y = this.props.yScale(previousSum) + 0.5
             }
 
             return (
@@ -67,9 +82,9 @@ export default class StackedColumns extends Component {
                 className={`bar${
                   this.state.activeKey === this.getKey(d, i) ? ' active' : ''
                 }`}
-                x={xScale(d.label)}
+                x={this.props.xScale(d.label)}
                 y={y}
-                width={xBandwidth}
+                width={this.props?.xScale?.bandwidth()}
                 height={Math.abs(height)}
                 onClick={() => this.onColumnClick(d, i)}
                 data-tip={cell.tooltipData}
