@@ -734,14 +734,17 @@ export default class Input extends React.Component {
     const shouldShowButton = {
       showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
       showCopyButton: isTable && !allColumnsHidden,
-      showSaveAsCSVButton: isTable && !allColumnsHidden,
       showSaveAsPNGButton: isChart,
       showHideColumnsButton:
         autoQLConfig.enableColumnVisibilityManager &&
         (isTable || allColumnsHidden) &&
         displayType !== 'pivot_table',
       showSQLButton: isDataResponse && autoQLConfig.debug,
-      showSaveAsCSVButton: isDataResponse && autoQLConfig.enableCSVDownload,
+      showSaveAsCSVButton:
+        isDataResponse &&
+        hasMoreThanOneRow &&
+        !allColumnsHidden &&
+        autoQLConfig.enableCSVDownload,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
       showCreateNotificationIcon:
