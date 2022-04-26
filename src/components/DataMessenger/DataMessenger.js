@@ -324,9 +324,8 @@ export default class DataMessenger extends React.Component {
   rebuildTooltips = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
-      console.log('rebuilding tooltips 1')
       ReactTooltip.rebuild()
-    }, 1000)
+    }, 500)
   }
 
   setMaxWidthAndHeightFromDocument = () => {

@@ -5,7 +5,11 @@ import { StackedBars } from '../StackedBars'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { calculateMinAndMaxSums, shouldLabelsRotate } from '../../../js/Util'
+import {
+  calculateMinAndMaxSums,
+  shouldLabelsRotate,
+  getLongestLabelInPx,
+} from '../../../js/Util'
 import { getTickValues } from '../helpers'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
@@ -19,6 +23,13 @@ export default class ChataStackedBarChart extends Component {
     super(props)
 
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+
+    this.rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.longestLabelWidth
+    )
+    this.prevRotateLabels = this.rotateLabels
   }
 
   static propTypes = {
@@ -63,7 +74,14 @@ export default class ChataStackedBarChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
+    }
+
     if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
@@ -72,9 +90,7 @@ export default class ChataStackedBarChart extends Component {
   didLabelsRotate = () => {
     const rotateLabels = shouldLabelsRotate(
       this.tickWidth,
-      this.xLabelArray,
-      this.props.columns[this.props.numberColumnIndex],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
@@ -84,6 +100,14 @@ export default class ChataStackedBarChart extends Component {
     }
 
     return false
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.xLabelArray,
+      this.props.columns[this.props.numberColumnIndex],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -165,21 +189,23 @@ export default class ChataStackedBarChart extends Component {
           xAxisTitle={this.props.numberAxisTitle}
           xGridLines
         />
-        <StackedBars
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-          }}
-          data={this.props.data}
-          width={this.props.width}
-          height={this.props.height}
-          onChartClick={this.props.onChartClick}
-          activeKey={this.props.activeChartElementKey}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <StackedBars
+            themeConfig={this.props.themeConfig}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            width={this.props.width}
+            height={this.props.height}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

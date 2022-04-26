@@ -10,6 +10,7 @@ import {
   calculateMinAndMaxSums,
   shouldLabelsRotate,
   getTickWidth,
+  getLongestLabelInPx,
 } from '../../../js/Util'
 
 import { getTickValues } from '../helpers'
@@ -26,15 +27,10 @@ export default class ChataStackedColumnChart extends Component {
 
     const { xScale, yScale, tickWidth, xTickValues } = this.getScaleData(props)
 
-    this.rotateLabels = shouldLabelsRotate(
-      tickWidth,
-      this.labelArray,
-      props.columns[0],
-      getDataFormatting(props.dataFormatting)
-    )
+    this.setLongestLabelWidth(props)
 
+    this.rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
     this.prevRotateLabels = this.rotateLabels
-    this.isFirstRender = true
 
     this.state = {
       xScale,
@@ -87,9 +83,17 @@ export default class ChataStackedColumnChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
+    }
+
     if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
+
     if (this.didDimensionsChange(prevProps)) {
       this.setState({
         ...this.getScaleData(this.props, prevProps),
@@ -117,9 +121,7 @@ export default class ChataStackedColumnChart extends Component {
   didLabelsRotate = () => {
     const rotateLabels = shouldLabelsRotate(
       this.state.tickWidth,
-      this.labelArray,
-      this.props.columns[0],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
@@ -129,6 +131,14 @@ export default class ChataStackedColumnChart extends Component {
     }
 
     return false
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.labelArray,
+      props.columns[0],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   getScaleData = (props, prevProps) => {

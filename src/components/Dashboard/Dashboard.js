@@ -184,9 +184,8 @@ class Dashboard extends React.Component {
   rebuildTooltips = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
-      console.log('rebuilding tooltips 2')
       ReactTooltip.rebuild()
-    }, 1000)
+    }, 500)
   }
 
   setStyles = () => {
@@ -747,9 +746,7 @@ class Dashboard extends React.Component {
       >
         {tileLayout.map((tile) => (
           <DashboardTile
-            className={`react-autoql-dashboard-tile${
-              this.state.isDragging ? ' dragging' : ''
-            } ${tile.i}`}
+            innerDivClass={`react-autoql-dashboard-tile ${tile.i}`}
             tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
             authentication={getAuthentication(this.props.authentication)}
@@ -761,7 +758,7 @@ class Dashboard extends React.Component {
             secondDisplayPercentage={tile.secondDisplayPercentage}
             queryResponse={tile.queryResponse}
             isEditing={this.props.isEditing}
-            isDragging={this.state.isDragging}
+            isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
             deleteTile={this.deleteTile}
@@ -803,7 +800,7 @@ class Dashboard extends React.Component {
               ? this.renderTiles()
               : this.renderEmptyDashboardMessage()}
           </div>
-          {this.renderDrilldownModal()}
+          {!this.state.isDragging && this.renderDrilldownModal()}
           <ReactTooltip
             className="react-autoql-dashboard-tooltip"
             id="react-autoql-dashboard-toolbar-btn-tooltip"

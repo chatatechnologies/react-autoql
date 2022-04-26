@@ -6,7 +6,11 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { getMinAndMaxValues, getTickValues } from '../helpers.js'
-import { shouldLabelsRotate, getTickWidth } from '../../../js/Util'
+import {
+  shouldLabelsRotate,
+  getTickWidth,
+  getLongestLabelInPx,
+} from '../../../js/Util'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -19,6 +23,13 @@ export default class ChataColumnChart extends Component {
     super(props)
 
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+
+    this.rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.longestLabelWidth
+    )
+    this.prevRotateLabels = this.rotateLabels
   }
 
   static propTypes = {
@@ -65,7 +76,14 @@ export default class ChataColumnChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
+    }
+
     if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
@@ -74,9 +92,7 @@ export default class ChataColumnChart extends Component {
   didLabelsRotate = () => {
     const rotateLabels = shouldLabelsRotate(
       this.tickWidth,
-      this.labelArray,
-      this.props.columns[this.props.stringColumnIndex],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
@@ -86,6 +102,14 @@ export default class ChataColumnChart extends Component {
     }
 
     return false
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.labelArray,
+      this.props.columns[this.props.stringColumnIndex],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -103,13 +127,6 @@ export default class ChataColumnChart extends Component {
 
     this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
     this.labelArray = props.data.map((element) => element[props.labelValue])
-
-    this.rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.labelArray,
-      props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
-    )
 
     this.xTickValues = getTickValues(
       this.tickWidth,
@@ -162,22 +179,24 @@ export default class ChataColumnChart extends Component {
           xAxisTitle={this.props.stringAxisTitle}
           yAxisTitle={this.props.numberAxisTitle}
         />
-        <Columns
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-          }}
-          data={this.props.data}
-          width={this.props.width}
-          height={this.props.height}
-          labelValue={this.props.labelValue}
-          onChartClick={this.props.onChartClick}
-          activeKey={this.props.activeChartElementKey}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <Columns
+            themeConfig={this.props.themeConfig}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            width={this.props.width}
+            height={this.props.height}
+            labelValue={this.props.labelValue}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

@@ -6,7 +6,7 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { getMinAndMaxValues, getTickValues } from '../helpers.js'
-import { shouldLabelsRotate } from '../../../js/Util'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -20,6 +20,13 @@ export default class ChataBarChart extends Component {
     super(props)
 
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+
+    this.rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.longestLabelWidth
+    )
+    this.prevRotateLabels = this.rotateLabels
   }
 
   static propTypes = {
@@ -64,7 +71,14 @@ export default class ChataBarChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
+    }
+
     if (this.didLabelsRotate()) {
       this.props.onLabelChange()
     }
@@ -73,9 +87,7 @@ export default class ChataBarChart extends Component {
   didLabelsRotate = () => {
     const rotateLabels = shouldLabelsRotate(
       this.tickWidth,
-      this.xLabelArray,
-      this.props.columns[this.props.numberColumnIndex],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
@@ -85,6 +97,14 @@ export default class ChataBarChart extends Component {
     }
 
     return false
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.xLabelArray,
+      this.props.columns[this.props.numberColumnIndex],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -160,7 +180,7 @@ export default class ChataBarChart extends Component {
           yAxisTitle={this.props.stringAxisTitle}
           xGridLines
         />
-        {
+        {this.props.marginAdjustmentFinished && (
           <Bars
             themeConfig={getThemeConfig(this.props.themeConfig)}
             scales={{ xScale: this.xScale, yScale: this.yScale }}
@@ -178,7 +198,7 @@ export default class ChataBarChart extends Component {
             onChartClick={this.props.onChartClick}
             activeKey={this.props.activeChartElementKey}
           />
-        }
+        )}
       </g>
     )
   }

@@ -66,10 +66,24 @@ export default class Axis extends Component {
 
   componentDidMount = () => {
     this.renderAxis()
+
+    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+      // https://d3-legend.susielu.com/
+      this.renderLegend()
+    }
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     this.renderAxis()
+
+    // only render legend once... unless labels changed
+    if (
+      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
+      this.props.legendLabels?.length &&
+      prevProps.legendLabels?.length !== this.props.legendLabels?.length
+    ) {
+      this.renderLegend()
+    }
   }
 
   componentWillUnmount = () => {
@@ -342,11 +356,6 @@ export default class Axis extends Component {
         .attr('dx', '0')
         .attr('fill-opacity', '0.7')
         .style('font-family', 'inherit')
-    }
-
-    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
-      // https://d3-legend.susielu.com/
-      this.renderLegend()
     }
 
     select(this.axisElement)

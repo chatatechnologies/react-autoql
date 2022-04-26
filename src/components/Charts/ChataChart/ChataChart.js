@@ -101,9 +101,6 @@ export default class ChataChart extends Component {
 
   componentDidMount = () => {
     this.firstRender = false
-    if (!this.props.isAnimatingContainer) {
-      this.updateMargins()
-    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -899,9 +896,9 @@ export default class ChataChart extends Component {
     <ChataColumnChart {...this.getCommonChartProps()} labelValue="label" />
   )
 
-  renderBarChart = () => {
-    return <ChataBarChart {...this.getCommonChartProps()} labelValue="label" />
-  }
+  renderBarChart = () => (
+    <ChataBarChart {...this.getCommonChartProps()} labelValue="label" />
+  )
 
   renderLineChart = () => (
     <ChataLineChart {...this.getCommonChartProps()} labelValue="label" />
@@ -986,23 +983,6 @@ export default class ChataChart extends Component {
     this.chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
     this.chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
 
-    if ((!this.chartHeight || !this.chartWidth) && this.chartPlaceholderRef) {
-      this.chartWidth = _get(this.chartPlaceholderRef, 'offsetWidth', 0)
-      this.chartHeight = _get(this.chartPlaceholderRef, 'offsetHeight', 0)
-    }
-
-    if (this.props.isResizing) {
-      return (
-        <div
-          ref={(r) => (this.chartPlaceholderRef = r)}
-          style={{
-            flexBasis: this.chartHeight ? `${this.chartHeight}px` : '100vh',
-            width: '100%',
-          }}
-        />
-      )
-    }
-
     return (
       <ErrorBoundary>
         <div
@@ -1010,7 +990,9 @@ export default class ChataChart extends Component {
           ref={(r) => (this.chartContainerRef = r)}
           data-test="react-autoql-chart"
           className={`react-autoql-chart-container ${
-            this.state.isLoading || this.props.isAnimatingContainer
+            this.state.isLoading ||
+            this.props.isAnimatingContainer ||
+            this.props.isResizing
               ? 'loading'
               : ''
           }`}
