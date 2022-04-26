@@ -44,6 +44,8 @@ export default class ChataBarChart extends Component {
     labelValue: PropTypes.string,
     onLabelChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    stringColumnIndex: PropTypes.number,
+    numberColumnIndex: PropTypes.number,
     onXAxisClick: PropTypes.func,
     onYAxisClick: PropTypes.func,
   }
@@ -147,7 +149,7 @@ export default class ChataBarChart extends Component {
           themeConfig={this.props.themeConfig}
           scales={{ xScale: this.xScale, yScale: this.yScale }}
           xCol={this.props.columns[this.props.numberColumnIndex]}
-          yCol={this.props.columns[0]}
+          yCol={this.props.columns[this.props.stringColumnIndex]}
           margins={{
             left: this.props.leftMargin,
             right: this.props.rightMargin,
