@@ -159,7 +159,7 @@ export default class ChataColumnChart extends Component {
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          legendLabels={this.legendLabels}
+          legendLabels={this.props.legendLabels}
           onLegendClick={this.props.onLegendClick}
           legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
           onLegendTitleClick={this.props.onLegendTitleClick}
