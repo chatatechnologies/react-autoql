@@ -1165,11 +1165,12 @@ export default class QueryOutput extends React.Component {
         this.dataConfig.numberColumnIndices = newNumberColumnIndices
       }
 
+      // Todo: this should be done on the BACKEND
       if (this.isStringColumnDateType()) {
         tableData.reverse()
       }
 
-      this.chartData = Object.values(
+      let chartData = Object.values(
         tableData.reduce((chartDataObject, row, rowIndex) => {
           // Loop through columns and create a series for each
           const cells = []
@@ -1229,6 +1230,8 @@ export default class QueryOutput extends React.Component {
           return chartDataObject
         }, {})
       )
+
+      this.chartData = chartData
 
       // Update supported display types after table data has been recalculated
       // there may be too many categories for a pie chart etc.

@@ -1,12 +1,10 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
-import { max } from 'd3-array'
 import { scaleOrdinal } from 'd3-scale'
 
 import { ChataColumnChart } from '../ChataColumnChart'
@@ -124,7 +122,11 @@ export default class ChataChart extends Component {
       this.updateMargins()
     }
 
-    if (!_isEqual(this.props.columns, prevProps.columns)) {
+    if (
+      !_isEqual(this.props.columns, prevProps.columns) ||
+      !_isEqual(this.props.dataConfig, prevProps.dataConfig)
+    ) {
+      this.filteredSeriesData = this.getFilteredSeriesData(this.props.data)
       this.setNumberColumnSelectorState()
     }
   }
@@ -529,17 +531,6 @@ export default class ChataChart extends Component {
     newArray.slice(index, index + 1)
     newArray.unshift(itemToRemove)
     return newArray
-  }
-
-  getChartWidth = () => {
-    // return this.props.messageContainerWidth - 70
-  }
-
-  getChartHeight = () => {
-    // if (displayType === 'pie') {
-    //   return this.PIE_CHART_HEIGHT
-    // }
-    // return 0.85 * this.props.messageContainerHeight - 40 // 85% of chat height minus message margins
   }
 
   renderStringColumnSelectorContent = () => {
