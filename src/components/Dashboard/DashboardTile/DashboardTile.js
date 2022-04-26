@@ -1126,10 +1126,6 @@ class DashboardTile extends React.Component {
   }
 
   renderContent = () => {
-    // if (this.props.isDragging) {
-    //   return null
-    // }
-
     return (
       <div
         className={`dashboard-tile-response-wrapper

@@ -1,9 +1,8 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import uuid from 'uuid'
-import ReactTooltip from 'react-tooltip'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
