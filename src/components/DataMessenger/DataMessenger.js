@@ -457,6 +457,7 @@ export default class DataMessenger extends React.Component {
       isFilterLockingMenuOpen: false,
     })
   }
+
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
     this.setState({
       width: isFullScreen ? this.props.width : maxWidth,
@@ -1052,6 +1053,32 @@ export default class DataMessenger extends React.Component {
     return <div className="header-title">{title}</div>
   }
 
+  closeFilterLockingMenu = () => {
+    if (this.state.isFilterLockingMenuOpen) {
+      this.setState({
+        isFilterLockingMenuOpen: false,
+        selectedValueLabel: undefined,
+      })
+    }
+  }
+
+  renderFLPopoverContent = () => {
+    return (
+      <div id="condition-menu-dropdown">
+        <ConditionLockMenu
+          data-test="react-autoql-filter-menu"
+          id="react-autoql-filter-menu"
+          authentication={this.props.authentication}
+          containerWidth={this.getDrawerWidth()}
+          isOpen={this.state.isFilterLockingMenuOpen}
+          themeConfig={this.props.themeConfig}
+          initFilterText={this.state.selectedValueLabel}
+          onClose={this.closeFilterLockingMenu}
+        />
+      </div>
+    )
+  }
+
   renderHeaderContent = () => {
     const maxWidth =
       Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
@@ -1099,37 +1126,11 @@ export default class DataMessenger extends React.Component {
           <Popover
             containerStyle={this.getFilterMenuPosition()}
             isOpen={this.state.isFilterLockingMenuOpen}
-            onClickOutside={(e) => {
-              if (this.state.isFilterLockingMenuOpen) {
-                this.setState({ isFilterLockingMenuOpen: false })
-              }
-            }}
+            onClickOutside={this.closeFilterLockingMenu}
             position="bottom"
             padding={2}
             align="center"
-            content={
-              <div id="condition-menu-dropdown" style={{ display: 'block' }}>
-                <ConditionLockMenu
-                  data-test="react-autoql-filter-menu"
-                  id="react-autoql-filter-menu"
-                  authentication={getAuthentication(
-                    getAuthentication(this.props.authentication)
-                  )}
-                  containerWidth={this.getDrawerWidth()}
-                  isOpen={this.state.isFilterLockingMenuOpen}
-                  themeConfig={getThemeConfig(
-                    getThemeConfig(this.props.themeConfig)
-                  )}
-                  initFilterText={this.state.selectedValueLabel}
-                  onClose={() => {
-                    this.setState({
-                      isFilterLockingMenuOpen: false,
-                      selectedValueLabel: undefined,
-                    })
-                  }}
-                />
-              </div>
-            }
+            content={this.renderFLPopoverContent()}
           >
             <div className="react-autoql-header-center-container">
               {this.renderHeaderTitle()}
