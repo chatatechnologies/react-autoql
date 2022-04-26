@@ -85,7 +85,9 @@ export const getLegendLocation = (seriesArray, displayType) => {
   } else if (_get(seriesArray, 'length') > 2) {
     return 'right'
   } else if (_get(seriesArray, 'length') > 1) {
-    return 'bottom'
+    return 'right'
+    // Todo: the margins are not working correctly, disable this for now
+    // return 'bottom'
   }
 
   return undefined
