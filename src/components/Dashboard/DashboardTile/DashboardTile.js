@@ -174,6 +174,10 @@ class DashboardTile extends React.Component {
     }
   }
 
+  toggleTableFilter = (ref, isFilteringTable) => {
+    ref?.toggleTableFilter({ isFilteringTable })
+  }
+
   isQueryValid = (query) => {
     return !!query && !!query.trim()
   }
@@ -1047,6 +1051,8 @@ class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
+        onFilterClick: ({ isFilteringTable }) =>
+          this.toggleTableFilter(this.responseRef, isFilteringTable),
         displayType,
       },
       showSplitViewBtn: !this.getIsSplitView(),
@@ -1119,6 +1125,9 @@ class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.secondResponseRef,
+        onFilterClick: ({ isFilteringTable }) =>
+          this.toggleTableFilter(this.secondResponseRef, isFilteringTable),
+        displayType,
       },
       showSplitViewBtn: this.getIsSplitView(),
       isSecondHalf: true,
