@@ -438,7 +438,6 @@ export const supports2DCharts = (columns) => {
   const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(
     columns
   )
-
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
 }
 

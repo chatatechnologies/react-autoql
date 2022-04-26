@@ -191,7 +191,7 @@ export default class ChatMessage extends React.Component {
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
-    }, 600)
+    }, 500)
 
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
     this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
@@ -364,7 +364,6 @@ export default class ChatMessage extends React.Component {
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            hideColumnCallback={this.hideColumnCallback}
             onTableFilterCallback={this.onTableFilter}
             appliedFilters={this.props.appliedFilters}
             onUpdate={this.props.onQueryOutputUpdate}

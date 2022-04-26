@@ -164,7 +164,6 @@ export default class QueryOutput extends React.Component {
     suggestionSelection: string,
     height: number,
     width: number,
-    hideColumnCallback: func,
     activeChartElementKey: string,
     onTableFilterCallback: func,
     enableColumnHeaderContextMenu: bool,
@@ -215,7 +214,6 @@ export default class QueryOutput extends React.Component {
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
-    hideColumnCallback: () => {},
     onTableFilterCallback: () => {},
     onDataConfigChange: () => {},
     onErrorCallback: () => {},
@@ -396,13 +394,18 @@ export default class QueryOutput extends React.Component {
       this.queryResponse.data.data.columns = columns
     }
 
+    this.dataConfig = undefined
     this.setSupportedDisplayTypes(getSupportedDisplayTypes(this.queryResponse))
 
     if (_get(this.tableRef, 'ref.table')) {
-      this.tableColumns = this.formatColumnsForTable(columns)
+      this.tableColumns = this.formatColumnsForTable()
       this.tableRef.ref.table.setColumns(this.tableColumns)
     } else if (!areAllColumnsHidden(this.queryResponse)) {
       this.generateTableData()
+    }
+
+    if (this.shouldGenerateChartData()) {
+      this.generateChartData()
     }
   }
 
@@ -544,9 +547,7 @@ export default class QueryOutput extends React.Component {
   }
 
   generateTableData = (columns) => {
-    this.tableColumns =
-      columns ||
-      this.formatColumnsForTable(this.queryResponse.data.data.columns)
+    this.tableColumns = columns || this.formatColumnsForTable()
 
     this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
     let filteredResponse = this.queryResponse.data.data.rows.filter(
@@ -1346,7 +1347,8 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
-  formatColumnsForTable = (columns) => {
+  formatColumnsForTable = (cols) => {
+    const columns = cols || this.queryResponse?.data?.data?.columns
     if (!columns) {
       return null
     }
@@ -2066,44 +2068,6 @@ export default class QueryOutput extends React.Component {
       )
     }
     return null
-  }
-
-  renderContextMenuContent = ({
-    position,
-    nudgedLeft,
-    nudgedTop,
-    targetRect,
-    popoverRect,
-  }) => {
-    return (
-      <div className="context-menu">
-        <ul className="context-menu-list">
-          <li
-            onClick={() => {
-              this.setState({ isContextMenuOpen: false })
-              this.props.hideColumnCallback(this.state.activeColumn)
-            }}
-          >
-            Hide Column
-          </li>
-        </ul>
-      </div>
-    )
-  }
-
-  renderContextMenu = () => {
-    return (
-      <Popover
-        isOpen={this.state.isContextMenuOpen}
-        position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
-        padding={10} // adjust padding here
-        onClickOutside={() => this.setState({ isContextMenuOpen: false })}
-        contentLocation={this.state.contextMenuPosition}
-        content={(props) => this.renderContextMenuContent(props)}
-      >
-        <div />
-      </Popover>
-    )
   }
 
   renderReverseTranslation = () => {
