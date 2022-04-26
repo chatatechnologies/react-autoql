@@ -403,6 +403,11 @@ export default class QueryOutput extends React.Component {
     if (this.shouldGenerateChartData()) {
       this.generateChartData()
     }
+
+    if (this.props.optionsToolbarRef) {
+      this.props.optionsToolbarRef._isMounted &&
+        this.props.optionsToolbarRef.forceUpdate()
+    }
   }
 
   generateAllData = (queryResponse, displayType) => {
