@@ -23,7 +23,6 @@ import {
   getSupportedDisplayTypes,
   getDefaultDisplayType,
   isDisplayTypeValid,
-  removeFromDOM,
 } from '../../../js/Util'
 
 import {
@@ -48,8 +47,31 @@ import './DashboardTile.scss'
 let autoCompleteArray = []
 
 class DashboardTile extends React.Component {
-  COMPONENT_KEY = uuid.v4()
-  autoCompleteTimer = undefined
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid.v4()
+    this.autoCompleteTimer = undefined
+
+    const supportedDisplayTypes =
+      getSupportedDisplayTypes(props.queryResponse) || []
+    const secondSupportedDisplayTypes =
+      getSupportedDisplayTypes(props.secondQueryResponse) || []
+
+    this.state = {
+      query: props.tile.query,
+      secondQuery: props.tile.secondQuery || this.props.tile.query,
+      title: props.tile.title,
+      isTopExecuting: false,
+      isBottomExecuting: false,
+      suggestions: [],
+      isSecondQueryInputOpen: false,
+      currentSource: 'user',
+      supportedDisplayTypes,
+      secondSupportedDisplayTypes,
+      isUnExecuted: false,
+    }
+  }
 
   static propTypes = {
     // Global
@@ -88,29 +110,6 @@ class DashboardTile extends React.Component {
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onProcessTileCallback: () => {},
-  }
-
-  state = {
-    query: this.props.tile.query,
-    secondQuery: this.props.tile.secondQuery || this.props.tile.query,
-    title: this.props.tile.title,
-    isTopExecuting: false,
-    isBottomExecuting: false,
-    suggestions: [],
-    isSecondQueryInputOpen: false,
-    currentSource: 'user',
-    supportedDisplayTypes:
-      getSupportedDisplayTypes(this.props.queryResponse) || [],
-    secondSupportedDisplayTypes:
-      getSupportedDisplayTypes(this.props.secondQueryResponse) || [],
-    isUnExecuted: false,
-  }
-
-  getFilteredProps = (props) => {
-    return {
-      ...props,
-      children: undefined,
-    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -166,6 +165,13 @@ class DashboardTile extends React.Component {
     }
 
     // todo: Cancel all dashboard calls here
+  }
+
+  getFilteredProps = (props) => {
+    return {
+      ...props,
+      children: undefined,
+    }
   }
 
   isQueryValid = (query) => {
@@ -746,27 +752,18 @@ class DashboardTile extends React.Component {
   }
 
   renderSplitResponse = () => {
-    const innerTileDiv = document.querySelector(
-      `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`
-    )
-
-    const secondQueryInputWidth = _get(innerTileDiv, 'clientWidth')
-      ? `${innerTileDiv.clientWidth - 70}px`
+    const secondQueryInputWidth = _get(this.tileInnerDiv, 'clientWidth')
+      ? `${this.tileInnerDiv.clientWidth - 70}px`
       : '0px'
 
     return (
       <SplitterLayout
         vertical={true}
-        onDragStart={(e) => {}}
         percentage={true}
         secondaryInitialSize={this.props.secondDisplayPercentage || 50}
         onDragEnd={() => {
           setTimeout(() => {
-            const secondaryContainer = document.querySelector(
-              `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY} .layout-pane:not(.layout-pane-primary)`
-            )
-
-            const percentString = _get(secondaryContainer, 'style.height', '')
+            const percentString = _get(this.tileInnerDiv, 'style.height', '')
             const percentNumber = Number(
               percentString.substring(0, percentString.length - 1)
             )
@@ -941,6 +938,7 @@ class DashboardTile extends React.Component {
                 autoSelectQueryValidationSuggestion={false}
                 isDashboardQuery={true}
                 autoChartAggregations={this.props.autoChartAggregations}
+                isResizing={this.props.isDragging}
                 renderSuggestionsAsDropdown={this.props.tile.h < 4}
                 enableDynamicCharting={this.props.enableDynamicCharting}
                 onUpdate={this.props.onQueryOutputUpdate}
@@ -959,7 +957,7 @@ class DashboardTile extends React.Component {
             {this.renderDataLimitWarning()}
           </Fragment>
         )}
-        {this.props.isEditing && (
+        {!this.props.isDragging && this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
             {this.props.isEditing &&
               showSplitViewBtn &&
@@ -970,28 +968,33 @@ class DashboardTile extends React.Component {
             />
           </div>
         )}
-        <OptionsToolbar
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          onErrorCallback={this.props.onErrorCallback}
-          onSuccessAlert={this.props.onSuccessCallback}
-          {...optionsToolbarProps}
-        />
+        {!this.props.isDragging && (
+          <OptionsToolbar
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            {...optionsToolbarProps}
+          />
+        )}
       </div>
     )
   }
 
   renderTopResponse = () => {
-    const displayType = isDisplayTypeValid(
-      this.props.queryResponse,
-      this.props.displayType
-    )
-      ? this.props.displayType
-      : getDefaultDisplayType(
-          this.props.queryResponse,
-          this.props.autoChartAggregations
-        )
+    let displayType = this.props.displayType
+    if (!this.props.isDragging) {
+      displayType = isDisplayTypeValid(
+        this.props.queryResponse,
+        this.props.displayType
+      )
+        ? this.props.displayType
+        : getDefaultDisplayType(
+            this.props.queryResponse,
+            this.props.autoChartAggregations
+          )
+    }
 
     return this.renderQueryOutput({
       queryOutputProps: {
@@ -1123,6 +1126,10 @@ class DashboardTile extends React.Component {
   }
 
   renderContent = () => {
+    // if (this.props.isDragging) {
+    //   return null
+    // }
+
     return (
       <div
         className={`dashboard-tile-response-wrapper
@@ -1188,22 +1195,16 @@ class DashboardTile extends React.Component {
           {this.props.children}
           <div
             id={`react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`}
-            className={`react-autoql-dashboard-tile-inner-div ${
-              this.getIsSplitView() ? 'split' : ''
-            }`}
+            ref={(r) => (this.tileInnerDiv = r)}
+            className={`react-autoql-dashboard-tile-inner-div
+              ${this.getIsSplitView() ? 'split' : ''}`}
           >
-            {this.props.isDragging ? (
-              this.renderDraggingPlaceholder()
-            ) : (
-              <Fragment>
-                {this.renderHeader()}
-                {this.renderContent()}
-              </Fragment>
-            )}
+            <Fragment>
+              {this.renderHeader()}
+              {this.renderContent()}
+            </Fragment>
           </div>
-          {!this.props.isDragging &&
-            this.props.isEditing &&
-            this.renderDragHandles()}
+          {this.props.isEditing && this.renderDragHandles()}
         </div>
       </ErrorBoundary>
     )
@@ -1212,8 +1213,13 @@ class DashboardTile extends React.Component {
 
 // React-Grid-Layout needs the forwarded original ref
 // we can forward our own ref down to DashboardTile as a prop
-export default React.forwardRef((props, ref) => (
-  <div ref={ref} data-test="react-autoql-dashboard-tile">
-    <DashboardTile {...props} ref={props.tileRef} />
+export default React.forwardRef(({ style, className, ...props }, ref) => (
+  <div style={{ ...style }} className={className} ref={ref}>
+    <DashboardTile
+      {...props}
+      ref={props.tileRef}
+      className={`${props.innerDivClass} ${props.isEditing ? 'editing' : ''}`}
+      data-test="react-autoql-dashboard-tile"
+    />
   </div>
 ))

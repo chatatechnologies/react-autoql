@@ -839,13 +839,12 @@ export const getLongestLabelInPx = (labels, col, config) => {
   return max
 }
 
-export const shouldLabelsRotate = (tickWidth, labels, col, config) => {
-  const labelWidth = getLongestLabelInPx(labels, col, config)
-  if (isNaN(tickWidth) || isNaN(labelWidth)) {
+export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
+  if (isNaN(tickWidth) || isNaN(longestLabelWidth)) {
     return undefined
   }
 
-  return tickWidth < labelWidth
+  return tickWidth < longestLabelWidth
 }
 
 export const getTickWidth = (scale, innerPadding) => {
