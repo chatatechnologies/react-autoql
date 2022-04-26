@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _isEqual from 'lodash.isequal'

@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import Autosuggest from 'react-autosuggest'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 

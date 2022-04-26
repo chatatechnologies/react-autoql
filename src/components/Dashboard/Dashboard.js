@@ -365,6 +365,7 @@ class Dashboard extends React.Component {
   }
 
   setParamsForTile = (params, id) => {
+    console.log('setting params for tile')
     try {
       this.setPreviousTileState(this.props.tiles)
 

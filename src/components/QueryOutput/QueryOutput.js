@@ -1,12 +1,10 @@
 import React, { Fragment } from 'react'
 import uuid from 'uuid'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import { UnmountClosed } from 'react-collapse'
 import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 
@@ -61,9 +59,7 @@ import {
   setCSSVars,
   supportsRegularPivotTable,
   getNumberOfGroupables,
-  getPadding,
   areAllColumnsHidden,
-  removeFromDOM,
 } from '../../js/Util.js'
 
 import {
