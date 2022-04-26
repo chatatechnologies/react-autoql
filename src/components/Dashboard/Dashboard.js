@@ -193,14 +193,30 @@ class Dashboard extends React.Component {
   }
 
   onWindowResize = (e) => {
+    if (!this.currentWindowWidth) {
+      this.currentWindowWidth = window.innerWidth
+    }
+
+    let hasWidthChanged = e.target.innerWidth !== this.currentWindowWidth
+    if (!hasWidthChanged) {
+      return
+    }
+
     if (!this.state.isWindowResizing) {
+      this.currentWindowWidth = window.innerWidth
       this.setState({ isWindowResizing: true })
     }
 
-    clearTimeout(this.windowResizeTimer)
-    this.windowResizeTimer = setTimeout(() => {
-      this.setState({ isWindowResizing: false })
-    }, 300)
+    // Only re-render if width changed
+    if (hasWidthChanged) {
+      clearTimeout(this.windowResizeTimer)
+      this.windowResizeTimer = setTimeout(() => {
+        if (hasWidthChanged) {
+          this.currentWindowWidth = undefined
+          this.setState({ isWindowResizing: false })
+        }
+      }, 300)
+    }
   }
 
   setPreviousTileState = (tiles) => {
