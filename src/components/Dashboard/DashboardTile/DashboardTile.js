@@ -69,7 +69,6 @@ class DashboardTile extends React.Component {
       currentSource: 'user',
       supportedDisplayTypes,
       secondSupportedDisplayTypes,
-      isUnExecuted: false,
     }
   }
 
@@ -88,8 +87,6 @@ class DashboardTile extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    isUnExecuted: PropTypes.bool,
-    onProcessTileCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -106,10 +103,8 @@ class DashboardTile extends React.Component {
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
-    isUnExecuted: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
-    onProcessTileCallback: () => {},
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -334,6 +329,21 @@ class DashboardTile extends React.Component {
       .catch((response) => this.endBottomQuery({ response }))
   }
 
+  clearQueryResponses = () => {
+    this.setState({
+      isTopExecuting: false,
+      isTopExecuted: false,
+      customMessage: undefined,
+    })
+    this.props.setParamsForTile(
+      {
+        queryResponse: undefined,
+        secondQueryResponse: undefined,
+      },
+      this.props.tile.i
+    )
+  }
+
   processTile = ({
     query,
     secondQuery,
@@ -341,8 +351,6 @@ class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
-    this.props.onProcessTileCallback(this.props.tile.i)
-
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -655,20 +663,13 @@ class DashboardTile extends React.Component {
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (
-      !this.props.isEditing &&
-      isExecuted &&
-      !this.props.isUnExecuted
-    ) {
+    } else if (!this.props.isEditing && isExecuted) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>No query was supplied for this tile.</em>
         </div>
       )
-    } else if (
-      this.props.isEditing &&
-      (!_get(this.state.query, 'trim()') || this.props.isUnExecuted)
-    ) {
+    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -694,7 +695,7 @@ class DashboardTile extends React.Component {
       )
     }
 
-    return <div className="dashboard-tile-loading-container">{content}</div>
+    return <div className="loading-container-centered">{content}</div>
   }
 
   onQueryValidationSelectOption = (queryText, suggestionList) => {
@@ -899,24 +900,13 @@ class DashboardTile extends React.Component {
     )
   }
 
-  renderQueryOutput = ({
+  renderResponse = ({
     queryOutputProps = {},
     vizToolbarProps = {},
     optionsToolbarProps = {},
     showSplitViewBtn,
     isSecondHalf,
   }) => {
-    const isExecuting =
-      isSecondHalf &&
-      this.props.tile.secondQuery &&
-      this.props.tile.secondQuery !== this.props.tile.query
-        ? this.state.isBottomExecuting
-        : this.state.isTopExecuting
-
-    const isExecuted = isSecondHalf
-      ? this.state.isBottomExecuted
-      : this.state.isTopExecuted
-
     let customMessage = this.state.customMessage
     if (isSecondHalf) {
       customMessage = this.state.secondCustomMessage
@@ -924,43 +914,36 @@ class DashboardTile extends React.Component {
 
     return (
       <div className="loading-container-centered">
-        {!queryOutputProps.queryResponse ||
-        isExecuting ||
-        this.props.isUnExecuted ? (
-          this.renderContentPlaceholder({ isExecuting, isExecuted })
-        ) : (
-          <Fragment>
-            {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
-              this.renderSuggestionMessage(customMessage)}
-            {!customMessage && (
-              <QueryOutput
-                authentication={getAuthentication(this.props.authentication)}
-                themeConfig={getThemeConfig(this.props.themeConfig)}
-                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-                dataFormatting={getDataFormatting(this.props.dataFormatting)}
-                renderTooltips={false}
-                autoSelectQueryValidationSuggestion={false}
-                isDashboardQuery={true}
-                autoChartAggregations={this.props.autoChartAggregations}
-                isResizing={this.props.isDragging}
-                renderSuggestionsAsDropdown={this.props.tile.h < 4}
-                enableDynamicCharting={this.props.enableDynamicCharting}
-                onUpdate={this.props.onQueryOutputUpdate}
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--react-autoql-background-color-primary'
-                )}
-                onDisplayTypeUpdate={() => {
-                  // This is necessary to update the toolbar with the newly rendered QueryOutput
-                  setTimeout(() => {
-                    this.forceUpdate()
-                  }, 0)
-                }}
-                {...queryOutputProps}
-              />
+        {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
+          this.renderSuggestionMessage(customMessage)}
+        {!customMessage && (
+          <QueryOutput
+            authentication={getAuthentication(this.props.authentication)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            dataFormatting={getDataFormatting(this.props.dataFormatting)}
+            renderTooltips={false}
+            autoSelectQueryValidationSuggestion={false}
+            isDashboardQuery={true}
+            autoChartAggregations={this.props.autoChartAggregations}
+            isResizing={this.props.isDragging}
+            renderSuggestionsAsDropdown={this.props.tile.h < 4}
+            enableDynamicCharting={this.props.enableDynamicCharting}
+            onUpdate={this.props.onQueryOutputUpdate}
+            backgroundColor={document.documentElement.style.getPropertyValue(
+              '--react-autoql-background-color-primary'
             )}
-            {this.renderDataLimitWarning()}
-          </Fragment>
+            onDisplayTypeUpdate={() => {
+              // This is necessary to update the toolbar with the newly rendered QueryOutput
+              setTimeout(() => {
+                this.forceUpdate()
+              }, 0)
+            }}
+            {...queryOutputProps}
+          />
         )}
+        {this.renderDataLimitWarning()}
+
         {!this.props.isDragging && this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
             {this.props.isEditing &&
@@ -987,6 +970,13 @@ class DashboardTile extends React.Component {
   }
 
   renderTopResponse = () => {
+    const isExecuting = this.state.isTopExecuting
+    const isExecuted = this.state.isTopExecuted
+
+    if (!this.props.queryResponse || isExecuting || !isExecuted) {
+      return this.renderContentPlaceholder({ isExecuting, isExecuted })
+    }
+
     let displayType = this.props.displayType
     if (!this.props.isDragging) {
       displayType = isDisplayTypeValid(
@@ -1000,7 +990,7 @@ class DashboardTile extends React.Component {
           )
     }
 
-    return this.renderQueryOutput({
+    return this.renderResponse({
       queryOutputProps: {
         ref: (ref) => (this.responseRef = ref),
         optionsToolbarRef: this.optionsToolbarRef,
@@ -1060,8 +1050,15 @@ class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
+    const isExecuting = this.state.isBottomExecuting
+    const isExecuted = this.state.isBottomExecuted
+
     const queryResponse =
       this.props.tile.secondQueryResponse || this.props.queryResponse
+
+    if (!queryResponse || isExecuting || !isExecuted) {
+      return this.renderContentPlaceholder({ isExecuting, isExecuted })
+    }
 
     const displayType = isDisplayTypeValid(
       queryResponse,
@@ -1073,7 +1070,7 @@ class DashboardTile extends React.Component {
       { secondDisplayType: displayType },
       this.props.tile.i
     )
-    return this.renderQueryOutput({
+    return this.renderResponse({
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.COMPONENT_KEY}`,
         ref: (ref) => (this.secondResponseRef = ref),

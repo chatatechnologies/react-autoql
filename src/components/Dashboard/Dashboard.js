@@ -106,8 +106,6 @@ class Dashboard extends React.Component {
   state = {
     isDragging: false,
     previousTileState: this.props.tiles,
-    /** keep a separate un-executed value for each tile */
-    isTileUnExecuted: {},
   }
 
   componentDidMount = () => {
@@ -226,8 +224,6 @@ class Dashboard extends React.Component {
   }
 
   executeDashboard = () => {
-    this.setState({ isTileUnExecuted: {} })
-
     try {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
@@ -240,13 +236,15 @@ class Dashboard extends React.Component {
   }
 
   unExecuteDashboard = () => {
-    const newUnExecutedObj = {}
-
-    this.props.tiles.forEach((tile) => {
-      newUnExecutedObj[tile.key] = true
-    })
-
-    this.setState({ isTileUnExecuted: newUnExecutedObj })
+    try {
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          this.tileRefs[dashboardTile].clearQueryResponses()
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   getChangeDetection = (oldTiles, newTiles, ignoreInputs) => {
@@ -786,16 +784,7 @@ class Dashboard extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
-            isUnExecuted={this.state.isTileUnExecuted[tile.key]}
             onQueryOutputUpdate={this.rebuildTooltips}
-            onProcessTileCallback={(tileKey) => {
-              this.setState((prevState) => ({
-                isTileUnExecuted: {
-                  ...prevState.isTileUnExecuted,
-                  [tileKey]: undefined,
-                },
-              }))
-            }}
           />
         ))}
       </ReactGridLayout>
