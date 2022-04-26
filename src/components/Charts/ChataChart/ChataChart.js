@@ -60,6 +60,7 @@ export default class ChataChart extends Component {
       topMargin: this.PADDING,
       bottomMargin: this.PADDING,
       bottomLegendMargin: 0,
+      loading: true,
     }
   }
 
@@ -118,7 +119,7 @@ export default class ChataChart extends Component {
       }
     }
 
-    if (this.shouldUpdateMargins(prevProps)) {
+    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
       this.updateMargins()
     }
 
@@ -145,16 +146,6 @@ export default class ChataChart extends Component {
     this.legend = undefined
     this.xAxis = undefined
     this.axes = undefined
-  }
-
-  shouldUpdateMargins = (prevProps) => {
-    return (
-      (!this.props.isAnimatingContainer && prevProps.isAnimatingContainer) ||
-      (this.props.type &&
-        this.props.type !== prevProps.type &&
-        this.props.type !== 'pie') ||
-      !_isEqual(this.props.dataConfig, prevProps.dataConfig)
-    )
   }
 
   getNumberColumnSelectorState = (props) => {
@@ -991,7 +982,7 @@ export default class ChataChart extends Component {
             flexBasis: this.chartHeight ? `${this.chartHeight}px` : '100vh',
           }}
         >
-          {!this.firstRender && (
+          {!this.firstRender && !this.props.isAnimatingContainer && (
             <Fragment>
               <svg
                 ref={(r) => (this.chartRef = r)}

@@ -226,31 +226,6 @@ export default class Input extends React.Component {
     this.setState({ isHideColumnsModalVisible: true })
   }
 
-  hideColumnCallback = (column) => {
-    if (!column) {
-      return
-    }
-
-    const columnDefinition = column.getDefinition()
-    setColumnVisibility({
-      ...getAuthentication(this.props.authentication),
-      columns: [
-        {
-          name: columnDefinition.name,
-          is_visible: false,
-        },
-      ],
-    })
-      .then(() => {
-        column.hide()
-      })
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
-      })
-  }
-
   onColumnVisibilitySave = (columns) => {
     const { authentication } = this.props
     const formattedColumns = columns.map((col) => {
