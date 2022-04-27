@@ -57,9 +57,9 @@ import {
   isTableType,
   isChartType,
   setCSSVars,
-  supportsRegularPivotTable,
   getNumberOfGroupables,
   areAllColumnsHidden,
+  getVisibleColumns,
 } from '../../js/Util.js'
 
 import {
@@ -161,7 +161,6 @@ export default class QueryOutput extends React.Component {
     height: number,
     width: number,
     activeChartElementKey: string,
-    onTableFilterCallback: func,
     enableColumnHeaderContextMenu: bool,
     isResizing: bool,
     enableDynamicCharting: bool,
@@ -210,8 +209,6 @@ export default class QueryOutput extends React.Component {
     onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
-    onTableFilterCallback: () => {},
-    onDataConfigChange: () => {},
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
     onColumnsUpdate: () => {},
@@ -254,12 +251,18 @@ export default class QueryOutput extends React.Component {
       }
 
       // If data config was changed here, tell the parent
-      if (!_isEqual(this.props.dataConfig, this.dataConfig)) {
+      if (
+        !_isEqual(this.props.dataConfig, this.dataConfig) &&
+        this.props.onDataConfigChange
+      ) {
         this.props.onDataConfigChange(this.dataConfig)
       }
 
       // If columns changed, we need to reset the column data config
-      if (!_isEqual(this.props.columns, prevProps.columns)) {
+      if (
+        !_isEqual(this.props.columns, prevProps.columns) &&
+        this.props.onDataConfigChange
+      ) {
         this.props.onDataConfigChange({})
       }
 
@@ -272,17 +275,36 @@ export default class QueryOutput extends React.Component {
         setCSSVars(getThemeConfig(this.props.themeConfig))
       }
 
-      if (this.props.queryResponse && !prevProps.queryResponse) {
-        this.setResponseData(this.props.displayType)
-        this.forceUpdate()
+      if (this.props.queryResponse && !this.queryResponse) {
+        if (
+          !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
+        ) {
+          const recommendedDisplayType = getDefaultDisplayType(
+            this.props.queryResponse,
+            this.props.autoChartAggregations
+          )
+          this.onRecommendedDisplayType(recommendedDisplayType)
+        } else {
+          this.setResponseData()
+          this.forceUpdate()
+        }
       }
 
       // Initial display type has been determined, set the table and chart data now
       if (!prevProps.displayType && this.props.displayType) {
-        this.props.onDisplayTypeUpdate()
-        this.setResponseData(this.props.displayType)
-        this.forceUpdate()
         ReactTooltip.hide()
+
+        if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
+          const recommendedDisplayType = getDefaultDisplayType(
+            this.queryResponse,
+            this.props.autoChartAggregations
+          )
+          this.onRecommendedDisplayType(recommendedDisplayType)
+        } else {
+          this.props.onDisplayTypeUpdate()
+          this.setResponseData()
+          this.forceUpdate()
+        }
       }
 
       // Detected a display type change from props. We must make sure
@@ -296,7 +318,7 @@ export default class QueryOutput extends React.Component {
           this.queryResponse,
           props.autoChartAggregations
         )
-        this.props.onRecommendedDisplayType(recommendedDisplayType)
+        this.onRecommendedDisplayType(recommendedDisplayType)
       }
 
       // Do not allow scrolling while the context menu is open
@@ -338,6 +360,13 @@ export default class QueryOutput extends React.Component {
       console.warn('Invalid reference ID provided for error')
     }
     return true
+  }
+
+  onRecommendedDisplayType = (recommendedDisplayType) => {
+    this.props.onRecommendedDisplayType(recommendedDisplayType)
+    console.warn(
+      `Display type ${this.props.displayType} is not supported for this dataset, we called the onRecommendedDisplayType callback with the recommended display type: ${recommendedDisplayType}`
+    )
   }
 
   isDataConfigValid = (dataConfig) => {
@@ -386,37 +415,66 @@ export default class QueryOutput extends React.Component {
   }
 
   updateColumns = (columns) => {
+    // Update columns in query response
     if (_get(this.queryResponse, 'data.data.columns')) {
       this.queryResponse.data.data.columns = columns
     }
 
+    // Reset persisted column config data
     this.dataConfig = undefined
-    this.setSupportedDisplayTypes(getSupportedDisplayTypes(this.queryResponse))
+    const visibleColumns = getVisibleColumns(this.queryResponse)
+    this.setColumnIndices(visibleColumns)
 
-    if (_get(this.tableRef, 'ref.table')) {
-      this.tableColumns = this.formatColumnsForTable()
-      this.tableRef.ref.table.setColumns(this.tableColumns)
-    } else if (!areAllColumnsHidden(this.queryResponse)) {
+    // Get new supported display types after column change
+    const newSupportedDisplayTypes = getSupportedDisplayTypes(
+      this.queryResponse
+    )
+    this.setSupportedDisplayTypes(newSupportedDisplayTypes)
+
+    // Generate new table data from new columns
+    if (this.shouldGenerateTableData()) {
       this.generateTableData()
+      if (this.shouldGeneratePivotData()) {
+        this.generatePivotTableData({ isFirstGeneration: true })
+      } else {
+        this.pivotTableColumns = undefined
+        this.pivotTableData = undefined
+      }
     }
 
+    // If tabulator is mounted, update columns in there
+    if (_get(this.tableRef, 'ref.table')) {
+      this.tableRef.ref.table.setColumns(this.tableColumns)
+    }
+
+    // Regenerate chart data from new columns
     if (this.shouldGenerateChartData()) {
       this.generateChartData()
+    } else {
+      this.chartData = undefined
     }
 
+    // Call update on options toolbar to show appropriate tools
     if (this.props.optionsToolbarRef) {
       this.props.optionsToolbarRef._isMounted &&
         this.props.optionsToolbarRef.forceUpdate()
     }
+
+    this.forceUpdate()
   }
 
   generateAllData = (queryResponse, displayType) => {
     if (_get(queryResponse, 'data.data') && displayType) {
-      if (isTableType(displayType) || isChartType(displayType)) {
+      if (this.shouldGenerateTableData()) {
         this.generateTableData()
-        this.shouldGeneratePivotData() &&
+
+        if (this.shouldGeneratePivotData()) {
           this.generatePivotData({ isFirstGeneration: true })
-        this.shouldGenerateChartData() && this.generateChartData()
+        }
+
+        if (this.shouldGenerateChartData()) {
+          this.generateChartData()
+        }
       }
     }
   }
@@ -431,8 +489,15 @@ export default class QueryOutput extends React.Component {
     this.generateAllData(this.queryResponse, this.props.displayType)
   }
 
-  shouldGeneratePivotData = () => {
-    return this.tableData && this.supportedDisplayTypes.includes('pivot_table')
+  shouldGeneratePivotData = (newTableData) => {
+    return (
+      (newTableData || this.tableData) &&
+      this.supportedDisplayTypes.includes('pivot_table')
+    )
+  }
+
+  shouldGenerateTableData = () => {
+    return _get(this.queryResponse, 'data.data.rows.length')
   }
 
   shouldGenerateChartData = () => {
@@ -549,8 +614,6 @@ export default class QueryOutput extends React.Component {
 
   generateTableData = (columns) => {
     this.tableColumns = columns || this.formatColumnsForTable()
-
-    this.supportsPivot = supportsRegularPivotTable(this.tableColumns)
     let filteredResponse = this.queryResponse.data.data.rows.filter(
       (row) => row[0] !== null
     )
@@ -732,39 +795,43 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  onTableFilter = async (filters) => {
-    if (
-      this.props.displayType === 'table' &&
-      _get(this.tableRef, 'ref.table')
-    ) {
+  onTableFilter = async (filters, rows) => {
+    if (this.props.displayType === 'table') {
       this.headerFilters = filters
 
-      clearTimeout(this.tableFilterTimeout)
-      this.tableFilterTimeout = setTimeout(() => {
-        const tableRef = _get(this.tableRef, 'ref.table')
-        if (tableRef) {
-          const newTableData = tableRef.getData('active')
-          // todo: Eventually we will want to update the pivot data too
-          // if (this.supportsPivot) {
-          //   this.generatePivotData({ newTableData })
-          // }
-          this.shouldGenerateChartData() && this.generateChartData(newTableData)
-          this.props.onTableFilterCallback(this.tableData)
+      const newTableData = []
+      rows.forEach((row) => {
+        newTableData.push(row.getData())
+      })
+
+      const numRows = newTableData.length
+      const prevRows =
+        this.prevRows >= 0 ? this.prevRows : this.tableData?.length
+
+      if (numRows !== prevRows) {
+        this.setSupportedDisplayTypes(
+          getSupportedDisplayTypes(
+            this.queryResponse,
+            undefined,
+            undefined,
+            newTableData
+          )
+        )
+
+        if (this.shouldGeneratePivotData(newTableData)) {
+          this.generatePivotData({ newTableData })
         }
-      }, 500)
-    } else if (
-      this.props.displayType === 'pivot_table' &&
-      _get(this.pivotTableRef, 'ref.table')
-    ) {
-      this.pivotHeaderFilters = filters
-      clearTimeout(this.tableFilterTimeout)
-      this.tableFilterTimeout = setTimeout(() => {
-        const pivotTableRef = _get(this.pivotTableRef, 'ref.table')
-        if (pivotTableRef) {
-          const newTableData = pivotTableRef.getData('active')
-          this.props.onTableFilterCallback(newTableData)
+
+        if (this.shouldGenerateChartData()) {
+          this.generateChartData(newTableData)
         }
-      }, 500)
+
+        if (this.props.optionsToolbarRef) {
+          this.props.optionsToolbarRef.forceUpdate()
+        }
+
+        this.prevRows = numRows
+      }
     }
   }
 
@@ -827,7 +894,7 @@ export default class QueryOutput extends React.Component {
     }
     this.dataConfig.stringColumnIndex = index
 
-    if (this.supportsPivot) {
+    if (this.supportedDisplayTypes.includes('pivot_table')) {
       this.generatePivotTableData()
     }
     this.generateChartData()
@@ -840,7 +907,7 @@ export default class QueryOutput extends React.Component {
     }
     this.dataConfig.legendColumnIndex = index
 
-    if (this.supportsPivot) {
+    if (this.supportedDisplayTypes.includes('pivot_table')) {
       this.generatePivotTableData()
     }
     this.generateChartData()
@@ -848,7 +915,10 @@ export default class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices) => {
-    if (this.supportsPivot && this.pivotTableColumns) {
+    if (
+      this.supportedDisplayTypes.includes('pivot_table') &&
+      this.pivotTableColumns
+    ) {
       // Add "hidden" attribute to pivot table columns for charts
       this.pivotTableColumns = this.pivotTableColumns.map((column, i) => {
         return {
@@ -868,6 +938,7 @@ export default class QueryOutput extends React.Component {
 
   setColumnIndices = (chartTableColumns) => {
     const columns = chartTableColumns || this.chartTableColumns
+
     if (!columns) {
       return
     }
@@ -880,14 +951,14 @@ export default class QueryOutput extends React.Component {
     if (!this.dataConfig.stringColumnIndices) {
       const { stringColumnIndices } = getStringColumnIndices(
         columns,
-        this.supportsPivot
+        this.supportedDisplayTypes.includes('pivot_table')
       )
       this.dataConfig.stringColumnIndices = stringColumnIndices
     }
     if (!(this.dataConfig.stringColumnIndex >= 0)) {
       const { stringColumnIndex } = getStringColumnIndices(
         columns,
-        this.supportsPivot
+        this.supportedDisplayTypes.includes('pivot_table')
       )
       this.dataConfig.stringColumnIndex = stringColumnIndex
     }
@@ -916,7 +987,7 @@ export default class QueryOutput extends React.Component {
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
       if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.props.onRecommendedDisplayType(
+        this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.queryResponse,
             this.props.autoChartAggregations
@@ -929,7 +1000,7 @@ export default class QueryOutput extends React.Component {
   getTooltipDataForCell = (row, columnIndex, numberValue) => {
     let tooltipElement = null
     try {
-      if (this.supportsPivot) {
+      if (this.supportedDisplayTypes.includes('pivot_table')) {
         const stringColumn = this.tableColumns[
           this.dataConfig.stringColumnIndex
         ]
@@ -992,7 +1063,7 @@ export default class QueryOutput extends React.Component {
   getDrilldownDataForCell = (row, columnIndex) => {
     const supportedByAPI = getNumberOfGroupables(this.tableColumns) > 0
 
-    if (this.supportsPivot) {
+    if (this.supportedDisplayTypes.includes('pivot_table')) {
       return {
         supportedByAPI,
         data: [
@@ -1033,7 +1104,7 @@ export default class QueryOutput extends React.Component {
   getMultiSeriesData = (columns, tableData) => {
     const { stringColumnIndex } = getStringColumnIndices(
       columns,
-      this.supportsPivot
+      this.supportedDisplayTypes.includes('pivot_table')
     )
     const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
     const { numberColumnIndex } = getNumberColumnIndices(columns)
@@ -1089,7 +1160,7 @@ export default class QueryOutput extends React.Component {
     const { numberColumnIndex } = getNumberColumnIndices(columns)
     const { stringColumnIndex } = getStringColumnIndices(
       columns,
-      this.supportsPivot
+      this.supportedDisplayTypes.includes('pivot_table')
     )
 
     const allCategories = this.tableData.map((d) => {
@@ -1114,12 +1185,15 @@ export default class QueryOutput extends React.Component {
   }
 
   getChartTableData = (newTableData) => {
-    let tableData = _cloneDeep(newTableData) || _cloneDeep(this.tableData)
+    let tableData = newTableData
+      ? _cloneDeep(newTableData)
+      : _cloneDeep(this.tableData)
+
     if (shouldPlotMultiSeries(this.tableColumns)) {
       return this.getMultiSeriesData(this.tableColumns, tableData)
     }
 
-    if (supportsRegularPivotTable(this.tableColumns)) {
+    if (this.supportedDisplayTypes.includes('pivot_table')) {
       tableData = _cloneDeep(this.pivotTableData)
     }
 
@@ -1131,7 +1205,7 @@ export default class QueryOutput extends React.Component {
       return this.getMultiSeriesColumns(this.tableColumns)
     }
 
-    if (supportsRegularPivotTable(this.tableColumns)) {
+    if (this.supportedDisplayTypes.includes('pivot_table')) {
       return _cloneDeep(this.pivotTableColumns)
     }
 
@@ -1139,6 +1213,7 @@ export default class QueryOutput extends React.Component {
   }
 
   generateChartData = (newTableData) => {
+    // check if table data has been generated... if not, generate it
     try {
       // Get columns for chart then reset indexes if necessary
       const columns = this.getChartTableColumns()
@@ -1147,7 +1222,6 @@ export default class QueryOutput extends React.Component {
 
       // Get table data for chart after columns
       const tableData = this.getChartTableData(newTableData)
-      this.chartTableData = tableData
 
       if (!this.dataConfig || shouldPlotMultiSeries(this.tableColumns)) {
         this.setColumnIndices()
@@ -1155,7 +1229,7 @@ export default class QueryOutput extends React.Component {
 
       let stringIndex = this.dataConfig.stringColumnIndex
 
-      if (this.supportsPivot) {
+      if (this.supportedDisplayTypes.includes('pivot_table')) {
         stringIndex = 0
         const newNumberColumnIndices = []
         this.pivotTableColumns.forEach((col, i) => {
@@ -1177,9 +1251,15 @@ export default class QueryOutput extends React.Component {
           // Loop through columns and create a series for each
           const cells = []
 
+          let nonPivotColorScaleValue = 0
           this.dataConfig.numberColumnIndices.forEach((columnIndex, i) => {
             const value = row[columnIndex]
-            const colorScaleValue = this.supportsPivot ? columnIndex : i
+            const colorScaleValue = this.supportedDisplayTypes.includes(
+              'pivot_table'
+            )
+              ? columnIndex
+              : nonPivotColorScaleValue
+
             const drilldownData = this.getDrilldownDataForCell(row, columnIndex)
             const tooltipData = this.getTooltipDataForCell(
               row,
@@ -1195,6 +1275,14 @@ export default class QueryOutput extends React.Component {
               drilldownData,
               tooltipData,
             })
+
+            // Fixes bug where wrong chart colors are used after column visibility change
+            if (
+              !this.supportedDisplayTypes.includes('pivot_table') &&
+              this.chartTableColumns[columnIndex]?.is_visible
+            ) {
+              nonPivotColorScaleValue++
+            }
           })
 
           // Make sure the row label doesn't exist already
@@ -1245,16 +1333,22 @@ export default class QueryOutput extends React.Component {
     } catch (error) {
       if (!this.chartDataError) {
         // Try one more time after resetting data config settings
+        console.warn(error)
         console.warn(
-          'An error was thrown while generating the chart data. Resetting the data config and trying again.'
+          'The above error was thrown while generating the chart data. Resetting the data config and trying again.'
         )
         this.chartDataError = true
         this.dataConfig = undefined
-        this.setColumnIndices()
-        this.generateChartData()
+
+        if (this.props.onDataConfigChange) {
+          this.props.onDataConfigChange(undefined)
+        } else {
+          this.setColumnIndices()
+          this.generateChartData()
+        }
       } else {
         // Something went wrong a second time. Do not show chart options
-        this.setSupportedDisplayTypes(['table'])
+        this.setSupportedDisplayTypes(['text'])
         this.chartData = undefined
         console.error(error)
       }
@@ -1559,11 +1653,11 @@ export default class QueryOutput extends React.Component {
       this.numberOfPivotTableRows = 12
     } catch (error) {
       console.error(error)
-      this.supportedDisplayTypes.filter(
+      this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
         (displayType) => displayType !== 'pivot_table'
       )
 
-      this.props.onRecommendedDisplayType('table')
+      this.onRecommendedDisplayType('table')
     }
   }
 
@@ -1642,13 +1736,6 @@ export default class QueryOutput extends React.Component {
         uniqueValues1 = { ...tempValues }
       }
 
-      // if (Object.keys(uniqueValues1).length > 50) {
-      //   this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
-      //     displayType => displayType !== "pivot_table"
-      //   );
-      //   this.setState({ displayType: "table" });
-      //   return null;
-      // }
       // Generate new column array
       const pivotTableColumns = [
         {
@@ -1854,6 +1941,7 @@ export default class QueryOutput extends React.Component {
       <ErrorBoundary>
         <ChataChart
           themeConfig={getThemeConfig(this.props.themeConfig)}
+          dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
           data={this.chartData}

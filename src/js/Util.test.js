@@ -520,6 +520,7 @@ describe('getSupportedDisplayTypes', () => {
 
   test('supports 3d charts', () => {
     expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
+      'table',
       'pivot_table',
       'stacked_column',
       'stacked_bar',
@@ -529,7 +530,6 @@ describe('getSupportedDisplayTypes', () => {
       'line',
       'bubble',
       'heatmap',
-      'table',
     ])
   })
 })

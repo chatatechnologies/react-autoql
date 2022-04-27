@@ -364,7 +364,6 @@ export default class ChatMessage extends React.Component {
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            onTableFilterCallback={this.onTableFilter}
             appliedFilters={this.props.appliedFilters}
             onUpdate={this.props.onQueryOutputUpdate}
             height={

@@ -99,7 +99,11 @@ export default class ChataChart extends Component {
   }
 
   componentDidMount = () => {
+    // The first render is to determine the chart size based on its parent container
     this.firstRender = false
+    if (!this.props.isResizing && !this.props.isAnimatingContainer) {
+      this.forceUpdate()
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -262,7 +266,7 @@ export default class ChataChart extends Component {
     return this.state.topMargin
   }
 
-  updateMargins = (delay = 0) => {
+  updateMargins = (delay = 100) => {
     this.setState({ isLoading: true })
     try {
       this.marginAdjustmentFinished = true
