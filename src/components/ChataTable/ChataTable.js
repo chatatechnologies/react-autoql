@@ -36,12 +36,12 @@ export default class ChataTable extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
-      dataFiltering: (filters) => {
-        // The filters provided to this function don't include header filters
-        // We only use header filters so we have to use the function below
+      dataFiltered: (filters, rows) => {
         if (this.ref && !this.firstRender) {
+          // The filters provided to this function don't include header filters
+          // We only use header filters so we have to use the function below
           const tableFilters = this.ref.table.getHeaderFilters()
-          props.onFilterCallback(tableFilters)
+          props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,

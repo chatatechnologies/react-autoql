@@ -26,6 +26,7 @@ import {
   isTableType,
   setCSSVars,
   areAllColumnsHidden,
+  areSomeColumnsHidden,
   isChartType,
 } from '../../js/Util'
 
@@ -145,7 +146,7 @@ export default class Input extends React.Component {
   fetchCSVAndExport = () => {
     const queryId = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.query_id'
+      'queryResponse.data.data.query_id'
     )
 
     exportCSV({
@@ -176,11 +177,11 @@ export default class Input extends React.Component {
       // outside of Data Messenger
       const queryId = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.query_id'
+        'queryResponse.data.data.query_id'
       )
       const queryText = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.text'
+        'queryResponse.data.data.text'
       )
       this.props.onCSVExportClick(queryId, queryText, isPivotTable)
     } else if (isPivotTable) {
@@ -204,10 +205,7 @@ export default class Input extends React.Component {
   }
 
   copySQL = () => {
-    const sql = _get(
-      this.props.responseRef,
-      'props.queryResponse.data.data.sql'
-    )
+    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql')
     const el = document.createElement('textarea')
     el.value = sql
     document.body.appendChild(el)
@@ -262,17 +260,18 @@ export default class Input extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    let columns =
-      this.props.dataColumns ||
-      _get(this.props.responseRef, 'props.queryResponse.data.data.columns').map(
-        (col) => {
-          return {
-            ...col,
-            content: col.display_name,
-            checked: col.is_visible,
-          }
-        }
-      )
+    const cols = _get(this.props.responseRef, 'queryResponse.data.data.columns')
+    if (!cols || !cols.length) {
+      return null
+    }
+
+    const columns = cols.map((col) => {
+      return {
+        ...col,
+        content: col.display_name,
+        checked: col.is_visible,
+      }
+    })
 
     return (
       <ErrorBoundary>
@@ -291,7 +290,7 @@ export default class Input extends React.Component {
   renderDataAlertModal = () => {
     const initialQuery = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.text'
+      'queryResponse.data.data.text'
     )
 
     return (
@@ -354,7 +353,7 @@ export default class Input extends React.Component {
   reportQueryProblem = (reason) => {
     const queryId = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.query_id'
+      'queryResponse.data.data.query_id'
     )
     this.setState({ isReportingProblem: true })
     reportProblem({
@@ -516,16 +515,11 @@ export default class Input extends React.Component {
     )
   }
 
-  areColumnsHidden = () => {
-    const columns = _get(this.props.responseRef, 'tableColumns', [])
-    return !!columns.find((col) => !col.visible)
-  }
-
   isDrilldownResponse = () => {
     try {
       const queryText = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.text'
+        'queryResponse.data.data.text'
       )
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
@@ -573,10 +567,7 @@ export default class Input extends React.Component {
   }
 
   renderSQLModal = () => {
-    const sql = _get(
-      this.props.responseRef,
-      'props.queryResponse.data.data.sql[0]'
-    )
+    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql[0]')
     if (!sql) {
       return null
     }
@@ -652,7 +643,10 @@ export default class Input extends React.Component {
               data-for="react-autoql-toolbar-btn-tooltip"
               data-test="options-toolbar-col-vis"
             >
-              <Icon type="eye" showBadge={this.areColumnsHidden()} />
+              <Icon
+                type="eye"
+                showBadge={shouldShowButton.showHiddenColsBadge}
+              />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
@@ -725,9 +719,11 @@ export default class Input extends React.Component {
     const displayType = _get(this.props.responseRef, 'props.displayType')
     const isTable = isTableType(displayType)
     const isChart = isChartType(displayType)
-    const response = _get(this.props.responseRef, 'props.queryResponse')
+    const response = _get(this.props.responseRef, 'queryResponse')
+    const hasColumns = !!_get(response, 'data.data.columns.length')
     const isDataResponse = _get(response, 'data.data.display_type') === 'data'
     const allColumnsHidden = areAllColumnsHidden(response)
+    const someColumnsHidden = areSomeColumnsHidden(response)
     const hasMoreThanOneRow = _get(response, 'data.data.rows.length') > 1
     const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
@@ -737,8 +733,9 @@ export default class Input extends React.Component {
       showSaveAsPNGButton: isChart,
       showHideColumnsButton:
         autoQLConfig.enableColumnVisibilityManager &&
-        (isTable || allColumnsHidden) &&
-        displayType !== 'pivot_table',
+        (displayType === 'table' ||
+          (displayType === 'text' && allColumnsHidden)),
+      showHiddenColsBadge: someColumnsHidden,
       showSQLButton: isDataResponse && autoQLConfig.debug,
       showSaveAsCSVButton:
         isDataResponse &&
@@ -747,6 +744,7 @@ export default class Input extends React.Component {
         autoQLConfig.enableCSVDownload,
       showDeleteButton: this.props.enableDeleteBtn,
       showReportProblemButton: !!_get(response, 'data.data.query_id'),
+
       showCreateNotificationIcon:
         isDataResponse &&
         autoQLConfig.enableNotifications &&

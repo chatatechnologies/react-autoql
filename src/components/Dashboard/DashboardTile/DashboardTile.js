@@ -886,8 +886,12 @@ class DashboardTile extends React.Component {
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
   }
+
   onSecondSupportedDisplayTypesChange = (secondSupportedDisplayTypes) => {
     this.setState({ secondSupportedDisplayTypes })
+    this.props.setParamsForTile({
+      secondDataConfig: undefined,
+    })
   }
 
   renderSuggestionMessage = (customMessage) => {
@@ -1014,6 +1018,9 @@ class DashboardTile extends React.Component {
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
+        onRecommendedDisplayType: (displayType) => {
+          this.onDisplayTypeChange(displayType)
+        },
         reportProblemCallback: this.reportProblemCallback,
         onColumnsUpdate: (columns) => {
           const newResponse = {
@@ -1085,6 +1092,7 @@ class DashboardTile extends React.Component {
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
         onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
+        onRecommendedDisplayType: this.onSecondDisplayTypeChange,
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
