@@ -437,6 +437,12 @@ export default class QueryOutput extends React.Component {
     this.supportedDisplayTypes = newSupportedDisplayTypes
     this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
+    if (areAllColumnsHidden(this.queryResponse)) {
+      // If all columns are hidden, display warning message instead of table
+      this.props.onRecommendedDisplayType('text')
+      return
+    }
+
     // Generate new table data from new columns
     if (this.shouldGenerateTableData()) {
       this.generateTableData()
