@@ -113,11 +113,18 @@ export default class QueryOutput extends React.Component {
       this.dataConfig = _cloneDeep(props.dataConfig)
     }
 
-    // Set the initial display type based on prop value, response, and supported display types
-    const displayType = isDisplayTypeValid(
+    const isProvidedDisplayTypeValid = isDisplayTypeValid(
       props.queryResponse,
       props.displayType
     )
+    if (!isProvidedDisplayTypeValid) {
+      props.onRecommendedDisplayType(
+        getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
+      )
+    }
+
+    // Set the initial display type based on prop value, response, and supported display types
+    const displayType = isProvidedDisplayTypeValid
       ? props.displayType
       : getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
 
@@ -166,7 +173,6 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: bool,
     onDataConfigChange: func,
     onDisplayTypeUpdate: func,
-    onColumnsUpdate: func,
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
@@ -211,7 +217,6 @@ export default class QueryOutput extends React.Component {
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
     onDisplayTypeUpdate: () => {},
-    onColumnsUpdate: () => {},
     onRTValueLabelClick: () => {},
     onRecommendedDisplayType: () => {},
     onUpdate: () => {},
@@ -429,7 +434,8 @@ export default class QueryOutput extends React.Component {
     const newSupportedDisplayTypes = getSupportedDisplayTypes(
       this.queryResponse
     )
-    this.setSupportedDisplayTypes(newSupportedDisplayTypes)
+    this.supportedDisplayTypes = newSupportedDisplayTypes
+    this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
     // Generate new table data from new columns
     if (this.shouldGenerateTableData()) {
@@ -460,7 +466,11 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
     }
 
-    this.forceUpdate()
+    if (this.props.displayType === 'text') {
+      this.props.onRecommendedDisplayType('table')
+    } else {
+      this.forceUpdate()
+    }
   }
 
   generateAllData = (queryResponse, displayType) => {
@@ -620,7 +630,7 @@ export default class QueryOutput extends React.Component {
 
     this.tableData = this.sortTableDataByDate(filteredResponse)
 
-    this.numberOfTableRows = _get(this.tableData, 'length', 0)
+    // this.numberOfTableRows = _get(this.tableData, 'length', 0)
     this.setColumnIndices()
   }
 

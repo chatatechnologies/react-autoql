@@ -377,7 +377,6 @@ export default class ChatMessage extends React.Component {
                 : undefined
             }
             demo={getAuthentication(this.props.authentication).demo}
-            onColumnsUpdate={this.props.onQueryResponseColumnsChange}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
@@ -451,11 +450,6 @@ export default class ChatMessage extends React.Component {
             this.props.deleteMessageCallback(this.props.id)
           }
           onFilterClick={this.toggleTableFilter}
-          onColumnVisibilitySave={() => {
-            this.setState({
-              displayType: getDefaultDisplayType(this.props.response),
-            })
-          }}
           onResponseCallback={this.props.onResponseCallback}
         />
       )

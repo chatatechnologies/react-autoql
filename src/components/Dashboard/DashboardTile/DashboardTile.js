@@ -19,11 +19,7 @@ import { Icon } from '../../Icon'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
-import {
-  getSupportedDisplayTypes,
-  getDefaultDisplayType,
-  isDisplayTypeValid,
-} from '../../../js/Util'
+import { getSupportedDisplayTypes } from '../../../js/Util'
 
 import {
   authenticationType,
@@ -1000,18 +996,7 @@ class DashboardTile extends React.Component {
       return this.renderContentPlaceholder({ isExecuting, isExecuted })
     }
 
-    let displayType = this.props.displayType
-    if (!this.props.isDragging) {
-      displayType = isDisplayTypeValid(
-        this.props.queryResponse,
-        this.props.displayType
-      )
-        ? this.props.displayType
-        : getDefaultDisplayType(
-            this.props.queryResponse,
-            this.props.autoChartAggregations
-          )
-    }
+    const displayType = this.props.displayType
 
     return this.renderResponse({
       queryOutputProps: {
@@ -1037,27 +1022,8 @@ class DashboardTile extends React.Component {
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
-        onRecommendedDisplayType: (displayType) => {
-          this.onDisplayTypeChange(displayType)
-        },
+        onRecommendedDisplayType: this.onDisplayTypeChange,
         reportProblemCallback: this.reportProblemCallback,
-        onColumnsUpdate: (columns) => {
-          const newResponse = {
-            ...this.props.queryResponse,
-            data: {
-              ...this.props.queryResponse.data,
-              data: {
-                ...this.props.queryResponse.data.data,
-                columns: columns,
-              },
-            },
-          }
-
-          this.props.setParamsForTile(
-            { queryResponse: newResponse },
-            this.props.tile.i
-          )
-        },
       },
       vizToolbarProps: {
         displayType: displayType,
@@ -1086,16 +1052,8 @@ class DashboardTile extends React.Component {
       return this.renderContentPlaceholder({ isExecuting, isExecuted })
     }
 
-    const displayType = isDisplayTypeValid(
-      queryResponse,
-      this.props.secondDisplayType
-    )
-      ? this.props.secondDisplayType
-      : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
-    this.props.setParamsForTile(
-      { secondDisplayType: displayType },
-      this.props.tile.i
-    )
+    const displayType = this.props.secondDisplayType
+
     return this.renderResponse({
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.COMPONENT_KEY}`,
@@ -1123,23 +1081,6 @@ class DashboardTile extends React.Component {
           })
         },
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
-        onColumnsUpdate: (columns) => {
-          const newResponse = {
-            ...queryResponse,
-            data: {
-              ...queryResponse.data,
-              data: {
-                ...queryResponse.data.data,
-                columns: columns,
-              },
-            },
-          }
-
-          this.props.setParamsForTile(
-            { secondQueryResponse: newResponse },
-            this.props.tile.i
-          )
-        },
       },
       vizToolbarProps: {
         displayType: displayType,
