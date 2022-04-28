@@ -6,7 +6,11 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { getMinAndMaxValues, getTickValues } from '../helpers.js'
-import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
+import {
+  shouldLabelsRotate,
+  getLongestLabelInPx,
+  formatChartLabel,
+} from '../../../js/Util'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -21,12 +25,7 @@ export default class ChataBarChart extends Component {
 
     this.setChartData(props)
     this.setLongestLabelWidth(props)
-
-    this.rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
-    this.prevRotateLabels = this.rotateLabels
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -80,25 +79,18 @@ export default class ChataBarChart extends Component {
     ) {
       this.setLongestLabelWidth(this.props)
     }
-
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
-    }
   }
 
-  didLabelsRotate = () => {
-    const rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
+  setLabelRotationValue = (props) => {
+    const tickWidth =
+      (props.width - props.leftMargin - props.rightMargin) /
+      this.xScale.ticks().length
+
+    const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
-
-    return false
   }
 
   setLongestLabelWidth = (props) => {
@@ -126,12 +118,8 @@ export default class ChataBarChart extends Component {
       .paddingOuter(props.outerPadding)
 
     this.yLabelArray = props.data.map((element) => element[props.labelValue])
-    this.xLabelArray = props.data.map(
-      (element) => element.cells[props.numberColumnIndex]
-    )
-    this.tickWidth =
-      (props.width - props.leftMargin - props.rightMargin) /
-      this.xScale.ticks().length
+    this.xLabelArray = this.xScale.ticks()
+
     this.barHeight = props.height / props.data.length
     this.yTickValues = getTickValues(
       this.barHeight,
@@ -142,6 +130,7 @@ export default class ChataBarChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g data-test="react-autoql-bar-chart">
@@ -161,6 +150,7 @@ export default class ChataBarChart extends Component {
           height={this.props.height}
           yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

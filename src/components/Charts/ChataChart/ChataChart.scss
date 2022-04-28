@@ -10,8 +10,10 @@
     background: transparent !important;
   }
 
+  transition: opacity 0.2s ease;
   &.loading {
     opacity: 0;
+    transition: none;
   }
 }
 
@@ -58,7 +60,7 @@
 }
 
 .react-autoql-chart-container g.tick {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .react-autoql-chart-container .react-autoql-heatmap-chart g.tick line,

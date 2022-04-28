@@ -855,6 +855,12 @@ export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
     return undefined
   }
 
+  // If it is close, default to rotating them.
+  const widthDifference = tickWidth - longestLabelWidth
+  if (Math.abs(widthDifference) < 5) {
+    return true
+  }
+
   return tickWidth < longestLabelWidth
 }
 

@@ -117,19 +117,6 @@ class DashboardTile extends React.Component {
         _omit(nextPropsFiltered, _functions(nextPropsFiltered))
       )
     ) {
-      // Keep this for a deep compare to debug
-      // console.log(
-      //   'PROPS were not equal!! Re-rendering',
-      //   _reduce(
-      //     nextProps,
-      //     function(result, value, key) {
-      //       return _isEqual(value, thisPropsFiltered[key])
-      //         ? result
-      //         : result.concat(key)
-      //     },
-      //     []
-      //   )
-      // )
       return true
     } else if (!_isEqual(this.state, nextState)) {
       return true
@@ -152,6 +139,38 @@ class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
+
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(this.props, prevProps)) {
+    //   console.log(
+    //     'PROPS were not equal!! Re-rendering',
+    //     _reduce(
+    //       prevProps,
+    //       (result, value, key) => {
+    //         return _isEqual(value, this.props[key])
+    //           ? result
+    //           : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    // }
+
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(this.state, prevState)) {
+    //   console.log(
+    //     'STATE were not equal!! Re-rendering',
+    //     _reduce(
+    //       prevState,
+    //       (result, value, key) => {
+    //         return _isEqual(value, this.state[key])
+    //           ? result
+    //           : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    // }
   }
 
   componentWillUnmount = () => {

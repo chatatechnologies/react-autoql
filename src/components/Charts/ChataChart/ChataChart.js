@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _reduce from 'lodash.reduce'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -19,7 +20,7 @@ import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { svgToPng, AwaitTimeout } from '../../../js/Util.js'
+import { svgToPng } from '../../../js/Util.js'
 import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
 
 import './ChataChart.scss'
@@ -52,6 +53,7 @@ export default class ChataChart extends Component {
     this.colorScale = scaleOrdinal().range(chartColors)
     this.filteredSeriesData = this.getFilteredSeriesData(props.data)
     this.firstRender = true
+    this.recursiveUpdateCount = 0
 
     this.state = {
       ...this.getNumberColumnSelectorState(props),
@@ -110,10 +112,31 @@ export default class ChataChart extends Component {
     if (nextProps.isResizing && this.props.isResizing) {
       return false
     }
+
+    if (this.state.isLoading && nextState.isLoading) {
+      return false
+    }
+
     return true
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
+    const chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
+    const chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
+    if (
+      !this.state.isLoading &&
+      this.recursiveUpdateCount < 2 &&
+      (chartWidth !== this.chartWidth || chartHeight !== this.chartHeight)
+    ) {
+      // Be careful with this to avoid infinite loop
+      this.recursiveUpdateCount++
+      clearTimeout(this.recursiveUpdateTimeout)
+      this.recursiveUpdateTimeout = setTimeout(() => {
+        this.recursiveUpdateCount = 0
+      }, 500)
+      this.forceUpdate()
+    }
+
     if (!this.props.isResizing && prevProps.isResizing) {
       // Fill max message container after resize
       // No need to update margins, they should stay the same
@@ -137,14 +160,10 @@ export default class ChataChart extends Component {
   }
 
   componentWillUnmount = () => {
-    clearTimeout(this.loadingTimeout)
+    clearTimeout(this.recursiveUpdateTimeout)
 
-    if (this.leftTopMarginUpdate) {
-      this.leftTopMarginUpdate.cancel()
-    }
-
-    if (this.rightBottomMarginUpdate) {
-      this.rightBottomMarginUpdate.cancel()
+    if (this.getNewMargins) {
+      this.getNewMargins.cancel()
     }
 
     this.legend = undefined
@@ -201,13 +220,22 @@ export default class ChataChart extends Component {
     return leftMargin
   }
 
-  getNewRightMargin = (chartContainerBbox, axesBbox) => {
+  getNewRightMargin = (chartContainerBbox, axesBbox, leftMargin) => {
     const axesLeft = axesBbox.x + chartContainerBbox.x
     const axesRight = axesLeft + axesBbox.width
     const containerRight = chartContainerBbox.x + chartContainerBbox.width
-    let rightMargin = this.state.rightMargin
+    const rightDiff = axesRight - containerRight
 
-    rightMargin += axesRight - containerRight + this.PADDING
+    const leftMarginDiff = leftMargin - this.state.leftMargin
+    const maxMargin = chartContainerBbox.width - leftMarginDiff
+    const calculatedMargin = this.state.rightMargin + rightDiff + this.PADDING
+
+    let rightMargin = this.state.rightMargin
+    if (calculatedMargin < maxMargin) {
+      rightMargin = calculatedMargin
+    } else {
+      rightMargin = this.PADDING
+    }
 
     return rightMargin
   }
@@ -266,55 +294,93 @@ export default class ChataChart extends Component {
     return this.state.topMargin
   }
 
-  updateMargins = (delay = 100) => {
-    this.setState({ isLoading: true })
+  rebuildTooltips = () => {
+    clearTimeout(this.rebuildTooltipsTimer)
+    this.rebuildTooltipsTimer = setTimeout(() => {
+      ReactTooltip.rebuild()
+    }, 500)
+  }
+
+  updateMargins = (delay = 0) => {
+    if (!this.state.isLoading) {
+      this.setState({ isLoading: true })
+    }
+
+    clearTimeout(this.updateMarginsThrottled)
+    this.updateMarginsThrottled = setTimeout(() => {
+      this.updateMarginsToThrottle(delay)
+    }, delay)
+  }
+
+  updateMarginsToThrottle = (delay = 0) => {
+    this.newMargins = undefined
+
     try {
-      this.marginAdjustmentFinished = true
+      this.axes = document.querySelector(
+        `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
+      )
 
-      this.marginUpdate = new AwaitTimeout(delay, () => {
-        this.axes = document.querySelector(
-          `#react-autoql-chart-${this.CHART_ID} .react-autoql-axes`
-        )
+      if (!this.chartContainerRef || !this.axes) {
+        return
+      }
 
-        if (!this.chartContainerRef || !this.axes) {
-          return
-        }
+      const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
+      const axesBbox = this.axes.getBBox()
 
-        const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
-        const axesBbox = this.axes.getBBox()
+      const leftMargin = this.getNewLeftMargin(chartContainerBbox, axesBbox)
+      const rightMargin = this.getNewRightMargin(
+        chartContainerBbox,
+        axesBbox,
+        leftMargin
+      )
+      const topMargin = this.getNewTopMargin()
+      const bottomMargin = this.getNewBottomMargin(chartContainerBbox, axesBbox)
 
-        const leftMargin = this.getNewLeftMargin(chartContainerBbox, axesBbox)
-        const rightMargin = this.getNewRightMargin(chartContainerBbox, axesBbox)
-        const topMargin = this.getNewTopMargin()
-        const bottomMargin = this.getNewBottomMargin(
-          chartContainerBbox,
-          axesBbox
-        )
+      this.newMargins = {
+        leftMargin,
+        topMargin,
+        rightMargin,
+        bottomMargin,
+      }
 
-        this.setState({
-          leftMargin,
-          topMargin,
-          rightMargin,
-          bottomMargin,
+      this.isMarginDiffSignificant = this.isMarginDifferenceSignificant()
+
+      if (this.isMarginDiffSignificant) {
+        this.marginAdjustmentFinished = true
+        this.setState({ ...this.newMargins }, () => {
+          this.clearLoading()
         })
-      })
-
-      this.marginUpdate
-        .start()
-        .then(() => {
-          clearTimeout(this.loadingTimeout)
-          this.loadingTimeout = setTimeout(() => {
-            this.setState({ isLoading: false })
-          }, 0)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
+      } else {
+        this.marginAdjustmentFinished = true
+        this.clearLoading()
+      }
     } catch (error) {
       // Something went wrong rendering the chart.
       console.error(error)
-      this.setState({ isLoading: false })
+      this.marginAdjustmentFinished = true
+      this.clearLoading()
     }
+  }
+
+  clearLoading = () => {
+    clearTimeout(this.loadingTimeout)
+    this.loadingTimeout = setTimeout(() => {
+      this.setState({ isLoading: false })
+    }, 100)
+  }
+
+  isMarginDifferenceSignificant = () => {
+    if (!this.newMargins) {
+      return false
+    }
+
+    const { leftMargin, topMargin, rightMargin, bottomMargin } = this.newMargins
+    const leftDiff = Math.abs(leftMargin - this.state.leftMargin)
+    const topDiff = Math.abs(topMargin - this.state.topMargin)
+    const rightDiff = Math.abs(rightMargin - this.state.rightMargin)
+    const bottomDiff = Math.abs(bottomMargin - this.state.bottomMargin)
+
+    return leftDiff > 10 || topDiff > 10 || rightDiff > 10 || bottomDiff > 10
   }
 
   getBase64Data = () => {
@@ -466,7 +532,7 @@ export default class ChataChart extends Component {
       leftMargin,
       isResizing: this.props.isResizing,
       isAnimatingContainer: this.props.isAnimatingContainer,
-      marginAdjustmentFinished: this.marginAdjustmentFinished,
+      marginAdjustmentFinished: this.state.loading,
       bottomLegendMargin,
       onChartClick,
       dataFormatting,
