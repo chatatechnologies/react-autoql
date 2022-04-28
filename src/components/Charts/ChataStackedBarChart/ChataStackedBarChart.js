@@ -24,12 +24,7 @@ export default class ChataStackedBarChart extends Component {
 
     this.setChartData(props)
     this.setLongestLabelWidth(props)
-
-    this.rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
-    this.prevRotateLabels = this.rotateLabels
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -81,31 +76,23 @@ export default class ChataStackedBarChart extends Component {
     ) {
       this.setLongestLabelWidth(this.props)
     }
-
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
-    }
   }
 
-  didLabelsRotate = () => {
-    const rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
+  setLabelRotationValue = (props) => {
+    const tickWidth =
+      (props.width - props.leftMargin - props.rightMargin) /
+      this.xScale.ticks().length
+    const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
-
-    return false
   }
 
   setLongestLabelWidth = (props) => {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xLabelArray,
-      this.props.columns[this.props.numberColumnIndex],
+      props.columns[props.numberColumnIndex],
       getDataFormatting(props.dataFormatting)
     )
   }
@@ -127,13 +114,8 @@ export default class ChataStackedBarChart extends Component {
       .paddingOuter(props.outerPadding)
 
     this.yLabelArray = props.data.map((element) => element.label)
-    this.xLabelArray = props.data.map(
-      (element) => element.cells[props.numberColumnIndex]
-    )
+    this.xLabelArray = this.xScale.ticks()
 
-    this.tickWidth =
-      (props.width - props.leftMargin - props.rightMargin) /
-      this.xScale.ticks().length
     this.barHeight = props.height / props.data.length
     this.yTickValues = getTickValues(
       this.barHeight,
@@ -144,6 +126,7 @@ export default class ChataStackedBarChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g data-test="react-autoql-stacked-bar-chart">
@@ -166,6 +149,7 @@ export default class ChataStackedBarChart extends Component {
           height={this.props.height}
           yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

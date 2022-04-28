@@ -1007,29 +1007,38 @@ export default class QueryOutput extends React.Component {
         const numberColumn = this.tableColumns[
           this.dataConfig.numberColumnIndex
         ]
+        const legendColumn = this.tableColumns[
+          this.dataConfig.legendColumnIndex
+        ]
 
-        tooltipElement = `<div>
-            <div>
-              <strong>${
-                this.pivotTableColumns[0].title
-              }:</strong> ${formatElement({
+        const tooltipLine1 = `<div>
+          <strong>${this.pivotTableColumns[0].title}:</strong>${formatElement({
           element: row[0],
           column: this.pivotTableColumns[0],
           config: getDataFormatting(this.props.dataFormatting),
         })}
-            </div>
-            <div><strong>${
-              this.tableColumns[this.dataConfig.legendColumnIndex].title
-            }:</strong> ${this.pivotTableColumns[columnIndex].title}
-            </div>
-            <div>
-            <div><strong>${numberColumn.title}:</strong> ${formatElement({
+        </div>`
+
+        let tooltipLine2 = `<span></span>`
+        if (legendColumn) {
+          tooltipLine2 = `<div><strong>${legendColumn.title}:</strong> ${this.pivotTableColumns[columnIndex].title}</div>`
+        } else if (stringColumn) {
+          tooltipLine2 = `<div><strong>${stringColumn.title}:</strong> ${this.pivotTableColumns[columnIndex].title}</div>`
+        }
+
+        const tooltipLine3 = `<div>
+          <strong>${numberColumn.title}:</strong> ${formatElement({
           element: row[columnIndex] || 0,
           column: numberColumn,
           config: getDataFormatting(this.props.dataFormatting),
         })}
-            </div>
-          </div>`
+        </div>`
+
+        tooltipElement = `<div>
+          ${tooltipLine1}
+          ${tooltipLine2}
+          ${tooltipLine3}
+        </div>`
       } else {
         const stringColumn = this.chartTableColumns[
           this.dataConfig.stringColumnIndex
@@ -1045,7 +1054,8 @@ export default class QueryOutput extends React.Component {
         })}
             </div>
             <div>
-            <div><strong>${numberColumn.title}:</strong> ${formatElement({
+            <div>
+              <strong>${numberColumn.title}:</strong> ${formatElement({
           element: numberValue || row[columnIndex] || 0,
           column: numberColumn,
           config: getDataFormatting(this.props.dataFormatting),

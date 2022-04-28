@@ -19,12 +19,7 @@ export default class ChataHeatmapChart extends Component {
     super(props)
     this.setChartData(props)
     this.setLongestLabelWidth(props)
-
-    this.rotateLabels = shouldLabelsRotate(
-      this.squareWidth,
-      this.longestLabelWidth
-    )
-    this.prevRotateLabels = this.rotateLabels
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -78,25 +73,17 @@ export default class ChataHeatmapChart extends Component {
     ) {
       this.setLongestLabelWidth(this.props)
     }
-
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
-    }
   }
 
-  didLabelsRotate = () => {
+  setLabelRotationValue = (props) => {
     const rotateLabels = shouldLabelsRotate(
       this.squareWidth,
       this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
-
-    return false
   }
 
   setLongestLabelWidth = (props) => {
@@ -178,6 +165,7 @@ export default class ChataHeatmapChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g
@@ -203,6 +191,7 @@ export default class ChataHeatmapChart extends Component {
           yGridLines
           dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           onXAxisClick={this.props.onXAxisClick}
           onYAxisClick={this.props.onYAxisClick}
         />

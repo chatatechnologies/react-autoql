@@ -196,9 +196,16 @@ export default class ChataTable extends React.Component {
     this.setState({ isFilteringTable })
   }
 
-  render = () => {
-    let styleHeight = _get(this.props, 'style.height')
+  getTableHeight = () => {
+    if (this.tableHeight) {
+      return `${this.tableHeight}px`
+    }
 
+    return `${_get(this.props, 'style.height')}px`
+  }
+
+  render = () => {
+    const height = this.getTableHeight()
     return (
       <ErrorBoundary>
         <div
@@ -211,7 +218,7 @@ export default class ChataTable extends React.Component {
           ${this.props.isResizing ? ' resizing' : ''}`}
           style={{
             ...this.props.style,
-            flexBasis: `${this.tableHeight || styleHeight}px`,
+            flexBasis: height,
           }}
         >
           {this.props.data && this.props.columns && (

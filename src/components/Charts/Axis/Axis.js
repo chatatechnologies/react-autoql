@@ -45,6 +45,7 @@ export default class Axis extends Component {
     hasBottomLegend: PropTypes.bool,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
+    onLabelChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -61,16 +62,17 @@ export default class Axis extends Component {
     hasRightLegend: false,
     hasBottomLegend: false,
     onLegendClick: () => {},
+    onLabelChange: () => {},
     onLegendTitleClick: undefined,
   }
 
   componentDidMount = () => {
     this.renderAxis()
-
     if (this.props.hasRightLegend || this.props.hasBottomLegend) {
       // https://d3-legend.susielu.com/
       this.renderLegend()
     }
+    this.props.onLabelChange()
   }
 
   componentDidUpdate = (prevProps) => {
@@ -83,6 +85,10 @@ export default class Axis extends Component {
       prevProps.legendLabels?.length !== this.props.legendLabels?.length
     ) {
       this.renderLegend()
+    }
+
+    if (this.props.rotateLabels !== prevProps.rotateLabels) {
+      this.props.onLabelChange()
     }
   }
 

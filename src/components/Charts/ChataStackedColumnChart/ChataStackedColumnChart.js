@@ -25,17 +25,14 @@ export default class ChataStackedColumnChart extends Component {
   constructor(props) {
     super(props)
 
-    const { xScale, yScale, tickWidth, xTickValues } = this.getScaleData(props)
+    const { xScale, yScale, xTickValues } = this.getScaleData(props)
 
     this.setLongestLabelWidth(props)
-
-    this.rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
-    this.prevRotateLabels = this.rotateLabels
+    this.setLabelRotationValue(props, xScale)
 
     this.state = {
       xScale,
       yScale,
-      tickWidth,
       xTickValues,
     }
   }
@@ -90,10 +87,6 @@ export default class ChataStackedColumnChart extends Component {
       this.setLongestLabelWidth(this.props)
     }
 
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
-    }
-
     if (this.didDimensionsChange(prevProps)) {
       this.setState({
         ...this.getScaleData(this.props, prevProps),
@@ -118,19 +111,13 @@ export default class ChataStackedColumnChart extends Component {
     return this.props[propName] !== prevProps[propName]
   }
 
-  didLabelsRotate = () => {
-    const rotateLabels = shouldLabelsRotate(
-      this.state.tickWidth,
-      this.longestLabelWidth
-    )
+  setLabelRotationValue = (props, xScale) => {
+    const tickWidth = getTickWidth(xScale, props.innerPadding)
+    const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
-
-    return false
   }
 
   setLongestLabelWidth = (props) => {
@@ -167,12 +154,13 @@ export default class ChataStackedColumnChart extends Component {
     return {
       xScale,
       yScale,
-      tickWidth,
       xTickValues,
     }
   }
 
   render = () => {
+    this.setLabelRotationValue(this.props, this.state.xScale)
+
     return (
       <g data-test="react-autoql-stacked-column-chart">
         <Axes
@@ -194,6 +182,7 @@ export default class ChataStackedColumnChart extends Component {
           height={this.props.height}
           xTicks={this.state.xTickValues}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
