@@ -386,7 +386,9 @@ export default class ChatMessage extends React.Component {
             renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
-            isResizing={this.props.isResizing}
+            isResizing={
+              this.props.isResizing || !this.props.isDataMessengerOpen
+            }
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
             dataConfig={this.state.dataConfig}

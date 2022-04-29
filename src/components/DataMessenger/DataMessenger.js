@@ -180,6 +180,7 @@ export default class DataMessenger extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     try {
       this.setIntroMessages()
       document.addEventListener('visibilitychange', this.onWindowResize)
@@ -196,13 +197,17 @@ export default class DataMessenger extends React.Component {
 
     fetchConditions(getAuthentication(this.props.authentication))
       .then((response) => {
-        var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
-        this.setState({
-          conditions: {
-            persistent: _get(response, 'data.data.data'),
-            session: sessionConditions,
-          },
-        })
+        if (this._isMounted) {
+          var sessionConditions = JSON.parse(
+            sessionStorage.getItem('conditions')
+          )
+          this.setState({
+            conditions: {
+              persistent: _get(response, 'data.data.data'),
+              session: sessionConditions,
+            },
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
@@ -211,17 +216,19 @@ export default class DataMessenger extends React.Component {
     if (this.props.enableQueryQuickStartTopics) {
       fetchTopics(getAuthentication(this.props.authentication))
         .then((response) => {
-          const topics = _get(response, 'data.data.topics')
-          if (topics) {
-            const topicsMessageContent = this.createTopicsMessage(topics)
-            if (topicsMessageContent) {
-              const topicsMessage = this.createIntroMessage({
-                content: topicsMessageContent,
-              })
-              this.setState({
-                messages: [...this.state.messages, topicsMessage],
-                topicsMessageContent: topicsMessageContent,
-              })
+          if (this._isMounted) {
+            const topics = _get(response, 'data.data.topics')
+            if (topics) {
+              const topicsMessageContent = this.createTopicsMessage(topics)
+              if (topicsMessageContent) {
+                const topicsMessage = this.createIntroMessage({
+                  content: topicsMessageContent,
+                })
+                this.setState({
+                  messages: [...this.state.messages, topicsMessage],
+                  topicsMessageContent: topicsMessageContent,
+                })
+              }
             }
           }
         })
@@ -304,6 +311,7 @@ export default class DataMessenger extends React.Component {
 
   componentWillUnmount() {
     try {
+      this._isMounted = false
       document.removeEventListener('visibilitychange', this.onWindowResize)
       window.removeEventListener('resize', this.onWindowResize)
 
@@ -315,10 +323,7 @@ export default class DataMessenger extends React.Component {
       clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.rebuildTooltipsTimer)
-    } catch (error) {
-      console.error(error)
-      this.setState({ hasError: true })
-    }
+    } catch (error) {}
   }
 
   rebuildTooltips = () => {
@@ -525,8 +530,6 @@ export default class DataMessenger extends React.Component {
   }
 
   onDrawerChange = (isOpen) => {
-    // this.props.onVisibleChange(isOpen)
-    console.log('on drawer change! is open?', isOpen)
     if (!isOpen) {
       this.setState({
         isFilterLockingMenuOpen: false,
