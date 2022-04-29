@@ -109,6 +109,7 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
@@ -171,6 +172,7 @@ class Dashboard extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     window.removeEventListener('resize', this.onWindowResize)
     clearTimeout(this.scrollToNewTileTimeout)
     clearTimeout(this.rebuildTooltipsTimer)
@@ -416,17 +418,21 @@ class Dashboard extends React.Component {
       ...getAutoQLConfig(this.props.autoQLConfig),
     })
       .then((drilldownResponse) => {
-        this.setState({
-          activeDrilldownResponse: drilldownResponse,
-          isDrilldownRunning: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            activeDrilldownResponse: drilldownResponse,
+            isDrilldownRunning: false,
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
-        this.setState({
-          isDrilldownRunning: false,
-          activeDrilldownResponse: undefined,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isDrilldownRunning: false,
+            activeDrilldownResponse: undefined,
+          })
+        }
       })
   }
 
