@@ -103,6 +103,10 @@ class DashboardTile extends React.Component {
     onSuccessCallback: () => {},
   }
 
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
   shouldComponentUpdate = (nextProps, nextState) => {
     const thisPropsFiltered = this.getFilteredProps(this.props)
     const nextPropsFiltered = this.getFilteredProps(nextProps)
@@ -170,6 +174,8 @@ class DashboardTile extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = true
+
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
@@ -289,8 +295,12 @@ class DashboardTile extends React.Component {
       skipQueryValidation: skipQueryValidation,
       source,
     })
-      .then((response) => this.endTopQuery({ response }))
-      .catch((response) => this.endTopQuery({ response }))
+      .then((response) => {
+        if (this._isMounted) this.endTopQuery({ response })
+      })
+      .catch((response) => {
+        if (this._isMounted) this.endTopQuery({ response })
+      })
   }
 
   processTileBottom = ({
@@ -340,8 +350,12 @@ class DashboardTile extends React.Component {
       skipQueryValidation: skipQueryValidation,
       source,
     })
-      .then((response) => this.endBottomQuery({ response }))
-      .catch((response) => this.endBottomQuery({ response }))
+      .then((response) => {
+        if (this._isMounted) this.endBottomQuery({ response })
+      })
+      .catch((response) => {
+        if (this._isMounted) this.endBottomQuery({ response })
+      })
   }
 
   clearQueryResponses = () => {
@@ -449,32 +463,34 @@ class DashboardTile extends React.Component {
         ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
-          const body = _get(response, 'data.data')
+          if (this._isMounted) {
+            const body = _get(response, 'data.data')
 
-          const sortingArray = []
-          let suggestionsMatchArray = []
-          autoCompleteArray = []
-          suggestionsMatchArray = body.matches
+            const sortingArray = []
+            let suggestionsMatchArray = []
+            autoCompleteArray = []
+            suggestionsMatchArray = body.matches
 
-          for (let i = 0; i < suggestionsMatchArray.length; i++) {
-            sortingArray.push(suggestionsMatchArray[i])
+            for (let i = 0; i < suggestionsMatchArray.length; i++) {
+              sortingArray.push(suggestionsMatchArray[i])
 
-            if (i === 4) {
-              break
+              if (i === 4) {
+                break
+              }
             }
-          }
 
-          sortingArray.sort((a, b) => b.length - a.length)
-          for (let idx = 0; idx < sortingArray.length; idx++) {
-            const anObject = {
-              name: sortingArray[idx],
+            sortingArray.sort((a, b) => b.length - a.length)
+            for (let idx = 0; idx < sortingArray.length; idx++) {
+              const anObject = {
+                name: sortingArray[idx],
+              }
+              autoCompleteArray.push(anObject)
             }
-            autoCompleteArray.push(anObject)
-          }
 
-          this.setState({
-            suggestions: autoCompleteArray,
-          })
+            this.setState({
+              suggestions: autoCompleteArray,
+            })
+          }
         })
         .catch((error) => {
           console.error(error)
