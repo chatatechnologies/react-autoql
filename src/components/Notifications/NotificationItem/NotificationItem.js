@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import ReactTooltip from 'react-tooltip'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEmpty from 'lodash.isempty'
 
@@ -40,7 +40,7 @@ import './NotificationItem.scss'
 dayjs.extend(advancedFormat)
 
 export default class NotificationItem extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
   supportedDisplayTypes = []
 
   static propTypes = {
@@ -86,10 +86,19 @@ export default class NotificationItem extends React.Component {
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
-      this.supportedDisplayTypes = getSupportedDisplayTypes(queryResponse, undefined, true)
-      const displayType = this.props.autoChartAggregations && this.supportedDisplayTypes.includes('column')
-        ? 'column'
-        : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
+      this.supportedDisplayTypes = getSupportedDisplayTypes(
+        queryResponse,
+        undefined,
+        true
+      )
+      const displayType =
+        this.props.autoChartAggregations &&
+        this.supportedDisplayTypes.includes('column')
+          ? 'column'
+          : getDefaultDisplayType(
+              queryResponse,
+              this.props.autoChartAggregations
+            )
       this.setState({ displayType })
     }
   }

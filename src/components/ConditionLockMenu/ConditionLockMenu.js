@@ -2,7 +2,7 @@ import React, { Fragment, createRef } from 'react'
 import PropTypes from 'prop-types'
 import Autosuggest from 'react-autosuggest'
 import { lang } from '../../js/Localization'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
@@ -34,7 +34,7 @@ import './ConditionLockMenu.scss'
 let autoCompleteArray = []
 
 export default class ConditionLockMenu extends React.Component {
-  UNIQUE_ID = uuid.v4()
+  UNIQUE_ID = uuid()
   mouseInfoRef = createRef()
   mouseSettingRef = createRef()
 

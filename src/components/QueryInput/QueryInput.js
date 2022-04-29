@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { bool, string, func } from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
@@ -43,7 +43,7 @@ import './QueryInput.scss'
 let autoCompleteArray = []
 
 export default class QueryInput extends React.Component {
-  UNIQUE_ID = uuid.v4()
+  UNIQUE_ID = uuid()
   autoCompleteTimer = undefined
 
   static propTypes = {
@@ -158,7 +158,7 @@ export default class QueryInput extends React.Component {
       inputValue: '',
       suggestions: [],
       queryValidationResponse: undefined,
-      queryValidationComponentId: uuid.v4(),
+      queryValidationComponentId: uuid(),
     })
 
     const query = queryText || this.state.inputValue
@@ -270,7 +270,7 @@ export default class QueryInput extends React.Component {
     // Reset validation configuration since text has changed
     this.setState({
       queryValidationResponse: undefined,
-      queryValidationComponentId: uuid.v4(),
+      queryValidationComponentId: uuid(),
     })
 
     if (this.queryValidationTimer) {
@@ -286,7 +286,7 @@ export default class QueryInput extends React.Component {
           if (this.state.inputValue === _get(response, 'data.data.query')) {
             this.setState({
               queryValidationResponse: response,
-              queryValidationComponentId: uuid.v4(),
+              queryValidationComponentId: uuid(),
             })
           }
         })

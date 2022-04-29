@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.filter'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 
@@ -25,7 +25,7 @@ export default class ReverseTranslation extends React.Component {
   constructor(props) {
     super(props)
 
-    this.COMPONENT_KEY = uuid.v4()
+    this.COMPONENT_KEY = uuid()
     this.reverseTranslationArray = props.reverseTranslation
 
     this.state = {

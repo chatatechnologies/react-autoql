@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 
 import { Input } from '../../Input'
@@ -53,14 +53,14 @@ export default class Rule extends React.Component {
     super(props)
 
     this.initialData = {}
-    this.TERM_ID_1 = uuid.v4()
-    this.TERM_ID_2 = uuid.v4()
+    this.TERM_ID_1 = uuid()
+    this.TERM_ID_2 = uuid()
 
     const { initialData } = props
 
     if (initialData && initialData.length === 1) {
       this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = uuid.v4()
+      this.TERM_ID_2 = uuid()
     } else if (initialData && initialData.length > 1) {
       this.TERM_ID_1 = initialData[0].id
       this.TERM_ID_2 = initialData[1].id
@@ -120,7 +120,7 @@ export default class Rule extends React.Component {
   parseJSON = (initialData) => {
     if (initialData.length === 1) {
       this.TERM_ID_1 = initialData[0].id
-      this.TERM_ID_2 = uuid.v4()
+      this.TERM_ID_2 = uuid()
       this.setState({
         input1Value: initialData[0].term_value,
         conditionSelectValue: 'EXISTS',

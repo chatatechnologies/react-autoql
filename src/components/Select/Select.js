@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
@@ -14,7 +14,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './Select.scss'
 
 export default class Select extends React.Component {
-  ID = uuid.v4()
+  ID = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,

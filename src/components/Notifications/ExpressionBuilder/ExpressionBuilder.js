@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import ReactTooltip from 'react-tooltip'
@@ -26,7 +26,7 @@ const getInitialStateData = (initialData) => {
 
   if (!_get(initialData, 'length')) {
     groups.push({
-      id: uuid.v4(),
+      id: uuid(),
       isComplete: false,
     })
 
@@ -131,7 +131,7 @@ export default class ExpressionBuilder extends React.Component {
       }
 
       return {
-        id: group.id || uuid.v4(),
+        id: group.id || uuid(),
         term_type: 'group',
         condition,
         term_value: termValue,
@@ -140,7 +140,7 @@ export default class ExpressionBuilder extends React.Component {
   }
 
   addGroup = ({ initialData, isComplete, id }) => {
-    const newId = id || uuid.v4()
+    const newId = id || uuid()
     const newGroups = [
       ...this.state.groups,
       {
