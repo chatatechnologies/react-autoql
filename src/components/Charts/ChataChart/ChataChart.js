@@ -301,7 +301,7 @@ export default class ChataChart extends Component {
     }, 500)
   }
 
-  updateMargins = (delay = 0) => {
+  updateMargins = (delay = 100) => {
     if (!this.state.isLoading) {
       this.setState({ isLoading: true })
     }
@@ -312,7 +312,7 @@ export default class ChataChart extends Component {
     }, delay)
   }
 
-  updateMarginsToThrottle = (delay = 0) => {
+  updateMarginsToThrottle = () => {
     this.newMargins = undefined
 
     try {
@@ -321,6 +321,7 @@ export default class ChataChart extends Component {
       )
 
       if (!this.chartContainerRef || !this.axes) {
+        this.clearLoading()
         return
       }
 

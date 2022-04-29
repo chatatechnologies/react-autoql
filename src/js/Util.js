@@ -581,10 +581,6 @@ export const getSupportedDisplayTypes = (
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
-  if (displayType === 'text' && _get(response, 'data.message')) {
-    return true
-  }
-
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
