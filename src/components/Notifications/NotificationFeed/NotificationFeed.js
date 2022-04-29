@@ -5,7 +5,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import InfiniteScroll from 'react-infinite-scroller'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
@@ -31,8 +31,8 @@ import { setCSSVars } from '../../../js/Util'
 import './NotificationFeed.scss'
 
 export default class NotificationFeed extends React.Component {
-  MODAL_COMPONENT_KEY = uuid.v4()
-  NOTIFICATION_LIST_KEY = uuid.v4()
+  MODAL_COMPONENT_KEY = uuid()
+  NOTIFICATION_LIST_KEY = uuid()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
@@ -98,7 +98,7 @@ export default class NotificationFeed extends React.Component {
         let notificationList = _cloneDeep(this.state.notificationList)
         let nextOffset = this.state.nextOffset
         let pagination = this.state.pagination
-        
+
         if (_get(data, 'items.length')) {
           notificationList = [...notificationList, ...data.items]
           nextOffset = this.state.nextOffset + this.NOTIFICATION_FETCH_LIMIT

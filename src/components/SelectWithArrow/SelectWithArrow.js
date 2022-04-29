@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactSelect from 'react-select'
@@ -10,7 +10,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './SelectWithArrow.scss'
 
 export default class Select extends React.Component {
-  ID = uuid.v4()
+  ID = uuid()
 
   static propTypes = {
     onChange: PropTypes.func,

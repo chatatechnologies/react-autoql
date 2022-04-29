@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 
 import { select } from 'd3-selection'
@@ -23,7 +23,7 @@ export default class Axis extends Component {
     super(props)
 
     this.LEGEND_PADDING = 130
-    this.LEGEND_ID = `axis-${uuid.v4()}`
+    this.LEGEND_ID = `axis-${uuid()}`
     this.swatchElements = []
   }
 

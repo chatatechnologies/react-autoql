@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
@@ -46,7 +46,7 @@ class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
 
-    this.COMPONENT_KEY = uuid.v4()
+    this.COMPONENT_KEY = uuid()
     this.autoCompleteTimer = undefined
 
     const supportedDisplayTypes =
@@ -195,7 +195,7 @@ class DashboardTile extends React.Component {
   endTopQuery = ({ response }) => {
     // Update component key after getting new response
     // so QueryOutput completely resets
-    this.COMPONENT_KEY = uuid.v4()
+    this.COMPONENT_KEY = uuid()
 
     this.props.setParamsForTile(
       {
@@ -1022,7 +1022,9 @@ class DashboardTile extends React.Component {
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
-        onRecommendedDisplayType: this.onDisplayTypeChange,
+        onRecommendedDisplayType: (displayType) => {
+          this.onDisplayTypeChange(displayType)
+        },
         reportProblemCallback: this.reportProblemCallback,
       },
       vizToolbarProps: {

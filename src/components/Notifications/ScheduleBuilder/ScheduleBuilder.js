@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Radio } from '../../Radio'
 import { TimezoneSelector } from '../../TimezoneSelector'
@@ -35,7 +35,7 @@ const getFrequencyValue = (dataAlert) => {
 }
 
 export default class ScheduleBuilder extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,

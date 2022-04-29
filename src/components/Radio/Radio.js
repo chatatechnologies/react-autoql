@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
@@ -12,7 +12,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './Radio.scss'
 
 export default class Radio extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,

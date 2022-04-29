@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import _get from 'lodash.get'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Checkbox } from '../Checkbox'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -111,7 +111,7 @@ export default class SelectableList extends React.Component {
                 if (index === this.props.columns.length - 1) {
                   const allItemsChecked = items.every((col) => col.checked)
                   return (
-                    <div key={`list-header-${uuid.v4()}`}>
+                    <div key={`list-header-${uuid()}`}>
                       {col.name}
                       <Checkbox
                         themeConfig={getThemeConfig(this.props.themeConfig)}
@@ -133,14 +133,14 @@ export default class SelectableList extends React.Component {
                     </div>
                   )
                 }
-                return <div key={`list-header-${uuid.v4()}`}>{col.name}</div>
+                return <div key={`list-header-${uuid()}`}>{col.name}</div>
               })}
             </div>
           )}
           {items.map((item, index) => {
             return (
               <div
-                key={`list-item-${uuid.v4()}`}
+                key={`list-item-${uuid()}`}
                 className={`react-autoql-list-item${
                   this.state.selected.includes(index) ? ' selected' : ''
                 }`}

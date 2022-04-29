@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
@@ -18,7 +18,7 @@ export default class ChataTable extends React.Component {
   constructor(props) {
     super(props)
 
-    this.TABLE_ID = uuid.v4()
+    this.TABLE_ID = uuid()
     this.firstRender = true
     this.ref = null
     this.filterTagElements = []

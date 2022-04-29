@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _reduce from 'lodash.reduce'
@@ -45,7 +45,7 @@ export default class ChataChart extends Component {
     super(props)
     const { chartColors } = props.themeConfig
 
-    this.CHART_ID = uuid.v4()
+    this.CHART_ID = uuid()
     this.Y_AXIS_LABEL_WIDTH = 15
     this.X_AXIS_LABEL_HEIGHT = 15
     this.PADDING = 20
@@ -612,7 +612,7 @@ export default class ChataChart extends Component {
                     ? 'active'
                     : ''
                 }`}
-                key={uuid.v4()}
+                key={uuid()}
                 onClick={() => {
                   this.props.changeStringColumnIndex(colIndex)
                   this.setState({ activeAxisSelector: undefined })
@@ -827,7 +827,7 @@ export default class ChataChart extends Component {
                     ? 'active'
                     : ''
                 }`}
-                key={uuid.v4()}
+                key={uuid()}
                 onClick={() => {
                   this.props.changeLegendColumnIndex(colIndex)
                   this.setState({ activeAxisSelector: undefined })

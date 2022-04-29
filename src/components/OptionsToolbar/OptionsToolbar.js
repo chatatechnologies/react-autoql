@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
@@ -651,7 +651,7 @@ export default class Input extends React.Component {
           )}
           {shouldShowButton.showReportProblemButton && (
             <Popover
-              key={uuid.v4()}
+              key={uuid()}
               isOpen={this.state.activeMenu === 'report-problem'}
               padding={8}
               onClickOutside={() => {
@@ -685,7 +685,7 @@ export default class Input extends React.Component {
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
-              key={uuid.v4()}
+              key={uuid()}
               isOpen={this.state.activeMenu === 'more-options'}
               position="bottom"
               padding={8}

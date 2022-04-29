@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
 import Popover from 'react-tiny-popover'
@@ -65,7 +65,7 @@ export default class DataMessenger extends React.Component {
     this.messageRefs = {}
     this.minWidth = 400
     this.minHeight = 400
-    this.DATA_MESSENGER_ID = uuid.v4()
+    this.DATA_MESSENGER_ID = uuid()
     this.HEADER_THICKNESS = 70
     this.setMaxWidthAndHeightFromDocument()
     setCSSVars(getThemeConfig(this.props.themeConfig))
@@ -364,7 +364,7 @@ export default class DataMessenger extends React.Component {
 
   createIntroMessage = ({ type, content }) => {
     return {
-      id: uuid.v4(),
+      id: uuid(),
       isResponse: true,
       type: type || 'text',
       content: content || '',
@@ -377,10 +377,10 @@ export default class DataMessenger extends React.Component {
     const topics = response.map((topic) => {
       return {
         label: topic.name,
-        value: uuid.v4(),
+        value: uuid(),
         children: topic.queries.map((query) => ({
           label: query.query,
-          value: uuid.v4(),
+          value: uuid(),
         })),
       }
     })
@@ -526,7 +526,7 @@ export default class DataMessenger extends React.Component {
 
   onDrawerChange = (isOpen) => {
     // this.props.onVisibleChange(isOpen)
-
+    console.log('on drawer change! is open?', isOpen)
     if (!isOpen) {
       this.setState({
         isFilterLockingMenuOpen: false,
@@ -700,7 +700,7 @@ export default class DataMessenger extends React.Component {
   createErrorMessage = (content) => {
     return {
       content: content || errorMessages.GENERAL_QUERY,
-      id: uuid.v4(),
+      id: uuid(),
       type: 'error',
       isResponse: true,
     }
@@ -715,7 +715,7 @@ export default class DataMessenger extends React.Component {
     appliedFilters,
     linkedQueryResponseRef,
   }) => {
-    const id = uuid.v4()
+    const id = uuid()
     this.setState({ lastMessageId: id })
 
     return {
@@ -744,7 +744,7 @@ export default class DataMessenger extends React.Component {
 
     const message = {
       content: text,
-      id: uuid.v4(),
+      id: uuid(),
       isResponse: false,
     }
 

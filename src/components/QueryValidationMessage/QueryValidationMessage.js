@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 
@@ -61,7 +61,7 @@ export default class QueryValidationMessage extends React.Component {
         const originalSuggestionList = suggestionInfo.suggestions.map(
           (suggestion) => {
             return {
-              id: uuid.v4(),
+              id: uuid(),
               hidden: false,
               ...suggestion,
             }
@@ -71,7 +71,7 @@ export default class QueryValidationMessage extends React.Component {
         // Add original query value to suggestion list
         const list = [
           ...originalSuggestionList,
-          { id: uuid.v4(), text: originalWord },
+          { id: uuid(), text: originalWord },
         ]
 
         suggestionLists.push(list)
@@ -146,7 +146,7 @@ export default class QueryValidationMessage extends React.Component {
         suggestionList.find(
           (suggestion) =>
             suggestion.text === this.props.initialSelections[index].text
-        ).id = this.props.initialSelections[index].id || uuid.v4()
+        ).id = this.props.initialSelections[index].id || uuid()
       })
 
       selectedSuggestions = this.props.initialSelections
@@ -275,7 +275,7 @@ export default class QueryValidationMessage extends React.Component {
         <Select
           themeConfig={getThemeConfig(this.props.themeConfig)}
           options={options}
-          key={uuid.v4()}
+          key={uuid()}
           value={suggestion.id}
           className="react-autoql-query-validation-select"
           popupClassname="query-validation-select"
@@ -300,7 +300,7 @@ export default class QueryValidationMessage extends React.Component {
           let suggestionElement = this.renderWordSelector(index)
 
           return (
-            <span key={uuid.v4()}>
+            <span key={uuid()}>
               {textElement}
               {suggestionElement}
             </span>

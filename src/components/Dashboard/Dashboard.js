@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import RGL, { WidthProvider } from 'react-grid-layout'
 import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
@@ -334,7 +334,7 @@ class Dashboard extends React.Component {
       this.setPreviousTileState(this.props.tiles)
 
       const tiles = _cloneDeep(this.props.tiles)
-      const id = uuid.v4()
+      const id = uuid()
       tiles.push({
         key: id,
         i: id,

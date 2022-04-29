@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactTooltip from 'react-tooltip'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -12,7 +12,7 @@ const validTypes = ['default', 'primary', 'danger']
 const validSizes = ['small', 'large']
 
 export default class Button extends React.Component {
-  COMPONENT_KEY = `react-autoql-btn-${uuid.v4()}`
+  COMPONENT_KEY = `react-autoql-btn-${uuid()}`
 
   static propTypes = {
     type: PropTypes.oneOf(validTypes),

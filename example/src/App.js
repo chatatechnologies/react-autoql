@@ -14,7 +14,7 @@ import {
   Icon as ChataIcon,
 } from 'react-autoql'
 
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import { sortable } from 'react-sortable'
 
 import {
@@ -110,7 +110,7 @@ export default class App extends Component {
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
-    componentKey: uuid.v4(),
+    componentKey: uuid(),
     isVisible: false,
     placement: 'right',
     showHandle: true,
@@ -302,7 +302,7 @@ export default class App extends Component {
       this.setState({
         isAuthenticated: false,
         activeIntegrator: undefined,
-        componentKey: uuid.v4(),
+        componentKey: uuid(),
       })
       return Promise.reject()
     }
@@ -313,7 +313,7 @@ export default class App extends Component {
         this.setState({
           isAuthenticated: true,
           activeIntegrator: this.getActiveIntegrator(),
-          componentKey: uuid.v4(),
+          componentKey: uuid(),
         })
         return Promise.resolve()
       })
@@ -321,7 +321,7 @@ export default class App extends Component {
         this.setState({
           isAuthenticated: false,
           activeIntegrator: undefined,
-          componentKey: uuid.v4(),
+          componentKey: uuid(),
         })
         return Promise.reject(error)
       })
@@ -413,7 +413,7 @@ export default class App extends Component {
           this.setState({
             isAuthenticated: true,
             isAuthenticating: false,
-            componentKey: uuid.v4(),
+            componentKey: uuid(),
             activeIntegrator: this.getActiveIntegrator(),
           })
 
@@ -471,7 +471,7 @@ export default class App extends Component {
         isAuthenticated: false,
         isAuthenticating: false,
         activeIntegrator: null,
-        componentKey: uuid.v4(),
+        componentKey: uuid(),
       })
 
       // Dont fetch dashboard if authentication failed...
@@ -546,7 +546,7 @@ export default class App extends Component {
   }
 
   reloadDataMessenger = () => {
-    this.setState({ componentKey: uuid.v4() })
+    this.setState({ componentKey: uuid() })
   }
 
   createDashboard = async () => {

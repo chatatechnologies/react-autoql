@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
@@ -98,14 +98,14 @@ export default class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
 
-    this.QUERY_VALIDATION_KEY = uuid.v4()
+    this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = props.queryResponse
     this.supportedDisplayTypes = getSupportedDisplayTypes(props.queryResponse)
     this.queryID = _get(props.queryResponse, 'data.data.query_id')
     this.interpretation = _get(props.queryResponse, 'data.data.interpretation')
-    this.tableID = uuid.v4()
-    this.pivotTableID = uuid.v4()
+    this.tableID = uuid()
+    this.pivotTableID = uuid()
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
@@ -117,6 +117,7 @@ export default class QueryOutput extends React.Component {
       props.queryResponse,
       props.displayType
     )
+
     if (!isProvidedDisplayTypeValid) {
       props.onRecommendedDisplayType(
         getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
@@ -130,7 +131,7 @@ export default class QueryOutput extends React.Component {
 
     // Set theme colors
     const { chartColors } = getThemeConfig(props.themeConfig)
-    this.COMPONENT_KEY = uuid.v4()
+    this.COMPONENT_KEY = uuid()
     this.colorScale = scaleOrdinal().range(chartColors)
     setCSSVars(getThemeConfig(props.themeConfig))
 
@@ -321,7 +322,7 @@ export default class QueryOutput extends React.Component {
       ) {
         const recommendedDisplayType = getDefaultDisplayType(
           this.queryResponse,
-          props.autoChartAggregations
+          this.props.autoChartAggregations
         )
         this.onRecommendedDisplayType(recommendedDisplayType)
       }
@@ -497,8 +498,8 @@ export default class QueryOutput extends React.Component {
 
   setResponseData = () => {
     // Initialize ID's of tables
-    this.tableID = uuid.v4()
-    this.pivotTableID = uuid.v4()
+    this.tableID = uuid()
+    this.pivotTableID = uuid()
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
 
@@ -664,7 +665,7 @@ export default class QueryOutput extends React.Component {
           <div className="react-autoql-suggestions-container">
             {this.props.renderSuggestionsAsDropdown ? (
               <select
-                key={uuid.v4()}
+                key={uuid()}
                 onChange={(e) => {
                   this.setState({ suggestionSelection: e.target.value })
                   this.onSuggestionClick({
@@ -678,7 +679,7 @@ export default class QueryOutput extends React.Component {
               >
                 {suggestions.map((suggestion, i) => {
                   return (
-                    <option key={uuid.v4()} value={suggestion}>
+                    <option key={uuid()} value={suggestion}>
                       {suggestion}
                     </option>
                   )
@@ -687,7 +688,7 @@ export default class QueryOutput extends React.Component {
             ) : (
               suggestions.map((suggestion) => {
                 return (
-                  <div key={uuid.v4()}>
+                  <div key={uuid()}>
                     <button
                       onClick={() =>
                         this.onSuggestionClick({
@@ -1493,7 +1494,7 @@ export default class QueryOutput extends React.Component {
 
       col.field = `${i}`
       col.title = col.display_name
-      col.id = uuid.v4()
+      col.id = uuid()
       col.widthGrow = 1
       col.widthShrink = 1
 
