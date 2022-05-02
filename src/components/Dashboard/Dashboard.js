@@ -194,7 +194,6 @@ class Dashboard extends React.Component {
 
     // Only re-render if width changed
     if (hasWidthChanged) {
-      clearTimeout(this.windowResizeTimer)
       this.windowResizeTimer = setTimeout(() => {
         if (hasWidthChanged) {
           this.currentWindowWidth = undefined
@@ -262,7 +261,6 @@ class Dashboard extends React.Component {
   }
 
   scrollToNewTile = () => {
-    clearTimeout(this.scrollToNewTileTimeout)
     this.scrollToNewTileTimeout = setTimeout(() => {
       if (this.ref) {
         this.ref.scrollIntoView(false)
@@ -271,9 +269,9 @@ class Dashboard extends React.Component {
   }
 
   onMoveStart = () => {
-    this.setState({
-      isDragging: true,
-    })
+    if (!this.state.isDragging) {
+      this.setState({ isDragging: true })
+    }
   }
 
   onMoveEnd = (layout) => {
@@ -286,7 +284,6 @@ class Dashboard extends React.Component {
 
       // Delaying this makes the snap back animation much smoother
       // after moving a tile
-      clearTimeout(this.stopDraggingTimeout)
       this.stopDraggingTimeout = setTimeout(() => {
         this.setState({
           isDragging: false,
@@ -434,7 +431,6 @@ class Dashboard extends React.Component {
 
       const drilldownResponse = filterDataForDrilldown(queryResponse, data)
 
-      clearTimeout(this.drillingDownTimeout)
       this.drillingDownTimeout = setTimeout(() => {
         this.setState({
           isDrilldownRunning: false,
@@ -479,7 +475,6 @@ class Dashboard extends React.Component {
 
       this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
 
-      clearTimeout(this.animationTimeout)
       this.animationTimeout = setTimeout(() => {
         this.setState({
           isAnimatingModal: false,
@@ -498,12 +493,6 @@ class Dashboard extends React.Component {
     return CHART_TYPES.includes(displayType)
   }
 
-  reportProblemCallback = () => {
-    if (this.optionsToolbarRef?._isMounted) {
-      this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
-    }
-  }
-
   renderDrilldownTable = () => {
     return (
       <div className="react-autoql-dashboard-drilldown-table">
@@ -512,38 +501,23 @@ class Dashboard extends React.Component {
             <LoadingDots />
           </div>
         ) : (
-          <Fragment>
-            <QueryOutput
-              ref={(r) => (this.drilldownTableRef = r)}
-              displayType="table"
-              authentication={getAuthentication(this.props.authentication)}
-              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-              themeConfig={getThemeConfig(this.props.themeConfig)}
-              dataFormatting={getDataFormatting(this.props.dataFormatting)}
-              queryResponse={this.state.activeDrilldownResponse}
-              renderTooltips={false}
-              isDashboardQuery={true}
-              onUpdate={this.rebuildTooltips}
-              isAnimatingContainer={this.state.isAnimatingModal}
-              autoChartAggregations={this.props.autoChartAggregations}
-              backgroundColor={document.documentElement.style.getPropertyValue(
-                '--react-autoql-background-color-primary'
-              )}
-              reportProblemCallback={this.reportProblemCallback}
-              optionsToolbarRef={this.optionsToolbarRef}
-            />
-            <div style={{ display: 'none' }}>
-              <OptionsToolbar
-                authentication={getAuthentication(this.props.authentication)}
-                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-                themeConfig={getThemeConfig(this.props.themeConfig)}
-                onErrorCallback={this.props.onErrorCallback}
-                onSuccessAlert={this.props.onSuccessCallback}
-                ref={(r) => (this.optionsToolbarRef = r)}
-                responseRef={this.drilldownTableRef}
-              />
-            </div>
-          </Fragment>
+          <QueryOutput
+            ref={(r) => (this.drilldownTableRef = r)}
+            displayType="table"
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            dataFormatting={getDataFormatting(this.props.dataFormatting)}
+            queryResponse={this.state.activeDrilldownResponse}
+            renderTooltips={false}
+            isDashboardQuery={true}
+            onUpdate={this.rebuildTooltips}
+            isAnimatingContainer={this.state.isAnimatingModal}
+            backgroundColor={document.documentElement.style.getPropertyValue(
+              '--react-autoql-background-color-primary'
+            )}
+            reportProblemCallback={this.reportProblemCallback}
+          />
         )}
       </div>
     )
@@ -736,7 +710,7 @@ class Dashboard extends React.Component {
           this.updateTileLayout(layout)
           this.setState({ layout })
         }}
-        onDragStart={this.onMoveStart}
+        onDrag={this.onMoveStart}
         onResizeStart={this.onMoveStart}
         onDragStop={this.onMoveEnd}
         onResizeStop={this.onMoveEnd}

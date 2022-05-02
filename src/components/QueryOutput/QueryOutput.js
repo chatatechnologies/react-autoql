@@ -98,6 +98,7 @@ export default class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
 
+    this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = props.queryResponse
@@ -125,7 +126,6 @@ export default class QueryOutput extends React.Component {
 
     // Set theme colors
     const { chartColors } = getThemeConfig(props.themeConfig)
-    this.COMPONENT_KEY = uuid()
     this.colorScale = scaleOrdinal().range(chartColors)
     setCSSVars(getThemeConfig(props.themeConfig))
 
@@ -216,6 +216,7 @@ export default class QueryOutput extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     try {
       if (this.props.optionsToolbarRef?._isMounted) {
         this.props.optionsToolbarRef.forceUpdate()
@@ -354,6 +355,7 @@ export default class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     ReactTooltip.hide()
   }
 
@@ -500,9 +502,6 @@ export default class QueryOutput extends React.Component {
   }
 
   setResponseData = () => {
-    // Initialize ID's of tables
-    this.tableID = uuid()
-    this.pivotTableID = uuid()
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
 
@@ -752,9 +751,12 @@ export default class QueryOutput extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.props.displayType === 'table' && this.tableRef) {
+    if (this.props.displayType === 'table' && this.tableRef?._isMounted) {
       this.tableRef.copyToClipboard()
-    } else if (this.props.displayType === 'pivot_table' && this.pivotTableRef) {
+    } else if (
+      this.props.displayType === 'pivot_table' &&
+      this.pivotTableRef?._isMounted
+    ) {
       this.pivotTableRef.copyToClipboard()
     }
   }
@@ -765,10 +767,16 @@ export default class QueryOutput extends React.Component {
         const trimmedData = data.split(',')[1]
         return Promise.resolve(trimmedData)
       })
-    } else if (this.tableRef && this.props.displayType === 'table') {
+    } else if (
+      this.tableRef?._isMounted &&
+      this.props.displayType === 'table'
+    ) {
       const data = this.tableRef.getBase64Data()
       return Promise.resolve(data)
-    } else if (this.pivotTableRef && this.props.displayType === 'pivot_table') {
+    } else if (
+      this.pivotTableRef?._isMounted &&
+      this.props.displayType === 'pivot_table'
+    ) {
       const data = this.pivotTableRef.getBase64Data()
       return Promise.resolve(data)
     }
@@ -808,11 +816,12 @@ export default class QueryOutput extends React.Component {
 
   toggleTableFilter = ({ isFilteringTable }) => {
     if (this.props.displayType === 'table') {
-      this.tableRef && this.tableRef.toggleTableFilter({ isFilteringTable })
+      this.tableRef?._isMounted &&
+        this.tableRef.toggleTableFilter({ isFilteringTable })
     }
 
     if (this.props.displayType === 'pivot_table') {
-      this.pivotTableRef &&
+      this.pivotTableRef?._isMounted &&
         this.pivotTableRef.toggleTableFilter({ isFilteringTable })
     }
   }
@@ -1949,19 +1958,17 @@ export default class QueryOutput extends React.Component {
     }
 
     return (
-      <Fragment>
-        <ChataTable
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          key={this.tableID}
-          ref={(ref) => (this.tableRef = ref)}
-          columns={this.tableColumns}
-          data={this.tableData}
-          onCellClick={this.processCellClick}
-          headerFilters={this.headerFilters}
-          onFilterCallback={this.onTableFilter}
-          isResizing={this.props.isResizing}
-        />
-      </Fragment>
+      <ChataTable
+        themeConfig={getThemeConfig(this.props.themeConfig)}
+        key={this.tableID}
+        ref={(ref) => (this.tableRef = ref)}
+        columns={this.tableColumns}
+        data={this.tableData}
+        onCellClick={this.processCellClick}
+        headerFilters={this.headerFilters}
+        onFilterCallback={this.onTableFilter}
+        isResizing={this.props.isResizing}
+      />
     )
   }
 
@@ -2185,10 +2192,12 @@ export default class QueryOutput extends React.Component {
       console.warn(
         `display type not recognized: ${this.props.displayType} - rendering as plain text`
       )
+
       return this.renderMessage(
         `display type not recognized: ${this.props.displayType}`
       )
     }
+
     return null
   }
 

@@ -186,7 +186,7 @@ export default class OptionsToolbar extends React.Component {
       )
       this.props.onCSVExportClick(queryId, queryText, isPivotTable)
     } else if (isPivotTable) {
-      if (_get(this.props, 'responseRef.pivotTableRef')) {
+      if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
         this.props.responseRef.pivotTableRef.saveAsCSV()
       }
     } else {
