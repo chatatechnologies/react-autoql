@@ -47,6 +47,7 @@ class DashboardTile extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.QUERY_RESPONSE_KEY = uuid()
     this.autoCompleteTimer = undefined
 
     const supportedDisplayTypes =
@@ -200,7 +201,7 @@ class DashboardTile extends React.Component {
   endTopQuery = ({ response }) => {
     // Update component key after getting new response
     // so QueryOutput completely resets
-    this.COMPONENT_KEY = uuid()
+    this.QUERY_RESPONSE_KEY = uuid()
 
     this.props.setParamsForTile(
       {
@@ -210,10 +211,12 @@ class DashboardTile extends React.Component {
       this.props.tile.i
     )
 
-    this.setState({
-      isTopExecuting: false,
-      isTopExecuted: true,
-    })
+    if (this._isMounted) {
+      this.setState({
+        isTopExecuting: false,
+        isTopExecuted: true,
+      })
+    }
   }
 
   endBottomQuery = ({ response }) => {
@@ -295,9 +298,12 @@ class DashboardTile extends React.Component {
       source,
     })
       .then((response) => {
-        if (this._isMounted) this.endTopQuery({ response })
+        if (this._isMounted) {
+          this.endTopQuery({ response })
+        }
       })
       .catch((response) => {
+        console.error('CAUGHT ERROR IN PROCESS QUERY')
         if (this._isMounted) this.endTopQuery({ response })
       })
   }
@@ -1047,7 +1053,7 @@ class DashboardTile extends React.Component {
       queryOutputProps: {
         ref: (ref) => (this.responseRef = ref),
         optionsToolbarRef: this.optionsToolbarRef,
-        key: `dashboard-tile-query-top-${this.COMPONENT_KEY}`,
+        key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         displayType,
         queryResponse: this.props.queryResponse,
         dataConfig: this.props.tile.dataConfig,
@@ -1067,7 +1073,8 @@ class DashboardTile extends React.Component {
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
-        onRecommendedDisplayType: (displayType) => {
+        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
+          this.onSupportedDisplayTypesChange(supportedDisplayTypes)
           this.onDisplayTypeChange(displayType)
         },
         reportProblemCallback: this.reportProblemCallback,
@@ -1118,7 +1125,7 @@ class DashboardTile extends React.Component {
 
     return this.renderResponse({
       queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.COMPONENT_KEY}`,
+        key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
         ref: (ref) => (this.secondResponseRef = ref),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         displayType,
@@ -1131,10 +1138,9 @@ class DashboardTile extends React.Component {
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
-        onSupportedDisplayTypesChange: (displayTypes) => {
-          this.onSecondSupportedDisplayTypesChange(displayTypes)
-        },
-        onRecommendedDisplayType: (displayType) => {
+        onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
+        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
+          this.onSecondSupportedDisplayTypesChange(supportedDisplayTypes)
           this.onSecondDisplayTypeChange(displayType)
         },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
@@ -1250,7 +1256,7 @@ class DashboardTile extends React.Component {
 
 // React-Grid-Layout needs the forwarded original ref
 // we can forward our own ref down to DashboardTile as a prop
-export default React.forwardRef(({ style, className, ...props }, ref) => (
+export default React.forwardRef(({ style, className, key, ...props }, ref) => (
   <div style={{ ...style }} className={className} ref={ref}>
     <DashboardTile
       {...props}

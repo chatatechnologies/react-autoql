@@ -37,7 +37,7 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       dataFiltered: (filters, rows) => {
-        if (this.ref && !this.firstRender) {
+        if (this._isMounted && this.ref && !this.firstRender) {
           // The filters provided to this function don't include header filters
           // We only use header filters so we have to use the function below
           const tableFilters = this.ref.table.getHeaderFilters()
@@ -74,6 +74,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.firstRender = false
     this.setTableHeaderValues = setTimeout(() => {
       this.setInitialHeaderFilters()
@@ -92,11 +93,12 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.ref) {
-      clearTimeout(this.setDimensionsTimeout)
       this.setDimensionsTimeout = setTimeout(() => {
-        const tableHeight = _get(this.ref, 'ref.offsetHeight')
-        if (tableHeight) {
-          this.tableHeight = tableHeight
+        if (this._isMounted) {
+          const tableHeight = _get(this.ref, 'ref.offsetHeight')
+          if (tableHeight) {
+            this.tableHeight = tableHeight
+          }
         }
       }, 0)
     }
@@ -116,6 +118,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     clearTimeout(this.setTableHeaderValues)
     clearTimeout(this.setDimensionsTimeout)
     this.resetFilterTags()
@@ -136,13 +139,13 @@ export default class ChataTable extends React.Component {
   }
 
   copyToClipboard = () => {
-    if (this.ref && this.ref.table) {
+    if (this._isMounted && this.ref?.table) {
       this.ref.table.copyToClipboard('active', true)
     }
   }
 
   saveAsCSV = () => {
-    if (this.ref && this.ref.table) {
+    if (this._isMounted && this.ref?.table) {
       this.ref.table.download('csv', 'export.csv', {
         delimiter: ',',
       })
@@ -155,7 +158,8 @@ export default class ChataTable extends React.Component {
     if (this.filterTagElements.length) {
       this.filterTagElements.forEach((filterTag) => {
         try {
-          if (filterTag.parentNode) filterTag.parentNode.removeChild(filterTag)
+          if (filterTag.parentNode && this._isMounted)
+            filterTag.parentNode.removeChild(filterTag)
         } catch (error) {}
       })
     }
@@ -165,7 +169,7 @@ export default class ChataTable extends React.Component {
     this.resetFilterTags()
 
     let filterValues
-    if (_get(this.ref, 'table')) {
+    if (this._isMounted && this.ref?.table) {
       filterValues = this.ref.table.getHeaderFilters()
     }
 
