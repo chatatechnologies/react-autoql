@@ -402,7 +402,7 @@ export default class ChatMessage extends React.Component {
             enableFilterLocking={this.props.enableFilterLocking}
             onRTValueLabelClick={this.props.onRTValueLabelClick}
             reportProblemCallback={() => {
-              if (this.optionsToolbarRef) {
+              if (this.optionsToolbarRef?._isMounted) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
               }
             }}
@@ -463,7 +463,7 @@ export default class ChatMessage extends React.Component {
   onDisplayTypeChange = (displayType) => {
     // Reset table filters when display type is changed
     this.toggleTableFilter({ isFilteringTable: false })
-    if (this.optionsToolbarRef) {
+    if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef.filtering = false
     }
 

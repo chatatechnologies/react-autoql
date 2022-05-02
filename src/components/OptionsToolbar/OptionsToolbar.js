@@ -46,7 +46,7 @@ import {
 
 import './OptionsToolbar.scss'
 
-export default class Input extends React.Component {
+export default class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -108,6 +108,7 @@ export default class Input extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    clearTimeout(this.temporaryStateTimeout)
   }
 
   onTableFilter = (newTableData) => {
@@ -127,7 +128,7 @@ export default class Input extends React.Component {
 
   setTemporaryState = (key, value, duration) => {
     this.setState({ [key]: value })
-    setTimeout(() => {
+    this.temporaryStateTimeout = setTimeout(() => {
       this.setState({ [key]: undefined })
     }, duration)
   }
@@ -241,10 +242,12 @@ export default class Input extends React.Component {
     this.setState({ isSettingColumnVisibility: true })
     setColumnVisibility({ ...authentication, columns: formattedColumns })
       .then(() => {
-        this.setState({
-          isHideColumnsModalVisible: false,
-          isSettingColumnVisibility: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isHideColumnsModalVisible: false,
+            isSettingColumnVisibility: false,
+          })
+        }
 
         if (this.props.responseRef) {
           this.props.responseRef.updateColumns(formattedColumns)
@@ -255,7 +258,10 @@ export default class Input extends React.Component {
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
+
+        if (this._isMounted) {
+          this.setState({ isSettingColumnVisibility: false })
+        }
       })
   }
 
@@ -363,11 +369,15 @@ export default class Input extends React.Component {
     })
       .then(() => {
         this.props.onSuccessAlert('Thank you for your feedback.')
-        this.setState({ activeMenu: undefined, isReportingProblem: false })
+        if (this._isMounted) {
+          this.setState({ activeMenu: undefined, isReportingProblem: false })
+        }
       })
       .catch((error) => {
         this.props.onErrorCallback(error)
-        this.setState({ isReportingProblem: false })
+        if (this._isMounted) {
+          this.setState({ isReportingProblem: false })
+        }
       })
   }
 

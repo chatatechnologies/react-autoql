@@ -118,12 +118,6 @@ export default class QueryOutput extends React.Component {
       props.displayType
     )
 
-    if (!isProvidedDisplayTypeValid) {
-      props.onRecommendedDisplayType(
-        getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
-      )
-    }
-
     // Set the initial display type based on prop value, response, and supported display types
     const displayType = isProvidedDisplayTypeValid
       ? props.displayType
@@ -173,7 +167,6 @@ export default class QueryOutput extends React.Component {
     isResizing: bool,
     enableDynamicCharting: bool,
     onDataConfigChange: func,
-    onDisplayTypeUpdate: func,
     onNoneOfTheseClick: func,
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
@@ -217,7 +210,6 @@ export default class QueryOutput extends React.Component {
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
-    onDisplayTypeUpdate: () => {},
     onRTValueLabelClick: () => {},
     onRecommendedDisplayType: () => {},
     onUpdate: () => {},
@@ -225,12 +217,25 @@ export default class QueryOutput extends React.Component {
 
   componentDidMount = () => {
     try {
-      if (this.props.optionsToolbarRef) {
+      if (this.props.optionsToolbarRef?._isMounted) {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
-      this.props.onDisplayTypeUpdate()
+      const isProvidedDisplayTypeValid = isDisplayTypeValid(
+        this.props.queryResponse,
+        this.props.displayType
+      )
+
+      if (!isProvidedDisplayTypeValid) {
+        this.onRecommendedDisplayType(
+          getDefaultDisplayType(
+            this.props.queryResponse,
+            this.props.autoChartAggregations
+          )
+        )
+      } else {
+        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
+      }
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -307,7 +312,6 @@ export default class QueryOutput extends React.Component {
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
         } else {
-          this.props.onDisplayTypeUpdate()
           this.setResponseData()
           this.forceUpdate()
         }
@@ -316,7 +320,6 @@ export default class QueryOutput extends React.Component {
       // Detected a display type change from props. We must make sure
       // the display type is valid before updating the state
       if (
-        this.props.displayType &&
         this.props.displayType !== prevProps.displayType &&
         !isDisplayTypeValid(this.queryResponse, this.props.displayType)
       ) {
@@ -340,9 +343,8 @@ export default class QueryOutput extends React.Component {
         this.forceUpdate()
       }
 
-      if (this.props.optionsToolbarRef) {
-        this.props.optionsToolbarRef._isMounted &&
-          this.props.optionsToolbarRef.forceUpdate()
+      if (this.props.optionsToolbarRef?._isMounted) {
+        this.props.optionsToolbarRef.forceUpdate()
       }
 
       this.props.onUpdate()
@@ -353,7 +355,6 @@ export default class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     ReactTooltip.hide()
-    clearTimeout(this.tableFilterTimeout)
   }
 
   hasError = (response) => {
@@ -369,7 +370,10 @@ export default class QueryOutput extends React.Component {
   }
 
   onRecommendedDisplayType = (recommendedDisplayType) => {
-    this.props.onRecommendedDisplayType(recommendedDisplayType)
+    this.props.onRecommendedDisplayType(
+      recommendedDisplayType,
+      this.supportedDisplayTypes
+    )
     console.warn(
       `Display type ${this.props.displayType} is not supported for this dataset, we called the onRecommendedDisplayType callback with the recommended display type: ${recommendedDisplayType}`
     )
@@ -440,7 +444,7 @@ export default class QueryOutput extends React.Component {
 
     if (areAllColumnsHidden(this.queryResponse)) {
       // If all columns are hidden, display warning message instead of table
-      this.props.onRecommendedDisplayType('text')
+      this.onRecommendedDisplayType('text')
       return
     }
 
@@ -468,13 +472,12 @@ export default class QueryOutput extends React.Component {
     }
 
     // Call update on options toolbar to show appropriate tools
-    if (this.props.optionsToolbarRef) {
-      this.props.optionsToolbarRef._isMounted &&
-        this.props.optionsToolbarRef.forceUpdate()
+    if (this.props.optionsToolbarRef?._isMounted) {
+      this.props.optionsToolbarRef.forceUpdate()
     }
 
     if (this.props.displayType === 'text') {
-      this.props.onRecommendedDisplayType('table')
+      this.onRecommendedDisplayType('table')
     } else {
       this.forceUpdate()
     }
@@ -667,12 +670,14 @@ export default class QueryOutput extends React.Component {
               <select
                 key={uuid()}
                 onChange={(e) => {
-                  this.setState({ suggestionSelection: e.target.value })
-                  this.onSuggestionClick({
-                    query: e.target.value,
-                    source: 'suggestion',
-                    queryId,
-                  })
+                  if (this._isMounted) {
+                    this.setState({ suggestionSelection: e.target.value })
+                    this.onSuggestionClick({
+                      query: e.target.value,
+                      source: 'suggestion',
+                      queryId,
+                    })
+                  }
                 }}
                 value={this.state.suggestionSelection}
                 className="react-autoql-suggestions-select"
@@ -843,7 +848,7 @@ export default class QueryOutput extends React.Component {
           this.generateChartData(newTableData)
         }
 
-        if (this.props.optionsToolbarRef) {
+        if (this.props.optionsToolbarRef?._isMounted) {
           this.props.optionsToolbarRef.forceUpdate()
         }
 
@@ -1001,7 +1006,6 @@ export default class QueryOutput extends React.Component {
         !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes))
     ) {
       this.supportedDisplayTypes = supportedDisplayTypes
-      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
       if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
         this.onRecommendedDisplayType(
@@ -1010,6 +1014,8 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
         )
+      } else {
+        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
       }
     }
   }
