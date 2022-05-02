@@ -127,21 +127,6 @@ class Dashboard extends React.Component {
       this.setStyles()
     }
 
-    // Keep this for a deep compare to debug
-    // if (!_isEqual(prevProps, prevProps)) {
-    //   console.log(
-    //     'PROPS were not equal!! Re-rendering',
-    //     _reduce(
-    //       this.props,
-    //       function(result, value, key) {
-    //         return _isEqual(value, prevProps[key]) ? result : result.concat(key)
-    //       },
-    //       []
-    //     )
-    //   )
-    //   return true
-    // }
-
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (
       prevProps.isEditing &&
@@ -514,7 +499,7 @@ class Dashboard extends React.Component {
   }
 
   reportProblemCallback = () => {
-    if (this.optionsToolbarRef) {
+    if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
     }
   }
@@ -777,6 +762,7 @@ class Dashboard extends React.Component {
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
             queryResponse={tile.queryResponse}
+            secondQueryResponse={tile.secondQueryResponse}
             isEditing={this.props.isEditing}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}

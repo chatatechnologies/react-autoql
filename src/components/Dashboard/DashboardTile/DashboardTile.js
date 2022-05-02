@@ -174,11 +174,10 @@ class DashboardTile extends React.Component {
   }
 
   componentWillUnmount = () => {
-    this._isMounted = true
+    this._isMounted = false
 
-    if (this.autoCompleteTimer) {
-      clearTimeout(this.autoCompleteTimer)
-    }
+    clearTimeout(this.autoCompleteTimer)
+    clearTimeout(this.dragEndTimeout)
 
     // todo: Cancel all dashboard calls here
   }
@@ -607,7 +606,9 @@ class DashboardTile extends React.Component {
                   value={this.state.query}
                   data-tip="Query"
                   data-for="react-autoql-dashboard-toolbar-btn-tooltip"
-                  onChange={(e) => this.setState({ query: e.target.value })}
+                  onChange={(e) => {
+                    this.setState({ query: e.target.value })
+                  }}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
                   onBlur={(e) => {
@@ -689,7 +690,11 @@ class DashboardTile extends React.Component {
     )
   }
 
-  renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
+  renderContentPlaceholder = ({
+    isExecuting,
+    isExecuted,
+    showSplitViewBtn,
+  } = {}) => {
     let content = null
     if (isExecuting) {
       // This should always take priority over the other conditions below
@@ -726,7 +731,18 @@ class DashboardTile extends React.Component {
       )
     }
 
-    return <div className="loading-container-centered">{content}</div>
+    return (
+      <div className="loading-container-centered">
+        {content}
+        {!this.props.isDragging && this.props.isEditing && (
+          <div className="dashboard-tile-viz-toolbar-container">
+            {this.props.isEditing &&
+              showSplitViewBtn &&
+              this.renderSplitViewBtn()}
+          </div>
+        )}
+      </div>
+    )
   }
 
   onQueryValidationSelectOption = (queryText, suggestionList) => {
@@ -764,13 +780,13 @@ class DashboardTile extends React.Component {
   }
 
   reportProblemCallback = () => {
-    if (this.optionsToolbarRef) {
+    if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
     }
   }
 
   secondReportProblemCallback = () => {
-    if (this.secondOptionsToolbarRef) {
+    if (this.secondOptionsToolbarRef?._isMounted) {
       this.secondOptionsToolbarRef.setState({ activeMenu: 'other-problem' })
     }
   }
@@ -798,7 +814,7 @@ class DashboardTile extends React.Component {
         percentage={true}
         secondaryInitialSize={this.props.secondDisplayPercentage || 50}
         onDragEnd={() => {
-          setTimeout(() => {
+          this.dragEndTimeout = setTimeout(() => {
             const percentString = _get(this.tileInnerDiv, 'style.height', '')
             const percentNumber = Number(
               percentString.substring(0, percentString.length - 1)
@@ -855,7 +871,9 @@ class DashboardTile extends React.Component {
                   this.state.isSecondQueryInputOpen ? 'open' : ''
                 }`}
                 value={this.state.secondQuery}
-                onChange={(e) => this.setState({ secondQuery: e.target.value })}
+                onChange={(e) => {
+                  this.setState({ secondQuery: e.target.value })
+                }}
                 onKeyDown={this.onSecondQueryTextKeyDown}
                 onBlur={(e) => {
                   if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
@@ -885,17 +903,30 @@ class DashboardTile extends React.Component {
     )
   }
 
+  onSplitViewClick = () => {
+    const splitView = !this.props.tile?.splitView
+    let secondQuery = this.props.tile?.secondQuery
+
+    if (splitView && !secondQuery) {
+      secondQuery = this.props.tile?.query
+    }
+
+    this.props.setParamsForTile(
+      {
+        splitView,
+        secondQuery,
+      },
+      this.props.tile.i
+    )
+
+    ReactTooltip.hide()
+  }
+
   renderSplitViewBtn = () => {
     return (
       <div className="viz-toolbar split-view-btn" data-test="split-view-btn">
         <button
-          onClick={() => {
-            this.props.setParamsForTile(
-              { splitView: !this.props.tile.splitView },
-              this.props.tile.i
-            )
-            ReactTooltip.hide()
-          }}
+          onClick={this.onSplitViewClick}
           className="react-autoql-toolbar-btn"
           data-tip={this.props.tile.splitView ? 'Single View' : 'Split View'}
           data-for="react-autoql-dashboard-toolbar-btn-tooltip"
@@ -968,12 +999,6 @@ class DashboardTile extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
-            onDisplayTypeUpdate={() => {
-              // This is necessary to update the toolbar with the newly rendered QueryOutput
-              setTimeout(() => {
-                this.forceUpdate()
-              }, 0)
-            }}
             {...queryOutputProps}
           />
         )}
@@ -1009,10 +1034,14 @@ class DashboardTile extends React.Component {
     const isExecuted = this.state.isTopExecuted
 
     if (!this.props.queryResponse || isExecuting || !isExecuted) {
-      return this.renderContentPlaceholder({ isExecuting, isExecuted })
+      return this.renderContentPlaceholder({
+        isExecuting,
+        isExecuted,
+        showSplitViewBtn: !this.getIsSplitView(),
+      })
     }
 
-    const displayType = this.props.displayType
+    const displayType = _get(this.props, 'tile.displayType')
 
     return this.renderResponse({
       queryOutputProps: {
@@ -1060,17 +1089,32 @@ class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
-    const isExecuting = this.state.isBottomExecuting
-    const isExecuted = this.state.isBottomExecuted
+    const topQuery = this.props?.tile?.query
+    const bottomQuery = this.props?.tile?.secondQuery
+    const isQuerySameAsTop = !bottomQuery || topQuery === bottomQuery
 
-    const queryResponse =
-      this.props.tile.secondQueryResponse || this.props.queryResponse
+    let isExecuting = this.state.isBottomExecuting
+    let isExecuted = this.state.isBottomExecuted
 
-    if (!queryResponse || isExecuting || !isExecuted) {
-      return this.renderContentPlaceholder({ isExecuting, isExecuted })
+    if (isQuerySameAsTop) {
+      isExecuting = this.state.isTopExecuting
+      isExecuted = this.state.isTopExecuted
     }
 
-    const displayType = this.props.secondDisplayType
+    if (
+      (!isQuerySameAsTop && !this.props.secondQueryResponse) ||
+      (isQuerySameAsTop && !this.props.queryResponse) ||
+      isExecuting ||
+      !isExecuted
+    ) {
+      return this.renderContentPlaceholder({
+        isExecuting,
+        isExecuted,
+        showSplitViewBtn: this.getIsSplitView(),
+      })
+    }
+
+    const displayType = _get(this.props, 'tile.secondDisplayType', 'table')
 
     return this.renderResponse({
       queryOutputProps: {
@@ -1078,7 +1122,8 @@ class DashboardTile extends React.Component {
         ref: (ref) => (this.secondResponseRef = ref),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         displayType,
-        queryResponse,
+        queryResponse:
+          this.props.secondQueryResponse || this.props.queryResponse,
         dataConfig: this.props.tile.secondDataConfig,
         onDataConfigChange: this.onSecondDataConfigChange,
         queryValidationSelections: this.props.tile
@@ -1086,8 +1131,12 @@ class DashboardTile extends React.Component {
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
-        onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
-        onRecommendedDisplayType: this.onSecondDisplayTypeChange,
+        onSupportedDisplayTypesChange: (displayTypes) => {
+          this.onSecondSupportedDisplayTypesChange(displayTypes)
+        },
+        onRecommendedDisplayType: (displayType) => {
+          this.onSecondDisplayTypeChange(displayType)
+        },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
