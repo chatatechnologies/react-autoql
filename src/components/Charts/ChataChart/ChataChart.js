@@ -155,6 +155,8 @@ export default class ChataChart extends Component {
       !_isEqual(this.props.columns, prevProps.columns) ||
       !_isEqual(this.props.tableColumns, prevProps.tableColumns) ||
       !_isEqual(this.props.dataConfig, prevProps.dataConfig)
+      !_isEqual(this.props.dataConfig, prevProps.dataConfig) ||
+      (this.props.type === 'pie' && !_isEqual(this.props.data, prevProps.data))
     ) {
       this.filteredSeriesData = this.getFilteredSeriesData(this.props.data)
       this.setNumberColumnSelectorState()
