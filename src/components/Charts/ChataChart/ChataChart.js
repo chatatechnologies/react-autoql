@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _reduce from 'lodash.reduce'
+import disableScroll from 'disable-scroll'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -156,6 +157,13 @@ export default class ChataChart extends Component {
     ) {
       this.filteredSeriesData = this.getFilteredSeriesData(this.props.data)
       this.setNumberColumnSelectorState()
+    }
+
+    // Disable scrolling while the popover is open
+    if (!prevState.activeAxisSelector && this.state.activeAxisSelector) {
+      disableScroll.on()
+    } else if (prevState.activeAxisSelector && !this.state.activeAxisSelector) {
+      disableScroll.off()
     }
   }
 
@@ -883,11 +891,11 @@ export default class ChataChart extends Component {
   }
 
   renderAxisSelector = (axis) => {
-    const popoverContent = this.renderAxisSelectorContent(axis)
-
-    if (!popoverContent) {
+    if (this.state.activeAxisSelector !== axis) {
       return null
     }
+
+    const popoverContent = this.renderAxisSelectorContent(axis)
 
     return (
       <Popover
