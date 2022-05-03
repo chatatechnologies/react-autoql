@@ -115,12 +115,16 @@ export default class Axes extends React.Component {
   }
 
   getBBoxFromRef = (ref) => {
+    let bbox
     try {
-      const bbox = ref.getBBox()
-      return bbox
+      if (ref) {
+        bbox = ref.getBBox()
+      }
     } catch (error) {
-      return undefined
+      console.error(error)
     }
+
+    return bbox
   }
 
   renderXLabelDropdown = (xLabelX, xLabelY) => {

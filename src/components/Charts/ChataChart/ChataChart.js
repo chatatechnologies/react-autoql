@@ -153,6 +153,7 @@ export default class ChataChart extends Component {
 
     if (
       !_isEqual(this.props.columns, prevProps.columns) ||
+      !_isEqual(this.props.tableColumns, prevProps.tableColumns) ||
       !_isEqual(this.props.dataConfig, prevProps.dataConfig)
     ) {
       this.filteredSeriesData = this.getFilteredSeriesData(this.props.data)
@@ -180,10 +181,10 @@ export default class ChataChart extends Component {
   }
 
   getNumberColumnSelectorState = (props) => {
-    const { columns } = props
+    const { tableColumns } = props
     const { numberColumnIndices } = props.dataConfig
 
-    if (!columns || !numberColumnIndices) {
+    if (!tableColumns || !numberColumnIndices) {
       return
     }
 
@@ -191,7 +192,7 @@ export default class ChataChart extends Component {
     const quantityItems = []
     const ratioItems = []
 
-    columns.forEach((col, i) => {
+    tableColumns.forEach((col, i) => {
       const item = {
         content: col.title,
         checked: numberColumnIndices.includes(i),
@@ -208,7 +209,7 @@ export default class ChataChart extends Component {
     })
 
     return {
-      activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
+      activeNumberType: _get(tableColumns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
       ratioSelectorState: ratioItems,
