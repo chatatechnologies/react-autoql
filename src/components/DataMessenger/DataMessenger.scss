@@ -36,7 +36,7 @@
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
-  color:  var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-accent-text-color);
   line-height: 60px;
   font-size: 18px;
   letter-spacing: 0.05em;
@@ -341,6 +341,7 @@
   border-radius: 4px;
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   transition: opacity 0.2s ease 0s !important;
+  opacity: 1 !important;
 }
 
 .clear-messages-confirm-popover {
