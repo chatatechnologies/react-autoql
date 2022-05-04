@@ -949,37 +949,28 @@ export default class DataMessenger extends React.Component {
     if (this.state.activePage === 'data-messenger') {
       return (
         <>
-          <div
-            id="react-autoql-filter-menu-dropdown"
-            style={{ justifyContent: 'left', position: 'absolute', right: 30 }}
-          >
-            {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? (
-              <button
-                id="react-autoql-filter-menu-dropdown-button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  this.setState({
-                    isFilterLockingMenuOpen: !this.state
-                      .isFilterLockingMenuOpen,
-                  })
-                }}
-                className="react-autoql-drawer-header-btn clear-all"
-                data-tip={lang.openFilterLocking}
-                data-for="react-autoql-header-tooltip"
-              >
-                <Icon
-                  type={
-                    _get(this.state.conditions, 'persistent.length') > 0 ||
-                    _get(this.state.conditions, 'session.length') > 0
-                      ? 'lock'
-                      : 'unlock'
-                  }
-                />
-              </button>
-            ) : (
-              <span />
-            )}
-          </div>
+          {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                this.setState({
+                  isFilterLockingMenuOpen: !this.state.isFilterLockingMenuOpen,
+                })
+              }}
+              className="react-autoql-drawer-header-btn filter-locking"
+              data-tip={lang.openFilterLocking}
+              data-for="react-autoql-header-tooltip"
+            >
+              <Icon
+                type={
+                  _get(this.state.conditions, 'persistent.length') > 0 ||
+                  _get(this.state.conditions, 'session.length') > 0
+                    ? 'lock'
+                    : 'unlock'
+                }
+              />
+            </button>
+          )}
           <Popover
             isOpen={this.state.isOptionsDropdownOpen}
             onClickOutside={() => {
