@@ -730,11 +730,12 @@ export default class OptionsToolbar extends React.Component {
     const isTable = isTableType(displayType)
     const isChart = isChartType(displayType)
     const response = _get(this.props.responseRef, 'queryResponse')
-    const hasColumns = !!_get(response, 'data.data.columns.length')
     const isDataResponse = _get(response, 'data.data.display_type') === 'data'
     const allColumnsHidden = areAllColumnsHidden(response)
     const someColumnsHidden = areSomeColumnsHidden(response)
-    const hasMoreThanOneRow = _get(response, 'data.data.rows.length') > 1
+    const numRows = _get(response, 'data.data.rows.length')
+    const hasData = numRows > 0
+    const hasMoreThanOneRow = numRows > 1
     const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
     const shouldShowButton = {
@@ -743,6 +744,7 @@ export default class OptionsToolbar extends React.Component {
       showSaveAsPNGButton: isChart,
       showHideColumnsButton:
         autoQLConfig.enableColumnVisibilityManager &&
+        hasData &&
         (displayType === 'table' ||
           (displayType === 'text' && allColumnsHidden)),
       showHiddenColsBadge: someColumnsHidden,
