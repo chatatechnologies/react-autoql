@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
@@ -46,6 +47,7 @@ export default class Axis extends Component {
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
     onLabelChange: PropTypes.func,
+    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -64,6 +66,7 @@ export default class Axis extends Component {
     onLegendClick: () => {},
     onLabelChange: () => {},
     onLegendTitleClick: undefined,
+    legendLabels: undefined,
   }
 
   componentDidMount = () => {
@@ -82,7 +85,7 @@ export default class Axis extends Component {
     if (
       (this.props.hasRightLegend || this.props.hasBottomLegend) &&
       this.props.legendLabels?.length &&
-      prevProps.legendLabels?.length !== this.props.legendLabels?.length
+      !_isEqual(this.props.legendLabels, prevProps.legendLabels)
     ) {
       this.renderLegend()
     }

@@ -29,10 +29,17 @@
   flex-shrink: 0;
   z-index: 1;
 }
+.react-autoql-drawer .react-autoql-header-left-container {
+  display: flex;
+  justify-content: left;
+  width: 100px;
+  margin-left: 10px;
+}
 .react-autoql-drawer .react-autoql-header-right-container {
   display: flex;
   justify-content: right;
   width: 100px;
+  margin-right: 10px;
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
@@ -48,11 +55,6 @@
 .react-autoql-drawer .header-title {
   animation: fadeIn 0.3s;
 }
-.react-autoql-drawer .react-autoql-header-left-container {
-  display: flex;
-  justify-content: left;
-  width: 100px;
-}
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   line-height: 1em;
@@ -61,27 +63,22 @@
   opacity: 1;
 
   &.close span.react-autoql-icon svg {
-    width: 30px;
-    height: 30px;
-    padding-top: 3px;
+    width: 27px;
+    height: 27px;
   }
   &.screen-mode span.react-autoql-icon svg {
-    width: 25px;
-    height: 25px;
-    padding-top: 3px;
-    margin-left: 0px;
+    width: 22px;
+    height: 22px;
   }
 
-  &.clear-all {
-    position: absolute;
-    right: 10px;
-    animation: fadeIn 0.3s;
-  }
   &.clear-all span.react-autoql-icon svg {
-    width: 28px;
-    height: 28px;
-    padding-top: 7px;
-    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+  }
+
+  &.filter-locking span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
   }
 }
 
@@ -151,7 +148,7 @@
   background: transparent;
   border: none;
   color: var(--react-autoql-accent-text-color);
-  margin: 10px;
+  margin: 10px 0px 10px 0px;
   margin-right: 0;
   font-size: 20px;
   cursor: pointer;
