@@ -49,9 +49,9 @@ workflows:
           filters:
             branches:
               ignore: master
-  # test-and-release:
-  #   jobs:
-  #     - test-and-release:
-  #         filters:
-  #           branches:
-  #             only: master
+  test-and-release:
+    jobs:
+      - test-and-release:
+          filters:
+            branches:
+              only: master
