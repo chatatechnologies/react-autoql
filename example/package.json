@@ -34,8 +34,5 @@
     "node": "14.17.3",
     "npm": "^6.0.1"
   },
-  "cacheDirectories": [],
-  "env": {
-    "NODE_ENV": "dev"
-  }
+  "cacheDirectories": []
 }
