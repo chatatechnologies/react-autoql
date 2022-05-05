@@ -34,6 +34,23 @@ import './ConditionLockMenu.scss'
 let autoCompleteArray = []
 
 export default class ConditionLockMenu extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      inputValue: '',
+      lastQuery: '',
+      suggestions: [],
+      selectedConditions: this.props.conditions || [],
+      isFetchingConditions: false,
+      isShowingInfo: false,
+      isShowingSettingInfo: false,
+      showMessage: {
+        type: 'unlock',
+        message: 'filter removed',
+      },
+    }
+  }
   UNIQUE_ID = uuid()
   mouseInfoRef = createRef()
   mouseSettingRef = createRef()
@@ -45,6 +62,7 @@ export default class ConditionLockMenu extends React.Component {
     authentication: authenticationType,
     initFilterText: PropTypes.string,
     themeConfig: themeConfigType,
+    onConditionChangeCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -54,88 +72,75 @@ export default class ConditionLockMenu extends React.Component {
     authentication: undefined,
     initFilterText: undefined,
     themeConfig: themeConfigDefault,
-  }
-
-  state = {
-    inputValue: '',
-    lastQuery: '',
-    suggestions: [],
-    selectedConditions: [],
-    isFetchingConditions: false,
-    isShowingInfo: false,
-    isShowingSettingInfo: false,
-    showMessage: {
-      type: 'unlock',
-      message: 'filter removed',
-    },
+    onConditionChangeCallback: () => {},
   }
 
   componentDidMount = () => {
-    try {
-      this.setState({
-        isFetchingConditions: true,
-      })
-      fetchConditions(getAuthentication(this.props.authentication)).then(
-        (response) => {
-          let conditions = _get(response, 'data.data.data')
-          let array = this.state.selectedConditions
-
-          for (let i = 0; i < conditions.length; i++) {
-            array.push({
-              id: conditions[i].id,
-              keyword: conditions[i].value,
-              value: conditions[i].value,
-              show_message: conditions[i].show_message,
-              key: conditions[i].key,
-              lock_flag: conditions[i].lock_flag,
-            })
-          }
-          if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
-            var sessionConditions = JSON.parse(
-              sessionStorage.getItem('conditions')
-            )
-            for (let i = 0; i < sessionConditions.length; i++) {
+    if (!this.props.conditions) {
+      try {
+        this.setState({
+          isFetchingConditions: true,
+        })
+        fetchConditions(getAuthentication(this.props.authentication)).then(
+          (response) => {
+            let conditions = _get(response, 'data.data.data')
+            let array = [...this.props.conditions]
+            for (let i = 0; i < conditions.length; i++) {
               array.push({
-                id: sessionConditions[i].id,
-                keyword: sessionConditions[i].value,
-                value: sessionConditions[i].value,
-                show_message: sessionConditions[i].show_message,
-                key: sessionConditions[i].key,
-                lock_flag: sessionConditions[i].lock_flag,
+                id: conditions[i].id,
+                keyword: conditions[i].value,
+                value: conditions[i].value,
+                show_message: conditions[i].show_message,
+                key: conditions[i].key,
+                lock_flag: conditions[i].lock_flag,
+              })
+            }
+            if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
+              var sessionConditions = JSON.parse(
+                sessionStorage.getItem('conditions')
+              )
+              for (let i = 0; i < sessionConditions.length; i++) {
+                array.push({
+                  id: sessionConditions[i].id,
+                  keyword: sessionConditions[i].value,
+                  value: sessionConditions[i].value,
+                  show_message: sessionConditions[i].show_message,
+                  key: sessionConditions[i].key,
+                  lock_flag: sessionConditions[i].lock_flag,
+                })
+              }
+            }
+            array.sort((a, b) => {
+              return a.keyword.toUpperCase() < b.keyword.toUpperCase()
+                ? -1
+                : a.keyword > b.keyword
+                ? 1
+                : 0
+            })
+            if (this.props.initFilterText && this.props.initFilterText !== '') {
+              this.props.onConditionChangeCallback(array)
+              this.setState({
+                isFetchingConditions: false,
+              })
+              for (let i = 0; i < array.length; i++) {
+                if (array[i].keyword === this.props.initFilterText) {
+                  this.handleHighlightFilterRow(i)
+                  return
+                }
+              }
+              this.animateInputTextAndSubmit(this.props.initFilterText)
+            } else {
+              this.props.onConditionChangeCallback(!!array.length)
+              this.setState({
+                inputValue: '',
+                isFetchingConditions: false,
               })
             }
           }
-
-          array.sort((a, b) => {
-            return a.keyword.toUpperCase() < b.keyword.toUpperCase()
-              ? -1
-              : a.keyword > b.keyword
-              ? 1
-              : 0
-          })
-          if (this.props.initFilterText && this.props.initFilterText !== '') {
-            this.setState({
-              selectedConditions: array,
-              isFetchingConditions: false,
-            })
-            for (let i = 0; i < array.length; i++) {
-              if (array[i].keyword === this.props.initFilterText) {
-                this.handleHighlightFilterRow(i)
-                return
-              }
-            }
-            this.animateInputTextAndSubmit(this.props.initFilterText)
-          } else {
-            this.setState({
-              selectedConditions: array,
-              inputValue: '',
-              isFetchingConditions: false,
-            })
-          }
-        }
-      )
-    } catch (error) {
-      console.error(error)
+        )
+      } catch (error) {
+        console.error(error)
+      }
     }
   }
 
@@ -197,8 +202,9 @@ export default class ConditionLockMenu extends React.Component {
             ? 1
             : 0
         })
+
+        this.props.onConditionChangeCallback(array)
         this.setState({
-          selectedConditions: array,
           inputValue: '',
           isFetchingConditions: false,
         })
@@ -213,7 +219,7 @@ export default class ConditionLockMenu extends React.Component {
    * @param {*} suggestion
    */
   getSuggestionValue = (suggestion) => {
-    let array = this.state.selectedConditions
+    let array = [...this.props.conditions]
 
     if (
       array.some(
@@ -286,15 +292,15 @@ export default class ConditionLockMenu extends React.Component {
       })
     }
 
-    const array = this.state.selectedConditions
+    const array = [...this.props.conditions]
     array.splice(index, 1)
-    // this.setState({ selectedConditions: array })
+    this.props.onConditionChangeCallback(array)
     this.handleShowMessage('unlock', 'Filter removed.')
     ReactTooltip.hide()
   }
 
   handlePersistConditionToggle = (item) => {
-    var index = this.state.selectedConditions.findIndex(
+    var index = this.props.conditions.findIndex(
       (condition) => condition.id === item.id
     )
     var sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
@@ -302,46 +308,33 @@ export default class ConditionLockMenu extends React.Component {
     if (index === -1) {
       // handle error
     } else {
-      this.setState(
-        {
-          selectedConditions: [
-            ...this.state.selectedConditions.slice(0, index),
-            Object.assign(
-              {},
-              this.state.selectedConditions[index],
-              item.lock_flag === 1
-                ? (this.state.selectedConditions[index].lock_flag = 0)
-                : (this.state.selectedConditions[index].lock_flag = 1)
-            ),
-            ...this.state.selectedConditions.slice(index + 1),
-          ],
-        },
-        () => {
-          setConditions({
-            ...getAuthentication(this.props.authentication),
-            conditions: this.state.selectedConditions,
-          }).then(() => {
-            this.handleFetchFilteredList()
-          })
-          if (item.lock_flag === 0) {
-            if (sessionConditions == null) sessionConditions = []
-            sessionConditions.push(item)
-            sessionStorage.setItem(
-              'conditions',
-              JSON.stringify(sessionConditions)
-            )
-          } else {
-            var sessionIndex = sessionConditions.findIndex(
-              (condition) => condition.id === item.id
-            )
-            sessionConditions.splice(sessionIndex, 1)
-            sessionStorage.setItem(
-              'conditions',
-              JSON.stringify(sessionConditions)
-            )
-          }
-        }
-      )
+      const array = [
+        ...this.props.conditions.slice(0, index),
+        Object.assign(
+          {},
+          this.props.conditions[index],
+          item.lock_flag === 1
+            ? (this.props.conditions[index].lock_flag = 0)
+            : (this.props.conditions[index].lock_flag = 1)
+        ),
+        ...this.props.conditions.slice(index + 1),
+      ]
+      this.props.onConditionChangeCallback(array)
+      setConditions({
+        ...getAuthentication(this.props.authentication),
+        conditions: array,
+      })
+      if (item.lock_flag === 0) {
+        if (sessionConditions == null) sessionConditions = []
+        sessionConditions.push(item)
+        sessionStorage.setItem('conditions', JSON.stringify(sessionConditions))
+      } else {
+        var sessionIndex = sessionConditions.findIndex(
+          (condition) => condition.id === item.id
+        )
+        sessionConditions.splice(sessionIndex, 1)
+        sessionStorage.setItem('conditions', JSON.stringify(sessionConditions))
+      }
     }
   }
 
@@ -585,7 +578,7 @@ export default class ConditionLockMenu extends React.Component {
             </div>
           ) : (
             <div className="react-autoql-condition-list">
-              {_get(this.state.selectedConditions, 'length') === 0 ? (
+              {_get(this.props.conditions, 'length') === 0 ? (
                 <div className="react-autoql-empty-condition-list">
                   <p>
                     <i>{lang.noFiltersLocked}</i>
@@ -618,7 +611,7 @@ export default class ConditionLockMenu extends React.Component {
                         </tr>
                       </thead>
                       <tbody>
-                        {this.state.selectedConditions.map((item, index) => {
+                        {this.props.conditions.map((item, index) => {
                           return (
                             <tr
                               key={index}

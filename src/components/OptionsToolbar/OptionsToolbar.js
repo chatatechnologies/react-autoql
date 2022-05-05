@@ -725,60 +725,71 @@ export default class OptionsToolbar extends React.Component {
     )
   }
 
-  render = () => {
-    const displayType = _get(this.props.responseRef, 'props.displayType')
-    const isTable = isTableType(displayType)
-    const isChart = isChartType(displayType)
-    const response = _get(this.props.responseRef, 'queryResponse')
-    const isDataResponse = _get(response, 'data.data.display_type') === 'data'
-    const allColumnsHidden = areAllColumnsHidden(response)
-    const someColumnsHidden = areSomeColumnsHidden(response)
-    const numRows = _get(response, 'data.data.rows.length')
-    const hasData = numRows > 0
-    const hasMoreThanOneRow = numRows > 1
-    const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
+  getShouldShouldButtonObj = () => {
+    let shouldShowButton = {}
+    try {
+      const displayType = _get(this.props.responseRef, 'props.displayType')
+      const isTable = isTableType(displayType)
+      const isChart = isChartType(displayType)
+      const response = _get(this.props.responseRef, 'queryResponse')
+      const isDataResponse = _get(response, 'data.data.display_type') === 'data'
+      const allColumnsHidden = areAllColumnsHidden(response)
+      const someColumnsHidden = areSomeColumnsHidden(response)
+      const numRows = _get(response, 'data.data.rows.length')
+      const hasData = numRows > 0
+      const hasMoreThanOneRow = numRows > 1
+      const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
-    const shouldShowButton = {
-      showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
-      showCopyButton: isTable && !allColumnsHidden,
-      showSaveAsPNGButton: isChart,
-      showHideColumnsButton:
-        autoQLConfig.enableColumnVisibilityManager &&
-        hasData &&
-        (displayType === 'table' ||
-          (displayType === 'text' && allColumnsHidden)),
-      showHiddenColsBadge: someColumnsHidden,
-      showSQLButton: isDataResponse && autoQLConfig.debug,
-      showSaveAsCSVButton:
-        isDataResponse &&
-        hasMoreThanOneRow &&
-        !allColumnsHidden &&
-        autoQLConfig.enableCSVDownload,
-      showDeleteButton: this.props.enableDeleteBtn,
-      showReportProblemButton: !!_get(response, 'data.data.query_id'),
+      shouldShowButton = {
+        showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
+        showCopyButton: isTable && !allColumnsHidden,
+        showSaveAsPNGButton: isChart,
+        showHideColumnsButton:
+          autoQLConfig.enableColumnVisibilityManager &&
+          hasData &&
+          (displayType === 'table' ||
+            (displayType === 'text' && allColumnsHidden)),
+        showHiddenColsBadge: someColumnsHidden,
+        showSQLButton: isDataResponse && autoQLConfig.debug,
+        showSaveAsCSVButton:
+          isDataResponse &&
+          hasMoreThanOneRow &&
+          !allColumnsHidden &&
+          autoQLConfig.enableCSVDownload,
+        showDeleteButton: this.props.enableDeleteBtn,
+        showReportProblemButton: !!_get(response, 'data.data.query_id'),
 
-      showCreateNotificationIcon:
-        isDataResponse &&
-        autoQLConfig.enableNotifications &&
-        !this.isDrilldownResponse(),
-      showShareToSlackButton: false,
-      // This feature is disabled indefinitely
-      // isDataResponse &&
-      // autoQLConfig.enableSlackSharing,
-      showShareToTeamsButton: false,
-      // This feature is disabled indefinitely
-      // isDataResponse &&
-      // autoQLConfig.enableTeamsSharing,
+        showCreateNotificationIcon:
+          isDataResponse &&
+          autoQLConfig.enableNotifications &&
+          !this.isDrilldownResponse(),
+        showShareToSlackButton: false,
+        // This feature is disabled indefinitely
+        // isDataResponse &&
+        // autoQLConfig.enableSlackSharing,
+        showShareToTeamsButton: false,
+        // This feature is disabled indefinitely
+        // isDataResponse &&
+        // autoQLConfig.enableTeamsSharing,
+      }
+
+      shouldShowButton.showMoreOptionsButton =
+        shouldShowButton.showCopyButton ||
+        shouldShowButton.showSQLButton ||
+        shouldShowButton.showCreateNotificationIcon ||
+        shouldShowButton.showSaveAsCSVButton ||
+        shouldShowButton.showSaveAsPNGButton ||
+        shouldShowButton.showShareToSlackButton ||
+        shouldShowButton.showShareToTeamsButton
+    } catch (error) {
+      console.error(error)
     }
 
-    shouldShowButton.showMoreOptionsButton =
-      shouldShowButton.showCopyButton ||
-      shouldShowButton.showSQLButton ||
-      shouldShowButton.showCreateNotificationIcon ||
-      shouldShowButton.showSaveAsCSVButton ||
-      shouldShowButton.showSaveAsPNGButton ||
-      shouldShowButton.showShareToSlackButton ||
-      shouldShowButton.showShareToTeamsButton
+    return shouldShowButton
+  }
+
+  render = () => {
+    const shouldShowButton = this.getShouldShouldButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
     if (
@@ -789,7 +800,7 @@ export default class OptionsToolbar extends React.Component {
 
     return (
       <ErrorBoundary>
-        {this.renderToolbar(shouldShowButton, allColumnsHidden)}
+        {this.renderToolbar(shouldShowButton)}
         {shouldShowButton.showHideColumnsButton &&
           this.renderHideColumnsModal()}
         {shouldShowButton.showReportProblemButton &&
