@@ -33,17 +33,17 @@ export default class Columns extends Component {
   }
 
   render = () => {
-    const { scales, data, labelValue } = this.props
+    const { scales, labelValue } = this.props
     const { xScale } = scales
 
-    const numberOfSeries = data[0].cells.length
+    const numberOfSeries = this.props.data[0].cells.length
     const barWidth = xScale.bandwidth() / numberOfSeries
 
     // Loop through each data value to make each series
     const allBars = []
     for (let i = 0; i < numberOfSeries; i++) {
       allBars.push(
-        data.map((d) => {
+        this.props.data.map((d) => {
           const x0 = xScale(d[labelValue])
           const dX = i * barWidth
           const finalBarXPosition = x0 + dX

@@ -2,10 +2,10 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 
 import { checkProps } from '../../../test/testUtils'
-import { ConditionLockMenu } from './' 
+import { ConditionLockMenu } from './'
 
 const defaultProps = {
-  containerWidth: '500px',
+  containerWidth: 500,
   onClose: () => {},
   isOpen: false,
   initFilterText: undefined,
@@ -40,16 +40,16 @@ describe('props', () => {
   test('does not throw warning with expected props', () => {
     checkProps(ConditionLockMenu, defaultProps)
   })
-  
+
   describe('containerWidth', () => {
     test('containerWidth is applied', () => {
-      const html = mount(<ConditionLockMenu containerWidth={"500px"} />)
+      const html = mount(<ConditionLockMenu containerWidth={'500px'} />)
       const menu = html.find('#react-autoql-filter-menu')
       expect(menu.exists()).toBe(false)
     })
     test('renders correctly with containerWidth', () => {
-      const wrapper = setup({ containerWidth: "500px" })
-      expect(wrapper.instance().props.containerWidth).toBe("500px")
+      const wrapper = setup({ containerWidth: '500px' })
+      expect(wrapper.instance().props.containerWidth).toBe('500px')
     })
     test('renders correctly without containerWidth', () => {
       const wrapper = setup({ containerWidth: undefined })
@@ -67,11 +67,11 @@ describe('props', () => {
       expect(wrapper.instance().props.isOpen).toBe(true)
     })
   })
-  
+
   describe('initFilterText', () => {
     test('renders correctly with initFilterText', () => {
-      const wrapper = setup({ isOpen: true, initFilterText: "asdsdfsd" })
-      expect(wrapper.instance().props.initFilterText).toEqual("asdsdfsd")
+      const wrapper = setup({ isOpen: true, initFilterText: 'asdsdfsd' })
+      expect(wrapper.instance().props.initFilterText).toEqual('asdsdfsd')
     })
     test('renders correctly with initFilterText undefined', () => {
       const wrapper = setup({ isOpen: true })

@@ -50,29 +50,31 @@ export default class StackedLines extends Component {
     )
   }
 
-  createPolygon = (data, series, polygonVertices) => {
+  createPolygon = (series, polygonVertices) => {
     const polygonPoints = polygonVertices
-      .map(xy => {
+      .map((xy) => {
         return xy.join(',')
       })
       .join(' ')
 
     return (
       <polygon
-        key={`${data[0].cells[series].label}`}
+        key={`${this.props.data[0].cells[series].label}`}
         className={`bar${
-          this.state.activeKey === data[0].cells[series].label ? ' active' : ''
+          this.state.activeKey === this.props.data[0].cells[series].label
+            ? ' active'
+            : ''
         }`}
         points={polygonPoints}
         data-tip={`
             <div>
-              <strong>${this.props.legendTitle}</strong>: ${data[0].cells[series].label}
+              <strong>${this.props.legendTitle}</strong>: ${this.props.data[0].cells[series].label}
             </div>
           `}
         data-for="chart-element-tooltip"
         data-effect="float"
         style={{
-          fill: data[0].cells[series].color,
+          fill: this.props.data[0].cells[series].color,
           fillOpacity: 1,
         }}
       />
@@ -80,16 +82,19 @@ export default class StackedLines extends Component {
   }
 
   render = () => {
-    const { scales, data } = this.props
+    const { scales } = this.props
     const { xScale, yScale } = scales
 
     const polygons = []
     const polygonVertexDots = []
-    const numPolygons = data[0].cells.length
+    const numPolygons = this.props.data[0].cells.length
 
-    const firstPoint = [xScale(data[0].label), yScale(this.props.minValue)]
+    const firstPoint = [
+      xScale(this.props.data[0].label),
+      yScale(this.props.minValue),
+    ]
     const lastPoint = [
-      xScale(data[data.length - 1].label),
+      xScale(this.props.data[this.props.data.length - 1].label),
       yScale(this.props.minValue),
     ]
 
@@ -100,7 +105,7 @@ export default class StackedLines extends Component {
       // First point goes on (0,0)
       let polygonVertices = [firstPoint]
 
-      data.forEach(d => {
+      this.props.data.forEach((d) => {
         const cell = d.cells[series]
         const valueNumber = Number(cell.value)
         const value = !Number.isNaN(valueNumber) ? valueNumber : 0
@@ -132,7 +137,7 @@ export default class StackedLines extends Component {
       polygonVertices.push(firstPoint) // this one might not be necessary
 
       // Add polygon to list
-      polygons.push(this.createPolygon(data, series, polygonVertices))
+      polygons.push(this.createPolygon(series, polygonVertices))
     }
 
     // Reverse order so smallest areas are drawn on top

@@ -29,14 +29,21 @@
   flex-shrink: 0;
   z-index: 1;
 }
+.react-autoql-drawer .react-autoql-header-left-container {
+  display: flex;
+  justify-content: left;
+  width: 100px;
+  margin-left: 10px;
+}
 .react-autoql-drawer .react-autoql-header-right-container {
   display: flex;
   justify-content: right;
   width: 100px;
+  margin-right: 10px;
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
-  color: #fff;
+  color: var(--react-autoql-accent-text-color);
   line-height: 60px;
   font-size: 18px;
   letter-spacing: 0.05em;
@@ -48,12 +55,6 @@
 .react-autoql-drawer .header-title {
   animation: fadeIn 0.3s;
 }
-.react-autoql-drawer .react-autoql-header-left-container {
-  width: 100px;
-}
-
-.react-autoql-chart-tooltip {
-}
 
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   line-height: 1em;
@@ -62,20 +63,22 @@
   opacity: 1;
 
   &.close span.react-autoql-icon svg {
-    width: 30px;
-    height: 30px;
-    padding-top: 3px;
+    width: 27px;
+    height: 27px;
   }
-  &.clear-all {
-    position: absolute;
-    right: 10px;
-    animation: fadeIn 0.3s;
+  &.screen-mode span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
   }
+
   &.clear-all span.react-autoql-icon svg {
-    width: 28px;
-    height: 28px;
-    padding-top: 7px;
-    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+  }
+
+  &.filter-locking span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
   }
 }
 
@@ -144,13 +147,14 @@
 .react-autoql-drawer .chat-header-container button {
   background: transparent;
   border: none;
-  color: white;
-  margin: 10px;
+  color: var(--react-autoql-accent-text-color);
+  margin: 10px 0px 10px 0px;
   margin-right: 0;
   font-size: 20px;
   cursor: pointer;
   outline: none !important;
 }
+
 .react-autoql-drawer .chat-header-container button:hover {
   opacity: 0.7;
 }
@@ -201,7 +205,7 @@
 
     &.default-logo {
       background-color: var(--react-autoql-accent-color, #26a7df);
-      color: #fff;
+      color: var(--react-autoql-accent-text-color);
 
       .react-autoql-bubbles-outlined {
         position: absolute;
@@ -334,6 +338,7 @@
   border-radius: 4px;
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   transition: opacity 0.2s ease 0s !important;
+  opacity: 1 !important;
 }
 
 .clear-messages-confirm-popover {
@@ -418,7 +423,7 @@
     z-index: 1;
 
     background: var(--react-autoql-accent-color);
-    color: #fff;
+    color: var(--react-autoql-accent-text-color);
     opacity: 1;
 
     font-size: 22px;

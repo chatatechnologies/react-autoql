@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import ContentEditable from 'react-contenteditable'
 import sanitizeHtml from 'sanitize-html'
 import Popover from 'react-tiny-popover'
@@ -25,8 +25,8 @@ import { runQueryValidation } from '../../js/queryService'
 import './QueryInputWithValidation.scss'
 
 export default class QueryValidationMessage extends React.Component {
-  COMPONENT_KEY = `query-input-with-validation-${uuid.v4()}`
-  POPOVER_TRIGGER_KEY = `validation-popover-trigger-${uuid.v4()}`
+  COMPONENT_KEY = `query-input-with-validation-${uuid()}`
+  POPOVER_TRIGGER_KEY = `validation-popover-trigger-${uuid()}`
   originalReplaceWords = []
   suggestionLists = []
 
@@ -137,7 +137,7 @@ export default class QueryValidationMessage extends React.Component {
         const originalSuggestionList = suggestionInfo.suggestions.map(
           (suggestion) => {
             return {
-              id: uuid.v4(),
+              id: uuid(),
               hidden: false,
               ...suggestion,
             }
@@ -147,7 +147,7 @@ export default class QueryValidationMessage extends React.Component {
         // Add original query value to suggestion list
         const list = [
           ...originalSuggestionList,
-          { id: uuid.v4(), text: originalWord },
+          { id: uuid(), text: originalWord },
         ]
 
         suggestionLists.push(list)
@@ -223,7 +223,7 @@ export default class QueryValidationMessage extends React.Component {
         suggestionList.find(
           (suggestion) =>
             suggestion.text === this.props.initialSelections[index].text
-        ).id = this.props.initialSelections[index].id || uuid.v4()
+        ).id = this.props.initialSelections[index].id || uuid()
       })
 
       selectedSuggestions = this.props.initialSelections
@@ -243,7 +243,7 @@ export default class QueryValidationMessage extends React.Component {
     this.setState(
       { selectedSuggestions: _cloneDeep(selectedSuggestions) },
       () => {
-        setCaretPosition(this.COMPONENT_KEY, 5)
+        setCaretPosition(this.inputRef, 5)
       }
     )
   }
@@ -356,7 +356,7 @@ export default class QueryValidationMessage extends React.Component {
       >
         <Select
           options={options}
-          key={uuid.v4()}
+          key={uuid()}
           value={suggestion.id}
           className="react-autoql-query-validation-select"
           popupClassname="validation-select"
@@ -428,10 +428,6 @@ export default class QueryValidationMessage extends React.Component {
           this.isNewQueryAppendedToOldQuery(newQuery, currentQuery) &&
           _get(response, 'data.data.replacements.length')
         ) {
-          console.log(
-            'these were the replacements:',
-            _get(response, 'data.data.replacements')
-          )
           this.initializeQueryValidationOptions(_cloneDeep(response.data))
         }
       })

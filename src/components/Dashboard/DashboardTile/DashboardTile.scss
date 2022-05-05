@@ -1,7 +1,8 @@
-.react-autoql-dashboard .react-grid-item {
+.react-autoql-dashboard .react-autoql-dashboard-tile {
   background: var(--react-autoql-background-color-primary, #fff);
   color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
   font-family: var(--react-autoql-font-family), sans-serif;
+  height: 100%;
   overflow: hidden;
 
   border-radius: 4px;
@@ -199,7 +200,6 @@
   .react-autoql-table-container {
     padding: 20px;
     padding-top: 15px;
-    width: 100%;
   }
 
   .react-autoql-response-content-container {
@@ -500,17 +500,11 @@
 }
 
 /* React Grid Layout overrides */
-.react-grid-item > .react-resizable-handle {
+.react-grid-item .react-resizable-handle {
   z-index: 1;
   position: absolute;
-  width: 25px;
-  height: 25px;
-  bottom: 0;
-  right: 0;
-}
-.react-grid-item > .react-resizable-handle::after {
-  width: 11px !important;
-  height: 11px !important;
+  width: 11px;
+  height: 11px;
   bottom: 4px;
   right: 4px;
   opacity: 0;
@@ -521,7 +515,7 @@
   transition: opacity 0.3s ease;
 }
 
-.react-grid-item:hover > .react-resizable-handle::after {
+.react-autoql-dashboard-tile.editing:hover .react-resizable-handle {
   opacity: 1;
 }
 

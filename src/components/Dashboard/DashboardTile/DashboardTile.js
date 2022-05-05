@@ -1,9 +1,11 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
+import _omit from 'lodash.omit'
+import _functions from 'lodash.functions'
 import Autosuggest from 'react-autosuggest'
 import ReactTooltip from 'react-tooltip'
 import SplitterLayout from 'react-splitter-layout'
@@ -17,11 +19,7 @@ import { Icon } from '../../Icon'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
-import {
-  getSupportedDisplayTypes,
-  getDefaultDisplayType,
-  isDisplayTypeValid,
-} from '../../../js/Util'
+import { getSupportedDisplayTypes } from '../../../js/Util'
 
 import {
   authenticationType,
@@ -44,9 +42,32 @@ import './DashboardTile.scss'
 
 let autoCompleteArray = []
 
-export default class DashboardTile extends React.Component {
-  COMPONENT_KEY = uuid.v4()
-  autoCompleteTimer = undefined
+class DashboardTile extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.COMPONENT_KEY = uuid()
+    this.QUERY_RESPONSE_KEY = uuid()
+    this.autoCompleteTimer = undefined
+
+    const supportedDisplayTypes =
+      getSupportedDisplayTypes(props.queryResponse) || []
+    const secondSupportedDisplayTypes =
+      getSupportedDisplayTypes(props.secondQueryResponse) || []
+
+    this.state = {
+      query: props.tile.query,
+      secondQuery: props.tile.secondQuery || this.props.tile.query,
+      title: props.tile.title,
+      isTopExecuting: false,
+      isBottomExecuting: false,
+      suggestions: [],
+      isSecondQueryInputOpen: false,
+      currentSource: 'user',
+      supportedDisplayTypes,
+      secondSupportedDisplayTypes,
+    }
+  }
 
   static propTypes = {
     // Global
@@ -63,8 +84,6 @@ export default class DashboardTile extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    isUnExecuted: PropTypes.bool,
-    onProcessTileCallback: PropTypes.func,
   }
 
   static defaultProps = {
@@ -81,33 +100,12 @@ export default class DashboardTile extends React.Component {
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
-    isUnExecuted: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
-    onProcessTileCallback: () => {},
   }
 
-  state = {
-    query: this.props.tile.query,
-    secondQuery: this.props.tile.secondQuery || this.props.tile.query,
-    title: this.props.tile.title,
-    isTopExecuting: false,
-    isBottomExecuting: false,
-    suggestions: [],
-    isSecondQueryInputOpen: false,
-    currentSource: 'user',
-    supportedDisplayTypes:
-      getSupportedDisplayTypes(this.props.queryResponse) || [],
-    secondSupportedDisplayTypes:
-      getSupportedDisplayTypes(this.props.secondQueryResponse) || [],
-    isUnExecuted: false,
-  }
-
-  getFilteredProps = (props) => {
-    return {
-      ...props,
-      children: undefined,
-    }
+  componentDidMount = () => {
+    this._isMounted = true
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -116,23 +114,10 @@ export default class DashboardTile extends React.Component {
 
     if (
       !_isEqual(
-        _.omit(thisPropsFiltered, _.functions(thisPropsFiltered)),
-        _.omit(nextPropsFiltered, _.functions(nextPropsFiltered))
+        _omit(thisPropsFiltered, _functions(thisPropsFiltered)),
+        _omit(nextPropsFiltered, _functions(nextPropsFiltered))
       )
     ) {
-      // Keep this for a deep compare to debug
-      // console.log(
-      //   'PROPS were not equal!! Re-rendering',
-      //   _reduce(
-      //     nextProps,
-      //     function(result, value, key) {
-      //       return _isEqual(value, thisPropsFiltered[key])
-      //         ? result
-      //         : result.concat(key)
-      //     },
-      //     []
-      //   )
-      // )
       return true
     } else if (!_isEqual(this.state, nextState)) {
       return true
@@ -155,13 +140,58 @@ export default class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
+
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(this.props, prevProps)) {
+    //   console.log(
+    //     'PROPS were not equal!! Re-rendering',
+    //     _reduce(
+    //       prevProps,
+    //       (result, value, key) => {
+    //         return _isEqual(value, this.props[key])
+    //           ? result
+    //           : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    // }
+
+    // Keep this for a deep compare to debug
+    // if (!_isEqual(this.state, prevState)) {
+    //   console.log(
+    //     'STATE were not equal!! Re-rendering',
+    //     _reduce(
+    //       prevState,
+    //       (result, value, key) => {
+    //         return _isEqual(value, this.state[key])
+    //           ? result
+    //           : result.concat(key)
+    //       },
+    //       []
+    //     )
+    //   )
+    // }
   }
 
   componentWillUnmount = () => {
-    if (this.autoCompleteTimer) {
-      clearTimeout(this.autoCompleteTimer)
-    }
+    this._isMounted = false
+
+    clearTimeout(this.autoCompleteTimer)
+    clearTimeout(this.dragEndTimeout)
+
     // todo: Cancel all dashboard calls here
+  }
+
+  getFilteredProps = (props) => {
+    return {
+      ...props,
+      children: undefined,
+    }
+  }
+
+  toggleTableFilter = (ref, isFilteringTable) => {
+    ref?.toggleTableFilter({ isFilteringTable })
   }
 
   isQueryValid = (query) => {
@@ -171,7 +201,7 @@ export default class DashboardTile extends React.Component {
   endTopQuery = ({ response }) => {
     // Update component key after getting new response
     // so QueryOutput completely resets
-    this.COMPONENT_KEY = uuid.v4()
+    this.QUERY_RESPONSE_KEY = uuid()
 
     this.props.setParamsForTile(
       {
@@ -181,10 +211,12 @@ export default class DashboardTile extends React.Component {
       this.props.tile.i
     )
 
-    this.setState({
-      isTopExecuting: false,
-      isTopExecuted: true,
-    })
+    if (this._isMounted) {
+      this.setState({
+        isTopExecuting: false,
+        isTopExecuted: true,
+      })
+    }
   }
 
   endBottomQuery = ({ response }) => {
@@ -265,8 +297,15 @@ export default class DashboardTile extends React.Component {
       skipQueryValidation: skipQueryValidation,
       source,
     })
-      .then((response) => this.endTopQuery({ response }))
-      .catch((response) => this.endTopQuery({ response }))
+      .then((response) => {
+        if (this._isMounted) {
+          this.endTopQuery({ response })
+        }
+      })
+      .catch((response) => {
+        console.error('CAUGHT ERROR IN PROCESS QUERY')
+        if (this._isMounted) this.endTopQuery({ response })
+      })
   }
 
   processTileBottom = ({
@@ -316,8 +355,27 @@ export default class DashboardTile extends React.Component {
       skipQueryValidation: skipQueryValidation,
       source,
     })
-      .then((response) => this.endBottomQuery({ response }))
-      .catch((response) => this.endBottomQuery({ response }))
+      .then((response) => {
+        if (this._isMounted) this.endBottomQuery({ response })
+      })
+      .catch((response) => {
+        if (this._isMounted) this.endBottomQuery({ response })
+      })
+  }
+
+  clearQueryResponses = () => {
+    this.setState({
+      isTopExecuting: false,
+      isTopExecuted: false,
+      customMessage: undefined,
+    })
+    this.props.setParamsForTile(
+      {
+        queryResponse: undefined,
+        secondQueryResponse: undefined,
+      },
+      this.props.tile.i
+    )
   }
 
   processTile = ({
@@ -327,8 +385,6 @@ export default class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
-    this.props.onProcessTileCallback(this.props.tile.i)
-
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -412,32 +468,34 @@ export default class DashboardTile extends React.Component {
         ...getAuthentication(this.props.authentication),
       })
         .then((response) => {
-          const body = _get(response, 'data.data')
+          if (this._isMounted) {
+            const body = _get(response, 'data.data')
 
-          const sortingArray = []
-          let suggestionsMatchArray = []
-          autoCompleteArray = []
-          suggestionsMatchArray = body.matches
+            const sortingArray = []
+            let suggestionsMatchArray = []
+            autoCompleteArray = []
+            suggestionsMatchArray = body.matches
 
-          for (let i = 0; i < suggestionsMatchArray.length; i++) {
-            sortingArray.push(suggestionsMatchArray[i])
+            for (let i = 0; i < suggestionsMatchArray.length; i++) {
+              sortingArray.push(suggestionsMatchArray[i])
 
-            if (i === 4) {
-              break
+              if (i === 4) {
+                break
+              }
             }
-          }
 
-          sortingArray.sort((a, b) => b.length - a.length)
-          for (let idx = 0; idx < sortingArray.length; idx++) {
-            const anObject = {
-              name: sortingArray[idx],
+            sortingArray.sort((a, b) => b.length - a.length)
+            for (let idx = 0; idx < sortingArray.length; idx++) {
+              const anObject = {
+                name: sortingArray[idx],
+              }
+              autoCompleteArray.push(anObject)
             }
-            autoCompleteArray.push(anObject)
-          }
 
-          this.setState({
-            suggestions: autoCompleteArray,
-          })
+            this.setState({
+              suggestions: autoCompleteArray,
+            })
+          }
         })
         .catch((error) => {
           console.error(error)
@@ -554,7 +612,9 @@ export default class DashboardTile extends React.Component {
                   value={this.state.query}
                   data-tip="Query"
                   data-for="react-autoql-dashboard-toolbar-btn-tooltip"
-                  onChange={(e) => this.setState({ query: e.target.value })}
+                  onChange={(e) => {
+                    this.setState({ query: e.target.value })
+                  }}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
                   onBlur={(e) => {
@@ -636,25 +696,22 @@ export default class DashboardTile extends React.Component {
     )
   }
 
-  renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
+  renderContentPlaceholder = ({
+    isExecuting,
+    isExecuted,
+    showSplitViewBtn,
+  } = {}) => {
     let content = null
     if (isExecuting) {
       // This should always take priority over the other conditions below
       content = <LoadingDots />
-    } else if (
-      !this.props.isEditing &&
-      isExecuted &&
-      !this.props.isUnExecuted
-    ) {
+    } else if (!this.props.isEditing && isExecuted) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>No query was supplied for this tile.</em>
         </div>
       )
-    } else if (
-      this.props.isEditing &&
-      (!_get(this.state.query, 'trim()') || this.props.isUnExecuted)
-    ) {
+    } else if (this.props.isEditing && !_get(this.state.query, 'trim()')) {
       content = (
         <div className="dashboard-tile-placeholder-text">
           <em>
@@ -680,7 +737,18 @@ export default class DashboardTile extends React.Component {
       )
     }
 
-    return <div className="dashboard-tile-loading-container">{content}</div>
+    return (
+      <div className="loading-container-centered">
+        {content}
+        {!this.props.isDragging && this.props.isEditing && (
+          <div className="dashboard-tile-viz-toolbar-container">
+            {this.props.isEditing &&
+              showSplitViewBtn &&
+              this.renderSplitViewBtn()}
+          </div>
+        )}
+      </div>
+    )
   }
 
   onQueryValidationSelectOption = (queryText, suggestionList) => {
@@ -718,13 +786,13 @@ export default class DashboardTile extends React.Component {
   }
 
   reportProblemCallback = () => {
-    if (this.optionsToolbarRef) {
+    if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
     }
   }
 
   secondReportProblemCallback = () => {
-    if (this.secondOptionsToolbarRef) {
+    if (this.secondOptionsToolbarRef?._isMounted) {
       this.secondOptionsToolbarRef.setState({ activeMenu: 'other-problem' })
     }
   }
@@ -742,27 +810,18 @@ export default class DashboardTile extends React.Component {
   }
 
   renderSplitResponse = () => {
-    const innerTileDiv = document.querySelector(
-      `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`
-    )
-
-    const secondQueryInputWidth = _get(innerTileDiv, 'clientWidth')
-      ? `${innerTileDiv.clientWidth - 70}px`
+    const secondQueryInputWidth = _get(this.tileInnerDiv, 'clientWidth')
+      ? `${this.tileInnerDiv.clientWidth - 70}px`
       : '0px'
 
     return (
       <SplitterLayout
         vertical={true}
-        onDragStart={(e) => {}}
         percentage={true}
         secondaryInitialSize={this.props.secondDisplayPercentage || 50}
         onDragEnd={() => {
-          setTimeout(() => {
-            const secondaryContainer = document.querySelector(
-              `#react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY} .layout-pane:not(.layout-pane-primary)`
-            )
-
-            const percentString = _get(secondaryContainer, 'style.height', '')
+          this.dragEndTimeout = setTimeout(() => {
+            const percentString = _get(this.tileInnerDiv, 'style.height', '')
             const percentNumber = Number(
               percentString.substring(0, percentString.length - 1)
             )
@@ -818,7 +877,9 @@ export default class DashboardTile extends React.Component {
                   this.state.isSecondQueryInputOpen ? 'open' : ''
                 }`}
                 value={this.state.secondQuery}
-                onChange={(e) => this.setState({ secondQuery: e.target.value })}
+                onChange={(e) => {
+                  this.setState({ secondQuery: e.target.value })
+                }}
                 onKeyDown={this.onSecondQueryTextKeyDown}
                 onBlur={(e) => {
                   if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
@@ -848,17 +909,30 @@ export default class DashboardTile extends React.Component {
     )
   }
 
+  onSplitViewClick = () => {
+    const splitView = !this.props.tile?.splitView
+    let secondQuery = this.props.tile?.secondQuery
+
+    if (splitView && !secondQuery) {
+      secondQuery = this.props.tile?.query
+    }
+
+    this.props.setParamsForTile(
+      {
+        splitView,
+        secondQuery,
+      },
+      this.props.tile.i
+    )
+
+    ReactTooltip.hide()
+  }
+
   renderSplitViewBtn = () => {
     return (
       <div className="viz-toolbar split-view-btn" data-test="split-view-btn">
         <button
-          onClick={() => {
-            this.props.setParamsForTile(
-              { splitView: !this.props.tile.splitView },
-              this.props.tile.i
-            )
-            ReactTooltip.hide()
-          }}
+          onClick={this.onSplitViewClick}
           className="react-autoql-toolbar-btn"
           data-tip={this.props.tile.splitView ? 'Single View' : 'Split View'}
           data-for="react-autoql-dashboard-toolbar-btn-tooltip"
@@ -880,8 +954,12 @@ export default class DashboardTile extends React.Component {
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
   }
+
   onSecondSupportedDisplayTypesChange = (secondSupportedDisplayTypes) => {
     this.setState({ secondSupportedDisplayTypes })
+    this.props.setParamsForTile({
+      secondDataConfig: undefined,
+    })
   }
 
   renderSuggestionMessage = (customMessage) => {
@@ -894,24 +972,13 @@ export default class DashboardTile extends React.Component {
     )
   }
 
-  renderQueryOutput = ({
+  renderResponse = ({
     queryOutputProps = {},
     vizToolbarProps = {},
     optionsToolbarProps = {},
     showSplitViewBtn,
     isSecondHalf,
   }) => {
-    const isExecuting =
-      isSecondHalf &&
-      this.props.tile.secondQuery &&
-      this.props.tile.secondQuery !== this.props.tile.query
-        ? this.state.isBottomExecuting
-        : this.state.isTopExecuting
-
-    const isExecuted = isSecondHalf
-      ? this.state.isBottomExecuted
-      : this.state.isTopExecuted
-
     let customMessage = this.state.customMessage
     if (isSecondHalf) {
       customMessage = this.state.secondCustomMessage
@@ -919,43 +986,31 @@ export default class DashboardTile extends React.Component {
 
     return (
       <div className="loading-container-centered">
-        {!queryOutputProps.queryResponse ||
-        isExecuting ||
-        this.props.isUnExecuted ? (
-          this.renderContentPlaceholder({ isExecuting, isExecuted })
-        ) : (
-          <Fragment>
-            {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
-              this.renderSuggestionMessage(customMessage)}
-            {!customMessage && (
-              <QueryOutput
-                authentication={getAuthentication(this.props.authentication)}
-                themeConfig={getThemeConfig(this.props.themeConfig)}
-                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-                dataFormatting={getDataFormatting(this.props.dataFormatting)}
-                renderTooltips={false}
-                autoSelectQueryValidationSuggestion={false}
-                isDashboardQuery={true}
-                autoChartAggregations={this.props.autoChartAggregations}
-                renderSuggestionsAsDropdown={this.props.tile.h < 4}
-                enableDynamicCharting={this.props.enableDynamicCharting}
-                backgroundColor={document.documentElement.style.getPropertyValue(
-                  '--react-autoql-background-color-primary'
-                )}
-                isDashboardQuery={true}
-                onDisplayTypeUpdate={() => {
-                  // This is necessary to update the toolbar with the newly rendered QueryOutput
-                  setTimeout(() => {
-                    this.forceUpdate()
-                  }, 0)
-                }}
-                {...queryOutputProps}
-              />
+        {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
+          this.renderSuggestionMessage(customMessage)}
+        {!customMessage && (
+          <QueryOutput
+            authentication={getAuthentication(this.props.authentication)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            dataFormatting={getDataFormatting(this.props.dataFormatting)}
+            renderTooltips={false}
+            autoSelectQueryValidationSuggestion={false}
+            isDashboardQuery={true}
+            autoChartAggregations={this.props.autoChartAggregations}
+            isResizing={this.props.isDragging}
+            renderSuggestionsAsDropdown={this.props.tile.h < 4}
+            enableDynamicCharting={this.props.enableDynamicCharting}
+            onUpdate={this.props.onQueryOutputUpdate}
+            backgroundColor={document.documentElement.style.getPropertyValue(
+              '--react-autoql-background-color-primary'
             )}
-            {this.renderDataLimitWarning()}
-          </Fragment>
+            {...queryOutputProps}
+          />
         )}
-        {this.props.isEditing && (
+        {this.renderDataLimitWarning()}
+
+        {!this.props.isDragging && this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
             {this.props.isEditing &&
               showSplitViewBtn &&
@@ -966,34 +1021,39 @@ export default class DashboardTile extends React.Component {
             />
           </div>
         )}
-        <OptionsToolbar
-          authentication={getAuthentication(this.props.authentication)}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          onErrorCallback={this.props.onErrorCallback}
-          onSuccessAlert={this.props.onSuccessCallback}
-          {...optionsToolbarProps}
-        />
+        {!this.props.isDragging && (
+          <OptionsToolbar
+            authentication={getAuthentication(this.props.authentication)}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            onErrorCallback={this.props.onErrorCallback}
+            onSuccessAlert={this.props.onSuccessCallback}
+            {...optionsToolbarProps}
+          />
+        )}
       </div>
     )
   }
 
   renderTopResponse = () => {
-    const displayType = isDisplayTypeValid(
-      this.props.queryResponse,
-      this.props.displayType
-    )
-      ? this.props.displayType
-      : getDefaultDisplayType(
-          this.props.queryResponse,
-          this.props.autoChartAggregations
-        )
+    const isExecuting = this.state.isTopExecuting
+    const isExecuted = this.state.isTopExecuted
 
-    return this.renderQueryOutput({
+    if (!this.props.queryResponse || isExecuting || !isExecuted) {
+      return this.renderContentPlaceholder({
+        isExecuting,
+        isExecuted,
+        showSplitViewBtn: !this.getIsSplitView(),
+      })
+    }
+
+    const displayType = _get(this.props, 'tile.displayType')
+
+    return this.renderResponse({
       queryOutputProps: {
         ref: (ref) => (this.responseRef = ref),
         optionsToolbarRef: this.optionsToolbarRef,
-        key: `dashboard-tile-query-top-${this.COMPONENT_KEY}`,
+        key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         displayType,
         queryResponse: this.props.queryResponse,
         dataConfig: this.props.tile.dataConfig,
@@ -1013,24 +1073,11 @@ export default class DashboardTile extends React.Component {
         },
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
-        reportProblemCallback: this.reportProblemCallback,
-        onColumnsUpdate: (columns) => {
-          const newResponse = {
-            ...this.props.queryResponse,
-            data: {
-              ...this.props.queryResponse.data,
-              data: {
-                ...this.props.queryResponse.data.data,
-                columns: columns,
-              },
-            },
-          }
-
-          this.props.setParamsForTile(
-            { queryResponse: newResponse },
-            this.props.tile.i
-          )
+        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
+          this.onSupportedDisplayTypesChange(supportedDisplayTypes)
+          this.onDisplayTypeChange(displayType)
         },
+        reportProblemCallback: this.reportProblemCallback,
       },
       vizToolbarProps: {
         displayType: displayType,
@@ -1040,32 +1087,50 @@ export default class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
+        onFilterClick: ({ isFilteringTable }) =>
+          this.toggleTableFilter(this.responseRef, isFilteringTable),
+        displayType,
       },
       showSplitViewBtn: !this.getIsSplitView(),
     })
   }
 
   renderBottomResponse = () => {
-    const queryResponse =
-      this.props.tile.secondQueryResponse || this.props.queryResponse
+    const topQuery = this.props?.tile?.query
+    const bottomQuery = this.props?.tile?.secondQuery
+    const isQuerySameAsTop = !bottomQuery || topQuery === bottomQuery
 
-    const displayType = isDisplayTypeValid(
-      queryResponse,
-      this.props.secondDisplayType
-    )
-      ? this.props.secondDisplayType
-      : getDefaultDisplayType(queryResponse, this.props.autoChartAggregations)
-    this.props.setParamsForTile(
-      { secondDisplayType: displayType },
-      this.props.tile.i
-    )
-    return this.renderQueryOutput({
+    let isExecuting = this.state.isBottomExecuting
+    let isExecuted = this.state.isBottomExecuted
+
+    if (isQuerySameAsTop) {
+      isExecuting = this.state.isTopExecuting
+      isExecuted = this.state.isTopExecuted
+    }
+
+    if (
+      (!isQuerySameAsTop && !this.props.secondQueryResponse) ||
+      (isQuerySameAsTop && !this.props.queryResponse) ||
+      isExecuting ||
+      !isExecuted
+    ) {
+      return this.renderContentPlaceholder({
+        isExecuting,
+        isExecuted,
+        showSplitViewBtn: this.getIsSplitView(),
+      })
+    }
+
+    const displayType = _get(this.props, 'tile.secondDisplayType', 'table')
+
+    return this.renderResponse({
       queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.COMPONENT_KEY}`,
+        key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
         ref: (ref) => (this.secondResponseRef = ref),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         displayType,
-        queryResponse,
+        queryResponse:
+          this.props.secondQueryResponse || this.props.queryResponse,
         dataConfig: this.props.tile.secondDataConfig,
         onDataConfigChange: this.onSecondDataConfigChange,
         queryValidationSelections: this.props.tile
@@ -1074,6 +1139,10 @@ export default class DashboardTile extends React.Component {
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
         onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
+        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
+          this.onSecondSupportedDisplayTypesChange(supportedDisplayTypes)
+          this.onSecondDisplayTypeChange(displayType)
+        },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
@@ -1085,23 +1154,6 @@ export default class DashboardTile extends React.Component {
           })
         },
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
-        onColumnsUpdate: (columns) => {
-          const newResponse = {
-            ...queryResponse,
-            data: {
-              ...queryResponse.data,
-              data: {
-                ...queryResponse.data.data,
-                columns: columns,
-              },
-            },
-          }
-
-          this.props.setParamsForTile(
-            { secondQueryResponse: newResponse },
-            this.props.tile.i
-          )
-        },
       },
       vizToolbarProps: {
         displayType: displayType,
@@ -1111,6 +1163,9 @@ export default class DashboardTile extends React.Component {
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.secondResponseRef,
+        onFilterClick: ({ isFilteringTable }) =>
+          this.toggleTableFilter(this.secondResponseRef, isFilteringTable),
+        displayType,
       },
       showSplitViewBtn: this.getIsSplitView(),
       isSecondHalf: true,
@@ -1172,48 +1227,42 @@ export default class DashboardTile extends React.Component {
       onTouchEnd,
     }
 
-    let dashboardTileToolTipElement = document.getElementById(
-      'dashboard-data-limit-warning-tooltip'
-    )
-    if (dashboardTileToolTipElement) {
-      if (_get(this.props, 'style.width')) {
-        dashboardTileToolTipElement.style.maxWidth = `${_get(
-          this.props,
-          'style.width'
-        ).match(/\d+/g)[0] - 75}px`
-      }
-    }
-
     return (
       <ErrorBoundary>
         <div
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
-          data-test="react-autoql-dashboard-tile"
           {...propsToPassToDragHandle}
         >
           {this.props.children}
           <div
             id={`react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`}
-            className={`react-autoql-dashboard-tile-inner-div ${
-              this.getIsSplitView() ? 'split' : ''
-            }`}
+            ref={(r) => (this.tileInnerDiv = r)}
+            className={`react-autoql-dashboard-tile-inner-div
+              ${this.getIsSplitView() ? 'split' : ''}`}
           >
-            {this.props.isDragging ? (
-              this.renderDraggingPlaceholder()
-            ) : (
-              <Fragment>
-                {this.renderHeader()}
-                {this.renderContent()}
-              </Fragment>
-            )}
+            <Fragment>
+              {this.renderHeader()}
+              {this.renderContent()}
+            </Fragment>
           </div>
-          {!this.props.isDragging &&
-            this.props.isEditing &&
-            this.renderDragHandles()}
+          {this.props.isEditing && this.renderDragHandles()}
         </div>
       </ErrorBoundary>
     )
   }
 }
+
+// React-Grid-Layout needs the forwarded original ref
+// we can forward our own ref down to DashboardTile as a prop
+export default React.forwardRef(({ style, className, key, ...props }, ref) => (
+  <div style={{ ...style }} className={className} ref={ref}>
+    <DashboardTile
+      {...props}
+      ref={props.tileRef}
+      className={`${props.innerDivClass} ${props.isEditing ? 'editing' : ''}`}
+      data-test="react-autoql-dashboard-tile"
+    />
+  </div>
+))

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
@@ -12,7 +12,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './Steps.scss'
 
 export default class Steps extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -125,6 +125,7 @@ export default class Steps extends React.Component {
           contentContainer.style.height = `${this.getHeightOfStepContent(i)}px`
           // Set height back to auto after transition so it can
           // be dynamically adjusted when the content changes
+          clearTimeout(this.autoHideTimeout)
           this.autoHideTimeout = setTimeout(() => {
             const activeContentContainerAfterTransition = document.querySelector(
               `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`

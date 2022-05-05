@@ -1,6 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
-import _ from 'lodash'
+import { constructRTArray } from './reverseTranslationHelpers'
 
 var autoCompleteCall = null
 
@@ -66,80 +66,14 @@ export const fetchSuggestions = ({
 
   return axios
     .get(relatedQueriesUrl, config)
-    .then((response) => Promise.resolve(response))
+    .then((response) => {
+      return Promise.resolve(response)
+    })
     .catch((error) => Promise.reject(_get(error, 'response')))
-}
-
-export const fetchQandASuggestions = ({ queryID, projectID, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers/suggestions?key=${apiKey}`
-  const data = {
-    query_id: queryID,
-    project_id: projectID,
-  }
-  const config = {}
-
-  return axios
-    .post(url, data, config)
-    .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
-        throw new Error('Parse error')
-      }
-
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      if (error.message === 'Parse error') {
-        return Promise.reject({ error: 'Parse error' })
-      }
-      if (error.response === 401 || !_get(error, 'response.data')) {
-        return Promise.reject({ error: 'Unauthenticated' })
-      }
-      return Promise.reject(_get(error, 'response'))
-    })
-}
-
-/**
- * This function is for AutoAE Queries
- * @param {*} param0
- * @returns
- */
-export const runQandAQuery = ({ query, projectID, AutoAEId, apiKey }) => {
-  const url = `https://backend-staging.chata.io/api/v1/answers?key=${apiKey}`
-  const data = {
-    query,
-    project_id: projectID,
-  }
-  const config = {
-    headers: {
-      'AutoAE-Session-ID': AutoAEId,
-    },
-  }
-
-  return axios
-    .post(url, data, config)
-    .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
-        throw new Error('Parse error')
-      }
-
-      return Promise.resolve(response)
-    })
-    .catch((error) => {
-      if (error.message === 'Parse error') {
-        return Promise.reject({ error: 'Parse error' })
-      }
-      if (error.response === 401 || !_get(error, 'response.data')) {
-        return Promise.reject({ error: 'Unauthenticated' })
-      }
-      return Promise.reject(_get(error, 'response'))
-    })
 }
 
 export const runQueryOnly = ({
   query,
-  isQandA,
   projectID,
   userSelection,
   debug,
@@ -185,10 +119,6 @@ export const runQueryOnly = ({
     return Promise.reject({ error: 'No query supplied' })
   }
 
-  if (isQandA) {
-    return runQandAQuery({ query, projectID, AutoAEId, apiKey })
-  }
-
   if (!apiKey || !domain || !token) {
     return Promise.reject({ error: 'Unauthenticated' })
   }
@@ -205,6 +135,11 @@ export const runQueryOnly = ({
       if (response.data && typeof response.data === 'string') {
         // There was an error parsing the json
         throw new Error('Parse error')
+      }
+
+      const reverseTranslation = constructRTArray(response)
+      if (reverseTranslation) {
+        response.data.data.reverse_translation = reverseTranslation
       }
 
       return Promise.resolve(response)
@@ -232,7 +167,6 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
-  isQandA,
   projectID,
   userSelection,
   debug,
@@ -260,7 +194,7 @@ export const runQuery = ({
     }
   }
 
-  if (enableQueryValidation && !skipQueryValidation && !isQandA) {
+  if (enableQueryValidation && !skipQueryValidation) {
     return runQueryValidation({
       text: query,
       domain,
@@ -290,7 +224,6 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
-    isQandA,
     projectID,
     userSelection,
     debug,
@@ -301,6 +234,39 @@ export const runQuery = ({
     source,
     AutoAEId,
   })
+}
+
+export const exportCSV = ({
+  queryId,
+  domain,
+  apiKey,
+  token,
+  csvProgressCallback,
+} = {}) => {
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+  const url = `${domain}/autoql/api/v1/query/${queryId}/export?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    responseType: 'blob',
+    onDownloadProgress: (progressEvent) => {
+      if (csvProgressCallback) {
+        let percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        )
+        csvProgressCallback(percentCompleted)
+      }
+    },
+  }
+
+  return axios
+    .post(url, {}, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
@@ -361,10 +327,30 @@ export const runDrilldown = ({
 
   return axios
     .post(url, requestData, config)
+    .then((response) => {
+      const reverseTranslation = constructRTArray(response)
+      if (reverseTranslation) {
+        response.data.data.reverse_translation = reverseTranslation
+      }
+      return Promise.resolve(response)
+    })
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+export const fetchTopics = ({ domain, token, apiKey } = {}) => {
+  if (!domain || !apiKey || !token) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+  const url = `${domain}/autoql/api/v1/topic-set?key=${apiKey}`
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+  return axios
+    .get(url, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
-
 export const fetchAutocomplete = ({
   suggestion,
   domain,
@@ -531,12 +517,11 @@ export const sendSuggestion = ({
   apiKey,
   domain,
   token,
-  isQandA,
 }) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
   const data = { suggestion }
 
-  if (!isQandA && (!token || !domain || !apiKey)) {
+  if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 

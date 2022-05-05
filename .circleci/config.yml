@@ -12,7 +12,7 @@ jobs:
       - restore_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
       - run: npm i
-      - run: npm i react react-dom
+      - run: npm i react@16.9.0 react-dom@16.9.0
       - save_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
           paths:
@@ -21,7 +21,6 @@ jobs:
           name: Run Tests
           no_output_timeout: 60m
           command: npm run test -- --maxWorkers=4
-
   test-and-release:
     executor:
       name: node/default

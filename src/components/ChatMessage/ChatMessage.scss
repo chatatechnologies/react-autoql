@@ -1,6 +1,7 @@
 .chat-single-message-container {
   transition: background-color 0.2s ease;
   padding-top: 6px;
+  max-height: 85%;
 
   &:first-of-type {
     margin-top: 10px;
@@ -42,14 +43,13 @@
   display: flex;
   justify-content: flex-start;
   padding-left: 20px;
-  height: unset !important;
-  animation: scale-up-bl 0.6s ease;
+  animation: scale-up-bl 0.5s ease;
 }
 .chat-single-message-container.request {
   display: flex;
   justify-content: flex-end;
   padding-right: 20px;
-  animation: scale-up-br 0.6s ease;
+  animation: scale-up-br 0.5s ease;
 }
 .chat-single-message-container .chat-message-bubble {
   position: relative;
@@ -89,13 +89,8 @@
 }
 .chat-single-message-container.request .chat-message-bubble {
   background: var(--react-autoql-accent-color);
-  color: white;
+  color: var(--react-autoql-accent-text-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-}
-/* Increase height of message to include table filters,
-so we dont have to redraw the whole table */
-.chat-single-message-container.response.filtering-table {
-  max-height: calc(85% + 35px) !important;
 }
 .chat-message-toolbar,
 .chat-message-toolbar.autoql-options-toolbar {
@@ -108,7 +103,7 @@ so we dont have to redraw the whole table */
   line-height: 28px;
   background: var(--react-autoql-background-color-primary);
   border: 1px solid var(--react-autoql-border-color);
-  color: var(--react-autoql-accent-color);
+  color: var(--react-autoql-text-color-primary);
 }
 .chat-message-toolbar.right {
   right: -9px;

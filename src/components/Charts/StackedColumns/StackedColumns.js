@@ -2,10 +2,33 @@ import React, { Component } from 'react'
 import _get from 'lodash.get'
 
 export default class StackedColumns extends Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      activeKey: this.props.activeKey,
+    }
+  }
+
   static propTypes = {}
 
-  state = {
-    activeKey: this.props.activeKey
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.activeKey !== nextProps.activeKey) {
+      return true
+    }
+
+    if (this.props.data?.length !== nextProps.data?.length) {
+      return true
+    }
+
+    if (
+      this.props.xScale !== nextProps.xScale ||
+      this.props.yScale !== nextProps.yScale
+    ) {
+      return true
+    }
+
+    return false
   }
 
   getKey = (d, i) => {
@@ -16,61 +39,62 @@ export default class StackedColumns extends Component {
     const newActiveKey = this.getKey(d, i)
     this.props.onChartClick({
       activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData
+      drilldownData: d.cells[i].drilldownData,
     })
 
     this.setState({ activeKey: newActiveKey })
   }
 
   render = () => {
-    const { scales, data } = this.props
-    const { xScale, yScale } = scales
+    return (
+      <g data-test="stacked-columns">
+        {this.props.data.map((d) => {
+          let runningPositiveSumObject = {}
+          let runningNegativeSumObject = {}
 
-    const stackedColumns = data.map(d => {
-      let runningPositiveSumObject = {}
-      let runningNegativeSumObject = {}
+          return d.cells.map((cell, i) => {
+            const valueNumber = Number(cell.value)
+            const value = !Number.isNaN(valueNumber) ? valueNumber : 0
 
-      return d.cells.map((cell, i) => {
-        const valueNumber = Number(cell.value)
-        const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+            let y
+            let height
+            if (value >= 0) {
+              const previousSum = runningPositiveSumObject[d.label] || 0
+              const nextSum = previousSum + value
+              runningPositiveSumObject[d.label] = nextSum
 
-        let y
-        let height
-        if (value >= 0) {
-          const previousSum = runningPositiveSumObject[d.label] || 0
-          const nextSum = previousSum + value
-          runningPositiveSumObject[d.label] = nextSum
+              height =
+                Math.abs(this.props.yScale(value) - this.props.yScale(0)) - 0.5
+              y = this.props.yScale(nextSum) + 0.5
+            } else {
+              const previousSum = runningNegativeSumObject[d.label] || 0
+              const nextSum = previousSum + value
+              runningNegativeSumObject[d.label] = nextSum
 
-          height = Math.abs(yScale(value) - yScale(0)) - 0.5
-          y = yScale(nextSum) + 0.5
-        } else {
-          const previousSum = runningNegativeSumObject[d.label] || 0
-          const nextSum = previousSum + value
-          runningNegativeSumObject[d.label] = nextSum
+              height =
+                Math.abs(this.props.yScale(value) - this.props.yScale(0)) - 0.5
+              y = this.props.yScale(previousSum) + 0.5
+            }
 
-          height = Math.abs(yScale(value) - yScale(0)) - 0.5
-          y = yScale(previousSum) + 0.5
-        }
-
-        return (
-          <rect
-            key={`${d.label}-${cell.label}`}
-            className={`bar${
-              this.state.activeKey === this.getKey(d, i) ? ' active' : ''
-            }`}
-            x={xScale(d.label)}
-            y={y}
-            width={xScale.bandwidth()}
-            height={Math.abs(height)}
-            onClick={() => this.onColumnClick(d, i)}
-            data-tip={cell.tooltipData}
-            data-for="chart-element-tooltip"
-            style={{ fill: cell.color, fillOpacity: 0.7 }}
-          />
-        )
-      })
-    })
-
-    return <g data-test="stacked-columns">{stackedColumns}</g>
+            return (
+              <rect
+                key={`${d.label}-${cell.label}`}
+                className={`bar${
+                  this.state.activeKey === this.getKey(d, i) ? ' active' : ''
+                }`}
+                x={this.props.xScale(d.label)}
+                y={y}
+                width={this.props?.xScale?.bandwidth()}
+                height={Math.abs(height)}
+                onClick={() => this.onColumnClick(d, i)}
+                data-tip={cell.tooltipData}
+                data-for="chart-element-tooltip"
+                style={{ fill: cell.color, fillOpacity: 0.7 }}
+              />
+            )
+          })
+        })}
+      </g>
+    )
   }
 }

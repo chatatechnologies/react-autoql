@@ -8,18 +8,20 @@
     "axios": "^0.19.0",
     "lodash": "^4.17.15",
     "penv": "^0.2.0",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
     "react-scripts": "^3.4.1",
-    "react-sortable": "^2.0.0",
-    "react-ratings-declarative": "^3.4.1"
+    "react-sortable": "^2.0.0"
+  },
+  "devDependencies": {
+    "react-app-rewired": "^2.2.1"
   },
   "scripts": {
     "preinstall": "npx penv $NODE_ENV",
-    "start": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-scripts start",
-    "dev": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-scripts start",
-    "build": "SKIP_PREFLIGHT_CHECK=true react-scripts build",
-    "test": "react-scripts test",
+    "start": "export PORT=3001 npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
+    "dev": "npx penv $NODE_ENV && SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
+    "build": "SKIP_PREFLIGHT_CHECK=true react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
   "browserslist": [
@@ -32,8 +34,5 @@
     "node": "14.17.3",
     "npm": "^6.0.1"
   },
-  "cacheDirectories": [],
-  "env": {
-    "NODE_ENV": "dev"
-  }
+  "cacheDirectories": []
 }

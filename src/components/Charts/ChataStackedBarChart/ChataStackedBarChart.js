@@ -5,19 +5,27 @@ import { StackedBars } from '../StackedBars'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { calculateMinAndMaxSums, shouldRotateLabels } from '../../../js/Util'
+import {
+  calculateMinAndMaxSums,
+  shouldLabelsRotate,
+  getLongestLabelInPx,
+} from '../../../js/Util'
 import { getTickValues } from '../helpers'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataStackedBarChart extends Component {
-  xScale = scaleLinear()
-  yScale = scaleBand()
+  constructor(props) {
+    super(props)
+
+    this.setChartData(props)
+    this.setLongestLabelWidth(props)
+    this.setLabelRotationValue(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -53,130 +61,135 @@ export default class ChataStackedBarChart extends Component {
     onLabelChange: () => {},
   }
 
-  componentDidUpdate = () => {
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
+
+  shouldComponentUpdate = () => {
+    return true
+  }
+
+  componentDidUpdate = (prevProps) => {
     if (
-      typeof this.prevRotateLabels !== 'undefined' &&
-      this.prevRotateLabels !== this.rotateLabels
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
     ) {
-      this.props.onLabelChange()
+      this.setLongestLabelWidth(this.props)
     }
   }
 
-  handleLabelRotation = (tickWidth, labelArray) => {
-    this.prevRotateLabels = this.rotateLabels
-    this.rotateLabels = shouldRotateLabels(
-      tickWidth,
-      labelArray,
-      this.props.columns[this.props.numberColumnIndex],
-      getDataFormatting(this.props.dataFormatting)
+  setLabelRotationValue = (props) => {
+    const tickWidth =
+      (props.width - props.leftMargin - props.rightMargin) /
+      this.xScale.ticks().length
+    const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
+
+    if (typeof rotateLabels !== 'undefined') {
+      this.rotateLabels = rotateLabels
+    }
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.xLabelArray,
+      props.columns[props.numberColumnIndex],
+      getDataFormatting(props.dataFormatting)
+    )
+  }
+
+  setChartData = (props) => {
+    const { maxValue, minValue } = calculateMinAndMaxSums(props.data)
+    this.maxValue = maxValue
+    this.minValue = minValue
+
+    this.xScale = scaleLinear()
+      .domain([this.minValue, this.maxValue])
+      .range([props.leftMargin, props.width - props.rightMargin])
+      .nice()
+
+    this.yScale = scaleBand()
+      .domain(props.data.map((d) => d.label))
+      .range([props.height - props.bottomMargin, props.topMargin])
+      .paddingInner(props.innerPadding)
+      .paddingOuter(props.outerPadding)
+
+    this.yLabelArray = props.data.map((element) => element.label)
+    this.xLabelArray = this.xScale.ticks()
+
+    this.barHeight = props.height / props.data.length
+    this.yTickValues = getTickValues(
+      this.barHeight,
+      props.height,
+      this.yLabelArray
     )
   }
 
   render = () => {
-    const {
-      hasMultipleNumberColumns,
-      hasMultipleStringColumns,
-      activeChartElementKey,
-      enableDynamicCharting,
-      onLegendTitleClick,
-      numberColumnIndices,
-      stringColumnIndices,
-      bottomLegendMargin,
-      numberColumnIndex,
-      numberAxisTitle,
-      dataFormatting,
-      legendLocation,
-      onLegendClick,
-      tableColumns,
-      legendColumn,
-      innerPadding,
-      outerPadding,
-      bottomMargin,
-      onChartClick,
-      legendLabels,
-      onXAxisClick,
-      onYAxisClick,
-      themeConfig,
-      rightMargin,
-      leftMargin,
-      topMargin,
-      columns,
-      height,
-      width,
-      data,
-    } = this.props
-
-    // Get max and min values from all series
-    const { max, min } = calculateMinAndMaxSums(data)
-
-    const xScale = this.xScale
-      .domain([min, max])
-      .range([leftMargin, width - rightMargin])
-      .nice()
-
-    const yScale = this.yScale
-      .domain(data.map((d) => d.label))
-      .range([height - bottomMargin, topMargin])
-      .paddingInner(innerPadding)
-      .paddingOuter(outerPadding)
-
-    const yLabelArray = data.map((element) => element.label)
-    const xLabelArray = data.map((element) => element.cells[numberColumnIndex])
-    const tickWidth = (width - leftMargin - rightMargin) / xScale.ticks().length
-    const barHeight = height / data.length
-    const yTickValues = getTickValues(barHeight, this.props.height, yLabelArray)
-    this.handleLabelRotation(tickWidth, xLabelArray)
+    this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g data-test="react-autoql-stacked-bar-chart">
         <Axes
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
-          xCol={_get(tableColumns, `[${numberColumnIndex}]`)}
-          yCol={columns[0]}
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          xCol={_get(
+            this.props.tableColumns,
+            `[${this.props.numberColumnIndex}]`
+          )}
+          yCol={this.props.columns[0]}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
-            bottomLegend: bottomLegendMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+            bottomLegend: this.props.bottomLegendMargin,
           }}
-          width={width}
-          height={height}
-          yTicks={yTickValues}
+          width={this.props.width}
+          height={this.props.height}
+          yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
-          dataFormatting={dataFormatting}
-          hasRightLegend={legendLocation === 'right'}
-          hasBottomLegend={legendLocation === 'bottom'}
-          legendLabels={legendLabels}
-          onLegendClick={onLegendClick}
-          legendTitle={_get(legendColumn, 'title', 'Category')}
-          onLegendTitleClick={onLegendTitleClick}
-          enableDynamicCharting={enableDynamicCharting}
-          onXAxisClick={onXAxisClick}
-          onYAxisClick={onYAxisClick}
-          stringColumnIndices={stringColumnIndices}
-          numberColumnIndices={numberColumnIndices}
-          hasXDropdown={enableDynamicCharting && hasMultipleNumberColumns}
-          hasYDropdown={enableDynamicCharting && hasMultipleStringColumns}
-          xAxisTitle={numberAxisTitle}
+          onLabelChange={this.props.onLabelChange}
+          dataFormatting={this.props.dataFormatting}
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          legendLabels={this.props.legendLabels}
+          onLegendClick={this.props.onLegendClick}
+          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
+          onLegendTitleClick={this.props.onLegendTitleClick}
+          enableDynamicCharting={this.props.enableDynamicCharting}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          stringColumnIndices={this.props.stringColumnIndices}
+          numberColumnIndices={this.props.numberColumnIndices}
+          hasXDropdown={
+            this.props.enableDynamicCharting &&
+            this.props.hasMultipleNumberColumns
+          }
+          hasYDropdown={
+            this.props.enableDynamicCharting &&
+            this.props.hasMultipleStringColumns
+          }
+          xAxisTitle={this.props.numberAxisTitle}
           xGridLines
         />
-        <StackedBars
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
-          margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
-          }}
-          data={data}
-          width={width}
-          height={height}
-          onChartClick={onChartClick}
-          activeKey={activeChartElementKey}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <StackedBars
+            themeConfig={this.props.themeConfig}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            width={this.props.width}
+            height={this.props.height}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

@@ -109,7 +109,6 @@ export default class QueryTipsTab extends React.Component {
             pageCount={this.props.totalPages}
             pageRangeDisplayed={1}
             forcePage={this.props.currentPage - 1} // it is 0 indexed
-            pageRangeDisplayed={1}
             marginPagesDisplayed={2}
             containerClassName={'pagination'}
             subContainerClassName={'pages pagination'}
@@ -132,7 +131,11 @@ export default class QueryTipsTab extends React.Component {
             this.queryTipsScrollComponent = c
           }}
         >
-          <div className="query-tips-page-container" data-test="query-tips-tab">
+          <div
+            ref={this.props.queryTipsPageRef}
+            className="query-tips-page-container"
+            data-test="query-tips-tab"
+          >
             <div
               className="react-autoql-chatbar-input-container"
               style={{ animation: 'slideDown 0.5s ease' }}

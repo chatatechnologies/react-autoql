@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
@@ -15,123 +15,16 @@ import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(
 import './ChataTable.scss'
 
 export default class ChataTable extends React.Component {
-  firstRender = true
-  ref = null
+  constructor(props) {
+    super(props)
 
-  static propTypes = {
-    themeConfig: themeConfigType,
-    data: PropTypes.arrayOf(PropTypes.array),
-    columns: PropTypes.arrayOf(PropTypes.shape({})),
-    onFilterCallback: PropTypes.func,
-    setFilterTagsCallback: PropTypes.func,
-  }
+    this.TABLE_ID = uuid()
+    this.firstRender = true
+    this.ref = null
+    this.filterTagElements = []
 
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-    data: undefined,
-    columns: undefined,
-    setFilterTagsCallback: () => {},
-    onFilterCallback: () => {},
-    onCellClick: () => {},
-  }
-
-  state = {
-    columns: this.props.columns,
-  }
-
-  componentDidMount = () => {
-    this.firstRender = false
-    this.TABLE_CONTAINER_ID = uuid.v4()
-
-    setCSSVars(getThemeConfig(this.props.themeConfig))
-    setTimeout(() => {
-      this.setInitialHeaderFilters()
-      this.props.setFilterTagsCallback()
-    }, 100)
-  }
-
-  shouldComponentUpdate = (nextProps, nextState) => {
-    // Tabulator takes care of updates in these cases
-    // No need to re-render after filter changes
-    const thisPropsFiltered = {
-      ...this.props,
-      data: undefined,
-      headerFilters: undefined,
-    }
-    const nextPropsFiltered = {
-      ...nextProps,
-      data: undefined,
-      headerFilters: undefined,
-    }
-
-    if (!_isEqual(thisPropsFiltered, nextPropsFiltered)) {
-      return true
-    } else if (!_isEqual(this.state, nextState)) {
-      return true
-    }
-    return false
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
-  }
-
-  setInitialHeaderFilters = () => {
-    if (_get(this.props, 'headerFilters.length') && _get(this.ref, 'table')) {
-      this.props.headerFilters.forEach((filter) => {
-        this.ref.table.setHeaderFilterValue(filter.field, filter.value)
-      })
-    }
-  }
-
-  cellClick = (e, cell) => {
-    // e.preventDefault()
-    // e.stopPropagation()
-    this.props.onCellClick(cell)
-  }
-
-  copyToClipboard = () => {
-    if (this.ref && this.ref.table) {
-      this.ref.table.copyToClipboard('active', true)
-    }
-  }
-
-  saveAsCSV = () => {
-    if (this.ref && this.ref.table) {
-      this.ref.table.download('csv', 'table.csv', {
-        delimiter: ',',
-      })
-    }
-  }
-
-  getBase64Data = () => {
-    if (this.ref && this.ref.table) {
-      const data = this.ref.table.getData()
-      const columns = this.ref.table.getColumnDefinitions()
-      const columnNames = columns.map((col) => col.title)
-      data.unshift(columnNames)
-
-      const csvContent =
-        // We may want to specify this information in the future
-        // "data:text/csv;charset=utf-8," +
-        data.map((row) => row.join(',')).join('\n')
-      const encodedContent = btoa(csvContent)
-      return Promise.resolve(encodedContent)
-    }
-
-    return Promise.reject()
-  }
-
-  render = () => {
-    const options = {
-      // layout: 'fitDataStretch',
+    this.supportsDrilldown = isAggregation(props.columns)
+    this.tableOptions = {
       layout: 'fitDataFill',
       textSize: '9px',
       movableColumns: true,
@@ -143,37 +36,205 @@ export default class ChataTable extends React.Component {
         rowGroups: false,
         columnCalcs: false,
       },
-      dataFiltering: (filters) => {
-        // The filters provided to this function don't include header filters
-        // We only use header filters so we have to use the function below
-        if (this.ref && !this.firstRender) {
-          this.props.onFilterCallback(this.ref.table.getHeaderFilters())
+      dataFiltered: (filters, rows) => {
+        if (this._isMounted && this.ref && !this.firstRender) {
+          // The filters provided to this function don't include header filters
+          // We only use header filters so we have to use the function below
+          const tableFilters = this.ref.table.getHeaderFilters()
+          props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,
     }
 
-    const supportsDrilldown = isAggregation(this.props.columns)
+    setCSSVars(getThemeConfig(props.themeConfig))
 
+    this.state = {
+      columns: this.props.columns,
+      isFilteringTable: false,
+    }
+  }
+
+  static propTypes = {
+    themeConfig: themeConfigType,
+    data: PropTypes.arrayOf(PropTypes.array),
+    columns: PropTypes.arrayOf(PropTypes.shape({})),
+    onFilterCallback: PropTypes.func,
+    isResizing: PropTypes.bool,
+  }
+
+  static defaultProps = {
+    themeConfig: themeConfigDefault,
+    data: undefined,
+    columns: undefined,
+    isResizing: false,
+    onFilterCallback: () => {},
+    onCellClick: () => {},
+    onErrorCallback: () => {},
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+    this.firstRender = false
+    this.setTableHeaderValues = setTimeout(() => {
+      this.setInitialHeaderFilters()
+      this.setFilterTags({ isFilteringTable: false })
+    }, 100)
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
+    ) {
+      setCSSVars(getThemeConfig(this.props.themeConfig))
+    }
+
+    if (this.ref) {
+      this.setDimensionsTimeout = setTimeout(() => {
+        if (this._isMounted) {
+          const tableHeight = _get(this.ref, 'ref.offsetHeight')
+          if (tableHeight) {
+            this.tableHeight = tableHeight
+          }
+        }
+      }, 0)
+    }
+
+    if (this.props.isResizing) {
+      this.isResizing = true
+    }
+
+    if (!this.state.isFilteringTable && prevState.isFilteringTable) {
+      try {
+        this.setFilterTags({ isFilteringTable: this.state.isFilteringTable })
+      } catch (error) {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      }
+    }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+    clearTimeout(this.setTableHeaderValues)
+    clearTimeout(this.setDimensionsTimeout)
+    this.resetFilterTags()
+    this.existingFilterTag = undefined
+    this.filterTagElements = undefined
+  }
+
+  setInitialHeaderFilters = () => {
+    if (_get(this.props, 'headerFilters.length') && _get(this.ref, 'table')) {
+      this.props.headerFilters.forEach((filter) => {
+        this.ref.table.setHeaderFilterValue(filter.field, filter.value)
+      })
+    }
+  }
+
+  cellClick = (e, cell) => {
+    this.props.onCellClick(cell)
+  }
+
+  copyToClipboard = () => {
+    if (this._isMounted && this.ref?.table) {
+      this.ref.table.copyToClipboard('active', true)
+    }
+  }
+
+  saveAsCSV = () => {
+    if (this._isMounted && this.ref?.table) {
+      this.ref.table.download('csv', 'export.csv', {
+        delimiter: ',',
+      })
+      return Promise.resolve()
+    }
+    return Promise.reject()
+  }
+
+  resetFilterTags = () => {
+    if (this.filterTagElements.length) {
+      this.filterTagElements.forEach((filterTag) => {
+        try {
+          if (filterTag.parentNode && this._isMounted)
+            filterTag.parentNode.removeChild(filterTag)
+        } catch (error) {}
+      })
+    }
+  }
+
+  setFilterTags = () => {
+    this.resetFilterTags()
+
+    let filterValues
+    if (this._isMounted && this.ref?.table) {
+      filterValues = this.ref.table.getHeaderFilters()
+    }
+
+    if (filterValues) {
+      filterValues.forEach((filter, i) => {
+        try {
+          const colIndex = filter.field
+          this.filterTagElements[colIndex] = document.createElement('span')
+          this.filterTagElements[colIndex].innerText = 'F'
+          this.filterTagElements[colIndex].setAttribute('class', 'filter-tag')
+
+          this.columnTitleEl = document.querySelector(
+            `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${colIndex}"] .tabulator-col-title`
+          )
+          this.columnTitleEl.insertBefore(
+            this.filterTagElements[colIndex],
+            this.columnTitleEl.firstChild
+          )
+        } catch (error) {
+          console.error(error)
+          this.props.onErrorCallback(error)
+        }
+      })
+    }
+  }
+
+  toggleTableFilter = ({ isFilteringTable }) => {
+    this.setState({ isFilteringTable })
+  }
+
+  getTableHeight = () => {
+    if (this.tableHeight) {
+      return `${this.tableHeight}px`
+    }
+
+    return `${_get(this.props, 'style.height')}px`
+  }
+
+  render = () => {
+    const height = this.getTableHeight()
     return (
       <ErrorBoundary>
         <div
-          id={`react-autoql-table-container-${this.TABLE_CONTAINER_ID}`}
+          id={`react-autoql-table-container-${this.TABLE_ID}`}
+          ref={(ref) => (this.tableContainer = ref)}
           data-test="react-autoql-table"
           className={`react-autoql-table-container 
-          ${supportsDrilldown ? 'supports-drilldown' : ''}`}
-          style={this.props.style}
+          ${this.supportsDrilldown ? 'supports-drilldown' : ''}
+          ${this.state.isFilteringTable ? ' filtering' : ''}
+          ${this.props.isResizing ? ' resizing' : ''}`}
+          style={{
+            ...this.props.style,
+            flexBasis: height,
+          }}
         >
           {this.props.data && this.props.columns && (
             <ReactTabulator
               ref={(ref) => (this.ref = ref)}
+              id={`react-autoql-table-${this.TABLE_ID}`}
               columns={this.state.columns}
               data={this.props.data}
               cellClick={this.cellClick}
-              options={options}
+              options={this.tableOptions}
               data-custom-attr="test-custom-attribute"
               className="react-autoql-table"
-              height="98%"
               clipboard
               download
             />

@@ -2,9 +2,9 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
-import uuid from 'uuid'
+import _isEmpty from 'lodash.isempty'
+import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
-import _ from 'lodash'
 
 import { Modal } from '../../Modal'
 import { ConfirmModal } from '../../ConfirmModal'
@@ -34,7 +34,7 @@ import {
 import './DataAlertModal.scss'
 
 export default class DataAlertModal extends React.Component {
-  NEW_NOTIFICATION_MODAL_ID = uuid.v4()
+  NEW_NOTIFICATION_MODAL_ID = uuid()
 
   static propTypes = {
     authentication: authenticationType,
@@ -143,7 +143,7 @@ export default class DataAlertModal extends React.Component {
   initializeFields = () => {
     // If we are editing an existing notification
     // Fill the fields with the current settings
-    if (!_.isEmpty(this.props.currentDataAlert)) {
+    if (!_isEmpty(this.props.currentDataAlert)) {
       const notification = this.props.currentDataAlert
       this.setState({
         titleInput: notification.title,
@@ -170,16 +170,16 @@ export default class DataAlertModal extends React.Component {
     return [
       {
         condition: 'TERMINATOR',
-        id: uuid.v4(),
+        id: uuid(),
         term_type: 'group',
         term_value: [
           {
-            id: uuid.v4(),
+            id: uuid(),
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: uuid.v4(),
+                id: uuid(),
                 condition: 'EXISTS',
                 term_type: 'query',
                 term_value: query,
@@ -590,10 +590,7 @@ export default class DataAlertModal extends React.Component {
       this.setState({
         isDeletingDataAlert: true,
       })
-      deleteDataAlert(
-        dataAlertId,
-        getAuthentication(this.props.authentication)
-      )
+      deleteDataAlert(dataAlertId, getAuthentication(this.props.authentication))
         .then(() => {
           this.setState({
             isDeletingDataAlert: false,
@@ -665,7 +662,7 @@ export default class DataAlertModal extends React.Component {
           themeConfig={getThemeConfig(this.props.themeConfig)}
           title={this.props.title}
           titleIcon={
-            !_.isEmpty(this.props.currentDataAlert) ? (
+            !_isEmpty(this.props.currentDataAlert) ? (
               <Icon type="edit" />
             ) : (
               <span />
@@ -713,13 +710,15 @@ export default class DataAlertModal extends React.Component {
             </div>
           }
         >
-          <div className="notification-modal-content">
-            <Steps
-              themeConfig={getThemeConfig(this.props.themeConfig)}
-              ref={(r) => (this.stepsRef = r)}
-              steps={steps}
-            />
-          </div>
+          {this.props.isVisible && (
+            <div className="notification-modal-content">
+              <Steps
+                themeConfig={getThemeConfig(this.props.themeConfig)}
+                ref={(r) => (this.stepsRef = r)}
+                steps={steps}
+              />
+            </div>
+          )}
         </Modal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}

@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
@@ -9,7 +10,7 @@ import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
-import { formatChartLabel } from '../../../js/Util.js'
+import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
 
 import './Axis.scss'
 import { themeConfigType, dataFormattingType } from '../../../props/types.js'
@@ -19,8 +20,13 @@ import {
 } from '../../../props/defaults.js'
 
 export default class Axis extends Component {
-  LEGEND_PADDING = 130
-  LEGEND_ID = `axis-${uuid.v4()}`
+  constructor(props) {
+    super(props)
+
+    this.LEGEND_PADDING = 130
+    this.LEGEND_ID = `axis-${uuid()}`
+    this.swatchElements = []
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -40,6 +46,8 @@ export default class Axis extends Component {
     hasBottomLegend: PropTypes.bool,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
+    onLabelChange: PropTypes.func,
+    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -56,15 +64,46 @@ export default class Axis extends Component {
     hasRightLegend: false,
     hasBottomLegend: false,
     onLegendClick: () => {},
+    onLabelChange: () => {},
     onLegendTitleClick: undefined,
+    legendLabels: undefined,
   }
 
   componentDidMount = () => {
     this.renderAxis()
+    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+      // https://d3-legend.susielu.com/
+      this.renderLegend()
+    }
+    this.props.onLabelChange()
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     this.renderAxis()
+
+    // only render legend once... unless labels changed
+    if (
+      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
+      this.props.legendLabels?.length &&
+      !_isEqual(this.props.legendLabels, prevProps.legendLabels)
+    ) {
+      this.renderLegend()
+    }
+
+    if (this.props.rotateLabels !== prevProps.rotateLabels) {
+      this.props.onLabelChange()
+    }
+  }
+
+  componentWillUnmount = () => {
+    removeFromDOM(this.axisElement)
+    removeFromDOM(this.legendBorder)
+    removeFromDOM(this.legendElement)
+    removeFromDOM(this.legendClippingContainer)
+    removeFromDOM(this.bottomLegendElement)
+    removeFromDOM(this.rightLegendElement)
+    removeFromDOM(this.legendSwatchElements)
+    removeFromDOM(this.swatchElements)
   }
 
   styleLegendTitleNoBorder = (svg) => {
@@ -88,9 +127,9 @@ export default class Axis extends Component {
       .attr('class', 'react-autoql-axis-selector-arrow')
 
     // Add border that shows on hover
-    let titleBBox = {}
+    this.titleBBox = {}
     try {
-      titleBBox = svg
+      this.titleBBox = svg
         .select('.legendTitle')
         .node()
         .getBBox()
@@ -98,42 +137,43 @@ export default class Axis extends Component {
 
     select(this.legendBorder)
       .attr('class', 'legend-title-border')
-      .attr('width', _get(titleBBox, 'width', 0) + 20)
-      .attr('height', _get(titleBBox, 'height', 0) + 10)
-      .attr('x', _get(titleBBox, 'x', 0) - 10)
-      .attr('y', _get(titleBBox, 'y', 0) - 10)
+      .attr('width', _get(this.titleBBox, 'width', 0) + 20)
+      .attr('height', _get(this.titleBBox, 'height', 0) + 10)
+      .attr('x', _get(this.titleBBox, 'x', 0) - 10)
+      .attr('y', _get(this.titleBBox, 'y', 0) - 10)
       .attr('stroke', 'transparent')
       .attr('stroke-width', '1px')
       .attr('fill', 'transparent')
       .attr('rx', 4)
 
     // Move to front
-    const legendElement = select(this.legendBorder).node()
-    legendElement.parentNode.appendChild(legendElement)
+    this.legendElement = select(this.legendBorder).node()
+    this.legendElement.parentNode.appendChild(this.legendElement)
   }
 
-  removeOverlappingLegendLabels = () => {
-    const legendContainer = select(
-      `#legend-bounding-box-${this.LEGEND_ID}`
-    ).node()
+  // TODO: remove last visible legend label if it is cut off
+  // removeOverlappingLegendLabels = () => {
+  //   const legendContainer = select(
+  //     `#legend-bounding-box-${this.LEGEND_ID}`
+  //   ).node()
 
-    select(this.rightLegendElement)
-      .selectAll('.cell')
-      .attr('opacity', function(d) {
-        // todo: fix this so the bboxes are absolute and intersection is possible
-        // const tspanElement = select(this)
-        //   .select('tspan')
-        //   .node()
-        // const isOverflowing = doesElementOverflowContainer(
-        //   this,
-        //   legendContainer
-        // )
-        // if (isOverflowing) {
-        //   return 0
-        // }
-        // return 1
-      })
-  }
+  //   select(this.rightLegendElement)
+  //     .selectAll('.cell')
+  //     .attr('opacity', function(d) {
+  //       // todo: fix this so the bboxes are absolute and intersection is possible
+  //       // const tspanElement = select(this)
+  //       //   .select('tspan')
+  //       //   .node()
+  //       // const isOverflowing = doesElementOverflowContainer(
+  //       //   this,
+  //       //   legendContainer
+  //       // )
+  //       // if (isOverflowing) {
+  //       //   return 0
+  //       // }
+  //       // return 1
+  //     })
+  // }
 
   renderLegend = () => {
     try {
@@ -147,9 +187,9 @@ export default class Axis extends Component {
       const legendScale = this.getLegendScale()
 
       if (this.props.hasRightLegend) {
-        const svg = select(this.rightLegendElement)
+        this.legendSVG = select(this.rightLegendElement)
 
-        svg
+        this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '0.7')
@@ -175,13 +215,13 @@ export default class Axis extends Component {
           legendOrdinal.title(this.props.legendTitle).titleWidth(100)
         }
 
-        svg.call(legendOrdinal).style('font-family', 'inherit')
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
 
         if (this.props.legendTitle) {
           if (this.props.onLegendTitleClick) {
-            this.styleLegendTitleWithBorder(svg)
+            this.styleLegendTitleWithBorder(this.legendSVG)
           } else {
-            this.styleLegendTitleNoBorder(svg)
+            this.styleLegendTitleNoBorder(this.legendSVG)
           }
         }
 
@@ -191,10 +231,13 @@ export default class Axis extends Component {
           .node()
           .getBBox().width
         select(this.legendClippingContainer).attr('width', legendWidth + 30)
-        svg.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
+        this.legendSVG.attr(
+          'clip-path',
+          `url(#legend-clip-area-${this.LEGEND_ID})`
+        )
       } else if (this.props.hasBottomLegend) {
-        const svg = select(this.bottomLegendElement)
-        svg
+        this.legendSVG = select(this.bottomLegendElement)
+        this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
           .style('fill-opacity', '0.7')
@@ -217,7 +260,7 @@ export default class Axis extends Component {
             self.props.onLegendClick(d)
           })
 
-        svg.call(legendOrdinal).style('font-family', 'inherit')
+        this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
       }
 
       this.applyStylesForHiddenSeries()
@@ -236,24 +279,24 @@ export default class Axis extends Component {
         })
         .map((l) => l.label)
 
-      const legendSwatchElements = document.querySelectorAll(
+      this.legendSwatchElements = document.querySelectorAll(
         `#${this.LEGEND_ID} .label`
       )
 
-      if (legendSwatchElements) {
-        legendSwatchElements.forEach((el) => {
+      if (this.legendSwatchElements) {
+        this.legendSwatchElements.forEach((el, i) => {
           let textStrings = []
           el.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
           })
 
           const legendLabelText = textStrings.join(' ')
-          const swatchElement = el.parentElement.querySelector('.swatch')
+          this.swatchElements[i] = el.parentElement.querySelector('.swatch')
 
           if (legendLabelTexts.includes(legendLabelText)) {
-            swatchElement.style.opacity = 0.3
+            this.swatchElements[i].style.opacity = 0.3
           } else {
-            swatchElement.style.opacity = 1
+            this.swatchElements[i].style.opacity = 1
           }
         })
       }
@@ -324,11 +367,6 @@ export default class Axis extends Component {
         .style('font-family', 'inherit')
     }
 
-    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
-      // https://d3-legend.susielu.com/
-      this.renderLegend()
-    }
-
     select(this.axisElement)
       .selectAll('.axis text')
       .style('fill', 'currentColor')
@@ -390,7 +428,7 @@ export default class Axis extends Component {
             }}
             id={this.LEGEND_ID}
             data-test="right-legend"
-            className="legendOrdinal"
+            className="legendOrdinal right-legend"
             transform={`translate(${this.props.width + 15}, ${
               this.props.legendTitle ? '30' : '25'
             })`}

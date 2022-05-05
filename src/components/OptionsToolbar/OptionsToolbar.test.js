@@ -44,18 +44,9 @@ const sampleResponse = {
   },
 }
 
-const defaultProps = {
-  authentication: testAuthentication,
-  autoQLConfig: autoQLConfigDefault,
-  enableDeleteBtn: false,
-  onSuccessAlert: () => {},
-  onErrorCallback: () => {},
-  onNewNotificationCallback: () => {},
-  deleteMessageCallback: () => {},
-  onFilterCallback: () => {},
-}
+const defaultProps = OptionsToolbar.defaultProps
 
-const setup = (props = {}, state = null) => {
+const setup = (props = {}, queryOutputProps = {}, state = null) => {
   // Create a query output component from the sample response,
   // then pass that into the toolbar component
   const queryOutputComponent = mount(
@@ -65,6 +56,7 @@ const setup = (props = {}, state = null) => {
         responseRef = r
       }}
       queryResponse={sampleResponse}
+      {...queryOutputProps}
     />
   )
   queryOutputComponent.mount()
@@ -79,7 +71,13 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
-    const wrapper = setup()
+    const wrapper = setup(undefined, { displayType: 'table' })
+    const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
+    expect(toolbarComponent.exists()).toBe(true)
+  })
+
+  test('renders correctly for single value response', () => {
+    const wrapper = setup(undefined, { displayType: 'single-value' })
     const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
     expect(toolbarComponent.exists()).toBe(true)
   })
@@ -94,7 +92,7 @@ describe('column visibility manager', () => {
         enableColumnVisibilityManager: false,
       },
     }
-    const wrapper = setup(propsWithColVisDisabled)
+    const wrapper = setup(propsWithColVisDisabled, { displayType: 'table' })
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(false)
   })
@@ -148,10 +146,13 @@ describe('column visibility manager', () => {
         type: 'QUANTITY',
       },
     ]
-    const wrapper = setup({
-      ...propsWithColVisEnabled,
-      response,
-    })
+    const wrapper = setup(
+      {
+        ...propsWithColVisEnabled,
+        response,
+      },
+      { displayType: 'table' }
+    )
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(true)
   })
@@ -167,7 +168,7 @@ describe('trash button', () => {
 
 describe('more options button', () => {
   test('renders by default', () => {
-    const wrapper = setup()
+    const wrapper = setup(undefined, { displayType: 'table' })
     const moreOptionsBtn = findByTestAttr(
       wrapper,
       'react-autoql-toolbar-more-options-btn'

@@ -21,6 +21,9 @@
         margin-right: 10px;
         cursor: pointer;
       }
+      #react-autoql-notification-error-status-icon-PROJECT {
+        margin-right: 10px;
+      }
 
       .reset-period-info-icon {
         padding-right: 20px;
@@ -91,7 +94,7 @@
       width: 35px;
       border-radius: 20px;
       background: var(--react-autoql-accent-color, #26a7df);
-      color: white;
+      color:  var(--react-autoql-accent-text-color);
       line-height: 38px;
       text-align: center;
       font-size: 20px;
@@ -111,8 +114,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px;
-    .react-autoql-notification-setting-display-name-title {
-    }
     .react-autoql-notification-setting-display-name-message {
       opacity: 0.5;
     }

@@ -1,9 +1,8 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import uuid from 'uuid'
-import ReactTooltip from 'react-tooltip'
+import { v4 as uuid } from 'uuid'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -12,7 +11,7 @@ import { entries } from 'd3-collection'
 import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
-import { formatElement } from '../../../js/Util'
+import { formatElement, removeFromDOM } from '../../../js/Util'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -22,7 +21,7 @@ import {
 } from '../../../props/defaults'
 
 export default class Axis extends Component {
-  CHART_ID = uuid.v4()
+  CHART_ID = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -51,40 +50,29 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
-    this.LEGEND_ID = `react-autoql-pie-legend-${uuid.v4()}`
+    this.LEGEND_ID = `react-autoql-pie-legend-${uuid()}`
     this.renderPie()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!_isEqual(this.props.data, nextProps.data)) {
-      return true
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
     }
 
-    if (this.state.activeKey !== nextState.activeKey) {
-      return true
-    }
-
-    if (
-      this.props.height !== nextProps.height ||
-      this.props.width !== nextProps.width
-    ) {
-      return true
-    }
-
-    return false
+    return true
   }
 
   componentDidUpdate = () => {
     this.renderPie()
-    ReactTooltip.rebuild()
+  }
+
+  componentWillUnmount = () => {
+    removeFromDOM(this.legend)
+    removeFromDOM(this.pieChartContainer)
   }
 
   renderPieContainer = () => {
     const { width, height } = this.props
-    if (this.pieChartContainer) {
-      // Remove previous pie slices
-      this.pieChartContainer.remove()
-    }
 
     this.pieChartContainer = select(this.chartElement)
       .append('svg')
@@ -243,8 +231,8 @@ export default class Axis extends Component {
     // Because the pie will never be larger than half the width
     const legendWrapLength = this.props.width / 2 - 70 // 70 for the width of the circles and padding
 
-    const svg = select(this.legendElement)
-    svg
+    this.legend = select(this.legendElement)
+    this.legend
       .append('g')
       .attr('class', 'legendOrdinal')
       .style('fill', 'currentColor')
@@ -273,10 +261,10 @@ export default class Axis extends Component {
         }
       })
 
-    svg.select('.legendOrdinal').call(legendOrdinal)
+    this.legend.select('.legendOrdinal').call(legendOrdinal)
 
     let legendBBox
-    const legendElement = svg.select('.legendOrdinal').node()
+    const legendElement = this.legend.select('.legendOrdinal').node()
     if (legendElement) {
       legendBBox = legendElement.getBBox()
     }
@@ -287,7 +275,7 @@ export default class Axis extends Component {
     const legendYPosition =
       legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
 
-    svg
+    this.legend
       .select('.legendOrdinal')
       .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
 
@@ -299,12 +287,12 @@ export default class Axis extends Component {
       .filter((l) => l.hidden)
       .map((l) => l.label)
 
-    const legendSwatchElements = document.querySelectorAll(
+    this.legendSwatchElements = document.querySelectorAll(
       `#${this.LEGEND_ID} .label tspan`
     )
 
-    if (legendSwatchElements) {
-      legendSwatchElements.forEach((el) => {
+    if (this.legendSwatchElements) {
+      this.legendSwatchElements.forEach((el) => {
         const swatchElement = el.parentElement.parentElement.querySelector(
           '.swatch'
         )
@@ -336,8 +324,9 @@ export default class Axis extends Component {
   }
 
   renderPie = () => {
+    removeFromDOM(this.pieChartContainer)
+
     const self = this
-    const { data } = this.props
 
     this.setPieRadius()
 
@@ -345,7 +334,7 @@ export default class Axis extends Component {
       .innerRadius(self.outerRadius * 1.1)
       .outerRadius(self.outerRadius * 1.1)
 
-    this.sortedData = data
+    this.sortedData = this.props.data
       .concat() // this copies the array so the original isn't mutated
       .sort(
         (a, b) => parseFloat(a.cells[0].value) - parseFloat(b.cells[0].value)

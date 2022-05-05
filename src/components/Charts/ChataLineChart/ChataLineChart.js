@@ -6,18 +6,26 @@ import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
 import { getMinAndMaxValues, getTickValues } from '../helpers.js'
-import { shouldRotateLabels, getTickWidth } from '../../../js/Util'
+import {
+  shouldLabelsRotate,
+  getTickWidth,
+  getLongestLabelInPx,
+} from '../../../js/Util'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataLineChart extends Component {
-  xScale = scaleBand()
-  yScale = scaleLinear()
+  constructor(props) {
+    super(props)
+
+    this.setChartData(props)
+    this.setLongestLabelWidth(props)
+    this.setLabelRotationValue(props)
+  }
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -56,128 +64,132 @@ export default class ChataLineChart extends Component {
     onLabelChange: () => {},
   }
 
-  componentDidUpdate = () => {
+  componentDidMount = () => {
+    this.props.onLabelChange()
+  }
+
+  shouldComponentUpdate = () => {
+    return true
+  }
+
+  componentDidUpdate = (prevProps) => {
     if (
-      typeof this.prevRotateLabels !== 'undefined' &&
-      this.prevRotateLabels !== this.rotateLabels
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
     ) {
-      this.props.onLabelChange()
+      this.setLongestLabelWidth(this.props)
     }
   }
 
-  handleLabelRotation = (tickWidth, labelArray) => {
-    this.prevRotateLabels = this.rotateLabels
-    this.rotateLabels = shouldRotateLabels(
-      tickWidth,
-      labelArray,
+  setLabelRotationValue = (props) => {
+    const rotateLabels = shouldLabelsRotate(
+      this.tickWidth,
+      this.longestLabelWidth
+    )
+
+    if (typeof rotateLabels !== 'undefined') {
+      this.rotateLabels = rotateLabels
+    }
+  }
+
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.labelArray,
       this.props.columns[this.props.stringColumnIndex],
-      getDataFormatting(this.props.dataFormatting)
+      getDataFormatting(props.dataFormatting)
+    )
+  }
+
+  setChartData = (props) => {
+    // Get max and min values from all series
+    const { minValue, maxValue } = getMinAndMaxValues(props.data)
+    this.minValue = minValue
+    this.maxValue = maxValue
+
+    this.xScale = scaleBand()
+      .domain(props.data.map((d) => d[props.labelValue]))
+      .range([props.leftMargin, props.width - props.rightMargin])
+      .paddingInner(props.innerPadding)
+      .paddingOuter(0.1)
+
+    this.yScale = scaleLinear()
+      .domain([minValue, maxValue])
+      .range([props.height - props.bottomMargin, props.topMargin])
+      .nice()
+
+    this.labelArray = props.data.map((element) => element[props.labelValue])
+    this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
+    this.xTickValues = getTickValues(
+      this.tickWidth,
+      props.width,
+      this.labelArray
     )
   }
 
   render = () => {
-    const {
-      hasMultipleStringColumns,
-      hasMultipleNumberColumns,
-      activeChartElementKey,
-      enableDynamicCharting,
-      onLegendTitleClick,
-      bottomLegendMargin,
-      stringColumnIndex,
-      numberColumnIndex,
-      numberAxisTitle,
-      stringAxisTitle,
-      backgroundColor,
-      legendLocation,
-      dataFormatting,
-      onLegendClick,
-      legendColumn,
-      onXAxisClick,
-      onYAxisClick,
-      innerPadding,
-      bottomMargin,
-      legendLabels,
-      onChartClick,
-      themeConfig,
-      rightMargin,
-      leftMargin,
-      labelValue,
-      topMargin,
-      columns,
-      height,
-      width,
-      data,
-    } = this.props
-
-    // Get max and min values from all series
-    const { minValue, maxValue } = getMinAndMaxValues(data)
-    const xScale = this.xScale
-      .domain(data.map((d) => d[labelValue]))
-      .range([leftMargin, width - rightMargin])
-      .paddingInner(innerPadding)
-      .paddingOuter(0.1)
-
-    const yScale = this.yScale
-      .domain([minValue, maxValue])
-      .range([height - bottomMargin, topMargin])
-      .nice()
-
-    const labelArray = data.map((element) => element[labelValue])
-    const tickWidth = getTickWidth(xScale, innerPadding)
-    const xTickValues = getTickValues(tickWidth, this.props.width, labelArray)
-    this.handleLabelRotation(tickWidth, labelArray)
+    this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g data-test="react-autoql-line-chart">
         <Axes
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
-          xCol={columns[0]}
-          yCol={columns[numberColumnIndex]}
+          themeConfig={this.props.themeConfig}
+          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          xCol={this.props.columns[0]}
+          yCol={this.props.columns[this.props.numberColumnIndex]}
           margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
-            bottomLegend: bottomLegendMargin,
+            left: this.props.leftMargin,
+            right: this.props.rightMargin,
+            bottom: this.props.bottomMargin,
+            top: this.props.topMargin,
+            bottomLegend: this.props.bottomLegendMargin,
           }}
-          width={width}
-          height={height}
-          xTicks={xTickValues}
+          width={this.props.width}
+          height={this.props.height}
+          xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
-          dataFormatting={dataFormatting}
-          legendLabels={legendLabels}
-          hasRightLegend={legendLocation === 'right'}
-          hasBottomLegend={legendLocation === 'bottom'}
-          legendTitle={_get(legendColumn, 'title', 'Category')}
-          onLegendTitleClick={onLegendTitleClick}
-          onLegendClick={onLegendClick}
+          onLabelChange={this.props.onLabelChange}
+          dataFormatting={this.props.dataFormatting}
+          legendLabels={this.props.legendLabels}
+          hasRightLegend={this.props.legendLocation === 'right'}
+          hasBottomLegend={this.props.legendLocation === 'bottom'}
+          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
+          onLegendTitleClick={this.props.onLegendTitleClick}
+          onLegendClick={this.props.onLegendClick}
           yGridLines
-          onXAxisClick={onXAxisClick}
-          onYAxisClick={onYAxisClick}
-          hasXDropdown={enableDynamicCharting && hasMultipleStringColumns}
-          hasYDropdown={enableDynamicCharting && hasMultipleNumberColumns}
-          yAxisTitle={numberAxisTitle}
-          xAxisTitle={stringAxisTitle}
+          onXAxisClick={this.props.onXAxisClick}
+          onYAxisClick={this.props.onYAxisClick}
+          hasXDropdown={
+            this.props.enableDynamicCharting &&
+            this.props.hasMultipleStringColumns
+          }
+          hasYDropdown={
+            this.props.enableDynamicCharting &&
+            this.props.hasMultipleNumberColumns
+          }
+          yAxisTitle={this.props.numberAxisTitle}
+          xAxisTitle={this.props.stringAxisTitle}
         />
-        <Line
-          themeConfig={themeConfig}
-          scales={{ xScale, yScale }}
-          margins={{
-            left: leftMargin,
-            right: rightMargin,
-            bottom: bottomMargin,
-            top: topMargin,
-          }}
-          data={data}
-          maxValue={maxValue}
-          width={width}
-          height={height}
-          labelValue={labelValue}
-          onChartClick={onChartClick}
-          backgroundColor={backgroundColor}
-          activeKey={activeChartElementKey}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <Line
+            themeConfig={this.props.themeConfig}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            maxValue={this.maxValue}
+            width={this.props.width}
+            height={this.props.height}
+            labelValue={this.props.labelValue}
+            onChartClick={this.props.onChartClick}
+            backgroundColor={this.props.backgroundColor}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

@@ -12,6 +12,10 @@ export default class Squares extends Component {
     this.opacityScale = scaleLinear()
       .domain([0, this.props.maxValue])
       .range([0, 1])
+
+    this.state = {
+      activeKey: this.props.activeKey,
+    }
   }
 
   static propTypes = {
@@ -22,17 +26,13 @@ export default class Squares extends Component {
     themeConfig: themeConfigDefault,
   }
 
-  state = {
-    activeKey: this.props.activeKey,
-  }
-
   render = () => {
-    const { scales, data } = this.props
+    const { scales } = this.props
     const { xScale, yScale } = scales
 
     const squares = []
 
-    data.forEach((d) => {
+    this.props.data.forEach((d) => {
       d.cells.forEach((cell, i) => {
         const fillColor =
           cell.value >= 0

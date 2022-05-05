@@ -1,5 +1,4 @@
 import React from 'react'
-import { select } from 'd3-selection'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 
@@ -8,11 +7,21 @@ import { dataFormattingType, themeConfigType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
-  getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class Axes extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.labelInlineStyles = {
+      fontSize: 12,
+      fontFamily: 'inherit',
+      fill: 'currentColor',
+      fillOpacity: 0.7,
+      cursor: 'default',
+    }
+  }
+
   static propTypes = {
     dataFormatting: dataFormattingType,
     themeConfig: themeConfigType,
@@ -40,6 +49,7 @@ export default class Axes extends React.Component {
     xAxisTitle: PropTypes.string,
     yAxisTitle: PropTypes.string,
     legendTitle: PropTypes.string,
+    onLabelChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -67,6 +77,11 @@ export default class Axes extends React.Component {
     onLegendClick: () => {},
     onXAxisClick: () => {},
     onYAxisClick: () => {},
+    onLabelChange: () => {},
+  }
+
+  componentDidMount = () => {
+    this.props.onLabelChange()
   }
 
   renderAxisLabel = (title = '', hasDropdown) => {
@@ -100,172 +115,189 @@ export default class Axes extends React.Component {
   }
 
   getBBoxFromRef = (ref) => {
+    let bbox
     try {
-      const bBox = select(ref)
-        .node()
-        .getBBox()
-
-      return bBox
+      if (ref) {
+        bbox = ref.getBBox()
+      }
     } catch (error) {
-      return {}
+      console.error(error)
     }
+
+    return bbox
+  }
+
+  renderXLabelDropdown = (xLabelX, xLabelY) => {
+    const xLabelBbox = this.getBBoxFromRef(this.xLabelRef)
+    const xLabelWidth = xLabelBbox ? xLabelBbox.width : 0
+    const xLabelHeight = xLabelBbox ? xLabelBbox.height : 0
+
+    return (
+      <rect
+        className="x-axis-label-border"
+        data-test="x-axis-label-border"
+        x={xLabelX - 10 - xLabelWidth / 2}
+        y={xLabelY - 16}
+        width={xLabelWidth + 20}
+        height={xLabelHeight + 10}
+        onClick={this.props.onXAxisClick}
+        fill="transparent"
+        stroke="transparent"
+        strokeWidth="1px"
+        rx="4"
+      />
+    )
+  }
+
+  renderYLabelDropdown = (yLabelX, yLabelY) => {
+    const yLabelBbox = this.getBBoxFromRef(this.yLabelRef)
+    const yLabelWidth = yLabelBbox ? yLabelBbox.width : 0
+    const yLabelHeight = yLabelBbox ? yLabelBbox.height : 0
+
+    return (
+      <rect
+        className="y-axis-label-border"
+        data-test="y-axis-label-border"
+        x={yLabelX - yLabelWidth / 2 - 10}
+        y={yLabelY - 16}
+        width={yLabelWidth + 20}
+        height={yLabelHeight + 10}
+        transform="rotate(-90)"
+        onClick={this.props.onYAxisClick}
+        fill="transparent"
+        stroke="transparent"
+        strokeWidth="1px"
+        rx="4"
+      />
+    )
+  }
+
+  renderXAxisLabel = (xAxisTitle) => {
+    const xLabelX =
+      (this.props.width - this.props.margins.left) / 2 + this.props.margins.left
+    const xLabelY =
+      this.props.height - (this.props.margins.bottomLegend || 0) - 15
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.xLabelRef = r)}
+          className="x-axis-label"
+          data-test="x-axis-label"
+          textAnchor="middle"
+          fontWeight="bold"
+          y={xLabelY}
+          x={xLabelX}
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisLabel(xAxisTitle, this.props.hasXDropdown)}
+        </text>
+        {this.props.hasXDropdown && this.renderXLabelDropdown(xLabelX, xLabelY)}
+      </g>
+    )
+  }
+
+  renderYAxisLabel = (yAxisTitle) => {
+    const yLabelY = 20
+    const yLabelX = -((this.props.height - this.props.margins.bottom) / 2)
+
+    return (
+      <g>
+        <text
+          ref={(r) => (this.yLabelRef = r)}
+          className="y-axis-label"
+          data-test="y-axis-label"
+          textAnchor="middle"
+          transform="rotate(-90)"
+          fontWeight="bold"
+          x={yLabelX}
+          y={yLabelY}
+          style={this.labelInlineStyles}
+        >
+          {this.renderAxisLabel(yAxisTitle, this.props.hasYDropdown)}
+        </text>
+        {this.props.hasYDropdown && this.renderYLabelDropdown(yLabelX, yLabelY)}
+      </g>
+    )
+  }
+
+  renderXAxis = (xAxisTitle) => {
+    return (
+      <Axis
+        orient="Bottom"
+        scale={_get(this.props, 'scales.xScale')}
+        translate={`translate(0, ${this.props.height -
+          this.props.margins.bottom})`}
+        rotateLabels={this.props.rotateLabels}
+        tickSizeInner={
+          -this.props.height +
+          this.props.margins.top +
+          this.props.margins.bottom
+        }
+        ticks={this.props.xTicks}
+        height={this.props.height}
+        width={this.props.width - this.props.margins.right}
+        margins={this.props.margins}
+        col={this.props.xCol}
+        title={xAxisTitle}
+        showGridLines={this.props.xGridLines}
+        hasRightLegend={this.props.hasRightLegend}
+        hasBottomLegend={this.props.hasBottomLegend}
+        legendLabels={this.props.legendLabels}
+        legendColumn={this.props.legendColumn}
+        dataFormatting={this.props.dataFormatting}
+        themeConfig={this.props.themeConfig}
+        onLegendClick={this.props.onLegendClick}
+        onLegendTitleClick={this.props.onLegendTitleClick}
+        onLabelChange={this.props.onLabelChange}
+        legendTitle={this.props.legendTitle}
+      />
+    )
+  }
+
+  renderYAxis = (yAxisTitle) => {
+    return (
+      <Axis
+        orient="Left"
+        scale={_get(this.props, 'scales.yScale')}
+        translate={`translate(${this.props.margins.left}, 0)`}
+        tickSizeInner={
+          -this.props.width + this.props.margins.left + this.props.margins.right
+        }
+        ticks={this.props.yTicks}
+        height={this.props.height}
+        width={this.props.width - this.props.margins.right}
+        margins={this.props.margins}
+        col={this.props.yCol}
+        title={yAxisTitle}
+        showGridLines={this.props.yGridLines}
+        dataFormatting={this.props.dataFormatting}
+        themeConfig={this.props.themeConfig}
+        onLegendClick={this.props.onLegendClick}
+      />
+    )
   }
 
   render = () => {
-    const {
-      themeConfig,
-      scales,
-      margins,
-      height,
-      width,
-      xTicks,
-      yTicks,
-      rotateLabels,
-      xCol,
-      yCol,
-      xGridLines,
-      yGridLines,
-      legendLabels,
-      legendColumn,
-      dataFormatting,
-      hasRightLegend,
-      hasBottomLegend,
-      onLegendClick,
-      onXAxisClick,
-      onYAxisClick,
-      hasXDropdown,
-      hasYDropdown,
-      xAxisTitle,
-      yAxisTitle,
-      legendTitle,
-      onLegendTitleClick,
-    } = this.props
-
-    const xProps = {
-      orient: 'Bottom',
-      scale: scales.xScale,
-      translate: `translate(0, ${height - margins.bottom})`,
-      rotateLabels: rotateLabels,
-      tickSizeInner: -height + margins.top + margins.bottom,
-      ticks: xTicks,
-      height,
-      width: width - margins.right,
-      margins,
-      col: xCol,
-      title: xAxisTitle || xCol.title,
-      showGridLines: xGridLines,
-      hasRightLegend,
-      hasBottomLegend,
-      legendLabels,
-      legendColumn,
-      dataFormatting,
-      themeConfig,
-      onLegendClick,
-      onLegendTitleClick,
-      legendTitle,
+    if (
+      !_get(this.props, 'scales.yScale') ||
+      !_get(this.props, 'scales.xScale') ||
+      !this.props.height ||
+      !this.props.width
+    ) {
+      return null
     }
 
-    const yProps = {
-      orient: 'Left',
-      scale: scales.yScale,
-      translate: `translate(${margins.left}, 0)`,
-      tickSizeInner: -width + margins.left + margins.right,
-      ticks: yTicks,
-      height,
-      width: width - margins.right,
-      margins,
-      col: yCol,
-      title: yAxisTitle || yCol.title,
-      showGridLines: yGridLines,
-      dataFormatting,
-      themeConfig,
-      onLegendClick,
-    }
-
-    const labelInlineStyles = {
-      fontSize: 12,
-      fontFamily: 'inherit',
-      fill: 'currentColor',
-      fillOpacity: 0.7,
-      cursor: 'default',
-    }
-
-    // x-axis positions
-    const xLabelX =
-      (xProps.width - xProps.margins.left) / 2 + xProps.margins.left
-    const xLabelY = xProps.height - (xProps.margins.bottomLegend || 0) - 15
-    const xLabelWidth = _get(this.getBBoxFromRef(this.xLabelRef), 'width', 0)
-    const xLabelHeight = _get(this.getBBoxFromRef(this.xLabelRef), 'height', 0)
-
-    // y-axis positions
-    const yLabelY = 20
-    const yLabelX = -((yProps.height - yProps.margins.bottom) / 2)
-    const yLabelWidth = _get(this.getBBoxFromRef(this.yLabelRef), 'width', 0)
-    const yLabelHeight = _get(this.getBBoxFromRef(this.yLabelRef), 'height', 0)
+    const xAxisTitle = this.props.xAxisTitle || this.props.xCol.title
+    const yAxisTitle = this.props.yAxisTitle || this.props.yCol.title
 
     return (
-      <g className="react-autoql-axes" data-test="react-autoql-axes">
-        <g>
-          <text
-            ref={(r) => (this.yLabelRef = r)}
-            className="y-axis-label"
-            data-test="y-axis-label"
-            textAnchor="middle"
-            transform="rotate(-90)"
-            fontWeight="bold"
-            x={yLabelX}
-            y={yLabelY}
-            style={labelInlineStyles}
-          >
-            {this.renderAxisLabel(yProps.title, hasYDropdown)}
-          </text>
-          {hasYDropdown && (
-            <rect
-              className="y-axis-label-border"
-              data-test="y-axis-label-border"
-              x={yLabelX - yLabelWidth / 2 - 10}
-              y={yLabelY - 16}
-              width={yLabelWidth + 20}
-              height={yLabelHeight + 10}
-              transform="rotate(-90)"
-              onClick={(e) => onYAxisClick(e)}
-              fill="transparent"
-              stroke="transparent"
-              strokeWidth="1px"
-              rx="4"
-            />
-          )}
-        </g>
-        <Axis {...xProps} />
-        <Axis {...yProps} />
-        <g>
-          <text
-            ref={(r) => (this.xLabelRef = r)}
-            className="x-axis-label"
-            data-test="x-axis-label"
-            textAnchor="middle"
-            fontWeight="bold"
-            y={xLabelY}
-            x={xLabelX}
-            style={labelInlineStyles}
-          >
-            {this.renderAxisLabel(xProps.title, hasXDropdown)}
-          </text>
-          {hasXDropdown && (
-            <rect
-              className="x-axis-label-border"
-              data-test="x-axis-label-border"
-              x={xLabelX - 10 - xLabelWidth / 2}
-              y={xLabelY - 16}
-              width={xLabelWidth + 20}
-              height={xLabelHeight + 10}
-              onClick={(e) => onXAxisClick(e)}
-              fill="transparent"
-              stroke="transparent"
-              strokeWidth="1px"
-              rx="4"
-            />
-          )}
+      <g>
+        {this.renderYAxisLabel(yAxisTitle)}
+        {this.renderXAxisLabel(xAxisTitle)}
+        <g className="react-autoql-axes" data-test="react-autoql-axes">
+          {this.renderXAxis(xAxisTitle)}
+          {this.renderYAxis(yAxisTitle)}
         </g>
       </g>
     )

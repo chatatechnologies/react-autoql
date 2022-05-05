@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import ReactTooltip from 'react-tooltip'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'

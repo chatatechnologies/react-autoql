@@ -1,5 +1,5 @@
-import Numbro from 'numbro'
 import _get from 'lodash.get'
+import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
@@ -147,14 +147,12 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     case 'DOLLAR_AMT': {
       if (Number(d) || Number(d) === 0) {
         const currency = currencyCode || 'USD'
-        // const sigDigs = String(parseInt(d)).length
         try {
           formattedLabel = new Intl.NumberFormat(languageCode, {
             style: 'currency',
             currency: `${currency}`,
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-            // maximumSignificantDigits: sigDigs
           }).format(d)
         } catch (error) {
           console.error(error)
@@ -163,7 +161,6 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-            // maximumSignificantDigits: sigDigs
           }).format(d)
         }
       }
@@ -171,9 +168,7 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     }
     case 'QUANTITY': {
       if (Number(d)) {
-        formattedLabel = Numbro(d).format({
-          thousandSeparated: true,
-        })
+        formattedLabel = new Intl.NumberFormat(languageCode).format(d)
       }
       break
     }
@@ -185,26 +180,14 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
       formattedLabel = formatStringDate(d, config)
       break
     }
-    // case 'DATE_MONTH': {
-    //   // This will be a string of the month number ie. "2", "12"
-    //   const monthNumber = Number(d)
-    //   if (monthNumber && MONTH_NAMES[monthNumber]) {
-    //     formattedLabel = MONTH_NAMES[monthNumber]
-    //   }
-    //   break
-    // }
-    // case 'DATE_YEAR': {
-    //   // This should always be a string of the year number ie. "2019"
-    //   formattedLabel = Number(d)
-    //   break
-    // }
     case 'PERCENT': {
       if (Number(d)) {
-        let p = Number(d) / 100;
-        formattedLabel = Numbro(p).format({
-          output: 'percent',
-          mantissa: 0,
-        })
+        let p = Number(d) / 100
+        formattedLabel = new Intl.NumberFormat(languageCode, {
+          style: 'percent',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(p)
       }
       break
     }
@@ -277,12 +260,15 @@ export const formatElement = ({
             quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
           if (Number(element)) {
-            formattedElement = Numbro(element).format({
-              thousandSeparated: true,
-              mantissa:
-                Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0,
-            })
+            const numDecimals =
+              Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
+
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              minimumFractionDigits: numDecimals,
+              maximumFractionDigits: numDecimals,
+            }).format(element)
           }
+
           break
         }
         case 'DATE': {
@@ -293,31 +279,24 @@ export const formatElement = ({
           formattedElement = formatStringDate(element, config)
           break
         }
-        // case 'DATE_MONTH': {
-        //   // This will be a string of the month number ie. "2", "12"
-        //   const monthNumber = Number(element)
-        //   if (monthNumber && MONTH_NAMES[monthNumber]) {
-        //     formattedElement = MONTH_NAMES[monthNumber]
-        //   }
-        //   break
-        // }
         case 'RATIO': {
           if (Number(element)) {
-            formattedElement = Numbro(element).format('0.0000')
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              minimumFractionDigits: 4,
+              maximumFractionDigits: 4,
+            }).format(element)
           }
           break
         }
-        // This is for ratios. Not sure why it isn't RATIO
-        // case 'NUMBER': {
-        //   if (Number(element)) {
-        //     formattedElement = Numbro(element).format('0.0000')
-        //   }
-        //   break
-        // }
         case 'PERCENT': {
           if (Number(element)) {
-            let p = Number(element) / 100;
-            formattedElement = Numbro(p).format('0.00%')
+            let p = Number(element) / 100
+
+            formattedElement = new Intl.NumberFormat(languageCode, {
+              style: 'percent',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(p)
 
             if (htmlElement) {
               htmlElement.classList.add(
@@ -475,7 +454,32 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieChart) => {
+export const getHiddenColumns = (response) => {
+  return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
+}
+
+export const getVisibleColumns = (response) => {
+  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+}
+
+export const areSomeColumnsHidden = (response) => {
+  const hasColumns = _get(response, 'data.data.columns.length')
+  const hiddenColumns = getHiddenColumns(response)
+  return hasColumns && !!hiddenColumns.length
+}
+
+export const areAllColumnsHidden = (response) => {
+  const hasColumns = _get(response, 'data.data.columns.length')
+  const visibleColumns = getVisibleColumns(response)
+  return hasColumns && !visibleColumns.length
+}
+
+export const getSupportedDisplayTypes = (
+  response,
+  chartData,
+  shouldExcludePieChart,
+  newTableData
+) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -491,18 +495,23 @@ export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieCh
       return [displayType]
     }
 
-    const columns = _get(response, 'data.data.columns')
     const rows = _get(response, 'data.data.rows', [])
+    const columns = getVisibleColumns(response)
 
-    if (!columns || rows.length <= 1) {
-      return []
+    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+      return ['text']
     }
 
-    if (supportsRegularPivotTable(columns)) {
+    if (isSingleValueResponse(response)) {
+      return ['single-value']
+    }
+
+    const isTableEmpty = !!newTableData && !newTableData.length
+    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
       if (rows.length < 1000) {
-        supportedDisplayTypes = [
+        supportedDisplayTypes.push(
           'pivot_table',
           'stacked_column',
           'stacked_bar',
@@ -511,9 +520,8 @@ export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieCh
           'bar',
           'line',
           'bubble',
-          'heatmap',
-          'table',
-        ]
+          'heatmap'
+        )
       } else {
         console.warn(
           'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
@@ -521,7 +529,7 @@ export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieCh
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(columns)) {
+    } else if (supports2DCharts(columns) && !isTableEmpty) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -574,7 +582,7 @@ export const getSupportedDisplayTypes = (response, chartData, shouldExcludePieCh
 
 export const isDisplayTypeValid = (response, displayType) => {
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
-  const isValid = supportedDisplayTypes.includes(displayType)
+  const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
     console.warn(
       'Warning: provided display type is not valid for this response data'
@@ -608,6 +616,10 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return responseDisplayType
   }
 
+  if (supportedDisplayTypes.length === 1) {
+    return supportedDisplayTypes[0]
+  }
+
   // We want to default on pivot table if it is one of the supported types
   if (supportedDisplayTypes.includes('pivot_table')) {
     let displayType = 'pivot_table'
@@ -621,8 +633,11 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // If there is no display type in the response, default to regular table
-  if (!responseDisplayType || responseDisplayType === 'data') {
+  // If there is no display type in the response, but there is tabular data, default to regular table
+  if (
+    (!responseDisplayType && hasData(response)) ||
+    responseDisplayType === 'data'
+  ) {
     let displayType = 'table'
 
     if (defaultToChart) {
@@ -634,8 +649,8 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
     return displayType
   }
 
-  // Default to table type
-  return 'table'
+  // Default to plain text
+  return 'text'
 }
 
 export const getGroupBysFromPivotTable = (
@@ -792,31 +807,8 @@ export const calculateMinAndMaxSums = (data) => {
   const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
 
   return {
-    max: maxValue,
-    min: minValue,
-  }
-}
-
-export const changeTooltipText = (id, text, tooltipShiftDistance, duration) => {
-  const tooltip = document.getElementById(id)
-  const prevText = tooltip.innerHTML
-
-  tooltip.innerHTML = text
-  if (tooltipShiftDistance) {
-    tooltip.style.left = `${Number(
-      tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-    ) + tooltipShiftDistance}px`
-  }
-
-  if (duration) {
-    setTimeout(() => {
-      tooltip.innerHTML = prevText
-      if (tooltipShiftDistance) {
-        tooltip.style.left = `${Number(
-          tooltip.style.left.substring(0, tooltip.style.left.length - 2)
-        ) - tooltipShiftDistance}px`
-      }
-    }, duration)
+    maxValue,
+    minValue,
   }
 }
 
@@ -854,9 +846,18 @@ export const getLongestLabelInPx = (labels, col, config) => {
   return max
 }
 
-export const shouldRotateLabels = (tickWidth, labels, col, config) => {
-  const labelWidth = getLongestLabelInPx(labels, col, config)
-  return tickWidth < labelWidth
+export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
+  if (isNaN(tickWidth) || isNaN(longestLabelWidth)) {
+    return undefined
+  }
+
+  // If it is close, default to rotating them.
+  const widthDifference = tickWidth - longestLabelWidth
+  if (Math.abs(widthDifference) < 5) {
+    return true
+  }
+
+  return tickWidth < longestLabelWidth
 }
 
 export const getTickWidth = (scale, innerPadding) => {
@@ -874,13 +875,43 @@ export const setCSSVars = (themeConfig) => {
     return
   }
 
-  const { theme, accentColor, fontFamily } = themeConfig
+  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
   if (accentColor) {
     themeStyles['accent-color'] = accentColor
   }
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
+  }
+  if (accentTextColor) {
+    themeStyles['accent-text-color'] = accentTextColor
+  } else {
+    let accentTextColor = accentColor
+    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+
+    if (accentTextColor.slice(0, 1) === '#') {
+      accentTextColor = accentTextColor.slice(1)
+    }
+
+    // If a three-character hexcode, make six-character
+    if (accentTextColor.length === 3) {
+      accentTextColor = accentTextColor
+        .split('')
+        .map(function(accentTextColor) {
+          return accentTextColor + accentTextColor
+        })
+        .join('')
+    }
+    // Convert to RGB value
+    let r = parseInt(accentTextColor.substr(0, 2), 16)
+    let g = parseInt(accentTextColor.substr(2, 2), 16)
+    let b = parseInt(accentTextColor.substr(4, 2), 16)
+    // Get YIQ ratio
+    let yiq = (r * 299 + g * 587 + b * 114) / 1000
+    // Check contrast
+
+    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
   }
 
   for (let property in themeStyles) {
@@ -989,30 +1020,47 @@ export const isSingleValueResponse = (response) => {
   )
 }
 
-export const isTableResponse = (response, displayType) => {
+export const hasData = (response) => {
   if (!response) {
     return false
   }
 
-  return (
-    !isSingleValueResponse(response) &&
-    _get(response, 'data.data.rows.length', 0) > 0 &&
-    isTableType(displayType)
-  )
+  const hasData =
+    _get(response, 'data.data.rows.length') &&
+    _get(response, 'data.data.rows.length')
+  return hasData
 }
 
-export const awaitTimeout = (delay, cb = () => {}) => {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      cb()
-      resolve()
-    }, delay)
-  )
+export class AwaitTimeout {
+  constructor(delay, callback = () => {}) {
+    this.delay = delay
+    this.callback = callback
+  }
+
+  start = () => {
+    this.timeoutPromise = new Promise((resolve) => {
+      clearTimeout(this.timeout)
+      this.timeout = setTimeout(() => {
+        this.callback()
+        resolve()
+      }, this.delay)
+      return this.timeout
+    })
+    return this.timeoutPromise
+  }
+
+  cancel = () => {
+    if (this.timeoutPromise) {
+      this.timeoutPromise.reject
+    }
+    if (this.timeout) {
+      clearTimeout(this.timeout)
+    }
+    return
+  }
 }
 
-export const setCaretPosition = (elemId, caretPos) => {
-  const elem = document.getElementById(elemId)
-
+export const setCaretPosition = (elem, caretPos) => {
   if (elem != null) {
     if (elem.createTextRange) {
       const range = elem.createTextRange()
@@ -1024,5 +1072,25 @@ export const setCaretPosition = (elemId, caretPos) => {
         elem.setSelectionRange(caretPos, caretPos)
       } else elem.focus()
     }
+  }
+}
+
+export const removeFromDOM = (elem) => {
+  if (!elem) {
+    return
+  }
+
+  try {
+    if (typeof elem.forEach === 'function' && _get(elem, 'length')) {
+      elem.forEach((el) => {
+        if (el && typeof el.remove === 'function') {
+          el.remove()
+        }
+      })
+    } else if (typeof elem.remove === 'function') {
+      elem.remove()
+    }
+  } catch (error) {
+    console.error(error)
   }
 }
