@@ -2,9 +2,17 @@ import dayjs from './dayjsWithPlugins'
 import _get from 'lodash.get'
 
 const isIsoDate = (str) => {
-  if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false
-  var d = new Date(str)
-  return d.toISOString() === str
+  if (!str) {
+    return false
+  }
+
+  try {
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false
+    var d = new Date(str)
+    return d.toISOString() === str
+  } catch (error) {
+    return false
+  }
 }
 
 export const constructRTArray = (response) => {
