@@ -259,7 +259,6 @@ export default class ChataTable extends React.Component {
     if (this.tableHeight) {
       return `${this.tableHeight}px`
     }
-
     return `${_get(this.props, 'style.height')}px`
   }
 
@@ -286,6 +285,7 @@ export default class ChataTable extends React.Component {
               id={`react-autoql-table-${this.TABLE_ID}`}
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
+              cellClick={this.cellClick}
               options={this.tableOptions}
               data-custom-attr="test-custom-attribute"
               className="react-autoql-table"
