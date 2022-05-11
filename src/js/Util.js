@@ -454,8 +454,18 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
+export const getHiddenColumns = (response) => {
+  return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
+}
+
 export const getVisibleColumns = (response) => {
   return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+}
+
+export const areSomeColumnsHidden = (response) => {
+  const hasColumns = _get(response, 'data.data.columns.length')
+  const hiddenColumns = getHiddenColumns(response)
+  return hasColumns && !!hiddenColumns.length
 }
 
 export const areAllColumnsHidden = (response) => {
@@ -467,7 +477,8 @@ export const areAllColumnsHidden = (response) => {
 export const getSupportedDisplayTypes = (
   response,
   chartData,
-  shouldExcludePieChart
+  shouldExcludePieChart,
+  newTableData
 ) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
@@ -495,11 +506,12 @@ export const getSupportedDisplayTypes = (
       return ['single-value']
     }
 
-    if (supportsRegularPivotTable(columns)) {
+    const isTableEmpty = !!newTableData && !newTableData.length
+    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
       if (rows.length < 1000) {
-        supportedDisplayTypes = [
+        supportedDisplayTypes.push(
           'pivot_table',
           'stacked_column',
           'stacked_bar',
@@ -508,9 +520,8 @@ export const getSupportedDisplayTypes = (
           'bar',
           'line',
           'bubble',
-          'heatmap',
-          'table',
-        ]
+          'heatmap'
+        )
       } else {
         console.warn(
           'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
@@ -518,7 +529,7 @@ export const getSupportedDisplayTypes = (
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(columns)) {
+    } else if (supports2DCharts(columns) && !isTableEmpty) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -570,10 +581,6 @@ export const getSupportedDisplayTypes = (
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
-  if (displayType === 'text' && _get(response, 'data.message')) {
-    return true
-  }
-
   const supportedDisplayTypes = getSupportedDisplayTypes(response)
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
@@ -839,13 +846,18 @@ export const getLongestLabelInPx = (labels, col, config) => {
   return max
 }
 
-export const shouldLabelsRotate = (tickWidth, labels, col, config) => {
-  const labelWidth = getLongestLabelInPx(labels, col, config)
-  if (isNaN(tickWidth) || isNaN(labelWidth)) {
+export const shouldLabelsRotate = (tickWidth, longestLabelWidth) => {
+  if (isNaN(tickWidth) || isNaN(longestLabelWidth)) {
     return undefined
   }
 
-  return tickWidth < labelWidth
+  // If it is close, default to rotating them.
+  const widthDifference = tickWidth - longestLabelWidth
+  if (Math.abs(widthDifference) < 5) {
+    return true
+  }
+
+  return tickWidth < longestLabelWidth
 }
 
 export const getTickWidth = (scale, innerPadding) => {

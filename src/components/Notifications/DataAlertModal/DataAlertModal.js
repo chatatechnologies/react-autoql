@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
 import { Modal } from '../../Modal'
@@ -34,7 +34,7 @@ import {
 import './DataAlertModal.scss'
 
 export default class DataAlertModal extends React.Component {
-  NEW_NOTIFICATION_MODAL_ID = uuid.v4()
+  NEW_NOTIFICATION_MODAL_ID = uuid()
 
   static propTypes = {
     authentication: authenticationType,
@@ -170,16 +170,16 @@ export default class DataAlertModal extends React.Component {
     return [
       {
         condition: 'TERMINATOR',
-        id: uuid.v4(),
+        id: uuid(),
         term_type: 'group',
         term_value: [
           {
-            id: uuid.v4(),
+            id: uuid(),
             term_type: 'group',
             condition: 'TERMINATOR',
             term_value: [
               {
-                id: uuid.v4(),
+                id: uuid(),
                 condition: 'EXISTS',
                 term_type: 'query',
                 term_value: query,

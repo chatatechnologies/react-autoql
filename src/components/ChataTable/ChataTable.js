@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
@@ -24,7 +24,7 @@ export default class ChataTable extends React.Component {
   constructor(props) {
     super(props)
 
-    this.TABLE_ID = uuid.v4()
+    this.TABLE_ID = uuid()
     this.firstRender = true
     this.hasSetInitialData = false
     this.ref = null
@@ -86,9 +86,9 @@ export default class ChataTable extends React.Component {
       dataFiltering: (filters) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
-        if (this.ref && !this.firstRender) {
+        if (this._isMounted && this.ref && !this.firstRender) {
           const tableFilters = this.ref.table.getHeaderFilters()
-          props.onFilterCallback(tableFilters)
+          props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,
@@ -125,6 +125,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.firstRender = false
     this.setTableHeaderValues = setTimeout(() => {
       this.setInitialHeaderFilters()
@@ -147,11 +148,12 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.ref) {
-      clearTimeout(this.setDimensionsTimeout)
       this.setDimensionsTimeout = setTimeout(() => {
-        const tableHeight = _get(this.ref, 'ref.offsetHeight')
-        if (tableHeight) {
-          this.tableHeight = tableHeight
+        if (this._isMounted) {
+          const tableHeight = _get(this.ref, 'ref.offsetHeight')
+          if (tableHeight) {
+            this.tableHeight = tableHeight
+          }
         }
       }, 0)
     }
@@ -171,6 +173,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     clearTimeout(this.setTableHeaderValues)
     clearTimeout(this.setDimensionsTimeout)
     this.resetFilterTags()
@@ -191,13 +194,13 @@ export default class ChataTable extends React.Component {
   }
 
   copyToClipboard = () => {
-    if (this.ref && this.ref.table) {
+    if (this._isMounted && this.ref?.table) {
       this.ref.table.copyToClipboard('active', true)
     }
   }
 
   saveAsCSV = () => {
-    if (this.ref && this.ref.table) {
+    if (this._isMounted && this.ref?.table) {
       this.ref.table.download('csv', 'export.csv', {
         delimiter: ',',
       })
@@ -210,7 +213,8 @@ export default class ChataTable extends React.Component {
     if (this.filterTagElements.length) {
       this.filterTagElements.forEach((filterTag) => {
         try {
-          if (filterTag.parentNode) filterTag.parentNode.removeChild(filterTag)
+          if (filterTag.parentNode && this._isMounted)
+            filterTag.parentNode.removeChild(filterTag)
         } catch (error) {}
       })
     }
@@ -220,7 +224,7 @@ export default class ChataTable extends React.Component {
     this.resetFilterTags()
 
     let filterValues
-    if (_get(this.ref, 'table')) {
+    if (this._isMounted && this.ref?.table) {
       filterValues = this.ref.table.getHeaderFilters()
     }
 
@@ -251,9 +255,16 @@ export default class ChataTable extends React.Component {
     this.setState({ isFilteringTable })
   }
 
-  render = () => {
-    let styleHeight = _get(this.props, 'style.height')
+  getTableHeight = () => {
+    if (this.tableHeight) {
+      return `${this.tableHeight}px`
+    }
 
+    return `${_get(this.props, 'style.height')}px`
+  }
+
+  render = () => {
+    const height = this.getTableHeight()
     return (
       <ErrorBoundary>
         <div
@@ -266,7 +277,7 @@ export default class ChataTable extends React.Component {
           ${this.props.isResizing ? ' resizing' : ''}`}
           style={{
             ...this.props.style,
-            flexBasis: `${this.tableHeight || styleHeight}px`,
+            flexBasis: height,
           }}
         >
           {this.props.data && this.props.columns && (

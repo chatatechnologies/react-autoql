@@ -191,7 +191,7 @@ export default class ChatMessage extends React.Component {
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
-    }, 600)
+    }, 500)
 
     this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
     this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
@@ -364,9 +364,8 @@ export default class ChatMessage extends React.Component {
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            hideColumnCallback={this.hideColumnCallback}
-            onTableFilterCallback={this.onTableFilter}
             appliedFilters={this.props.appliedFilters}
+            onUpdate={this.props.onQueryOutputUpdate}
             height={
               isChartType(this.state.displayType)
                 ? this.state.chartHeight
@@ -378,7 +377,6 @@ export default class ChatMessage extends React.Component {
                 : undefined
             }
             demo={getAuthentication(this.props.authentication).demo}
-            onColumnsUpdate={this.props.onQueryResponseColumnsChange}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
@@ -388,7 +386,9 @@ export default class ChatMessage extends React.Component {
             renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
-            isResizing={this.props.isResizing}
+            isResizing={
+              this.props.isResizing || !this.props.isDataMessengerOpen
+            }
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
             dataConfig={this.state.dataConfig}
@@ -402,7 +402,7 @@ export default class ChatMessage extends React.Component {
             enableFilterLocking={this.props.enableFilterLocking}
             onRTValueLabelClick={this.props.onRTValueLabelClick}
             reportProblemCallback={() => {
-              if (this.optionsToolbarRef) {
+              if (this.optionsToolbarRef?._isMounted) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
               }
             }}
@@ -452,11 +452,6 @@ export default class ChatMessage extends React.Component {
             this.props.deleteMessageCallback(this.props.id)
           }
           onFilterClick={this.toggleTableFilter}
-          onColumnVisibilitySave={() => {
-            this.setState({
-              displayType: getDefaultDisplayType(this.props.response),
-            })
-          }}
           onResponseCallback={this.props.onResponseCallback}
         />
       )
@@ -468,7 +463,7 @@ export default class ChatMessage extends React.Component {
   onDisplayTypeChange = (displayType) => {
     // Reset table filters when display type is changed
     this.toggleTableFilter({ isFilteringTable: false })
-    if (this.optionsToolbarRef) {
+    if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef.filtering = false
     }
 

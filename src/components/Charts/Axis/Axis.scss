@@ -12,7 +12,6 @@ g.legendOrdinal tspan {
   cursor: pointer;
   stroke: transparent;
   opacity: 0.5;
-  transition: stroke 0.3s ease;
 
   &:hover {
     stroke: var(--react-autoql-accent-color) !important;

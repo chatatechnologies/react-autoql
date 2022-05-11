@@ -104,7 +104,7 @@
     "sanitize-html": "^2.3.2",
     "sql-formatter": "^2.3.3",
     "throttle-debounce": "^2.1.0",
-    "uuid": "https://registry.npmjs.org/uuid/-/uuid-2.0.3.tgz"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.16.0",

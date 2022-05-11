@@ -1,9 +1,8 @@
-import React, { Component, Fragment } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import uuid from 'uuid'
-import ReactTooltip from 'react-tooltip'
+import { v4 as uuid } from 'uuid'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -22,7 +21,7 @@ import {
 } from '../../../props/defaults'
 
 export default class Axis extends Component {
-  CHART_ID = uuid.v4()
+  CHART_ID = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,
@@ -51,7 +50,7 @@ export default class Axis extends Component {
   }
 
   componentDidMount = () => {
-    this.LEGEND_ID = `react-autoql-pie-legend-${uuid.v4()}`
+    this.LEGEND_ID = `react-autoql-pie-legend-${uuid()}`
     this.renderPie()
   }
 
@@ -65,7 +64,6 @@ export default class Axis extends Component {
 
   componentDidUpdate = () => {
     this.renderPie()
-    ReactTooltip.rebuild()
   }
 
   componentWillUnmount = () => {

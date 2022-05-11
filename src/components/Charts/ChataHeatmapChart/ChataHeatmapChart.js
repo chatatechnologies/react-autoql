@@ -5,7 +5,7 @@ import { max } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Squares } from '../Squares'
-import { shouldLabelsRotate } from '../../../js/Util.js'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import {
   themeConfigDefault,
   dataFormattingDefault,
@@ -18,6 +18,8 @@ export default class ChataHeatmapChart extends Component {
   constructor(props) {
     super(props)
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -64,27 +66,32 @@ export default class ChataHeatmapChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
     }
   }
 
-  didLabelsRotate = () => {
+  setLabelRotationValue = (props) => {
     const rotateLabels = shouldLabelsRotate(
       this.squareWidth,
-      this.uniqueXLabels,
-      this.props.columns[0],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
+  }
 
-    return false
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.uniqueXLabels,
+      this.props.columns[0],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -158,6 +165,7 @@ export default class ChataHeatmapChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g
@@ -183,30 +191,33 @@ export default class ChataHeatmapChart extends Component {
           yGridLines
           dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           onXAxisClick={this.props.onXAxisClick}
           onYAxisClick={this.props.onYAxisClick}
         />
-        <Squares
-          themeConfig={getThemeConfig(this.props.themeConfig)}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-          }}
-          data={this.props.data}
-          columns={this.props.columns}
-          legendColumn={this.props.legendColumn}
-          maxValue={this.maxValue}
-          width={this.props.width}
-          height={this.props.height}
-          dataValue={this.props.dataValue}
-          labelValueX={this.props.labelValueX}
-          labelValueY={this.props.labelValueY}
-          onChartClick={this.props.onChartClick}
-          activeKey={this.props.activeChartElementKey}
-        />
+        {this.props.marginAdjustmentFinished && (
+          <Squares
+            themeConfig={getThemeConfig(this.props.themeConfig)}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            columns={this.props.columns}
+            legendColumn={this.props.legendColumn}
+            maxValue={this.maxValue}
+            width={this.props.width}
+            height={this.props.height}
+            dataValue={this.props.dataValue}
+            labelValueX={this.props.labelValueX}
+            labelValueY={this.props.labelValueY}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+          />
+        )}
       </g>
     )
   }

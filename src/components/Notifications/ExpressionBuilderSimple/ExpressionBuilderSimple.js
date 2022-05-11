@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -86,8 +86,6 @@ export default class ExpressionBuilderSimple extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
-
     if (!_isEqual(prevProps.expression, this.props.expression)) {
       // Recalculate rules on notification data change
       this.setState({ ...getInitialStateData(this.props.expression) })
@@ -181,7 +179,7 @@ export default class ExpressionBuilderSimple extends React.Component {
           <RuleSimple
             themeConfig={getThemeConfig(this.props.themeConfig)}
             ref={(r) => (this.ruleRef = r)}
-            ruleId={_get(this.state.expression, 'id', uuid.v4())}
+            ruleId={_get(this.state.expression, 'id', uuid())}
             onUpdate={this.onRuleUpdate}
             initialData={this.state.expression}
             readOnly={true}
@@ -209,7 +207,7 @@ export default class ExpressionBuilderSimple extends React.Component {
               authentication={getAuthentication(this.props.authentication)}
               themeConfig={getThemeConfig(this.props.themeConfig)}
               ref={(r) => (this.ruleRef = r)}
-              ruleId={_get(this.state.expression, 'id', uuid.v4())}
+              ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}
               initialData={this.state.expression}
             />

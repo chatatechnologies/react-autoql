@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import '../DateSelect.scss'
 
@@ -44,7 +44,7 @@ const days = [
 ]
 
 export default class WeekSelect extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
 
   static propTypes = {
     value: PropTypes.arrayOf(PropTypes.number),

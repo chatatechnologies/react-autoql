@@ -4,7 +4,7 @@ import ReactTooltip from 'react-tooltip'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
@@ -30,7 +30,7 @@ import {
 import './DataAlerts.scss'
 
 export default class DataAlerts extends React.Component {
-  COMPONENT_KEY = uuid.v4()
+  COMPONENT_KEY = uuid()
 
   static propTypes = {
     authentication: authenticationType,
@@ -400,7 +400,6 @@ export default class DataAlerts extends React.Component {
                           onChange={(e) => {
                             this.onEnableSwitchChange(e, notification)
                             ReactTooltip.hide()
-                            ReactTooltip.rebuild()
                           }}
                         />
                       )}

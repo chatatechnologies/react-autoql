@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 
 import { Radio } from '../../Radio'
 import { Icon } from '../../Icon'
@@ -31,14 +31,14 @@ const getInitialStateData = (initialData) => {
   const rules = []
   if (!initialData || !initialData.length) {
     rules.push({
-      id: uuid.v4(),
+      id: uuid(),
       type: 'rule',
       isComplete: false,
     })
     state = { rules }
   } else {
     initialData.forEach((rule) => {
-      const id = rule.id || uuid.v4()
+      const id = rule.id || uuid()
       rules.push({
         id,
         type: isGroup(rule.term_value) ? 'group' : 'rule',
@@ -57,7 +57,7 @@ const getInitialStateData = (initialData) => {
 }
 
 export default class Group extends React.Component {
-  ID = uuid.v4()
+  ID = uuid()
   ruleRefs = []
 
   static propTypes = {
@@ -108,7 +108,7 @@ export default class Group extends React.Component {
       }
 
       return {
-        id: rule.id || uuid.v4(),
+        id: rule.id || uuid(),
         term_type: 'group',
         condition,
         term_value: termValue,
@@ -168,7 +168,7 @@ export default class Group extends React.Component {
   }
 
   addRule = () => {
-    const newId = uuid.v4()
+    const newId = uuid()
     const newRules = [
       ...this.state.rules,
       {
@@ -182,7 +182,7 @@ export default class Group extends React.Component {
   }
 
   addGroup = () => {
-    const newId = uuid.v4()
+    const newId = uuid()
     const newRules = [
       ...this.state.rules,
       {

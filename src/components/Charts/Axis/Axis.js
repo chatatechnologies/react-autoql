@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
+import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
@@ -23,7 +24,7 @@ export default class Axis extends Component {
     super(props)
 
     this.LEGEND_PADDING = 130
-    this.LEGEND_ID = `axis-${uuid.v4()}`
+    this.LEGEND_ID = `axis-${uuid()}`
     this.swatchElements = []
   }
 
@@ -45,6 +46,8 @@ export default class Axis extends Component {
     hasBottomLegend: PropTypes.bool,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
+    onLabelChange: PropTypes.func,
+    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -61,15 +64,35 @@ export default class Axis extends Component {
     hasRightLegend: false,
     hasBottomLegend: false,
     onLegendClick: () => {},
+    onLabelChange: () => {},
     onLegendTitleClick: undefined,
+    legendLabels: undefined,
   }
 
   componentDidMount = () => {
     this.renderAxis()
+    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
+      // https://d3-legend.susielu.com/
+      this.renderLegend()
+    }
+    this.props.onLabelChange()
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     this.renderAxis()
+
+    // only render legend once... unless labels changed
+    if (
+      (this.props.hasRightLegend || this.props.hasBottomLegend) &&
+      this.props.legendLabels?.length &&
+      !_isEqual(this.props.legendLabels, prevProps.legendLabels)
+    ) {
+      this.renderLegend()
+    }
+
+    if (this.props.rotateLabels !== prevProps.rotateLabels) {
+      this.props.onLabelChange()
+    }
   }
 
   componentWillUnmount = () => {
@@ -342,11 +365,6 @@ export default class Axis extends Component {
         .attr('dx', '0')
         .attr('fill-opacity', '0.7')
         .style('font-family', 'inherit')
-    }
-
-    if (this.props.hasRightLegend || this.props.hasBottomLegend) {
-      // https://d3-legend.susielu.com/
-      this.renderLegend()
     }
 
     select(this.axisElement)

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 
 import { Icon } from '../Icon'
@@ -13,7 +13,7 @@ import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 import './Checkbox.scss'
 
 export default class Checkbox extends React.Component {
-  ID = uuid.v4()
+  ID = uuid()
 
   static propTypes = {
     themeConfig: themeConfigType,

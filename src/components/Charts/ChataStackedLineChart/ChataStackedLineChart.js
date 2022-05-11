@@ -5,20 +5,25 @@ import { StackedLines } from '../StackedLines'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { calculateMinAndMaxSums, shouldLabelsRotate } from '../../../js/Util'
+import {
+  calculateMinAndMaxSums,
+  shouldLabelsRotate,
+  getLongestLabelInPx,
+} from '../../../js/Util'
 import { getTickValues } from '../helpers'
 import { dataFormattingType, themeConfigType } from '../../../props/types'
 import {
   dataFormattingDefault,
   themeConfigDefault,
   getDataFormatting,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 export default class ChataStackedLineChart extends Component {
   constructor(props) {
     super(props)
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -63,27 +68,32 @@ export default class ChataStackedLineChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
     }
   }
 
-  didLabelsRotate = () => {
+  setLabelRotationValue = (props) => {
     const rotateLabels = shouldLabelsRotate(
       this.tickWidth,
-      this.labelArray,
-      this.props.columns[0],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
+  }
 
-    return false
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.labelArray,
+      this.props.columns[0],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -116,6 +126,7 @@ export default class ChataStackedLineChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g data-test="react-autoql-stacked-line-chart">
@@ -138,6 +149,7 @@ export default class ChataStackedLineChart extends Component {
           height={this.props.height}
           xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
@@ -151,23 +163,25 @@ export default class ChataStackedLineChart extends Component {
           hasXDropdown={this.props.enableDynamicCharting}
           yAxisTitle={this.props.numberAxisTitle}
         />
-        <StackedLines
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-          }}
-          data={this.props.data}
-          width={this.props.width}
-          height={this.props.height}
-          onChartClick={this.props.onChartClick}
-          activeKey={this.props.activeChartElementKey}
-          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
-          minValue={0} // change to min if we want to account for negative values at some point
-        />
+        {this.props.marginAdjustmentFinished && (
+          <StackedLines
+            themeConfig={this.props.themeConfig}
+            scales={{ xScale: this.xScale, yScale: this.yScale }}
+            margins={{
+              left: this.props.leftMargin,
+              right: this.props.rightMargin,
+              bottom: this.props.bottomMargin,
+              top: this.props.topMargin,
+            }}
+            data={this.props.data}
+            width={this.props.width}
+            height={this.props.height}
+            onChartClick={this.props.onChartClick}
+            activeKey={this.props.activeChartElementKey}
+            legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
+            minValue={0} // change to min if we want to account for negative values at some point
+          />
+        )}
       </g>
     )
   }

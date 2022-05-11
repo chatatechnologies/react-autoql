@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactTooltip from 'react-tooltip'
 import _isEqual from 'lodash.isequal'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -38,8 +37,6 @@ class VizToolbar extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    ReactTooltip.rebuild()
-
     if (
       !_isEqual(
         getThemeConfig(this.props.themeConfig),

@@ -10,15 +10,13 @@ const defaultProps = {
     { cells: [{ value: 50 }, { value: 75 }], label: 'label1`' },
     { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' },
   ],
-  scales: {
-    xScale: scaleBand()
-      .domain(['label1', 'label2'])
-      .range([0, 200])
-      .paddingInner(0.1),
-    yScale: scaleLinear()
-      .domain([0, 100])
-      .range([0, 300]),
-  },
+  xScale: scaleBand()
+    .domain(['label1', 'label2'])
+    .range([0, 200])
+    .paddingInner(0.1),
+  yScale: scaleLinear()
+    .domain([0, 100])
+    .range([0, 300]),
   height: 300,
   width: 300,
 }

@@ -1,7 +1,7 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
-import uuid from 'uuid'
+import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
@@ -26,6 +26,7 @@ import {
   isTableType,
   setCSSVars,
   areAllColumnsHidden,
+  areSomeColumnsHidden,
   isChartType,
 } from '../../js/Util'
 
@@ -45,7 +46,7 @@ import {
 
 import './OptionsToolbar.scss'
 
-export default class Input extends React.Component {
+export default class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -91,8 +92,6 @@ export default class Input extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    ReactTooltip.rebuild()
-
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }
@@ -109,6 +108,7 @@ export default class Input extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    clearTimeout(this.temporaryStateTimeout)
   }
 
   onTableFilter = (newTableData) => {
@@ -128,7 +128,7 @@ export default class Input extends React.Component {
 
   setTemporaryState = (key, value, duration) => {
     this.setState({ [key]: value })
-    setTimeout(() => {
+    this.temporaryStateTimeout = setTimeout(() => {
       this.setState({ [key]: undefined })
     }, duration)
   }
@@ -147,7 +147,7 @@ export default class Input extends React.Component {
   fetchCSVAndExport = () => {
     const queryId = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.query_id'
+      'queryResponse.data.data.query_id'
     )
 
     exportCSV({
@@ -178,15 +178,15 @@ export default class Input extends React.Component {
       // outside of Data Messenger
       const queryId = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.query_id'
+        'queryResponse.data.data.query_id'
       )
       const queryText = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.text'
+        'queryResponse.data.data.text'
       )
       this.props.onCSVExportClick(queryId, queryText, isPivotTable)
     } else if (isPivotTable) {
-      if (_get(this.props, 'responseRef.pivotTableRef')) {
+      if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
         this.props.responseRef.pivotTableRef.saveAsCSV()
       }
     } else {
@@ -206,10 +206,7 @@ export default class Input extends React.Component {
   }
 
   copySQL = () => {
-    const sql = _get(
-      this.props.responseRef,
-      'props.queryResponse.data.data.sql'
-    )
+    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql')
     const el = document.createElement('textarea')
     el.value = sql
     document.body.appendChild(el)
@@ -226,31 +223,6 @@ export default class Input extends React.Component {
 
   showHideColumnsModal = () => {
     this.setState({ isHideColumnsModalVisible: true })
-  }
-
-  hideColumnCallback = (column) => {
-    if (!column) {
-      return
-    }
-
-    const columnDefinition = column.getDefinition()
-    setColumnVisibility({
-      ...getAuthentication(this.props.authentication),
-      columns: [
-        {
-          name: columnDefinition.name,
-          is_visible: false,
-        },
-      ],
-    })
-      .then(() => {
-        column.hide()
-      })
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
-      })
   }
 
   onColumnVisibilitySave = (columns) => {
@@ -270,10 +242,12 @@ export default class Input extends React.Component {
     this.setState({ isSettingColumnVisibility: true })
     setColumnVisibility({ ...authentication, columns: formattedColumns })
       .then(() => {
-        this.setState({
-          isHideColumnsModalVisible: false,
-          isSettingColumnVisibility: false,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isHideColumnsModalVisible: false,
+            isSettingColumnVisibility: false,
+          })
+        }
 
         if (this.props.responseRef) {
           this.props.responseRef.updateColumns(formattedColumns)
@@ -284,22 +258,26 @@ export default class Input extends React.Component {
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        this.setState({ isSettingColumnVisibility: false })
+
+        if (this._isMounted) {
+          this.setState({ isSettingColumnVisibility: false })
+        }
       })
   }
 
   renderHideColumnsModal = () => {
-    let columns =
-      this.props.dataColumns ||
-      _get(this.props.responseRef, 'props.queryResponse.data.data.columns').map(
-        (col) => {
-          return {
-            ...col,
-            content: col.display_name,
-            checked: col.is_visible,
-          }
-        }
-      )
+    const cols = _get(this.props.responseRef, 'queryResponse.data.data.columns')
+    if (!cols || !cols.length) {
+      return null
+    }
+
+    const columns = cols.map((col) => {
+      return {
+        ...col,
+        content: col.display_name,
+        checked: col.is_visible,
+      }
+    })
 
     return (
       <ErrorBoundary>
@@ -318,7 +296,7 @@ export default class Input extends React.Component {
   renderDataAlertModal = () => {
     const initialQuery = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.text'
+      'queryResponse.data.data.text'
     )
 
     return (
@@ -381,7 +359,7 @@ export default class Input extends React.Component {
   reportQueryProblem = (reason) => {
     const queryId = _get(
       this.props.responseRef,
-      'props.queryResponse.data.data.query_id'
+      'queryResponse.data.data.query_id'
     )
     this.setState({ isReportingProblem: true })
     reportProblem({
@@ -391,11 +369,15 @@ export default class Input extends React.Component {
     })
       .then(() => {
         this.props.onSuccessAlert('Thank you for your feedback.')
-        this.setState({ activeMenu: undefined, isReportingProblem: false })
+        if (this._isMounted) {
+          this.setState({ activeMenu: undefined, isReportingProblem: false })
+        }
       })
       .catch((error) => {
         this.props.onErrorCallback(error)
-        this.setState({ isReportingProblem: false })
+        if (this._isMounted) {
+          this.setState({ isReportingProblem: false })
+        }
       })
   }
 
@@ -543,16 +525,11 @@ export default class Input extends React.Component {
     )
   }
 
-  areColumnsHidden = () => {
-    const columns = _get(this.props.responseRef, 'tableColumns', [])
-    return !!columns.find((col) => !col.visible)
-  }
-
   isDrilldownResponse = () => {
     try {
       const queryText = _get(
         this.props.responseRef,
-        'props.queryResponse.data.data.text'
+        'queryResponse.data.data.text'
       )
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
@@ -600,10 +577,7 @@ export default class Input extends React.Component {
   }
 
   renderSQLModal = () => {
-    const sql = _get(
-      this.props.responseRef,
-      'props.queryResponse.data.data.sql[0]'
-    )
+    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql[0]')
     if (!sql) {
       return null
     }
@@ -679,12 +653,15 @@ export default class Input extends React.Component {
               data-for="react-autoql-toolbar-btn-tooltip"
               data-test="options-toolbar-col-vis"
             >
-              <Icon type="eye" showBadge={this.areColumnsHidden()} />
+              <Icon
+                type="eye"
+                showBadge={shouldShowButton.showHiddenColsBadge}
+              />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
             <Popover
-              key={uuid.v4()}
+              key={uuid()}
               isOpen={this.state.activeMenu === 'report-problem'}
               padding={8}
               onClickOutside={() => {
@@ -718,7 +695,7 @@ export default class Input extends React.Component {
           )}
           {shouldShowButton.showMoreOptionsButton && (
             <Popover
-              key={uuid.v4()}
+              key={uuid()}
               isOpen={this.state.activeMenu === 'more-options'}
               position="bottom"
               padding={8}
@@ -748,51 +725,71 @@ export default class Input extends React.Component {
     )
   }
 
-  render = () => {
-    const displayType = _get(this.props.responseRef, 'props.displayType')
-    const isTable = isTableType(displayType)
-    const isChart = isChartType(displayType)
-    const response = _get(this.props.responseRef, 'props.queryResponse')
-    const isDataResponse = _get(response, 'data.data.display_type') === 'data'
-    const allColumnsHidden = areAllColumnsHidden(response)
-    const hasMoreThanOneRow = _get(response, 'data.data.rows.length') > 1
-    const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
+  getShouldShouldButtonObj = () => {
+    let shouldShowButton = {}
+    try {
+      const displayType = _get(this.props.responseRef, 'props.displayType')
+      const isTable = isTableType(displayType)
+      const isChart = isChartType(displayType)
+      const response = _get(this.props.responseRef, 'queryResponse')
+      const isDataResponse = _get(response, 'data.data.display_type') === 'data'
+      const allColumnsHidden = areAllColumnsHidden(response)
+      const someColumnsHidden = areSomeColumnsHidden(response)
+      const numRows = _get(response, 'data.data.rows.length')
+      const hasData = numRows > 0
+      const hasMoreThanOneRow = numRows > 1
+      const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
-    const shouldShowButton = {
-      showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
-      showCopyButton: isTable && !allColumnsHidden,
-      showSaveAsCSVButton: isTable && !allColumnsHidden,
-      showSaveAsPNGButton: isChart,
-      showHideColumnsButton:
-        autoQLConfig.enableColumnVisibilityManager &&
-        (isTable || allColumnsHidden) &&
-        displayType !== 'pivot_table',
-      showSQLButton: isDataResponse && autoQLConfig.debug,
-      showSaveAsCSVButton: isDataResponse && autoQLConfig.enableCSVDownload,
-      showDeleteButton: this.props.enableDeleteBtn,
-      showReportProblemButton: !!_get(response, 'data.data.query_id'),
-      showCreateNotificationIcon:
-        isDataResponse &&
-        autoQLConfig.enableNotifications &&
-        !this.isDrilldownResponse(),
-      showShareToSlackButton: false,
-      // This feature is disabled indefinitely
-      // isDataResponse &&
-      // autoQLConfig.enableSlackSharing,
-      showShareToTeamsButton: false,
-      // This feature is disabled indefinitely
-      // isDataResponse &&
-      // autoQLConfig.enableTeamsSharing,
+      shouldShowButton = {
+        showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
+        showCopyButton: isTable && !allColumnsHidden,
+        showSaveAsPNGButton: isChart,
+        showHideColumnsButton:
+          autoQLConfig.enableColumnVisibilityManager &&
+          hasData &&
+          (displayType === 'table' ||
+            (displayType === 'text' && allColumnsHidden)),
+        showHiddenColsBadge: someColumnsHidden,
+        showSQLButton: isDataResponse && autoQLConfig.debug,
+        showSaveAsCSVButton:
+          isDataResponse &&
+          hasMoreThanOneRow &&
+          !allColumnsHidden &&
+          autoQLConfig.enableCSVDownload,
+        showDeleteButton: this.props.enableDeleteBtn,
+        showReportProblemButton: !!_get(response, 'data.data.query_id'),
+
+        showCreateNotificationIcon:
+          isDataResponse &&
+          autoQLConfig.enableNotifications &&
+          !this.isDrilldownResponse(),
+        showShareToSlackButton: false,
+        // This feature is disabled indefinitely
+        // isDataResponse &&
+        // autoQLConfig.enableSlackSharing,
+        showShareToTeamsButton: false,
+        // This feature is disabled indefinitely
+        // isDataResponse &&
+        // autoQLConfig.enableTeamsSharing,
+      }
+
+      shouldShowButton.showMoreOptionsButton =
+        shouldShowButton.showCopyButton ||
+        shouldShowButton.showSQLButton ||
+        shouldShowButton.showCreateNotificationIcon ||
+        shouldShowButton.showSaveAsCSVButton ||
+        shouldShowButton.showSaveAsPNGButton ||
+        shouldShowButton.showShareToSlackButton ||
+        shouldShowButton.showShareToTeamsButton
+    } catch (error) {
+      console.error(error)
     }
 
-    shouldShowButton.showMoreOptionsButton =
-      shouldShowButton.showCopyButton ||
-      shouldShowButton.showSQLButton ||
-      shouldShowButton.showCreateNotificationIcon ||
-      shouldShowButton.showSaveAsCSVButton ||
-      shouldShowButton.showSaveAsPNGButton ||
-      shouldShowButton.showShareToSlackButton ||
-      shouldShowButton.showShareToTeamsButton
+    return shouldShowButton
+  }
+
+  render = () => {
+    const shouldShowButton = this.getShouldShouldButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
     if (
@@ -803,7 +800,7 @@ export default class Input extends React.Component {
 
     return (
       <ErrorBoundary>
-        {this.renderToolbar(shouldShowButton, allColumnsHidden)}
+        {this.renderToolbar(shouldShowButton)}
         {shouldShowButton.showHideColumnsButton &&
           this.renderHideColumnsModal()}
         {shouldShowButton.showReportProblemButton &&

@@ -520,6 +520,7 @@ describe('getSupportedDisplayTypes', () => {
 
   test('supports 3d charts', () => {
     expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
+      'table',
       'pivot_table',
       'stacked_column',
       'stacked_bar',
@@ -529,7 +530,6 @@ describe('getSupportedDisplayTypes', () => {
       'line',
       'bubble',
       'heatmap',
-      'table',
     ])
   })
 })
@@ -660,7 +660,6 @@ describe('getMinValueFromKeyValueObj', () => {
 // export const calculateMinAndMaxSums = data
 // export const getChartLabelTextWidthInPx = text
 // export const getLongestLabelInPx = (labels, col, config)
-// export const shouldLabelsRotate = (tickWidth, labels, col, config)
 // export const getTickWidth = (scale, innerPadding)
 // export const setCSSVars = ({ themeConfig, prefix })
 // export const setStyleVars = ({ themeStyles, prefix })

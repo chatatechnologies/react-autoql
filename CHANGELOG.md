@@ -1,3 +1,29 @@
+# [3.4.0](https://github.com/chatatechnologies/react-autoql/compare/v3.3.4...v3.4.0) (2022-03-21)
+
+
+### Bug Fixes
+
+* **app.js:** set maxMessages to 20 to help QA team to test ([774237a](https://github.com/chatatechnologies/react-autoql/commit/774237a0c8af0a0406d1760c9236fee7107c1cc8))
+* **chatmessage.scss:** add a min-height attribute of 200px ([6224169](https://github.com/chatatechnologies/react-autoql/commit/6224169571a33cf681732131ace4fc5635b3526b))
+* **dashboardtile:** set secondDisplayType to be default displaytype when process the spliting ([5cc9a95](https://github.com/chatatechnologies/react-autoql/commit/5cc9a95ce315bf17b86e687dd59490b793b0fe15))
+* **datamessenger:** fixed the delete function ([2d87f52](https://github.com/chatatechnologies/react-autoql/commit/2d87f526a17c32f8cb65e7d3ae45602b17db7efb))
+* **optionstoolbar:** change reportProblemMessage to be a state ([7d3c194](https://github.com/chatatechnologies/react-autoql/commit/7d3c19447e0ec6469e432771d5eef0168bb9b901))
+* **package.json:** roll back version of react-tabulator to 0.13.2 from 0.18.1 ([dd62d1e](https://github.com/chatatechnologies/react-autoql/commit/dd62d1e8b9a707837d915cc516a929bec770cb5a))
+* **queryoutput:** add a feature to sort YYYY-WW format date ([8bf4870](https://github.com/chatatechnologies/react-autoql/commit/8bf48707b1613b030fdaf52e31201b11d015857f))
+* **queryoutput:** added a feature to sort based on yyyy-WW ([ce95873](https://github.com/chatatechnologies/react-autoql/commit/ce958730b6e76a1d2c344a26459c4dc25f937d93))
+* **queryoutput:** comment out sort function ([0bc58f9](https://github.com/chatatechnologies/react-autoql/commit/0bc58f9ccf77eece57230f8c6cf942ce6e0696e9))
+* **queryoutput.css:** set .react-autoql-response-content-container.table height to calc(100% - 44px) ([da487fa](https://github.com/chatatechnologies/react-autoql/commit/da487fa9c247e273f510f847cd96a3bcccefe878))
+* **queryservice:** enable query validation on several projects ([0b91b1e](https://github.com/chatatechnologies/react-autoql/commit/0b91b1e2b560303b414c0a1f60e9e02fb16f68c5))
+* **refix a bug:** refix a bug ([5aab596](https://github.com/chatatechnologies/react-autoql/commit/5aab59647a4b0b0265b56878771e4e09e813f16b))
+* change example/package.json ([a22fa81](https://github.com/chatatechnologies/react-autoql/commit/a22fa815520d89374a9b40ce2f60a5209cab78dc))
+* fix the if statement ([af19331](https://github.com/chatatechnologies/react-autoql/commit/af19331efe61b74d1e1059e8143b4e836edd028e))
+* refix the height to unset ([72883f4](https://github.com/chatatechnologies/react-autoql/commit/72883f47ecd87ad9b9a9b692d1f1af8c5312ab0e))
+
+
+### Features
+
+* change maxMessages value ([4959ddf](https://github.com/chatatechnologies/react-autoql/commit/4959ddfe0b994d9aa16f4aef9c93fbb86010ba7a))
+
 ## [3.3.4](https://github.com/chatatechnologies/react-autoql/compare/v3.3.3...v3.3.4) (2022-02-28)
 
 

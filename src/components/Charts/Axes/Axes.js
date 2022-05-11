@@ -49,6 +49,7 @@ export default class Axes extends React.Component {
     xAxisTitle: PropTypes.string,
     yAxisTitle: PropTypes.string,
     legendTitle: PropTypes.string,
+    onLabelChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -76,6 +77,11 @@ export default class Axes extends React.Component {
     onLegendClick: () => {},
     onXAxisClick: () => {},
     onYAxisClick: () => {},
+    onLabelChange: () => {},
+  }
+
+  componentDidMount = () => {
+    this.props.onLabelChange()
   }
 
   renderAxisLabel = (title = '', hasDropdown) => {
@@ -109,12 +115,16 @@ export default class Axes extends React.Component {
   }
 
   getBBoxFromRef = (ref) => {
+    let bbox
     try {
-      const bbox = ref.getBBox()
-      return bbox
+      if (ref) {
+        bbox = ref.getBBox()
+      }
     } catch (error) {
-      return undefined
+      console.error(error)
     }
+
+    return bbox
   }
 
   renderXLabelDropdown = (xLabelX, xLabelY) => {
@@ -239,6 +249,7 @@ export default class Axes extends React.Component {
         themeConfig={this.props.themeConfig}
         onLegendClick={this.props.onLegendClick}
         onLegendTitleClick={this.props.onLegendTitleClick}
+        onLabelChange={this.props.onLabelChange}
         legendTitle={this.props.legendTitle}
       />
     )

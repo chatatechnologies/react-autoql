@@ -5,7 +5,7 @@ import { max, min } from 'd3-array'
 
 import { Axes } from '../Axes'
 import { Circles } from '../Circles'
-import { shouldLabelsRotate } from '../../../js/Util.js'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
@@ -18,6 +18,8 @@ export default class ChataBubbleChart extends Component {
   constructor(props) {
     super(props)
     this.setChartData(props)
+    this.setLongestLabelWidth(props)
+    this.setLabelRotationValue(props)
   }
 
   static propTypes = {
@@ -64,27 +66,32 @@ export default class ChataBubbleChart extends Component {
     return true
   }
 
-  componentDidUpdate = () => {
-    if (this.didLabelsRotate()) {
-      this.props.onLabelChange()
+  componentDidUpdate = (prevProps) => {
+    if (
+      this.props.marginAdjustmentFinished &&
+      prevProps?.data?.length !== this.props.data?.length
+    ) {
+      this.setLongestLabelWidth(this.props)
     }
   }
 
-  didLabelsRotate = () => {
+  setLabelRotationValue = (props) => {
     const rotateLabels = shouldLabelsRotate(
       this.squareWidth,
-      this.uniqueXLabels,
-      this.props.columns[0],
-      getDataFormatting(this.props.dataFormatting)
+      this.longestLabelWidth
     )
 
     if (typeof rotateLabels !== 'undefined') {
-      this.prevRotateLabels = this.rotateLabels
       this.rotateLabels = rotateLabels
-      return this.prevRotateLabels !== this.rotateLabels
     }
+  }
 
-    return false
+  setLongestLabelWidth = (props) => {
+    this.longestLabelWidth = getLongestLabelInPx(
+      this.uniqueXLabels,
+      this.props.columns[0],
+      getDataFormatting(props.dataFormatting)
+    )
   }
 
   setChartData = (props) => {
@@ -157,6 +164,7 @@ export default class ChataBubbleChart extends Component {
 
   render = () => {
     this.setChartData(this.props)
+    this.setLabelRotationValue(this.props)
 
     return (
       <g
@@ -182,6 +190,7 @@ export default class ChataBubbleChart extends Component {
           yGridLines
           dataFormatting={this.props.dataFormatting}
           rotateLabels={this.rotateLabels}
+          onLabelChange={this.props.onLabelChange}
           onXAxisClick={this.props.onXAxisClick}
           onYAxisClick={this.props.onYAxisClick}
         />
