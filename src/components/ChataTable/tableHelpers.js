@@ -1,12 +1,31 @@
+import { isColumnNumberType } from '../QueryOutput/columnHelpers'
+
+export const getTableConfigState = (params, tableRef) => {
+  const formattedSorters = formatSortersForAPI(params, tableRef)
+  const formattedFilters = formatFiltersForAPI(params, tableRef)
+
+  const configState = {
+    sorters: formattedSorters,
+    filters: formattedFilters,
+    page: params?.page,
+  }
+
+  return configState
+}
+
 export const formatSortersForAPI = (params, tableRef) => {
   let sorters = []
-  if (params.sorters && params.sorters.length > 0) {
-    sorters = params.sorters.map((sorter) => {
-      const column = tableRef.table.getColumn(sorter.field).getDefinition()
-
-      return {
-        name: column.name,
-        sort: sorter.dir.toUpperCase(),
+  if (params?.sorters?.length > 0) {
+    params.sorters.forEach((sorter) => {
+      try {
+        const column = tableRef.table.getColumn(sorter.field).getDefinition()
+        const name = column.name
+        const sort = sorter.dir.toUpperCase()
+        if (name && sort) {
+          sorters.push({ name, sort })
+        }
+      } catch (error) {
+        console.error(error)
       }
     })
   }
@@ -14,17 +33,53 @@ export const formatSortersForAPI = (params, tableRef) => {
   return sorters
 }
 
+export const formatNumberFilterValue = (headerValue = '') => {
+  const strNumber = headerValue.trim().replace(/[^0-9.]/g, '')
+  let value = Number(strNumber)
+  if (!strNumber || isNaN(value)) {
+    throw new Error('Unable to convert string to number')
+  }
+
+  // let operator = 'LIKE'
+  let operator = '='
+
+  const trimmedStringValue = headerValue.trim()
+  if (trimmedStringValue.length >= 2) {
+    if (['<=', '>=', '!='].includes(trimmedStringValue.substring(0, 2))) {
+      operator = trimmedStringValue.substring(0, 2)
+    } else if (['=', '<', '>'].includes(trimmedStringValue.substring(0, 1))) {
+      operator = trimmedStringValue.substring(0, 1)
+    }
+  }
+
+  return { value: strNumber, operator }
+}
+
 export const formatFiltersForAPI = (params, tableRef) => {
+  // for Number type column =,<,>,<=  >=
+  // for String the operator is = or like
   let filters = []
 
-  if (params.filters && params.filters.length > 0) {
-    filters = params.filters.map((filter) => {
-      const column = tableRef.table.getColumn(filter.field).getDefinition()
+  // test to see if there is an error, if it continues for loop
+  if (params?.filters?.length > 0) {
+    params.filters.forEach((filter) => {
+      try {
+        const column = tableRef.table.getColumn(filter.field).getDefinition()
+        const filterObj = {
+          name: column.name,
+          value: filter.value,
+          operator: '=',
+        }
 
-      return {
-        name: column.name,
-        operator: 'like', // todo: change this based on column type and filter text
-        value: filter.value,
+        if (isColumnNumberType(column)) {
+          const formatted = formatNumberFilterValue(filter.value)
+          filterObj.operator = formatted.operator
+          filterObj.value = formatted.value
+        }
+
+        filters.push(filterObj)
+      } catch (error) {
+        console.warn(error)
       }
     })
   }

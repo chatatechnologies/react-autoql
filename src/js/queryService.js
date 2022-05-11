@@ -120,13 +120,6 @@ export const runSubQuery = ({
       if (error.response === 401 || !_get(error, 'response.data')) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
-      if (
-        _get(error, 'response.data.reference_id') === '1.1.430' ||
-        _get(error, 'response.data.reference_id') === '1.1.431'
-      ) {
-        const queryId = _get(error, 'response.data.data.query_id')
-        return fetchSuggestions({ query, queryId, domain, apiKey, token })
-      }
       return Promise.reject(_get(error, 'response'))
     })
 }

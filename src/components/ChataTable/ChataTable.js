@@ -5,6 +5,7 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
 
+import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { setCSSVars, isAggregation } from '../../js/Util'
 import { themeConfigType } from '../../props/types'
@@ -18,7 +19,7 @@ import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
 import { runSubQuery } from '../../js/queryService'
-import { formatFiltersForAPI, formatSortersForAPI } from './tableHelpers'
+import { getTableConfigState } from './tableHelpers'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -31,7 +32,7 @@ export default class ChataTable extends React.Component {
     this.currentPage = 1
     this.filterTagElements = []
     this.supportsDrilldown = isAggregation(props.columns)
-    this.supportsInfiniteScroll = props.useInfiniteScroll && props.pageSize
+    this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
       ajaxProgressiveLoad: this.supportsInfiniteScroll ? 'scroll' : undefined,
@@ -40,30 +41,44 @@ export default class ChataTable extends React.Component {
       ajaxSorting: true,
       ajaxFiltering: true,
       ajaxRequestFunc: (url, config, params) => {
-        const formattedSorters = formatSortersForAPI(params, this.ref)
-        const formattedFilters = formatFiltersForAPI(params, this.ref)
+        try {
+          const tableConfigState = getTableConfigState(params, this.ref)
+          if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+            return Promise.resolve()
+          }
 
-        if (!this.hasSetInitialData) {
-          this.hasSetInitialData = true
-          return Promise.resolve({ rows: this.props.data, page: 1 })
+          this.previousTableConfigState = tableConfigState
+
+          if (!this.hasSetInitialData) {
+            this.hasSetInitialData = true
+            return Promise.resolve({ rows: this.props.data, page: 1 })
+          }
+
+          return runSubQuery({
+            ...getAuthentication(props.authentication),
+            ...tableConfigState,
+            queryId: props.queryID,
+          })
+        } catch (error) {
+          // Send empty promise so data doesn't change
+          return Promise.resolve()
         }
-
-        return runSubQuery({
-          ...getAuthentication(props.authentication),
-          queryId: props.queryID,
-          page: params.page,
-          sorters: formattedSorters,
-          filters: formattedFilters,
-        })
       },
       ajaxResponse: (url, params, response) => {
+        if (!response) {
+          return {
+            data: this.data,
+            last_page: this.lastPage,
+          }
+        }
+
         this.currentPage = response.page
         const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
-        const lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+        this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
         let modResponse = {}
         modResponse.data = response.rows
-        modResponse.last_page = lastPage
+        modResponse.last_page = this.lastPage
         return modResponse
       },
       ajaxError: (error) => {
@@ -83,7 +98,13 @@ export default class ChataTable extends React.Component {
       },
       cellClick: this.cellClick,
       dataSorting: (sorters) => {},
-      dataFiltering: (filters) => {
+      dataFiltering: () => {
+        const data = this.ref?.table?.getData()
+        if (data?.length) {
+          this.data = data
+        }
+      },
+      dataFiltered: (filters, rows) => {
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
         if (this._isMounted && this.ref && !this.firstRender) {
@@ -280,8 +301,8 @@ export default class ChataTable extends React.Component {
           }}
         >
           {this.props.data && this.props.columns && (
-            <ReactTabulator
-              ref={(ref) => (this.ref = ref)}
+            <TableWrapper
+              tableRef={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}

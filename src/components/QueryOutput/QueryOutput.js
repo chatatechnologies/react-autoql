@@ -1543,10 +1543,10 @@ export default class QueryOutput extends React.Component {
 
       // Need to set custom filters for cells that are
       // displayed differently than the data (ie. dates)
-      col.headerFilterFunc = this.setFilterFunction(col)
+      // col.headerFilterFunc = this.setFilterFunction(col)
 
       // Allow proper chronological sorting for date strings
-      col.sorter = this.setSorterFunction(col)
+      // col.sorter = this.setSorterFunction(col)
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {
