@@ -14,11 +14,11 @@ dayjs.extend(LocalizedFormat)
 
   try {
     // Check if file exists, then use it
-    require(`dayjs/locale/${specificLanguageCode}`)
+    require(`dayjs/locale/${specificLanguageCode}.js`)
     dayjs.locale(specificLanguageCode)
   } catch (error) {
     try {
-      require(`dayjs/locale/${genericLanguageCode}`)
+      require(`dayjs/locale/${genericLanguageCode}.js`)
       dayjs.locale(genericLanguageCode)
     } catch (error) {}
   }

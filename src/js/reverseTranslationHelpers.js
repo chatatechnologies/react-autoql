@@ -1,6 +1,20 @@
 import dayjs from './dayjsWithPlugins'
 import _get from 'lodash.get'
 
+const isIsoDate = (str) => {
+  if (!str) {
+    return false
+  }
+
+  try {
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false
+    var d = new Date(str)
+    return d.toISOString() === str
+  } catch (error) {
+    return false
+  }
+}
+
 export const constructRTArray = (response) => {
   try {
     const interpretation = _get(response, 'data.data.parsed_interpretation')
@@ -107,11 +121,13 @@ const formatChunkWithDates = (chunk) => {
   try {
     const textArray = chunk.eng.split(' ')
     const textWithDatesArray = textArray.map((text) => {
-      const formattedDate = dayjs(text)
-        .utc()
-        .format('ll')
-      if (formattedDate !== 'Invalid Date') {
-        return formattedDate
+      if (isIsoDate(text)) {
+        const formattedDate = dayjs(text)
+          .utc()
+          .format('ll')
+        if (formattedDate !== 'Invalid Date') {
+          return formattedDate
+        }
       }
       return text
     })
