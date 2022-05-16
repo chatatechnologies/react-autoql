@@ -4,7 +4,9 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _reduce from 'lodash.reduce'
-import disableScroll from 'disable-scroll'
+import _sortBy from 'lodash.sortby'
+import _cloneDeep from 'lodash.clonedeep'
+import _isEmpty from 'lodash.isempty'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -22,16 +24,17 @@ import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { svgToPng } from '../../../js/Util.js'
-import { getLegendLabelsForMultiSeries, getLegendLocation } from '../helpers.js'
+import {
+  chartContainerDefaultProps,
+  chartContainerPropTypes,
+  getLegendLabelsForMultiSeries,
+  getLegendLocation,
+} from '../helpers.js'
 
 import './ChataChart.scss'
 import Popover from 'react-tiny-popover'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import {
-  themeConfigType,
-  dataFormattingType,
-  dataConfigType,
-} from '../../../props/types'
+import { themeConfigType, dataFormattingType } from '../../../props/types'
 import {
   themeConfigDefault,
   dataFormattingDefault,
@@ -51,13 +54,14 @@ export default class ChataChart extends Component {
     this.X_AXIS_LABEL_HEIGHT = 15
     this.PADDING = 20
 
-    this.colorScale = scaleOrdinal().range(chartColors)
-    this.filteredSeriesData = this.getFilteredSeriesData(props.data)
     this.firstRender = true
     this.recursiveUpdateCount = 0
 
+    this.colorScale = scaleOrdinal().range(chartColors)
+
     this.state = {
       ...this.getNumberColumnSelectorState(props),
+      aggregatedData: !props.isPivot ? this.aggregateRowData(props) : undefined,
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
@@ -75,31 +79,11 @@ export default class ChataChart extends Component {
   }
 
   static propTypes = {
-    themeConfig: themeConfigType,
-    dataFormatting: dataFormattingType,
-    dataConfig: dataConfigType,
-
-    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    tableColumns: PropTypes.arrayOf(PropTypes.shape({})),
+    ...chartContainerPropTypes,
     type: PropTypes.string.isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
-    onLegendClick: PropTypes.func,
-    enableDynamicCharting: PropTypes.bool,
-    isResizing: PropTypes.bool,
   }
 
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-    dataFormatting: dataFormattingDefault,
-    dataConfig: undefined,
-
-    tableColumns: [],
-    enableDynamicCharting: true,
-    isResizing: false,
-    onLegendClick: () => {},
-  }
+  static defaultProps = chartContainerDefaultProps
 
   componentDidMount = () => {
     // The first render is to determine the chart size based on its parent container
@@ -122,6 +106,10 @@ export default class ChataChart extends Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    let newState = {}
+    let shouldForceUpdate = false
+    let shouldUpdateMargins = false
+
     const chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
     const chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
     if (
@@ -135,7 +123,7 @@ export default class ChataChart extends Component {
       this.recursiveUpdateTimeout = setTimeout(() => {
         this.recursiveUpdateCount = 0
       }, 500)
-      this.forceUpdate()
+      shouldForceUpdate = true
     }
 
     if (!this.props.isResizing && prevProps.isResizing) {
@@ -143,29 +131,49 @@ export default class ChataChart extends Component {
       // No need to update margins, they should stay the same
       if (this.chartContainerRef) {
         this.chartContainerRef.style.flexBasis = '100vh'
-        this.forceUpdate()
+        shouldForceUpdate = true
       }
     }
 
-    if (!_isEqual(this.props.dataConfig, prevProps.dataConfig)) {
-      this.updateMargins()
+    if (
+      !_isEqual(
+        this.props.numberColumnIndices,
+        prevProps.numberColumnIndices
+      ) ||
+      this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
+      this.props.data?.length !== prevProps.data?.length ||
+      !_isEqual(this.props.columns, prevProps.columns) ||
+      (this.props.type === 'pie' && !_isEqual(this.props.data, prevProps.data))
+    ) {
+      if (!this.props.isPivot) {
+        newState.aggregatedData = this.aggregateRowData(this.props)
+      }
+      newState = {
+        ...newState,
+        ...this.getNumberColumnSelectorState(this.props),
+      }
     }
 
     if (
-      !_isEqual(this.props.columns, prevProps.columns) ||
-      !_isEqual(this.props.tableColumns, prevProps.tableColumns) ||
-      !_isEqual(this.props.dataConfig, prevProps.dataConfig) ||
-      (this.props.type === 'pie' && !_isEqual(this.props.data, prevProps.data))
+      !_isEqual(
+        this.props.numberColumnIndices,
+        prevProps.numberColumnIndices
+      ) ||
+      !_isEqual(this.props.stringColumnIndex, prevProps.stringColumnIndex) ||
+      !_isEqual(this.props.legendColumn, prevProps.legendColumn)
     ) {
-      this.filteredSeriesData = this.getFilteredSeriesData(this.props.data)
-      this.setNumberColumnSelectorState()
+      shouldUpdateMargins = true
     }
 
-    // Disable scrolling while the popover is open
-    if (!prevState.activeAxisSelector && this.state.activeAxisSelector) {
-      disableScroll.on()
-    } else if (prevState.activeAxisSelector && !this.state.activeAxisSelector) {
-      disableScroll.off()
+    if (!_isEmpty(newState)) {
+      shouldForceUpdate = false
+      this.setState(newState, () => {
+        if (shouldUpdateMargins) this.updateMargins()
+      })
+    }
+
+    if (shouldForceUpdate) {
+      this.forceUpdate()
     }
   }
 
@@ -182,10 +190,9 @@ export default class ChataChart extends Component {
   }
 
   getNumberColumnSelectorState = (props) => {
-    const { tableColumns } = props
-    const { numberColumnIndices } = props.dataConfig
+    const { columns, numberColumnIndices } = props
 
-    if (!tableColumns || !numberColumnIndices) {
+    if (!columns || !numberColumnIndices) {
       return
     }
 
@@ -193,7 +200,11 @@ export default class ChataChart extends Component {
     const quantityItems = []
     const ratioItems = []
 
-    tableColumns.forEach((col, i) => {
+    columns.forEach((col, i) => {
+      if (!col.is_visible) {
+        return
+      }
+
       const item = {
         content: col.title,
         checked: numberColumnIndices.includes(i),
@@ -210,11 +221,43 @@ export default class ChataChart extends Component {
     })
 
     return {
-      activeNumberType: _get(tableColumns, `[${numberColumnIndices[0]}].type`),
+      activeNumberType: _get(columns, `[${numberColumnIndices[0]}].type`),
       currencySelectorState: currencyItems,
       quantitySelectorState: quantityItems,
       ratioSelectorState: ratioItems,
     }
+  }
+
+  aggregateRowData = (props) => {
+    const { stringColumnIndex, numberColumnIndices } = props
+    const sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
+    const aggregatedData = []
+
+    let rowSum = _cloneDeep(sortedData[0])
+    sortedData.forEach((currentRow, i) => {
+      if (i === 0) {
+        return
+      } else if (i === sortedData.length - 1) {
+        aggregatedData.push(rowSum)
+      } else if (
+        currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
+      ) {
+        aggregatedData.push(rowSum)
+        rowSum = _cloneDeep(currentRow)
+      } else {
+        const newRow = _cloneDeep(currentRow)
+        numberColumnIndices.forEach((columnIndex) => {
+          let currentValue = Number(newRow[columnIndex])
+          let sumValue = Number(rowSum[columnIndex])
+          if (isNaN(currentValue)) currentValue = 0
+          if (isNaN(sumValue)) sumValue = 0
+          newRow[columnIndex] = currentValue + sumValue
+        })
+        rowSum = newRow
+      }
+    })
+
+    return aggregatedData
   }
 
   setNumberColumnSelectorState = () => {
@@ -259,7 +302,7 @@ export default class ChataChart extends Component {
 
     let bottomLegendMargin = 0
     const legendLocation = getLegendLocation(
-      _get(this.props.dataConfig, 'numberColumnIndices'),
+      this.props.numberColumnIndices,
       this.props.type
     )
     if (legendLocation === 'bottom' && _get(legendBBox, 'height')) {
@@ -434,18 +477,20 @@ export default class ChataChart extends Component {
   }
 
   getStringAxisTitle = () => {
-    return _get(
-      this.props.tableColumns,
-      `[${_get(this.props, 'dataConfig.stringColumnIndex')}].display_name`
-    )
+    const { columns, stringColumnIndex } = this.props
+    return columns?.[stringColumnIndex]?.display_name
   }
 
   getNumberAxisTitle = () => {
+    const { columns, numberColumnIndices } = this.props
     try {
-      const { columns, dataConfig } = this.props
       const numberColumns = columns.filter((col, i) => {
-        return _get(dataConfig, 'numberColumnIndices').includes(i)
+        return numberColumnIndices.includes(i)
       })
+
+      if (!numberColumns?.length) {
+        return undefined
+      }
 
       // If there are different titles for any of the columns, return a generic label based on the type
       const allTitlesEqual = !numberColumns.find((col) => {
@@ -474,6 +519,36 @@ export default class ChataChart extends Component {
     }
   }
 
+  onXAxisClick = (e) => {
+    this.setState({
+      activeAxisSelector: 'x',
+      axisSelectorLocation: {
+        left: e.pageX,
+        top: e.pageY,
+        x: e.pageX,
+        y: e.pageY,
+      },
+    })
+  }
+
+  onYAxisClick = (e) => {
+    this.setState({
+      activeAxisSelector: 'y',
+      axisSelectorLocation: {
+        left: e.pageX,
+        top: e.pageY,
+        x: e.pageX,
+        y: e.pageY,
+      },
+    })
+  }
+  onLegendTitleClick = (e) => {
+    this.setState({
+      activeAxisSelector: 'legend',
+      axisSelectorLocation: { left: e.pageX, top: e.pageY },
+    })
+  }
+
   getCommonChartProps = () => {
     const {
       topMargin,
@@ -483,122 +558,65 @@ export default class ChataChart extends Component {
       bottomLegendMargin,
     } = this.state
 
-    const {
-      activeChartElementKey,
-      enableDynamicCharting,
-      dataFormatting,
-      onLegendClick,
-      onChartClick,
-      tableColumns,
-      themeConfig,
-      columns,
-    } = this.props
-
-    const {
-      stringColumnIndices,
-      numberColumnIndices,
-      stringColumnIndex,
-      numberColumnIndex,
-      legendColumnIndex,
-    } = this.props.dataConfig
+    const { numberColumnIndices, stringColumnIndices } = this.props
 
     let innerPadding = this.INNER_PADDING
     if (numberColumnIndices.length > 1) {
       innerPadding = 0.1
     }
 
+    const visibleSeriesIndices = numberColumnIndices.filter(
+      (colIndex) => !this.props.columns[colIndex].isSeriesHidden
+    )
+
+    const legendLabels = getLegendLabelsForMultiSeries(
+      this.props.columns,
+      this.colorScale,
+      numberColumnIndices
+    )
+
+    const hasMultipleNumberColumns =
+      [
+        ...this.state.currencySelectorState,
+        ...this.state.quantitySelectorState,
+        ...this.state.ratioSelectorState,
+      ].length > 1
+
     return {
-      data: this.filteredSeriesData,
+      ...this.props,
+      data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
       outerPadding: this.OUTER_PADDING,
-      onXAxisClick: (e) => {
-        this.setState({
-          activeAxisSelector: 'x',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY },
-        })
-      },
-      onYAxisClick: (e) => {
-        this.setState({
-          activeAxisSelector: 'y',
-          axisSelectorLocation: { left: e.pageX, top: e.pageY },
-        })
-      },
-      onLegendTitleClick: !!this.props.tableColumns[legendColumnIndex]
-        ? (e) => {
-            this.setState({
-              activeAxisSelector: 'legend',
-              axisSelectorLocation: { left: e.pageX, top: e.pageY },
-            })
-          }
-        : undefined,
-      onLabelChange: this.updateMargins,
+      colorScale: this.colorScale,
       height: this.chartHeight,
       width: this.chartWidth,
-      columns,
-      tableColumns,
       topMargin,
       bottomMargin,
       rightMargin,
       leftMargin,
-      isResizing: this.props.isResizing,
-      isAnimatingContainer: this.props.isAnimatingContainer,
-      marginAdjustmentFinished: this.state.loading,
       bottomLegendMargin,
-      onChartClick,
-      dataFormatting,
-      themeConfig,
-      activeChartElementKey,
-      onLegendClick,
-      stringColumnIndex,
-      stringColumnIndices,
-      numberColumnIndex,
-      numberColumnIndices,
+      marginAdjustmentFinished: this.state.loading,
+      legendTitle: this.props.legendColumn?.title || 'Category',
+      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
+      legendColumn: numberColumnIndices?.length > 1 && this.props.legendColumn,
+      legendLabels,
+      visibleSeriesIndices,
+      hasMultipleNumberColumns,
+      hasMultipleStringColumns: stringColumnIndices.length > 1,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),
-      enableDynamicCharting,
-      hasMultipleNumberColumns:
-        [
-          ...this.state.currencySelectorState,
-          ...this.state.quantitySelectorState,
-          ...this.state.ratioSelectorState,
-        ].length > 1,
-      hasMultipleStringColumns: stringColumnIndices.length > 1,
-      legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
-      legendColumn: this.props.tableColumns[legendColumnIndex],
-      legendLabels: getLegendLabelsForMultiSeries(
-        this.props.columns,
-        this.colorScale,
-        numberColumnIndices
-      ),
+      onLabelChange: this.updateMargins,
+      onXAxisClick: this.onXAxisClick,
+      onYAxisClick: this.onYAxisClick,
+      onLegendTitleClick: !!this.props.legendColumn
+        ? this.onLegendTitleClick
+        : undefined,
     }
-  }
-
-  getFilteredSeriesData = (data) => {
-    if (_get(data, '[0].cells')) {
-      try {
-        const filteredSeriesData = data.map((d) => {
-          const newCells = d.cells.filter((cell) => {
-            return !cell.hidden
-          })
-
-          return {
-            ...d,
-            cells: newCells,
-          }
-        })
-
-        return filteredSeriesData
-      } catch (error) {
-        console.error(error)
-        return data
-      }
-    }
-    return data
   }
 
   moveIndexToFront = (index, array) => {
-    const newArray = [...array]
+    const newArray = _cloneDeep(array)
     const itemToRemove = array[index]
     newArray.slice(index, index + 1)
     newArray.unshift(itemToRemove)
@@ -615,13 +633,11 @@ export default class ChataChart extends Component {
         }}
       >
         <ul className="axis-selector-content">
-          {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
+          {this.props.stringColumnIndices.map((colIndex, i) => {
             return (
               <li
                 className={`string-select-list-item ${
-                  colIndex === _get(this.props.dataConfig, 'stringColumnIndex')
-                    ? 'active'
-                    : ''
+                  colIndex === this.props.stringColumnIndex ? 'active' : ''
                 }`}
                 key={uuid()}
                 onClick={() => {
@@ -629,7 +645,7 @@ export default class ChataChart extends Component {
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.tableColumns, `[${colIndex}].title`)}
+                {_get(this.props.columns, `[${colIndex}].title`)}
               </li>
             )
           })}
@@ -656,12 +672,8 @@ export default class ChataChart extends Component {
           {!!currencySelectorState.length && (
             <Fragment>
               <div className="number-selector-header">
-                {this.props.dataConfig &&
-                this.props.tableColumns &&
-                this.props.dataConfig.legendColumnIndex !== undefined
-                  ? this.props.tableColumns[
-                      this.props.dataConfig.legendColumnIndex
-                    ].display_name
+                {this.props.columns && this.props.legendColumn !== undefined
+                  ? this.props.legendColumn.display_name
                   : 'Currency'}
               </div>
               <SelectableList
@@ -699,12 +711,8 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">
                 {' '}
-                {this.props.dataConfig &&
-                this.props.tableColumns &&
-                this.props.dataConfig.legendColumnIndex !== undefined
-                  ? this.props.tableColumns[
-                      this.props.dataConfig.legendColumnIndex
-                    ].display_name
+                {this.props.columns && this.props.legendColumn !== undefined
+                  ? this.props.legendColumn.display_name
                   : 'Quantity'}
               </div>
               <SelectableList
@@ -741,12 +749,8 @@ export default class ChataChart extends Component {
             <Fragment>
               <div className="number-selector-header">
                 {' '}
-                {this.props.dataConfig &&
-                this.props.tableColumns &&
-                this.props.dataConfig.legendColumnIndex !== undefined
-                  ? this.props.tableColumns[
-                      this.props.dataConfig.legendColumnIndex
-                    ].display_name
+                {this.props.columns && this.props.legendColumn !== undefined
+                  ? this.props.legendColumn.display_name
                   : 'Ratio'}
               </div>
               <SelectableList
@@ -817,7 +821,7 @@ export default class ChataChart extends Component {
   }
 
   renderLegendSelectorContent = () => {
-    if (_get(this.props.dataConfig, 'stringColumnIndices.length', 0) < 2) {
+    if (this.props.stringColumnIndices?.length < 2) {
       return null
     }
 
@@ -830,13 +834,11 @@ export default class ChataChart extends Component {
         }}
       >
         <ul className="axis-selector-content">
-          {this.props.dataConfig.stringColumnIndices.map((colIndex, i) => {
+          {this.props.stringColumnIndices.map((colIndex, i) => {
             return (
               <li
                 className={`string-select-list-item ${
-                  colIndex === _get(this.props.dataConfig, 'legendColumnIndex')
-                    ? 'active'
-                    : ''
+                  colIndex === this.props.legendColumnIndex ? 'active' : ''
                 }`}
                 key={uuid()}
                 onClick={() => {
@@ -844,7 +846,7 @@ export default class ChataChart extends Component {
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.tableColumns, `[${colIndex}].title`)}
+                {_get(this.props.columns, `[${colIndex}].title`)}
               </li>
             )
           })}
@@ -899,10 +901,19 @@ export default class ChataChart extends Component {
 
     const popoverContent = this.renderAxisSelectorContent(axis)
 
+    let position = 'top'
+    if (axis === 'y') {
+      position = 'right'
+    } else if (axis === 'legend') {
+      position = 'bottom'
+    }
+
     return (
       <Popover
         isOpen={this.state.activeAxisSelector === axis}
         content={popoverContent}
+        position={position}
+        align="center"
         onClickOutside={(e) => {
           if (
             e.pageX !== this.state.axisSelectorLocation.left &&
@@ -921,18 +932,8 @@ export default class ChataChart extends Component {
           nudgedLeft,
           nudgedTop,
         }) => {
-          let topPosition = _get(this.state.axisSelectorLocation, 'top', 0) - 50
-          let leftPosition =
-            _get(this.state.axisSelectorLocation, 'left', 0) - 75
-          const bottomPosition = topPosition + popoverRect.height
-
-          if (bottomPosition > window.innerHeight) {
-            topPosition -= bottomPosition - window.innerHeight + 10
-          }
-
-          if (leftPosition < 0) {
-            leftPosition = 10
-          }
+          let topPosition = _get(this.state.axisSelectorLocation, 'y', 0)
+          let leftPosition = _get(this.state.axisSelectorLocation, 'x', 0) - 75
 
           return {
             top: topPosition,
@@ -955,52 +956,32 @@ export default class ChataChart extends Component {
     )
   }
 
-  renderColumnChart = () => (
-    <ChataColumnChart {...this.getCommonChartProps()} labelValue="label" />
+  renderColumnChart = (dataType) => (
+    <ChataColumnChart {...this.getCommonChartProps({ dataType })} />
   )
 
-  renderBarChart = () => (
-    <ChataBarChart {...this.getCommonChartProps()} labelValue="label" />
+  renderBarChart = (dataType) => (
+    <ChataBarChart {...this.getCommonChartProps({ dataType })} />
   )
 
-  renderLineChart = () => (
-    <ChataLineChart {...this.getCommonChartProps()} labelValue="label" />
+  renderLineChart = (dataType) => (
+    <ChataLineChart {...this.getCommonChartProps({ dataType })} />
   )
 
-  renderPieChart = () => {
-    return (
-      <ChataPieChart
-        {...this.getCommonChartProps()}
-        labelValue="label"
-        backgroundColor={this.props.backgroundColor}
-      />
-    )
-  }
+  renderPieChart = () => <ChataPieChart {...this.getCommonChartProps()} />
 
   renderHeatmapChart = () => (
-    <ChataHeatmapChart
-      {...this.getCommonChartProps()}
-      dataValue="value"
-      labelValueX="labelY"
-      labelValueY="labelX"
-    />
+    <ChataHeatmapChart {...this.getCommonChartProps()} />
   )
 
-  renderBubbleChart = () => (
-    <ChataBubbleChart
-      {...this.getCommonChartProps()}
-      dataValue="value"
-      labelValueX="labelY"
-      labelValueY="labelX"
-    />
-  )
+  renderBubbleChart = () => <ChataBubbleChart {...this.getCommonChartProps()} />
 
   renderStackedColumnChart = () => (
     <ChataStackedColumnChart {...this.getCommonChartProps()} />
   )
 
-  renderStackedBarChart = () => (
-    <ChataStackedBarChart {...this.getCommonChartProps()} />
+  renderStackedBarChart = (dataType) => (
+    <ChataStackedBarChart {...this.getCommonChartProps({ dataType })} />
   )
 
   renderStackedLineChart = () => (

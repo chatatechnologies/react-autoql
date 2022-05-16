@@ -8,6 +8,7 @@ import { LIGHT_THEME, DARK_THEME } from './Themes'
 import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
+  isAggregation,
 } from '../components/QueryOutput/columnHelpers'
 
 export const onlyUnique = (value, index, self) => {
@@ -134,7 +135,11 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
   }
 
   if (!col || !col.type) {
-    return d
+    return {
+      fullWidthLabel: d,
+      formattedLabel: d,
+      isTruncated: false,
+    }
   }
 
   const { currencyCode, languageCode } = config
@@ -697,17 +702,25 @@ export const nameValueObject = (name, value) => {
   }
 }
 
-export const isAggregation = (columns) => {
-  try {
-    let isAgg = false
-    if (columns) {
-      isAgg = !!columns.find((col) => col.groupable)
-    }
-    return isAgg
-  } catch (error) {
-    console.error(error)
-    return false
+export const getGroupBys = (row, columns) => {
+  if (!columns?.length) {
+    return undefined
   }
+
+  const groupableColumns = getGroupableColumns(columns)
+  const numGroupables = groupableColumns.length
+  if (!numGroupables) {
+    return { groupBys: undefined, supportedByAPI: false }
+  }
+
+  const groupBys = []
+  groupableColumns.forEach((colIndex) => {
+    const groupByName = columns[colIndex].name
+    const groupByValue = `${row[colIndex]}`
+    groupBys.push(nameValueObject(groupByName, groupByValue))
+  })
+
+  return { groupBys, supportedByAPI: true }
 }
 
 export const getGroupBysFromTable = (cell, tableColumns) => {
@@ -733,85 +746,6 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
   return groupByArray
 }
 
-export const getObjSize = (obj) => {
-  if (typeof obj !== 'object') {
-    return undefined
-  }
-
-  return Object.keys(obj).length
-}
-
-export const getMaxValueFromKeyValueObj = (obj) => {
-  const size = getObjSize(obj)
-
-  let maxValue = 0
-  if (size === 1) {
-    maxValue = obj[Object.keys(obj)[0]]
-  } else if (size > 1) {
-    const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
-    })
-    maxValue = Math.max(...numberValues)
-  }
-  return maxValue
-}
-
-export const getMinValueFromKeyValueObj = (obj) => {
-  const size = getObjSize(obj)
-
-  let minValue = 0
-  if (size === 1) {
-    minValue = obj[Object.keys(obj)[0]]
-  } else if (size > 1) {
-    const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
-    })
-    minValue = Math.min(...numberValues)
-  }
-  return minValue
-}
-
-export const calculateMinAndMaxSums = (data) => {
-  const positiveSumsObject = {}
-  const negativeSumsObject = {}
-
-  // Loop through data array to get maximum and minimum sums of postive and negative values
-  // These will be used to get the max and min values for the x Scale (data values)
-  data.forEach((d) => {
-    const label = d.label
-    d.cells.forEach((cell) => {
-      const cellConvertedToNumber = Number(cell.value)
-      const value = !Number.isNaN(cellConvertedToNumber)
-        ? cellConvertedToNumber
-        : 0
-      if (value >= 0) {
-        // Calculate positive sum
-        if (positiveSumsObject[label]) {
-          positiveSumsObject[label] += value
-        } else {
-          positiveSumsObject[label] = value
-        }
-      } else if (value < 0) {
-        // Calculate negative sum
-        if (negativeSumsObject[label]) {
-          negativeSumsObject[label] -= value
-        } else {
-          negativeSumsObject[label] = value
-        }
-      }
-    })
-  })
-
-  // Get max and min sums from those sum objects
-  const maxValue = getMaxValueFromKeyValueObj(positiveSumsObject)
-  const minValue = getMinValueFromKeyValueObj(negativeSumsObject)
-
-  return {
-    maxValue,
-    minValue,
-  }
-}
-
 export const getChartLabelTextWidthInPx = (text) => {
   try {
     const tempDiv = document.createElement('DIV')
@@ -832,7 +766,14 @@ export const getChartLabelTextWidthInPx = (text) => {
 }
 
 export const getLongestLabelInPx = (labels, col, config) => {
-  let max = getChartLabelTextWidthInPx(labels[0])
+  if (!labels?.length || !col) {
+    return 0
+  }
+
+  let max = getChartLabelTextWidthInPx(
+    formatChartLabel({ d: labels[0], col, config })
+  )
+
   labels.forEach((label) => {
     const formattedLabel = formatChartLabel({ d: label, col, config })
       .formattedLabel
@@ -952,28 +893,30 @@ export const getQueryParams = (url) => {
   }
 }
 
-export const filterDataForDrilldown = (response, drilldownData) => {
-  const drilldownDataObject = drilldownData[0]
-  const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
-    (col) => col.name === drilldownDataObject.name
-  )
-
-  const filteredRows = _get(response, 'data.data.rows', []).filter((row) => {
-    return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
-  })
-
-  const newResponseData = {
-    ...response,
-    data: {
-      ...response.data,
-      data: {
-        ...response.data.data,
-        rows: filteredRows,
-      },
-    },
-  }
-
-  return newResponseData
+export const filterDataForDrilldown = (
+  response,
+  drilldownData,
+  columnIndex,
+  row
+) => {
+  // const drilldownDataObject = drilldownData[0]
+  // const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
+  //   (col) => col.name === drilldownDataObject.name
+  // )
+  // const filteredRows = _get(response, 'data.data.rows', []).filter((row) => {
+  //   return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
+  // })
+  // const newResponseData = {
+  //   ...response,
+  //   data: {
+  //     ...response.data,
+  //     data: {
+  //       ...response.data.data,
+  //       rows: filteredRows,
+  //     },
+  //   },
+  // }
+  // return newResponseData
 }
 
 export const getPadding = (element) => {

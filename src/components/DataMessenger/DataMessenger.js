@@ -45,7 +45,6 @@ import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import {
-  runDrilldown,
   fetchQueryTips,
   fetchConditions,
   fetchTopics,
@@ -627,66 +626,6 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  runDrilldownFromAPI = (data, queryID) => {
-    runDrilldown({
-      ...getAuthentication(getAuthentication(this.props.authentication)),
-      ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
-      queryID,
-      data,
-    })
-      .then((response) => {
-        this.addResponseMessage({
-          response: { ...response, enableDrilldowns: true },
-        })
-        this.setState({ isChataThinking: false })
-      })
-      .catch((error) => {
-        console.error(error)
-        this.addResponseMessage({
-          content: _get(error, 'message'),
-        })
-        this.setState({ isChataThinking: false })
-      })
-  }
-
-  runFilterDrilldown = (drilldownData, messageId) => {
-    const response = this.state.messages.find(
-      (message) => message.id === messageId
-    ).response
-
-    if (!response) {
-      return
-    }
-
-    const drilldownResponse = filterDataForDrilldown(response, drilldownData)
-
-    clearTimeout(this.responseTimeout)
-    this.responseTimeout = setTimeout(() => {
-      this.addResponseMessage({
-        response: drilldownResponse,
-      })
-      this.setState({ isChataThinking: false })
-    }, 1500)
-  }
-
-  processDrilldown = (drilldownData, queryID, messageId) => {
-    if (
-      getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableDrilldowns
-    ) {
-      if (!drilldownData || !drilldownData.data) {
-        return
-      }
-
-      this.setState({ isChataThinking: true })
-
-      if (!drilldownData.supportedByAPI) {
-        this.runFilterDrilldown(drilldownData.data, messageId)
-      } else {
-        this.runDrilldownFromAPI(drilldownData.data, queryID)
-      }
-    }
-  }
-
   clearMessages = () => {
     if (this.queryInputRef) {
       this.queryInputRef.focus()
@@ -1187,6 +1126,22 @@ export default class DataMessenger extends React.Component {
     }
   }
 
+  onDrilldownStart = () => {
+    this.setState({ isChataThinking: true })
+  }
+
+  onDrilldownEnd = ({ response, error } = {}) => {
+    this.setState({ isChataThinking: false })
+
+    if (response) {
+      this.addResponseMessage({ response })
+    } else if (error) {
+      this.addResponseMessage({
+        content: error,
+      })
+    }
+  }
+
   renderDataMessengerContent = () => {
     return (
       <Fragment>
@@ -1227,9 +1182,11 @@ export default class DataMessenger extends React.Component {
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
-                  processDrilldown={(drilldownData, queryID) =>
-                    this.processDrilldown(drilldownData, queryID, message.id)
-                  }
+                  onDrilldownStart={this.onDrilldownStart}
+                  onDrilldownEnd={this.onDrilldownEnd}
+                  // onDataClick={(...params) =>
+                  //   this.processDrilldown(...params, message.id)
+                  // }
                   isResponse={message.isResponse}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}

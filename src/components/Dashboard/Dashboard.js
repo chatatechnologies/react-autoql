@@ -613,15 +613,28 @@ class Dashboard extends React.Component {
                           )}
                           queryResponse={queryResponse}
                           displayType={displayType}
-                          dataConfig={dataConfig}
+                          tableConfig={dataConfig}
                           isDashboardQuery={true}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }
-                          onDataClick={(drilldownData, queryID) => {
-                            this.startDrilldown(drilldownData, queryID, tile.i)
+                          onDrilldownStart={this.props.onDrilldownStart}
+                          onDrilldownEnd={this.props.onDrilldownEnd}
+                          onDataClick={(
+                            drilldownData,
+                            queryID,
+                            columnIndex,
+                            row
+                          ) => {
+                            this.startDrilldown(
+                              drilldownData,
+                              queryID,
+                              tile.i,
+                              columnIndex,
+                              row
+                            )
                           }}
                           activeChartElementKey={
                             this.state.activeDrilldownChartElementKey
@@ -744,7 +757,7 @@ class Dashboard extends React.Component {
             deleteTile={this.deleteTile}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             notExecutedText={this.props.notExecutedText}
-            processDrilldown={this.processDrilldown}
+            onDataClick={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}

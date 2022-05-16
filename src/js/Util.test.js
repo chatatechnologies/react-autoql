@@ -17,17 +17,20 @@ import {
   isDisplayTypeValid,
   getDefaultDisplayType,
   nameValueObject,
-  isAggregation,
-  getObjSize,
-  getMaxValueFromKeyValueObj,
-  getMinValueFromKeyValueObj,
 } from './Util'
 
 import {
+  isAggregation,
   getColumnTypeAmounts,
   isColumnStringType,
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
+
+import {
+  getObjSize,
+  getMaxValueFromKeyValueObj,
+  getMinValueFromKeyValueObj,
+} from '../components/Charts/helpers'
 
 import responseTestCases from '../../test/responseTestCases'
 
@@ -657,7 +660,6 @@ describe('getMinValueFromKeyValueObj', () => {
   })
 })
 
-// export const calculateMinAndMaxSums = data
 // export const getChartLabelTextWidthInPx = text
 // export const getLongestLabelInPx = (labels, col, config)
 // export const getTickWidth = (scale, innerPadding)

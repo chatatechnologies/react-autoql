@@ -296,7 +296,7 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
 
 export const runDrilldown = ({
   queryID,
-  data,
+  groupBys,
   debug,
   test,
   domain,
@@ -313,7 +313,7 @@ export const runDrilldown = ({
 
   const requestData = {
     translation: debug ? 'include' : 'exclude',
-    columns: data,
+    columns: groupBys,
     test,
   }
 

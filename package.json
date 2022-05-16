@@ -76,6 +76,7 @@
     "lodash.omit": "^4.5.0",
     "lodash.reduce": "^4.6.0",
     "lodash.some": "^4.6.0",
+    "lodash.sortby": "^4.7.0",
     "lodash.uniq": "^4.5.0",
     "make-coverage-badge": "^1.2.0",
     "moment-timezone": "^0.5.32",

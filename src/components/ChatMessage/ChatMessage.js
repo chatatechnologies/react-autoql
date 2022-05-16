@@ -65,8 +65,6 @@ export default class ChatMessage extends React.Component {
         props.autoChartAggregations
       ),
       supportedDisplayTypes: getSupportedDisplayTypes(props.response),
-      chartHeight: this.getChartHeight(displayType),
-      chartWidth: this.getChartWidth(),
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
@@ -205,16 +203,6 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      prevProps.messageContainerHeight !== this.props.messageContainerHeight ||
-      prevProps.messageContainerWidth !== this.props.messageContainerWidth ||
-      this.state.displayType !== prevState.displayType
-    ) {
-      this.setState({
-        chartHeight: this.getChartHeight(this.state.displayType),
-        chartWidth: this.getChartWidth(),
-      })
-    }
     ReactTooltip.hide()
   }
 
@@ -355,7 +343,7 @@ export default class ChatMessage extends React.Component {
             ref={(ref) => (this.responseRef = ref)}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            onDataClick={this.props.processDrilldown}
+            onDataClick={this.props.onDataClick}
             queryResponse={this.props.response}
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}
@@ -366,16 +354,8 @@ export default class ChatMessage extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             appliedFilters={this.props.appliedFilters}
             onUpdate={this.props.onQueryOutputUpdate}
-            height={
-              isChartType(this.state.displayType)
-                ? this.state.chartHeight
-                : undefined
-            }
-            width={
-              isChartType(this.state.displayType)
-                ? this.state.chartWidth
-                : undefined
-            }
+            onDrilldownStart={this.props.onDrilldownStart}
+            onDrilldownEnd={this.props.onDrilldownEnd}
             demo={getAuthentication(this.props.authentication).demo}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -391,8 +371,8 @@ export default class ChatMessage extends React.Component {
             }
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
-            dataConfig={this.state.dataConfig}
-            onDataConfigChange={this.updateDataConfig}
+            tableConfig={this.state.dataConfig}
+            onTableConfigChange={this.updateDataConfig}
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
@@ -494,20 +474,6 @@ export default class ChatMessage extends React.Component {
       )
     }
     return null
-  }
-
-  // TODO(Nikki): handle this in chatachart not here
-  getChartWidth = () => {
-    return this.props.messageContainerWidth - 70
-  }
-
-  // TODO(Nikki): handle this in chatachart not here
-  getChartHeight = (displayType) => {
-    if (displayType === 'pie') {
-      return this.PIE_CHART_HEIGHT
-    }
-
-    return 0.85 * this.props.messageContainerHeight - 40 // 85% of chat height minus message margins
   }
 
   renderDataLimitWarning = () => {

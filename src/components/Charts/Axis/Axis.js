@@ -11,13 +11,9 @@ import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
 
 import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
+import { axesDefaultProps, axesPropTypes } from '../helpers.js'
 
 import './Axis.scss'
-import { themeConfigType, dataFormattingType } from '../../../props/types.js'
-import {
-  themeConfigDefault,
-  dataFormattingDefault,
-} from '../../../props/defaults.js'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -29,44 +25,21 @@ export default class Axis extends Component {
   }
 
   static propTypes = {
-    themeConfig: themeConfigType,
-    dataFormatting: dataFormattingType,
-
+    ...axesPropTypes,
     scale: PropTypes.func.isRequired,
-    margins: PropTypes.shape({}),
-    height: PropTypes.number,
+    col: PropTypes.shape({}).isRequired,
+    ticks: PropTypes.array,
     orient: PropTypes.string,
     tickSizeInner: PropTypes.number,
     translate: PropTypes.string,
-    ticks: PropTypes.array,
-    rotateLabels: PropTypes.bool,
-    type: PropTypes.string,
-    col: PropTypes.shape({}),
-    hasRightLegend: PropTypes.bool,
-    hasBottomLegend: PropTypes.bool,
-    onLegendClick: PropTypes.func,
-    onLegendTitleClick: PropTypes.func,
-    onLabelChange: PropTypes.func,
-    legendLabels: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
-    dataFormatting: dataFormattingDefault,
-
-    margins: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
+    ...axesDefaultProps,
     orient: 'Bottom',
-    hasRightLegend: false,
-    hasBottomLegend: false,
-    onLegendClick: () => {},
-    onLabelChange: () => {},
-    onLegendTitleClick: undefined,
-    legendLabels: undefined,
+    ticks: undefined,
+    tickSizeInner: undefined,
+    translate: undefined,
   }
 
   componentDidMount = () => {
@@ -84,7 +57,6 @@ export default class Axis extends Component {
     // only render legend once... unless labels changed
     if (
       (this.props.hasRightLegend || this.props.hasBottomLegend) &&
-      this.props.legendLabels?.length &&
       !_isEqual(this.props.legendLabels, prevProps.legendLabels)
     ) {
       this.renderLegend()
@@ -184,7 +156,7 @@ export default class Axis extends Component {
         return
       }
 
-      const legendScale = this.getLegendScale()
+      const legendScale = this.getLegendScale(legendLabels)
 
       if (this.props.hasRightLegend) {
         this.legendSVG = select(this.rightLegendElement)
@@ -208,7 +180,9 @@ export default class Axis extends Component {
           .labelWrap(100)
           .scale(legendScale)
           .on('cellclick', function(d) {
-            self.props.onLegendClick(d)
+            self.props.onLegendClick(
+              legendLabels.find((label) => label.label === d)
+            )
           })
 
         if (this.props.legendTitle) {
@@ -263,7 +237,7 @@ export default class Axis extends Component {
         this.legendSVG.call(legendOrdinal).style('font-family', 'inherit')
       }
 
-      this.applyStylesForHiddenSeries()
+      this.applyStylesForHiddenSeries(legendLabels)
       // todo: get this working properly
       // this.removeOverlappingLegendLabels()
     } catch (error) {
@@ -271,9 +245,9 @@ export default class Axis extends Component {
     }
   }
 
-  applyStylesForHiddenSeries = () => {
+  applyStylesForHiddenSeries = (legendLabels) => {
     try {
-      const legendLabelTexts = this.props.legendLabels
+      const legendLabelTexts = legendLabels
         .filter((l) => {
           return l.hidden
         })
@@ -305,14 +279,14 @@ export default class Axis extends Component {
     }
   }
 
-  getLegendScale = () => {
-    const colorRange = this.props.legendLabels.map((obj) => {
+  getLegendScale = (legendLabels) => {
+    const colorRange = legendLabels.map((obj) => {
       return obj.color
     })
 
     return scaleOrdinal()
       .domain(
-        this.props.legendLabels.map((obj) => {
+        legendLabels.map((obj) => {
           return obj.label
         })
       )
@@ -406,10 +380,9 @@ export default class Axis extends Component {
   }
 
   render = () => {
-    const numSeries =
-      (this.props.legendLabels && this.props.legendLabels.length) || 0
+    const numSeries = this.props.numberColumnIndices?.length || 0
     const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
-    const marginLeft = this.props.margins.left || 0
+    const marginLeft = this.props.leftMargin || 0
 
     return (
       <g data-test="axis">
@@ -441,13 +414,13 @@ export default class Axis extends Component {
                 id={`legend-bounding-box-${this.LEGEND_ID}`}
                 height={
                   this.props.height -
-                  this.props.margins.top -
+                  this.props.topMargin -
                   // make legend smaller if labels are not rotated
                   // because they might overlap the legend
-                  (!this.props.rotateLabels ? this.props.margins.bottom : 44) + // distance to bottom of axis labels
+                  (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
                   20 // account for translation
                 }
-                width={this.props.margins.right + 30}
+                width={this.props.rightMargin + 30}
                 style={{ transform: 'translate(-30px, -30px)' }}
               />
             </clipPath>

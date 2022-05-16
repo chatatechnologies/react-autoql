@@ -1,5 +1,17 @@
 import _get from 'lodash.get'
-import { isAggregation } from '../../js/Util'
+
+export const isAggregation = (columns) => {
+  try {
+    let isAgg = false
+    if (columns) {
+      isAgg = !!columns.find((col) => col.groupable)
+    }
+    return isAgg
+  } catch (error) {
+    console.error(error)
+    return false
+  }
+}
 
 export const isColumnNumberType = (col) => {
   const { type } = col
@@ -32,12 +44,14 @@ export const getNumberColumnIndices = (columns) => {
 
   columns.forEach((col, index) => {
     const { type } = col
-    if (type === 'DOLLAR_AMT') {
-      dollarAmtIndices.push(index)
-    } else if (type === 'QUANTITY') {
-      quantityIndices.push(index)
-    } else if (type === 'PERCENT' || type === 'RATIO') {
-      ratioIndices.push(index)
+    if (col.is_visible) {
+      if (type === 'DOLLAR_AMT') {
+        dollarAmtIndices.push(index)
+      } else if (type === 'QUANTITY') {
+        quantityIndices.push(index)
+      } else if (type === 'PERCENT' || type === 'RATIO') {
+        ratioIndices.push(index)
+      }
     }
   })
 
@@ -83,12 +97,15 @@ export const getMultiSeriesColumnIndex = (columns) => {
     return undefined
   }
 
-  return columns.findIndex((col) => col && col.multi_series === true)
+  return columns.findIndex(
+    (col) => col && col.is_visible && col.multi_series === true
+  )
 }
 
 export const getDateColumnIndex = (columns) => {
   return columns.findIndex(
-    (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
+    (col) =>
+      col.is_visible && (col.type === 'DATE' || col.type === 'DATE_STRING')
   )
 }
 
@@ -104,7 +121,8 @@ export const getStringColumnIndices = (columns, supportsPivot) => {
   columns.forEach((col, index) => {
     if (
       (isColumnStringType(col) || col.groupable) &&
-      index !== multiSeriesIndex
+      index !== multiSeriesIndex &&
+      col.is_visible
     ) {
       stringColumnIndices.push(index)
     }

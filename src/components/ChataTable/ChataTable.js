@@ -6,7 +6,8 @@ import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { setCSSVars, isAggregation } from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
+import { isAggregation } from '../QueryOutput/columnHelpers'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
 

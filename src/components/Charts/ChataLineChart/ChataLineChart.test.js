@@ -1,26 +1,13 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-
 import { findByTestAttr } from '../../../../test/testUtils'
 import ChataLineChart from './ChataLineChart'
+import sampleProps from '../chartTestData'
 
-const defaultProps = {
-  data: [
-    {
-      cells: [{ value: 50 }, { value: 75 }],
-      label: 'label1`',
-      origRow: ['label1', 50, 75],
-    },
-    {
-      cells: [{ value: 30 }, { value: 65 }],
-      label: 'label2`',
-      origRow: ['label2', 30, 65],
-    },
-  ],
-  columns: [{}, {}, {}],
-  height: 300,
-  width: 300,
-}
+const pivotSampleProps = sampleProps.pivot
+const datePivotSampleProps = sampleProps.datePivot
+const listSampleProps = sampleProps.list
+const defaultProps = ChataLineChart.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -32,8 +19,26 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with required props', () => {
-    const wrapper = setup()
+  test('renders list data chart correctly', () => {
+    const wrapper = setup(listSampleProps)
+    const lineChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-line-chart'
+    )
+    expect(lineChartComponent.exists()).toBe(true)
+  })
+
+  test('renders list data chart correctly', () => {
+    const wrapper = setup(pivotSampleProps)
+    const lineChartComponent = findByTestAttr(
+      wrapper,
+      'react-autoql-line-chart'
+    )
+    expect(lineChartComponent.exists()).toBe(true)
+  })
+
+  test('renders list data chart correctly', () => {
+    const wrapper = setup(datePivotSampleProps)
     const lineChartComponent = findByTestAttr(
       wrapper,
       'react-autoql-line-chart'

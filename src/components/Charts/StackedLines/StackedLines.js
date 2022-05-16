@@ -1,46 +1,61 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  getTooltipContent,
+  getKey,
+} from '../helpers'
 
 export default class StackedLines extends Component {
-  static propTypes = {}
+  static propTypes = chartElementPropTypes
+  static defaultProps = chartElementDefaultProps
 
   state = {
     activeKey: this.props.activeKey,
   }
 
-  getKey = (d, i) => {
-    return `${d.label}-${d.cells[i].label}`
-  }
+  onDotClick = (row, colIndex, rowIndex) => {
+    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
 
-  onDotClick = (d, i) => {
-    const newActiveKey = this.getKey(d, i)
-    this.props.onChartClick({
-      activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData,
-    })
+    this.props.onChartClick(
+      row,
+      colIndex,
+      this.props.columns,
+      this.props.stringColumnIndex,
+      this.props.legendColumn,
+      this.props.numberColumnIndex
+    )
 
     this.setState({ activeKey: newActiveKey })
   }
 
-  createPolygonVertexDot = (d, series, x, y) => {
-    const cell = d.cells[series]
+  createPolygonVertexDot = (d, i, x, y, colIndex, index) => {
+    const tooltip = getTooltipContent({
+      row: d,
+      columns: this.props.columns,
+      colIndex,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      dataFormatting: this.props.dataFormatting,
+    })
 
     return (
       <circle
-        key={this.getKey(d, series)}
+        key={`dot-${getKey(this.KEY, index, i)}`}
         className={`vertex-dot${
-          this.state.activeKey === this.getKey(d, series) ? ' active' : ''
+          this.state.activeKey === getKey(this.KEY, index, i) ? ' active' : ''
         }`}
         cy={y}
         cx={x}
         r={4}
-        onClick={() => this.onDotClick(d, series)}
-        data-tip={cell.tooltipData}
+        onClick={() => this.onDotClick(d, colIndex, i)}
+        data-tip={tooltip}
         data-for="chart-element-tooltip"
         style={{
-          opacity: this.state.activeKey === this.getKey(d, series) ? 1 : 0,
+          opacity: this.state.activeKey === getKey(this.KEY, index, i) ? 1 : 0,
           cursor: 'pointer',
-          stroke: cell.color,
+          stroke: this.props.colorScale(i),
           strokeWidth: 3,
           strokeOpacity: 0.7,
           fillOpacity: 1,
@@ -50,7 +65,8 @@ export default class StackedLines extends Component {
     )
   }
 
-  createPolygon = (series, polygonVertices) => {
+  createPolygon = (i, polygonVertices) => {
+    const { stringColumnIndex } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
         return xy.join(',')
@@ -59,22 +75,22 @@ export default class StackedLines extends Component {
 
     return (
       <polygon
-        key={`${this.props.data[0].cells[series].label}`}
+        key={`polygon-${getKey(this.KEY, stringColumnIndex, i)}`}
         className={`bar${
-          this.state.activeKey === this.props.data[0].cells[series].label
+          this.state.activeKey === this.props.data[0][stringColumnIndex]
             ? ' active'
             : ''
         }`}
         points={polygonPoints}
         data-tip={`
             <div>
-              <strong>${this.props.legendTitle}</strong>: ${this.props.data[0].cells[series].label}
+              <strong>${this.props.legendTitle}</strong>: ${this.props.legendLabels[i].label}
             </div>
           `}
         data-for="chart-element-tooltip"
         data-effect="float"
         style={{
-          fill: this.props.data[0].cells[series].color,
+          fill: this.props.colorScale(i),
           fillOpacity: 1,
         }}
       />
@@ -82,66 +98,74 @@ export default class StackedLines extends Component {
   }
 
   render = () => {
-    const { scales } = this.props
-    const { xScale, yScale } = scales
+    const {
+      columns,
+      numberColumnIndices,
+      stringColumnIndex,
+      yScale,
+      xScale,
+    } = this.props
+
+    const visibleSeries = numberColumnIndices.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
+
+    if (!visibleSeries.length) {
+      return null
+    }
 
     const polygons = []
     const polygonVertexDots = []
-    const numPolygons = this.props.data[0].cells.length
 
-    const firstPoint = [
-      xScale(this.props.data[0].label),
-      yScale(this.props.minValue),
-    ]
-    const lastPoint = [
-      xScale(this.props.data[this.props.data.length - 1].label),
-      yScale(this.props.minValue),
-    ]
+    let minValue = yScale.domain()[0]
+    if (minValue < 0) minValue = 0
 
-    let runningPositiveSumObject = {}
-    let runningNegativeSumObject = {}
+    let prevValues = []
+    let prevPolygonVertices = []
+    xScale.domain().forEach((xLabel) => {
+      prevValues.push(minValue)
+      prevPolygonVertices.push([xScale(xLabel), yScale(minValue)])
+    })
 
-    for (let series = 0; series < numPolygons; series++) {
-      // First point goes on (0,0)
-      let polygonVertices = [firstPoint]
+    numberColumnIndices.forEach((colIndex, i) => {
+      let currentValues = []
+      let currentPolygonVertices = []
+      if (!columns[colIndex].isSeriesHidden) {
+        this.props.data.forEach((d, index) => {
+          const rawValue = d[colIndex]
+          const valueNumber = Number(rawValue)
+          const value = isNaN(valueNumber) ? 0 : valueNumber
 
-      this.props.data.forEach((d) => {
-        const cell = d.cells[series]
-        const valueNumber = Number(cell.value)
-        const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+          const x = xScale(d[stringColumnIndex])
+          const prevValue = prevValues[index]
+          const currentValue = prevValue + value
+          const y = yScale(currentValue)
 
-        let y
-        const x = xScale(d.label)
-        if (value >= 0) {
-          const previousSum = runningPositiveSumObject[d.label] || 0
-          const nextSum = previousSum + value
-          runningPositiveSumObject[d.label] = nextSum
-          y = yScale(nextSum) + 0.5
-        } else {
-          const previousSum = runningNegativeSumObject[d.label] || 0
-          const nextSum = previousSum + value
-          runningNegativeSumObject[d.label] = nextSum
-          y = yScale(previousSum) + 0.5
-        }
+          currentValues[index] = currentValue
+          currentPolygonVertices.push([x, y])
 
-        polygonVertices.push([x, y])
+          if (value !== 0) {
+            const polygonVertexDot = this.createPolygonVertexDot(
+              d,
+              i,
+              x,
+              y,
+              colIndex,
+              index
+            )
+            polygonVertexDots.push(polygonVertexDot)
+          }
+        })
 
-        if (cell.value !== 0) {
-          const polygonVertexDot = this.createPolygonVertexDot(d, series, x, y)
-          polygonVertexDots.push(polygonVertexDot)
-        }
-      })
+        // Add polygon to list
+        const reversedPrevVertices = prevPolygonVertices.reverse()
+        const polygon = reversedPrevVertices.concat(currentPolygonVertices)
+        polygons.push(this.createPolygon(i, polygon))
+      }
 
-      // Last points go on (max, 0) then back to the beginning (0,0)
-      polygonVertices.push(lastPoint)
-      polygonVertices.push(firstPoint) // this one might not be necessary
-
-      // Add polygon to list
-      polygons.push(this.createPolygon(series, polygonVertices))
-    }
-
-    // Reverse order so smallest areas are drawn on top
-    polygons.reverse()
+      prevValues = currentValues
+      prevPolygonVertices = currentPolygonVertices
+    })
 
     return (
       <g data-test="stacked-lines">

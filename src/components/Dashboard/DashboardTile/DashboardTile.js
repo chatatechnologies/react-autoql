@@ -1062,6 +1062,8 @@ class DashboardTile extends React.Component {
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
         onNoneOfTheseClick: this.onNoneOfTheseClick,
+        onDrilldownStart: this.props.onDrilldownStart,
+        onDrilldownEnd: this.props.onDrilldownEnd,
         onDataClick: (drilldownData, queryID, activeKey) => {
           this.props.processDrilldown({
             tileId: this.props.tile.i,
