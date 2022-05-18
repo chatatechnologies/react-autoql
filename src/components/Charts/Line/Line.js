@@ -12,11 +12,11 @@ export default class Line extends Component {
   static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
   onDotClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -24,7 +24,8 @@ export default class Line extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -68,27 +69,6 @@ export default class Line extends Component {
           const y = yScale(value || minValue)
           const xy = [x, y]
           vertices.push(xy)
-
-          // vertices.push(
-          //   <line
-          //     key={`line-${getKey(this.KEY, index, i)}`}
-          //     className="line"
-          //     x1={xScale(d[stringColumnIndex]) + xShift}
-          //     y1={yScale(value || minValue)}
-          //     x2={
-          //       nextRow
-          //         ? xScale(nextRow[stringColumnIndex]) + xShift
-          //         : xScale(d[stringColumnIndex]) + xShift
-          //     }
-          //     y2={
-          //       nextRow
-          //         ? yScale(nextRow[colIndex] || minValue)
-          //         : yScale(value || minValue)
-          //     }
-          //     stroke={this.props.colorScale(i)}
-          //     opacity={0.7}
-          //   />
-          // )
         })
       }
 
@@ -100,12 +80,12 @@ export default class Line extends Component {
 
       const polyline = (
         <polyline
-          key={`line-${getKey(this.KEY, 0, i)}`}
+          key={`line-${getKey(0, i)}`}
           className="line"
           points={polylinePoints}
           fill="none"
           stroke={this.props.colorScale(i)}
-          strokeWidth={2}
+          strokeWidth={1}
           opacity={0.7}
         />
       )
@@ -154,9 +134,9 @@ export default class Line extends Component {
 
           allDots.push(
             <circle
-              key={getKey(this.KEY, index, i)}
+              key={getKey(colIndex, index)}
               className={`line-dot${
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? ' active'
                   : ''
               }`}
@@ -174,7 +154,7 @@ export default class Line extends Component {
                 fillOpacity: 1,
                 opacity: 0,
                 fill:
-                  this.state.activeKey === getKey(this.KEY, index, i)
+                  this.state.activeKey === getKey(colIndex, index)
                     ? this.props.colorScale(i)
                     : this.props.backgroundColor || '#fff',
               }}

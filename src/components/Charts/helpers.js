@@ -120,8 +120,8 @@ export const scaleZero = (scale) => {
   return scale(0)
 }
 
-export const getKey = (key, rowIndex, cellIndex) => {
-  return `${key}-${rowIndex}-${cellIndex}`
+export const getKey = (rowIndex, cellIndex) => {
+  return `${rowIndex}-${cellIndex}`
 }
 
 export const shouldRecalculateLongestLabel = (prevProps, props) => {
@@ -376,6 +376,10 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
 }
 
 export const getLegendLocation = (seriesArray, displayType) => {
+  if (seriesArray?.length < 2) {
+    return undefined
+  }
+
   if (
     displayType === 'pie' ||
     displayType === 'heatmap' ||

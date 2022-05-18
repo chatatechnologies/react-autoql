@@ -12,11 +12,11 @@ export default class StackedColumns extends Component {
   static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
   onColumnClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -24,7 +24,8 @@ export default class StackedColumns extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -91,9 +92,9 @@ export default class StackedColumns extends Component {
 
           return (
             <rect
-              key={getKey(this.KEY, index, i)}
+              key={getKey(colIndex, index)}
               className={`column${
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? ' active'
                   : ''
               }`}

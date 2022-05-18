@@ -34,11 +34,11 @@ export default class Circles extends Component {
   static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
   onCircleClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -46,7 +46,8 @@ export default class Circles extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -96,10 +97,10 @@ export default class Circles extends Component {
 
           circles.push(
             <circle
-              key={getKey(this.KEY, index, i)}
+              key={getKey(colIndex, index)}
               data-test="circles"
               className={`circle${
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? ' active'
                   : ''
               }`}
@@ -113,7 +114,7 @@ export default class Circles extends Component {
                 stroke: 'transparent',
                 strokeWidth: 10,
                 fill:
-                  this.state.activeKey === getKey(this.KEY, index, i)
+                  this.state.activeKey === getKey(colIndex, index)
                     ? colorScale(1)
                     : colorScale(0),
                 fillOpacity: 0.7,

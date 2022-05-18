@@ -12,11 +12,11 @@ export default class StackedLines extends Component {
   static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
   onDotClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -24,7 +24,8 @@ export default class StackedLines extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -42,9 +43,9 @@ export default class StackedLines extends Component {
 
     return (
       <circle
-        key={`dot-${getKey(this.KEY, index, i)}`}
+        key={`dot-${getKey(colIndex, index)}`}
         className={`vertex-dot${
-          this.state.activeKey === getKey(this.KEY, index, i) ? ' active' : ''
+          this.state.activeKey === getKey(colIndex, index) ? ' active' : ''
         }`}
         cy={y}
         cx={x}
@@ -53,7 +54,7 @@ export default class StackedLines extends Component {
         data-tip={tooltip}
         data-for="chart-element-tooltip"
         style={{
-          opacity: this.state.activeKey === getKey(this.KEY, index, i) ? 1 : 0,
+          opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
           cursor: 'pointer',
           stroke: this.props.colorScale(i),
           strokeWidth: 3,
@@ -75,7 +76,7 @@ export default class StackedLines extends Component {
 
     return (
       <polygon
-        key={`polygon-${getKey(this.KEY, stringColumnIndex, i)}`}
+        key={`polygon-${getKey(stringColumnIndex, i)}`}
         className={`bar${
           this.state.activeKey === this.props.data[0][stringColumnIndex]
             ? ' active'

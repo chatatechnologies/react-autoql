@@ -453,33 +453,43 @@ class Dashboard extends React.Component {
     }
   }
 
-  processDrilldown = ({
-    tileId,
-    drilldownData,
-    queryID,
-    activeKey,
-    isSecondHalf,
-  }) => {
+  onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
-      if (!drilldownData || !drilldownData.data) {
-        return
-      }
       this.setState({
+        isDrilldownRunning: true,
+        isDrilldownChartHidden: false,
         isDrilldownModalVisible: true,
         isDrilldownSecondHalf: isSecondHalf,
-        activeDrilldownTile: tileId,
+        activeDrilldownTile: tileId || this.state.activeDrilldownTile,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
-        isAnimatingModal: true,
+        isAnimatingModal: !this.state.isDrilldownModalVisible,
       })
-
-      this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
 
       this.animationTimeout = setTimeout(() => {
         this.setState({
           isAnimatingModal: false,
         })
       }, 200)
+    }
+  }
+
+  onDrilldownEnd = ({ response, error }) => {
+    if (response) {
+      if (this._isMounted) {
+        this.setState({
+          activeDrilldownResponse: response,
+          isDrilldownRunning: false,
+        })
+      }
+    } else if (error) {
+      console.error(error)
+      if (this._isMounted) {
+        this.setState({
+          isDrilldownRunning: false,
+          activeDrilldownResponse: undefined,
+        })
+      }
     }
   }
 
@@ -620,22 +630,13 @@ class Dashboard extends React.Component {
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }
-                          onDrilldownStart={this.props.onDrilldownStart}
-                          onDrilldownEnd={this.props.onDrilldownEnd}
-                          onDataClick={(
-                            drilldownData,
-                            queryID,
-                            columnIndex,
-                            row
-                          ) => {
-                            this.startDrilldown(
-                              drilldownData,
-                              queryID,
-                              tile.i,
-                              columnIndex,
-                              row
-                            )
-                          }}
+                          onDrilldownStart={(activeKey) =>
+                            this.onDrilldownStart({
+                              tileId: tile.i,
+                              activeKey,
+                            })
+                          }
+                          onDrilldownEnd={this.onDrilldownEnd}
                           activeChartElementKey={
                             this.state.activeDrilldownChartElementKey
                           }
@@ -763,6 +764,8 @@ class Dashboard extends React.Component {
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
             onQueryOutputUpdate={this.rebuildTooltips}
+            onDrilldownStart={this.onDrilldownStart}
+            onDrilldownEnd={this.onDrilldownEnd}
           />
         ))}
       </ReactGridLayout>

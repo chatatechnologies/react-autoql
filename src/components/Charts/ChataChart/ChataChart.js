@@ -7,6 +7,7 @@ import _reduce from 'lodash.reduce'
 import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
+import Popover from 'react-tiny-popover'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
@@ -19,11 +20,13 @@ import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
+import { ChataStackedLineChart } from '../ChataStackedLineChart'
+import { getThemeConfig } from '../../../props/defaults'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-
 import { svgToPng } from '../../../js/Util.js'
+
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -32,14 +35,6 @@ import {
 } from '../helpers.js'
 
 import './ChataChart.scss'
-import Popover from 'react-tiny-popover'
-import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { themeConfigType, dataFormattingType } from '../../../props/types'
-import {
-  themeConfigDefault,
-  dataFormattingDefault,
-  getThemeConfig,
-} from '../../../props/defaults'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -159,6 +154,7 @@ export default class ChataChart extends Component {
         this.props.numberColumnIndices,
         prevProps.numberColumnIndices
       ) ||
+      this.props.numberColumnIndex !== prevProps.numberColumnIndex ||
       !_isEqual(this.props.stringColumnIndex, prevProps.stringColumnIndex) ||
       !_isEqual(this.props.legendColumn, prevProps.legendColumn)
     ) {
@@ -293,6 +289,14 @@ export default class ChataChart extends Component {
     return rightMargin
   }
 
+  getLegendLabels = () => {
+    return getLegendLabelsForMultiSeries(
+      this.props.columns,
+      this.colorScale,
+      this.props.numberColumnIndices
+    )
+  }
+
   getNewBottomMargin = (chartContainerBbox) => {
     let legendBBox
     this.legend = select(this.chartRef)
@@ -308,9 +312,11 @@ export default class ChataChart extends Component {
     if (legendLocation === 'bottom' && _get(legendBBox, 'height')) {
       bottomLegendMargin = legendBBox.height + 10
     }
+
     this.xAxis = select(this.chartRef)
       .select('.axis-Bottom')
       .node()
+
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 40 // margin to include axis label
     if (xAxisBBox.height === 0) {
@@ -569,11 +575,7 @@ export default class ChataChart extends Component {
       (colIndex) => !this.props.columns[colIndex].isSeriesHidden
     )
 
-    const legendLabels = getLegendLabelsForMultiSeries(
-      this.props.columns,
-      this.colorScale,
-      numberColumnIndices
-    )
+    const legendLabels = this.getLegendLabels()
 
     const hasMultipleNumberColumns =
       [
@@ -584,6 +586,7 @@ export default class ChataChart extends Component {
 
     return {
       ...this.props,
+      key: undefined,
       data: this.state.aggregatedData || this.props.data,
       colorScale: this.colorScale,
       innerPadding,
@@ -599,14 +602,15 @@ export default class ChataChart extends Component {
       marginAdjustmentFinished: this.state.loading,
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
-      legendColumn: numberColumnIndices?.length > 1 && this.props.legendColumn,
       legendLabels,
       visibleSeriesIndices,
       hasMultipleNumberColumns,
       hasMultipleStringColumns: stringColumnIndices.length > 1,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),
-      onLabelChange: this.updateMargins,
+      onLabelChange: () => {
+        this.updateMargins()
+      },
       onXAxisClick: this.onXAxisClick,
       onYAxisClick: this.onYAxisClick,
       onLegendTitleClick: !!this.props.legendColumn
@@ -821,7 +825,8 @@ export default class ChataChart extends Component {
   }
 
   renderLegendSelectorContent = () => {
-    if (this.props.stringColumnIndices?.length < 2) {
+    const legendLabels = this.getLegendLabels()
+    if (legendLabels?.length < 2) {
       return null
     }
 
@@ -834,7 +839,7 @@ export default class ChataChart extends Component {
         }}
       >
         <ul className="axis-selector-content">
-          {this.props.stringColumnIndices.map((colIndex, i) => {
+          {legendLabels.map((legendItem, i) => {
             return (
               <li
                 className={`string-select-list-item ${
@@ -842,11 +847,11 @@ export default class ChataChart extends Component {
                 }`}
                 key={uuid()}
                 onClick={() => {
-                  this.props.changeLegendColumnIndex(colIndex)
+                  this.props.changeLegendColumnIndex(i)
                   this.setState({ activeAxisSelector: undefined })
                 }}
               >
-                {_get(this.props.columns, `[${colIndex}].title`)}
+                {legendItem.label}
               </li>
             )
           })}

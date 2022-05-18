@@ -155,7 +155,8 @@ export default class Axis extends Component {
         this.props.columns,
         this.props.stringColumnIndex,
         this.props.legendColumn,
-        this.props.numberColumnIndex
+        this.props.numberColumnIndex,
+        newActiveKey
       )
       this.setState({ activeKey: newActiveKey })
     }

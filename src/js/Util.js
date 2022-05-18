@@ -479,12 +479,11 @@ export const areAllColumnsHidden = (response) => {
   return hasColumns && !visibleColumns.length
 }
 
-export const getSupportedDisplayTypes = (
+export const getSupportedDisplayTypes = ({
   response,
-  chartData,
   shouldExcludePieChart,
-  newTableData
-) => {
+  dataLength,
+} = {}) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -511,7 +510,8 @@ export const getSupportedDisplayTypes = (
       return ['single-value']
     }
 
-    const isTableEmpty = !!newTableData && !newTableData.length
+    const numRows = dataLength || rows.length
+    const isTableEmpty = dataLength === 0
     if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
@@ -539,7 +539,7 @@ export const getSupportedDisplayTypes = (
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (supportsPieChart(columns, chartData) && !shouldExcludePieChart) {
+      if (numRows <= 10 && !shouldExcludePieChart) {
         supportedDisplayTypes.push('pie')
       }
 
@@ -586,7 +586,7 @@ export const getSupportedDisplayTypes = (
 }
 
 export const isDisplayTypeValid = (response, displayType) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes(response)
+  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
   if (!isValid) {
     console.warn(
@@ -609,7 +609,7 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
 }
 
 export const getDefaultDisplayType = (response, defaultToChart) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes(response)
+  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
   const responseDisplayType = _get(response, 'data.data.display_type')
 
   // If the display type is a recognized non-chart or non-table type

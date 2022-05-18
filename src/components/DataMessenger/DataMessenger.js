@@ -1184,9 +1184,6 @@ export default class DataMessenger extends React.Component {
                   addMessageToDM={this.addResponseMessage}
                   onDrilldownStart={this.onDrilldownStart}
                   onDrilldownEnd={this.onDrilldownEnd}
-                  // onDataClick={(...params) =>
-                  //   this.processDrilldown(...params, message.id)
-                  // }
                   isResponse={message.isResponse}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}

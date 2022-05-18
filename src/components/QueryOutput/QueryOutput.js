@@ -98,7 +98,9 @@ export default class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = props.queryResponse
-    this.supportedDisplayTypes = getSupportedDisplayTypes(props.queryResponse)
+    this.supportedDisplayTypes = getSupportedDisplayTypes({
+      response: props.queryResponse,
+    })
     this.queryID = _get(props.queryResponse, 'data.data.query_id')
     this.interpretation = _get(props.queryResponse, 'data.data.interpretation')
     this.tableID = uuid()
@@ -434,9 +436,9 @@ export default class QueryOutput extends React.Component {
     }
 
     // Get new supported display types after column change
-    const newSupportedDisplayTypes = getSupportedDisplayTypes(
-      this.queryResponse
-    )
+    const newSupportedDisplayTypes = getSupportedDisplayTypes({
+      response: this.queryResponse,
+    })
     this.supportedDisplayTypes = newSupportedDisplayTypes
     this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
@@ -779,11 +781,17 @@ export default class QueryOutput extends React.Component {
     return drilldownResponse
   }
 
-  processDrilldown = async ({ groupBys, supportedByAPI, columnIndex, row }) => {
+  processDrilldown = async ({
+    groupBys,
+    supportedByAPI,
+    columnIndex,
+    row,
+    activeKey,
+  }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
         if (supportedByAPI) {
-          this.props.onDrilldownStart()
+          this.props.onDrilldownStart(activeKey)
           const response = await runDrilldown({
             ...getAuthentication(getAuthentication(this.props.authentication)),
             ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
@@ -827,7 +835,8 @@ export default class QueryOutput extends React.Component {
     columns,
     stringColumnIndex,
     legendColumn,
-    numberColumnIndex
+    numberColumnIndex,
+    activeKey
   ) => {
     const drilldownData = {}
     const groupBys = []
@@ -864,6 +873,7 @@ export default class QueryOutput extends React.Component {
       supportedByAPI: !!groupBys.length,
       columnIndex,
       row,
+      activeKey,
     })
   }
 
@@ -893,14 +903,15 @@ export default class QueryOutput extends React.Component {
         this.prevRows >= 0 ? this.prevRows : this.tableData?.length
 
       if (numRows !== prevRows) {
-        this.setSupportedDisplayTypes(
-          getSupportedDisplayTypes(
-            this.queryResponse,
-            undefined,
-            undefined,
-            newTableData
-          )
-        )
+        // We dont use filtered table to chart currently.
+        // We can enable this if we add that feature back
+        // this.setSupportedDisplayTypes(
+        //   getSupportedDisplayTypes({
+        //     response: this.queryResponse,
+        //     dataLength: this.tableData?.length,
+        //     pivotDataLength: this.pivotTableData?.length,
+        //   })
+        // )
 
         if (this.shouldGeneratePivotData(newTableData)) {
           this.generatePivotData({ newTableData })
@@ -1587,6 +1598,8 @@ export default class QueryOutput extends React.Component {
           return map
         }, {})
 
+      let newStringColumnIndex = stringColumnIndex
+      let newLegendColumnIndex = legendColumnIndex
       // Make sure the longer list is in the legend, UNLESS its a date type
       // DATE types should always go in the axis if possible
       if (
@@ -1594,19 +1607,18 @@ export default class QueryOutput extends React.Component {
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
         !isColumnDateType(this.getColumnFromIndexString('stringColumnIndex'))
       ) {
-        const tempCol = legendColumnIndex
-        legendColumnIndex = stringColumnIndex
-        stringColumnIndex = tempCol
+        newStringColumnIndex = legendColumnIndex
+        newLegendColumnIndex = stringColumnIndex
 
-        const tempValues = { ...uniqueValues0 }
-        uniqueValues0 = { ...uniqueValues1 }
-        uniqueValues1 = { ...tempValues }
+        const tempValues = _cloneDeep(uniqueValues0)
+        uniqueValues0 = _cloneDeep(uniqueValues1)
+        uniqueValues1 = _cloneDeep(tempValues)
       }
 
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...this.tableColumns[stringColumnIndex],
+          ...this.tableColumns[newStringColumnIndex],
           frozen: true,
           headerContext: undefined,
           visible: true,
@@ -1617,7 +1629,7 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueValues1).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
-          column: this.tableColumns[legendColumnIndex],
+          column: this.tableColumns[newLegendColumnIndex],
           config: getDataFormatting(this.props.dataFormatting),
         })
         pivotTableColumns.push({
@@ -1638,14 +1650,22 @@ export default class QueryOutput extends React.Component {
 
       tableData.forEach((row) => {
         // Populate first column
-        pivotTableData[uniqueValues0[row[stringColumnIndex]]][0] =
-          row[stringColumnIndex]
+        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][0] =
+          row[newStringColumnIndex]
 
         // Populate remaining columns
-        pivotTableData[uniqueValues0[row[stringColumnIndex]]][
-          uniqueValues1[row[legendColumnIndex]] + 1
+        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][
+          uniqueValues1[row[newLegendColumnIndex]] + 1
         ] = row[numberColumnIndex]
       })
+
+      // Pie charts might be available if dataset is small enough
+      const newSupportedDisplayTypes = getSupportedDisplayTypes({
+        response: this.queryResponse,
+      })
+      if (!_isEqual(newSupportedDisplayTypes, this.supportedDisplayTypes)) {
+        this.setSupportedDisplayTypes(newSupportedDisplayTypes)
+      }
 
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData

@@ -51,9 +51,9 @@ class DashboardTile extends React.Component {
     this.autoCompleteTimer = undefined
 
     const supportedDisplayTypes =
-      getSupportedDisplayTypes(props.queryResponse) || []
+      getSupportedDisplayTypes({ response: props.queryResponse }) || []
     const secondSupportedDisplayTypes =
-      getSupportedDisplayTypes(props.secondQueryResponse) || []
+      getSupportedDisplayTypes({ response: props.secondQueryResponse }) || []
 
     this.state = {
       query: props.tile.query,
@@ -130,9 +130,9 @@ class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
       this.setState({ query: _get(this.props, 'tile.query') }, () => {
         this.setState({
-          supportedDisplayTypes: getSupportedDisplayTypes(
-            _get(this.props, 'queryResponse')
-          ),
+          supportedDisplayTypes: getSupportedDisplayTypes({
+            response: _get(this.props, 'queryResponse'),
+          }),
         })
       })
     }
@@ -1062,17 +1062,13 @@ class DashboardTile extends React.Component {
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
         onNoneOfTheseClick: this.onNoneOfTheseClick,
-        onDrilldownStart: this.props.onDrilldownStart,
-        onDrilldownEnd: this.props.onDrilldownEnd,
-        onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown({
+        onDrilldownStart: (activeKey) =>
+          this.props.onDrilldownStart({
             tileId: this.props.tile.i,
-            drilldownData,
-            queryID,
-            activeKey,
             isSecondHalf: false,
-          })
-        },
+            activeKey,
+          }),
+        onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
         onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
@@ -1146,15 +1142,13 @@ class DashboardTile extends React.Component {
           this.onSecondDisplayTypeChange(displayType)
         },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
-        onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown({
+        onDrilldownStart: (activeKey) =>
+          this.props.onDrilldownStart({
             tileId: this.props.tile.i,
-            drilldownData,
-            queryID,
-            activeKey,
             isSecondHalf: true,
-          })
-        },
+            activeKey,
+          }),
+        onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
       },
       vizToolbarProps: {
@@ -1246,7 +1240,7 @@ class DashboardTile extends React.Component {
           >
             <Fragment>
               {this.renderHeader()}
-              {this.renderContent()}
+              {!this.props.isResizing && this.renderContent()}
             </Fragment>
           </div>
           {this.props.isEditing && this.renderDragHandles()}

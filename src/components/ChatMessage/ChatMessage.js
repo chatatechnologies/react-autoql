@@ -64,7 +64,9 @@ export default class ChatMessage extends React.Component {
         props.response,
         props.autoChartAggregations
       ),
-      supportedDisplayTypes: getSupportedDisplayTypes(props.response),
+      supportedDisplayTypes: getSupportedDisplayTypes({
+        response: props.response,
+      }),
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,

@@ -491,7 +491,7 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes(response)).toEqual(['table'])
+    expect(getSupportedDisplayTypes({ response })).toEqual(['table'])
   })
 
   test('supports 2d charts', () => {
@@ -512,7 +512,7 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes(response)).toEqual([
+    expect(getSupportedDisplayTypes({ response })).toEqual([
       'table',
       'column',
       'bar',
@@ -522,7 +522,9 @@ describe('getSupportedDisplayTypes', () => {
   })
 
   test('supports 3d charts', () => {
-    expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
+    expect(
+      getSupportedDisplayTypes({ response: sampleDoubleGroupableResponse })
+    ).toEqual([
       'table',
       'pivot_table',
       'stacked_column',

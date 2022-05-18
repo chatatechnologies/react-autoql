@@ -48,6 +48,7 @@ export default class Axis extends Component {
       // https://d3-legend.susielu.com/
       this.renderLegend()
     }
+
     this.props.onLabelChange()
   }
 
@@ -68,12 +69,7 @@ export default class Axis extends Component {
   }
 
   componentWillUnmount = () => {
-    removeFromDOM(this.axisElement)
-    removeFromDOM(this.legendBorder)
     removeFromDOM(this.legendElement)
-    removeFromDOM(this.legendClippingContainer)
-    removeFromDOM(this.bottomLegendElement)
-    removeFromDOM(this.rightLegendElement)
     removeFromDOM(this.legendSwatchElements)
     removeFromDOM(this.swatchElements)
   }

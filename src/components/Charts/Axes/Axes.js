@@ -1,5 +1,6 @@
 import React from 'react'
 import _get from 'lodash.get'
+import { v4 as uuid } from 'uuid'
 
 import { Axis } from '../Axis'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
@@ -7,6 +8,9 @@ import { axesDefaultProps, axesPropTypes } from '../helpers'
 export default class Axes extends React.Component {
   constructor(props) {
     super(props)
+
+    this.xAxisKey = uuid()
+    this.yAxisKey = uuid()
 
     this.labelInlineStyles = {
       fontSize: 12,
@@ -166,6 +170,7 @@ export default class Axes extends React.Component {
     return (
       <Axis
         {...this.props}
+        key={this.xAxisKey}
         orient="Bottom"
         scale={this.props.xScale}
         translate={`translate(0, ${this.props.height -
@@ -186,6 +191,7 @@ export default class Axes extends React.Component {
     return (
       <Axis
         {...this.props}
+        key={this.yAxisKey}
         orient="Left"
         scale={this.props.yScale}
         translate={`translate(${this.props.leftMargin}, 0)`}

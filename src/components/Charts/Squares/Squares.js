@@ -39,7 +39,7 @@ export default class Squares extends Component {
   static defaultProps = chartElementDefaultProps
 
   onSquareClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -47,7 +47,8 @@ export default class Squares extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -100,10 +101,10 @@ export default class Squares extends Component {
 
           squares.push(
             <rect
-              key={getKey(this.KEY, index, i)}
+              key={getKey(colIndex, index)}
               data-test="squares"
               className={`square${
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? ' active'
                   : ''
               }`}
@@ -117,16 +118,16 @@ export default class Squares extends Component {
               stroke={activeFillColor}
               strokeWidth="2px"
               strokeOpacity={
-                this.state.activeKey === getKey(this.KEY, index, i) ? 1 : 0
+                this.state.activeKey === getKey(colIndex, index) ? 1 : 0
               }
               // chosen color for positive values and red for negative values
               fill={
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? activeFillColor
                   : fillColor
               }
               fillOpacity={
-                this.state.activeKey === getKey(this.KEY, index, i)
+                this.state.activeKey === getKey(colIndex, index)
                   ? 1
                   : this.opacityScale(Math.abs(value))
               }

@@ -13,11 +13,11 @@ export default class Columns extends Component {
   static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
   onColumnClick = (row, colIndex, rowIndex) => {
-    const newActiveKey = getKey(this.KEY, rowIndex, colIndex)
+    const newActiveKey = getKey(colIndex, rowIndex)
 
     this.props.onChartClick(
       row,
@@ -25,7 +25,8 @@ export default class Columns extends Component {
       this.props.columns,
       this.props.stringColumnIndex,
       this.props.legendColumn,
-      this.props.numberColumnIndex
+      this.props.numberColumnIndex,
+      newActiveKey
     )
 
     this.setState({ activeKey: newActiveKey })
@@ -88,7 +89,7 @@ export default class Columns extends Component {
               dataFormatting,
             })
 
-            const key = getKey(this.KEY, index, i)
+            const key = getKey(colIndex, index)
 
             return (
               <rect
