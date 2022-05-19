@@ -46,7 +46,6 @@ export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
 
-    this.supportedDisplayTypes = []
     this.filtering = false
     this.PIE_CHART_HEIGHT = 330
     this.MESSAGE_HEIGHT_MARGINS = 40

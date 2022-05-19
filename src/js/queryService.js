@@ -74,7 +74,6 @@ export const fetchSuggestions = ({
 
 export const runQueryOnly = ({
   query,
-  projectID,
   userSelection,
   debug,
   test,
@@ -167,7 +166,6 @@ export const runQueryOnly = ({
 
 export const runQuery = ({
   query,
-  projectID,
   userSelection,
   debug,
   test,
@@ -179,21 +177,6 @@ export const runQuery = ({
   skipQueryValidation,
   AutoAEId,
 } = {}) => {
-  // Temp for demo: decode token to get project id
-  let id
-  let base64Url
-  if (token) {
-    base64Url = token.split('.')[1]
-    //bass64Url was failing unit tests due to undefined.
-    if (base64Url) {
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-      const buff = Buffer.from(base64, 'base64')
-      const payloadinit = buff.toString('ascii')
-      const payload = JSON.parse(payloadinit)
-      id = _get(payload, 'project_id')
-    }
-  }
-
   if (enableQueryValidation && !skipQueryValidation) {
     return runQueryValidation({
       text: query,
@@ -224,7 +207,6 @@ export const runQuery = ({
 
   return runQueryOnly({
     query,
-    projectID,
     userSelection,
     debug,
     test,

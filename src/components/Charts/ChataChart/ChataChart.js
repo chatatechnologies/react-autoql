@@ -175,10 +175,10 @@ export default class ChataChart extends Component {
 
     let rowSum = _cloneDeep(sortedData[0])
     sortedData.forEach((currentRow, i) => {
-      if (i === 0) {
-        return
-      } else if (i === sortedData.length - 1) {
+      if (i === sortedData.length - 1) {
         aggregatedData.push(rowSum)
+      } else if (i === 0) {
+        return
       } else if (
         currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
       ) {

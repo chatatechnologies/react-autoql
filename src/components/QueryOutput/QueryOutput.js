@@ -439,7 +439,7 @@ export default class QueryOutput extends React.Component {
     const newSupportedDisplayTypes = getSupportedDisplayTypes({
       response: this.queryResponse,
     })
-    this.supportedDisplayTypes = newSupportedDisplayTypes
+    this.setSupportedDisplayTypes(newSupportedDisplayTypes)
     this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
     if (areAllColumnsHidden(this.queryResponse)) {
@@ -792,13 +792,19 @@ export default class QueryOutput extends React.Component {
       try {
         if (supportedByAPI) {
           this.props.onDrilldownStart(activeKey)
-          const response = await runDrilldown({
-            ...getAuthentication(getAuthentication(this.props.authentication)),
-            ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
-            queryID: this.queryID,
-            groupBys,
-          })
-          this.props.onDrilldownEnd({ response })
+          try {
+            const response = await runDrilldown({
+              ...getAuthentication(
+                getAuthentication(this.props.authentication)
+              ),
+              ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
+              queryID: this.queryID,
+              groupBys,
+            })
+            this.props.onDrilldownEnd({ response })
+          } catch (error) {
+            this.props.onDrilldownEnd({ response: error })
+          }
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
           const response = this.getFilterDrilldown({ stringColumnIndex, row })
@@ -1553,8 +1559,10 @@ export default class QueryOutput extends React.Component {
       this.setPivotTableConfig()
     } catch (error) {
       console.error(error)
-      this.supportedDisplayTypes = this.supportedDisplayTypes.filter(
-        (displayType) => displayType !== 'pivot_table'
+      this.setSupportedDisplayTypes(
+        this.supportedDisplayTypes.filter(
+          (displayType) => displayType !== 'pivot_table'
+        )
       )
 
       this.onRecommendedDisplayType('table')
@@ -2108,7 +2116,6 @@ export default class QueryOutput extends React.Component {
         >
           {this.renderResponse()}
           {this.renderFooter()}
-          {}
         </div>
       </ErrorBoundary>
     )
