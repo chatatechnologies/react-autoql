@@ -34,6 +34,7 @@ import {
 
 import './ChataChart.scss'
 import {
+  getColumnTypeAmounts,
   getTotalNumberColumns,
   getTotalStringColumns,
 } from '../../QueryOutput/columnHelpers'
@@ -481,9 +482,13 @@ export default class ChataChart extends Component {
       innerPadding = 0.1
     }
 
-    const legendLabels = this.getLegendLabels()
-    const hasMultipleNumberColumns = getTotalNumberColumns(columns) > 1
-    const hasMultipleStringColumns = getTotalStringColumns(columns) > 1
+    const {
+      amountOfNumberColumns,
+      amountOfStringColumns,
+    } = getColumnTypeAmounts(columns)
+    const hasMultipleNumberColumns = amountOfNumberColumns > 1
+    const hasMultipleStringColumns = amountOfStringColumns > 1
+
     const visibleSeriesIndices = numberColumnIndices.filter(
       (colIndex) => !columns[colIndex].isSeriesHidden
     )
@@ -508,7 +513,7 @@ export default class ChataChart extends Component {
       marginAdjustmentFinished: this.state.loading,
       legendTitle: this.props.legendColumn?.title || 'Category',
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type),
-      legendLabels,
+      legendLabels: this.getLegendLabels(),
       visibleSeriesIndices,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),

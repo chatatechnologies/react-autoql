@@ -38,24 +38,6 @@ export const isColumnDateType = (col) => {
   }
 }
 
-export const getTotalNumberColumns = (columns) => {
-  if (!columns?.length) {
-    return 0
-  }
-
-  const numberCols = columns.filter((col) => isColumnNumberType(col))
-  return numberCols.length
-}
-
-export const getTotalStringColumns = (columns) => {
-  if (!columns?.length) {
-    return 0
-  }
-
-  const stringCols = columns.filter((col) => isColumnStringType(col))
-  return stringCols.length
-}
-
 export const getNumberColumnIndices = (columns) => {
   const dollarAmtIndices = []
   const quantityIndices = []
@@ -171,9 +153,9 @@ export const getColumnTypeAmounts = (columns) => {
   let amountOfNumberColumns = 0
 
   columns.forEach((col) => {
-    if (isColumnNumberType(col)) {
+    if (isColumnNumberType(col) && col.is_visible) {
       amountOfNumberColumns += 1
-    } else if (isColumnStringType(col)) {
+    } else if (isColumnStringType(col) && col.is_visible) {
       amountOfStringColumns += 1
     }
   })

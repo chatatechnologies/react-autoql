@@ -853,7 +853,7 @@ export default class QueryOutput extends React.Component {
     if (columns?.[stringColumnIndex]?.datePivot) {
       const year = Number(columns?.[columnIndex]?.name)
       const month = row?.[stringColumnIndex]
-      const value = this.pivotOriginalColumnData?.[year]?.[month]
+      const value = `${this.pivotOriginalColumnData?.[year]?.[month]}`
       groupBys.push({
         name: stringColumn.name,
         value,
@@ -861,14 +861,14 @@ export default class QueryOutput extends React.Component {
     } else if (stringColumn?.groupable) {
       groupBys.push({
         name: stringColumn.name,
-        value: row?.[stringColumnIndex],
+        value: `${row?.[stringColumnIndex]}`,
       })
     }
 
     if (legendColumn?.groupable) {
       groupBys.push({
         name: legendColumn.name,
-        value: columns?.[numberColumnIndex]?.name,
+        value: `${columns?.[numberColumnIndex]?.name}`,
       })
     }
 
@@ -1525,6 +1525,7 @@ export default class QueryOutput extends React.Component {
           field: `${i + 1}`,
           headerContext: undefined,
           visible: true,
+          is_visible: true,
         })
       })
 
@@ -1630,6 +1631,7 @@ export default class QueryOutput extends React.Component {
           frozen: true,
           headerContext: undefined,
           visible: true,
+          is_visible: true,
           field: '0',
         },
       ]
@@ -1648,6 +1650,7 @@ export default class QueryOutput extends React.Component {
           field: `${i + 1}`,
           headerContext: undefined,
           visible: true,
+          is_visible: true,
         })
       })
 
