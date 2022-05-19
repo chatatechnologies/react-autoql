@@ -1903,6 +1903,25 @@ export default class QueryOutput extends React.Component {
     return this.renderMessage()
   }
 
+  renderDataLimitWarning = () => {
+    const numRows = this.queryResponse?.data?.data?.rows?.length
+    const maxRowLimit = this.queryResponse?.data?.data?.row_limit
+
+    if (maxRowLimit && numRows === maxRowLimit) {
+      return (
+        <div className="dashboard-data-limit-warning-icon">
+          <Icon
+            type="warning"
+            data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
+            data-for="dashboard-data-limit-warning-tooltip"
+          />
+        </div>
+      )
+    }
+
+    return null
+  }
+
   renderMessage = (error) => {
     try {
       if (typeof error === 'object') {
@@ -2064,6 +2083,18 @@ export default class QueryOutput extends React.Component {
     )
   }
 
+  renderFooter = () => {
+    return (
+      <div className="query-output-footer">
+        {getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+        this.props.showQueryInterpretation
+          ? this.renderReverseTranslation()
+          : null}
+        {this.renderDataLimitWarning()}
+      </div>
+    )
+  }
+
   render = () => {
     return (
       <ErrorBoundary>
@@ -2076,10 +2107,8 @@ export default class QueryOutput extends React.Component {
           ${isTableType(this.props.displayType) ? 'table' : ''}`}
         >
           {this.renderResponse()}
-          {getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-          this.props.showQueryInterpretation
-            ? this.renderReverseTranslation()
-            : null}
+          {this.renderFooter()}
+          {}
         </div>
       </ErrorBoundary>
     )

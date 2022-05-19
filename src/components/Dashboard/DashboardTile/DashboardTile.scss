@@ -21,15 +21,6 @@
   align-items: center;
 }
 
-// Data limit warning tooltip in Dashboardtile
-.dashboard-data-limit-warning-icon {
-  color: var(--react-autoql-warning-color) !important;
-  position: absolute !important;
-  bottom: 40px;
-  right: 16px;
-  font-size: 20px;
-}
-
 // Drag handles
 .react-autoql-dashboard-tile-drag-handle {
   transition: opacity 0.3s ease;

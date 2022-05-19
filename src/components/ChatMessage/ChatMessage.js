@@ -478,26 +478,6 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  renderDataLimitWarning = () => {
-    const numRows = _get(this.props, 'response.data.data.rows.length')
-    const maxRowLimit = _get(this.props, 'response.data.data.row_limit')
-
-    if (
-      maxRowLimit &&
-      numRows === maxRowLimit &&
-      !areAllColumnsHidden(this.props.response)
-    ) {
-      return (
-        <Icon
-          type="warning"
-          className="data-limit-warning-icon"
-          data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for="chart-element-tooltip"
-        />
-      )
-    }
-  }
-
   render = () => {
     return (
       <ErrorBoundary>
@@ -522,7 +502,6 @@ export default class ChatMessage extends React.Component {
               <Fragment>
                 {this.renderRightToolbar()}
                 {this.renderLeftToolbar()}
-                {this.renderDataLimitWarning()}
               </Fragment>
             )}
           </div>
