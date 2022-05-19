@@ -19,6 +19,7 @@ import {
   chartPropTypes,
   getTooltipContent,
 } from '../helpers'
+import ReactTooltip from 'react-tooltip'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -250,6 +251,7 @@ export default class Axis extends Component {
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
       this.setState({ legendLabels: newLegendLabels })
     }
+    ReactTooltip.rebuild()
   }
 
   renderLegend = () => {
