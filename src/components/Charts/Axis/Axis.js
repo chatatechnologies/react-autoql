@@ -48,7 +48,6 @@ export default class Axis extends Component {
       // https://d3-legend.susielu.com/
       this.renderLegend()
     }
-
     this.props.onLabelChange()
   }
 

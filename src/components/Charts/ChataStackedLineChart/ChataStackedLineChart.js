@@ -18,7 +18,6 @@ import { getDataFormatting } from '../../../props/defaults'
 export default class ChataStackedLineChart extends Component {
   constructor(props) {
     super(props)
-
     this.setChartData(props)
     this.setLongestLabelWidth(props)
     this.setLabelRotationValue(props)

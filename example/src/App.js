@@ -111,7 +111,6 @@ export default class App extends Component {
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
     componentKey: uuid(),
-    isVisible: true,
     placement: 'right',
     showHandle: true,
     theme: 'light',

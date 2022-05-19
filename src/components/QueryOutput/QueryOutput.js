@@ -1120,6 +1120,9 @@ export default class QueryOutput extends React.Component {
         const legendColumn = this.tableColumns[
           this.tableConfig.legendColumnIndex
         ]
+        const legendColumn = this.tableColumns[
+          this.dataConfig.legendColumnIndex
+        ]
 
         const tooltipLine1 = `<div>
           <strong>${this.pivotTableColumns[0].title}:</strong>${formatElement({

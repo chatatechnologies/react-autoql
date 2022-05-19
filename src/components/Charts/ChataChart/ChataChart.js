@@ -130,6 +130,7 @@ export default class ChataChart extends Component {
         shouldForceUpdate = true
       }
     }
+  }
 
     if (dataStructureChanged(this.props, prevProps)) {
       shouldUpdateMargins = true
@@ -526,6 +527,9 @@ export default class ChataChart extends Component {
       bottomMargin,
       rightMargin,
       leftMargin,
+      isResizing: this.props.isResizing,
+      isAnimatingContainer: this.props.isAnimatingContainer,
+      marginAdjustmentFinished: this.state.loading,
       bottomLegendMargin,
       hasMultipleNumberColumns,
       hasMultipleStringColumns,

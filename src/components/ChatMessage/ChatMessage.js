@@ -205,6 +205,16 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      prevProps.messageContainerHeight !== this.props.messageContainerHeight ||
+      prevProps.messageContainerWidth !== this.props.messageContainerWidth ||
+      this.state.displayType !== prevState.displayType
+    ) {
+      this.setState({
+        chartHeight: this.getChartHeight(this.state.displayType),
+        chartWidth: this.getChartWidth(),
+      })
+    }
     ReactTooltip.hide()
   }
 

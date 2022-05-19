@@ -88,7 +88,6 @@ export default class NotificationItem extends React.Component {
       }
       this.supportedDisplayTypes = getSupportedDisplayTypes({
         response: queryResponse,
-        shouldExcludePieChart: true,
       })
       const displayType =
         this.props.autoChartAggregations &&

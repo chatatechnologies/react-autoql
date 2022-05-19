@@ -1239,7 +1239,7 @@ class DashboardTile extends React.Component {
           >
             <Fragment>
               {this.renderHeader()}
-              {!this.props.isResizing && this.renderContent()}
+              {this.renderContent()}
             </Fragment>
           </div>
           {this.props.isEditing && this.renderDragHandles()}
