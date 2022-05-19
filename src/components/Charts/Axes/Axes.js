@@ -88,7 +88,6 @@ export default class Axes extends React.Component {
           <AxisSelector
             {...this.props}
             column={this.props.xCol}
-            onAxisSelect={this.props.onXAxisClick}
             position="top"
             align="end"
             childProps={{

@@ -9,6 +9,7 @@ import { axisLeft, axisBottom } from 'd3-axis'
 import { legendColor } from 'd3-svg-legend'
 import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
+import LegendSelector from './LegendSelector'
 
 import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes } from '../helpers.js'
@@ -176,6 +177,7 @@ export default class Axis extends Component {
           .labelWrap(100)
           .scale(legendScale)
           .on('cellclick', function(d) {
+            self.props.onLabelChange({ setLoading: false })
             self.props.onLegendClick(
               legendLabels.find((label) => label.label === d)
             )
@@ -420,12 +422,19 @@ export default class Axis extends Component {
                 style={{ transform: 'translate(-30px, -30px)' }}
               />
             </clipPath>
-            {this.props.onLegendTitleClick && (
-              <rect
-                ref={(el) => {
-                  this.legendBorder = el
+            {this.props.legendColumn && (
+              <LegendSelector
+                {...this.props}
+                column={this.props.legendColumn}
+                position="bottom"
+                align="end"
+                childProps={{
+                  ref: (r) => (this.legendBorder = r),
+                  x: _get(this.titleBBox, 'x', 0) - 10,
+                  y: _get(this.titleBBox, 'y', 0) - 10,
+                  width: _get(this.titleBBox, 'width', 0) + 20,
+                  height: _get(this.titleBBox, 'height', 0) + 10,
                 }}
-                onClick={this.props.onLegendTitleClick}
               />
             )}
           </g>

@@ -435,7 +435,7 @@ class Dashboard extends React.Component {
         this.setState({
           isAnimatingModal: false,
         })
-      }, 200)
+      }, 500)
     }
   }
 

@@ -138,11 +138,17 @@ export default class ChataChart extends Component {
       }
     }
 
+    // --------- Only update state once after checking new props -----------
+    // ----------- keep this at the bottom of componentDidMount ------------
     if (!_isEmpty(newState)) {
       shouldForceUpdate = false
       this.setState(newState, () => {
         if (shouldUpdateMargins) this.updateMargins()
       })
+      return
+    } else if (shouldUpdateMargins) {
+      this.updateMargins()
+      return
     }
 
     if (shouldForceUpdate) {
@@ -294,14 +300,14 @@ export default class ChataChart extends Component {
     }, 500)
   }
 
-  updateMargins = (delay = 100) => {
-    if (!this.state.isLoading) {
+  updateMargins = ({ setLoading = true, delay = 100 } = {}) => {
+    if (!this.state.isLoading && setLoading) {
       this.setState({ isLoading: true })
     }
 
     clearTimeout(this.updateMarginsThrottled)
     this.updateMarginsThrottled = setTimeout(() => {
-      this.updateMarginsToThrottle(delay)
+      this.updateMarginsToThrottle()
     }, delay)
   }
 
@@ -459,36 +465,6 @@ export default class ChataChart extends Component {
     }
   }
 
-  onXAxisClick = (e) => {
-    this.setState({
-      activeAxisSelector: 'x',
-      axisSelectorLocation: {
-        left: e.pageX,
-        top: e.pageY,
-        x: e.pageX,
-        y: e.pageY,
-      },
-    })
-  }
-
-  onYAxisClick = (e) => {
-    this.setState({
-      activeAxisSelector: 'y',
-      axisSelectorLocation: {
-        left: e.pageX,
-        top: e.pageY,
-        x: e.pageX,
-        y: e.pageY,
-      },
-    })
-  }
-  onLegendTitleClick = (e) => {
-    this.setState({
-      activeAxisSelector: 'legend',
-      axisSelectorLocation: { left: e.pageX, top: e.pageY },
-    })
-  }
-
   getCommonChartProps = () => {
     const {
       topMargin,
@@ -536,19 +512,8 @@ export default class ChataChart extends Component {
       visibleSeriesIndices,
       numberAxisTitle: this.getNumberAxisTitle(),
       stringAxisTitle: this.getStringAxisTitle(),
-      activeAxisSelector: this.state.activeAxisSelector,
-      isXAxisSelectorOpen: this.state.activeAxisSelector === 'x',
-      isYAxisSelectorOpen: this.state.activeAxisSelector === 'y',
-      isLegendSelectorOpen: this.state.activeAxisSelector === 'legend',
       onStringColumnSelect: this.onStringColumnSelect,
-      onLabelChange: () => {
-        this.updateMargins()
-      },
-      onXAxisClick: this.onXAxisClick,
-      onYAxisClick: this.onYAxisClick,
-      onLegendTitleClick: !!this.props.legendColumn
-        ? this.onLegendTitleClick
-        : undefined,
+      onLabelChange: this.updateMargins,
     }
   }
 
@@ -558,57 +523,6 @@ export default class ChataChart extends Component {
     newArray.slice(index, index + 1)
     newArray.unshift(itemToRemove)
     return newArray
-  }
-
-  onStringColumnSelect = (colIndex) => {
-    this.props.changeStringColumnIndex(colIndex)
-    this.setState({ activeAxisSelector: undefined })
-  }
-
-  onNumberColumnSelect = (colIndices) => {
-    this.props.changeNumberColumnIndex(colIndex)
-    this.setState({ activeAxisSelector: undefined })
-  }
-
-  onLegendColumnSelect = () => {
-    this.props.changeLegendColumnIndex(colIndex)
-    this.setState({ activeAxisSelector: undefined })
-  }
-
-  renderLegendSelectorContent = () => {
-    const legendLabels = this.getLegendLabels()
-    if (legendLabels?.length < 2) {
-      return null
-    }
-
-    return (
-      <div
-        className="axis-selector-container"
-        id="legend-selector-content"
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
-      >
-        <ul className="axis-selector-content">
-          {legendLabels.map((legendItem, i) => {
-            return (
-              <li
-                className={`string-select-list-item ${
-                  i === 'SOMETHING GOES HERE' ? 'active' : '' // TODO: How to we keep track of active legend index
-                }`}
-                key={uuid()}
-                onClick={() => {
-                  this.props.changeLegendColumnIndex(i)
-                  this.setState({ activeAxisSelector: undefined })
-                }}
-              >
-                {legendItem.label}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    )
   }
 
   renderColumnChart = (dataType) => (

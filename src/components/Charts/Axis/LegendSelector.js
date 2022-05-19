@@ -29,25 +29,23 @@ export default class StringAxisSelector extends React.Component {
     return (
       <div
         className="axis-selector-container"
-        id="string-column-selector-content"
+        id="legend-selector-content"
         onClick={(e) => {
           e.stopPropagation()
         }}
       >
         <ul className="axis-selector-content">
-          {this.props.stringColumnIndices.map((colIndex, i) => {
+          {this.props.stringColumnIndices.map((legendItem, i) => {
             return (
               <li
-                className={`string-select-list-item ${
-                  colIndex === this.props.stringColumnIndex ? 'active' : ''
-                }`}
+                className={`string-select-list-item`}
                 key={uuid()}
                 onClick={() => {
+                  this.props.onChangeLegendColumnIndex(i)
                   this.closeSelector()
-                  this.props.changeStringColumnIndex(colIndex)
                 }}
               >
-                {_get(this.props.columns, `[${colIndex}].title`)}
+                {legendItem.label}
               </li>
             )
           })}
@@ -67,8 +65,8 @@ export default class StringAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className="axis-label-border"
-          data-test="axis-label-border"
+          className="legend-title-border"
+          data-test="legend-title-border"
           onClick={this.openSelector}
           fill="transparent"
           stroke="transparent"
