@@ -77,11 +77,6 @@ export default class StackedLines extends Component {
     return (
       <polygon
         key={`polygon-${getKey(stringColumnIndex, i)}`}
-        className={`bar${
-          this.state.activeKey === this.props.data[0][stringColumnIndex]
-            ? ' active'
-            : ''
-        }`}
         points={polygonPoints}
         data-tip={`
             <div>
@@ -162,10 +157,10 @@ export default class StackedLines extends Component {
         const reversedPrevVertices = prevPolygonVertices.reverse()
         const polygon = reversedPrevVertices.concat(currentPolygonVertices)
         polygons.push(this.createPolygon(i, polygon))
-      }
 
-      prevValues = currentValues
-      prevPolygonVertices = currentPolygonVertices
+        prevValues = currentValues
+        prevPolygonVertices = currentPolygonVertices
+      }
     })
 
     return (
