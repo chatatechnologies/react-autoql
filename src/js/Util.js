@@ -346,6 +346,19 @@ export const getPNGBase64 = (svgElement) => {
   }
 }
 
+export const getBBoxFromRef = (ref) => {
+  let bbox
+  try {
+    if (ref) {
+      bbox = ref.getBBox()
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  return bbox
+}
+
 /**
  * converts an svg string to base64 png using the domUrl
  * @param {string} svgElement the svgElement
@@ -891,32 +904,6 @@ export const getQueryParams = (url) => {
   } catch (error) {
     return undefined
   }
-}
-
-export const filterDataForDrilldown = (
-  response,
-  drilldownData,
-  columnIndex,
-  row
-) => {
-  // const drilldownDataObject = drilldownData[0]
-  // const clickedColumnIndex = _get(response, 'data.data.columns', []).findIndex(
-  //   (col) => col.name === drilldownDataObject.name
-  // )
-  // const filteredRows = _get(response, 'data.data.rows', []).filter((row) => {
-  //   return `${row[clickedColumnIndex]}` === `${drilldownDataObject.value}`
-  // })
-  // const newResponseData = {
-  //   ...response,
-  //   data: {
-  //     ...response.data,
-  //     data: {
-  //       ...response.data.data,
-  //       rows: filteredRows,
-  //     },
-  //   },
-  // }
-  // return newResponseData
 }
 
 export const getPadding = (element) => {

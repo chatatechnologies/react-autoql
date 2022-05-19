@@ -3,6 +3,8 @@ import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
 
 import { Axis } from '../Axis'
+import AxisSelector from './AxisSelector'
+import { getBBoxFromRef } from '../../../js/Util'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 
 export default class Axes extends React.Component {
@@ -59,69 +61,14 @@ export default class Axes extends React.Component {
     )
   }
 
-  getBBoxFromRef = (ref) => {
-    let bbox
-    try {
-      if (ref) {
-        bbox = ref.getBBox()
-      }
-    } catch (error) {
-      console.error(error)
-    }
-
-    return bbox
-  }
-
-  renderXLabelDropdown = (xLabelX, xLabelY) => {
-    const xLabelBbox = this.getBBoxFromRef(this.xLabelRef)
-    const xLabelWidth = xLabelBbox ? xLabelBbox.width : 0
-    const xLabelHeight = xLabelBbox ? xLabelBbox.height : 0
-
-    return (
-      <rect
-        className="x-axis-label-border"
-        data-test="x-axis-label-border"
-        x={xLabelX - 10 - xLabelWidth / 2}
-        y={xLabelY - 16}
-        width={xLabelWidth + 20}
-        height={xLabelHeight + 10}
-        onClick={this.props.onXAxisClick}
-        fill="transparent"
-        stroke="transparent"
-        strokeWidth="1px"
-        rx="4"
-      />
-    )
-  }
-
-  renderYLabelDropdown = (yLabelX, yLabelY) => {
-    const yLabelBbox = this.getBBoxFromRef(this.yLabelRef)
-    const yLabelWidth = yLabelBbox ? yLabelBbox.width : 0
-    const yLabelHeight = yLabelBbox ? yLabelBbox.height : 0
-
-    return (
-      <rect
-        className="y-axis-label-border"
-        data-test="y-axis-label-border"
-        x={yLabelX - yLabelWidth / 2 - 10}
-        y={yLabelY - 16}
-        width={yLabelWidth + 20}
-        height={yLabelHeight + 10}
-        transform="rotate(-90)"
-        onClick={this.props.onYAxisClick}
-        fill="transparent"
-        stroke="transparent"
-        strokeWidth="1px"
-        rx="4"
-      />
-    )
-  }
-
   renderXAxisLabel = (xAxisTitle) => {
     const xLabelX =
       (this.props.width - this.props.leftMargin) / 2 + this.props.leftMargin
     const xLabelY =
       this.props.height - (this.props.bottomLegendMargin || 0) - 15
+    const xLabelBbox = getBBoxFromRef(this.xLabelRef)
+    const xLabelWidth = xLabelBbox ? xLabelBbox.width : 0
+    const xLabelHeight = xLabelBbox ? xLabelBbox.height : 0
 
     return (
       <g>
@@ -137,7 +84,21 @@ export default class Axes extends React.Component {
         >
           {this.renderAxisLabel(xAxisTitle, this.props.hasXDropdown)}
         </text>
-        {this.props.hasXDropdown && this.renderXLabelDropdown(xLabelX, xLabelY)}
+        {this.props.hasXDropdown && (
+          <AxisSelector
+            {...this.props}
+            column={this.props.xCol}
+            onAxisSelect={this.props.onXAxisClick}
+            position="top"
+            align="end"
+            childProps={{
+              x: xLabelX - xLabelWidth / 2 - 10,
+              y: xLabelY - 16,
+              width: xLabelWidth + 20,
+              height: xLabelHeight + 10,
+            }}
+          />
+        )}
       </g>
     )
   }
@@ -145,6 +106,9 @@ export default class Axes extends React.Component {
   renderYAxisLabel = (yAxisTitle) => {
     const yLabelY = 20
     const yLabelX = -((this.props.height - this.props.bottomMargin) / 2)
+    const yLabelBbox = getBBoxFromRef(this.yLabelRef)
+    const yLabelWidth = yLabelBbox ? yLabelBbox.width : 0
+    const yLabelHeight = yLabelBbox ? yLabelBbox.height : 0
 
     return (
       <g>
@@ -161,7 +125,21 @@ export default class Axes extends React.Component {
         >
           {this.renderAxisLabel(yAxisTitle, this.props.hasYDropdown)}
         </text>
-        {this.props.hasYDropdown && this.renderYLabelDropdown(yLabelX, yLabelY)}
+        {this.props.hasYDropdown && (
+          <AxisSelector
+            {...this.props}
+            column={this.props.yCol}
+            position="right"
+            align="center"
+            childProps={{
+              x: yLabelX - yLabelWidth / 2 - 10,
+              y: yLabelY - 16,
+              width: yLabelWidth + 20,
+              height: yLabelHeight + 10,
+              transform: 'rotate(-90)',
+            }}
+          />
+        )}
       </g>
     )
   }

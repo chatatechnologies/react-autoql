@@ -14,7 +14,8 @@ export const isAggregation = (columns) => {
 }
 
 export const isColumnNumberType = (col) => {
-  const { type } = col
+  const type = col?.type
+
   return (
     type === 'DOLLAR_AMT' ||
     type === 'QUANTITY' ||
@@ -24,7 +25,7 @@ export const isColumnNumberType = (col) => {
 }
 
 export const isColumnStringType = (col) => {
-  const { type } = col
+  const type = col?.type
   return type === 'STRING' || type === 'DATE_STRING' || type === 'DATE'
 }
 
@@ -35,6 +36,24 @@ export const isColumnDateType = (col) => {
   } catch (error) {
     return false
   }
+}
+
+export const getTotalNumberColumns = (columns) => {
+  if (!columns?.length) {
+    return 0
+  }
+
+  const numberCols = columns.filter((col) => isColumnNumberType(col))
+  return numberCols.length
+}
+
+export const getTotalStringColumns = (columns) => {
+  if (!columns?.length) {
+    return 0
+  }
+
+  const stringCols = columns.filter((col) => isColumnStringType(col))
+  return stringCols.length
 }
 
 export const getNumberColumnIndices = (columns) => {

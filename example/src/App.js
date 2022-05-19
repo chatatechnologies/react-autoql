@@ -138,7 +138,7 @@ export default class App extends Component {
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
     height: 500,
-    width: 2000,
+    width: 1000,
     title: 'Data Messenger',
     accentTextColor: '#ffffff',
     lightAccentColor: '#26a7df',

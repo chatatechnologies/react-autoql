@@ -16,7 +16,7 @@ import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
 import {
   authenticationType,
   autoQLConfigType,
@@ -418,41 +418,6 @@ class Dashboard extends React.Component {
       })
   }
 
-  runFilterDrilldown = (data, tileId, isSecondHalf) => {
-    try {
-      const tile = this.props.tiles.find((tile) => tile.i === tileId)
-      if (!tile) {
-        return
-      }
-
-      const queryResponse = isSecondHalf
-        ? tile.secondQueryResponse
-        : tile.queryResponse
-
-      const drilldownResponse = filterDataForDrilldown(queryResponse, data)
-
-      this.drillingDownTimeout = setTimeout(() => {
-        this.setState({
-          isDrilldownRunning: false,
-          activeDrilldownResponse: drilldownResponse,
-        })
-      }, 1500)
-    } catch (error) {
-      console.error(error)
-      this.props.onErrorCallback(error)
-    }
-  }
-
-  startDrilldown = (drilldownData, queryID, tileId, isSecondHalf) => {
-    this.setState({ isDrilldownRunning: true, isDrilldownChartHidden: false })
-
-    if (drilldownData.supportedByAPI) {
-      this.runDrilldownFromAPI(drilldownData.data, queryID, isSecondHalf)
-    } else {
-      this.runFilterDrilldown(drilldownData.data, tileId, isSecondHalf)
-    }
-  }
-
   onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       this.setState({
@@ -621,9 +586,9 @@ class Dashboard extends React.Component {
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
-                          queryResponse={queryResponse}
+                          queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
-                          tableConfig={dataConfig}
+                          tableConfig={_cloneDeep(dataConfig)}
                           isDashboardQuery={true}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}

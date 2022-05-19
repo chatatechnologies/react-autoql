@@ -303,7 +303,6 @@ class DashboardTile extends React.Component {
         }
       })
       .catch((response) => {
-        console.error('CAUGHT ERROR IN PROCESS QUERY')
         if (this._isMounted) this.endTopQuery({ response })
       })
   }

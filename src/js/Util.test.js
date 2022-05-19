@@ -669,7 +669,6 @@ describe('getMinValueFromKeyValueObj', () => {
 // export const setStyleVars = ({ themeStyles, prefix })
 // export const getQueryParams = url
 // export const getNumberColumnIndices = columns
-// export const filterDataForDrilldown = (response, drilldownData)
 // export const getPadding = element
 // export const capitalizeFirstChar = string
 // export const isSingleValueResponse = response

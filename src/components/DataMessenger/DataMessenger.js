@@ -26,11 +26,7 @@ import {
   getThemeConfig,
 } from '../../props/defaults'
 
-import {
-  setCSSVars,
-  filterDataForDrilldown,
-  removeFromDOM,
-} from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 import { lang, setLanguage } from '../../js/Localization'
 

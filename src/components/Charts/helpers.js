@@ -105,6 +105,19 @@ export const chartElementDefaultProps = {
   onChartClick: () => {},
 }
 
+export const dataStructureChanged = (props, prevProps) => {
+  return (
+    props.data?.length !== prevProps.data?.length ||
+    props.stringColumnIndex !== prevProps.stringColumnIndex ||
+    props.numberColumnIndex !== prevProps.numberColumnIndex ||
+    !_isEqual(props.legendColumn, prevProps.legendColumn) ||
+    !_isEqual(props.columns, prevProps.columns) ||
+    !_isEqual(props.numberColumnIndices, prevProps.numberColumnIndices) ||
+    !_isEqual(props.stringColumnIndices, prevProps.stringColumnIndices) ||
+    (props.type === 'pie' && !_isEqual(props.data, prevProps.data))
+  )
+}
+
 export const scaleZero = (scale) => {
   const domain = scale?.domain()
   const domainLength = domain?.length

@@ -771,9 +771,9 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  getFilterDrilldown = ({ columnIndex, row }) => {
+  getFilterDrilldown = ({ stringColumnIndex, row }) => {
     const filteredRows = this.tableData?.filter((origRow) => {
-      return `${origRow[columnIndex]}` === `${row[columnIndex]}`
+      return `${origRow[stringColumnIndex]}` === `${row[stringColumnIndex]}`
     })
 
     const drilldownResponse = _cloneDeep(this.queryResponse)
@@ -784,9 +784,9 @@ export default class QueryOutput extends React.Component {
   processDrilldown = async ({
     groupBys,
     supportedByAPI,
-    columnIndex,
     row,
     activeKey,
+    stringColumnIndex,
   }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       try {
@@ -799,9 +799,9 @@ export default class QueryOutput extends React.Component {
             groupBys,
           })
           this.props.onDrilldownEnd({ response })
-        } else if (isNaN(columnIndex) && !!row?.length) {
-          this.props.onDrilldownStart()
-          const response = this.getFilterDrilldown({ columnIndex, row })
+        } else if (!isNaN(stringColumnIndex) && !!row?.length) {
+          this.props.onDrilldownStart(activeKey)
+          const response = this.getFilterDrilldown({ stringColumnIndex, row })
           this.filterDrilldownTimeout = setTimeout(() => {
             this.props.onDrilldownEnd({ response })
           }, 1500)
@@ -871,9 +871,9 @@ export default class QueryOutput extends React.Component {
     this.processDrilldown({
       groupBys,
       supportedByAPI: !!groupBys.length,
-      columnIndex,
       row,
       activeKey,
+      stringColumnIndex,
     })
   }
 
