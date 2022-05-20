@@ -199,7 +199,7 @@ export default class DataAlerts extends React.Component {
     return (
       <DataAlertModal
         ref={(r) => (this.editModalRef = r)}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         key={this.COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
         isVisible={this.state.isEditModalVisible}
@@ -377,14 +377,12 @@ export default class DataAlerts extends React.Component {
                           )}
 
                           <Checkbox
-                            themeConfig={getThemeConfig(this.props.themeConfig)}
                             type="switch"
                             className="react-autoql-notification-disable-checkbox"
                           />
                         </React.Fragment>
                       ) : (
                         <Checkbox
-                          themeConfig={getThemeConfig(this.props.themeConfig)}
                           type="switch"
                           checked={
                             notification.status === 'ACTIVE' ||

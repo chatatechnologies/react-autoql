@@ -62,6 +62,10 @@
   float: none;
   opacity: 1;
 
+  &.hidden {
+    display: none;
+  }
+
   &.close span.react-autoql-icon svg {
     width: 27px;
     height: 27px;
@@ -116,29 +120,29 @@
   font-size: 13px;
 }
 
-.react-autoql-drawer .condition-list-container {
-  position: absolute;
-  border: 1px solid var(--react-autoql-text-color-primary);
-  border-radius: 100rem;
-  background-color: transparent;
-  color: var(--react-autoql-text-color-primary);
-  padding: 0 5px 0 5px;
-  transition: background-color 250ms ease, box-shadow 250ms ease;
-  z-index: 9999999;
-  width: fit-content;
-  height: fit-content;
-}
+// .react-autoql-drawer .condition-list-container {
+//   position: absolute;
+//   border: 1px solid var(--react-autoql-text-color-primary);
+//   border-radius: 100rem;
+//   background-color: transparent;
+//   color: var(--react-autoql-text-color-primary);
+//   padding: 0 5px 0 5px;
+//   transition: background-color 250ms ease, box-shadow 250ms ease;
+//   z-index: 9999999;
+//   width: fit-content;
+//   height: fit-content;
+// }
 
-.condition-list-display {
-  display: none;
-  background-color: var(--react-autoql-background-color-primary);
-  border-radius: 4px;
-  padding: 5px;
-  width: fit-content;
-  height: fit-content;
-  padding: 10px;
-  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
-}
+// .condition-list-display {
+//   display: none;
+//   background-color: var(--react-autoql-background-color-primary);
+//   border-radius: 4px;
+//   padding: 5px;
+//   width: fit-content;
+//   height: fit-content;
+//   padding: 10px;
+//   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.4);
+// }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
   outline: none;
@@ -308,7 +312,7 @@
 .react-autoql-drawer-tooltip {
   font-family: var(--react-autoql-font-family), sans-serif;
   letter-spacing: 0.04em;
-  line-height: 0.9em;
+  line-height: 1.5em;
   padding: 7px 15px;
   transition: none;
   opacity: 1 !important;
@@ -326,14 +330,14 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
-.react-autoql-condition-lock-menu {
-  color: var(--react-autoql-text-color-primary);
-  background: var(--react-autoql-background-color-primary);
-  min-height: 300px;
-}
+// .react-autoql-condition-lock-menu {
+//   color: var(--react-autoql-text-color-primary);
+//   background: var(--react-autoql-background-color-primary);
+//   min-height: 300px;
+// }
 
 .react-tiny-popover-container {
-  z-index: 9999;
+  z-index: 99999;
   border: 1px solid #ababab52;
   border-radius: 4px;
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);

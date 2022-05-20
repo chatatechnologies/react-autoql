@@ -6,17 +6,12 @@ import _isEqual from 'lodash.isequal'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { setCSSVars } from '../../js/Util'
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
-
 import './Checkbox.scss'
 
 export default class Checkbox extends React.Component {
   ID = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     hasError: PropTypes.bool,
     indeterminate: PropTypes.bool,
     label: PropTypes.string,
@@ -26,7 +21,6 @@ export default class Checkbox extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     hasError: false,
     indeterminate: undefined,
     type: 'default',
@@ -40,22 +34,11 @@ export default class Checkbox extends React.Component {
     if (this.selector) {
       this.selector.indeterminate = this.props.indeterminate
     }
-
-    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {
     if (prevProps.indeterminate !== this.props.indeterminate) {
       this.selector.indeterminate = this.props.indeterminate
-    }
-
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
@@ -70,7 +53,6 @@ export default class Checkbox extends React.Component {
       indeterminate,
       hasError,
       style,
-      themeConfig,
       onChange,
       checked,
       ...nativeProps
@@ -96,13 +78,11 @@ export default class Checkbox extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className="react-autoql-checkbox-container"
+          className={`react-autoql-checkbox-container ${this.props.className}`}
           data-test="react-autoql-checkbox"
+          style={this.props.style}
         >
-          <div
-            className={`${checkboxClassname} ${this.props.className}`}
-            style={this.props.style}
-          >
+          <div className={checkboxClassname}>
             <input
               {...nativeProps}
               type="checkbox"
