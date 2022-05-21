@@ -60,21 +60,6 @@ export default class Modal extends React.Component {
     isConfirmCloseModalVisible: false,
   }
 
-  componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
-  }
-
   onClose = (deleteFromPortal = true) => {
     if (this.props.confirmOnClose && deleteFromPortal) {
       this.setState({ isConfirmCloseModalVisible: true })

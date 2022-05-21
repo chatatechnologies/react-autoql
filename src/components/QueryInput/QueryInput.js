@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { bool, string, func } from 'prop-types'
+import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
@@ -16,7 +16,6 @@ import {
   dataFormattingDefault,
   themeConfigDefault,
   getAuthentication,
-  getDataFormatting,
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
@@ -51,15 +50,16 @@ export default class QueryInput extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     themeConfig: themeConfigType,
-    enableVoiceRecord: bool,
-    isDisabled: bool,
-    onSubmit: func,
-    onResponseCallback: func,
-    className: string,
-    autoCompletePlacement: string,
-    showLoadingDots: bool,
-    showChataIcon: bool,
-    inputValue: string,
+    enableVoiceRecord: PropTypes.bool,
+    isDisabled: PropTypes.bool,
+    onSubmit: PropTypes.func,
+    onResponseCallback: PropTypes.func,
+    className: PropTypes.string,
+    autoCompletePlacement: PropTypes.string,
+    showLoadingDots: PropTypes.bool,
+    showChataIcon: PropTypes.bool,
+    inputValue: PropTypes.string,
+    queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -76,6 +76,7 @@ export default class QueryInput extends React.Component {
     isBackButtonClicked: false,
     inputValue: undefined,
     source: [],
+    queryFilters: undefined,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
@@ -175,6 +176,7 @@ export default class QueryInput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
           AutoAEId: this.props.AutoAEId,
+          filters: this.props.queryFilters,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)
@@ -192,6 +194,7 @@ export default class QueryInput extends React.Component {
           ...getAutoQLConfig(this.props.autoQLConfig),
           source: newSource,
           AutoAEId: this.props.AutoAEId,
+          filters: this.props.queryFilters,
         })
           .then((response) => {
             this.props.onResponseCallback(response, query)

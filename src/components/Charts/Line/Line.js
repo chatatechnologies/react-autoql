@@ -1,114 +1,186 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  getKey,
+  getTooltipContent,
+} from '../helpers'
 
 export default class Line extends Component {
-  static propTypes = {}
+  static propTypes = chartElementPropTypes
+  static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
-  getKey = (d, i) => {
-    const { labelValue } = this.props
-    return `${d[labelValue]}-${d.cells[i].label}`
-  }
+  onDotClick = (row, colIndex, rowIndex) => {
+    const newActiveKey = getKey(colIndex, rowIndex)
 
-  onDotClick = (d, i) => {
-    const newActiveKey = this.getKey(d, i)
-    this.props.onChartClick({
-      activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData,
-    })
+    this.props.onChartClick(
+      row,
+      colIndex,
+      this.props.columns,
+      this.props.stringColumnIndex,
+      this.props.legendColumn,
+      this.props.numberColumnIndex,
+      newActiveKey
+    )
 
     this.setState({ activeKey: newActiveKey })
   }
 
-  makeLines = () => {
-    const { scales, labelValue } = this.props
-    const { xScale, yScale } = scales
+  makePolyline = () => {
+    const {
+      columns,
+      numberColumnIndices,
+      stringColumnIndex,
+      yScale,
+      xScale,
+    } = this.props
 
-    const numberOfSeries = this.props.data[0].cells.length
-    const allLines = []
+    let polylines = []
+    numberColumnIndices.forEach((colIndex, i) => {
+      let vertices = []
+      if (!columns[colIndex].isSeriesHidden) {
+        this.props.data.forEach((d, index) => {
+          const value = d[colIndex]
+          const prevRow = this.props.data[index - 1]
+          const nextRow = this.props.data[index + 1]
 
-    for (let series = 0; series < numberOfSeries; series++) {
-      this.props.data.forEach((d, i) => {
-        const d2 = this.props.data[i + 1]
-        const xShift = xScale.bandwidth() / 2
-        const minValue = yScale.domain()[0]
+          // If the visual difference between vertices is not noticeable, dont even render
+          const isFirstOrLastPoint =
+            index === 0 || index === this.props.data.length - 1
+          if (
+            !isFirstOrLastPoint &&
+            Math.abs(yScale(value) - yScale(prevRow?.[colIndex])) < 0.05 &&
+            Math.abs(
+              yScale(prevRow?.[colIndex]) - yScale(nextRow?.[colIndex])
+            ) < 0.05
+          ) {
+            return
+          }
 
-        allLines.push(
-          <line
-            key={`line-${d[labelValue]}-${series}`}
-            className="line"
-            x1={xScale(d[labelValue]) + xShift}
-            y1={yScale(d.cells[series].value || minValue)}
-            x2={
-              d2
-                ? xScale(d2[labelValue]) + xShift
-                : xScale(d[labelValue]) + xShift
-            }
-            y2={
-              d2
-                ? yScale(d2.cells[series].value || minValue)
-                : yScale(d.cells[series].value || minValue)
-            }
-            stroke={d.cells[series].color}
-            opacity={0.7}
-          />
-        )
-      })
-    }
+          const xShift = xScale.bandwidth() / 2
+          const minValue = yScale.domain()[0]
 
-    return allLines
+          const x = xScale(d[stringColumnIndex]) + xShift
+          const y = yScale(value || minValue)
+          const xy = [x, y]
+          vertices.push(xy)
+        })
+      }
+
+      const polylinePoints = vertices
+        .map((xy) => {
+          return xy.join(',')
+        })
+        .join(' ')
+
+      const polyline = (
+        <polyline
+          key={`line-${getKey(0, i)}`}
+          className="line"
+          points={polylinePoints}
+          fill="none"
+          stroke={this.props.colorScale(i)}
+          strokeWidth={1}
+          opacity={0.7}
+        />
+      )
+
+      polylines.push(polyline)
+    })
+
+    return polylines
   }
 
-  makeDots = () => {
-    const { scales, labelValue } = this.props
-    const { xScale, yScale } = scales
+  makeDots = (numVisibleSeries) => {
+    const {
+      columns,
+      legendColumn,
+      numberColumnIndices,
+      stringColumnIndex,
+      dataFormatting,
+      yScale,
+      xScale,
+    } = this.props
 
-    const numberOfSeries = this.props.data[0].cells.length
     const allDots = []
+    numberColumnIndices.forEach((colIndex, i) => {
+      if (!columns[colIndex].isSeriesHidden) {
+        this.props.data.forEach((d, index) => {
+          const value = d[colIndex]
+          if (!value) {
+            return
+          }
 
-    for (let series = 0; series < numberOfSeries; series++) {
-      this.props.data.forEach((d) => {
-        const xShift = xScale.bandwidth() / 2
-        allDots.push(
-          <circle
-            key={this.getKey(d, series)}
-            className={`line-dot${
-              this.state.activeKey === this.getKey(d, series) ? ' active' : ''
-            }`}
-            cy={yScale(d.cells[series].value)}
-            cx={xScale(d[labelValue]) + xShift}
-            r={3}
-            onClick={() => this.onDotClick(d, series)}
-            data-tip={_get(d, `cells[${series}].tooltipData`)}
-            data-for="chart-element-tooltip"
-            style={{
-              cursor: 'pointer',
-              stroke: d.cells[series].color,
-              strokeWidth: 2,
-              strokeOpacity: 0.7,
-              fillOpacity: 1,
-              opacity: 0,
-              fill:
-                this.state.activeKey === this.getKey(d, series)
-                  ? d.cells[series].color
-                  : this.props.backgroundColor || '#fff',
-            }}
-            // onHover={{}}
-          />
-        )
-      })
-    }
+          const cy = yScale(value)
+          if (cy < 0.05) {
+            return
+          }
+
+          const xShift = xScale.bandwidth() / 2
+
+          const tooltip = getTooltipContent({
+            row: d,
+            columns,
+            colIndex,
+            stringColumnIndex,
+            legendColumn,
+            dataFormatting,
+          })
+
+          allDots.push(
+            <circle
+              key={getKey(colIndex, index)}
+              className={`line-dot${
+                this.state.activeKey === getKey(colIndex, index)
+                  ? ' active'
+                  : ''
+              }`}
+              cy={cy}
+              cx={xScale(d[stringColumnIndex]) + xShift}
+              r={3}
+              onClick={() => this.onDotClick(d, colIndex, index)}
+              data-tip={tooltip}
+              data-for="chart-element-tooltip"
+              style={{
+                cursor: 'pointer',
+                stroke: this.props.colorScale(i),
+                strokeWidth: 2,
+                strokeOpacity: 0.7,
+                fillOpacity: 1,
+                opacity: 0,
+                fill:
+                  this.state.activeKey === getKey(colIndex, index)
+                    ? this.props.colorScale(i)
+                    : this.props.backgroundColor || '#fff',
+              }}
+            />
+          )
+        })
+      }
+    })
+
     return allDots
   }
 
   render = () => {
+    const visibleSeries = this.props.numberColumnIndices.filter((colIndex) => {
+      return !this.props.columns[colIndex].isSeriesHidden
+    })
+
+    const numVisibleSeries = visibleSeries.length
+    if (!numVisibleSeries) {
+      return null
+    }
+
     return (
       <g data-test="line">
-        {this.makeLines()}
-        {this.makeDots()}
+        {this.makePolyline()}
+        {this.makeDots(numVisibleSeries)}
       </g>
     )
   }

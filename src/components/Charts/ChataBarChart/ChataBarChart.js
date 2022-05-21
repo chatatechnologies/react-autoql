@@ -1,23 +1,20 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import { Axes } from '../Axes'
-import { Bars } from '../Bars'
 import { scaleLinear, scaleBand } from 'd3-scale'
+import _isEqual from 'lodash.isequal'
 import _get from 'lodash.get'
 
-import { getMinAndMaxValues, getTickValues } from '../helpers.js'
+import { Axes } from '../Axes'
+import { Bars } from '../Bars'
+
 import {
-  shouldLabelsRotate,
-  getLongestLabelInPx,
-  formatChartLabel,
-} from '../../../js/Util'
-import { themeConfigType, dataFormattingType } from '../../../props/types'
-import {
-  themeConfigDefault,
-  dataFormattingDefault,
-  getDataFormatting,
-  getThemeConfig,
-} from '../../../props/defaults'
+  getTickValues,
+  chartPropTypes,
+  chartDefaultProps,
+  getMinAndMaxValues,
+  shouldRecalculateLongestLabel,
+} from '../helpers.js'
+import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util'
+import { getDataFormatting } from '../../../props/defaults'
 
 export default class ChataBarChart extends Component {
   constructor(props) {
@@ -28,41 +25,8 @@ export default class ChataBarChart extends Component {
     this.setLabelRotationValue(props)
   }
 
-  static propTypes = {
-    themeConfig: themeConfigType,
-    dataFormatting: dataFormattingType,
-
-    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number,
-    rightMargin: PropTypes.number,
-    topMargin: PropTypes.number,
-    bottomMargin: PropTypes.number,
-    labelValue: PropTypes.string,
-    onLabelChange: PropTypes.func,
-    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
-    stringColumnIndex: PropTypes.number,
-    numberColumnIndex: PropTypes.number,
-    onXAxisClick: PropTypes.func,
-    onYAxisClick: PropTypes.func,
-  }
-
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-    dataFormatting: dataFormattingDefault,
-
-    leftMargin: 0,
-    rightMargin: 0,
-    topMargin: 0,
-    bottomMargin: 0,
-    labelValue: 'label',
-    numberColumnIndices: [],
-    onXAxisClick: () => {},
-    onYAxisClick: () => {},
-    onLabelChange: () => {},
-  }
+  static propTypes = chartPropTypes
+  static defaultProps = chartDefaultProps
 
   componentDidMount = () => {
     this.props.onLabelChange()
@@ -73,10 +37,7 @@ export default class ChataBarChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      this.props.marginAdjustmentFinished &&
-      prevProps?.data?.length !== this.props.data?.length
-    ) {
+    if (shouldRecalculateLongestLabel(prevProps, this.props)) {
       this.setLongestLabelWidth(this.props)
     }
   }
@@ -96,15 +57,19 @@ export default class ChataBarChart extends Component {
   setLongestLabelWidth = (props) => {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xLabelArray,
-      this.props.columns[this.props.numberColumnIndex],
+      props.columns[props.numberColumnIndex],
       getDataFormatting(props.dataFormatting)
     )
   }
 
   setChartData = (props) => {
-    const { minValue, maxValue } = getMinAndMaxValues(props.data)
-    this.minValue = minValue
-    this.maxValue = maxValue
+    let numberColumnIndices = props.numberColumnIndices
+    if (props.visibleSeriesIndices?.length)
+      numberColumnIndices = props.visibleSeriesIndices
+    const { minValue, maxValue } = getMinAndMaxValues(
+      props.data,
+      numberColumnIndices
+    )
 
     this.xScale = scaleLinear()
       .domain([minValue, maxValue])
@@ -112,12 +77,15 @@ export default class ChataBarChart extends Component {
       .nice()
 
     this.yScale = scaleBand()
-      .domain(props.data.map((d) => d[props.labelValue]))
+      .domain(props.data.map((d) => d[props.stringColumnIndex]))
       .range([props.height - props.bottomMargin, props.topMargin])
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
 
-    this.yLabelArray = props.data.map((element) => element[props.labelValue])
+    this.yLabelArray = props.data.map(
+      (element) => element[props.stringColumnIndex]
+    )
+
     this.xLabelArray = this.xScale.ticks()
 
     this.barHeight = props.height / props.data.length
@@ -135,31 +103,15 @@ export default class ChataBarChart extends Component {
     return (
       <g data-test="react-autoql-bar-chart">
         <Axes
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          {...this.props}
+          xScale={this.xScale}
+          yScale={this.yScale}
           xCol={this.props.columns[this.props.numberColumnIndex]}
           yCol={this.props.columns[this.props.stringColumnIndex]}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-            bottomLegend: this.props.bottomLegendMargin,
-          }}
-          width={this.props.width}
-          height={this.props.height}
           yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
-          onLabelChange={this.props.onLabelChange}
-          dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
-          onLegendTitleClick={this.props.onLegendTitleClick}
-          legendLabels={this.props.legendLabels}
-          onLegendClick={this.props.onLegendClick}
-          onXAxisClick={this.props.onXAxisClick}
-          onYAxisClick={this.props.onYAxisClick}
           hasXDropdown={
             this.props.enableDynamicCharting &&
             this.props.hasMultipleNumberColumns
@@ -173,23 +125,7 @@ export default class ChataBarChart extends Component {
           xGridLines
         />
         {this.props.marginAdjustmentFinished && (
-          <Bars
-            themeConfig={getThemeConfig(this.props.themeConfig)}
-            scales={{ xScale: this.xScale, yScale: this.yScale }}
-            margins={{
-              left: this.props.leftMargin,
-              right: this.props.rightMargin,
-              bottom: this.props.bottomMargin,
-              top: this.props.topMargin,
-            }}
-            data={this.props.data}
-            maxValue={this.maxValue}
-            width={this.props.width}
-            height={this.props.height}
-            labelValue={this.props.labelValue}
-            onChartClick={this.props.onChartClick}
-            activeKey={this.props.activeChartElementKey}
-          />
+          <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />
         )}
       </g>
     )

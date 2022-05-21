@@ -1,31 +1,14 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-
 import ChataChart from './ChataChart'
-
 import { findByTestAttr } from '../../../../test/testUtils'
-import { themeConfigDefault, dataConfigDefault } from '../../../props/defaults'
+import sampleProps from '../chartTestData'
 
-const defaultProps = {
-  themeConfig: themeConfigDefault,
-  data: [
-    {
-      cells: [{ value: 50 }, { value: 75 }],
-      label: 'label1`',
-      origRow: ['label1', 50, 75],
-    },
-    {
-      cells: [{ value: 30 }, { value: 65 }],
-      label: 'label2`',
-      origRow: ['label2', 30, 65],
-    },
-  ],
-  columns: [{}, {}, {}],
-  dataConfig: dataConfigDefault,
-  height: 300,
-  width: 300,
-  type: 'bar',
-}
+const pivotSampleProps = sampleProps.pivot
+const datePivotSampleProps = sampleProps.datePivot
+const listSampleProps = sampleProps.list
+
+const defaultProps = ChataChart.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -37,9 +20,27 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with required props', () => {
-    const wrapper = setup()
-    const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
-    expect(chartComponent.exists()).toBe(true)
+  describe('list data', () => {
+    test('bar', () => {
+      const wrapper = setup({ ...listSampleProps, type: 'bar' })
+      const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
+      expect(chartComponent.exists()).toBe(true)
+    })
+  })
+
+  describe('pivot data', () => {
+    test('stacked-column', () => {
+      const wrapper = setup({ ...pivotSampleProps, type: 'stacked-column' })
+      const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
+      expect(chartComponent.exists()).toBe(true)
+    })
+  })
+
+  describe('date pivot data', () => {
+    test('heatmap', () => {
+      const wrapper = setup({ ...datePivotSampleProps, type: 'heatmap' })
+      const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
+      expect(chartComponent.exists()).toBe(true)
+    })
   })
 })

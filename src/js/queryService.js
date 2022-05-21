@@ -74,7 +74,6 @@ export const fetchSuggestions = ({
 
 export const runQueryOnly = ({
   query,
-  projectID,
   userSelection,
   debug,
   test,
@@ -82,28 +81,23 @@ export const runQueryOnly = ({
   apiKey,
   token,
   source,
-  AutoAEId,
+  filters,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
-  const sessionConditions = JSON.parse(sessionStorage.getItem('conditions'))
-  let conditions = {}
 
-  if (sessionConditions !== null) {
-    for (let i = 0; i < sessionConditions.length; i++) {
-      if (
-        Object.keys(conditions).some(
-          (item) => item === sessionConditions[i].key
-        )
-      ) {
-        var item = Object.keys(conditions).find(
-          (key) => key === sessionConditions[i].key
-        )
-        conditions[item].push(sessionConditions[i].value)
-      } else {
-        conditions[sessionConditions[i].key] = [sessionConditions[i].value]
-      }
+  let formattedFilters
+  try {
+    if (filters?.length) {
+      formattedFilters = {}
+      filters.forEach((filter) => {
+        const prevFilterValues = formattedFilters[filter.key] || []
+        formattedFilters[filter.key] = [...prevFilterValues, filter.value]
+      })
     }
+  } catch (error) {
+    console.error(error)
+    formattedFilters = undefined
   }
 
   const data = {
@@ -112,14 +106,16 @@ export const runQueryOnly = ({
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
-    session_locked_conditions: conditions,
+    session_locked_conditions: formattedFilters,
   }
 
   if (!query || !query.trim()) {
+    console.error('No query supplied in request')
     return Promise.reject({ error: 'No query supplied' })
   }
 
   if (!apiKey || !domain || !token) {
+    console.error('authentication invalid for request')
     return Promise.reject({ error: 'Unauthenticated' })
   }
 
@@ -145,6 +141,7 @@ export const runQueryOnly = ({
       return Promise.resolve(response)
     })
     .catch((error) => {
+      console.error(error)
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
@@ -165,75 +162,27 @@ export const runQueryOnly = ({
     })
 }
 
-export const runQuery = ({
-  query,
-  projectID,
-  userSelection,
-  debug,
-  test,
-  enableQueryValidation,
-  domain,
-  apiKey,
-  token,
-  source,
-  skipQueryValidation,
-  AutoAEId,
-} = {}) => {
-  // Temp for demo: decode token to get project id
-  let id
-  let base64Url
-  if (token) {
-    base64Url = token.split('.')[1]
-    //bass64Url was failing unit tests due to undefined.
-    if (base64Url) {
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-      const buff = Buffer.from(base64, 'base64')
-      const payloadinit = buff.toString('ascii')
-      const payload = JSON.parse(payloadinit)
-      id = _get(payload, 'project_id')
-    }
-  }
-
-  if (enableQueryValidation && !skipQueryValidation) {
+export const runQuery = (params) => {
+  if (params?.enableQueryValidation && !params?.skipQueryValidation) {
     return runQueryValidation({
-      text: query,
-      domain,
-      apiKey,
-      token,
+      text: params?.query,
+      domain: params?.domain,
+      apiKey: params?.apiKey,
+      token: params?.token,
     })
       .then((response) => {
         if (failedValidation(response)) {
           return Promise.resolve(response)
         }
-        return runQueryOnly({
-          query,
-          userSelection,
-          debug,
-          test,
-          domain,
-          apiKey,
-          token,
-          source,
-          AutoAEId,
-        })
+        return runQueryOnly(params)
       })
       .catch((error) => {
+        console.error(error)
         return Promise.reject(error)
       })
   }
 
-  return runQueryOnly({
-    query,
-    projectID,
-    userSelection,
-    debug,
-    test,
-    token,
-    domain,
-    apiKey,
-    source,
-    AutoAEId,
-  })
+  return runQueryOnly(params)
 }
 
 export const exportCSV = ({
@@ -296,7 +245,7 @@ export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
 
 export const runDrilldown = ({
   queryID,
-  data,
+  groupBys,
   debug,
   test,
   domain,
@@ -313,7 +262,7 @@ export const runDrilldown = ({
 
   const requestData = {
     translation: debug ? 'include' : 'exclude',
-    columns: data,
+    columns: groupBys,
     test,
   }
 
@@ -381,7 +330,7 @@ export const fetchAutocomplete = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchValueLabelAutocomplete = ({
+export const fetchVLAutocomplete = ({
   suggestion,
   domain,
   token,
@@ -411,7 +360,7 @@ export const fetchValueLabelAutocomplete = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchConditions = ({ apiKey, token, domain } = {}) => {
+export const fetchFilters = ({ apiKey, token, domain } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
@@ -430,9 +379,13 @@ export const fetchConditions = ({ apiKey, token, domain } = {}) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
+export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  if (!filters?.length) {
+    return Promise.reject(new Error('No filters provided'))
   }
 
   const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
@@ -443,21 +396,12 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     },
   }
 
-  // discard id of existing conditions before sending.
-  let array = []
-  conditions.forEach((obj) => {
-    array.push({
-      key: obj.key,
-      keyword: obj.keyword,
-      lock_flag: obj.lock_flag,
-      show_message: obj.show_message,
-      value: obj.value,
-    })
+  // discard id of existing filters before sending.
+  const formattedFilters = filters.map((filter) => {
+    return { ...filter, id: undefined }
   })
 
-  const data = {
-    columns: array,
-  }
+  const data = { columns: formattedFilters }
 
   return axios
     .put(url, data, config)
@@ -465,12 +409,12 @@ export const setConditions = ({ apiKey, token, domain, conditions } = {}) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const unsetCondition = ({ apiKey, token, domain, condition } = {}) => {
+export const unsetFilter = ({ apiKey, token, domain, filter } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking/${condition.id}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/condition-locking/${filter.id}?key=${apiKey}`
 
   const config = {
     headers: {

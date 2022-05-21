@@ -1,25 +1,11 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import { scaleLinear, scaleBand } from 'd3-scale'
-
 import { findByTestAttr } from '../../../../test/testUtils'
 import StackedColumns from './StackedColumns'
+import sampleProps from '../chartTestData'
 
-const defaultProps = {
-  data: [
-    { cells: [{ value: 50 }, { value: 75 }], label: 'label1`' },
-    { cells: [{ value: 30 }, { value: 65 }], label: 'label2`' },
-  ],
-  xScale: scaleBand()
-    .domain(['label1', 'label2'])
-    .range([0, 200])
-    .paddingInner(0.1),
-  yScale: scaleLinear()
-    .domain([0, 100])
-    .range([0, 300]),
-  height: 300,
-  width: 300,
-}
+const pivotSampleProps = sampleProps.pivot
+const defaultProps = StackedColumns.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -31,8 +17,12 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with required props', () => {
-    const wrapper = setup()
+  test('renders regular pivot chart data correctly', () => {
+    const wrapper = setup({
+      ...pivotSampleProps,
+      xScale: pivotSampleProps.stringScale,
+      yScale: pivotSampleProps.numberScale,
+    })
     const stackedColumnsComponent = findByTestAttr(wrapper, 'stacked-columns')
     expect(stackedColumnsComponent.exists()).toBe(true)
   })
