@@ -2085,7 +2085,7 @@ export default class QueryOutput extends React.Component {
       !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
       !this.props.showQueryInterpretation
     ) {
-      return <div />
+      return null
     }
 
     return (
