@@ -55,7 +55,6 @@ export default class FilterLockPopover extends React.Component {
     themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
-    initFilterText: PropTypes.string,
     position: PropTypes.string,
     align: PropTypes.string,
     onChange: PropTypes.func,
@@ -66,7 +65,6 @@ export default class FilterLockPopover extends React.Component {
     themeConfig: themeConfigDefault,
 
     isOpen: false,
-    initFilterText: '',
     position: 'bottom',
     align: 'center',
     onChange: () => {},
