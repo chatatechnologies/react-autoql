@@ -9,6 +9,7 @@
   max-width: 70vw;
   height: 350px;
   background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
 
   .filter-lock-toast-container {
     top: 0;
@@ -34,11 +35,13 @@
   h3 {
     margin-top: 3px;
     margin-bottom: 15px;
+    color: var(--react-autoql-text-color-primary);
   }
 
   h4 {
     margin-top: 3px;
     margin-bottom: 5px;
+    color: var(--react-autoql-text-color-primary);
   }
 
   .react-autoql-condition-list-loading-container,
