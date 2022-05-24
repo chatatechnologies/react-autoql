@@ -51,9 +51,9 @@ class DashboardTile extends React.Component {
     this.autoCompleteTimer = undefined
 
     const supportedDisplayTypes =
-      getSupportedDisplayTypes(props.queryResponse) || []
+      getSupportedDisplayTypes({ response: props.queryResponse }) || []
     const secondSupportedDisplayTypes =
-      getSupportedDisplayTypes(props.secondQueryResponse) || []
+      getSupportedDisplayTypes({ response: props.secondQueryResponse }) || []
 
     this.state = {
       query: props.tile.query,
@@ -130,9 +130,9 @@ class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
       this.setState({ query: _get(this.props, 'tile.query') }, () => {
         this.setState({
-          supportedDisplayTypes: getSupportedDisplayTypes(
-            _get(this.props, 'queryResponse')
-          ),
+          supportedDisplayTypes: getSupportedDisplayTypes({
+            response: _get(this.props, 'queryResponse'),
+          }),
         })
       })
     }
@@ -303,7 +303,6 @@ class DashboardTile extends React.Component {
         }
       })
       .catch((response) => {
-        console.error('CAUGHT ERROR IN PROCESS QUERY')
         if (this._isMounted) this.endTopQuery({ response })
       })
   }
@@ -1008,7 +1007,6 @@ class DashboardTile extends React.Component {
             {...queryOutputProps}
           />
         )}
-        {/* {this.renderDataLimitWarning()} */}
 
         {!this.props.isDragging && this.props.isEditing && (
           <div className="dashboard-tile-viz-toolbar-container">
@@ -1062,15 +1060,13 @@ class DashboardTile extends React.Component {
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
         onNoneOfTheseClick: this.onNoneOfTheseClick,
-        onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown({
+        onDrilldownStart: (activeKey) =>
+          this.props.onDrilldownStart({
             tileId: this.props.tile.i,
-            drilldownData,
-            queryID,
-            activeKey,
             isSecondHalf: false,
-          })
-        },
+            activeKey,
+          }),
+        onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
         onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
@@ -1144,15 +1140,13 @@ class DashboardTile extends React.Component {
           this.onSecondDisplayTypeChange(displayType)
         },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
-        onDataClick: (drilldownData, queryID, activeKey) => {
-          this.props.processDrilldown({
+        onDrilldownStart: (activeKey) =>
+          this.props.onDrilldownStart({
             tileId: this.props.tile.i,
-            drilldownData,
-            queryID,
-            activeKey,
             isSecondHalf: true,
-          })
-        },
+            activeKey,
+          }),
+        onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
       },
       vizToolbarProps: {
@@ -1200,22 +1194,6 @@ class DashboardTile extends React.Component {
         <div className="react-autoql-dashboard-tile-drag-handle right" />
       </Fragment>
     )
-  }
-
-  renderDataLimitWarning = () => {
-    const numRows = _get(this.props, 'queryResponse.data.data.rows.length')
-    const maxRowLimit = _get(this.props, 'queryResponse.data.data.row_limit')
-
-    if (maxRowLimit && numRows === maxRowLimit) {
-      return (
-        <Icon
-          type="warning"
-          className="dashboard-data-limit-warning-icon"
-          data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for="dashboard-data-limit-warning-tooltip"
-        />
-      )
-    }
   }
 
   render = () => {

@@ -86,11 +86,9 @@ export default class NotificationItem extends React.Component {
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
-      this.supportedDisplayTypes = getSupportedDisplayTypes(
-        queryResponse,
-        undefined,
-        true
-      )
+      this.supportedDisplayTypes = getSupportedDisplayTypes({
+        response: queryResponse,
+      })
       const displayType =
         this.props.autoChartAggregations &&
         this.supportedDisplayTypes.includes('column')

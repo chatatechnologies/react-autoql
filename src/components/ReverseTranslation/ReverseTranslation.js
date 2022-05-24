@@ -15,7 +15,7 @@ import {
   getAuthentication,
 } from '../../props/defaults'
 
-import { fetchValueLabelAutocomplete } from '../../js/queryService'
+import { fetchVLAutocomplete } from '../../js/queryService'
 import { setCSSVars } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -86,7 +86,7 @@ export default class ReverseTranslation extends React.Component {
       this.reverseTranslationArray.forEach((chunk, i) => {
         if (chunk.c_type === 'VALUE_LABEL') {
           valueLabelValidationPromises.push(
-            fetchValueLabelAutocomplete({
+            fetchVLAutocomplete({
               suggestion: chunk.eng,
               ...getAuthentication(this.props.authentication),
             }).then((response) => {

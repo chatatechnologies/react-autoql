@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 import { v4 as uuid } from 'uuid'
 
 import { select } from 'd3-selection'
@@ -12,45 +13,73 @@ import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
-import { themeConfigType, dataFormattingType } from '../../../props/types'
+import { getDataFormatting, getThemeConfig } from '../../../props/defaults'
 import {
-  themeConfigDefault,
-  dataFormattingDefault,
-  getDataFormatting,
-  getThemeConfig,
-} from '../../../props/defaults'
+  chartDefaultProps,
+  chartPropTypes,
+  getTooltipContent,
+} from '../helpers'
+import ReactTooltip from 'react-tooltip'
 
 export default class Axis extends Component {
-  CHART_ID = uuid()
+  constructor(props) {
+    super(props)
+
+    this.CHART_ID = uuid()
+    this.LEGEND_ID = `react-autoql-pie-legend-${uuid()}`
+
+    this.sortedData = props.data
+      .concat() // this copies the array so the original isn't mutated
+      .sort((aRow, bRow) => {
+        const a = aRow[props.numberColumnIndex] || 0
+        const b = bRow[props.numberColumnIndex] || 0
+        return parseFloat(b) - parseFloat(a)
+      })
+
+    const { chartColors } = getThemeConfig(props.themeConfig)
+    this.colorScale = scaleOrdinal()
+      .domain(
+        this.sortedData.map((d) => {
+          return d[props.stringColumnIndex]
+        })
+      )
+      .range(chartColors)
+
+    const legendLabels = this.sortedData.map((d, i) => {
+      const legendString = `${formatElement({
+        element: d[props.stringColumnIndex] || 'Untitled Category',
+        column: props.columns?.[props.stringColumnIndex],
+      })}: ${formatElement({
+        element: d[props.numberColumnIndex] || 0,
+        column: _get(props, `columns[${props.numberColumnIndex}]`),
+        config: props.columns?.[props.dataFormatting],
+      })}`
+      return {
+        label: legendString.trim(),
+        hidden: false,
+        dataIndex: i,
+      }
+    })
+
+    this.state = {
+      activeKey: this.props.activeChartElementKey,
+      legendLabels,
+    }
+  }
 
   static propTypes = {
-    themeConfig: themeConfigType,
-    dataFormatting: dataFormattingType,
-
-    height: PropTypes.number.isRequired,
-    width: PropTypes.number.isRequired,
-    data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-    columns: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-    onChartClick: PropTypes.func,
-    margin: PropTypes.number,
+    ...chartPropTypes,
     backgroundColor: PropTypes.string,
+    margin: PropTypes.number,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
-    dataFormatting: dataFormattingDefault,
-
-    margin: 40,
+    ...chartDefaultProps,
     backgroundColor: 'transparent',
-    onChartClick: () => {},
-  }
-
-  state = {
-    activeKey: this.props.activeChartElementKey,
+    margin: 40,
   }
 
   componentDidMount = () => {
-    this.LEGEND_ID = `react-autoql-pie-legend-${uuid()}`
     this.renderPie()
   }
 
@@ -71,6 +100,35 @@ export default class Axis extends Component {
     removeFromDOM(this.pieChartContainer)
   }
 
+  renderPie = () => {
+    removeFromDOM(this.pieChartContainer)
+
+    const self = this
+
+    this.setPieRadius()
+
+    this.outerArc = arc()
+      .innerRadius(self.outerRadius * 1.1)
+      .outerRadius(self.outerRadius * 1.1)
+
+    const pieChart = pie().value((d, i) => {
+      return d.value[self.props.numberColumnIndex]
+    })
+
+    this.dataReady = pieChart(
+      entries(
+        self.sortedData.filter((d, i) => !this.state.legendLabels?.[i]?.hidden)
+      )
+    )
+
+    this.renderPieContainer()
+    this.renderPieSlices()
+    this.renderLegend()
+
+    // Finally, translate container of legend and pie chart to center of parent container
+    this.centerVisualization()
+  }
+
   renderPieContainer = () => {
     const { width, height } = this.props
 
@@ -86,23 +144,23 @@ export default class Axis extends Component {
       )
   }
 
-  setColorScale = () => {
-    const self = this
-    const { chartColors } = getThemeConfig(this.props.themeConfig)
-
-    this.color = scaleOrdinal()
-      .domain(
-        self.sortedData.map((d) => {
-          return d[self.props.labelValue]
-        })
+  onSliceClick = (d) => {
+    const newActiveKey = d.data.key
+    if (newActiveKey === this.state.activeKey) {
+      // Put it back if it is expanded
+      this.setState({ activeKey: null })
+    } else {
+      this.props.onChartClick(
+        d.data.value,
+        this.props.numberColumnIndex,
+        this.props.columns,
+        this.props.stringColumnIndex,
+        this.props.legendColumn,
+        this.props.numberColumnIndex,
+        newActiveKey
       )
-      .range(chartColors)
-
-    const pieChart = pie().value((d) => {
-      return d.value.cells[0].value
-    })
-
-    this.dataReady = pieChart(entries(self.sortedData.filter((d) => !d.hidden)))
+      this.setState({ activeKey: newActiveKey })
+    }
   }
 
   renderPieSlices = () => {
@@ -122,11 +180,18 @@ export default class Axis extends Component {
           .outerRadius(self.outerRadius)
       )
       .attr('fill', (d) => {
-        return self.color(d.data.value[self.props.labelValue])
+        return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
       .attr('data-for', 'chart-element-tooltip')
       .attr('data-tip', function(d) {
-        return _get(d, 'data.value.cells[0].tooltipData')
+        return getTooltipContent({
+          row: d.data.value,
+          columns: self.props.columns,
+          colIndex: self.props.numberColumnIndex,
+          stringColumnIndex: self.props.stringColumnIndex,
+          legendColumn: self.props.legendColumn,
+          dataFormatting: self.props.dataFormatting,
+        })
       })
       .style('fill-opacity', 0.85)
       .attr('stroke-width', '0.5px')
@@ -137,31 +202,17 @@ export default class Axis extends Component {
       .on('mouseout', function(d) {
         select(this).style('fill-opacity', 0.85)
       })
-      .on('click', function(d) {
-        const newActiveKey = _get(d, `data.value[${self.props.labelValue}]`)
-        if (newActiveKey === self.state.activeKey) {
-          // Put it back if it is expanded
-          self.setState({ activeKey: null })
-        } else {
-          self.props.onChartClick({
-            drilldownData: _get(d, 'data.value.cells[0].drilldownData'),
-            activeKey: newActiveKey,
-          })
-          self.setState({ activeKey: newActiveKey })
-        }
-      })
+      .on('click', this.onSliceClick)
 
     // render active pie slice if there is one
     self.pieChartContainer.selectAll('path.slice').each(function(slice) {
       select(this)
         .transition()
         .duration(500)
-        .attr('transform', function(data) {
-          if (data.data.value[self.props.labelValue] === self.state.activeKey) {
+        .attr('transform', function(d) {
+          if (d.data.key === self.state.activeKey) {
             const a =
-              data.startAngle +
-              (data.endAngle - data.startAngle) / 2 -
-              Math.PI / 2
+              d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2
             const x = Math.cos(a) * 10
             const y = Math.sin(a) * 10
             // move it away from the circle center
@@ -192,36 +243,26 @@ export default class Axis extends Component {
     )
   }
 
+  onLegendClick = (legendObjStr) => {
+    const legendObj = JSON.parse(legendObjStr)
+    const index = legendObj?.dataIndex
+    if (!!this.state.legendLabels?.[index]) {
+      const newLegendLabels = _cloneDeep(this.state.legendLabels)
+      newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
+      this.setState({ legendLabels: newLegendLabels })
+    }
+    ReactTooltip.rebuild()
+  }
+
   renderLegend = () => {
     const self = this
-    const {
-      height,
-      margin,
-      labelValue,
-      stringColumnIndex,
-      numberColumnIndex,
-    } = this.props
+    const { height } = this.props
     const { chartColors } = getThemeConfig(this.props.themeConfig)
 
-    this.legendLabels = this.sortedData.map((d) => {
-      const legendString = `${formatElement({
-        element: d[labelValue] || 'Untitled Category',
-        column: _get(this.props, `columns[${stringColumnIndex}]`),
-      })}: ${formatElement({
-        element: d.cells[0].value || 0,
-        column: _get(this.props, `columns[${numberColumnIndex}]`),
-        config: getDataFormatting(this.props.dataFormatting),
-      })}`
-      return {
-        hidden: d.hidden,
-        label: legendString.trim(),
-      }
-    })
-
     let legendScale
-    if (this.legendLabels) {
+    if (this.state.legendLabels) {
       legendScale = scaleOrdinal()
-        .domain(self.legendLabels.map((item) => item.label))
+        .domain(this.state.legendLabels.map((obj) => JSON.stringify(obj)))
         .range(chartColors)
     } else {
       return
@@ -249,17 +290,10 @@ export default class Axis extends Component {
       )
       .orient('vertical')
       .shapePadding(5)
+      .labels(self.state.legendLabels.map((labelObj) => labelObj.label))
       .labelWrap(legendWrapLength)
       .scale(legendScale)
-      .on('cellclick', function(d) {
-        const dataIndex = self.legendLabels.findIndex((legendObj) => {
-          return legendObj.label === d
-        })
-
-        if (dataIndex >= 0) {
-          self.props.onLegendClick(self.sortedData[dataIndex])
-        }
-      })
+      .on('cellclick', this.onLegendClick)
 
     this.legend.select('.legendOrdinal').call(legendOrdinal)
 
@@ -283,7 +317,7 @@ export default class Axis extends Component {
   }
 
   applyStylesForHiddenSeries = () => {
-    const legendLabelTexts = this.legendLabels
+    const legendLabelTexts = this.state.legendLabels
       .filter((l) => l.hidden)
       .map((l) => l.label)
 
@@ -321,32 +355,6 @@ export default class Axis extends Component {
 
     this.outerRadius = pieWidth / 2
     this.innerRadius = this.outerRadius - 50 > 15 ? this.outerRadius - 50 : 0
-  }
-
-  renderPie = () => {
-    removeFromDOM(this.pieChartContainer)
-
-    const self = this
-
-    this.setPieRadius()
-
-    this.outerArc = arc()
-      .innerRadius(self.outerRadius * 1.1)
-      .outerRadius(self.outerRadius * 1.1)
-
-    this.sortedData = this.props.data
-      .concat() // this copies the array so the original isn't mutated
-      .sort(
-        (a, b) => parseFloat(a.cells[0].value) - parseFloat(b.cells[0].value)
-      )
-
-    this.renderPieContainer()
-    this.setColorScale()
-    this.renderPieSlices()
-    this.renderLegend()
-
-    // Finally, translate container of legend and pie chart to center of parent container
-    this.centerVisualization()
   }
 
   render = () => {

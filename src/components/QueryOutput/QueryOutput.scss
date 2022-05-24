@@ -107,6 +107,21 @@
   }
 }
 
+.query-output-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 5px;
+  max-height: 150px;
+  width: 100%;
+}
+
+.dashboard-data-limit-warning-icon {
+  color: var(--react-autoql-warning-color) !important;
+  margin-left: 10px;
+  font-size: 20px;
+}
+
 /* query validation */
 .react-autoql-query-validation-selector-container {
   display: inline-block;
@@ -272,10 +287,6 @@
 }
 
 .react-autoql-reverse-translation-container {
-  margin-right: auto;
-  padding-top: 10px;
-  max-height: 150px;
-
   .react-autoql-reverse-translation {
     color: var(--react-autoql-text-color-primary);
     background-color: var(--react-autoql-background-color-secondary);

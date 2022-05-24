@@ -1,90 +1,115 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  getTooltipContent,
+  scaleZero,
+  getKey,
+} from '../helpers'
 
 export default class Bars extends Component {
-  static propTypes = {
-    data: PropTypes.array.isRequired,
-    scales: PropTypes.shape({}).isRequired,
-    labelValue: PropTypes.string.isRequired,
-    activeKey: PropTypes.string,
-    onChartClick: PropTypes.func,
-  }
-
-  static defaultProps = {
-    activeKey: undefined,
-    onChartClick: () => {},
-  }
+  static propTypes = chartElementPropTypes
+  static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
   }
 
-  X0 = () => {
-    const minValue = this.props.scales.xScale.domain()[0]
-    if (minValue > 0) {
-      return this.props.scales.xScale(minValue)
-    }
-    return this.props.scales.xScale(0)
-  }
-  X = (d, i) => this.props.scales.xScale(_get(d, `cells[${i}].value`))
+  onBarClick = (row, colIndex, rowIndex) => {
+    const newActiveKey = getKey(colIndex, rowIndex)
 
-  getKey = (d, i) => {
-    const { labelValue } = this.props
-    return `${d[labelValue]}-${d.cells[i].label}`
-  }
-
-  onBarClick = (d, i) => {
-    const newActiveKey = this.getKey(d, i)
-    this.props.onChartClick({
-      activeKey: newActiveKey,
-      drilldownData: d.cells[i].drilldownData,
-    })
+    this.props.onChartClick(
+      row,
+      colIndex,
+      this.props.columns,
+      this.props.stringColumnIndex,
+      this.props.legendColumn,
+      this.props.numberColumnIndex,
+      newActiveKey
+    )
 
     this.setState({ activeKey: newActiveKey })
   }
 
   render = () => {
-    const { scales, labelValue } = this.props
-    const { yScale } = scales
+    const {
+      columns,
+      legendColumn,
+      numberColumnIndices,
+      stringColumnIndex,
+      dataFormatting,
+      yScale,
+      xScale,
+    } = this.props
 
-    const numberOfSeries = this.props.data[0].cells.length
-    const barHeight = yScale.bandwidth() / numberOfSeries
+    const visibleSeries = numberColumnIndices.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
 
-    // Loop through each data value to make each series
-    const allBars = []
-    for (let i = 0; i < numberOfSeries; i++) {
-      allBars.push(
-        this.props.data.map((d, index) => {
-          const y0 = yScale(d[labelValue])
-          const dY = i * barHeight
-          const finalBarYPosition = y0 + dY
-
-          let width = Math.abs(this.X(d, i) - this.X0())
-          if (Number.isNaN(width)) {
-            width = 0
-          }
-
-          return (
-            <rect
-              key={d[labelValue]}
-              className={`bar${
-                this.state.activeKey === this.getKey(d, i) ? ' active' : ''
-              }`}
-              data-test={`bar-${i}-${index}`}
-              y={finalBarYPosition}
-              x={d.cells[i].value > 0 ? this.X0() : this.X(d, i)}
-              width={width}
-              height={barHeight}
-              onClick={() => this.onBarClick(d, i)}
-              data-tip={_get(d, `cells[${i}].tooltipData`)}
-              data-for="chart-element-tooltip"
-              style={{ fill: d.cells[i].color, fillOpacity: 0.7 }}
-            />
-          )
-        })
-      )
+    if (!visibleSeries.length) {
+      return null
     }
+
+    const allBars = []
+    const barHeight = yScale.bandwidth() / visibleSeries.length
+
+    let visibleIndex = 0
+    numberColumnIndices.forEach((colIndex, i) => {
+      if (!columns[colIndex].isSeriesHidden) {
+        allBars.push(
+          this.props.data.map((d, index) => {
+            const value = d[colIndex]
+            if (!value) {
+              return null
+            }
+
+            let width = Math.abs(xScale(value) - scaleZero(xScale))
+            if (Number.isNaN(width)) {
+              width = 0
+            }
+
+            if (width < 0.05) {
+              return null
+            }
+
+            const y0 = yScale(d[stringColumnIndex])
+            const dY = visibleIndex * barHeight
+            const finalBarYPosition = y0 + dY
+
+            const tooltip = getTooltipContent({
+              row: d,
+              columns,
+              colIndex,
+              stringColumnIndex,
+              legendColumn,
+              dataFormatting,
+            })
+
+            return (
+              <rect
+                key={getKey(colIndex, index)}
+                className={`bar${
+                  this.state.activeKey === getKey(colIndex, index)
+                    ? ' active'
+                    : ''
+                }`}
+                data-test={`bar-${i}-${index}`}
+                y={finalBarYPosition}
+                x={value > 0 ? scaleZero(xScale) : xScale(value)}
+                width={width}
+                height={barHeight}
+                onClick={() => this.onBarClick(d, colIndex, index)}
+                data-tip={tooltip}
+                data-for="chart-element-tooltip"
+                style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
+              />
+            )
+          })
+        )
+        visibleIndex += 1
+      }
+    })
 
     return <g data-test="bars">{allBars}</g>
   }
