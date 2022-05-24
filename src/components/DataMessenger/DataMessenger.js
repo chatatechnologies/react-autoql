@@ -40,11 +40,7 @@ import { Cascader } from '../Cascader'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import {
-  fetchQueryTips,
-  fetchFilters,
-  fetchTopics,
-} from '../../js/queryService'
+import { fetchQueryTips, fetchTopics } from '../../js/queryService'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 
@@ -77,7 +73,6 @@ export default class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
       selectedValueLabel: undefined,
-      conditions: undefined,
       messages: [],
       topicsMessageContent: undefined,
       queryTipsList: undefined,
@@ -86,7 +81,6 @@ export default class DataMessenger extends React.Component {
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
       isSizeMaximum: false,
-      selectedConditions: [],
     }
   }
 
@@ -190,61 +184,6 @@ export default class DataMessenger extends React.Component {
       console.error(error)
       this.setState({ hasError: true })
     }
-
-    fetchFilters(getAuthentication(this.props.authentication)).then(
-      (response) => {
-        let conditions = _get(response, 'data.data.data')
-        let array = [...this.state.selectedConditions]
-        for (let i = 0; i < conditions.length; i++) {
-          array.push({
-            id: conditions[i].id,
-            keyword: conditions[i].value,
-            value: conditions[i].value,
-            show_message: conditions[i].show_message,
-            key: conditions[i].key,
-            lock_flag: conditions[i].lock_flag,
-          })
-        }
-        if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          for (let i = 0; i < sessionConditions.length; i++) {
-            array.push({
-              id: sessionConditions[i].id,
-              keyword: sessionConditions[i].value,
-              value: sessionConditions[i].value,
-              show_message: sessionConditions[i].show_message,
-              key: sessionConditions[i].key,
-              lock_flag: sessionConditions[i].lock_flag,
-            })
-          }
-        }
-        array.sort((a, b) => {
-          return a.keyword.toUpperCase() < b.keyword.toUpperCase()
-            ? -1
-            : a.keyword > b.keyword
-            ? 1
-            : 0
-        })
-        if (this.props.initFilterText && this.props.initFilterText !== '') {
-          this.setState({
-            selectedConditions: array,
-          })
-          for (let i = 0; i < array.length; i++) {
-            if (array[i].keyword === this.props.initFilterText) {
-              this.handleHighlightFilterRow(i)
-              return
-            }
-          }
-          this.animateInputTextAndSubmit(this.props.initFilterText)
-        } else {
-          this.setState({
-            selectedConditions: array,
-          })
-        }
-      }
-    )
 
     if (this.props.enableQueryQuickStartTopics) {
       fetchTopics(getAuthentication(this.props.authentication))
@@ -909,35 +848,6 @@ export default class DataMessenger extends React.Component {
       <>
         {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking &&
           this.renderFilterLockPopover()}
-        {/* {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && (
-            <Popover
-              containerStyle={this.getFilterMenuPosition()}
-              isOpen={this.state.isFilterLockMenuOpen}
-              onClickOutside={this.closeFilterLockMenu}
-              position="bottom"
-              padding={2}
-              align="center"
-              content={this.renderFLPopoverContent()}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  this.setState({
-                    isFilterLockMenuOpen: !this.state.isFilterLockMenuOpen,
-                  })
-                }}
-                className="react-autoql-drawer-header-btn filter-locking"
-                data-tip={lang.openFilterLocking}
-                data-for="react-autoql-header-tooltip"
-              >
-                <Icon
-                  type={
-                    this.state.selectedConditions?.length ? 'lock' : 'unlock'
-                  }
-                />
-              </button>
-            </Popover>
-          )} */}
         <Popover
           isOpen={this.state.isOptionsDropdownOpen}
           onClickOutside={() => {
@@ -1032,7 +942,7 @@ export default class DataMessenger extends React.Component {
   }
 
   onFilterChange = (allFilters) => {
-    const sessionFilters = allFilters.filter((filter) => filter.lock_flag === 0)
+    const sessionFilters = allFilters.filter((filter) => filter.isSession)
     this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
   }
 

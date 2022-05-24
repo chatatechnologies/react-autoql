@@ -104,8 +104,8 @@
       background-color: var(--react-autoql-accent-color);
       color: white;
       animation-name: highlightIn, highlightOut;
-      animation-duration: 400ms, 400ms;
-      animation-delay: 0ms, 1500ms;
+      animation-duration: 300ms, 300ms;
+      animation-delay: 0ms, 1000ms;
       animation-timing-function: ease-in, ease-out;
       animation-iteration-count: 1, 1;
     }

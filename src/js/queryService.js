@@ -365,7 +365,7 @@ export const fetchFilters = ({ apiKey, token, domain } = {}) => {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking?key=${apiKey}`
 
   const config = {
     headers: {
@@ -388,7 +388,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     return Promise.reject(new Error('No filters provided'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking?key=${apiKey}`
 
   const config = {
     headers: {
@@ -409,12 +409,12 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const unsetFilter = ({ apiKey, token, domain, filter } = {}) => {
+export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking/${filter.id}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking/${filter.id}?key=${apiKey}`
 
   const config = {
     headers: {
