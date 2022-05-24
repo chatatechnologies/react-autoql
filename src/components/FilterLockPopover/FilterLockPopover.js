@@ -114,14 +114,16 @@ export default class FilterLockPopover extends React.Component {
 
   handleHighlightFilterRow(filter) {
     const key = this.getKey(filter)
+    const startAt = 0
+    const duration = 1300
 
     this.highlightFilterStartTimeout = setTimeout(() => {
       this.setState({ highlightedFilter: key })
-    }, 300)
+    }, startAt)
 
     this.highlightFilterEndTimeout = setTimeout(() => {
       this.setState({ highlightedFilter: undefined })
-    }, 2500)
+    }, duration)
   }
 
   animateInputTextAndSubmit = (text) => {
