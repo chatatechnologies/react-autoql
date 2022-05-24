@@ -18,6 +18,14 @@
     .Toastify__toast {
       min-height: 48px;
     }
+
+    .Toastify__toast-body {
+      justify-content: center;
+    }
+
+    .Toastify__toast-body > div:last-child {
+      flex: unset;
+    }
   }
 }
 
