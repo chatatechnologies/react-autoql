@@ -113,7 +113,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   handleHighlightFilterRow(filterKey) {
-    toast.info('This condition has already been applied.')
+    toast.info('This filter has already been applied.')
     const startAt = 0
     const duration = 1300
 
