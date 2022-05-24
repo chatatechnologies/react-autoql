@@ -1922,8 +1922,10 @@ export default class QueryOutput extends React.Component {
         <div className="dashboard-data-limit-warning-icon">
           <Icon
             type="warning"
-            data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-            data-for="dashboard-data-limit-warning-tooltip"
+            data-tip={`The display limit of ${numRows} rows has been reached.<br />
+            Try querying a smaller time-frame to ensure<br />
+            all your data is displayed.`}
+            data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           />
         </div>
       )
@@ -2079,6 +2081,13 @@ export default class QueryOutput extends React.Component {
   }
 
   renderReverseTranslation = () => {
+    if (
+      !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
+      !this.props.showQueryInterpretation
+    ) {
+      return <div />
+    }
+
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
@@ -2096,10 +2105,7 @@ export default class QueryOutput extends React.Component {
   renderFooter = () => {
     return (
       <div className="query-output-footer">
-        {getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-        this.props.showQueryInterpretation
-          ? this.renderReverseTranslation()
-          : null}
+        {this.renderReverseTranslation()}
         {this.renderDataLimitWarning()}
       </div>
     )
@@ -2119,6 +2125,13 @@ export default class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.renderFooter()}
         </div>
+        <ReactTooltip
+          className="react-autoql-drawer-tooltip"
+          id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          effect="solid"
+          place="left"
+          html
+        />
       </ErrorBoundary>
     )
   }
