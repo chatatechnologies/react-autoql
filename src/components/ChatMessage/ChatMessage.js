@@ -41,6 +41,7 @@ import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
 import { exportCSV } from '../../js/queryService'
+import { Spinner } from '../Spinner'
 
 export default class ChatMessage extends React.Component {
   constructor(props) {
@@ -152,15 +153,16 @@ export default class ChatMessage extends React.Component {
       this.props.isCSVProgressMessage &&
       typeof this.state.csvDownloadProgress === 'undefined'
     ) {
-      this.props.setCSVDownloadProgress(this.props.id, 0)
       const linkedQueryResponseRef = this.props.linkedQueryResponseRef
       const queryDisplayType = _get(linkedQueryResponseRef, 'props.displayType')
 
       if (queryDisplayType === 'pivot_table') {
         if (_get(linkedQueryResponseRef, 'pivotTableRef')) {
           linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
-            this.props.setCSVDownloadProgress(this.props.id, 100)
-            this.onCSVExportFinish(undefined, true)
+            this.pivotTableCSVDownloadTimeout = setTimeout(() => {
+              this.props.setCSVDownloadProgress(this.props.id, 100)
+              this.onCSVExportFinish(undefined, true)
+            }, 2000)
           })
         }
       } else {
@@ -180,6 +182,8 @@ export default class ChatMessage extends React.Component {
             this.onCSVExportFinish(response)
           })
           .catch((error) => {
+            this.props.setCSVDownloadProgress(this.props.id, 0)
+            this.props.addMessageToDM({ response: error })
             console.error(error)
           })
       }
@@ -208,6 +212,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
+    clearTimeout(this.pivotTableCSVDownloadTimeout)
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
@@ -294,7 +299,14 @@ export default class ChatMessage extends React.Component {
   }
 
   renderCSVProgressMessage = () => {
-    return `Fetching your file ... ${this.state.csvDownloadProgress || 0}%`
+    if (isNaN(this.state.csvDownloadProgress)) {
+      return (
+        <div>
+          Fetching your file <Spinner />
+        </div>
+      )
+    }
+    return `Downloading your file ... ${this.state.csvDownloadProgress}%`
   }
 
   renderContent = () => {
