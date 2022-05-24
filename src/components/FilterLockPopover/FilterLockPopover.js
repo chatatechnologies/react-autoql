@@ -332,9 +332,10 @@ export default class FilterLockPopover extends React.Component {
             data-place="right"
             data-for="filter-locking-tooltip"
             data-tip="
-            Filters can be applied to narrow down your query<br/>
-            results. Locking a filter ensures that only the<br/>
-            specific data you wish to see is returned."
+            Filters can be applied to narrow down<br />
+            your query results. Locking a filter<br />
+            ensures that only the specific data<br />
+            you wish to see is returned."
           />
         </h3>
       </div>
@@ -431,9 +432,11 @@ export default class FilterLockPopover extends React.Component {
                 type="info"
                 data-place="left"
                 data-for="filter-locking-tooltip"
-                data-tip="Persistent filters remain locked at all times, unless<br/>
-                        the filter is removed. If unchecked, the filter will<br/>
-                        be locked until you end your browser session."
+                data-tip="
+                Persistent filters remain locked at all<br />
+                times, unless the filter is removed. If<br />
+                unchecked, the filter will be locked<br />
+                until you end your browser session."
               />
             </h4>
           </div>
