@@ -158,12 +158,12 @@ export default class ChatMessage extends React.Component {
 
       if (queryDisplayType === 'pivot_table') {
         if (_get(linkedQueryResponseRef, 'pivotTableRef')) {
-          linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
-            this.pivotTableCSVDownloadTimeout = setTimeout(() => {
+          this.pivotTableCSVDownloadTimeout = setTimeout(() => {
+            linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
               this.props.setCSVDownloadProgress(this.props.id, 100)
               this.onCSVExportFinish(undefined, true)
-            }, 2000)
-          })
+            })
+          }, 2000)
         }
       } else {
         exportCSV({

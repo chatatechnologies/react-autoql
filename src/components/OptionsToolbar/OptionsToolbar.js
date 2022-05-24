@@ -752,10 +752,7 @@ export default class OptionsToolbar extends React.Component {
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
         showSaveAsCSVButton:
-          isDataResponse &&
-          hasMoreThanOneRow &&
-          !allColumnsHidden &&
-          autoQLConfig.enableCSVDownload,
+          isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: this.props.enableDeleteBtn,
         showReportProblemButton: !!_get(response, 'data.data.query_id'),
 
