@@ -615,11 +615,10 @@ export default class QueryOutput extends React.Component {
 
   generateTableData = (columns) => {
     this.tableColumns = columns || this.formatColumnsForTable()
-    let filteredResponse = this.queryResponse.data.data.rows.filter(
-      (row) => row[0] !== null
-    )
 
-    this.tableData = this.sortTableDataByDate(filteredResponse)
+    this.tableData = this.sortTableDataByDate(
+      this.queryResponse?.data?.data?.rows
+    )
 
     this.setTableConfig()
   }
