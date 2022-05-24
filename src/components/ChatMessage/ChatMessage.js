@@ -215,12 +215,14 @@ export default class ChatMessage extends React.Component {
 
   onCSVExportFinish = (response, isPivotTable) => {
     let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
-    const CSVtotal_rows = _get(response, 'headers.total_rows')
-    const CSVreturned_rows = _get(response, 'headers.returned_rows')
+    let CSVtotalRows = _get(response, 'headers.total_rows')
+    let CSVreturnedRows = _get(response, 'headers.returned_rows')
     let CSVexportLimit = _get(response, 'headers.export_limit')
     if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
       CSVFileSizeMb = parseInt(CSVFileSizeMb)
       CSVexportLimit = parseInt(CSVexportLimit)
+      CSVtotalRows = parseInt(CSVtotalRows)
+      CSVreturnedRows = parseInt(CSVreturnedRows)
     }
 
     this.props.addMessageToDM({
@@ -231,46 +233,14 @@ export default class ChatMessage extends React.Component {
             <i>{this.props.queryText}</i>
           </b>
           .
-          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+          {!isPivotTable && CSVtotalRows > CSVreturnedRows ? (
             <>
               <br />
               <p>
+                <br />
                 WARNING: The file you’ve requested is larger than{' '}
-                {CSVexportLimit}. This exceeds the maximum download size and you
-                will only receive partial data.
-              </p>
-            </>
-          ) : null}
-        </>
-      ),
-    })
-  }
-
-  onCSVExportFinish = (response, isPivotTable) => {
-    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
-    const CSVtotal_rows = _get(response, 'headers.total_rows')
-    const CSVreturned_rows = _get(response, 'headers.returned_rows')
-    let CSVexportLimit = _get(response, 'headers.export_limit')
-    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
-      CSVFileSizeMb = parseInt(CSVFileSizeMb)
-      CSVexportLimit = parseInt(CSVexportLimit)
-    }
-
-    this.props.addMessageToDM({
-      content: (
-        <>
-          Your file has successfully been downloaded with the query{' '}
-          <b>
-            <i>{this.props.queryText}</i>
-          </b>
-          .
-          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
-            <>
-              <br />
-              <p>
-                WARNING: The file you’ve requested is larger than{' '}
-                {CSVexportLimit}. This exceeds the maximum download size and you
-                will only receive partial data.
+                {CSVexportLimit}MB. This exceeds the maximum download size and
+                you will only receive partial data.
               </p>
             </>
           ) : null}
