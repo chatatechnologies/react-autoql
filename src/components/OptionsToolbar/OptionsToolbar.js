@@ -59,8 +59,10 @@ export default class OptionsToolbar extends React.Component {
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
     onResponseCallback: PropTypes.func,
-    onCSVExportClick: PropTypes.func,
     onFilterClick: PropTypes.func,
+    onCSVDownloadStart: PropTypes.func,
+    onCSVDownloadFinish: PropTypes.func,
+    onCSVDownloadProgress: PropTypes.func,
   }
 
   static defaultProps = {
@@ -77,6 +79,9 @@ export default class OptionsToolbar extends React.Component {
     onFilterClick: () => {},
     onColumnVisibilitySave: () => {},
     onResponseCallback: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadFinish: () => {},
+    onCSVDownloadProgress: () => {},
   }
 
   state = {
@@ -109,6 +114,7 @@ export default class OptionsToolbar extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.temporaryStateTimeout)
+    clearTimeout(this.pivotTableCSVDownloadTimeout)
   }
 
   onTableFilter = (newTableData) => {
@@ -149,10 +155,16 @@ export default class OptionsToolbar extends React.Component {
       this.props.responseRef,
       'queryResponse.data.data.query_id'
     )
-
+    const uniqueId = uuid()
+    this.props.onCSVDownloadStart({ id: uniqueId, queryId })
     exportCSV({
       queryId,
       ...getAuthentication(this.props.authentication),
+      csvProgressCallback: (percentCompleted) =>
+        this.props.onCSVDownloadProgress({
+          id: uniqueId,
+          progress: percentCompleted,
+        }),
     })
       .then((response) => {
         const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -161,8 +173,26 @@ export default class OptionsToolbar extends React.Component {
         link.setAttribute('download', 'export.csv')
         document.body.appendChild(link)
         link.click()
+
+        let fileSizeMb = _get(response, 'headers.content-length') / 1000000
+        let totalRows = _get(response, 'headers.total_rows')
+        let returnedRows = _get(response, 'headers.returned_rows')
+        let exportLimit = _get(response, 'headers.export_limit')
+        fileSizeMb = parseInt(fileSizeMb)
+        exportLimit = parseInt(exportLimit)
+        totalRows = parseInt(totalRows)
+        returnedRows = parseInt(returnedRows)
+
+        this.props.onCSVDownloadFinish({
+          id: uniqueId,
+          fileSizeMb,
+          exportLimit,
+          totalRows,
+          returnedRows,
+        })
       })
       .catch((error) => {
+        this.props.onCSVDownloadFinish({ id: uniqueId, error })
         console.error(error)
       })
   }
@@ -171,23 +201,17 @@ export default class OptionsToolbar extends React.Component {
     this.setState({ activeMenu: undefined })
     const displayType = _get(this.props.responseRef, 'props.displayType')
     const isPivotTable = displayType === 'pivot_table'
+    const uniqueId = uuid()
 
-    if (this.props.onCSVExportClick) {
-      // Only use this different behaviour for Data Messenger
-      // Export directly from here if using this component
-      // outside of Data Messenger
-      const queryId = _get(
-        this.props.responseRef,
-        'queryResponse.data.data.query_id'
-      )
-      const queryText = _get(
-        this.props.responseRef,
-        'queryResponse.data.data.text'
-      )
-      this.props.onCSVExportClick(queryId, queryText, isPivotTable)
-    } else if (isPivotTable) {
+    if (isPivotTable) {
       if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
-        this.props.responseRef.pivotTableRef.saveAsCSV()
+        this.props.onCSVDownloadStart({ id: uniqueId })
+        this.pivotTableCSVDownloadTimeout = setTimeout(() => {
+          this.props.responseRef.pivotTableRef.saveAsCSV().then(() => {
+            this.props.onCSVDownloadProgress({ id: uniqueId, progress: 100 })
+            this.props.onCSVDownloadFinish({ id: uniqueId })
+          })
+        }, 2000)
       }
     } else {
       this.fetchCSVAndExport()

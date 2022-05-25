@@ -525,9 +525,7 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-  getIsDownloadingCSVResponse = (response) => {
-    return !!_get(response, 'config.onDownloadProgress')
-  }
+
   onResponse = (response, query) => {
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
@@ -604,28 +602,27 @@ export default class DataMessenger extends React.Component {
   }
 
   createMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
     appliedFilters,
-    linkedQueryResponseRef,
   }) => {
-    const id = uuid()
+    const uniqueId = id || uuid()
     this.setState({ lastMessageId: id })
 
     return {
       content,
       response,
       query,
-      id,
+      id: uniqueId,
       appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
       isCSVProgressMessage,
       queryId,
-      linkedQueryResponseRef,
     }
   }
 
@@ -651,12 +648,12 @@ export default class DataMessenger extends React.Component {
   }
 
   addResponseMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
-    linkedQueryResponseRef,
   }) => {
     let currentMessages = this.state.messages
 
@@ -677,11 +674,11 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage()
     } else if (isCSVProgressMessage) {
       message = this.createMessage({
+        id,
         content,
         query,
         isCSVProgressMessage,
         queryId,
-        linkedQueryResponseRef,
       })
     } else if (!response && !content) {
       message = this.createErrorMessage()
@@ -1046,11 +1043,11 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
-  setCSVDownloadProgress = (id, percentCompleted) => {
-    this.csvProgressLog[id] = percentCompleted
+  onCSVDownloadProgress = ({ id, progress }) => {
+    this.csvProgressLog[id] = progress
     if (this.messageRefs[id]) {
       this.messageRefs[id].setState({
-        csvDownloadProgress: percentCompleted,
+        csvDownloadProgress: progress,
       })
     }
   }
@@ -1100,10 +1097,9 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
-                  linkedQueryResponseRef={message.linkedQueryResponseRef}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                  setCSVDownloadProgress={this.setCSVDownloadProgress}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
                   scrollRef={this.messengerScrollComponent}
@@ -1120,9 +1116,7 @@ export default class DataMessenger extends React.Component {
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
                   onQueryOutputUpdate={this.rebuildTooltips}
-                  dataFormatting={getDataFormatting(
-                    getDataFormatting(this.props.dataFormatting)
-                  )}
+                  dataFormatting={this.props.dataFormatting}
                   displayType={
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
