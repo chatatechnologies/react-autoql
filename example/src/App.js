@@ -1544,6 +1544,15 @@ export default class App extends Component {
               onChange={(newTiles) => {
                 this.setState({ dashboardTiles: newTiles })
               }}
+              onCSVDownloadStart={(params) =>
+                console.log('on csv start', params)
+              }
+              onCSVDownloadProgress={(params) =>
+                console.log('on csv progress', params)
+              }
+              onCSVDownloadFinish={(params) =>
+                console.log('on csv end', params)
+              }
             />
           </Fragment>
         ) : (

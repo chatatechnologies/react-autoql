@@ -21,7 +21,6 @@ import {
   dataFormattingDefault,
   themeConfigDefault,
   getAuthentication,
-  getDataFormatting,
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
