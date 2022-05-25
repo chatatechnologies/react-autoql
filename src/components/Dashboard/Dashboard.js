@@ -81,6 +81,9 @@ class Dashboard extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onCSVDownloadStart: PropTypes.func,
+    onCSVDownloadProgress: PropTypes.func,
+    onCSVDownloadFinish: PropTypes.func,
   }
 
   static defaultProps = {
@@ -101,6 +104,9 @@ class Dashboard extends React.Component {
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadProgress: () => {},
+    onCSVDownloadFinish: () => {},
   }
 
   state = {
@@ -731,6 +737,9 @@ class Dashboard extends React.Component {
             onQueryOutputUpdate={this.rebuildTooltips}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
+            onCSVDownloadStart={this.props.onCSVDownloadStart}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.props.onCSVDownloadFinish}
           />
         ))}
       </ReactGridLayout>
