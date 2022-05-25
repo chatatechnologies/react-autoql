@@ -1,22 +1,22 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 import { scaleLinear, scaleBand } from 'd3-scale'
 import _get from 'lodash.get'
 
-import { getMinAndMaxValues, getTickValues } from '../helpers.js'
+import {
+  chartDefaultProps,
+  chartPropTypes,
+  getMinAndMaxValues,
+  getTickValues,
+  shouldRecalculateLongestLabel,
+} from '../helpers.js'
 import {
   shouldLabelsRotate,
   getTickWidth,
   getLongestLabelInPx,
 } from '../../../js/Util'
-import { themeConfigType, dataFormattingType } from '../../../props/types'
-import {
-  themeConfigDefault,
-  dataFormattingDefault,
-  getDataFormatting,
-} from '../../../props/defaults'
+import { getDataFormatting } from '../../../props/defaults'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
@@ -27,41 +27,8 @@ export default class ChataColumnChart extends Component {
     this.setLabelRotationValue(props)
   }
 
-  static propTypes = {
-    themeConfig: themeConfigType,
-    dataFormatting: dataFormattingType,
-
-    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
-    leftMargin: PropTypes.number,
-    rightMargin: PropTypes.number,
-    topMargin: PropTypes.number,
-    bottomMargin: PropTypes.number,
-    labelValue: PropTypes.string,
-    onLabelChange: PropTypes.func,
-    numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
-    onXAxisClick: PropTypes.func,
-    onYAxisClick: PropTypes.func,
-    legendLocation: PropTypes.string,
-  }
-
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-    dataFormatting: dataFormattingDefault,
-
-    leftMargin: 0,
-    rightMargin: 0,
-    topMargin: 0,
-    bottomMargin: 0,
-    labelValue: 'label',
-    numberColumnIndices: [],
-    legendLocation: undefined,
-    onXAxisClick: () => {},
-    onYAxisClick: () => {},
-    onLabelChange: () => {},
-  }
+  static propTypes = chartPropTypes
+  static defaultProps = chartDefaultProps
 
   componentDidMount = () => {
     this.props.onLabelChange()
@@ -72,10 +39,7 @@ export default class ChataColumnChart extends Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      this.props.marginAdjustmentFinished &&
-      prevProps?.data?.length !== this.props.data?.length
-    ) {
+    if (shouldRecalculateLongestLabel(prevProps, this.props)) {
       this.setLongestLabelWidth(this.props)
     }
   }
@@ -93,16 +57,24 @@ export default class ChataColumnChart extends Component {
 
   setLongestLabelWidth = (props) => {
     this.longestLabelWidth = getLongestLabelInPx(
-      this.labelArray,
-      this.props.columns[this.props.stringColumnIndex],
+      this.xTickValues,
+      props.columns[props.stringColumnIndex],
       getDataFormatting(props.dataFormatting)
     )
   }
 
   setChartData = (props) => {
-    const { minValue, maxValue } = getMinAndMaxValues(props.data)
+    let numberColumnIndices = props.numberColumnIndices
+    if (props.visibleSeriesIndices?.length)
+      numberColumnIndices = props.visibleSeriesIndices
+
+    const { minValue, maxValue } = getMinAndMaxValues(
+      props.data,
+      numberColumnIndices
+    )
+
     this.xScale = scaleBand()
-      .domain(props.data.map((d) => d[props.labelValue]))
+      .domain(props.data.map((d) => d[props.stringColumnIndex]))
       .range([props.leftMargin, props.width - props.rightMargin])
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
@@ -113,12 +85,10 @@ export default class ChataColumnChart extends Component {
       .nice()
 
     this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
-    this.labelArray = props.data.map((element) => element[props.labelValue])
-
     this.xTickValues = getTickValues(
       this.tickWidth,
       props.width,
-      this.labelArray
+      this.xScale.domain()
     )
   }
 
@@ -129,34 +99,15 @@ export default class ChataColumnChart extends Component {
     return (
       <g data-test="react-autoql-column-chart">
         <Axes
-          themeConfig={this.props.themeConfig}
-          scales={{ xScale: this.xScale, yScale: this.yScale }}
+          {...this.props}
+          xScale={this.xScale}
+          yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.columns[this.props.numberColumnIndex]}
-          margins={{
-            left: this.props.leftMargin,
-            right: this.props.rightMargin,
-            bottom: this.props.bottomMargin,
-            top: this.props.topMargin,
-            bottomLegend: this.props.bottomLegendMargin,
-          }}
-          width={this.props.width}
-          height={this.props.height}
           xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
-          onLabelChange={this.props.onLabelChange}
-          dataFormatting={this.props.dataFormatting}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          legendLabels={this.props.legendLabels}
-          onLegendClick={this.props.onLegendClick}
-          legendTitle={_get(this.props.legendColumn, 'title', 'Category')}
-          onLegendTitleClick={this.props.onLegendTitleClick}
-          yGridLines
-          onXAxisClick={this.props.onXAxisClick}
-          onYAxisClick={this.props.onYAxisClick}
-          stringColumnIndices={this.props.stringColumnIndices}
-          numberColumnIndices={this.props.numberColumnIndices}
           hasXDropdown={
             this.props.enableDynamicCharting &&
             this.props.hasMultipleStringColumns
@@ -167,24 +118,10 @@ export default class ChataColumnChart extends Component {
           }
           xAxisTitle={this.props.stringAxisTitle}
           yAxisTitle={this.props.numberAxisTitle}
+          yGridLines
         />
         {this.props.marginAdjustmentFinished && (
-          <Columns
-            themeConfig={this.props.themeConfig}
-            scales={{ xScale: this.xScale, yScale: this.yScale }}
-            margins={{
-              left: this.props.leftMargin,
-              right: this.props.rightMargin,
-              bottom: this.props.bottomMargin,
-              top: this.props.topMargin,
-            }}
-            data={this.props.data}
-            width={this.props.width}
-            height={this.props.height}
-            labelValue={this.props.labelValue}
-            onChartClick={this.props.onChartClick}
-            activeKey={this.props.activeChartElementKey}
-          />
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
         )}
       </g>
     )

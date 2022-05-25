@@ -16,7 +16,7 @@ import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { setCSSVars, filterDataForDrilldown } from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
 import {
   authenticationType,
   autoQLConfigType,
@@ -81,6 +81,9 @@ class Dashboard extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onCSVDownloadStart: PropTypes.func,
+    onCSVDownloadProgress: PropTypes.func,
+    onCSVDownloadFinish: PropTypes.func,
   }
 
   static defaultProps = {
@@ -101,6 +104,9 @@ class Dashboard extends React.Component {
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadProgress: () => {},
+    onCSVDownloadFinish: () => {},
   }
 
   state = {
@@ -418,68 +424,43 @@ class Dashboard extends React.Component {
       })
   }
 
-  runFilterDrilldown = (data, tileId, isSecondHalf) => {
-    try {
-      const tile = this.props.tiles.find((tile) => tile.i === tileId)
-      if (!tile) {
-        return
-      }
-
-      const queryResponse = isSecondHalf
-        ? tile.secondQueryResponse
-        : tile.queryResponse
-
-      const drilldownResponse = filterDataForDrilldown(queryResponse, data)
-
-      this.drillingDownTimeout = setTimeout(() => {
-        this.setState({
-          isDrilldownRunning: false,
-          activeDrilldownResponse: drilldownResponse,
-        })
-      }, 1500)
-    } catch (error) {
-      console.error(error)
-      this.props.onErrorCallback(error)
-    }
-  }
-
-  startDrilldown = (drilldownData, queryID, tileId, isSecondHalf) => {
-    this.setState({ isDrilldownRunning: true, isDrilldownChartHidden: false })
-
-    if (drilldownData.supportedByAPI) {
-      this.runDrilldownFromAPI(drilldownData.data, queryID, isSecondHalf)
-    } else {
-      this.runFilterDrilldown(drilldownData.data, tileId, isSecondHalf)
-    }
-  }
-
-  processDrilldown = ({
-    tileId,
-    drilldownData,
-    queryID,
-    activeKey,
-    isSecondHalf,
-  }) => {
+  onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
-      if (!drilldownData || !drilldownData.data) {
-        return
-      }
       this.setState({
+        isDrilldownRunning: true,
+        isDrilldownChartHidden: false,
         isDrilldownModalVisible: true,
         isDrilldownSecondHalf: isSecondHalf,
-        activeDrilldownTile: tileId,
+        activeDrilldownTile: tileId || this.state.activeDrilldownTile,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
-        isAnimatingModal: true,
+        isAnimatingModal: !this.state.isDrilldownModalVisible,
       })
-
-      this.startDrilldown(drilldownData, queryID, tileId, isSecondHalf)
 
       this.animationTimeout = setTimeout(() => {
         this.setState({
           isAnimatingModal: false,
         })
-      }, 200)
+      }, 500)
+    }
+  }
+
+  onDrilldownEnd = ({ response, error }) => {
+    if (response) {
+      if (this._isMounted) {
+        this.setState({
+          activeDrilldownResponse: response,
+          isDrilldownRunning: false,
+        })
+      }
+    } else if (error) {
+      console.error(error)
+      if (this._isMounted) {
+        this.setState({
+          isDrilldownRunning: false,
+          activeDrilldownResponse: undefined,
+        })
+      }
     }
   }
 
@@ -611,18 +592,22 @@ class Dashboard extends React.Component {
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
-                          queryResponse={queryResponse}
+                          queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
-                          dataConfig={dataConfig}
+                          tableConfig={_cloneDeep(dataConfig)}
                           isDashboardQuery={true}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }
-                          onDataClick={(drilldownData, queryID) => {
-                            this.startDrilldown(drilldownData, queryID, tile.i)
-                          }}
+                          onDrilldownStart={(activeKey) =>
+                            this.onDrilldownStart({
+                              tileId: tile.i,
+                              activeKey,
+                            })
+                          }
+                          onDrilldownEnd={this.onDrilldownEnd}
                           activeChartElementKey={
                             this.state.activeDrilldownChartElementKey
                           }
@@ -744,12 +729,17 @@ class Dashboard extends React.Component {
             deleteTile={this.deleteTile}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             notExecutedText={this.props.notExecutedText}
-            processDrilldown={this.processDrilldown}
+            onDataClick={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
             onQueryOutputUpdate={this.rebuildTooltips}
+            onDrilldownStart={this.onDrilldownStart}
+            onDrilldownEnd={this.onDrilldownEnd}
+            onCSVDownloadStart={this.props.onCSVDownloadStart}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.props.onCSVDownloadFinish}
           />
         ))}
       </ReactGridLayout>

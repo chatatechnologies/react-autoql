@@ -17,17 +17,20 @@ import {
   isDisplayTypeValid,
   getDefaultDisplayType,
   nameValueObject,
-  isAggregation,
-  getObjSize,
-  getMaxValueFromKeyValueObj,
-  getMinValueFromKeyValueObj,
 } from './Util'
 
 import {
+  isAggregation,
   getColumnTypeAmounts,
   isColumnStringType,
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
+
+import {
+  getObjSize,
+  getMaxValueFromKeyValueObj,
+  getMinValueFromKeyValueObj,
+} from '../components/Charts/helpers'
 
 import responseTestCases from '../../test/responseTestCases'
 
@@ -488,7 +491,7 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes(response)).toEqual(['table'])
+    expect(getSupportedDisplayTypes({ response })).toEqual(['table'])
   })
 
   test('supports 2d charts', () => {
@@ -509,7 +512,7 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes(response)).toEqual([
+    expect(getSupportedDisplayTypes({ response })).toEqual([
       'table',
       'column',
       'bar',
@@ -519,7 +522,9 @@ describe('getSupportedDisplayTypes', () => {
   })
 
   test('supports 3d charts', () => {
-    expect(getSupportedDisplayTypes(sampleDoubleGroupableResponse)).toEqual([
+    expect(
+      getSupportedDisplayTypes({ response: sampleDoubleGroupableResponse })
+    ).toEqual([
       'table',
       'pivot_table',
       'stacked_column',
@@ -657,7 +662,6 @@ describe('getMinValueFromKeyValueObj', () => {
   })
 })
 
-// export const calculateMinAndMaxSums = data
 // export const getChartLabelTextWidthInPx = text
 // export const getLongestLabelInPx = (labels, col, config)
 // export const getTickWidth = (scale, innerPadding)
@@ -665,7 +669,6 @@ describe('getMinValueFromKeyValueObj', () => {
 // export const setStyleVars = ({ themeStyles, prefix })
 // export const getQueryParams = url
 // export const getNumberColumnIndices = columns
-// export const filterDataForDrilldown = (response, drilldownData)
 // export const getPadding = element
 // export const capitalizeFirstChar = string
 // export const isSingleValueResponse = response

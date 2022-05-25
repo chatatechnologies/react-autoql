@@ -21,16 +21,11 @@ import {
   dataFormattingDefault,
   themeConfigDefault,
   getAuthentication,
-  getDataFormatting,
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
 
-import {
-  setCSSVars,
-  filterDataForDrilldown,
-  removeFromDOM,
-} from '../../js/Util'
+import { setCSSVars } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 import { lang, setLanguage } from '../../js/Localization'
 
@@ -44,13 +39,8 @@ import { Cascader } from '../Cascader'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import {
-  runDrilldown,
-  fetchQueryTips,
-  fetchConditions,
-  fetchTopics,
-} from '../../js/queryService'
-import { ConditionLockMenu } from '../ConditionLockMenu'
+import { fetchQueryTips, fetchTopics } from '../../js/queryService'
+import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 // Styles
@@ -80,9 +70,8 @@ export default class DataMessenger extends React.Component {
       placement: this.getPlacementProp(props.placement),
       lastMessageId: undefined,
       isOptionsDropdownOpen: false,
-      isFilterLockingMenuOpen: false,
+      isFilterLockMenuOpen: false,
       selectedValueLabel: undefined,
-      conditions: undefined,
       messages: [],
       topicsMessageContent: undefined,
       queryTipsList: undefined,
@@ -91,7 +80,6 @@ export default class DataMessenger extends React.Component {
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
       isSizeMaximum: false,
-      selectedConditions: [],
     }
   }
 
@@ -196,61 +184,6 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    fetchConditions(getAuthentication(this.props.authentication)).then(
-      (response) => {
-        let conditions = _get(response, 'data.data.data')
-        let array = [...this.state.selectedConditions]
-        for (let i = 0; i < conditions.length; i++) {
-          array.push({
-            id: conditions[i].id,
-            keyword: conditions[i].value,
-            value: conditions[i].value,
-            show_message: conditions[i].show_message,
-            key: conditions[i].key,
-            lock_flag: conditions[i].lock_flag,
-          })
-        }
-        if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          for (let i = 0; i < sessionConditions.length; i++) {
-            array.push({
-              id: sessionConditions[i].id,
-              keyword: sessionConditions[i].value,
-              value: sessionConditions[i].value,
-              show_message: sessionConditions[i].show_message,
-              key: sessionConditions[i].key,
-              lock_flag: sessionConditions[i].lock_flag,
-            })
-          }
-        }
-        array.sort((a, b) => {
-          return a.keyword.toUpperCase() < b.keyword.toUpperCase()
-            ? -1
-            : a.keyword > b.keyword
-            ? 1
-            : 0
-        })
-        if (this.props.initFilterText && this.props.initFilterText !== '') {
-          this.setState({
-            selectedConditions: array,
-          })
-          for (let i = 0; i < array.length; i++) {
-            if (array[i].keyword === this.props.initFilterText) {
-              this.handleHighlightFilterRow(i)
-              return
-            }
-          }
-          this.animateInputTextAndSubmit(this.props.initFilterText)
-        } else {
-          this.setState({
-            selectedConditions: array,
-          })
-        }
-      }
-    )
-
     if (this.props.enableQueryQuickStartTopics) {
       fetchTopics(getAuthentication(this.props.authentication))
         .then((response) => {
@@ -314,7 +247,7 @@ export default class DataMessenger extends React.Component {
       }
 
       if (this.state.activePage !== prevState.activePage) {
-        nextState.isFilterLockingMenuOpen = false
+        nextState.isFilterLockMenuOpen = false
         nextState.selectedValueLabel = undefined
       }
 
@@ -479,7 +412,7 @@ export default class DataMessenger extends React.Component {
       messages: introMessages,
       lastMessageId: introMessages[introMessages.length - 1].id,
       isOptionsDropdownOpen: false,
-      isFilterLockingMenuOpen: false,
+      isFilterLockMenuOpen: false,
     })
   }
 
@@ -552,7 +485,7 @@ export default class DataMessenger extends React.Component {
   onDrawerChange = (isOpen) => {
     if (!isOpen) {
       this.setState({
-        isFilterLockingMenuOpen: false,
+        isFilterLockMenuOpen: false,
         selectedValueLabel: undefined,
         isVisible: false,
       })
@@ -591,9 +524,7 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-  getIsDownloadingCSVResponse = (response) => {
-    return !!_get(response, 'config.onDownloadProgress')
-  }
+
   onResponse = (response, query) => {
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
@@ -624,66 +555,6 @@ export default class DataMessenger extends React.Component {
     this.setState({ isChataThinking: false })
     if (this.queryInputRef) {
       this.queryInputRef.focus()
-    }
-  }
-
-  runDrilldownFromAPI = (data, queryID) => {
-    runDrilldown({
-      ...getAuthentication(getAuthentication(this.props.authentication)),
-      ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
-      queryID,
-      data,
-    })
-      .then((response) => {
-        this.addResponseMessage({
-          response: { ...response, enableDrilldowns: true },
-        })
-        this.setState({ isChataThinking: false })
-      })
-      .catch((error) => {
-        console.error(error)
-        this.addResponseMessage({
-          content: _get(error, 'message'),
-        })
-        this.setState({ isChataThinking: false })
-      })
-  }
-
-  runFilterDrilldown = (drilldownData, messageId) => {
-    const response = this.state.messages.find(
-      (message) => message.id === messageId
-    ).response
-
-    if (!response) {
-      return
-    }
-
-    const drilldownResponse = filterDataForDrilldown(response, drilldownData)
-
-    clearTimeout(this.responseTimeout)
-    this.responseTimeout = setTimeout(() => {
-      this.addResponseMessage({
-        response: drilldownResponse,
-      })
-      this.setState({ isChataThinking: false })
-    }, 1500)
-  }
-
-  processDrilldown = (drilldownData, queryID, messageId) => {
-    if (
-      getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)).enableDrilldowns
-    ) {
-      if (!drilldownData || !drilldownData.data) {
-        return
-      }
-
-      this.setState({ isChataThinking: true })
-
-      if (!drilldownData.supportedByAPI) {
-        this.runFilterDrilldown(drilldownData.data, messageId)
-      } else {
-        this.runDrilldownFromAPI(drilldownData.data, queryID)
-      }
     }
   }
 
@@ -730,28 +601,27 @@ export default class DataMessenger extends React.Component {
   }
 
   createMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
     appliedFilters,
-    linkedQueryResponseRef,
   }) => {
-    const id = uuid()
+    const uniqueId = id || uuid()
     this.setState({ lastMessageId: id })
 
     return {
       content,
       response,
       query,
-      id,
+      id: uniqueId,
       appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
       isCSVProgressMessage,
       queryId,
-      linkedQueryResponseRef,
     }
   }
 
@@ -777,12 +647,12 @@ export default class DataMessenger extends React.Component {
   }
 
   addResponseMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
-    linkedQueryResponseRef,
   }) => {
     let currentMessages = this.state.messages
 
@@ -803,11 +673,11 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage()
     } else if (isCSVProgressMessage) {
       message = this.createMessage({
+        id,
         content,
         query,
         isCSVProgressMessage,
         queryId,
-        linkedQueryResponseRef,
       })
     } else if (!response && !content) {
       message = this.createErrorMessage()
@@ -870,10 +740,14 @@ export default class DataMessenger extends React.Component {
   }
 
   onRTValueLabelClick = (text) => {
-    this.setState({
-      isFilterLockingMenuOpen: true,
-      selectedValueLabel: text,
-    })
+    this.setState(
+      {
+        isFilterLockMenuOpen: true,
+      },
+      () => {
+        this.filterLockRef?.insertFilter(text)
+      }
+    )
   }
 
   renderTabs = () => {
@@ -965,100 +839,72 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  renderOptionsDropdown = () => {
-    if (this.state.activePage === 'data-messenger') {
-      return (
-        <>
-          {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && (
-            <Popover
-              containerStyle={this.getFilterMenuPosition()}
-              isOpen={this.state.isFilterLockingMenuOpen}
-              onClickOutside={this.closeFilterLockingMenu}
-              position="bottom"
-              padding={2}
-              align="center"
-              content={this.renderFLPopoverContent()}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  this.setState({
-                    isFilterLockingMenuOpen: !this.state
-                      .isFilterLockingMenuOpen,
-                  })
-                }}
-                className="react-autoql-drawer-header-btn filter-locking"
-                data-tip={lang.openFilterLocking}
-                data-for="react-autoql-header-tooltip"
-              >
-                <Icon
-                  type={
-                    this.state.selectedConditions?.length ? 'lock' : 'unlock'
-                  }
-                />
-              </button>
-            </Popover>
-          )}
-          <Popover
-            isOpen={this.state.isOptionsDropdownOpen}
-            onClickOutside={() => {
-              this.setState({ isOptionsDropdownOpen: false })
-            }}
-            position="bottom" // preferred position
-            content={
-              <div>
-                <div className="clear-messages-confirm-popover">
-                  <div
-                    className="react-autoql-menu-text"
-                    onClick={this.handleClearQueriesDropdown}
+  renderRightHeaderContent = () => {
+    return (
+      <>
+        {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking &&
+          this.renderFilterLockPopover()}
+        <Popover
+          isOpen={this.state.isOptionsDropdownOpen}
+          onClickOutside={() => {
+            this.setState({ isOptionsDropdownOpen: false })
+          }}
+          position="bottom" // preferred position
+          content={
+            <div>
+              <div className="clear-messages-confirm-popover">
+                <div
+                  className="react-autoql-menu-text"
+                  onClick={this.handleClearQueriesDropdown}
+                >
+                  <Icon type="trash" />
+                  <span style={{ marginLeft: 5 }}>
+                    {lang.clearDataResponses}
+                  </span>
+                </div>
+                <div
+                  ref={(r) => (this.clearQueriesDropdown = r)}
+                  id="clear-queries-dropdown"
+                  style={{ display: 'none' }}
+                >
+                  <Button
+                    type="default"
+                    size="small"
+                    onClick={() =>
+                      this.setState({ isOptionsDropdownOpen: false })
+                    }
                   >
-                    <Icon type="trash" />
-                    <span style={{ marginLeft: 5 }}>
-                      {lang.clearDataResponses}
-                    </span>
-                  </div>
-                  <div
-                    ref={(r) => (this.clearQueriesDropdown = r)}
-                    id="clear-queries-dropdown"
-                    style={{ display: 'none' }}
+                    Cancel
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => this.clearMessages()}
                   >
-                    <Button
-                      type="default"
-                      size="small"
-                      onClick={() =>
-                        this.setState({ isOptionsDropdownOpen: false })
-                      }
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="primary"
-                      size="small"
-                      onClick={() => this.clearMessages()}
-                    >
-                      Clear
-                    </Button>
-                  </div>
+                    Clear
+                  </Button>
                 </div>
               </div>
+            </div>
+          }
+        >
+          <button
+            onClick={() =>
+              this.setState({
+                isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
+              })
             }
+            className={`react-autoql-drawer-header-btn clear-all ${
+              this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+            }`}
+            data-tip={lang.clearDataResponses}
+            data-for="react-autoql-header-tooltip"
           >
-            <button
-              onClick={() =>
-                this.setState({
-                  isOptionsDropdownOpen: !this.state.isOptionsDropdownOpen,
-                })
-              }
-              className="react-autoql-drawer-header-btn clear-all"
-              data-tip={lang.clearDataResponses}
-              data-for="react-autoql-header-tooltip"
-            >
-              <Icon type="trash" />
-            </button>
-          </Popover>
-        </>
-      )
-    }
+            <Icon type="trash" />
+          </button>
+        </Popover>
+      </>
+    )
   }
 
   renderHeaderTitle = () => {
@@ -1075,34 +921,52 @@ export default class DataMessenger extends React.Component {
     return <div className="header-title">{title}</div>
   }
 
-  closeFilterLockingMenu = () => {
-    if (this.state.isFilterLockingMenuOpen) {
+  openFilterLockMenu = () => {
+    if (!this.state.isFilterLockMenuOpen) {
       this.setState({
-        isFilterLockingMenuOpen: false,
-        selectedValueLabel: undefined,
+        isFilterLockMenuOpen: true,
       })
     }
   }
 
-  renderFLPopoverContent = () => {
+  closeFilterLockMenu = () => {
+    if (this.state.isFilterLockMenuOpen) {
+      this.setState({
+        isFilterLockMenuOpen: false,
+      })
+    }
+  }
+
+  onFilterChange = (allFilters) => {
+    const sessionFilters = allFilters.filter((filter) => filter.isSession)
+    this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
+  }
+
+  renderFilterLockPopover = () => {
     return (
-      <div id="condition-menu-dropdown" onClick={(e) => e.stopPropagation()}>
-        <ConditionLockMenu
-          ref={(ref) => (this.conditionLockMenuRef = ref)}
-          data-test="react-autoql-filter-menu"
-          id="react-autoql-filter-menu"
-          authentication={this.props.authentication}
-          containerWidth={this.getDrawerWidth()}
-          isOpen={this.state.isFilterLockingMenuOpen}
-          themeConfig={this.props.themeConfig}
-          initFilterText={this.state.selectedValueLabel}
-          onClose={this.closeFilterLockingMenu}
-          conditions={this.state.selectedConditions}
-          onConditionChangeCallback={(selectedConditions) => {
-            this.setState({ selectedConditions })
-          }}
-        />
-      </div>
+      <FilterLockPopover
+        ref={(r) => (this.filterLockRef = r)}
+        authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
+        isOpen={this.state.isFilterLockMenuOpen}
+        onChange={this.onFilterChange}
+        onClose={this.closeFilterLockMenu}
+      >
+        <button
+          className={`react-autoql-drawer-header-btn filter-locking ${
+            this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
+          }`}
+          data-tip={lang.openFilterLocking}
+          data-for="react-autoql-header-tooltip"
+          onClick={
+            this.state.isFilterLockMenuOpen
+              ? this.closeFilterLockMenu
+              : this.openFilterLockMenu
+          }
+        >
+          <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+        </button>
+      </FilterLockPopover>
     )
   }
 
@@ -1148,7 +1012,7 @@ export default class DataMessenger extends React.Component {
           {this.renderHeaderTitle()}
         </div>
         <div className="react-autoql-header-right-container">
-          {this.renderOptionsDropdown()}
+          {this.renderRightHeaderContent()}
         </div>
       </Fragment>
     )
@@ -1178,11 +1042,27 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
-  setCSVDownloadProgress = (id, percentCompleted) => {
-    this.csvProgressLog[id] = percentCompleted
+  onCSVDownloadProgress = ({ id, progress }) => {
+    this.csvProgressLog[id] = progress
     if (this.messageRefs[id]) {
       this.messageRefs[id].setState({
-        csvDownloadProgress: percentCompleted,
+        csvDownloadProgress: progress,
+      })
+    }
+  }
+
+  onDrilldownStart = () => {
+    this.setState({ isChataThinking: true })
+  }
+
+  onDrilldownEnd = ({ response, error } = {}) => {
+    this.setState({ isChataThinking: false })
+
+    if (response) {
+      this.addResponseMessage({ response })
+    } else if (error) {
+      this.addResponseMessage({
+        content: error,
       })
     }
   }
@@ -1216,10 +1096,9 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
-                  linkedQueryResponseRef={message.linkedQueryResponseRef}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                  setCSVDownloadProgress={this.setCSVDownloadProgress}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
                   scrollRef={this.messengerScrollComponent}
@@ -1227,9 +1106,8 @@ export default class DataMessenger extends React.Component {
                   setActiveMessage={this.setActiveMessage}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
-                  processDrilldown={(drilldownData, queryID) =>
-                    this.processDrilldown(drilldownData, queryID, message.id)
-                  }
+                  onDrilldownStart={this.onDrilldownStart}
+                  onDrilldownEnd={this.onDrilldownEnd}
                   isResponse={message.isResponse}
                   isChataThinking={this.state.isChataThinking}
                   onSuggestionClick={this.onSuggestionClick}
@@ -1237,9 +1115,7 @@ export default class DataMessenger extends React.Component {
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
                   onQueryOutputUpdate={this.rebuildTooltips}
-                  dataFormatting={getDataFormatting(
-                    getDataFormatting(this.props.dataFormatting)
-                  )}
+                  dataFormatting={this.props.dataFormatting}
                   displayType={
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')
@@ -1302,6 +1178,7 @@ export default class DataMessenger extends React.Component {
             hideInput={this.props.hideInput}
             source={['data_messenger']}
             AutoAEId={this.props.AutoAEId}
+            queryFilters={this.state.sessionFilters}
           />
         </div>
       </Fragment>

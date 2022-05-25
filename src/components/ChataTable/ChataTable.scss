@@ -1,6 +1,5 @@
 .react-autoql-table-container {
-  flex-grow: 1;
-  flex-shrink: 1;
+  flex: 1;
   max-width: 100%;
   width: 100%;
   background-color: inherit;
@@ -23,7 +22,6 @@
   .react-autoql-table.tabulator
   .tabulator-row.tabulator-unselectable:hover {
   cursor: pointer !important;
-  background-color: var(--react-autoql-hover-color) !important;
 }
 .react-autoql-table.tabulator
   .tabulator-header

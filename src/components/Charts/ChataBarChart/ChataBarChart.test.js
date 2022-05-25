@@ -1,29 +1,14 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-
 import { findByTestAttr } from '../../../../test/testUtils'
 import ChataBarChart from './ChataBarChart'
+import sampleProps from '../chartTestData'
 
-const defaultProps = {
-  data: [
-    {
-      cells: [{ value: 50 }, { value: 75 }],
-      label: 'label1',
-      origRow: ['label1', 50, 75],
-    },
-    {
-      cells: [{ value: 30 }, { value: 65 }],
-      label: 'label2',
-      origRow: ['label2', 30, 65],
-    },
-  ],
-  numberColumnIndex: 1,
-  numberColumnIndices: [1, 2],
-  stringColumnIndex: 1,
-  columns: [{}, {}, {}],
-  height: 300,
-  width: 300,
-}
+const pivotSampleProps = sampleProps.pivot
+const datePivotSampleProps = sampleProps.datePivot
+const listSampleProps = sampleProps.list
+
+const defaultProps = ChataBarChart.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -35,42 +20,21 @@ const setup = (props = {}, state = null) => {
 }
 
 describe('renders correctly', () => {
-  test('renders correctly with required props', () => {
-    const wrapper = setup()
+  test('renders list data chart correctly', () => {
+    const wrapper = setup(listSampleProps)
+    const barChartComponent = findByTestAttr(wrapper, 'react-autoql-bar-chart')
+    expect(barChartComponent.exists()).toBe(true)
+  })
+
+  test('renders pivot data chart correctly', () => {
+    const wrapper = setup(pivotSampleProps)
+    const barChartComponent = findByTestAttr(wrapper, 'react-autoql-bar-chart')
+    expect(barChartComponent.exists()).toBe(true)
+  })
+
+  test('renders date pivot data chart correctly', () => {
+    const wrapper = setup(datePivotSampleProps)
     const barChartComponent = findByTestAttr(wrapper, 'react-autoql-bar-chart')
     expect(barChartComponent.exists()).toBe(true)
   })
 })
-
-// describe('onLabelChange is called when labels get rotated', () => {
-//   const onLabelChange = jest.fn()
-//   const wrapper = setup({ onLabelChange })
-//   wrapper.setProps({
-//     data: [
-//       {
-//         cells: [
-//           {
-//             value: 50,
-//             label: 'label1',
-//           },
-//           {
-//             value: 75,
-//             label:
-//               'label1 thats really really really really really really really really long',
-//           },
-//         ],
-//         label: 'test label',
-//         origRow: ['label1', 50, 75],
-//       },
-//       {
-//         cells: [
-//           { value: 30, label: 'one' },
-//           { value: 65, label: 'two' },
-//         ],
-//         label: 'test label 2',
-//         origRow: ['label2', 30, 65],
-//       },
-//     ],
-//   })
-//   expect(onLabelChange).toHaveBeenCalled()
-// })

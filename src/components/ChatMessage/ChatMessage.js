@@ -25,7 +25,6 @@ import {
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
-import { Icon } from '../Icon'
 import { OptionsToolbar } from '../OptionsToolbar'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -33,20 +32,16 @@ import {
   getDefaultDisplayType,
   isChartType,
   getSupportedDisplayTypes,
-  areAllColumnsHidden,
-  isTableType,
-  removeFromDOM,
 } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
-import { exportCSV } from '../../js/queryService'
+import { Spinner } from '../Spinner'
 
 export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
 
-    this.supportedDisplayTypes = []
     this.filtering = false
     this.PIE_CHART_HEIGHT = 330
     this.MESSAGE_HEIGHT_MARGINS = 40
@@ -64,9 +59,9 @@ export default class ChatMessage extends React.Component {
         props.response,
         props.autoChartAggregations
       ),
-      supportedDisplayTypes: getSupportedDisplayTypes(props.response),
-      chartHeight: this.getChartHeight(displayType),
-      chartWidth: this.getChartWidth(),
+      supportedDisplayTypes: getSupportedDisplayTypes({
+        response: props.response,
+      }),
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
@@ -104,7 +99,6 @@ export default class ChatMessage extends React.Component {
     onConditionClickCallback: PropTypes.func,
     onResponseCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
-    onCSVExportClick: PropTypes.func,
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
     messageContainerHeight: PropTypes.number,
@@ -149,43 +143,6 @@ export default class ChatMessage extends React.Component {
       this.props.scrollToBottom()
     }, 100)
 
-    if (
-      this.props.isCSVProgressMessage &&
-      typeof this.state.csvDownloadProgress === 'undefined'
-    ) {
-      this.props.setCSVDownloadProgress(this.props.id, 0)
-      const linkedQueryResponseRef = this.props.linkedQueryResponseRef
-      const queryDisplayType = _get(linkedQueryResponseRef, 'props.displayType')
-
-      if (queryDisplayType === 'pivot_table') {
-        if (_get(linkedQueryResponseRef, 'pivotTableRef')) {
-          linkedQueryResponseRef.pivotTableRef.saveAsCSV().then(() => {
-            this.props.setCSVDownloadProgress(this.props.id, 100)
-            this.onCSVExportFinish(undefined, true)
-          })
-        }
-      } else {
-        exportCSV({
-          queryId: this.props.queryId,
-          ...getAuthentication(this.props.authentication),
-          csvProgressCallback: (percentCompleted) =>
-            this.props.setCSVDownloadProgress(this.props.id, percentCompleted),
-        })
-          .then((response) => {
-            const url = window.URL.createObjectURL(new Blob([response.data]))
-            const link = document.createElement('a')
-            link.href = url
-            link.setAttribute('download', 'export.csv')
-            document.body.appendChild(link)
-            link.click()
-            this.onCSVExportFinish(response)
-          })
-          .catch((error) => {
-            console.error(error)
-          })
-      }
-    }
-
     // Wait until message bubble animation finishes to show query output content
     clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
@@ -205,16 +162,6 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      prevProps.messageContainerHeight !== this.props.messageContainerHeight ||
-      prevProps.messageContainerWidth !== this.props.messageContainerWidth ||
-      this.state.displayType !== prevState.displayType
-    ) {
-      this.setState({
-        chartHeight: this.getChartHeight(this.state.displayType),
-        chartWidth: this.getChartWidth(),
-      })
-    }
     ReactTooltip.hide()
   }
 
@@ -224,14 +171,9 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.animationTimeout)
   }
 
-  onCSVExportFinish = (response, isPivotTable) => {
-    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
-    const CSVtotal_rows = _get(response, 'headers.total_rows')
-    const CSVreturned_rows = _get(response, 'headers.returned_rows')
-    let CSVexportLimit = _get(response, 'headers.export_limit')
-    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
-      CSVFileSizeMb = parseInt(CSVFileSizeMb)
-      CSVexportLimit = parseInt(CSVexportLimit)
+  onCSVDownloadFinish = ({ error, exportLimit, totalRows, returnedRows }) => {
+    if (error) {
+      return this.props.addMessageToDM({ response: error })
     }
 
     this.props.addMessageToDM({
@@ -242,46 +184,14 @@ export default class ChatMessage extends React.Component {
             <i>{this.props.queryText}</i>
           </b>
           .
-          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
+          {totalRows && returnedRows && totalRows > returnedRows ? (
             <>
               <br />
               <p>
-                WARNING: The file you’ve requested is larger than{' '}
-                {CSVexportLimit}. This exceeds the maximum download size and you
-                will only receive partial data.
-              </p>
-            </>
-          ) : null}
-        </>
-      ),
-    })
-  }
-
-  onCSVExportFinish = (response, isPivotTable) => {
-    let CSVFileSizeMb = _get(response, 'headers.content-length') / 1000000
-    const CSVtotal_rows = _get(response, 'headers.total_rows')
-    const CSVreturned_rows = _get(response, 'headers.returned_rows')
-    let CSVexportLimit = _get(response, 'headers.export_limit')
-    if (!isPivotTable && CSVFileSizeMb && CSVexportLimit) {
-      CSVFileSizeMb = parseInt(CSVFileSizeMb)
-      CSVexportLimit = parseInt(CSVexportLimit)
-    }
-
-    this.props.addMessageToDM({
-      content: (
-        <>
-          Your file has successfully been downloaded with the query{' '}
-          <b>
-            <i>{this.props.queryText}</i>
-          </b>
-          .
-          {!isPivotTable && CSVFileSizeMb >= CSVexportLimit ? (
-            <>
-              <br />
-              <p>
-                WARNING: The file you’ve requested is larger than{' '}
-                {CSVexportLimit}. This exceeds the maximum download size and you
-                will only receive partial data.
+                <br />
+                WARNING: The file you’ve requested is larger than {exportLimit}
+                MB. This exceeds the maximum download size and you will only
+                receive partial data.
               </p>
             </>
           ) : null}
@@ -335,7 +245,14 @@ export default class ChatMessage extends React.Component {
   }
 
   renderCSVProgressMessage = () => {
-    return `Fetching your file ... ${this.state.csvDownloadProgress || 0}%`
+    if (isNaN(this.state.csvDownloadProgress)) {
+      return (
+        <div>
+          Fetching your file <Spinner />
+        </div>
+      )
+    }
+    return `Downloading your file ... ${this.state.csvDownloadProgress}%`
   }
 
   renderContent = () => {
@@ -355,7 +272,7 @@ export default class ChatMessage extends React.Component {
             ref={(ref) => (this.responseRef = ref)}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            onDataClick={this.props.processDrilldown}
+            onDataClick={this.props.onDataClick}
             queryResponse={this.props.response}
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}
@@ -366,16 +283,8 @@ export default class ChatMessage extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             appliedFilters={this.props.appliedFilters}
             onUpdate={this.props.onQueryOutputUpdate}
-            height={
-              isChartType(this.state.displayType)
-                ? this.state.chartHeight
-                : undefined
-            }
-            width={
-              isChartType(this.state.displayType)
-                ? this.state.chartWidth
-                : undefined
-            }
+            onDrilldownStart={this.props.onDrilldownStart}
+            onDrilldownEnd={this.props.onDrilldownEnd}
             demo={getAuthentication(this.props.authentication).demo}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -391,8 +300,8 @@ export default class ChatMessage extends React.Component {
             }
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
-            dataConfig={this.state.dataConfig}
-            onDataConfigChange={this.updateDataConfig}
+            tableConfig={this.state.dataConfig}
+            onTableConfigChange={this.updateDataConfig}
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
@@ -419,13 +328,12 @@ export default class ChatMessage extends React.Component {
     }
   }
 
-  onCSVExportClick = (queryId, query) => {
+  onCSVDownloadStart = ({ id, queryId, query }) => {
     this.props.addMessageToDM({
-      content: `Fetching your file ... 0%`,
+      id,
       query,
-      isCSVProgressMessage: true,
       queryId,
-      linkedQueryResponseRef: this.responseRef,
+      isCSVProgressMessage: true,
     })
   }
 
@@ -439,12 +347,14 @@ export default class ChatMessage extends React.Component {
         <OptionsToolbar
           ref={(r) => (this.optionsToolbarRef = r)}
           className={`chat-message-toolbar right`}
-          authentication={getAuthentication(this.props.authentication)}
+          authentication={this.props.authentication}
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           themeConfig={getThemeConfig(this.props.themeConfig)}
           responseRef={this.responseRef}
           displayType={this.state.displayType}
-          onCSVExportClick={this.onCSVExportClick}
+          onCSVDownloadStart={this.onCSVDownloadStart}
+          onCSVDownloadFinish={this.onCSVDownloadFinish}
+          onCSVDownloadProgress={this.props.onCSVDownloadProgress}
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
           enableDeleteBtn={!this.props.isIntroMessage}
@@ -496,40 +406,6 @@ export default class ChatMessage extends React.Component {
     return null
   }
 
-  // TODO(Nikki): handle this in chatachart not here
-  getChartWidth = () => {
-    return this.props.messageContainerWidth - 70
-  }
-
-  // TODO(Nikki): handle this in chatachart not here
-  getChartHeight = (displayType) => {
-    if (displayType === 'pie') {
-      return this.PIE_CHART_HEIGHT
-    }
-
-    return 0.85 * this.props.messageContainerHeight - 40 // 85% of chat height minus message margins
-  }
-
-  renderDataLimitWarning = () => {
-    const numRows = _get(this.props, 'response.data.data.rows.length')
-    const maxRowLimit = _get(this.props, 'response.data.data.row_limit')
-
-    if (
-      maxRowLimit &&
-      numRows === maxRowLimit &&
-      !areAllColumnsHidden(this.props.response)
-    ) {
-      return (
-        <Icon
-          type="warning"
-          className="data-limit-warning-icon"
-          data-tip={`The display limit of ${numRows} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
-          data-for="chart-element-tooltip"
-        />
-      )
-    }
-  }
-
   render = () => {
     return (
       <ErrorBoundary>
@@ -554,7 +430,6 @@ export default class ChatMessage extends React.Component {
               <Fragment>
                 {this.renderRightToolbar()}
                 {this.renderLeftToolbar()}
-                {this.renderDataLimitWarning()}
               </Fragment>
             )}
           </div>

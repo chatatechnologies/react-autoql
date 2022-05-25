@@ -1,80 +1,127 @@
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import _get from 'lodash.get'
 import { scaleLinear } from 'd3-scale'
-import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
-import { themeConfigType } from '../../../props/types'
+import { max, min } from 'd3-array'
+import _get from 'lodash.get'
+
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  getTooltipContent,
+  getKey,
+} from '../helpers'
 
 export default class Circles extends Component {
-  static propTypes = {
-    themeConfig: themeConfigType,
+  constructor(props) {
+    super(props)
 
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    maxValue: PropTypes.number,
-    minValue: PropTypes.number,
-  }
+    const maxValue = max(
+      props.data.map((row) =>
+        max(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+      )
+    )
 
-  static defaultProps = {
-    themeConfig: themeConfigDefault,
-    maxValue: 0,
-    minValue: 0,
+    const minValue = min(
+      props.data.map((row) =>
+        min(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+      )
+    )
+
+    this.radiusScale = scaleLinear()
+      .domain([minValue, maxValue])
+      .range([0, Math.min(props.xScale.bandwidth(), props.yScale.bandwidth())])
   }
+  static propTypes = chartElementPropTypes
+  static defaultProps = chartElementDefaultProps
 
   state = {
-    activeKey: this.props.activeKey,
+    activeKey: this.props.activeChartElementKey,
+  }
+
+  onCircleClick = (row, colIndex, rowIndex) => {
+    const newActiveKey = getKey(colIndex, rowIndex)
+
+    this.props.onChartClick(
+      row,
+      colIndex,
+      this.props.columns,
+      this.props.stringColumnIndex,
+      this.props.legendColumn,
+      this.props.numberColumnIndex,
+      newActiveKey
+    )
+
+    this.setState({ activeKey: newActiveKey })
   }
 
   render = () => {
-    const { scales } = this.props
-    const { xScale, yScale } = scales
+    const {
+      columns,
+      legendColumn,
+      numberColumnIndices,
+      stringColumnIndex,
+      dataFormatting,
+      legendLabels,
+      colorScale,
+      yScale,
+      xScale,
+    } = this.props
 
-    const radiusScale = scaleLinear()
-      .domain([this.props.minValue, this.props.maxValue])
-      .range([0, Math.min(xScale.bandwidth(), yScale.bandwidth())])
+    const visibleSeries = numberColumnIndices.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
+
+    if (!visibleSeries.length) {
+      return null
+    }
 
     const circles = []
-    this.props.data.forEach((d) => {
-      d.cells.forEach((cell) => {
-        circles.push(
-          <circle
-            key={`${cell.label}-${d.label}`}
-            data-test="circles"
-            className={`circle${
-              this.state.activeKey === `${cell.label}-${d.label}`
-                ? ' active'
-                : ''
-            }`}
-            cx={xScale(d.label) + xScale.bandwidth() / 2}
-            cy={yScale(cell.label) + yScale.bandwidth() / 2}
-            r={cell.value < 0 ? 0 : radiusScale(cell.value) / 2}
-            onClick={() => {
-              this.setState({
-                activeKey: `${cell.label}-${d.label}`,
-              })
-              this.props.onChartClick({
-                activeKey: `${cell.label}-${d.label}`,
-                drilldownData: cell.drilldownData,
-              })
-            }}
-            data-tip={cell.tooltipData}
-            data-for="chart-element-tooltip"
-            style={{
-              stroke: 'transparent',
-              strokeWidth: 10,
-              fill:
-                this.state.activeKey === `${cell.label}-${d.label}`
-                  ? _get(
-                      getThemeConfig(this.props.themeConfig),
-                      'chartColors[1]'
-                    )
-                  : _get(
-                      getThemeConfig(this.props.themeConfig),
-                      'chartColors[0]'
-                    ),
-              fillOpacity: 0.7,
-            }}
-          />
-        )
+
+    this.props.data.forEach((row, index) => {
+      numberColumnIndices.forEach((colIndex, i) => {
+        if (!columns[colIndex].isSeriesHidden) {
+          const rawValue = row[colIndex]
+          const valueNumber = Number(rawValue)
+          const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+
+          const xLabel = row[stringColumnIndex]
+          const yLabel = legendLabels[i].label
+
+          const tooltip = getTooltipContent({
+            row,
+            columns,
+            colIndex,
+            stringColumnIndex,
+            legendColumn,
+            dataFormatting,
+          })
+
+          circles.push(
+            <circle
+              key={getKey(colIndex, index)}
+              data-test="circles"
+              className={`circle${
+                this.state.activeKey === getKey(colIndex, index)
+                  ? ' active'
+                  : ''
+              }`}
+              cx={xScale(xLabel) + xScale.bandwidth() / 2}
+              cy={yScale(yLabel) + yScale.bandwidth() / 2}
+              r={value < 0 ? 0 : this.radiusScale(value) / 2}
+              onClick={() => this.onCircleClick(row, colIndex, index)}
+              data-tip={tooltip}
+              data-for="chart-element-tooltip"
+              style={{
+                stroke: 'transparent',
+                strokeWidth: 10,
+                fill:
+                  this.state.activeKey === getKey(colIndex, index)
+                    ? colorScale(1)
+                    : colorScale(0),
+                fillOpacity: 0.7,
+              }}
+            />
+          )
+        }
       })
     })
     return <g>{circles}</g>
