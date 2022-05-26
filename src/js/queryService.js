@@ -86,27 +86,13 @@ export const runQueryOnly = ({
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
-  let formattedFilters
-  try {
-    if (filters?.length) {
-      formattedFilters = {}
-      filters.forEach((filter) => {
-        const prevFilterValues = formattedFilters[filter.key] || []
-        formattedFilters[filter.key] = [...prevFilterValues, filter.value]
-      })
-    }
-  } catch (error) {
-    console.error(error)
-    formattedFilters = undefined
-  }
-
   const data = {
     text: query,
     source: formatSourceString(source),
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
-    session_locked_conditions: formattedFilters,
+    session_filter_locks: filters,
   }
 
   if (!query || !query.trim()) {
