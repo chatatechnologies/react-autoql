@@ -4,13 +4,7 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import QueryTipsTab from './QueryTipsTab'
 
-const defaultProps = {
-  onQueryTipsInputKeyPress: () => {},
-  executeQuery: () => {},
-  loading: false,
-  error: false,
-  queryTipsList: []
-}
+const defaultProps = QueryTipsTab.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }

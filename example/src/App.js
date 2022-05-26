@@ -150,6 +150,7 @@ export default class App extends Component {
     demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
+    dprKey: getStoredProp('dpr-key') || '',
     projectId: getStoredProp('customer-id') || '',
     themeCode: getStoredProp('theme-code') || '',
     displayName: getStoredProp('user-id') || '',
@@ -191,6 +192,7 @@ export default class App extends Component {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey,
       domain: this.state.domain,
+      dprKey: this.state.dprKey,
     }
   }
 
@@ -835,6 +837,17 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
+          <Form.Item label="AutoAE API key" name="dprKey">
+            <Input
+              name="dpr-key"
+              onChange={(e) => {
+                this.setState({ dprKey: e.target.value })
+              }}
+              onBlur={(e) => setStoredProp('dpr-key', e.target.value)}
+              value={this.state.dprKey}
+              // autoComplete="on"
+            />
+          </Form.Item>
           <Form.Item
             label="Domain URL"
             name="domain"
@@ -916,7 +929,7 @@ export default class App extends Component {
           Reload Data Messenger
         </Button>
         <Button
-          onClick={() => this.setState({ isVisible: true })}
+          onClick={this.dmRef?.open}
           type="primary"
           icon={<MenuFoldOutlined />}
         >
@@ -1274,8 +1287,10 @@ export default class App extends Component {
         // onMaskClick={() => {
         //   this.setState({ isVisible: false })
         // }}
+        ref={(r) => (this.dmRef = r)}
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
+        enableDPRTab={!!this.state.dprKey}
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
         dataFormatting={this.getDataFormattingProp()}

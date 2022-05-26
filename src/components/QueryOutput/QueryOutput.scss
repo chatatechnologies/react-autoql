@@ -15,6 +15,10 @@
   width: 100%;
   height: 100%;
   color: var(--react-autoql-text-color-primary);
+
+  a {
+    color: var(--react-autoql-accent-color);
+  }
 }
 
 .react-autoql-response-content-container.table {

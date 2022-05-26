@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import _reduce from 'lodash.reduce'
 import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
@@ -33,11 +32,7 @@ import {
 } from '../helpers.js'
 
 import './ChataChart.scss'
-import {
-  getColumnTypeAmounts,
-  getTotalNumberColumns,
-  getTotalStringColumns,
-} from '../../QueryOutput/columnHelpers'
+import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25

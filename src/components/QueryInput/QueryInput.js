@@ -38,12 +38,26 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './QueryInput.scss'
+import { dprQuery } from '../../js/dprService'
 
 let autoCompleteArray = []
 
 export default class QueryInput extends React.Component {
-  UNIQUE_ID = uuid()
-  autoCompleteTimer = undefined
+  constructor(props) {
+    super(props)
+
+    setCSSVars(getThemeConfig(this.props.themeConfig))
+
+    this.UNIQUE_ID = uuid()
+    this.autoCompleteTimer = undefined
+
+    this.state = {
+      inputValue: '',
+      lastQuery: '',
+      suggestions: [],
+      isQueryRunning: false,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -60,6 +74,7 @@ export default class QueryInput extends React.Component {
     showChataIcon: PropTypes.bool,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    placeholder: PropTypes.string.isRequired,
   }
 
   static defaultProps = {
@@ -81,15 +96,9 @@ export default class QueryInput extends React.Component {
     onResponseCallback: () => {},
   }
 
-  state = {
-    inputValue: '',
-    lastQuery: '',
-    suggestions: [],
-    isQueryRunning: false,
-  }
-
   componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    this._isMounted = true
+    this.focus()
   }
 
   componentDidUpdate = (prevProps) => {
@@ -107,6 +116,7 @@ export default class QueryInput extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
     }
@@ -116,18 +126,14 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  animateInputTextAndSubmit = ({
-    query,
-    userSelection,
-    skipQueryValidation,
-    source,
-  }) => {
+  animateInputTextAndSubmit = ({ query, userSelection, source }) => {
     if (typeof query === 'string' && _get(query, 'length')) {
       for (let i = 1; i <= query.length; i++) {
         setTimeout(() => {
-          this.setState({
-            inputValue: query.slice(0, i),
-          })
+          if (this._isMounted)
+            this.setState({
+              inputValue: query.slice(0, i),
+            })
           if (i === query.length) {
             setTimeout(() => {
               this.submitQuery({
@@ -143,6 +149,32 @@ export default class QueryInput extends React.Component {
     }
   }
 
+  submitDprQuery = (query) => {
+    dprQuery({
+      dprKey: this.props.authentication?.dprKey,
+      query,
+    })
+      .then((response) => this.onResponse(response, query))
+      .catch((error) => {
+        console.error(error)
+        this.onResponse(error)
+      })
+  }
+
+  onResponse = (response, query) => {
+    this.props.onResponseCallback(response, query)
+    localStorage.setItem('inputValue', query)
+
+    const newState = {
+      isQueryRunning: false,
+      suggestions: [],
+      lastQuery: query || this.state?.lastQuery,
+    }
+    if (this._isMounted) {
+      this.setState(newState)
+    }
+  }
+
   submitQuery = ({
     queryText,
     userSelection,
@@ -154,13 +186,15 @@ export default class QueryInput extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
 
-    this.setState({
-      isQueryRunning: true,
-      inputValue: '',
-      suggestions: [],
-      queryValidationResponse: undefined,
-      queryValidationComponentId: uuid(),
-    })
+    if (this._isMounted) {
+      this.setState({
+        isQueryRunning: true,
+        inputValue: '',
+        suggestions: [],
+        queryValidationResponse: undefined,
+        queryValidationComponentId: uuid(),
+      })
+    }
 
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
@@ -168,7 +202,12 @@ export default class QueryInput extends React.Component {
     if (query.trim()) {
       this.props.onSubmit(query)
 
-      if (skipQueryValidation) {
+      if (
+        !this.props.authentication?.token &&
+        !!this.props.authentication?.dprKey
+      ) {
+        this.submitDprQuery(query)
+      } else if (skipQueryValidation) {
         runQueryOnly({
           query,
           userSelection,
@@ -178,15 +217,8 @@ export default class QueryInput extends React.Component {
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
         })
-          .then((response) => {
-            this.props.onResponseCallback(response, query)
-            this.setState({ isQueryRunning: false })
-          })
-          .catch((error) => {
-            console.error(error)
-            this.props.onResponseCallback(error)
-            this.setState({ isQueryRunning: false })
-          })
+          .then((response) => this.onResponse(response, query))
+          .catch((error) => console.error(error))
       } else {
         runQuery({
           query,
@@ -196,23 +228,16 @@ export default class QueryInput extends React.Component {
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
         })
-          .then((response) => {
-            this.props.onResponseCallback(response, query)
-            this.setState({ isQueryRunning: false })
-          })
+          .then((response) => this.onResponse(response, query))
           .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
               error: 'Unauthenticated',
             }
-            this.props.onResponseCallback(finalError)
-            this.setState({ isQueryRunning: false })
+            this.onResponse(finalError)
           })
       }
-
-      this.setState({ lastQuery: query, suggestions: [] })
-      localStorage.setItem('inputValue', query)
     }
   }
 
@@ -261,7 +286,8 @@ export default class QueryInput extends React.Component {
   userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
     if (
       userSelectedValueFromSuggestionBox &&
-      userSelectedValueFromSuggestionBox.name
+      userSelectedValueFromSuggestionBox.name &&
+      this._isMounted
     ) {
       this.userSelectedValue = userSelectedValueFromSuggestionBox.name
       this.userSelectedSuggestion = true
@@ -269,7 +295,7 @@ export default class QueryInput extends React.Component {
     }
   }
 
-  runQueryValidation = ({ text }) => {
+  runValidation = ({ text }) => {
     // Reset validation configuration since text has changed
     this.setState({
       queryValidationResponse: undefined,
@@ -349,7 +375,7 @@ export default class QueryInput extends React.Component {
 
   onInputChange = (e) => {
     //WIP
-    // this.runQueryValidation({ text: e.target.value })
+    // this.runValidation({ text: e.target.value })
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
@@ -402,8 +428,7 @@ export default class QueryInput extends React.Component {
                   className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
                     this.props.showChataIcon ? ' left-padding' : ''
                   }`,
-                  placeholder:
-                    this.props.placeholder || 'Type your queries here',
+                  placeholder: this.props.placeholder,
                   disabled: this.props.isDisabled,
                   onChange: this.onInputChange,
                   onKeyPress: this.onKeyPress,
@@ -437,7 +462,9 @@ export default class QueryInput extends React.Component {
                 }`}
                 placeholder={this.props.placeholder || 'Type your queries here'}
                 value={this.state.inputValue}
-                onChange={(e) => this.setState({ inputValue: e.target.value })}
+                onChange={(e) => {
+                  this.setState({ inputValue: e.target.value })
+                }}
                 data-test="chat-bar-input"
                 onKeyPress={this.onKeyPress}
                 onKeyDown={this.onKeyDown}

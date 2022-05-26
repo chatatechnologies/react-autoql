@@ -15,12 +15,14 @@ export default class Cascader extends React.Component {
     options: PropTypes.arrayOf(PropTypes.shape({})),
     onFinalOptionClick: PropTypes.func,
     onSeeMoreClick: PropTypes.func,
+    showSeeMoreButton: PropTypes.bool,
   }
 
   static defaultProps = {
     options: [],
     onFinalOptionClick: () => {},
     onSeeMoreClick: undefined,
+    showSeeMoreButton: true,
   }
 
   state = {
@@ -82,19 +84,22 @@ export default class Cascader extends React.Component {
             </div>
           )
         })}
-        {hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
-          <div
-            className="option"
-            data-test="see-more-option"
-            onClick={() => {
-              this.props.onSeeMoreClick(mostRecentOptionLabel)
-            }}
-          >
-            <span>
-              <Icon type="light-bulb" /> See more...
-            </span>
-          </div>
-        )}
+        {this.props.showSeeMoreButton &&
+          hasNoChildren &&
+          mostRecentOptionLabel &&
+          this.props.onSeeMoreClick && (
+            <div
+              className="option"
+              data-test="see-more-option"
+              onClick={() => {
+                this.props.onSeeMoreClick(mostRecentOptionLabel)
+              }}
+            >
+              <span>
+                <Icon type="light-bulb" /> See more...
+              </span>
+            </div>
+          )}
       </div>
     )
   }
