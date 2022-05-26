@@ -60,6 +60,7 @@ export default class QueryInput extends React.Component {
     showChataIcon: PropTypes.bool,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    clearQueryOnSubmit: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -77,6 +78,7 @@ export default class QueryInput extends React.Component {
     inputValue: undefined,
     source: [],
     queryFilters: undefined,
+    clearQueryOnSubmit: true,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
@@ -154,13 +156,18 @@ export default class QueryInput extends React.Component {
       clearTimeout(this.autoCompleteTimer)
     }
 
-    this.setState({
+    const newState = {
       isQueryRunning: true,
-      inputValue: '',
       suggestions: [],
       queryValidationResponse: undefined,
       queryValidationComponentId: uuid(),
-    })
+    }
+
+    if (this.props.clearQueryOnSubmit) {
+      newState.inputValue = ''
+    }
+
+    this.setState(newState)
 
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
