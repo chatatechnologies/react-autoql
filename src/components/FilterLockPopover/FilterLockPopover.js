@@ -537,7 +537,8 @@ export default class FilterLockPopover extends React.Component {
                 data-for="filter-locking-tooltip"
                 data-delay-show={500}
               >
-                <Icon type="check" /> Include
+                <Icon type="check" />
+                &nbsp;Include
               </ToggleButton>
               <ToggleButton
                 value="exclude"
@@ -547,7 +548,8 @@ export default class FilterLockPopover extends React.Component {
                 data-for="filter-locking-tooltip"
                 data-delay-show={500}
               >
-                <Icon type="close" /> Exclude
+                <Icon type="close" />
+                &nbsp;Exclude
               </ToggleButton>
             </ToggleButtonGroup>
           </h4>
