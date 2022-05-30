@@ -58,19 +58,28 @@ export default class ChataBubbleChart extends Component {
   }
 
   setChartData = (props) => {
+    this.yLabelArray = props.legendLabels.map((d) => d.label)
+    this.circleHeight = props.height / this.yLabelArray.length
+
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
       .range([props.leftMargin, props.width - props.rightMargin])
       .paddingOuter(0.5)
 
     this.yScale = scaleBand()
-      .domain(props.legendLabels.map((d) => d.label))
+      .domain(this.yLabelArray)
       .range([props.height - props.bottomMargin, props.topMargin])
 
     this.xTickValues = getTickValues(
       this.xScale.bandwidth(),
       props.width,
       this.xScale.domain()
+    )
+
+    this.yTickValues = getTickValues(
+      this.circleHeight,
+      props.height,
+      this.yLabelArray
     )
   }
 
@@ -90,6 +99,7 @@ export default class ChataBubbleChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.legendColumn}
           xTicks={this.xTickValues}
+          yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
           yGridLines
         />
