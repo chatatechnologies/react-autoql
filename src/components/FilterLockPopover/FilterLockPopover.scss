@@ -116,12 +116,12 @@
       flex-direction: row;
       justify-content: space-between;
       flex-wrap: nowrap;
-      white-space: nowrap;
       margin-bottom: 4px;
 
       .persist-toggle-column,
       .react-autoql-condition-table-list-item {
         margin-right: 25px;
+        max-width: 350px;
       }
 
       .react-autoql-remove-filter-icon {
@@ -136,6 +136,8 @@
     .filter-lock-category-title {
       padding-right: 10px;
       padding-top: 1px;
+      max-width: 195px;
+      overflow: hidden;
     }
     .persist-toggle-column .react-autoql-icon {
       margin-left: 3px;
