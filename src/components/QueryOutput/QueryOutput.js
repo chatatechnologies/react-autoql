@@ -379,9 +379,6 @@ export default class QueryOutput extends React.Component {
       recommendedDisplayType,
       this.supportedDisplayTypes
     )
-    console.warn(
-      `Display type ${this.props.displayType} is not supported for this dataset, we called the onRecommendedDisplayType callback with the recommended display type: ${recommendedDisplayType}`
-    )
   }
 
   isTableConfigValid = (tableConfig) => {
@@ -707,26 +704,28 @@ export default class QueryOutput extends React.Component {
 
   renderSingleValueResponse = () => {
     return (
-      <a
-        className={`single-value-response ${
-          getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
-            ? ' with-drilldown'
-            : ''
-        }`}
-        onClick={() => {
-          this.props.onDataClick(
-            { supportedByAPI: true, data: [] },
-            this.queryID,
-            true
-          )
-        }}
-      >
-        {formatElement({
-          element: _get(this.queryResponse, 'data.data.rows[0][0]'),
-          column: _get(this.queryResponse, 'data.data.columns[0]'),
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-      </a>
+      <div className="single-value-response-container">
+        <a
+          className={`single-value-response ${
+            getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
+              ? ' with-drilldown'
+              : ''
+          }`}
+          onClick={() => {
+            this.props.onDataClick(
+              { supportedByAPI: true, data: [] },
+              this.queryID,
+              true
+            )
+          }}
+        >
+          {formatElement({
+            element: _get(this.queryResponse, 'data.data.rows[0][0]'),
+            column: _get(this.queryResponse, 'data.data.columns[0]'),
+            config: getDataFormatting(this.props.dataFormatting),
+          })}
+        </a>
+      </div>
     )
   }
 
