@@ -11,8 +11,9 @@
   height: 16px;
   margin: 0px;
   border-radius: 50%;
-  border: 1px solid currentColor;
-  border-color: currentColor transparent currentColor transparent;
+  border: 1px solid var(--react-autoql-accent-color);
+  border-color: var(--react-autoql-accent-color) transparent
+    var(--react-autoql-accent-color) transparent;
   animation: spinner-loader 1.2s linear infinite;
 }
 
