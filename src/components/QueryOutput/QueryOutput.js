@@ -379,9 +379,6 @@ export default class QueryOutput extends React.Component {
       recommendedDisplayType,
       this.supportedDisplayTypes
     )
-    console.warn(
-      `Display type ${this.props.displayType} is not supported for this dataset, we called the onRecommendedDisplayType callback with the recommended display type: ${recommendedDisplayType}`
-    )
   }
 
   isTableConfigValid = (tableConfig) => {
