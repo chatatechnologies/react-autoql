@@ -354,7 +354,6 @@ export default class NotificationItem extends React.Component {
                       this.props.authentication
                     )}
                     ref={(r) => (this.OUTPUT_REF = r)}
-                    isDashboardQuery={true}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
                     themeConfig={getThemeConfig(this.props.themeConfig)}

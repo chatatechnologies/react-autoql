@@ -1019,7 +1019,6 @@ class DashboardTile extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             renderTooltips={false}
             autoSelectQueryValidationSuggestion={false}
-            isDashboardQuery={true}
             autoChartAggregations={this.props.autoChartAggregations}
             isResizing={this.props.isDragging}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}

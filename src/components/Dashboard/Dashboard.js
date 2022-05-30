@@ -491,7 +491,6 @@ class Dashboard extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
-            isDashboardQuery={true}
             onUpdate={this.rebuildTooltips}
             isAnimatingContainer={this.state.isAnimatingModal}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -595,7 +594,6 @@ class Dashboard extends React.Component {
                           queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
                           tableConfig={_cloneDeep(dataConfig)}
-                          isDashboardQuery={true}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
