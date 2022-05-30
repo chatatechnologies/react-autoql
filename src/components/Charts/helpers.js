@@ -378,6 +378,14 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
       }
     }
 
+    // Always show 0 on the y axis
+    // Keep this for future use
+    // if (maxValue > 0 && minValue > 0) {
+    //   minValue = 0
+    // } else if (maxValue < 0 && minValue < 0) {
+    //   maxValue = 0
+    // }
+
     return {
       minValue,
       maxValue,

@@ -7,7 +7,8 @@
   opacity: 1;
   min-width: 500px;
   max-width: 70vw;
-  height: 350px;
+  min-height: 350px;
+  max-height: 90vh;
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
@@ -25,6 +26,26 @@
 
     .Toastify__toast-body > div:last-child {
       flex: unset;
+    }
+  }
+
+  .MuiToggleButton-root {
+    font-size: 11px;
+    height: 24px;
+
+    &.Mui-selected {
+      &.exclude-btn {
+        color: var(--react-autoql-danger-color);
+        border-color: var(--react-autoql-danger-color);
+      }
+      &.include-btn {
+        color: var(--react-autoql-accent-color);
+        border-color: var(--react-autoql-accent-color);
+      }
+
+      &:hover {
+        opacity: 0.7;
+      }
     }
   }
 }
@@ -50,12 +71,13 @@
     margin-top: 3px;
     margin-bottom: 5px;
     color: var(--react-autoql-text-color-primary);
+    display: inline-flex;
   }
 
   .react-autoql-condition-list-loading-container,
   .react-autoql-empty-condition-list,
   .react-autoql-filter-list-container {
-    flex: 1;
+    flex: 1 1 245px;
   }
 
   .filter-lock-menu-header {
@@ -86,7 +108,7 @@
   }
 
   .react-autoql-filter-list-container {
-    margin-top: 10px;
+    margin: 10px 0;
 
     .flex {
       width: 100%;
@@ -109,6 +131,14 @@
           color: var(--react-autoql-danger-color);
         }
       }
+    }
+
+    .filter-lock-category-title {
+      padding-right: 10px;
+      padding-top: 1px;
+    }
+    .persist-toggle-column .react-autoql-icon {
+      margin-left: 3px;
     }
 
     .react-autoql-highlight-row {
