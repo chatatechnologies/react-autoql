@@ -248,6 +248,10 @@ export default class FilterLockPopover extends React.Component {
     const auth = getAuthentication(this.props.authentication)
     const persistedFilters = filters.filter((filter) => !filter.isSession)
 
+    if (!persistedFilters?.length) {
+      return Promise.resolve()
+    }
+
     return setFilters({ ...auth, filters: persistedFilters })
       .then((response) => {
         const updatedFilters = response?.data?.data?.data
