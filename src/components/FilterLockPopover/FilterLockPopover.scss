@@ -11,6 +11,7 @@
   max-height: 90vh;
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
+  overflow-y: auto !important;
 
   .filter-lock-toast-container {
     top: 0;
@@ -32,6 +33,8 @@
   .MuiToggleButton-root {
     font-size: 11px;
     height: 24px;
+    color: var(--react-autoql-text-color-primary);
+    border-color: var(--react-autoql-border-color);
 
     &.Mui-selected {
       &.exclude-btn {
