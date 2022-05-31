@@ -601,6 +601,7 @@ export const getSupportedDisplayTypes = ({
 export const isDisplayTypeValid = (response, displayType) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({ response })
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
+
   return isValid
 }
 

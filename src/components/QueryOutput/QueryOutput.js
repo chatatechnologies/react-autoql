@@ -167,7 +167,6 @@ export default class QueryOutput extends React.Component {
     autoChartAggregations: bool,
     onSupportedDisplayTypesChange: func,
     onRTValueLabelClick: func,
-    isDashboardQuery: bool,
     enableQueryInterpretation: bool,
     defaultShowInterpretation: bool,
     isTaskModule: bool,
@@ -198,7 +197,6 @@ export default class QueryOutput extends React.Component {
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
     autoChartAggregations: true,
-    isDashboardQuery: false,
     enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
@@ -704,26 +702,28 @@ export default class QueryOutput extends React.Component {
 
   renderSingleValueResponse = () => {
     return (
-      <a
-        className={`single-value-response ${
-          getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
-            ? ' with-drilldown'
-            : ''
-        }`}
-        onClick={() => {
-          this.props.onDataClick(
-            { supportedByAPI: true, data: [] },
-            this.queryID,
-            true
-          )
-        }}
-      >
-        {formatElement({
-          element: _get(this.queryResponse, 'data.data.rows[0][0]'),
-          column: _get(this.queryResponse, 'data.data.columns[0]'),
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-      </a>
+      <div className="single-value-response-container">
+        <a
+          className={`single-value-response ${
+            getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
+              ? ' with-drilldown'
+              : ''
+          }`}
+          onClick={() => {
+            this.props.onDataClick(
+              { supportedByAPI: true, data: [] },
+              this.queryID,
+              true
+            )
+          }}
+        >
+          {formatElement({
+            element: _get(this.queryResponse, 'data.data.rows[0][0]'),
+            column: _get(this.queryResponse, 'data.data.columns[0]'),
+            config: getDataFormatting(this.props.dataFormatting),
+          })}
+        </a>
+      </div>
     )
   }
 
@@ -1914,6 +1914,10 @@ export default class QueryOutput extends React.Component {
     const numRows = this.queryResponse?.data?.data?.rows?.length
     const maxRowLimit = this.queryResponse?.data?.data?.row_limit
 
+    const isReverseTranslationRendered =
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation
+
     if (maxRowLimit && numRows === maxRowLimit) {
       return (
         <div className="dashboard-data-limit-warning-icon">
@@ -1923,6 +1927,7 @@ export default class QueryOutput extends React.Component {
             Try querying a smaller time-frame to ensure<br />
             all your data is displayed.`}
             data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+            data-place={isReverseTranslationRendered ? 'left' : 'right'}
           />
         </div>
       )

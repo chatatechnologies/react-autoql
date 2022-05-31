@@ -290,7 +290,7 @@ export default class DataMessenger extends React.Component {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 500)
+    }, 1000)
   }
 
   getMaxWidthAndHeightFromDocument = () => {
@@ -676,6 +676,7 @@ export default class DataMessenger extends React.Component {
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
+        rebuildTooltips={this.rebuildTooltips}
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${

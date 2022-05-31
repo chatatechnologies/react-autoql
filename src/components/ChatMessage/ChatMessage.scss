@@ -23,6 +23,12 @@
       opacity: 1;
     }
   }
+
+  .spinner-loader:after {
+    border: 1px solid var(--react-autoql-accent-color);
+    border-color: var(--react-autoql-accent-color) transparent
+      var(--react-autoql-accent-color) transparent;
+  }
 }
 
 .chat-condition-item-container {

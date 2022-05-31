@@ -21,6 +21,8 @@ export default class Radio extends React.Component {
     value: PropTypes.string,
     multiSelect: PropTypes.bool,
     type: PropTypes.string,
+    tooltips: PropTypes.arrayOf(PropTypes.string),
+    tooltipId: PropTypes.string,
   }
 
   static defaultProps = {
@@ -29,6 +31,8 @@ export default class Radio extends React.Component {
     multiSelect: false,
     value: undefined,
     type: 'original',
+    tooltips: [],
+    tooltipId: null,
     onChange: () => {},
   }
 
@@ -51,7 +55,7 @@ export default class Radio extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className="react-autoql-radio-btn-container"
+          className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-buttons ${this.props.className}`}
           data-test="react-autoql-radio"
         >
           {this.props.options.map((option, i) => {
@@ -65,8 +69,11 @@ export default class Radio extends React.Component {
                 className={`react-autoql-radio-btn
                   ${isActive ? ' active' : ''}`}
                 onClick={() => this.props.onChange(option)}
+                data-tip={this.props.tooltips?.[i]}
+                data-for={this.props.tooltipId}
+                data-delay-show={500}
               >
-                {option}
+                <div>{option}</div>
               </div>
             )
           })}
@@ -79,7 +86,7 @@ export default class Radio extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className="react-autoql-radio-btn-container"
+          className={`react-autoql-radio-btn-container react-autoql-radio-btn-container-list ${this.props.className}`}
           data-test="react-autoql-radio"
         >
           {this.props.options.map((option, i) => {
