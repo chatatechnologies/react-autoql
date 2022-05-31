@@ -1,6 +1,19 @@
 .react-autoql-radio-btn-container {
-  display: inline-block;
-  border-radius: 4px;
+  &.react-autoql-radio-btn-container-list {
+    display: inline-block;
+  }
+  &.react-autoql-radio-btn-container-buttons {
+    display: inline-flex;
+    justify-content: stretch;
+    align-items: stretch;
+    border-radius: 4px;
+
+    .react-autoql-radio-btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
 
   [type='radio']:checked,
   [type='radio']:not(:checked) {

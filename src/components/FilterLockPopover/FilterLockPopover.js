@@ -10,8 +10,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
 import Popover from 'react-tiny-popover'
-import ToggleButton from '@material-ui/lab/ToggleButton'
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup'
+import { Radio } from '../Radio'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -527,35 +526,19 @@ export default class FilterLockPopover extends React.Component {
         <div>
           <h4>
             <span className="filter-lock-category-title">{category}</span>
-            <ToggleButtonGroup
-              value={`${toggleButtonValue}`}
-              size="small"
-              exclusive
-              onChange={(e, value) => this.handleExcludeToggle(category, value)}
-            >
-              <ToggleButton
-                value="include"
-                className="include-btn"
-                data-tip="Only show results
-                          with these values"
-                data-for="filter-locking-tooltip"
-                data-delay-show={500}
-              >
-                <Icon type="check" />
-                &nbsp;Include
-              </ToggleButton>
-              <ToggleButton
-                value="exclude"
-                className="exclude-btn"
-                data-tip="Show results
-                          without these values"
-                data-for="filter-locking-tooltip"
-                data-delay-show={500}
-              >
-                <Icon type="close" />
-                &nbsp;Exclude
-              </ToggleButton>
-            </ToggleButtonGroup>
+            <Radio
+              className="include-exclude-toggle-group"
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              options={['INCLUDE', 'EXCLUDE']}
+              tooltips={[
+                'Only show results with these values',
+                'Show results without these values',
+              ]}
+              tooltipId="filter-locking-tooltip"
+              value={toggleButtonValue}
+              type="button"
+              onChange={(value) => this.handleExcludeToggle(category, value)}
+            />
           </h4>
         </div>
         {i === 0 ? (
