@@ -1,5 +1,40 @@
 import React from 'react'
 
+export const gradCapIcon = (
+  <svg
+    x="0px"
+    y="0px"
+    width="23px"
+    height="23px"
+    viewBox="0 0 23 23"
+    style={{ strokeWidth: '1.4px', marginBottom: '2px' }}
+  >
+    <g>
+      <path
+        class="react-autoql-icon-outlined"
+        d="M0.732,9.04l9.975-5.195c0.432-0.225,0.946-0.227,1.38-0.005l10.18,5.202c0.23,0.118,0.232,0.446,0.002,0.566
+l-10.069,5.258c-0.436,0.228-0.957,0.228-1.393,0L0.731,9.605C0.503,9.486,0.503,9.159,0.732,9.04z"
+      />
+      <path
+        class="react-autoql-icon-outlined"
+        d="M8.324,18.906c0.842,0.251,1.887,0.419,3.176,0.419c5.065,0,6.217-2.596,6.217-2.596v-4.745"
+      />
+      <path class="react-autoql-icon-outlined" d="M5.134,11.903" />
+      <ellipse
+        class="react-autoql-icon-outlined"
+        cx="11.425"
+        cy="9.005"
+        rx="0.91"
+        ry="0.611"
+      />
+      <path
+        class="react-autoql-icon-outlined"
+        d="M10.584,9.356l-5.107,2.808v2.51l-1.105,3.941c0,0,1.23,0.842,2.072,0l-0.966-3.941"
+      />
+    </g>
+  </svg>
+)
+
 export const bubblesIcon = (
   <svg x="0px" y="0px" width="23.7px" height="23.7px" viewBox="0 0 23.7 23.7">
     <path

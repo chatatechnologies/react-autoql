@@ -2,6 +2,12 @@
   transition: background-color 0.2s ease;
   padding-top: 6px;
 
+  a {
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--react-autoql-accent-color);
+  }
+
   &:not(.no-max-height) {
     max-height: 85%;
   }
@@ -167,6 +173,13 @@
 .chart-icon-svg-0,
 .react-autoql-icon-svg-0 {
   fill: currentColor;
+}
+.react-autoql-icon-outlined {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 10;
 }
 .hm0 {
   opacity: 0.5;

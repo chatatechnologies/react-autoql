@@ -66,7 +66,23 @@ export default class DataMessenger extends React.Component {
     ]
 
     this.dprMessengerIntroMessages = [
-      'Welcome to Investopedia! Ask me anything.',
+      <>
+        <span>Ask questions, get answers.</span>
+        <br />
+        <br />
+        <span>
+          Get helpful information about trading and investing, simply by asking
+          a question in your own words. Results are returned from content on{' '}
+          <a
+            href="https://www.investopedia.com/"
+            target="_blank"
+            rel="noopener"
+          >
+            Investopedia®
+          </a>
+          , including applicable reference links.
+        </span>
+      </>,
     ]
 
     this.state = {
@@ -338,7 +354,7 @@ export default class DataMessenger extends React.Component {
     ReactTooltip.hide()
   }
 
-  getHandlerProp = () => {
+  getHandleProp = () => {
     if (this.props.customHandle !== undefined) {
       return this.props.customHandle
     } else if (this.props.showHandle) {
@@ -538,10 +554,10 @@ export default class DataMessenger extends React.Component {
                     page === 'dpr' ? ' active' : ''
                   } react-autoql-dpr`}
                   onClick={() => this.setState({ activePage: 'dpr' })}
-                  data-tip="Query Investopedia"
+                  data-tip="Education"
                   data-for="react-autoql-header-tooltip"
                 >
-                  <Icon type="search" size={22} />
+                  <Icon type="grad-cap" size={22} />
                 </div>
               )}
             </div>
@@ -638,7 +654,7 @@ export default class DataMessenger extends React.Component {
         break
       }
       case 'dpr': {
-        title = 'Investopedia'
+        title = 'Education'
         break
       }
     }
@@ -882,6 +898,7 @@ export default class DataMessenger extends React.Component {
         isDataMessengerOpen={!!this.dmRef?.state?.open}
         introMessages={this.dataMessengerIntroMessages}
         csvProgressLog={this.csvProgressLog}
+        inputPlaceholder={this.props.inputPlaceholder}
       />
     </ErrorBoundary>
   )
@@ -901,6 +918,7 @@ export default class DataMessenger extends React.Component {
         isDataMessengerOpen={!!this.dmRef?.state?.open}
         introMessages={this.dprMessengerIntroMessages}
         disableMaxMessageHeight={true}
+        inputPlaceholder="Type your questions here"
         autoQLConfig={{
           enableAutocomplete: false,
           enableQueryInterpretation: false,
@@ -1138,7 +1156,7 @@ export default class DataMessenger extends React.Component {
           height={this.getDrawerHeight()}
           onChange={this.onDrawerChange}
           maskClosable={true}
-          handler={this.getHandlerProp()}
+          handler={this.getHandleProp()}
           level={this.props.shiftScreen ? 'all' : null}
           keyboard={false}
         >
