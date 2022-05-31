@@ -519,7 +519,8 @@ export default class FilterLockPopover extends React.Component {
     const categoryFilter = this.state.filters.find(
       (filter) => filter.show_message === category
     )
-    const toggleButtonValue = categoryFilter.filter_type?.trim()
+
+    const toggleButtonValue = categoryFilter.filter_type?.trim().toUpperCase()
 
     return (
       <div className="react-autoql-filter-list-title flex ">
