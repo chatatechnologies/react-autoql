@@ -1613,6 +1613,8 @@ export default class QueryOutput extends React.Component {
         uniqueValues1 = _cloneDeep(tempValues)
       }
 
+      this.tableConfig.legendColumnIndex = newLegendColumnIndex
+
       // Generate new column array
       const pivotTableColumns = [
         {
