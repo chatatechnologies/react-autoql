@@ -117,6 +117,7 @@ export default class DataMessenger extends React.Component {
     defaultShowInterpretation: bool,
     enableFilterLocking: bool,
     enableQueryQuickStartTopics: bool,
+    enableAjaxTableData: bool,
 
     // Callbacks
     onVisibleChange: func,
@@ -160,6 +161,7 @@ export default class DataMessenger extends React.Component {
     defaultShowInterpretation: false,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
+    enableAjaxTableData: false,
 
     // Callbacks
     onHandleClick: () => {},
@@ -1117,6 +1119,7 @@ export default class DataMessenger extends React.Component {
                   lastMessageId={this.state.lastMessageId}
                   onQueryOutputUpdate={this.rebuildTooltips}
                   dataFormatting={this.props.dataFormatting}
+                  enableAjaxTableData={this.props.enableAjaxTableData}
                   displayType={
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')

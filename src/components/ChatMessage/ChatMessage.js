@@ -103,6 +103,7 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     messageContainerHeight: PropTypes.number,
     messageContainerWidth: PropTypes.number,
+    enableAjaxTableData: PropTypes.bool.isRequired,
   }
 
   static defaultProps = {
@@ -285,6 +286,7 @@ export default class ChatMessage extends React.Component {
             onDrilldownStart={this.props.onDrilldownStart}
             onDrilldownEnd={this.props.onDrilldownEnd}
             demo={getAuthentication(this.props.authentication).demo}
+            enableAjaxTableData={this.props.enableAjaxTableData}
             onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'

@@ -87,6 +87,7 @@ class DashboardTile extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    enableAjaxTableData: PropTypes.bool.isRequired,
   }
 
   static defaultProps = {
@@ -1027,6 +1028,7 @@ class DashboardTile extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
+            enableAjaxTableData={this.props.enableAjaxTableData}
             {...queryOutputProps}
           />
         )}

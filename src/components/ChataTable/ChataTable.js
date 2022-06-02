@@ -36,55 +36,6 @@ export default class ChataTable extends React.Component {
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
-      ajaxProgressiveLoad: this.supportsInfiniteScroll ? 'scroll' : undefined,
-      ajaxProgressiveLoadScrollMargin: 2000, // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
-      ajaxURL: 'https://required-placeholder-url.com',
-      ajaxSorting: true,
-      ajaxFiltering: true,
-      ajaxRequestFunc: (url, config, params) => {
-        try {
-          const tableConfigState = getTableConfigState(params, this.ref)
-          if (_isEqual(this.previousTableConfigState, tableConfigState)) {
-            return Promise.resolve()
-          }
-
-          this.previousTableConfigState = tableConfigState
-
-          if (!this.hasSetInitialData) {
-            this.hasSetInitialData = true
-            return Promise.resolve({ rows: this.props.data, page: 1 })
-          }
-
-          return runSubQuery({
-            ...getAuthentication(props.authentication),
-            ...tableConfigState,
-            queryId: props.queryID,
-          })
-        } catch (error) {
-          // Send empty promise so data doesn't change
-          return Promise.resolve()
-        }
-      },
-      ajaxResponse: (url, params, response) => {
-        if (!response) {
-          return {
-            data: this.data,
-            last_page: this.lastPage,
-          }
-        }
-
-        this.currentPage = response.page
-        const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
-        this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
-
-        let modResponse = {}
-        modResponse.data = response.rows
-        modResponse.last_page = this.lastPage
-        return modResponse
-      },
-      ajaxError: (error) => {
-        console.error(error)
-      },
       dataLoadError: (error) => {
         console.error(error)
       },
@@ -114,6 +65,60 @@ export default class ChataTable extends React.Component {
         }
       },
       downloadReady: (fileContents, blob) => blob,
+    }
+
+    if (this.supportsInfiniteScroll) {
+      this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll
+        ? 'scroll'
+        : undefined
+      this.tableOptions.ajaxProgressiveLoadScrollMargin = 2000 // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
+      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+      this.tableOptions.ajaxSorting = true
+      this.tableOptions.ajaxFiltering = true
+      this.tableOptions.ajaxRequestFunc = (url, config, params) => {
+        try {
+          const tableConfigState = getTableConfigState(params, this.ref)
+          if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+            return Promise.resolve()
+          }
+
+          this.previousTableConfigState = tableConfigState
+
+          if (!this.hasSetInitialData) {
+            this.hasSetInitialData = true
+            return Promise.resolve({ rows: this.props.data, page: 1 })
+          }
+
+          return runSubQuery({
+            ...getAuthentication(props.authentication),
+            ...tableConfigState,
+            queryId: props.queryID,
+          })
+        } catch (error) {
+          // Send empty promise so data doesn't change
+          return Promise.resolve()
+        }
+      }
+      this.tableOptions.ajaxResponse = (url, params, response) => {
+        if (!response) {
+          return {
+            data: this.data,
+            last_page: this.lastPage,
+          }
+        }
+
+        this.currentPage = response.page
+        const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+        this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+
+        let modResponse = {}
+        modResponse.data = response.rows
+        modResponse.last_page = this.lastPage
+        return modResponse
+      }
+      this.tableOptions.ajaxError = (error) => {
+        console.error(error)
+      }
     }
 
     setCSSVars(getThemeConfig(props.themeConfig))
@@ -154,10 +159,6 @@ export default class ChataTable extends React.Component {
       this.setFilterTags({ isFilteringTable: false })
     }, 100)
   }
-
-  // shouldComponentUpdate = () => {
-  //   return false
-  // }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (
@@ -285,6 +286,7 @@ export default class ChataTable extends React.Component {
   }
 
   render = () => {
+    console.log('using infinite scroll?', this.supportsInfiniteScroll)
     const height = this.getTableHeight()
     return (
       <ErrorBoundary>

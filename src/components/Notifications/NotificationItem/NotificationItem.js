@@ -56,6 +56,7 @@ export default class NotificationItem extends React.Component {
     onDeleteSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    enableAjaxTableData: PropTypes.bool.isRequired,
   }
 
   static defaultProps = {
@@ -360,6 +361,7 @@ export default class NotificationItem extends React.Component {
                     displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
+                    enableAjaxTableData={this.props.enableAjaxTableData}
                   />
                 </Fragment>
               ) : (
