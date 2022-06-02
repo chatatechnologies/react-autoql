@@ -362,7 +362,7 @@ export default class FilterLockPopover extends React.Component {
         if (filter.show_message === category) {
           return {
             ...filter,
-            filter_type: value,
+            filter_type: value.toLowerCase(),
           }
         }
         return filter
