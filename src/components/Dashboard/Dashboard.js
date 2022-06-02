@@ -81,6 +81,9 @@ class Dashboard extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onCSVDownloadStart: PropTypes.func,
+    onCSVDownloadProgress: PropTypes.func,
+    onCSVDownloadFinish: PropTypes.func,
   }
 
   static defaultProps = {
@@ -101,6 +104,9 @@ class Dashboard extends React.Component {
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadProgress: () => {},
+    onCSVDownloadFinish: () => {},
   }
 
   state = {
@@ -485,7 +491,6 @@ class Dashboard extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
-            isDashboardQuery={true}
             onUpdate={this.rebuildTooltips}
             isAnimatingContainer={this.state.isAnimatingModal}
             backgroundColor={document.documentElement.style.getPropertyValue(
@@ -589,7 +594,6 @@ class Dashboard extends React.Component {
                           queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
                           tableConfig={_cloneDeep(dataConfig)}
-                          isDashboardQuery={true}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
@@ -723,7 +727,6 @@ class Dashboard extends React.Component {
             deleteTile={this.deleteTile}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             notExecutedText={this.props.notExecutedText}
-            onDataClick={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
@@ -731,6 +734,9 @@ class Dashboard extends React.Component {
             onQueryOutputUpdate={this.rebuildTooltips}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
+            onCSVDownloadStart={this.props.onCSVDownloadStart}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.props.onCSVDownloadFinish}
           />
         ))}
       </ReactGridLayout>

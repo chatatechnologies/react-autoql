@@ -1335,6 +1335,7 @@ export default class App extends Component {
           themeConfig={this.getThemeConfigProp()}
           ref={(r) => (this.queryInputRef = r)}
           autoCompletePlacement="below"
+          clearQueryOnSubmit={false}
           onSubmit={() => this.setState({ response: null })}
           onResponseCallback={(response) => {
             this.setState({ response })
@@ -1583,10 +1584,9 @@ export default class App extends Component {
             <ChataIcon type="dashboard" /> Dashboard
           </Menu.Item>
         )}
-        {/* Comment out for now
         {this.state.isAuthenticated && (
           <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
-        )} */}
+        )}
         <Menu.Item key="reviews">Reviews</Menu.Item>
         <Menu.Item key="speech">Speech Training</Menu.Item>
         {this.state.isAuthenticated && this.state.enableNotifications && (

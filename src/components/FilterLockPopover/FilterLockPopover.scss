@@ -7,8 +7,11 @@
   opacity: 1;
   min-width: 500px;
   max-width: 70vw;
-  height: 350px;
+  min-height: 350px;
+  max-height: 90vh;
   background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  overflow-y: auto !important;
 
   .filter-lock-toast-container {
     top: 0;
@@ -16,6 +19,40 @@
 
     .Toastify__toast {
       min-height: 48px;
+    }
+
+    .Toastify__toast-body {
+      justify-content: center;
+    }
+
+    .Toastify__toast-body > div:last-child {
+      flex: unset;
+    }
+  }
+
+  .include-exclude-toggle-group {
+    height: 23px;
+    font-size: 12px;
+    font-weight: 200;
+
+    .react-autoql-radio-btn.active {
+      background-color: var(--react-autoql-border-color);
+    }
+
+    :first-child.react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-accent-color);
+        border-color: var(--react-autoql-accent-color);
+      }
+    }
+
+    :nth-child(2).react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-danger-color);
+        border-color: var(--react-autoql-danger-color);
+      }
     }
   }
 }
@@ -34,17 +71,20 @@
   h3 {
     margin-top: 3px;
     margin-bottom: 15px;
+    color: var(--react-autoql-text-color-primary);
   }
 
   h4 {
     margin-top: 3px;
     margin-bottom: 5px;
+    color: var(--react-autoql-text-color-primary);
+    display: inline-flex;
   }
 
   .react-autoql-condition-list-loading-container,
   .react-autoql-empty-condition-list,
   .react-autoql-filter-list-container {
-    flex: 1;
+    flex: 1 1 245px;
   }
 
   .filter-lock-menu-header {
@@ -75,7 +115,7 @@
   }
 
   .react-autoql-filter-list-container {
-    margin-top: 10px;
+    margin: 10px 0;
 
     .flex {
       width: 100%;
@@ -83,12 +123,12 @@
       flex-direction: row;
       justify-content: space-between;
       flex-wrap: nowrap;
-      white-space: nowrap;
       margin-bottom: 4px;
 
       .persist-toggle-column,
       .react-autoql-condition-table-list-item {
         margin-right: 25px;
+        max-width: 350px;
       }
 
       .react-autoql-remove-filter-icon {
@@ -100,12 +140,22 @@
       }
     }
 
+    .filter-lock-category-title {
+      padding-right: 10px;
+      padding-top: 1px;
+      max-width: 195px;
+      overflow: hidden;
+    }
+    .persist-toggle-column .react-autoql-icon {
+      margin-left: 3px;
+    }
+
     .react-autoql-highlight-row {
       background-color: var(--react-autoql-accent-color);
       color: white;
       animation-name: highlightIn, highlightOut;
-      animation-duration: 400ms, 400ms;
-      animation-delay: 0ms, 1500ms;
+      animation-duration: 300ms, 300ms;
+      animation-delay: 0ms, 1000ms;
       animation-timing-function: ease-in, ease-out;
       animation-iteration-count: 1, 1;
     }

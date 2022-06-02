@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   background-color: inherit;
   font-size: 14px;
   overflow: hidden;
@@ -206,20 +206,27 @@
   opacity: 1 !important;
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
-.single-value-response {
-  color: inherit;
-  cursor: unset;
-  font-size: 20px;
-  &:hover {
+
+.single-value-response-container {
+  width: 100%;
+  text-align: center;
+
+  .single-value-response {
     color: inherit;
+    cursor: unset;
+    font-size: 20px;
+    &:hover {
+      color: inherit;
+    }
+  }
+  .single-value-response.with-drilldown:hover {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
   }
 }
-.single-value-response.with-drilldown:hover {
-  color: inherit;
-  text-decoration: underline;
-  font-weight: 600;
-  cursor: pointer;
-}
+
 .react-autoql-query-validation-container {
   width: 100%;
 }

@@ -138,27 +138,13 @@ export const runQueryOnly = ({
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
-  let formattedFilters
-  try {
-    if (filters?.length) {
-      formattedFilters = {}
-      filters.forEach((filter) => {
-        const prevFilterValues = formattedFilters[filter.key] || []
-        formattedFilters[filter.key] = [...prevFilterValues, filter.value]
-      })
-    }
-  } catch (error) {
-    console.error(error)
-    formattedFilters = undefined
-  }
-
   const data = {
     text: query,
     source: formatSourceString(source),
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
-    session_locked_conditions: formattedFilters,
+    session_filter_locks: filters,
   }
 
   if (!query || !query.trim()) {
@@ -417,7 +403,7 @@ export const fetchFilters = ({ apiKey, token, domain } = {}) => {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking?key=${apiKey}`
 
   const config = {
     headers: {
@@ -440,7 +426,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     return Promise.reject(new Error('No filters provided'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking?key=${apiKey}`
 
   const config = {
     headers: {
@@ -448,12 +434,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     },
   }
 
-  // discard id of existing filters before sending.
-  const formattedFilters = filters.map((filter) => {
-    return { ...filter, id: undefined }
-  })
-
-  const data = { columns: formattedFilters }
+  const data = { columns: filters }
 
   return axios
     .put(url, data, config)
@@ -461,12 +442,12 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const unsetFilter = ({ apiKey, token, domain, filter } = {}) => {
+export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/condition-locking/${filter.id}?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/filter-locking/${filter.id}?key=${apiKey}`
 
   const config = {
     headers: {
@@ -474,10 +455,8 @@ export const unsetFilter = ({ apiKey, token, domain, filter } = {}) => {
     },
   }
 
-  const data = {}
-
   return axios
-    .delete(url, config, data)
+    .delete(url, config, {})
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

@@ -84,6 +84,9 @@ class DashboardTile extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    onCSVDownloadStart: PropTypes.func,
+    onCSVDownloadProgress: PropTypes.func,
+    onCSVDownloadFinish: PropTypes.func,
   }
 
   static defaultProps = {
@@ -102,6 +105,9 @@ class DashboardTile extends React.Component {
     autoChartAggregations: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
+    onCSVDownloadStart: () => {},
+    onCSVDownloadProgress: () => {},
+    onCSVDownloadFinish: () => {},
   }
 
   componentDidMount = () => {
@@ -961,6 +967,24 @@ class DashboardTile extends React.Component {
     })
   }
 
+  onCSVDownloadStart = (params) =>
+    this.props.onCSVDownloadStart({
+      ...params,
+      tileId: this.props.tile.i,
+    })
+
+  onCSVDownloadProgress = (params) =>
+    this.props.onCSVDownloadProgress({
+      ...params,
+      tileId: this.props.tile.i,
+    })
+
+  onCSVDownloadFinish = (params) =>
+    this.props.onCSVDownloadFinish({
+      ...params,
+      tileId: this.props.tile.i,
+    })
+
   renderSuggestionMessage = (customMessage) => {
     if (customMessage) {
       return customMessage
@@ -995,7 +1019,6 @@ class DashboardTile extends React.Component {
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             renderTooltips={false}
             autoSelectQueryValidationSuggestion={false}
-            isDashboardQuery={true}
             autoChartAggregations={this.props.autoChartAggregations}
             isResizing={this.props.isDragging}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
@@ -1026,6 +1049,9 @@ class DashboardTile extends React.Component {
             themeConfig={getThemeConfig(this.props.themeConfig)}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessAlert={this.props.onSuccessCallback}
+            onCSVDownloadStart={this.onCSVDownloadStart}
+            onCSVDownloadProgress={this.onCSVDownloadProgress}
+            onCSVDownloadFinish={this.onCSVDownloadFinish}
             {...optionsToolbarProps}
           />
         )}

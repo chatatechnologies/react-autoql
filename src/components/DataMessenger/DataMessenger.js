@@ -21,7 +21,6 @@ import {
   dataFormattingDefault,
   themeConfigDefault,
   getAuthentication,
-  getDataFormatting,
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
@@ -40,11 +39,7 @@ import { Cascader } from '../Cascader'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import {
-  fetchQueryTips,
-  fetchFilters,
-  fetchTopics,
-} from '../../js/queryService'
+import { fetchQueryTips, fetchTopics } from '../../js/queryService'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 
@@ -77,7 +72,6 @@ export default class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
       selectedValueLabel: undefined,
-      conditions: undefined,
       messages: [],
       topicsMessageContent: undefined,
       queryTipsList: undefined,
@@ -86,7 +80,6 @@ export default class DataMessenger extends React.Component {
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
       isSizeMaximum: false,
-      selectedConditions: [],
     }
   }
 
@@ -191,61 +184,6 @@ export default class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
-    fetchFilters(getAuthentication(this.props.authentication)).then(
-      (response) => {
-        let conditions = _get(response, 'data.data.data')
-        let array = [...this.state.selectedConditions]
-        for (let i = 0; i < conditions.length; i++) {
-          array.push({
-            id: conditions[i].id,
-            keyword: conditions[i].value,
-            value: conditions[i].value,
-            show_message: conditions[i].show_message,
-            key: conditions[i].key,
-            lock_flag: conditions[i].lock_flag,
-          })
-        }
-        if (JSON.parse(sessionStorage.getItem('conditions')) !== null) {
-          var sessionConditions = JSON.parse(
-            sessionStorage.getItem('conditions')
-          )
-          for (let i = 0; i < sessionConditions.length; i++) {
-            array.push({
-              id: sessionConditions[i].id,
-              keyword: sessionConditions[i].value,
-              value: sessionConditions[i].value,
-              show_message: sessionConditions[i].show_message,
-              key: sessionConditions[i].key,
-              lock_flag: sessionConditions[i].lock_flag,
-            })
-          }
-        }
-        array.sort((a, b) => {
-          return a.keyword.toUpperCase() < b.keyword.toUpperCase()
-            ? -1
-            : a.keyword > b.keyword
-            ? 1
-            : 0
-        })
-        if (this.props.initFilterText && this.props.initFilterText !== '') {
-          this.setState({
-            selectedConditions: array,
-          })
-          for (let i = 0; i < array.length; i++) {
-            if (array[i].keyword === this.props.initFilterText) {
-              this.handleHighlightFilterRow(i)
-              return
-            }
-          }
-          this.animateInputTextAndSubmit(this.props.initFilterText)
-        } else {
-          this.setState({
-            selectedConditions: array,
-          })
-        }
-      }
-    )
-
     if (this.props.enableQueryQuickStartTopics) {
       fetchTopics(getAuthentication(this.props.authentication))
         .then((response) => {
@@ -345,7 +283,7 @@ export default class DataMessenger extends React.Component {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 500)
+    }, 1000)
   }
 
   setMaxWidthAndHeightFromDocument = () => {
@@ -586,9 +524,7 @@ export default class DataMessenger extends React.Component {
   getIsSuggestionResponse = (response) => {
     return !!_get(response, 'data.data.items')
   }
-  getIsDownloadingCSVResponse = (response) => {
-    return !!_get(response, 'config.onDownloadProgress')
-  }
+
   onResponse = (response, query) => {
     if (this.getIsSuggestionResponse(response)) {
       this.addResponseMessage({
@@ -665,28 +601,27 @@ export default class DataMessenger extends React.Component {
   }
 
   createMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
     appliedFilters,
-    linkedQueryResponseRef,
   }) => {
-    const id = uuid()
+    const uniqueId = id || uuid()
     this.setState({ lastMessageId: id })
 
     return {
       content,
       response,
       query,
-      id,
+      id: uniqueId,
       appliedFilters,
       type: _get(response, 'data.data.display_type'),
       isResponse: true,
       isCSVProgressMessage,
       queryId,
-      linkedQueryResponseRef,
     }
   }
 
@@ -712,12 +647,12 @@ export default class DataMessenger extends React.Component {
   }
 
   addResponseMessage = ({
+    id,
     response,
     content,
     query,
     isCSVProgressMessage,
     queryId,
-    linkedQueryResponseRef,
   }) => {
     let currentMessages = this.state.messages
 
@@ -738,11 +673,11 @@ export default class DataMessenger extends React.Component {
       message = this.createErrorMessage()
     } else if (isCSVProgressMessage) {
       message = this.createMessage({
+        id,
         content,
         query,
         isCSVProgressMessage,
         queryId,
-        linkedQueryResponseRef,
       })
     } else if (!response && !content) {
       message = this.createErrorMessage()
@@ -909,35 +844,6 @@ export default class DataMessenger extends React.Component {
       <>
         {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking &&
           this.renderFilterLockPopover()}
-        {/* {getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && (
-            <Popover
-              containerStyle={this.getFilterMenuPosition()}
-              isOpen={this.state.isFilterLockMenuOpen}
-              onClickOutside={this.closeFilterLockMenu}
-              position="bottom"
-              padding={2}
-              align="center"
-              content={this.renderFLPopoverContent()}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  this.setState({
-                    isFilterLockMenuOpen: !this.state.isFilterLockMenuOpen,
-                  })
-                }}
-                className="react-autoql-drawer-header-btn filter-locking"
-                data-tip={lang.openFilterLocking}
-                data-for="react-autoql-header-tooltip"
-              >
-                <Icon
-                  type={
-                    this.state.selectedConditions?.length ? 'lock' : 'unlock'
-                  }
-                />
-              </button>
-            </Popover>
-          )} */}
         <Popover
           isOpen={this.state.isOptionsDropdownOpen}
           onClickOutside={() => {
@@ -1032,7 +938,7 @@ export default class DataMessenger extends React.Component {
   }
 
   onFilterChange = (allFilters) => {
-    const sessionFilters = allFilters.filter((filter) => filter.lock_flag === 0)
+    const sessionFilters = allFilters.filter((filter) => filter.isSession)
     this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
   }
 
@@ -1045,6 +951,7 @@ export default class DataMessenger extends React.Component {
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
+        rebuildTooltips={this.rebuildTooltips}
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
@@ -1136,11 +1043,11 @@ export default class DataMessenger extends React.Component {
     }, 1000)
   }
 
-  setCSVDownloadProgress = (id, percentCompleted) => {
-    this.csvProgressLog[id] = percentCompleted
+  onCSVDownloadProgress = ({ id, progress }) => {
+    this.csvProgressLog[id] = progress
     if (this.messageRefs[id]) {
       this.messageRefs[id].setState({
-        csvDownloadProgress: percentCompleted,
+        csvDownloadProgress: progress,
       })
     }
   }
@@ -1190,10 +1097,9 @@ export default class DataMessenger extends React.Component {
                   themeConfig={getThemeConfig(
                     getThemeConfig(this.props.themeConfig)
                   )}
-                  linkedQueryResponseRef={message.linkedQueryResponseRef}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                  setCSVDownloadProgress={this.setCSVDownloadProgress}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
                   scrollRef={this.messengerScrollComponent}
@@ -1210,9 +1116,7 @@ export default class DataMessenger extends React.Component {
                   scrollToBottom={this.scrollToBottom}
                   lastMessageId={this.state.lastMessageId}
                   onQueryOutputUpdate={this.rebuildTooltips}
-                  dataFormatting={getDataFormatting(
-                    getDataFormatting(this.props.dataFormatting)
-                  )}
+                  dataFormatting={this.props.dataFormatting}
                   displayType={
                     message.displayType ||
                     _get(message, 'response.data.data.display_type')

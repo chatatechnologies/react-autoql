@@ -58,13 +58,16 @@ export default class ChataHeatmapChart extends Component {
   }
 
   setChartData = (props) => {
+    this.yLabelArray = props.legendLabels.map((d) => d.label)
+    this.squareHeight = props.height / this.yLabelArray.length
+
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
       .range([props.leftMargin + 10, props.width - props.rightMargin])
       .paddingInner(0.01)
 
     this.yScale = scaleBand()
-      .domain(props.legendLabels.map((d) => d.label))
+      .domain(this.yLabelArray)
       .range([props.height - props.bottomMargin, props.topMargin])
       .paddingInner(0.01)
 
@@ -72,6 +75,12 @@ export default class ChataHeatmapChart extends Component {
       this.xScale.bandwidth(),
       props.width,
       this.xScale.domain()
+    )
+
+    this.yTickValues = getTickValues(
+      this.squareHeight,
+      props.height,
+      this.yLabelArray
     )
   }
 
@@ -91,6 +100,7 @@ export default class ChataHeatmapChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.legendColumn}
           xTicks={this.xTickValues}
+          yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
           yGridLines
         />
