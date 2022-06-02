@@ -200,7 +200,6 @@ export default class QueryOutput extends React.Component {
     enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
-    onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -709,13 +708,9 @@ export default class QueryOutput extends React.Component {
               ? ' with-drilldown'
               : ''
           }`}
-          onClick={() => {
-            this.props.onDataClick(
-              { supportedByAPI: true, data: [] },
-              this.queryID,
-              true
-            )
-          }}
+          onClick={() =>
+            this.processDrilldown({ groupBys: [], supportedByAPI: true })
+          }
         >
           {formatElement({
             element: _get(this.queryResponse, 'data.data.rows[0][0]'),

@@ -727,7 +727,6 @@ class Dashboard extends React.Component {
             deleteTile={this.deleteTile}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             notExecutedText={this.props.notExecutedText}
-            onDataClick={this.processDrilldown}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
