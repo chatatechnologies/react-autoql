@@ -279,8 +279,14 @@ export default class FilterLockPopover extends React.Component {
 
     return setFilters({ ...auth, filters: [newFilter] })
       .then((response) => {
-        const updatedFilter = response?.data?.data?.data[0]
-        if (!updatedFilter) throw new Error('No filter in api response')
+        const filterList = response?.data?.data?.data
+        if (!filterList?.length) {
+          throw new Error('No filters in the api response')
+        }
+
+        const updatedFilter = filterList[filterList.length - 1]
+        if (!updatedFilter)
+          throw new Error('Filter not found in the api response')
 
         if (this.findFilter(newFilter)) {
           const updatedFilters = this.state.filters.map((filter) => {
@@ -332,7 +338,6 @@ export default class FilterLockPopover extends React.Component {
       id: undefined,
     }
     const newFilters = this.state.filters.map((filter) => {
-      const isSession = clickedFilter.isSession
       if (this.getKey(filter) === this.getKey(clickedFilter)) {
         return toggledFilter
       }
