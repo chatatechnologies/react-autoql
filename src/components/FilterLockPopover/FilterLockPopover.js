@@ -284,7 +284,10 @@ export default class FilterLockPopover extends React.Component {
           throw new Error('No filters in the api response')
         }
 
-        const updatedFilter = filterList[filterList.length - 1]
+        const updatedFilter = filterList.find(
+          (filter) => this.getKey(filter) === this.getKey(newFilter)
+        )
+
         if (!updatedFilter)
           throw new Error('Filter not found in the api response')
 
