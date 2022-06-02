@@ -382,12 +382,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     },
   }
 
-  // discard id of existing filters before sending.
-  const formattedFilters = filters.map((filter) => {
-    return { ...filter, id: undefined }
-  })
-
-  const data = { columns: formattedFilters }
+  const data = { columns: filters }
 
   return axios
     .put(url, data, config)
@@ -408,10 +403,8 @@ export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {
     },
   }
 
-  const data = {}
-
   return axios
-    .delete(url, config, data)
+    .delete(url, config, {})
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

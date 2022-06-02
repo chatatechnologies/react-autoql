@@ -1377,8 +1377,6 @@ export default class QueryOutput extends React.Component {
       col.field = `${i}`
       col.title = col.display_name
       col.id = uuid()
-      col.widthGrow = 1
-      col.widthShrink = 1
 
       // Visibility flag: this can be changed through the column visibility editor modal
       col.visible = col.is_visible
