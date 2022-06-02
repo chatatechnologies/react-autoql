@@ -165,14 +165,10 @@ export default class FilterLockPopover extends React.Component {
     return _cloneDeep(this.state.filters.filter((filter) => !filter.isSession))
   }
 
-  findFilter = ({ filterText, canonical, keyword, value, key }) => {
+  findFilter = ({ filterText, value, key }) => {
     const allFilters = this.state.filters
 
-    if (canonical && keyword) {
-      return allFilters.find(
-        (filter) => filter.key === canonical && filter.value === keyword
-      )
-    } else if (value && key) {
+    if (value && key) {
       return allFilters.find(
         (filter) => filter.key === key && filter.value === value
       )
@@ -322,15 +318,8 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getSuggestionValue = (sugg) => {
-    if (!!this.findFilter(sugg)) {
-      this.handleHighlightFilterRow(this.getKey(sugg))
-    } else {
-      let newFilter = this.createNewFilterFromSuggestion(sugg)
-
-      this.setFilter(newFilter)
-        .then(() => toast.success(`${sugg.keyword} has been locked.`))
-        .catch(() => toast.error(`Something went wrong. Please try again.`))
-    }
+    const selectedFilter = this.createNewFilterFromSuggestion(sugg)
+    return selectedFilter
   }
 
   handlePersistToggle = async (clickedFilter) => {
@@ -414,12 +403,22 @@ export default class FilterLockPopover extends React.Component {
     ReactTooltip.hide()
   }
 
-  onInputChange = (e) => {
-    if (e.keyCode === 38 || e.keyCode === 40) {
-      return // keyup or keydown
+  onInputChange = (e, { newValue, method }) => {
+    if (method === 'up' || method === 'down') {
+      return
     }
 
-    if (e && e.target && (e.target.value || e.target.value === '')) {
+    if (method === 'enter' || method === 'click') {
+      if (!!this.findFilter(newValue)) {
+        this.handleHighlightFilterRow(this.getKey(newValue))
+      } else {
+        this.setFilter(newValue)
+          .then(() => toast.success(`${newValue.value} has been locked.`))
+          .catch(() => toast.error(`Something went wrong. Please try again.`))
+      }
+    }
+
+    if (typeof e?.target?.value === 'string') {
       this.setState({ inputValue: e.target.value })
     }
   }
@@ -649,7 +648,7 @@ export default class FilterLockPopover extends React.Component {
           draggable={false}
           pauseOnHover={false}
           closeButton={false}
-          limit={2}
+          limit={1}
           theme={getThemeConfig(this.props.themeConfig).theme}
         />
         <div
