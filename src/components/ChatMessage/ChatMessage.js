@@ -272,7 +272,6 @@ export default class ChatMessage extends React.Component {
             ref={(ref) => (this.responseRef = ref)}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            onDataClick={this.props.onDataClick}
             queryResponse={this.props.response}
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}

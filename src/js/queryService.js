@@ -86,27 +86,13 @@ export const runQueryOnly = ({
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
-  let formattedFilters
-  try {
-    if (filters?.length) {
-      formattedFilters = {}
-      filters.forEach((filter) => {
-        const prevFilterValues = formattedFilters[filter.key] || []
-        formattedFilters[filter.key] = [...prevFilterValues, filter.value]
-      })
-    }
-  } catch (error) {
-    console.error(error)
-    formattedFilters = undefined
-  }
-
   const data = {
     text: query,
     source: formatSourceString(source),
     translation: debug ? 'include' : 'exclude',
     user_selection: finalUserSelection,
     test,
-    session_locked_conditions: formattedFilters,
+    session_filter_locks: filters,
   }
 
   if (!query || !query.trim()) {
@@ -396,12 +382,7 @@ export const setFilters = ({ apiKey, token, domain, filters } = {}) => {
     },
   }
 
-  // discard id of existing filters before sending.
-  const formattedFilters = filters.map((filter) => {
-    return { ...filter, id: undefined }
-  })
-
-  const data = { columns: formattedFilters }
+  const data = { columns: filters }
 
   return axios
     .put(url, data, config)
@@ -422,10 +403,8 @@ export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {
     },
   }
 
-  const data = {}
-
   return axios
-    .delete(url, config, data)
+    .delete(url, config, {})
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

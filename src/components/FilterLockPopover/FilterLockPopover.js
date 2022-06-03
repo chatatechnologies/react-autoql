@@ -10,6 +10,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { ToastContainer, toast } from 'react-toastify'
 import { Slide } from 'react-toastify'
 import Popover from 'react-tiny-popover'
+import { Radio } from '../Radio'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
@@ -58,6 +59,7 @@ export default class FilterLockPopover extends React.Component {
     position: PropTypes.string,
     align: PropTypes.string,
     onChange: PropTypes.func,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -67,6 +69,7 @@ export default class FilterLockPopover extends React.Component {
     isOpen: false,
     position: 'bottom',
     align: 'center',
+    rebuildTooltips: () => {},
     onChange: () => {},
   }
 
@@ -78,6 +81,7 @@ export default class FilterLockPopover extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
+      this.props.rebuildTooltips()
     }
 
     if (!this.props.isOpen && prevProps.isOpen) {
@@ -161,14 +165,10 @@ export default class FilterLockPopover extends React.Component {
     return _cloneDeep(this.state.filters.filter((filter) => !filter.isSession))
   }
 
-  findFilter = ({ filterText, canonical, keyword, value, key }) => {
+  findFilter = ({ filterText, value, key }) => {
     const allFilters = this.state.filters
 
-    if (canonical && keyword) {
-      return allFilters.find(
-        (filter) => filter.key === canonical && filter.value === keyword
-      )
-    } else if (value && key) {
+    if (value && key) {
       return allFilters.find(
         (filter) => filter.key === key && filter.value === value
       )
@@ -222,13 +222,52 @@ export default class FilterLockPopover extends React.Component {
   }
 
   createNewFilterFromSuggestion = (suggestion) => {
+    let filterType = 'include'
+    const filterSameCategory = this.state.filters.find(
+      (filter) => filter.show_message === suggestion.show_message
+    )
+    if (filterSameCategory) {
+      filterType = filterSameCategory.filter_type
+    }
+
     const newFilter = {
       value: suggestion.keyword,
       show_message: suggestion.show_message,
       key: suggestion.canonical,
-      filter_type: 'include',
+      filter_type: filterType,
     }
     return newFilter
+  }
+
+  setFilterTypes = (filters, oldFilters) => {
+    const auth = getAuthentication(this.props.authentication)
+    const persistedFilters = filters.filter((filter) => !filter.isSession)
+
+    if (!persistedFilters?.length) {
+      return Promise.resolve()
+    }
+
+    return setFilters({ ...auth, filters: persistedFilters })
+      .then((response) => {
+        const updatedFilters = response?.data?.data?.data
+        const newFilters = this.state.filters.map((filter) => {
+          const foundFilter = updatedFilters.find(
+            (newFilter) => this.getKey(filter) === this.getKey(newFilter)
+          )
+          if (foundFilter) {
+            return foundFilter
+          }
+          return filter
+        })
+        this.setState({ filters: newFilters })
+        return Promise.resolve(response)
+      })
+      .catch((error) => {
+        console.error(error)
+        this.setState({ filters: oldFilters })
+        toast.error(`Something went wrong. Please try again.`)
+        return Promise.reject()
+      })
   }
 
   setFilter = (newFilter) => {
@@ -236,8 +275,17 @@ export default class FilterLockPopover extends React.Component {
 
     return setFilters({ ...auth, filters: [newFilter] })
       .then((response) => {
-        const updatedFilter = response?.data?.data?.data[0]
-        if (!updatedFilter) throw new Error('No filter in api response')
+        const filterList = response?.data?.data?.data
+        if (!filterList?.length) {
+          throw new Error('No filters in the api response')
+        }
+
+        const updatedFilter = filterList.find(
+          (filter) => this.getKey(filter) === this.getKey(newFilter)
+        )
+
+        if (!updatedFilter)
+          throw new Error('Filter not found in the api response')
 
         if (this.findFilter(newFilter)) {
           const updatedFilters = this.state.filters.map((filter) => {
@@ -270,15 +318,8 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getSuggestionValue = (sugg) => {
-    if (!!this.findFilter(sugg)) {
-      this.handleHighlightFilterRow(this.getKey(sugg))
-    } else {
-      let newFilter = this.createNewFilterFromSuggestion(sugg)
-
-      this.setFilter(newFilter)
-        .then(() => toast.success(`${sugg.keyword} has been locked.`))
-        .catch(() => toast.error(`Something went wrong. Please try again.`))
-    }
+    const selectedFilter = this.createNewFilterFromSuggestion(sugg)
+    return selectedFilter
   }
 
   handlePersistToggle = async (clickedFilter) => {
@@ -289,7 +330,6 @@ export default class FilterLockPopover extends React.Component {
       id: undefined,
     }
     const newFilters = this.state.filters.map((filter) => {
-      const isSession = clickedFilter.isSession
       if (this.getKey(filter) === this.getKey(clickedFilter)) {
         return toggledFilter
       }
@@ -309,6 +349,35 @@ export default class FilterLockPopover extends React.Component {
       console.error(error)
       toast.error('Something went wrong. Please try again.')
       this.setState({ filters: oldFilters })
+    }
+  }
+
+  handleExcludeToggle = (category, value) => {
+    if (!value) {
+      return
+    }
+
+    try {
+      const newFilters = this.state.filters.map((filter) => {
+        if (filter.show_message === category) {
+          return {
+            ...filter,
+            filter_type: value.toLowerCase(),
+          }
+        }
+        return filter
+      })
+
+      const categoryFilters = newFilters.filter((filter) => {
+        return filter.show_message === category
+      })
+
+      this.setFilterTypes(categoryFilters, _cloneDeep(this.state.filters))
+      this.setState({
+        filters: newFilters,
+      })
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -334,12 +403,22 @@ export default class FilterLockPopover extends React.Component {
     ReactTooltip.hide()
   }
 
-  onInputChange = (e) => {
-    if (e.keyCode === 38 || e.keyCode === 40) {
-      return // keyup or keydown
+  onInputChange = (e, { newValue, method }) => {
+    if (method === 'up' || method === 'down') {
+      return
     }
 
-    if (e && e.target && (e.target.value || e.target.value === '')) {
+    if (method === 'enter' || method === 'click') {
+      if (!!this.findFilter(newValue)) {
+        this.handleHighlightFilterRow(this.getKey(newValue))
+      } else {
+        this.setFilter(newValue)
+          .then(() => toast.success(`${newValue.value} has been locked.`))
+          .catch(() => toast.error(`Something went wrong. Please try again.`))
+      }
+    }
+
+    if (typeof e?.target?.value === 'string') {
       this.setState({ inputValue: e.target.value })
     }
   }
@@ -430,6 +509,102 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  renderFilterListCategory = (category, i) => {
+    return (
+      <div key={category}>
+        {this.renderFilterListCategoryHeader(category, i)}
+        <div className="react-autoql-filter-list">
+          {this.state.filters
+            .filter((filter) => filter.show_message === category)
+            .map((filter) => this.renderFilterListItem(filter))}
+        </div>
+      </div>
+    )
+  }
+
+  renderFilterListCategoryHeader = (category, i) => {
+    const categoryFilter = this.state.filters.find(
+      (filter) => filter.show_message === category
+    )
+
+    const toggleButtonValue = categoryFilter.filter_type?.trim().toUpperCase()
+
+    return (
+      <div className="react-autoql-filter-list-title flex ">
+        <div>
+          <h4>
+            <span className="filter-lock-category-title">{category}</span>
+            <Radio
+              className="include-exclude-toggle-group"
+              themeConfig={getThemeConfig(this.props.themeConfig)}
+              options={['INCLUDE', 'EXCLUDE']}
+              tooltips={[
+                'Only show results with these values',
+                'Show results without these values',
+              ]}
+              tooltipId="filter-locking-tooltip"
+              value={toggleButtonValue}
+              type="button"
+              onChange={(value) => this.handleExcludeToggle(category, value)}
+            />
+          </h4>
+        </div>
+        {i === 0 ? (
+          <div className="persist-toggle-column">
+            <h4>
+              Persist{' '}
+              <Icon
+                type="info"
+                data-place="left"
+                data-for="filter-locking-tooltip"
+                data-tip="
+                Persistent filters remain locked at all<br />
+                times, unless the filter is removed. If<br />
+                unchecked, the filter will be locked<br />
+                until you end your browser session."
+              />
+            </h4>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  renderFilterListItem = (filter) => {
+    const key = this.getKey(filter)
+
+    return (
+      <div
+        key={key}
+        className={`flex ${
+          this.state.highlightedFilter === key
+            ? 'react-autoql-highlight-row'
+            : ''
+        }`}
+      >
+        <div className="react-autoql-condition-table-list-item">
+          {filter.value}
+        </div>
+        <div id="react-autoql-condition-table-settings">
+          <Checkbox
+            className="persist-toggle-column"
+            type="switch"
+            checked={!filter.isSession}
+            onChange={() => this.handlePersistToggle(filter)}
+          />
+          <Icon
+            className="react-autoql-remove-filter-icon"
+            data-tip="Remove filter"
+            data-for="filter-locking-tooltip"
+            data-delay-show={500}
+            type="trash"
+            onClick={() => this.removeFilter(filter)}
+          />
+        </div>
+      </div>
+    )
+  }
+
   renderFilterList = () => {
     if (this.state.isFetchingFilters) {
       return (
@@ -447,63 +622,15 @@ export default class FilterLockPopover extends React.Component {
       )
     }
 
+    const uniqueCategories = [
+      ...new Set(this.state.filters.map((filter) => filter.show_message)),
+    ]
+
     return (
       <div className="react-autoql-filter-list-container">
-        <div className="react-autoql-filter-list-title flex ">
-          <div>
-            <h4>Filter</h4>
-          </div>
-          <div className="persist-toggle-column">
-            <h4>
-              Persist{' '}
-              <Icon
-                type="info"
-                data-place="left"
-                data-for="filter-locking-tooltip"
-                data-tip="
-                Persistent filters remain locked at all<br />
-                times, unless the filter is removed. If<br />
-                unchecked, the filter will be locked<br />
-                until you end your browser session."
-              />
-            </h4>
-          </div>
-        </div>
-        <div className="react-autoql-filter-list">
-          {this.state.filters.map((filter) => {
-            const key = this.getKey(filter)
-            return (
-              <div
-                key={key}
-                className={`flex ${
-                  this.state.highlightedFilter === key
-                    ? 'react-autoql-highlight-row'
-                    : ''
-                }`}
-              >
-                <div className="react-autoql-condition-table-list-item">
-                  {`${filter.value} (${filter.show_message})`}
-                </div>
-                <div id="react-autoql-condition-table-settings">
-                  <Checkbox
-                    className="persist-toggle-column"
-                    type="switch"
-                    checked={!filter.isSession}
-                    onChange={() => this.handlePersistToggle(filter)}
-                  />
-                  <Icon
-                    className="react-autoql-remove-filter-icon"
-                    data-tip="Remove filter"
-                    data-for="filter-locking-tooltip"
-                    data-delay-show={500}
-                    type="trash"
-                    onClick={() => this.removeFilter(filter)}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {uniqueCategories.map((category, i) => {
+          return this.renderFilterListCategory(category, i)
+        })}
       </div>
     )
   }
@@ -521,7 +648,7 @@ export default class FilterLockPopover extends React.Component {
           draggable={false}
           pauseOnHover={false}
           closeButton={false}
-          limit={2}
+          limit={1}
           theme={getThemeConfig(this.props.themeConfig).theme}
         />
         <div
