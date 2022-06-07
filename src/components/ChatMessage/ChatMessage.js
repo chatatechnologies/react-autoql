@@ -176,12 +176,14 @@ export default class ChatMessage extends React.Component {
       return this.props.addMessageToDM({ response: error })
     }
 
+    const queryText = this.props.response?.data?.data?.text
+
     this.props.addMessageToDM({
       content: (
         <>
           Your file has successfully been downloaded with the query{' '}
           <b>
-            <i>{this.props.queryText}</i>
+            <i>{queryText}</i>
           </b>
           .
           {totalRows && returnedRows && totalRows > returnedRows ? (
