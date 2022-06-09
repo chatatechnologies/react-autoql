@@ -171,7 +171,7 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.animationTimeout)
   }
 
-  onCSVDownloadFinish = ({ error, exportLimit, totalRows, returnedRows }) => {
+  onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
     if (error) {
       return this.props.addMessageToDM({ response: error })
     }
@@ -186,7 +186,7 @@ export default class ChatMessage extends React.Component {
             <i>{queryText}</i>
           </b>
           .
-          {totalRows && returnedRows && totalRows > returnedRows ? (
+          {limitReached ? (
             <>
               <br />
               <p>
