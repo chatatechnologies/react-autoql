@@ -175,7 +175,9 @@ export default class OptionsToolbar extends React.Component {
 
         const exportLimit = parseInt(response?.headers?.export_limit)
         const limitReached =
-          response?.headers?.limit_reached == 'true' ? true : false
+          response?.headers?.limit_reached?.toLowerCase() == 'true'
+            ? true
+            : false
 
         this.props.onCSVDownloadFinish({
           id: uniqueId,
