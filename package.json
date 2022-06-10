@@ -28,7 +28,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-commit": "npx jest --clearCache && npm run test:badges && git add public/badge.svg && npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz"
+      "pre-commit": "npm run packexample && git add example/package/react-autoql-0.0.0-semantically-released.tgz && npx jest --clearCache && npm run test"
     }
   },
   "lint-staged": {
@@ -97,7 +97,7 @@
     "react-switch": "^6.0.0",
     "react-tabulator": "^0.13.2",
     "react-tiny-popover": "^3.4.5",
-    "react-toastify": "^9.0.1",
+    "react-toastify": "^8.2.0",
     "react-tooltip": "4.2.10",
     "recordrtc": "^5.6.1",
     "sanitize-html": "^2.3.2",

@@ -129,10 +129,6 @@
   padding-top: 0;
   background: inherit;
 
-  .query-output-error-message {
-    opacity: 0.8;
-  }
-
   .layout-splitter {
     height: 1px !important;
     color: var(--react-autoql-border-color);
@@ -195,6 +191,7 @@
 
   .react-autoql-response-content-container {
     padding: 7px;
+    align-items: center;
   }
 }
 

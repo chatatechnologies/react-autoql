@@ -19,6 +19,11 @@
   a {
     color: var(--react-autoql-accent-color);
   }
+
+  .query-output-error-message,
+  .no-columns-error-message {
+    margin: auto;
+  }
 }
 
 .react-autoql-response-content-container.table {

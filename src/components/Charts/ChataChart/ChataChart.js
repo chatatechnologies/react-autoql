@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
+import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
@@ -83,6 +84,7 @@ export default class ChataChart extends Component {
     if (!this.props.isResizing && !this.props.isAnimatingContainer) {
       this.forceUpdate()
     }
+    this.rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -132,6 +134,7 @@ export default class ChataChart extends Component {
       if (!this.props.isPivot) {
         newState.aggregatedData = this.aggregateRowData(this.props)
       }
+      this.rebuildTooltips()
     }
 
     // --------- Only update state once after checking new props -----------
@@ -293,7 +296,7 @@ export default class ChataChart extends Component {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 500)
+    }, 1000)
   }
 
   updateMargins = ({ setLoading = true, delay = 100 } = {}) => {

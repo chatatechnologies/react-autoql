@@ -200,7 +200,6 @@ export default class QueryOutput extends React.Component {
     enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
-    onDataClick: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -501,88 +500,100 @@ export default class QueryOutput extends React.Component {
   }
 
   dateSortFn = (a, b) => {
-    // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
-    let aDate = Number(a)
-    let bDate = Number(b)
+    try {
+      if (!a && !b) {
+        return 0
+      } else if (!a && b) {
+        return 1
+      } else if (a && !b) {
+        return -1
+      }
 
-    // If one is not a number, use dayjs to format
-    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
-      aDate = dayjs(a).unix()
-      bDate = dayjs(b).unix()
-    }
+      // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+      let aDate = Number(a)
+      let bDate = Number(b)
 
-    // Finally if all else fails, just compare the 2 values directly
-    if (!aDate || !bDate) {
-      //If one is a YYYY-WW
-      if (a.includes('-W')) {
-        let aDateYear = a.substring(0, 4)
-        let bDateYear = b.substring(0, 4)
-        if (aDateYear !== bDateYear) {
-          return bDateYear - aDateYear
-        } else {
-          let aDateWeek = a.substring(6, 8)
-          let bDateWeek = b.substring(6, 8)
-          return bDateWeek - aDateWeek
+      // If one is not a number, use dayjs to format
+      if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+        aDate = dayjs(a).unix()
+        bDate = dayjs(b).unix()
+      }
+
+      // Finally if all else fails, just compare the 2 values directly
+      if (!aDate || !bDate) {
+        //If one is a YYYY-WW
+        if (a.includes('-W')) {
+          let aDateYear = a.substring(0, 4)
+          let bDateYear = b.substring(0, 4)
+          if (aDateYear !== bDateYear) {
+            return bDateYear - aDateYear
+          } else {
+            let aDateWeek = a.substring(6, 8)
+            let bDateWeek = b.substring(6, 8)
+            return bDateWeek - aDateWeek
+          }
+        }
+        //If one is one of a weekday
+        else {
+          const days = [
+            {
+              description: 'Sunday',
+              value: 1,
+              label: 'S',
+            },
+            {
+              description: 'Monday',
+              value: 2,
+              label: 'M',
+            },
+            {
+              description: 'Tuesday',
+              value: 3,
+              label: 'T',
+            },
+            {
+              description: 'Wednesday',
+              value: 4,
+              label: 'W',
+            },
+            {
+              description: 'Thursday',
+              value: 5,
+              label: 'T',
+            },
+            {
+              description: 'Friday',
+              value: 6,
+              label: 'F',
+            },
+            {
+              description: 'Saturday',
+              value: 7,
+              label: 'S',
+            },
+          ]
+          let aWeekDay = null
+          let bWeekDay = null
+          days.forEach((weekdays) => {
+            if (a.trim() === weekdays.description) {
+              return (aWeekDay = weekdays.value)
+            }
+          })
+          days.forEach((weekdays) => {
+            if (b.trim() === weekdays.description) {
+              return (bWeekDay = weekdays.value)
+            }
+          })
+          if (aWeekDay === null || bWeekDay === null) {
+            return b - a
+          }
+          return bWeekDay - aWeekDay
         }
       }
-      //If one is one of a weekday
-      else {
-        const days = [
-          {
-            description: 'Sunday',
-            value: 1,
-            label: 'S',
-          },
-          {
-            description: 'Monday',
-            value: 2,
-            label: 'M',
-          },
-          {
-            description: 'Tuesday',
-            value: 3,
-            label: 'T',
-          },
-          {
-            description: 'Wednesday',
-            value: 4,
-            label: 'W',
-          },
-          {
-            description: 'Thursday',
-            value: 5,
-            label: 'T',
-          },
-          {
-            description: 'Friday',
-            value: 6,
-            label: 'F',
-          },
-          {
-            description: 'Saturday',
-            value: 7,
-            label: 'S',
-          },
-        ]
-        let aWeekDay = null
-        let bWeekDay = null
-        days.forEach((weekdays) => {
-          if (a.trim() === weekdays.description) {
-            return (aWeekDay = weekdays.value)
-          }
-        })
-        days.forEach((weekdays) => {
-          if (b.trim() === weekdays.description) {
-            return (bWeekDay = weekdays.value)
-          }
-        })
-        if (aWeekDay === null || bWeekDay === null) {
-          return b - a
-        }
-        return bWeekDay - aWeekDay
-      }
+      return bDate - aDate
+    } catch (error) {
+      return -1
     }
-    return bDate - aDate
   }
 
   sortTableDataByDate = (data) => {
@@ -604,7 +615,7 @@ export default class QueryOutput extends React.Component {
       return data
     } catch (error) {
       console.error(error)
-      return undefined
+      return data
     }
   }
 
@@ -709,13 +720,9 @@ export default class QueryOutput extends React.Component {
               ? ' with-drilldown'
               : ''
           }`}
-          onClick={() => {
-            this.props.onDataClick(
-              { supportedByAPI: true, data: [] },
-              this.queryID,
-              true
-            )
-          }}
+          onClick={() =>
+            this.processDrilldown({ groupBys: [], supportedByAPI: true })
+          }
         >
           {formatElement({
             element: _get(this.queryResponse, 'data.data.rows[0][0]'),
@@ -1377,8 +1384,6 @@ export default class QueryOutput extends React.Component {
       col.field = `${i}`
       col.title = col.display_name
       col.id = uuid()
-      col.widthGrow = 1
-      col.widthShrink = 1
 
       // Visibility flag: this can be changed through the column visibility editor modal
       col.visible = col.is_visible
@@ -1620,6 +1625,8 @@ export default class QueryOutput extends React.Component {
         uniqueValues1 = _cloneDeep(tempValues)
       }
 
+      this.tableConfig.legendColumnIndex = newLegendColumnIndex
+
       // Generate new column array
       const pivotTableColumns = [
         {
@@ -1775,7 +1782,9 @@ export default class QueryOutput extends React.Component {
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
-      return 'Error: There was no data supplied for this table'
+      return this.renderMessage(
+        'Error: There was no data supplied for this table'
+      )
     }
 
     if (this.props.displayType === 'pivot_table') {
@@ -1817,7 +1826,9 @@ export default class QueryOutput extends React.Component {
   renderChart = (displayType) => {
     if (!this.tableData || !this.tableColumns || !this.tableConfig) {
       console.error('Required table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const supportsPivot = this.supportsPivot()
@@ -1828,7 +1839,9 @@ export default class QueryOutput extends React.Component {
         !this.pivotTableConfig)
     ) {
       console.error('Required pivot table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
@@ -1966,10 +1979,14 @@ export default class QueryOutput extends React.Component {
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
 
-      return <div>{errorMessage}</div>
+      return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div>{errorMessages.GENERAL_QUERY}</div>
+      return (
+        <div className="query-output-error-message">
+          {errorMessages.GENERAL_QUERY}
+        </div>
+      )
     }
   }
 
