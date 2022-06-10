@@ -1782,7 +1782,9 @@ export default class QueryOutput extends React.Component {
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
-      return 'Error: There was no data supplied for this table'
+      return this.renderMessage(
+        'Error: There was no data supplied for this table'
+      )
     }
 
     if (this.props.displayType === 'pivot_table') {
@@ -1824,7 +1826,9 @@ export default class QueryOutput extends React.Component {
   renderChart = (displayType) => {
     if (!this.tableData || !this.tableColumns || !this.tableConfig) {
       console.error('Required table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const supportsPivot = this.supportsPivot()
@@ -1835,7 +1839,9 @@ export default class QueryOutput extends React.Component {
         !this.pivotTableConfig)
     ) {
       console.error('Required pivot table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
@@ -1973,10 +1979,14 @@ export default class QueryOutput extends React.Component {
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
 
-      return <div>{errorMessage}</div>
+      return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div>{errorMessages.GENERAL_QUERY}</div>
+      return (
+        <div className="query-output-error-message">
+          {errorMessages.GENERAL_QUERY}
+        </div>
+      )
     }
   }
 
