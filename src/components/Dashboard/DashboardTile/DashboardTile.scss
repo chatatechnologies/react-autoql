@@ -129,11 +129,6 @@
   padding-top: 0;
   background: inherit;
 
-  .query-output-error-message,
-  .no-columns-error-message {
-    margin: auto;
-  }
-
   .layout-splitter {
     height: 1px !important;
     color: var(--react-autoql-border-color);
