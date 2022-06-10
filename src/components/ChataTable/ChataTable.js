@@ -26,7 +26,7 @@ export default class ChataTable extends React.Component {
 
     this.supportsDrilldown = isAggregation(props.columns)
     this.tableOptions = {
-      layout: 'fitDataStretch',
+      layout: 'fitDataFill',
       textSize: '9px',
       movableColumns: true,
       progressiveRender: true,
