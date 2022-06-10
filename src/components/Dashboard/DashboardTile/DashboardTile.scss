@@ -129,8 +129,9 @@
   padding-top: 0;
   background: inherit;
 
-  .query-output-error-message {
-    opacity: 0.8;
+  .query-output-error-message,
+  .no-columns-error-message {
+    margin: auto;
   }
 
   .layout-splitter {
@@ -195,6 +196,7 @@
 
   .react-autoql-response-content-container {
     padding: 7px;
+    align-items: center;
   }
 }
 
