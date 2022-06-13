@@ -137,7 +137,7 @@ export default class QueryOutput extends React.Component {
     this.state = {
       displayType,
       tableFilters: [],
-      suggestionSelection: props.selectedSuggestion,
+      selectedSuggestion: props.selectedSuggestion,
       isShowingInterpretation,
     }
   }
@@ -152,12 +152,11 @@ export default class QueryOutput extends React.Component {
     tableConfig: shape({}),
     onSuggestionClick: func,
     displayType: string,
-    renderTooltips: bool,
     onQueryValidationSelectOption: func,
     autoSelectQueryValidationSuggestion: bool,
     queryValidationSelections: arrayOf(shape({})),
     renderSuggestionsAsDropdown: bool,
-    suggestionSelection: string,
+    selectedSuggestion: string,
     activeChartElementKey: string,
     enableColumnHeaderContextMenu: bool,
     isResizing: bool,
@@ -186,7 +185,6 @@ export default class QueryOutput extends React.Component {
     displayType: undefined,
     queryInputRef: undefined,
     onSuggestionClick: undefined,
-    renderTooltips: true,
     autoSelectQueryValidationSuggestion: true,
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
@@ -217,12 +215,9 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      const isProvidedDisplayTypeValid = isDisplayTypeValid(
-        this.props.queryResponse,
-        this.props.displayType
-      )
-
-      if (!isProvidedDisplayTypeValid) {
+      if (
+        !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
+      ) {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.props.queryResponse,
@@ -263,14 +258,6 @@ export default class QueryOutput extends React.Component {
         this.props.onTableConfigChange
       ) {
         this.props.onTableConfigChange(this.tableConfig)
-      }
-
-      // If columns changed, we need to reset the column data config
-      if (
-        !_isEqual(this.props.columns, prevProps.columns) &&
-        this.props.onTableConfigChange
-      ) {
-        this.props.onTableConfigChange({})
       }
 
       if (
@@ -446,7 +433,7 @@ export default class QueryOutput extends React.Component {
     this.tableConfig = undefined
     // Generate new table data from new columns
     if (this.shouldGenerateTableData()) {
-      this.generateTableData()
+      this.generateTableData(columns)
       if (this.shouldGeneratePivotData()) {
         this.generatePivotTableData({ isFirstGeneration: true })
       } else {
@@ -620,7 +607,8 @@ export default class QueryOutput extends React.Component {
   }
 
   generateTableData = (columns) => {
-    this.tableColumns = columns || this.formatColumnsForTable()
+    this.tableID = uuid()
+    this.tableColumns = this.formatColumnsForTable(columns)
 
     this.tableData = this.sortTableDataByDate(
       this.queryResponse?.data?.data?.rows
@@ -631,6 +619,7 @@ export default class QueryOutput extends React.Component {
 
   generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
+      this.pivotTableID = uuid()
       const tableData = newTableData || this.tableData
       if (this.tableColumns.length === 2) {
         this.generateDatePivotData(tableData)
@@ -656,7 +645,7 @@ export default class QueryOutput extends React.Component {
                 key={uuid()}
                 onChange={(e) => {
                   if (this._isMounted) {
-                    this.setState({ suggestionSelection: e.target.value })
+                    this.setState({ selectedSuggestion: e.target.value })
                     this.onSuggestionClick({
                       query: e.target.value,
                       source: 'suggestion',
@@ -664,7 +653,7 @@ export default class QueryOutput extends React.Component {
                     })
                   }
                 }}
-                value={this.state.suggestionSelection}
+                value={this.state.selectedSuggestion}
                 className="react-autoql-suggestions-select"
               >
                 {suggestions.map((suggestion, i) => {
@@ -1782,7 +1771,9 @@ export default class QueryOutput extends React.Component {
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
-      return 'Error: There was no data supplied for this table'
+      return this.renderMessage(
+        'Error: There was no data supplied for this table'
+      )
     }
 
     if (this.props.displayType === 'pivot_table') {
@@ -1824,7 +1815,9 @@ export default class QueryOutput extends React.Component {
   renderChart = (displayType) => {
     if (!this.tableData || !this.tableColumns || !this.tableConfig) {
       console.error('Required table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const supportsPivot = this.supportsPivot()
@@ -1835,7 +1828,9 @@ export default class QueryOutput extends React.Component {
         !this.pivotTableConfig)
     ) {
       console.error('Required pivot table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
@@ -1973,10 +1968,14 @@ export default class QueryOutput extends React.Component {
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
 
-      return <div>{errorMessage}</div>
+      return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div>{errorMessages.GENERAL_QUERY}</div>
+      return (
+        <div className="query-output-error-message">
+          {errorMessages.GENERAL_QUERY}
+        </div>
+      )
     }
   }
 
