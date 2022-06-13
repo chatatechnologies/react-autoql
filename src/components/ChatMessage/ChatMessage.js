@@ -291,9 +291,6 @@ export default class ChatMessage extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
-            // We want to render our own in the parent component
-            // so the tooltip doesn't get clipped by the drawer
-            renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
             isResizing={

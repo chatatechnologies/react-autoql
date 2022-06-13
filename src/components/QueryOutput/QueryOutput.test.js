@@ -1,27 +1,11 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
-import renderer from 'react-test-renderer'
-
-import { findByTestAttr, checkProps } from '../../../test/testUtils'
+import _cloneDeep from 'lodash.clonedeep'
+import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
 import testCases from '../../../test/responseTestCases'
 
-const defaultProps = {
-  supportedDisplayTypes: [],
-  supportsSuggestions: true,
-  isQueryRunning: false,
-  tableBorderColor: undefined,
-  displayType: undefined,
-  queryInputRef: undefined,
-  onSuggestionClick: undefined,
-  processDrilldown: () => {},
-}
-
-const createMockResponse = responseBody => {
-  return {
-    data: responseBody,
-  }
-}
+const defaultProps = QueryOutput.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
@@ -36,9 +20,7 @@ describe('test each response case', () => {
   for (let i = 0; i < testCases.length; i++) {
     describe(`renders correctly: response index ${i}`, () => {
       test('renders correctly with only token prop', () => {
-        const wrapper = shallow(
-          <QueryOutput response={createMockResponse(testCases[i])} />
-        )
+        const wrapper = shallow(<QueryOutput queryResponse={testCases[i]} />)
         const responseComponent = findByTestAttr(
           wrapper,
           'query-response-wrapper'
@@ -47,7 +29,7 @@ describe('test each response case', () => {
       })
       test(`renders correctly with default props: response index ${i}`, () => {
         const wrapper = setup({
-          response: createMockResponse(testCases[i]),
+          queryResponse: testCases[i],
         })
         expect(wrapper.exists()).toBe(true)
       })
@@ -63,4 +45,48 @@ describe('test each response case', () => {
     //   })
     // })
   }
+})
+
+describe('test table edge cases', () => {
+  describe('all columns initially hidden then visibility changed', () => {
+    test('columns hidden message shows when all columns are hidden', () => {
+      const testCaseHiddenColumns = _cloneDeep(testCases[8])
+      testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map(
+        (column) => {
+          return {
+            ...column,
+            is_visible: false,
+          }
+        }
+      )
+
+      const queryOutput = mount(
+        <QueryOutput queryResponse={testCaseHiddenColumns} displayType="text" />
+      )
+
+      const hiddenColMessage = findByTestAttr(
+        queryOutput,
+        'columns-hidden-message'
+      )
+      expect(hiddenColMessage.exists()).toBe(true)
+      queryOutput.unmount()
+    })
+    test('column headers are visible when column visibility is updated', () => {
+      const queryOutputVisible = mount(
+        <QueryOutput queryResponse={testCases[8]} displayType="table" />
+      )
+      const idBeforeUpdate = queryOutputVisible.instance().tableID
+
+      const newColumns = _cloneDeep(testCases[8].data.data.columns)
+      newColumns[0].is_visible = false
+      queryOutputVisible.instance().updateColumns(newColumns)
+      const idAfterUpdate = queryOutputVisible.instance().tableID
+
+      const didIdChange =
+        idBeforeUpdate && idAfterUpdate && idBeforeUpdate !== idAfterUpdate
+
+      queryOutputVisible.unmount()
+      expect(didIdChange).toBe(true)
+    })
+  })
 })
