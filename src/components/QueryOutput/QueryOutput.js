@@ -9,15 +9,7 @@ import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 
 import { scaleOrdinal } from 'd3-scale'
-import {
-  number,
-  bool,
-  string,
-  func,
-  shape,
-  arrayOf,
-  instanceOf,
-} from 'prop-types'
+import PropTypes from 'prop-types'
 
 import {
   dataFormattingType,
@@ -143,35 +135,35 @@ export default class QueryOutput extends React.Component {
   }
 
   static propTypes = {
-    queryResponse: shape({}),
-    queryInputRef: instanceOf(QueryInput),
+    queryResponse: PropTypes.shape({}),
+    queryInputRef: PropTypes.instanceOf(QueryInput),
     authentication: authenticationType,
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    tableConfig: shape({}),
-    onSuggestionClick: func,
-    displayType: string,
-    onQueryValidationSelectOption: func,
-    autoSelectQueryValidationSuggestion: bool,
-    queryValidationSelections: arrayOf(shape({})),
-    renderSuggestionsAsDropdown: bool,
-    selectedSuggestion: string,
-    activeChartElementKey: string,
-    enableColumnHeaderContextMenu: bool,
-    isResizing: bool,
-    enableDynamicCharting: bool,
-    onTableConfigChange: func,
-    onNoneOfTheseClick: func,
-    autoChartAggregations: bool,
-    onSupportedDisplayTypesChange: func,
-    onRTValueLabelClick: func,
-    enableQueryInterpretation: bool,
-    defaultShowInterpretation: bool,
-    isTaskModule: bool,
-    onUpdate: func,
-    onDrilldownStart: func,
-    onDrilldownEnd: func,
+    tableConfig: PropTypes.shape({}),
+    onSuggestionClick: PropTypes.func,
+    displayType: PropTypes.string,
+    onQueryValidationSelectOption: PropTypes.func,
+    autoSelectQueryValidationSuggestion: PropTypes.bool,
+    queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
+    renderSuggestionsAsDropdown: PropTypes.bool,
+    selectedSuggestion: PropTypes.string,
+    activeChartElementKey: PropTypes.string,
+    enableColumnHeaderContextMenu: PropTypes.bool,
+    isResizing: PropTypes.bool,
+    enableDynamicCharting: PropTypes.bool,
+    onTableConfigChange: PropTypes.func,
+    onNoneOfTheseClick: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
+    onSupportedDisplayTypesChange: PropTypes.func,
+    onRTValueLabelClick: PropTypes.func,
+    enableQueryInterpretation: PropTypes.bool,
+    defaultShowInterpretation: PropTypes.bool,
+    isTaskModule: PropTypes.bool,
+    onUpdate: PropTypes.func,
+    onDrilldownStart: PropTypes.func,
+    onDrilldownEnd: PropTypes.func,
   }
 
   static defaultProps = {

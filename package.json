@@ -164,7 +164,7 @@
     "rollup-plugin-css-only": "^1.0.0",
     "rollup-plugin-gzip": "^3.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-postcss": "^2.9.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-svg": "^1.0.1",
     "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-visualizer": "^5.6.0",
