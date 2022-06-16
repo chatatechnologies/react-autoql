@@ -15,7 +15,7 @@ import pkg from './package.json'
 const dist = 'dist'
 const bundle = 'autoql'
 
-const development = 'dev' //process.env.NODE_ENV === 'dev'
+const development = process.env.NODE_ENV === 'dev'
 
 const external = [
   ...Object.keys(pkg.peerDependencies || {}),
