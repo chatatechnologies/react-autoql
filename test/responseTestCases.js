@@ -18,7 +18,7 @@ export default [
         rows: null,
       },
       message: '',
-      referenceId: '1.1.0',
+      reference_id: '1.1.210',
     },
   },
   {
@@ -39,7 +39,7 @@ export default [
             type: 'DOLLAR_AMT',
           },
         ],
-        display_type: 'date_pivot',
+        display_type: 'data',
         interpretation: 'total sales by line item by transaction month',
         query_id: 'q_y4sWT0IAStWnLeM7COEsSQ',
         rows: [
@@ -50,8 +50,8 @@ export default [
           [1496188800, 14642.19],
         ],
       },
-      message: '',
-      referenceId: '1.1.0',
+      message: 'Success',
+      reference_id: '1.1.210',
     },
   },
   {
@@ -76,8 +76,8 @@ export default [
         query_id: 'q_t_LufuRpQsGh71LE51qYnA',
         rows: [['http://chata.ai/userguide/#bar-chart-2']],
       },
-      message: '',
-      referenceId: '1.1.0',
+      message: 'Success',
+      reference_id: '1.1.210',
     },
   },
   {
@@ -103,8 +103,8 @@ export default [
           ['None of these'],
         ],
       },
-      message: '',
-      referenceId: '1.1.0',
+      message: 'Success',
+      reference_id: '1.1.210',
     },
   },
   {
@@ -121,6 +121,8 @@ export default [
       ],
       query: 'sales for john',
     },
+    message: 'Success',
+    reference_id: '1.1.210',
   },
   {
     // 7. display type that we dont understand
@@ -151,8 +153,45 @@ export default [
           [1496188800, 14642.19],
         ],
       },
-      message: '',
-      referenceId: '1.1.0',
+      message: 'Success',
+      reference_id: '1.1.210',
+    },
+  },
+  {
+    // 8. valid regular table data response
+    data: {
+      data: {
+        columns: [
+          {
+            display_name: 'Quantity',
+            type: 'QUANTITY',
+            groupable: true,
+            active: false,
+            is_visible: true,
+            name: 'sale__transaction_date__month',
+          },
+          {
+            display_name: 'Amount',
+            active: false,
+            groupable: false,
+            is_visible: true,
+            name: 'sale__line_item___sum',
+            type: 'DOLLAR_AMT',
+          },
+        ],
+        display_type: 'data',
+        interpretation: 'total sales by line item by transaction month',
+        query_id: 'q_y4sWT0IAStWnLeM7COEsSQ',
+        rows: [
+          [1483142400, 12500],
+          [1488240000, 8742.68],
+          [1490918400, 11723.36],
+          [1493510400, 3243.12],
+          [1496188800, 14642.19],
+        ],
+      },
+      message: 'Success',
+      reference_id: '1.1.210',
     },
   },
 ]

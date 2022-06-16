@@ -48,8 +48,6 @@ export default class ChataTable extends React.Component {
       downloadReady: (fileContents, blob) => blob,
     }
 
-    setCSSVars(getThemeConfig(props.themeConfig))
-
     this.state = {
       isFilteringTable: false,
     }
@@ -220,6 +218,7 @@ export default class ChataTable extends React.Component {
             <ReactTabulator
               ref={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
+              data-test="autoql-tabulator-table"
               columns={this.props.columns}
               data={this.props.data}
               cellClick={this.cellClick}
