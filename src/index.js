@@ -5,6 +5,8 @@ export * from './components/QueryOutput'
 export * from './components/SpeechToTextButton'
 export * from './components/FilterLockPopover'
 export * from './components/ReverseTranslation'
+export * from './components/OptionsToolbar'
+export * from './components/VizToolbar'
 export {
   NotificationIcon,
   NotificationFeed,
