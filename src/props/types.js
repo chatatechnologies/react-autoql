@@ -1,44 +1,44 @@
-import { shape, number, string, oneOf, bool, arrayOf } from 'prop-types'
+import PropTypes from 'prop-types'
 
-export const authenticationType = shape({
-  token: string,
-  apiKey: string,
-  domain: string,
+export const authenticationType = PropTypes.shape({
+  token: PropTypes.string,
+  apiKey: PropTypes.string,
+  domain: PropTypes.string,
 })
 
-export const dataFormattingType = shape({
-  currencyCode: string,
-  languageCode: string,
-  currencyDecimals: number,
-  quantityDecimals: number,
-  comparisonDisplay: string,
-  monthYearFormat: string,
-  dayMonthYearFormat: string,
+export const dataFormattingType = PropTypes.shape({
+  currencyCode: PropTypes.string,
+  languageCode: PropTypes.string,
+  currencyDecimals: PropTypes.number,
+  quantityDecimals: PropTypes.number,
+  comparisonDisplay: PropTypes.string,
+  monthYearFormat: PropTypes.string,
+  dayMonthYearFormat: PropTypes.string,
 })
 
-export const autoQLConfigType = shape({
-  debug: bool,
-  test: bool,
-  enableAutocomplete: bool,
-  enableQueryValidation: bool,
-  enableDrilldowns: bool,
-  enableQuerySuggestions: bool,
-  enableColumnVisibilityManager: bool,
-  enableNotifications: bool,
+export const autoQLConfigType = PropTypes.shape({
+  debug: PropTypes.bool,
+  test: PropTypes.bool,
+  enableAutocomplete: PropTypes.bool,
+  enableQueryValidation: PropTypes.bool,
+  enableDrilldowns: PropTypes.bool,
+  enableQuerySuggestions: PropTypes.bool,
+  enableColumnVisibilityManager: PropTypes.bool,
+  enableNotifications: PropTypes.bool,
 })
 
-export const themeConfigType = shape({
-  theme: oneOf(['light', 'dark']),
-  chartColors: arrayOf(string),
-  accentColor: string,
-  fontFamily: string,
-  dashboardBackground: string,
+export const themeConfigType = PropTypes.shape({
+  theme: PropTypes.oneOf(['light', 'dark']),
+  chartColors: PropTypes.arrayOf(PropTypes.string),
+  accentColor: PropTypes.string,
+  fontFamily: PropTypes.string,
+  dashboardBackground: PropTypes.string,
 })
 
-export const dataConfigType = shape({
-  stringColumnIndices: arrayOf(number),
-  numberColumnIndices: arrayOf(number),
-  stringColumnIndex: number,
-  legendColumnIndex: number,
-  numberColumnIndex: number,
+export const dataConfigType = PropTypes.shape({
+  stringColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  stringColumnIndex: PropTypes.number,
+  legendColumnIndex: PropTypes.number,
+  numberColumnIndex: PropTypes.number,
 })
