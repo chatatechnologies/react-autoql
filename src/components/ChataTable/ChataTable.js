@@ -124,7 +124,6 @@ export default class ChataTable extends React.Component {
     setCSSVars(getThemeConfig(props.themeConfig))
 
     this.state = {
-      columns: this.props.columns,
       isFilteringTable: false,
     }
   }
@@ -161,15 +160,6 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
-
     if (this.ref) {
       this.setDimensionsTimeout = setTimeout(() => {
         if (this._isMounted) {

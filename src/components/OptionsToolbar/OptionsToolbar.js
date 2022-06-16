@@ -173,21 +173,16 @@ export default class OptionsToolbar extends React.Component {
         document.body.appendChild(link)
         link.click()
 
-        let fileSizeMb = _get(response, 'headers.content-length') / 1000000
-        let totalRows = _get(response, 'headers.total_rows')
-        let returnedRows = _get(response, 'headers.returned_rows')
-        let exportLimit = _get(response, 'headers.export_limit')
-        fileSizeMb = parseInt(fileSizeMb)
-        exportLimit = parseInt(exportLimit)
-        totalRows = parseInt(totalRows)
-        returnedRows = parseInt(returnedRows)
+        const exportLimit = parseInt(response?.headers?.export_limit)
+        const limitReached =
+          response?.headers?.limit_reached?.toLowerCase() == 'true'
+            ? true
+            : false
 
         this.props.onCSVDownloadFinish({
           id: uniqueId,
-          fileSizeMb,
           exportLimit,
-          totalRows,
-          returnedRows,
+          limitReached,
         })
       })
       .catch((error) => {

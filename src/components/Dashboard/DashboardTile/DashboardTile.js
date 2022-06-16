@@ -593,6 +593,7 @@ class DashboardTile extends React.Component {
                     value: this.state.query,
                     'data-tip': 'Query',
                     'data-for': 'react-autoql-dashboard-toolbar-btn-tooltip',
+                    'data-place': 'bottom',
                     onFocus: () => this.setState({ isQueryInputFocused: true }),
                     onChange: this.onQueryInputChange,
                     onKeyDown: this.onQueryTextKeyDown,
@@ -618,6 +619,7 @@ class DashboardTile extends React.Component {
                   value={this.state.query}
                   data-tip="Query"
                   data-for="react-autoql-dashboard-toolbar-btn-tooltip"
+                  data-place="bottom"
                   onChange={(e) => {
                     this.setState({ query: e.target.value })
                   }}
@@ -648,6 +650,7 @@ class DashboardTile extends React.Component {
                 value={this.state.title}
                 data-tip="Title"
                 data-for="react-autoql-dashboard-toolbar-btn-tooltip"
+                data-place="bottom"
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={(e) => {
@@ -670,6 +673,7 @@ class DashboardTile extends React.Component {
               type="play"
               onClick={() => this.processTile()}
               data-tip="Run tile"
+              data-place="left"
             />
           </div>
           <div

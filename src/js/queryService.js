@@ -319,6 +319,7 @@ export const runDrilldown = ({
       if (reverseTranslation) {
         response.data.data.reverse_translation = reverseTranslation
       }
+
       return Promise.resolve(response)
     })
     .catch((error) => Promise.reject(_get(error, 'response.data')))

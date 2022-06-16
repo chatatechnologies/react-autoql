@@ -1,9 +1,9 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
+import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import _reduce from 'lodash.reduce'
 import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
@@ -33,11 +33,7 @@ import {
 } from '../helpers.js'
 
 import './ChataChart.scss'
-import {
-  getColumnTypeAmounts,
-  getTotalNumberColumns,
-  getTotalStringColumns,
-} from '../../QueryOutput/columnHelpers'
+import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -88,6 +84,7 @@ export default class ChataChart extends Component {
     if (!this.props.isResizing && !this.props.isAnimatingContainer) {
       this.forceUpdate()
     }
+    this.rebuildTooltips()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -137,6 +134,7 @@ export default class ChataChart extends Component {
       if (!this.props.isPivot) {
         newState.aggregatedData = this.aggregateRowData(this.props)
       }
+      this.rebuildTooltips()
     }
 
     // --------- Only update state once after checking new props -----------
@@ -298,7 +296,7 @@ export default class ChataChart extends Component {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 500)
+    }, 1000)
   }
 
   updateMargins = ({ setLoading = true, delay = 100 } = {}) => {

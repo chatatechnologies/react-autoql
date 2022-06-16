@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react'
-import { number, bool, string, func, shape, array, oneOfType } from 'prop-types'
+import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
@@ -91,39 +91,39 @@ export default class DataMessenger extends React.Component {
     themeConfig: themeConfigType,
 
     // UI
-    placement: string,
-    maskClosable: bool,
-    width: oneOfType([string, number]),
-    height: oneOfType([string, number]),
-    showHandle: bool,
-    handleImage: string,
-    handleStyles: shape({}),
-    shiftScreen: bool,
-    userDisplayName: string,
-    clearOnClose: bool,
-    enableVoiceRecord: bool,
-    title: string,
-    maxMessages: number,
-    introMessage: string,
-    enableExploreQueriesTab: bool,
-    enableNotificationsTab: bool,
-    resizable: bool,
-    inputPlaceholder: string,
+    placement: PropTypes.string,
+    maskClosable: PropTypes.bool,
+    width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    showHandle: PropTypes.bool,
+    handleImage: PropTypes.string,
+    handleStyles: PropTypes.shape({}),
+    shiftScreen: PropTypes.bool,
+    userDisplayName: PropTypes.string,
+    clearOnClose: PropTypes.bool,
+    enableVoiceRecord: PropTypes.bool,
+    title: PropTypes.string,
+    maxMessages: PropTypes.number,
+    introMessage: PropTypes.string,
+    enableExploreQueriesTab: PropTypes.bool,
+    enableNotificationsTab: PropTypes.bool,
+    resizable: PropTypes.bool,
+    inputPlaceholder: PropTypes.string,
 
-    enableDynamicCharting: bool,
-    defaultTab: string,
-    autoChartAggregations: bool,
-    enableQueryInterpretation: bool,
-    defaultShowInterpretation: bool,
-    enableFilterLocking: bool,
-    enableQueryQuickStartTopics: bool,
-    enableAjaxTableData: bool,
+    enableDynamicCharting: PropTypes.bool,
+    defaultTab: PropTypes.string,
+    autoChartAggregations: PropTypes.bool,
+    enableQueryInterpretation: PropTypes.bool,
+    defaultShowInterpretation: PropTypes.bool,
+    enableFilterLocking: PropTypes.bool,
+    enableQueryQuickStartTopics: PropTypes.bool,
+    enableAjaxTableData: PropTypes.bool,
 
     // Callbacks
-    onVisibleChange: func,
-    onHandleClick: func,
-    onErrorCallback: func,
-    onSuccessAlert: func,
+    onVisibleChange: PropTypes.func,
+    onHandleClick: PropTypes.func,
+    onErrorCallback: PropTypes.func,
+    onSuccessAlert: PropTypes.func,
   }
 
   static defaultProps = {

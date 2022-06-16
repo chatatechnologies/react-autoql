@@ -129,7 +129,7 @@ export default class QueryOutput extends React.Component {
     this.state = {
       displayType,
       tableFilters: [],
-      suggestionSelection: props.selectedSuggestion,
+      selectedSuggestion: props.selectedSuggestion,
       isShowingInterpretation,
     }
   }
@@ -144,12 +144,11 @@ export default class QueryOutput extends React.Component {
     tableConfig: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
     displayType: PropTypes.string,
-    renderTooltips: PropTypes.bool,
     onQueryValidationSelectOption: PropTypes.func,
     autoSelectQueryValidationSuggestion: PropTypes.bool,
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
     renderSuggestionsAsDropdown: PropTypes.bool,
-    suggestionSelection: PropTypes.string,
+    selectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     enableColumnHeaderContextMenu: PropTypes.bool,
     isResizing: PropTypes.bool,
@@ -179,7 +178,6 @@ export default class QueryOutput extends React.Component {
     displayType: undefined,
     queryInputRef: undefined,
     onSuggestionClick: undefined,
-    renderTooltips: true,
     autoSelectQueryValidationSuggestion: true,
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
@@ -211,12 +209,9 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      const isProvidedDisplayTypeValid = isDisplayTypeValid(
-        this.props.queryResponse,
-        this.props.displayType
-      )
-
-      if (!isProvidedDisplayTypeValid) {
+      if (
+        !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
+      ) {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.props.queryResponse,
@@ -257,14 +252,6 @@ export default class QueryOutput extends React.Component {
         this.props.onTableConfigChange
       ) {
         this.props.onTableConfigChange(this.tableConfig)
-      }
-
-      // If columns changed, we need to reset the column data config
-      if (
-        !_isEqual(this.props.columns, prevProps.columns) &&
-        this.props.onTableConfigChange
-      ) {
-        this.props.onTableConfigChange({})
       }
 
       if (
@@ -440,7 +427,7 @@ export default class QueryOutput extends React.Component {
     this.tableConfig = undefined
     // Generate new table data from new columns
     if (this.shouldGenerateTableData()) {
-      this.generateTableData()
+      this.generateTableData(columns)
       if (this.shouldGeneratePivotData()) {
         this.generatePivotTableData({ isFirstGeneration: true })
       } else {
@@ -494,88 +481,100 @@ export default class QueryOutput extends React.Component {
   }
 
   dateSortFn = (a, b) => {
-    // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
-    let aDate = Number(a)
-    let bDate = Number(b)
+    try {
+      if (!a && !b) {
+        return 0
+      } else if (!a && b) {
+        return 1
+      } else if (a && !b) {
+        return -1
+      }
 
-    // If one is not a number, use dayjs to format
-    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
-      aDate = dayjs(a).unix()
-      bDate = dayjs(b).unix()
-    }
+      // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+      let aDate = Number(a)
+      let bDate = Number(b)
 
-    // Finally if all else fails, just compare the 2 values directly
-    if (!aDate || !bDate) {
-      //If one is a YYYY-WW
-      if (a.includes('-W')) {
-        let aDateYear = a.substring(0, 4)
-        let bDateYear = b.substring(0, 4)
-        if (aDateYear !== bDateYear) {
-          return bDateYear - aDateYear
-        } else {
-          let aDateWeek = a.substring(6, 8)
-          let bDateWeek = b.substring(6, 8)
-          return bDateWeek - aDateWeek
+      // If one is not a number, use dayjs to format
+      if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+        aDate = dayjs(a).unix()
+        bDate = dayjs(b).unix()
+      }
+
+      // Finally if all else fails, just compare the 2 values directly
+      if (!aDate || !bDate) {
+        //If one is a YYYY-WW
+        if (a.includes('-W')) {
+          let aDateYear = a.substring(0, 4)
+          let bDateYear = b.substring(0, 4)
+          if (aDateYear !== bDateYear) {
+            return bDateYear - aDateYear
+          } else {
+            let aDateWeek = a.substring(6, 8)
+            let bDateWeek = b.substring(6, 8)
+            return bDateWeek - aDateWeek
+          }
+        }
+        //If one is one of a weekday
+        else {
+          const days = [
+            {
+              description: 'Sunday',
+              value: 1,
+              label: 'S',
+            },
+            {
+              description: 'Monday',
+              value: 2,
+              label: 'M',
+            },
+            {
+              description: 'Tuesday',
+              value: 3,
+              label: 'T',
+            },
+            {
+              description: 'Wednesday',
+              value: 4,
+              label: 'W',
+            },
+            {
+              description: 'Thursday',
+              value: 5,
+              label: 'T',
+            },
+            {
+              description: 'Friday',
+              value: 6,
+              label: 'F',
+            },
+            {
+              description: 'Saturday',
+              value: 7,
+              label: 'S',
+            },
+          ]
+          let aWeekDay = null
+          let bWeekDay = null
+          days.forEach((weekdays) => {
+            if (a.trim() === weekdays.description) {
+              return (aWeekDay = weekdays.value)
+            }
+          })
+          days.forEach((weekdays) => {
+            if (b.trim() === weekdays.description) {
+              return (bWeekDay = weekdays.value)
+            }
+          })
+          if (aWeekDay === null || bWeekDay === null) {
+            return b - a
+          }
+          return bWeekDay - aWeekDay
         }
       }
-      //If one is one of a weekday
-      else {
-        const days = [
-          {
-            description: 'Sunday',
-            value: 1,
-            label: 'S',
-          },
-          {
-            description: 'Monday',
-            value: 2,
-            label: 'M',
-          },
-          {
-            description: 'Tuesday',
-            value: 3,
-            label: 'T',
-          },
-          {
-            description: 'Wednesday',
-            value: 4,
-            label: 'W',
-          },
-          {
-            description: 'Thursday',
-            value: 5,
-            label: 'T',
-          },
-          {
-            description: 'Friday',
-            value: 6,
-            label: 'F',
-          },
-          {
-            description: 'Saturday',
-            value: 7,
-            label: 'S',
-          },
-        ]
-        let aWeekDay = null
-        let bWeekDay = null
-        days.forEach((weekdays) => {
-          if (a.trim() === weekdays.description) {
-            return (aWeekDay = weekdays.value)
-          }
-        })
-        days.forEach((weekdays) => {
-          if (b.trim() === weekdays.description) {
-            return (bWeekDay = weekdays.value)
-          }
-        })
-        if (aWeekDay === null || bWeekDay === null) {
-          return b - a
-        }
-        return bWeekDay - aWeekDay
-      }
+      return bDate - aDate
+    } catch (error) {
+      return -1
     }
-    return bDate - aDate
   }
 
   sortTableDataByDate = (data) => {
@@ -597,12 +596,13 @@ export default class QueryOutput extends React.Component {
       return data
     } catch (error) {
       console.error(error)
-      return undefined
+      return data
     }
   }
 
   generateTableData = (columns) => {
-    this.tableColumns = columns || this.formatColumnsForTable()
+    this.tableID = uuid()
+    this.tableColumns = this.formatColumnsForTable(columns)
 
     this.tableData = this.sortTableDataByDate(
       this.queryResponse?.data?.data?.rows
@@ -613,6 +613,7 @@ export default class QueryOutput extends React.Component {
 
   generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
+      this.pivotTableID = uuid()
       const tableData = newTableData || this.tableData
       if (this.tableColumns.length === 2) {
         this.generateDatePivotData(tableData)
@@ -638,7 +639,7 @@ export default class QueryOutput extends React.Component {
                 key={uuid()}
                 onChange={(e) => {
                   if (this._isMounted) {
-                    this.setState({ suggestionSelection: e.target.value })
+                    this.setState({ selectedSuggestion: e.target.value })
                     this.onSuggestionClick({
                       query: e.target.value,
                       source: 'suggestion',
@@ -646,7 +647,7 @@ export default class QueryOutput extends React.Component {
                     })
                   }
                 }}
-                value={this.state.suggestionSelection}
+                value={this.state.selectedSuggestion}
                 className="react-autoql-suggestions-select"
               >
                 {suggestions.map((suggestion, i) => {
@@ -1607,6 +1608,8 @@ export default class QueryOutput extends React.Component {
         uniqueValues1 = _cloneDeep(tempValues)
       }
 
+      this.tableConfig.legendColumnIndex = newLegendColumnIndex
+
       // Generate new column array
       const pivotTableColumns = [
         {
@@ -1762,7 +1765,9 @@ export default class QueryOutput extends React.Component {
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
-      return 'Error: There was no data supplied for this table'
+      return this.renderMessage(
+        'Error: There was no data supplied for this table'
+      )
     }
 
     if (this.props.displayType === 'pivot_table') {
@@ -1809,7 +1814,9 @@ export default class QueryOutput extends React.Component {
   renderChart = (displayType) => {
     if (!this.tableData || !this.tableColumns || !this.tableConfig) {
       console.error('Required table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const supportsPivot = this.supportsPivot()
@@ -1820,7 +1827,9 @@ export default class QueryOutput extends React.Component {
         !this.pivotTableConfig)
     ) {
       console.error('Required pivot table data was missing')
-      return 'Error: There was no data supplied for this chart'
+      return this.renderMessage(
+        'Error: There was no data supplied for this chart'
+      )
     }
 
     const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
@@ -1958,10 +1967,14 @@ export default class QueryOutput extends React.Component {
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
 
-      return <div>{errorMessage}</div>
+      return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)
-      return <div>{errorMessages.GENERAL_QUERY}</div>
+      return (
+        <div className="query-output-error-message">
+          {errorMessages.GENERAL_QUERY}
+        </div>
+      )
     }
   }
 
