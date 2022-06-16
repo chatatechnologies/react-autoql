@@ -1,9 +1,8 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 
-import { findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
+import { findByTestAttr } from '../../../test/testUtils'
 import Cascader from './Cascader'
-import { TiNews } from 'react-icons/ti'
 
 const testOptions = [
   {
