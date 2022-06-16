@@ -2,68 +2,61 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-// Icons
-import {
-  AiFillCaretDown,
-  AiFillCaretLeft,
-  AiFillCaretRight,
-  AiFillCaretUp,
-  AiOutlineBook,
-  AiOutlineBulb,
-  AiOutlineDashboard,
-  AiOutlineEdit,
-  AiOutlineFileText,
-  AiOutlineMenu,
-  AiOutlineQuestionCircle,
-} from 'react-icons/ai'
+import { AiFillCaretDown } from '@react-icons/all-files/ai/AiFillCaretDown'
+import { AiFillCaretLeft } from '@react-icons/all-files/ai/AiFillCaretLeft'
+import { AiFillCaretRight } from '@react-icons/all-files/ai/AiFillCaretRight'
+import { AiFillCaretUp } from '@react-icons/all-files/ai/AiFillCaretUp'
+import { AiOutlineBook } from '@react-icons/all-files/ai/AiOutlineBook'
+import { AiOutlineBulb } from '@react-icons/all-files/ai/AiOutlineBulb'
+import { AiOutlineDashboard } from '@react-icons/all-files/ai/AiOutlineDashboard'
+import { AiOutlineEdit } from '@react-icons/all-files/ai/AiOutlineEdit'
+import { AiOutlineFileText } from '@react-icons/all-files/ai/AiOutlineFileText'
+import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
+import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
 
-import { BiLineChart } from 'react-icons/bi'
+import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 
-import { BsArrowBarDown, BsArrowBarUp } from 'react-icons/bs'
+import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
+import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
 
-import { FaMicrophoneAlt } from 'react-icons/fa'
-import {
-  FiAlertTriangle,
-  FiArrowLeft,
-  FiBell,
-  FiBellOff,
-  FiCalendar,
-  FiCheck,
-  FiDatabase,
-  FiDownload,
-  FiEye,
-  FiFilter,
-  FiMoreHorizontal,
-  FiMoreVertical,
-  FiPauseCircle,
-  FiPlus,
-  FiSend,
-  FiSettings,
-  FiTrash2,
-  FiMaximize,
-  FiMinimize,
-} from 'react-icons/fi'
+import { FaMicrophoneAlt } from '@react-icons/all-files/fa/FaMicrophoneAlt'
 
-import { GoReport } from 'react-icons/go'
+import { FiAlertTriangle } from '@react-icons/all-files/fi/FiAlertTriangle'
+import { FiArrowLeft } from '@react-icons/all-files/fi/FiArrowLeft'
+import { FiBell } from '@react-icons/all-files/fi/FiBell'
+import { FiBellOff } from '@react-icons/all-files/fi/FiBellOff'
+import { FiCalendar } from '@react-icons/all-files/fi/FiCalendar'
+import { FiCheck } from '@react-icons/all-files/fi/FiCheck'
+import { FiDatabase } from '@react-icons/all-files/fi/FiDatabase'
+import { FiDownload } from '@react-icons/all-files/fi/FiDownload'
+import { FiEye } from '@react-icons/all-files/fi/FiEye'
+import { FiFilter } from '@react-icons/all-files/fi/FiFilter'
+import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
+import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
+import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
+import { FiPlus } from '@react-icons/all-files/fi/FiPlus'
+import { FiSend } from '@react-icons/all-files/fi/FiSend'
+import { FiSettings } from '@react-icons/all-files/fi/FiSettings'
+import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
+import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
+import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
 
-import {
-  IoIosCloseCircleOutline,
-  IoIosGlobe,
-  IoIosHourglass,
-  IoIosSearch,
-} from 'react-icons/io'
+import { GoReport } from '@react-icons/all-files/go/GoReport'
 
-import {
-  MdClose,
-  MdContentCopy,
-  MdError,
-  MdInfoOutline,
-  MdLock,
-  MdLockOpen,
-  MdPlayCircleOutline,
-} from 'react-icons/md'
+import { IoIosCloseCircleOutline } from '@react-icons/all-files/io/IoIosCloseCircleOutline'
+import { IoIosGlobe } from '@react-icons/all-files/io/IoIosGlobe'
+import { IoIosHourglass } from '@react-icons/all-files/io/IoIosHourglass'
+import { IoIosSearch } from '@react-icons/all-files/io/IoIosSearch'
 
-import { TiSortNumerically } from 'react-icons/ti'
+import { MdClose } from '@react-icons/all-files/md/MdClose'
+import { MdContentCopy } from '@react-icons/all-files/md/MdContentCopy'
+import { MdError } from '@react-icons/all-files/md/MdError'
+import { MdInfoOutline } from '@react-icons/all-files/md/MdInfoOutline'
+import { MdLock } from '@react-icons/all-files/md/MdLock'
+import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
+import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
+
+import { TiSortNumerically } from '@react-icons/all-files/ti/TiSortNumerically'
 
 import {
   bubblesIcon,

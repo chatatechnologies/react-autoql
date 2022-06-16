@@ -51,7 +51,6 @@ export default class ChataTable extends React.Component {
     setCSSVars(getThemeConfig(props.themeConfig))
 
     this.state = {
-      columns: this.props.columns,
       isFilteringTable: false,
     }
   }
@@ -84,15 +83,6 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
-
     if (this.ref) {
       this.setDimensionsTimeout = setTimeout(() => {
         if (this._isMounted) {
@@ -230,7 +220,7 @@ export default class ChataTable extends React.Component {
             <ReactTabulator
               ref={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
-              columns={this.state.columns}
+              columns={this.props.columns}
               data={this.props.data}
               cellClick={this.cellClick}
               options={this.tableOptions}

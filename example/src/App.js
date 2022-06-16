@@ -73,7 +73,7 @@ const isProd = () => {
 }
 
 const getBaseUrl = () => {
-  return window.location.href.includes('prod')
+  return isProd()
     ? 'https://backend.chata.io'
     : 'https://backend-staging.chata.io'
 }

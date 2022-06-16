@@ -9,15 +9,7 @@ import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 
 import { scaleOrdinal } from 'd3-scale'
-import {
-  number,
-  bool,
-  string,
-  func,
-  shape,
-  arrayOf,
-  instanceOf,
-} from 'prop-types'
+import PropTypes from 'prop-types'
 
 import {
   dataFormattingType,
@@ -137,42 +129,41 @@ export default class QueryOutput extends React.Component {
     this.state = {
       displayType,
       tableFilters: [],
-      suggestionSelection: props.selectedSuggestion,
+      selectedSuggestion: props.selectedSuggestion,
       isShowingInterpretation,
     }
   }
 
   static propTypes = {
-    queryResponse: shape({}),
-    queryInputRef: instanceOf(QueryInput),
+    queryResponse: PropTypes.shape({}),
+    queryInputRef: PropTypes.instanceOf(QueryInput),
     authentication: authenticationType,
     themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    tableConfig: shape({}),
-    onSuggestionClick: func,
-    displayType: string,
-    renderTooltips: bool,
-    onQueryValidationSelectOption: func,
-    autoSelectQueryValidationSuggestion: bool,
-    queryValidationSelections: arrayOf(shape({})),
-    renderSuggestionsAsDropdown: bool,
-    suggestionSelection: string,
-    activeChartElementKey: string,
-    enableColumnHeaderContextMenu: bool,
-    isResizing: bool,
-    enableDynamicCharting: bool,
-    onTableConfigChange: func,
-    onNoneOfTheseClick: func,
-    autoChartAggregations: bool,
-    onSupportedDisplayTypesChange: func,
-    onRTValueLabelClick: func,
-    enableQueryInterpretation: bool,
-    defaultShowInterpretation: bool,
-    isTaskModule: bool,
-    onUpdate: func,
-    onDrilldownStart: func,
-    onDrilldownEnd: func,
+    tableConfig: PropTypes.shape({}),
+    onSuggestionClick: PropTypes.func,
+    displayType: PropTypes.string,
+    onQueryValidationSelectOption: PropTypes.func,
+    autoSelectQueryValidationSuggestion: PropTypes.bool,
+    queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
+    renderSuggestionsAsDropdown: PropTypes.bool,
+    selectedSuggestion: PropTypes.string,
+    activeChartElementKey: PropTypes.string,
+    enableColumnHeaderContextMenu: PropTypes.bool,
+    isResizing: PropTypes.bool,
+    enableDynamicCharting: PropTypes.bool,
+    onTableConfigChange: PropTypes.func,
+    onNoneOfTheseClick: PropTypes.func,
+    autoChartAggregations: PropTypes.bool,
+    onSupportedDisplayTypesChange: PropTypes.func,
+    onRTValueLabelClick: PropTypes.func,
+    enableQueryInterpretation: PropTypes.bool,
+    defaultShowInterpretation: PropTypes.bool,
+    isTaskModule: PropTypes.bool,
+    onUpdate: PropTypes.func,
+    onDrilldownStart: PropTypes.func,
+    onDrilldownEnd: PropTypes.func,
   }
 
   static defaultProps = {
@@ -186,7 +177,6 @@ export default class QueryOutput extends React.Component {
     displayType: undefined,
     queryInputRef: undefined,
     onSuggestionClick: undefined,
-    renderTooltips: true,
     autoSelectQueryValidationSuggestion: true,
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
@@ -217,12 +207,9 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      const isProvidedDisplayTypeValid = isDisplayTypeValid(
-        this.props.queryResponse,
-        this.props.displayType
-      )
-
-      if (!isProvidedDisplayTypeValid) {
+      if (
+        !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
+      ) {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.props.queryResponse,
@@ -263,14 +250,6 @@ export default class QueryOutput extends React.Component {
         this.props.onTableConfigChange
       ) {
         this.props.onTableConfigChange(this.tableConfig)
-      }
-
-      // If columns changed, we need to reset the column data config
-      if (
-        !_isEqual(this.props.columns, prevProps.columns) &&
-        this.props.onTableConfigChange
-      ) {
-        this.props.onTableConfigChange({})
       }
 
       if (
@@ -446,7 +425,7 @@ export default class QueryOutput extends React.Component {
     this.tableConfig = undefined
     // Generate new table data from new columns
     if (this.shouldGenerateTableData()) {
-      this.generateTableData()
+      this.generateTableData(columns)
       if (this.shouldGeneratePivotData()) {
         this.generatePivotTableData({ isFirstGeneration: true })
       } else {
@@ -620,7 +599,8 @@ export default class QueryOutput extends React.Component {
   }
 
   generateTableData = (columns) => {
-    this.tableColumns = columns || this.formatColumnsForTable()
+    this.tableID = uuid()
+    this.tableColumns = this.formatColumnsForTable(columns)
 
     this.tableData = this.sortTableDataByDate(
       this.queryResponse?.data?.data?.rows
@@ -631,6 +611,7 @@ export default class QueryOutput extends React.Component {
 
   generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
     try {
+      this.pivotTableID = uuid()
       const tableData = newTableData || this.tableData
       if (this.tableColumns.length === 2) {
         this.generateDatePivotData(tableData)
@@ -656,7 +637,7 @@ export default class QueryOutput extends React.Component {
                 key={uuid()}
                 onChange={(e) => {
                   if (this._isMounted) {
-                    this.setState({ suggestionSelection: e.target.value })
+                    this.setState({ selectedSuggestion: e.target.value })
                     this.onSuggestionClick({
                       query: e.target.value,
                       source: 'suggestion',
@@ -664,7 +645,7 @@ export default class QueryOutput extends React.Component {
                     })
                   }
                 }}
-                value={this.state.suggestionSelection}
+                value={this.state.selectedSuggestion}
                 className="react-autoql-suggestions-select"
               >
                 {suggestions.map((suggestion, i) => {

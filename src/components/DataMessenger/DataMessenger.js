@@ -263,18 +263,6 @@ export default class DataMessenger extends React.Component {
     } catch (error) {}
   }
 
-  open = () => {
-    if (!this.dmRef?.state?.open) {
-      this.dmRef.onHandleClick()
-    }
-  }
-
-  close = () => {
-    if (!!this.dmRef?.state?.open) {
-      this.dmRef.onHandleClick()
-    }
-  }
-
   setQueryTopics = () => {
     fetchTopics(getAuthentication(this.props.authentication))
       .then((response) => {
