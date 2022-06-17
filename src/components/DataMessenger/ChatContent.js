@@ -76,11 +76,13 @@ export default class ChatContent extends React.Component {
     csvProgressLog: PropTypes.shape({}),
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
+    enableAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
     csvProgressLog: {},
     disableMaxMessageHeight: false,
+    enableAjaxTableData: false,
     onCSVDownloadProgress: () => {},
     onRTValueLabelClick: () => {},
   }
@@ -349,6 +351,7 @@ export default class ChatContent extends React.Component {
         onRTValueLabelClick={this.props.onRTValueLabelClick}
         appliedFilters={params.appliedFilters}
         disableMaxHeight={this.props.disableMaxMessageHeight}
+        enableAjaxTableData={this.props.enableAjaxTableData}
       />
     )
   }

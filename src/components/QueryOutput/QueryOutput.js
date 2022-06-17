@@ -1921,7 +1921,9 @@ export default class QueryOutput extends React.Component {
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation
 
-    if (maxRowLimit && numRows === maxRowLimit) {
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+    if (maxRowLimit && numRows === maxRowLimit && !isTableAndAjax) {
       return (
         <div className="dashboard-data-limit-warning-icon">
           <Icon
@@ -2150,6 +2152,12 @@ export default class QueryOutput extends React.Component {
           id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           place="left"
+          html
+        />
+        <ReactTooltip
+          className="react-autoql-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
           html
         />
       </ErrorBoundary>

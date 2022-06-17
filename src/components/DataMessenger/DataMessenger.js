@@ -1095,12 +1095,6 @@ export default class DataMessenger extends React.Component {
           place="top"
           html
         />
-        <ReactTooltip
-          className="react-autoql-chart-tooltip"
-          id="chart-element-tooltip"
-          effect="solid"
-          html
-        />
       </Fragment>
     )
   }
