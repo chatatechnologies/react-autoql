@@ -72,6 +72,58 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
+export const runSubQuery = ({
+  queryId,
+  domain,
+  apiKey,
+  token,
+  debug,
+  page,
+  sorters,
+  filters,
+} = {}) => {
+  const url = `${domain}/autoql/api/v1/query/${queryId}/subquery?key=${apiKey}&page=${page}`
+
+  const data = {
+    translation: debug ? 'include' : 'exclude',
+    orders: sorters,
+    filters,
+  }
+
+  if (!queryId) {
+    return Promise.reject({ error: 'No query ID supplied' })
+  }
+
+  if (!apiKey || !domain || !token) {
+    return Promise.reject({ error: 'Unauthenticated' })
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .post(url, data, config)
+    .then((response) => {
+      if (response.data && typeof response.data === 'string') {
+        throw new Error('Parse error')
+      }
+
+      return Promise.resolve({ ..._get(response, 'data.data', {}), page })
+    })
+    .catch((error) => {
+      if (error.message === 'Parse error') {
+        return Promise.reject({ error: 'Parse error' })
+      }
+      if (error.response === 401 || !_get(error, 'response.data')) {
+        return Promise.reject({ error: 'Unauthenticated' })
+      }
+      return Promise.reject(_get(error, 'response'))
+    })
+}
+
 export const runQueryOnly = ({
   query,
   userSelection,

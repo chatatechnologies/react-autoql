@@ -129,6 +129,10 @@ export default class ChataChart extends Component {
       }
     }
 
+    if (this.props.type !== prevProps.type) {
+      this.rebuildTooltips()
+    }
+
     if (dataStructureChanged(this.props, prevProps)) {
       shouldUpdateMargins = true
       if (!this.props.isPivot) {

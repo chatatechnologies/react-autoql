@@ -50,6 +50,8 @@ export default class NotificationFeed extends React.Component {
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
+    enableAjaxTableData: PropTypes.bool,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -59,6 +61,8 @@ export default class NotificationFeed extends React.Component {
     showNotificationDetails: true,
     autoChartAggregations: false,
     showCreateAlertBtn: false,
+    enableAjaxTableData: false,
+    shouldRender: true,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -267,7 +271,6 @@ export default class NotificationFeed extends React.Component {
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         allowDelete={false}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
         title={
           this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
         }
@@ -277,6 +280,10 @@ export default class NotificationFeed extends React.Component {
   }
 
   render = () => {
+    if (!this.props.shouldRender) {
+      return null
+    }
+
     if (this.state.isFetchingFirstNotifications) {
       return (
         <div
@@ -364,6 +371,7 @@ export default class NotificationFeed extends React.Component {
                         this.setState({ activeDataAlert: dataAlert })
                         this.showEditDataAlertModal()
                       }}
+                      enableAjaxTableData={this.props.enableAjaxTableData}
                     />
                   )
                 })}

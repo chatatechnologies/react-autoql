@@ -16,6 +16,7 @@ const dist = 'dist'
 const bundle = 'autoql'
 
 const development = process.env.NODE_ENV === 'dev'
+const test = process.env.NODE_ENV === 'test'
 
 const external = [
   ...Object.keys(pkg.peerDependencies || {}),
@@ -48,9 +49,9 @@ const common = {
     }),
     !development && terser(),
     gzipPlugin(),
-    development && visualizer(),
-    development && bundleSize(),
-    development &&
+    test && visualizer(),
+    test && bundleSize(),
+    test &&
       analyzer({
         limit: 10,
       }),

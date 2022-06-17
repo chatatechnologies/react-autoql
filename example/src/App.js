@@ -95,7 +95,7 @@ class Item extends React.Component {
         }}
         {...this.props}
       >
-        {this.props.children}
+        {this.props.item}
       </li>
     )
   }
@@ -107,6 +107,7 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
+    pagination: false,
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
@@ -150,6 +151,7 @@ export default class App extends Component {
     demo: getStoredProp('demo') === 'true',
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
+    dprKey: getStoredProp('dpr-key') || '',
     projectId: getStoredProp('customer-id') || '',
     themeCode: getStoredProp('theme-code') || '',
     displayName: getStoredProp('user-id') || '',
@@ -191,6 +193,7 @@ export default class App extends Component {
       token: getStoredProp('jwtToken'),
       apiKey: this.state.apiKey,
       domain: this.state.domain,
+      dprKey: this.state.dprKey,
     }
   }
 
@@ -716,6 +719,7 @@ export default class App extends Component {
           key={i}
           onSortItems={this.onSortChartColors}
           items={chartColors}
+          item={item}
           sortId={i}
         >
           {item}
@@ -835,6 +839,16 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
+          <Form.Item label="AutoAE API key" name="dprKey">
+            <Input
+              name="dpr-key"
+              onChange={(e) => {
+                this.setState({ dprKey: e.target.value })
+              }}
+              onBlur={(e) => setStoredProp('dpr-key', e.target.value)}
+              value={this.state.dprKey}
+            />
+          </Form.Item>
           <Form.Item
             label="Domain URL"
             name="domain"
@@ -903,10 +917,11 @@ export default class App extends Component {
       <div>
         <h1>Authentication</h1>
         {this.renderAuthenticationForm()}
-        {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
-          true,
-          false,
-        ])}
+        {this.createBooleanRadioGroup(
+          'Enable Infinite Scroll and API Filtering/Sorting',
+          'pagination',
+          [true, false]
+        )}
         <h1>Customize Widgets</h1>
         <Button
           onClick={this.reloadDataMessenger}
@@ -916,7 +931,7 @@ export default class App extends Component {
           Reload Data Messenger
         </Button>
         <Button
-          onClick={() => this.setState({ isVisible: true })}
+          onClick={this.dmRef?.open}
           type="primary"
           icon={<MenuFoldOutlined />}
         >
@@ -1274,8 +1289,10 @@ export default class App extends Component {
         // onMaskClick={() => {
         //   this.setState({ isVisible: false })
         // }}
+        ref={(r) => (this.dmRef = r)}
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
+        enableDPRTab={!!this.state.dprKey}
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
         dataFormatting={this.getDataFormattingProp()}
@@ -1284,6 +1301,7 @@ export default class App extends Component {
         AutoAEId={this.state.componentKey}
         maskClosable
         showHandle={this.state.showHandle}
+        enableAjaxTableData={this.state.pagination}
         placement={
           this.state.currentPage === 'drawer' ||
           this.state.currentPage === 'dashboard' ||
@@ -1542,6 +1560,7 @@ export default class App extends Component {
               onErrorCallback={this.onError}
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
+              enableAjaxTableData={this.state.pagination}
               onChange={(newTiles) => {
                 this.setState({ dashboardTiles: newTiles })
               }}
