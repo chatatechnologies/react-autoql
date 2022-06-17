@@ -101,6 +101,7 @@ export default class DataMessenger extends React.Component {
       queryTipsError: false,
       queryTipsTotalPages: undefined,
       queryTipsCurrentPage: 1,
+      queryTipsInputValue: '',
       isSizeMaximum: false,
     }
   }
@@ -506,7 +507,6 @@ export default class DataMessenger extends React.Component {
                     }}
                     data-tip="Notifications"
                     data-for="react-autoql-header-tooltip"
-                    style={{ paddingBottom: '5px' }}
                   >
                     <div className="data-messenger-notification-btn">
                       <NotificationIcon

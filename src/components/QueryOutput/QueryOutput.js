@@ -1700,7 +1700,15 @@ export default class QueryOutput extends React.Component {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
       } else {
-        this.setState({ customResponse: 'Thank you for your feedback.' })
+        this.setState({
+          customResponse: (
+            <div className="feedback-message">
+              Thank you for your feedback!
+              <br />
+              To continue, try asking another query.
+            </div>
+          ),
+        })
       }
     } else {
       if (this.props.onSuggestionClick) {
@@ -2032,8 +2040,6 @@ export default class QueryOutput extends React.Component {
       return this.renderHTMLMessage()
     }
 
-    // This is used for "Thank you for your feedback" response
-    // when user clicks on "None of these" in the suggestion list
     if (this.state.customResponse) {
       return this.state.customResponse
     }

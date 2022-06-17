@@ -808,11 +808,27 @@ class DashboardTile extends React.Component {
   }
 
   onNoneOfTheseClick = () => {
-    this.setState({ customMessage: 'Thank you for your feedback' })
+    this.setState({
+      customMessage: (
+        <div className="feedback-message">
+          Thank you for your feedback!
+          <br />
+          To continue, try asking another query.
+        </div>
+      ),
+    })
   }
 
   secondOnNoneOfTheseClick = () => {
-    this.setState({ secondCustomMessage: 'Thank you for your feedback' })
+    this.setState({
+      secondCustomMessage: (
+        <div className="feedback-message">
+          Thank you for your feedback!
+          <br />
+          To continue, try asking another query.
+        </div>
+      ),
+    })
   }
 
   renderSuggestionPrefix = () => {

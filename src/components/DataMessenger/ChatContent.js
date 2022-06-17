@@ -123,13 +123,22 @@ export default class ChatContent extends React.Component {
   }
 
   onNoneOfTheseClick = () => {
+    this.addRequestMessage('None of these')
     this.setState({ isChataThinking: true })
 
     clearTimeout(this.feedbackTimeout)
     this.feedbackTimeout = setTimeout(() => {
       if (this._isMounted) {
         this.setState({ isChataThinking: false })
-        this.addResponseMessage({ content: 'Thank you for your feedback' })
+        this.addResponseMessage({
+          content: (
+            <div>
+              Thank you for your feedback!
+              <br />
+              To continue, try asking another query.
+            </div>
+          ),
+        })
       }
     }, 1000)
   }
