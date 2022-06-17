@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 import disableScroll from 'disable-scroll'
@@ -9,7 +10,6 @@ import dayjs from '../../js/dayjsWithPlugins'
 import parse from 'html-react-parser'
 
 import { scaleOrdinal } from 'd3-scale'
-import PropTypes from 'prop-types'
 
 import {
   dataFormattingType,
@@ -164,6 +164,7 @@ export default class QueryOutput extends React.Component {
     onUpdate: PropTypes.func,
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
+    enableAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -190,6 +191,7 @@ export default class QueryOutput extends React.Component {
     enableFilterLocking: false,
     showQueryInterpretation: false,
     isTaskModule: false,
+    enableAjaxTableData: false,
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -781,7 +783,7 @@ export default class QueryOutput extends React.Component {
               ...getAuthentication(
                 getAuthentication(this.props.authentication)
               ),
-              ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
+              ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
             })
@@ -1394,12 +1396,17 @@ export default class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       col.headerFilter = 'input'
 
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
-      col.headerFilterFunc = this.setFilterFunction(col)
+      if (
+        !this.props.enableAjaxTableData ||
+        this.props.displayType === 'pivot_table'
+      ) {
+        // Need to set custom filters for cells that are
+        // displayed differently than the data (ie. dates)
+        col.headerFilterFunc = this.setFilterFunction(col)
 
-      // Allow proper chronological sorting for date strings
-      col.sorter = this.setSorterFunction(col)
+        // Allow proper chronological sorting for date strings
+        col.sorter = this.setSorterFunction(col)
+      }
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {
@@ -1693,7 +1700,15 @@ export default class QueryOutput extends React.Component {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
       } else {
-        this.setState({ customResponse: 'Thank you for your feedback.' })
+        this.setState({
+          customResponse: (
+            <div className="feedback-message">
+              Thank you for your feedback!
+              <br />
+              To continue, try asking another query.
+            </div>
+          ),
+        })
       }
     } else {
       if (this.props.onSuggestionClick) {
@@ -1746,13 +1761,15 @@ export default class QueryOutput extends React.Component {
 
   renderAllColumnsHiddenMessage = () => {
     return (
-      <div className="no-columns-error-message">
+      <div
+        className="no-columns-error-message"
+        data-test="columns-hidden-message"
+      >
         <div>
           <Icon className="warning-icon" type="warning-triangle" />
           <br /> All columns in this table are currently hidden. You can adjust
           your column visibility preferences using the Column Visibility Manager
-          (
-          <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
+          (<Icon className="eye-icon" type="eye" />) in the Options Toolbar.
         </div>
       </div>
     )
@@ -1781,6 +1798,7 @@ export default class QueryOutput extends React.Component {
             headerFilters={this.pivotHeaderFilters}
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
+            useInfiniteScroll={false}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1791,15 +1809,19 @@ export default class QueryOutput extends React.Component {
 
     return (
       <ChataTable
+        authentication={this.props.authentication}
         themeConfig={getThemeConfig(this.props.themeConfig)}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.tableColumns}
         data={this.tableData}
         onCellClick={this.onTableCellClick}
+        queryID={this.queryID}
         headerFilters={this.headerFilters}
         onFilterCallback={this.onTableFilter}
         isResizing={this.props.isResizing}
+        useInfiniteScroll={this.props.enableAjaxTableData}
+        pageSize={_get(this.queryResponse, 'data.data.row_limit')}
       />
     )
   }
@@ -1912,7 +1934,9 @@ export default class QueryOutput extends React.Component {
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation
 
-    if (maxRowLimit && numRows === maxRowLimit) {
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+    if (maxRowLimit && numRows === maxRowLimit && !isTableAndAjax) {
       return (
         <div className="dashboard-data-limit-warning-icon">
           <Icon
@@ -1971,19 +1995,21 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderHTMLMessage = (queryResponse) => {
-    if (_get(queryResponse, 'data.data.answer', null) !== null) {
-      return parse(_get(queryResponse, 'data.data.answer'), {
-        replace: (domNode) => {
-          if (domNode.name === 'a') {
-            const props = domNode.attribs || {}
-            return (
-              <a {...props} target="_blank">
-                {domNode.children}
-              </a>
-            )
-          }
-        },
+  renderHTMLMessage = () => {
+    const answer = this.queryResponse?.data?.data?.answer
+    if (answer) {
+      return parse(answer, {
+        // Use this if we need to add "target blank" to <a>
+        // replace: (domNode) => {
+        //   if (domNode.name === 'a') {
+        //     const props = domNode.attribs || {}
+        //     return (
+        //       <a {...props} target="_blank">
+        //         {domNode.children}
+        //       </a>
+        //     )
+        //   }
+        // },
       })
     } else {
       return (
@@ -2010,8 +2036,10 @@ export default class QueryOutput extends React.Component {
       return this.renderError(this.queryResponse)
     }
 
-    // This is used for "Thank you for your feedback" response
-    // when user clicks on "None of these" in the suggestion list
+    if (displayType === 'html') {
+      return this.renderHTMLMessage()
+    }
+
     if (this.state.customResponse) {
       return this.state.customResponse
     }
@@ -2103,6 +2131,11 @@ export default class QueryOutput extends React.Component {
   }
 
   renderFooter = () => {
+    const displayType = this.props.displayType
+    if (['html', 'text', 'help', 'suggestion'].includes(displayType)) {
+      return null
+    }
+
     return (
       <div className="query-output-footer">
         {this.renderReverseTranslation()}
@@ -2130,6 +2163,12 @@ export default class QueryOutput extends React.Component {
           id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           place="left"
+          html
+        />
+        <ReactTooltip
+          className="react-autoql-chart-tooltip"
+          id="chart-element-tooltip"
+          effect="solid"
           html
         />
       </ErrorBoundary>

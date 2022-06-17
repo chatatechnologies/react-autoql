@@ -386,7 +386,9 @@ export default class OptionsToolbar extends React.Component {
       ...getAuthentication(this.props.authentication),
     })
       .then(() => {
-        this.props.onSuccessAlert('Thank you for your feedback.')
+        this.props.onSuccessAlert(
+          'Thank you for your feedback! To continue, try asking another query.'
+        )
         if (this._isMounted) {
           this.setState({ activeMenu: undefined, isReportingProblem: false })
         }

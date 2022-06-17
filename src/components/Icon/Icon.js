@@ -75,6 +75,7 @@ import {
   bubbleChartIcon,
   splitViewIcon,
   singleViewIcon,
+  gradCapIcon,
 } from '../../svgIcons.js'
 
 import slackLogo from '../../images/slack-logo.png'
@@ -231,6 +232,10 @@ export default class Icon extends React.Component {
       }
       case 'filter': {
         icon = <FiFilter />
+        break
+      }
+      case 'grad-cap': {
+        icon = gradCapIcon
         break
       }
       case 'globe': {

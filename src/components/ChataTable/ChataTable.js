@@ -5,15 +5,22 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { ReactTabulator } from 'react-tabulator'
 
+import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { setCSSVars } from '../../js/Util'
 import { isAggregation } from '../QueryOutput/columnHelpers'
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+import {
+  themeConfigDefault,
+  getThemeConfig,
+  getAuthentication,
+} from '../../props/defaults'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
+import { runSubQuery } from '../../js/queryService'
+import { getTableConfigState } from './tableHelpers'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -21,31 +28,114 @@ export default class ChataTable extends React.Component {
 
     this.TABLE_ID = uuid()
     this.firstRender = true
+    this.hasSetInitialData = false
     this.ref = null
+    this.currentPage = 1
     this.filterTagElements = []
-
     this.supportsDrilldown = isAggregation(props.columns)
+    this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
+
     this.tableOptions = {
+      dataLoadError: (error) => {
+        console.error(error)
+      },
+      selectableCheck: () => false,
       layout: 'fitDataFill',
       textSize: '9px',
-      movableColumns: true,
-      progressiveRender: true,
-      progressiveRenderSize: 5,
-      progressiveRenderMargin: 100,
+      clipboard: true,
+      download: true,
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
         columnCalcs: false,
       },
+      cellClick: this.cellClick,
+      dataSorting: (sorters) => {},
+      dataFiltering: () => {
+        const data = this.ref?.table?.getData()
+        if (data?.length) {
+          this.data = data
+        }
+      },
       dataFiltered: (filters, rows) => {
+        // The filters provided to this function don't include header filters
+        // We only use header filters so we have to use the function below
         if (this._isMounted && this.ref && !this.firstRender) {
-          // The filters provided to this function don't include header filters
-          // We only use header filters so we have to use the function below
           const tableFilters = this.ref.table.getHeaderFilters()
           props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,
+    }
+
+    if (this.supportsInfiniteScroll) {
+      this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll
+        ? 'scroll'
+        : undefined
+      this.tableOptions.ajaxProgressiveLoadScrollMargin = 2000 // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
+      this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
+      this.tableOptions.ajaxSorting = true
+      this.tableOptions.ajaxFiltering = true
+      this.tableOptions.virtualDomHoz = true
+      this.tableOptions.progressiveRenderSize = 5
+      this.tableOptions.progressiveRenderMargin = 100
+      this.tableOptions.ajaxLoader = true
+      this.tableOptions.ajaxLoaderLoading = ''
+      // todo: figure out how to show this
+      // `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
+      //   Loading...
+      // </div>`
+      this.tableOptions.ajaxLoaderError = ''
+      // todo: figure out how to show this
+      //  `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
+      //     Oops! Something went wrong, please try again.
+      //   </div>`
+      this.tableOptions.ajaxRequestFunc = async (url, config, params) => {
+        try {
+          const tableConfigState = getTableConfigState(params, this.ref)
+          if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+            return Promise.resolve()
+          }
+
+          this.previousTableConfigState = tableConfigState
+
+          if (!this.hasSetInitialData) {
+            this.hasSetInitialData = true
+            return Promise.resolve({ rows: this.props.data, page: 1 })
+          }
+
+          const response = await runSubQuery({
+            ...getAuthentication(props.authentication),
+            ...tableConfigState,
+            queryId: props.queryID,
+          })
+          return response
+        } catch (error) {
+          console.log(error)
+          // Send empty promise so data doesn't change
+          return Promise.resolve()
+        }
+      }
+      this.tableOptions.ajaxResponse = (url, params, response) => {
+        if (!response) {
+          return {
+            data: this.data,
+            last_page: this.lastPage,
+          }
+        }
+
+        this.currentPage = response.page
+        const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+        this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+
+        let modResponse = {}
+        modResponse.data = response.rows
+        modResponse.last_page = this.lastPage
+        return modResponse
+      }
+      this.tableOptions.ajaxError = (error) => {
+        console.error(error)
+      }
     }
 
     setCSSVars(getThemeConfig(props.themeConfig))
@@ -61,6 +151,8 @@ export default class ChataTable extends React.Component {
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
     isResizing: PropTypes.bool,
+    pageSize: PropTypes.number,
+    useInfiniteScroll: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -68,6 +160,8 @@ export default class ChataTable extends React.Component {
     data: undefined,
     columns: undefined,
     isResizing: false,
+    pageSize: 0,
+    useInfiniteScroll: true,
     onFilterCallback: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
@@ -195,7 +289,6 @@ export default class ChataTable extends React.Component {
     if (this.tableHeight) {
       return `${this.tableHeight}px`
     }
-
     return `${_get(this.props, 'style.height')}px`
   }
 
@@ -217,11 +310,12 @@ export default class ChataTable extends React.Component {
           }}
         >
           {this.props.data && this.props.columns && (
-            <ReactTabulator
-              ref={(ref) => (this.ref = ref)}
+            <TableWrapper
+              tableRef={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
+              data-test="autoql-tabulator-table"
               columns={this.props.columns}
-              data={this.props.data}
+              data={this.supportsInfiniteScroll ? [] : this.props.data}
               cellClick={this.cellClick}
               options={this.tableOptions}
               data-custom-attr="test-custom-attribute"

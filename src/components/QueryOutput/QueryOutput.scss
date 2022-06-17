@@ -16,8 +16,13 @@
   height: 100%;
   color: var(--react-autoql-text-color-primary);
 
+  a {
+    color: var(--react-autoql-accent-color);
+  }
+
   .query-output-error-message,
-  .no-columns-error-message {
+  .no-columns-error-message,
+  .feedback-message {
     margin: auto;
   }
 }

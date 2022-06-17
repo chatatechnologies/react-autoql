@@ -84,6 +84,7 @@ class Dashboard extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
+    enableAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -101,6 +102,7 @@ class Dashboard extends React.Component {
     notExecutedText: undefined,
     enableDynamicCharting: true,
     autoChartAggregations: true,
+    enableAjaxTableData: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -497,6 +499,7 @@ class Dashboard extends React.Component {
               '--react-autoql-background-color-primary'
             )}
             reportProblemCallback={this.reportProblemCallback}
+            enableAjaxTableData={this.props.enableAjaxTableData}
           />
         )}
       </div>
@@ -612,6 +615,7 @@ class Dashboard extends React.Component {
                           backgroundColor={document.documentElement.style.getPropertyValue(
                             '--react-autoql-background-color-primary'
                           )}
+                          enableAjaxTableData={this.props.enableAjaxTableData}
                         />
                       )}
                       {this.renderChartCollapseBtn('bottom')}
@@ -737,6 +741,7 @@ class Dashboard extends React.Component {
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
+            enableAjaxTableData={this.props.enableAjaxTableData}
           />
         ))}
       </ReactGridLayout>
