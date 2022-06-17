@@ -276,7 +276,6 @@ export default class ChataTable extends React.Component {
   }
 
   render = () => {
-    console.log('using infinite scroll?', this.supportsInfiniteScroll)
     const height = this.getTableHeight()
     return (
       <ErrorBoundary>

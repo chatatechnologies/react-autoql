@@ -1396,12 +1396,17 @@ export default class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       col.headerFilter = 'input'
 
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
-      // col.headerFilterFunc = this.setFilterFunction(col)
+      if (
+        !this.props.enableAjaxTableData ||
+        this.props.displayType === 'pivot_table'
+      ) {
+        // Need to set custom filters for cells that are
+        // displayed differently than the data (ie. dates)
+        col.headerFilterFunc = this.setFilterFunction(col)
 
-      // Allow proper chronological sorting for date strings
-      // col.sorter = this.setSorterFunction(col)
+        // Allow proper chronological sorting for date strings
+        col.sorter = this.setSorterFunction(col)
+      }
 
       // Context menu when right clicking on column header
       col.headerContext = (e, column) => {

@@ -845,7 +845,6 @@ export default class App extends Component {
               }}
               onBlur={(e) => setStoredProp('dpr-key', e.target.value)}
               value={this.state.dprKey}
-              // autoComplete="on"
             />
           </Form.Item>
           <Form.Item

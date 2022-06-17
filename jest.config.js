@@ -1,6 +1,5 @@
 const esModules = ['uuid'].join('|')
 module.exports = {
-  // setupTestFrameworkScriptFile: '<rootDir>/test/setupTests.js',
   setupFilesAfterEnv: ['<rootDir>/test/setupTests.js'],
   setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
   verbose: false,
@@ -18,7 +17,6 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
-  // moduleFileExtensions: ['js', 'jsx'],
   moduleDirectories: ['node_modules', 'example/node_modules', 'src'],
   coverageReporters: ['json-summary', 'text', 'lcov'],
   transformIgnorePatterns: ['/node_modules/(?!uuid)/'],
