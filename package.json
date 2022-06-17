@@ -10,8 +10,13 @@
   "files": [
     "dist"
   ],
+  "watch": {
+    "devscript": "{src,test}/*.js"
+  },
   "scripts": {
-    "dev": "export NODE_ENV=dev && watch 'npm run build' src",
+    "watch": "npm-watch",
+    "dev": "npm run watch devscript",
+    "devscript": "export NODE_ENV=dev && npm run build",
     "packexample": "cd example/package && npm pack ../..",
     "test": "NODE_ENV=test && jest --silent=false",
     "test:watch": "jest --watch",
@@ -113,9 +118,10 @@
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.16.0",
     "@babel/plugin-syntax-object-rest-spread": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.16.0",
-    "@babel/preset-env": "^7.16.0",
-    "@babel/preset-react": "^7.16.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.18.2",
+    "@babel/plugin-transform-runtime": "^7.18.5",
+    "@babel/preset-env": "^7.18.2",
+    "@babel/preset-react": "^7.17.12",
     "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-image": "^2.0.5",
     "@rollup/plugin-node-resolve": "^13.0.6",
@@ -128,12 +134,13 @@
     "autoprefixer": "^9.7.0",
     "axios-mock-adapter": "^1.18.1",
     "babel-core": "^7.0.0-bridge.0",
-    "babel-jest": "^23.4.2",
+    "babel-jest": "^28.1.1",
     "babel-plugin-import": "^1.13.3",
     "babel-preset-es2015-rollup": "^3.0.0",
     "check-prop-types": "^1.1.2",
-    "enzyme": "^3.7.0",
-    "enzyme-adapter-react-16": "^1.15.1",
+    "cheerio": "=1.0.0-rc.10",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.6",
     "eslint": "^5.16.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.18.2",
@@ -144,15 +151,16 @@
     "eslint-plugin-standard": "^4.0.1",
     "gh-pages": "^2.1.1",
     "husky": "^2.7.0",
-    "jest": "^23.6.0",
+    "jest": "^28.1.1",
     "jest-css-modules": "^2.0.0",
+    "jest-environment-jsdom": "^28.1.1",
     "jest-mock-axios": "^4.2.0",
-    "jsdom": "^16.2.2",
+    "jsdom": "^19.0.0",
     "lint-staged": "^13.0.2",
     "node-sass": "^7.0.0",
-    "postcss-prefixer": "^2.1.2",
-    "prettier-eslint": "^8.8.2",
-    "prettier-eslint-cli": "^4.7.1",
+    "npm-watch": "^0.11.0",
+    "prettier-eslint": "^15.0.1",
+    "prettier-eslint-cli": "^6.0.1",
     "react-test-renderer": "^16.11.0",
     "rimraf": "^2.7.1",
     "rollup": "^2.59.0",
@@ -167,18 +175,15 @@
     "rollup-plugin-svg": "^1.0.1",
     "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-visualizer": "^5.6.0",
-    "semantic-release": "^19.0.3",
-    "watch": "^1.0.2"
+    "semantic-release": "^19.0.3"
   },
   "peerDependencies": {
     "react": ">=16.9.0",
     "react-dom": ">=16.9.0"
   },
-  "resolutions": {
-    "**/**/fsevents": "^1.2.9"
-  },
   "engines": {
-    "node": "14.17.3"
+    "node": "14.17.3",
+    "npm": "6.14.13"
   },
   "config": {
     "commitizen": {

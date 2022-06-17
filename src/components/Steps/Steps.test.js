@@ -110,10 +110,4 @@ describe('renders correctly', () => {
     )
     expect(stepContainer.hasClass('active')).toBe(false)
   })
-
-  test('test jsdom', () => {
-    const wrapper = mount(<Steps {...defaultProps} />).setState({
-      activeStep: 1,
-    })
-  })
 })
