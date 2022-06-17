@@ -111,7 +111,6 @@ export default class ChataTable extends React.Component {
           })
           return response
         } catch (error) {
-          console.log(error)
           // Send empty promise so data doesn't change
           return Promise.resolve()
         }
