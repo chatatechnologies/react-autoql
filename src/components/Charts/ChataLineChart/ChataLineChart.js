@@ -97,7 +97,7 @@ export default class ChataLineChart extends Component {
           {...this.props}
           xScale={this.xScale}
           yScale={this.yScale}
-          xCol={this.props.columns[0]}
+          xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.columns[this.props.numberColumnIndex]}
           xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
