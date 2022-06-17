@@ -7,7 +7,7 @@ export const gradCapIcon = (
     width="23px"
     height="23px"
     viewBox="0 0 23 23"
-    style={{ strokeWidth: '1.4px', marginBottom: '2px' }}
+    style={{ strokeWidth: '1.4px', marginBottom: '2px', marginLeft: '1px' }}
   >
     <g>
       <path

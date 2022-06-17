@@ -107,6 +107,7 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
+    pagination: false,
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
@@ -915,10 +916,11 @@ export default class App extends Component {
       <div>
         <h1>Authentication</h1>
         {this.renderAuthenticationForm()}
-        {this.createBooleanRadioGroup('Show UI Overlay', 'uiOverlay', [
-          true,
-          false,
-        ])}
+        {this.createBooleanRadioGroup(
+          'Enable Infinite Scroll and API Filtering/Sorting',
+          'pagination',
+          [true, false]
+        )}
         <h1>Customize Widgets</h1>
         <Button
           onClick={this.reloadDataMessenger}
@@ -1298,6 +1300,7 @@ export default class App extends Component {
         AutoAEId={this.state.componentKey}
         maskClosable
         showHandle={this.state.showHandle}
+        enableAjaxTableData={this.state.pagination}
         placement={
           this.state.currentPage === 'drawer' ||
           this.state.currentPage === 'dashboard' ||
@@ -1556,6 +1559,7 @@ export default class App extends Component {
               onErrorCallback={this.onError}
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
+              enableAjaxTableData={this.state.pagination}
               onChange={(newTiles) => {
                 this.setState({ dashboardTiles: newTiles })
               }}

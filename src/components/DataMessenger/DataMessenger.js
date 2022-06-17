@@ -506,7 +506,7 @@ export default class DataMessenger extends React.Component {
                     }}
                     data-tip="Notifications"
                     data-for="react-autoql-header-tooltip"
-                    style={{ paddingBottom: '5px', paddingLeft: '2px' }}
+                    style={{ paddingBottom: '5px' }}
                   >
                     <div className="data-messenger-notification-btn">
                       <NotificationIcon
