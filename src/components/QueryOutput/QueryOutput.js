@@ -783,7 +783,7 @@ export default class QueryOutput extends React.Component {
               ...getAuthentication(
                 getAuthentication(this.props.authentication)
               ),
-              ...getAutoQLConfig(getAutoQLConfig(this.props.autoQLConfig)),
+              ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
             })
@@ -1748,13 +1748,15 @@ export default class QueryOutput extends React.Component {
 
   renderAllColumnsHiddenMessage = () => {
     return (
-      <div className="no-columns-error-message">
+      <div
+        className="no-columns-error-message"
+        data-test="columns-hidden-message"
+      >
         <div>
           <Icon className="warning-icon" type="warning-triangle" />
           <br /> All columns in this table are currently hidden. You can adjust
           your column visibility preferences using the Column Visibility Manager
-          (
-          <Icon className="eye-icon" type="eye" />) in the Options Toolbar.
+          (<Icon className="eye-icon" type="eye" />) in the Options Toolbar.
         </div>
       </div>
     )
@@ -1978,19 +1980,21 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  renderHTMLMessage = (queryResponse) => {
-    if (_get(queryResponse, 'data.data.answer', null) !== null) {
-      return parse(_get(queryResponse, 'data.data.answer'), {
-        replace: (domNode) => {
-          if (domNode.name === 'a') {
-            const props = domNode.attribs || {}
-            return (
-              <a {...props} target="_blank">
-                {domNode.children}
-              </a>
-            )
-          }
-        },
+  renderHTMLMessage = () => {
+    const answer = this.queryResponse?.data?.data?.answer
+    if (answer) {
+      return parse(answer, {
+        // Use this if we need to add "target blank" to <a>
+        // replace: (domNode) => {
+        //   if (domNode.name === 'a') {
+        //     const props = domNode.attribs || {}
+        //     return (
+        //       <a {...props} target="_blank">
+        //         {domNode.children}
+        //       </a>
+        //     )
+        //   }
+        // },
       })
     } else {
       return (
@@ -2015,6 +2019,10 @@ export default class QueryOutput extends React.Component {
 
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
+    }
+
+    if (displayType === 'html') {
+      return this.renderHTMLMessage()
     }
 
     // This is used for "Thank you for your feedback" response
@@ -2110,6 +2118,11 @@ export default class QueryOutput extends React.Component {
   }
 
   renderFooter = () => {
+    const displayType = this.props.displayType
+    if (['html', 'text', 'help', 'suggestion'].includes(displayType)) {
+      return null
+    }
+
     return (
       <div className="query-output-footer">
         {this.renderReverseTranslation()}

@@ -25,6 +25,8 @@ export default class ReverseTranslation extends React.Component {
   constructor(props) {
     super(props)
 
+    setCSSVars(getThemeConfig(props.themeConfig))
+
     this.COMPONENT_KEY = uuid()
     this.reverseTranslationArray = props.reverseTranslation
 
@@ -52,7 +54,6 @@ export default class ReverseTranslation extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
     if (this.props.onValueLabelClick) {
       this.validateAndUpdateValueLabels()
     }

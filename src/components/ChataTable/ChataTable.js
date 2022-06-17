@@ -39,7 +39,7 @@ export default class ChataTable extends React.Component {
       dataLoadError: (error) => {
         console.error(error)
       },
-      layout: 'fitDataStretch',
+      layout: 'fitDataFill',
       textSize: '9px',
       clipboard: true,
       download: true,
@@ -297,6 +297,7 @@ export default class ChataTable extends React.Component {
             <TableWrapper
               tableRef={(ref) => (this.ref = ref)}
               id={`react-autoql-table-${this.TABLE_ID}`}
+              data-test="autoql-tabulator-table"
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
               cellClick={this.cellClick}

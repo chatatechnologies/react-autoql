@@ -22,6 +22,8 @@ export default class QueryTipsTab extends React.Component {
     error: PropTypes.bool,
     queryTipsList: PropTypes.array,
     executeQuery: PropTypes.func,
+    shouldRender: PropTypes.bool,
+    isDataMessengerOpen: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -29,6 +31,8 @@ export default class QueryTipsTab extends React.Component {
     loading: false,
     error: false,
     queryTipsList: undefined,
+    shouldRender: true,
+    isDataMessengerOpen: true,
     executeQuery: () => {},
     onQueryTipsInputKeyPress: () => {},
   }
@@ -124,6 +128,10 @@ export default class QueryTipsTab extends React.Component {
   }
 
   render = () => {
+    if (!this.props.shouldRender || !this.props.isDataMessengerOpen) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <Scrollbars

@@ -565,8 +565,8 @@ export const getSupportedDisplayTypes = ({
       // Check if date pivot should be supported
       if (
         dateColumn &&
-        dateColumn.display_name.toLowerCase().includes('month') &&
-        columns.length === 2
+        dateColumn?.display_name?.toLowerCase().includes('month') &&
+        columns?.length === 2
       ) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []

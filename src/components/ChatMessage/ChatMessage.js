@@ -77,7 +77,6 @@ export default class ChatMessage extends React.Component {
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
-    setActiveMessage: PropTypes.func,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -101,9 +100,7 @@ export default class ChatMessage extends React.Component {
     addMessageToDM: PropTypes.func,
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
-    messageContainerHeight: PropTypes.number,
-    messageContainerWidth: PropTypes.number,
-    enableAjaxTableData: PropTypes.bool.isRequired,
+    enableAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -112,6 +109,7 @@ export default class ChatMessage extends React.Component {
     dataFormatting: dataFormattingDefault,
     themeConfig: themeConfigDefault,
 
+    enableAjaxTableData: false,
     isDataMessengerOpen: false,
     isIntroMessage: false,
     displayType: undefined,
@@ -126,10 +124,7 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
-    messageContainerHeight: undefined,
-    messageContainerWidth: undefined,
     onSuggestionClick: () => {},
-    setActiveMessage: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
@@ -140,6 +135,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.scrollToBottomTimeout = setTimeout(() => {
       this.props.scrollToBottom()
     }, 100)
@@ -167,6 +163,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
@@ -247,13 +244,17 @@ export default class ChatMessage extends React.Component {
     this.setState({ supportedDisplayTypes })
   }
 
+  renderFetchingFileMessage = () => {
+    return (
+      <div>
+        Fetching your file <Spinner />
+      </div>
+    )
+  }
+
   renderCSVProgressMessage = () => {
     if (isNaN(this.state.csvDownloadProgress)) {
-      return (
-        <div>
-          Fetching your file <Spinner />
-        </div>
-      )
+      return this.renderFetchingFileMessage()
     }
     return `Downloading your file ... ${this.state.csvDownloadProgress}%`
   }
@@ -293,9 +294,6 @@ export default class ChatMessage extends React.Component {
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
-            // We want to render our own in the parent component
-            // so the tooltip doesn't get clipped by the drawer
-            renderTooltips={false}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
             isResizing={
@@ -336,6 +334,7 @@ export default class ChatMessage extends React.Component {
       id,
       query,
       queryId,
+      content: this.renderFetchingFileMessage(),
       isCSVProgressMessage: true,
     })
   }
@@ -418,6 +417,7 @@ export default class ChatMessage extends React.Component {
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}
+            ${this.props.disableMaxHeight ? ' no-max-height' : ''}
           `}
         >
           <div

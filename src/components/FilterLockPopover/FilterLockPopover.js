@@ -635,36 +635,6 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
-  renderFilterList = () => {
-    if (this.state.isFetchingFilters) {
-      return (
-        <div className="react-autoql-condition-list-loading-container">
-          <LoadingDots />
-        </div>
-      )
-    }
-
-    if (!this.state.filters?.length) {
-      return (
-        <div className="react-autoql-empty-condition-list">
-          <i>{lang.noFiltersLocked}</i>
-        </div>
-      )
-    }
-
-    const uniqueCategories = [
-      ...new Set(this.state.filters.map((filter) => filter.show_message)),
-    ]
-
-    return (
-      <div className="react-autoql-filter-list-container">
-        {uniqueCategories.map((category, i) => {
-          return this.renderFilterListCategory(category, i)
-        })}
-      </div>
-    )
-  }
-
   renderContent = () => {
     return (
       <ErrorBoundary>
