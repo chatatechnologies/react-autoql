@@ -75,7 +75,21 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxSorting = true
       this.tableOptions.ajaxFiltering = true
-      this.tableOptions.ajaxRequestFunc = (url, config, params) => {
+      this.tableOptions.virtualDomHoz = true
+      this.tableOptions.progressiveRenderSize = 5
+      this.tableOptions.progressiveRenderMargin = 100
+      this.tableOptions.ajaxLoader = true
+      this.tableOptions.ajaxLoaderLoading = ''
+      // todo: figure out how to show this
+      // `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
+      //   Loading...
+      // </div>`
+      this.tableOptions.ajaxLoaderError = ''
+      // todo: figure out how to show this
+      //  `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
+      //     Oops! Something went wrong, please try again.
+      //   </div>`
+      this.tableOptions.ajaxRequestFunc = async (url, config, params) => {
         try {
           const tableConfigState = getTableConfigState(params, this.ref)
           if (_isEqual(this.previousTableConfigState, tableConfigState)) {
@@ -89,12 +103,14 @@ export default class ChataTable extends React.Component {
             return Promise.resolve({ rows: this.props.data, page: 1 })
           }
 
-          return runSubQuery({
+          const response = await runSubQuery({
             ...getAuthentication(props.authentication),
             ...tableConfigState,
             queryId: props.queryID,
           })
+          return response
         } catch (error) {
+          console.log(error)
           // Send empty promise so data doesn't change
           return Promise.resolve()
         }

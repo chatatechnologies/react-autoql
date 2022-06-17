@@ -95,7 +95,7 @@ class Item extends React.Component {
         }}
         {...this.props}
       >
-        {this.props.children}
+        {this.props.item}
       </li>
     )
   }
@@ -719,6 +719,7 @@ export default class App extends Component {
           key={i}
           onSortItems={this.onSortChartColors}
           items={chartColors}
+          item={item}
           sortId={i}
         >
           {item}

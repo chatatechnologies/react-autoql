@@ -11,7 +11,14 @@
     "dist"
   ],
   "watch": {
-    "devscript": "{src,test}/*.js"
+    "devscript": {
+      "patterns": [
+        "src",
+        "test"
+      ],
+      "extensions": "js,jsx,scss",
+      "quiet": false
+    }
   },
   "scripts": {
     "watch": "npm-watch",

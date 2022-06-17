@@ -40,7 +40,6 @@ export const formatNumberFilterValue = (headerValue = '') => {
     throw new Error('Unable to convert string to number')
   }
 
-  // let operator = 'LIKE'
   let operator = '='
 
   const trimmedStringValue = headerValue.trim()
@@ -68,7 +67,7 @@ export const formatFiltersForAPI = (params, tableRef) => {
         const filterObj = {
           name: column.name,
           value: filter.value,
-          operator: '=',
+          operator: 'like',
         }
 
         if (isColumnNumberType(column)) {
