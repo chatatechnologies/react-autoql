@@ -890,6 +890,7 @@ export default class DataMessenger extends React.Component {
         csvProgressLog={this.csvProgressLog}
         inputPlaceholder={this.props.inputPlaceholder}
         enableAjaxTableData={this.props.enableAjaxTableData}
+        autoChartAggregations={this.props.autoChartAggregations}
       />
     </ErrorBoundary>
   )

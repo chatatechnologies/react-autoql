@@ -54,6 +54,7 @@ export default class ReverseTranslation extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     if (this.props.onValueLabelClick) {
       this.validateAndUpdateValueLabels()
     }
@@ -78,6 +79,10 @@ export default class ReverseTranslation extends React.Component {
     }
   }
 
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
   validateAndUpdateValueLabels = () => {
     if (this.reverseTranslationArray.length) {
       const valueLabelValidationPromises = []
@@ -100,8 +105,10 @@ export default class ReverseTranslation extends React.Component {
       })
 
       Promise.all(valueLabelValidationPromises).then(() => {
-        this.reverseTranslationArray = validatedInterpretationArray
-        this.setState({ isValidated: true })
+        if (this._isMounted) {
+          this.reverseTranslationArray = validatedInterpretationArray
+          this.setState({ isValidated: true })
+        }
       })
     }
   }
