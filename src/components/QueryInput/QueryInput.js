@@ -129,6 +129,12 @@ export default class QueryInput extends React.Component {
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source }) => {
+    if (!(query?.length > 0)) {
+      return
+    }
+
+    const totalAnimationTime = 1000
+    const timePerChar = Math.round(totalAnimationTime / query.length)
     if (typeof query === 'string' && _get(query, 'length')) {
       for (let i = 1; i <= query.length; i++) {
         setTimeout(() => {
@@ -146,7 +152,7 @@ export default class QueryInput extends React.Component {
               })
             }, 300)
           }
-        }, i * 50)
+        }, i * timePerChar)
       }
     }
   }

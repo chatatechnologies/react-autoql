@@ -331,7 +331,6 @@ export default class QueryOutput extends React.Component {
   }
 
   componentWillUnmount = () => {
-    clearTimeout(this.filterDrilldownTimeout)
     this._isMounted = false
     ReactTooltip.hide()
   }
@@ -766,13 +765,17 @@ export default class QueryOutput extends React.Component {
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
-    const filteredRows = this.tableData?.filter((origRow) => {
-      return `${origRow[stringColumnIndex]}` === `${row[stringColumnIndex]}`
-    })
+    try {
+      const filteredRows = this.tableData?.filter((origRow) => {
+        return `${origRow[stringColumnIndex]}` === `${row[stringColumnIndex]}`
+      })
 
-    const drilldownResponse = _cloneDeep(this.queryResponse)
-    drilldownResponse.data.data.rows = filteredRows
-    return drilldownResponse
+      const drilldownResponse = _cloneDeep(this.queryResponse)
+      drilldownResponse.data.data.rows = filteredRows
+      return drilldownResponse
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   processDrilldown = async ({
@@ -802,7 +805,7 @@ export default class QueryOutput extends React.Component {
         } else if (!isNaN(stringColumnIndex) && !!row?.length) {
           this.props.onDrilldownStart(activeKey)
           const response = this.getFilterDrilldown({ stringColumnIndex, row })
-          this.filterDrilldownTimeout = setTimeout(() => {
+          setTimeout(() => {
             this.props.onDrilldownEnd({ response })
           }, 1500)
         }
