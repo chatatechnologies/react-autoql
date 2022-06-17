@@ -132,7 +132,7 @@ export default class ChatContent extends React.Component {
         this.setState({ isChataThinking: false })
         this.addResponseMessage({
           content: (
-            <div>
+            <div className="feedback-message">
               Thank you for your feedback!
               <br />
               To continue, try asking another query.

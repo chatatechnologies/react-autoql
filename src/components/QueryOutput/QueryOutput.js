@@ -684,13 +684,21 @@ export default class QueryOutput extends React.Component {
         </div>
       )
     } catch (error) {
-      suggestionListMessage = (
+      return (
         <div className="react-autoql-suggestion-message">
           Sorry something went wrong, I have no suggestions for you.
         </div>
       )
     }
 
+    if (this.props.renderFullSuggestionMessage) {
+      return (
+        <div style={{ textAlign: 'center' }}>
+          {this.renderError(this.queryResponse)}
+          {suggestionListMessage}
+        </div>
+      )
+    }
     return suggestionListMessage
   }
 
