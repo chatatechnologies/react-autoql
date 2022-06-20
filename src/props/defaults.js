@@ -19,7 +19,6 @@ export const autoQLConfigDefault = {
   test: false,
   enableAutocomplete: true,
   enableQueryInterpretation: true,
-  defaultShowInterpretation: false,
   enableQueryValidation: true,
   enableQuerySuggestions: true,
   enableColumnVisibilityManager: true,
@@ -28,6 +27,7 @@ export const autoQLConfigDefault = {
   enableSlackSharing: true,
   enableTeamsSharing: true,
   enableCSVDownload: false,
+  enableReportProblem: true,
 }
 
 export const themeConfigDefault = {

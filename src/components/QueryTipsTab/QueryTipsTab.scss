@@ -124,17 +124,10 @@
 
   .pagination-previous,
   .pagination-next {
-    position: absolute;
     font-size: 18px;
     a {
       color: var(--react-autoql-text-color-primary);
     }
-  }
-  .pagination-previous {
-    left: 20px;
-  }
-  .pagination-next {
-    right: 20px;
   }
 }
 

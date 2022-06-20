@@ -137,8 +137,6 @@ export default class DataMessenger extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
     autoChartAggregations: PropTypes.bool,
-    enableQueryInterpretation: PropTypes.bool,
-    defaultShowInterpretation: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
@@ -180,8 +178,6 @@ export default class DataMessenger extends React.Component {
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
     autoChartAggregations: true,
-    enableQueryInterpretation: false,
-    defaultShowInterpretation: false,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
     enableAjaxTableData: false,
@@ -895,33 +891,36 @@ export default class DataMessenger extends React.Component {
     </ErrorBoundary>
   )
 
-  renderDPRContent = () => (
-    <ErrorBoundary>
-      <ChatContent
-        {...this.props}
-        shouldRender={this.state.activePage === 'dpr'}
-        key={this.state.dataMessengerId}
-        ref={(r) => (this.dprMessengerContentRef = r)}
-        authentication={{ dprKey: this.props.authentication?.dprKey }}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        isResizing={this.state.isResizing || this.state.isWindowResizing}
-        source={['data_messenger']}
-        rebuildTooltips={this.rebuildTooltips}
-        isDataMessengerOpen={!!this.dmRef?.state?.open}
-        introMessages={this.dprMessengerIntroMessages}
-        disableMaxMessageHeight={true}
-        inputPlaceholder="Type your questions here"
-        autoQLConfig={{
-          enableAutocomplete: false,
-          enableQueryInterpretation: false,
-          enableQueryValidation: false,
-          enableQuerySuggestions: false,
-          enableColumnVisibilityManager: false,
-          enableDrilldowns: false,
-        }}
-      />
-    </ErrorBoundary>
-  )
+  renderDPRContent = () => {
+    return (
+      <ErrorBoundary>
+        <ChatContent
+          {...this.props}
+          shouldRender={this.state.activePage === 'dpr'}
+          key={this.state.dataMessengerId}
+          ref={(r) => (this.dprMessengerContentRef = r)}
+          authentication={{ dprKey: this.props.authentication?.dprKey }}
+          themeConfig={getThemeConfig(this.props.themeConfig)}
+          isResizing={this.state.isResizing || this.state.isWindowResizing}
+          source={['data_messenger']}
+          rebuildTooltips={this.rebuildTooltips}
+          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          introMessages={this.dprMessengerIntroMessages}
+          disableMaxMessageHeight={true}
+          inputPlaceholder="Type your questions here"
+          autoQLConfig={{
+            enableAutocomplete: false,
+            enableQueryValidation: false,
+            enableQuerySuggestions: false,
+            enableColumnVisibilityManager: false,
+            enableQueryInterpretation: false,
+            enableDrilldowns: false,
+            enableReportProblem: false,
+          }}
+        />
+      </ErrorBoundary>
+    )
+  }
 
   renderQueryTipsContent = () => (
     <ErrorBoundary>

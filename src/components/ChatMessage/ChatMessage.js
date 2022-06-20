@@ -306,7 +306,6 @@ export default class ChatMessage extends React.Component {
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}
-            enableQueryInterpretation={this.props.enableQueryInterpretation}
             showQueryInterpretation
             onRecommendedDisplayType={this.switchView}
             enableFilterLocking={this.props.enableFilterLocking}
