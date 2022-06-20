@@ -33,7 +33,6 @@ import {
   getAutoQLConfig,
   getThemeConfig,
 } from '../../props/defaults'
-import { OptionsToolbar } from '../OptionsToolbar'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
 import './Dashboard.scss'
@@ -62,6 +61,8 @@ const unExecuteDashboard = (ref) => {
 
 class Dashboard extends React.Component {
   tileRefs = {}
+  debounceTime = 50
+  onChangeTiles = null
 
   static propTypes = {
     // Global
@@ -113,7 +114,6 @@ class Dashboard extends React.Component {
 
   state = {
     isDragging: false,
-    previousTileState: this.props.tiles,
   }
 
   componentDidMount = () => {
@@ -147,16 +147,17 @@ class Dashboard extends React.Component {
     // If tile structure changed, set previous tile state for undo feature
     if (
       this.getChangeDetection(this.props.tiles, prevProps.tiles) &&
-      _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !== Infinity
+      _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !==
+        Number.MAX_VALUE
     ) {
       // Do not scroll to the bottom if new tile is added because of undo
-      if (
-        this.props.isEditing &&
-        prevProps.tiles.length < this.props.tiles.length &&
-        !this.state.justPerformedUndo
-      ) {
-        this.scrollToNewTile()
-      }
+      // if (
+      //   this.props.isEditing &&
+      //   prevProps.tiles.length < this.props.tiles.length &&
+      //   !this.state.justPerformedUndo
+      // ) {
+      //   this.scrollToNewTile()
+      // }
 
       this.setState({
         justPerformedUndo: false,
@@ -179,6 +180,32 @@ class Dashboard extends React.Component {
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
     }, 500)
+  }
+
+  debouncedOnChange = (tiles, saveInLog = true) => {
+    clearTimeout(this.onChangeTimer)
+    if (saveInLog) {
+      this.previousTileState = this.onChangeTiles
+        ? _cloneDeep(this.onChangeTiles)
+        : _cloneDeep(this.props.tiles)
+    }
+
+    this.onChangeTiles = _cloneDeep(tiles)
+    return new Promise((resolve, reject) => {
+      try {
+        this.onChangeTimer = setTimeout(() => {
+          if (this.onChangeTiles) {
+            this.props.onChange(this.onChangeTiles)
+            this.onChangeTiles = null
+            return resolve()
+          }
+          return resolve()
+        }, this.debounceTime)
+      } catch (error) {
+        console.error(error)
+        return reject()
+      }
+    })
   }
 
   setStyles = () => {
@@ -209,12 +236,6 @@ class Dashboard extends React.Component {
         }
       }, 300)
     }
-  }
-
-  setPreviousTileState = (tiles) => {
-    this.setState({
-      previousTileState: tiles,
-    })
   }
 
   executeDashboard = () => {
@@ -271,7 +292,11 @@ class Dashboard extends React.Component {
   scrollToNewTile = () => {
     this.scrollToNewTileTimeout = setTimeout(() => {
       if (this.ref) {
-        this.ref.scrollIntoView(false)
+        this.ref.scrollIntoView({
+          block: 'end',
+          inline: 'nearest',
+          behavior: 'smooth',
+        })
       }
     }, 200)
   }
@@ -287,7 +312,7 @@ class Dashboard extends React.Component {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
       if (this.getChangeDetection(this.props.tiles, layout, true)) {
-        this.setPreviousTileState(this.props.tiles)
+        this.previousTileState = this.props.tiles
       }
 
       // Delaying this makes the snap back animation much smoother
@@ -304,7 +329,8 @@ class Dashboard extends React.Component {
 
   updateTileLayout = (layout) => {
     try {
-      const tiles = this.props.tiles.map((tile, index) => {
+      const oldTiles = _cloneDeep(this.props.tiles)
+      const tiles = oldTiles.map((tile, index) => {
         return {
           ...tile,
           ...layout[index],
@@ -315,7 +341,7 @@ class Dashboard extends React.Component {
       // re-adjustment of all tiles after moving a single tile. So we do not
       // want to trigger the undo state on this action. Only on main actions
       // directly caused from user interaction
-      this.props.onChange(tiles)
+      this.debouncedOnChange(tiles, false)
     } catch (error) {
       console.error(error)
     }
@@ -323,8 +349,6 @@ class Dashboard extends React.Component {
 
   addTile = () => {
     try {
-      this.setPreviousTileState(this.props.tiles)
-
       const tiles = _cloneDeep(this.props.tiles)
       const id = uuid()
       tiles.push({
@@ -333,12 +357,18 @@ class Dashboard extends React.Component {
         w: 6,
         h: 5,
         x: (Object.keys(tiles).length * 6) % 12,
-        y: Infinity,
+        y: Number.MAX_VALUE,
         query: '',
         title: '',
       })
 
-      this.props.onChange(tiles)
+      this.debouncedOnChange(tiles)
+        .then(() => {
+          this.scrollToNewTile()
+        })
+        .catch((error) => {
+          console.error(error)
+        })
     } catch (error) {
       console.error(error)
     }
@@ -346,9 +376,8 @@ class Dashboard extends React.Component {
 
   undo = () => {
     try {
-      this.props.onChange(this.state.previousTileState)
+      this.debouncedOnChange(this.previousTileState, false)
       this.setState({
-        previousTileState: this.props.tiles,
         justPerformedUndo: true,
       })
     } catch (error) {
@@ -358,13 +387,11 @@ class Dashboard extends React.Component {
 
   deleteTile = (id) => {
     try {
-      this.setPreviousTileState(this.props.tiles)
-
       const tiles = _cloneDeep(this.props.tiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
-      this.props.onChange(tiles)
+      this.debouncedOnChange(tiles)
     } catch (error) {
       console.error(error)
     }
@@ -372,8 +399,6 @@ class Dashboard extends React.Component {
 
   setParamsForTile = (params, id) => {
     try {
-      this.setPreviousTileState(this.props.tiles)
-
       const tiles = _cloneDeep(this.props.tiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       tiles[tileIndex] = {
@@ -395,7 +420,7 @@ class Dashboard extends React.Component {
         tiles[tileIndex].secondskipQueryValidation = false
       }
 
-      this.props.onChange(tiles)
+      this.debouncedOnChange(tiles)
     } catch (error) {
       console.error(error)
     }
