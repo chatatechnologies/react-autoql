@@ -774,8 +774,9 @@ export default class OptionsToolbar extends React.Component {
         showSaveAsCSVButton:
           isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: this.props.enableDeleteBtn,
-        showReportProblemButton: !!_get(response, 'data.data.query_id'),
-
+        showReportProblemButton:
+          autoQLConfig.enableReportProblem &&
+          !!_get(response, 'data.data.query_id'),
         showCreateNotificationIcon:
           isDataResponse &&
           autoQLConfig.enableNotifications &&

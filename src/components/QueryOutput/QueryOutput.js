@@ -123,14 +123,10 @@ export default class QueryOutput extends React.Component {
     this.generateAllData(props.queryResponse, displayType)
     // -------------------------------------------
 
-    const isShowingInterpretation = getAutoQLConfig(props.autoQLConfig)
-      .defaultShowInterpretation
-
     this.state = {
       displayType,
       tableFilters: [],
       selectedSuggestion: props.selectedSuggestion,
-      isShowingInterpretation,
     }
   }
 
@@ -158,8 +154,6 @@ export default class QueryOutput extends React.Component {
     autoChartAggregations: PropTypes.bool,
     onSupportedDisplayTypesChange: PropTypes.func,
     onRTValueLabelClick: PropTypes.func,
-    enableQueryInterpretation: PropTypes.bool,
-    defaultShowInterpretation: PropTypes.bool,
     isTaskModule: PropTypes.bool,
     onUpdate: PropTypes.func,
     onDrilldownStart: PropTypes.func,
@@ -312,12 +306,6 @@ export default class QueryOutput extends React.Component {
         disableScroll.on()
       } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
         disableScroll.off()
-      }
-
-      if (
-        prevState.isShowingInterpretation !== this.state.isShowingInterpretation
-      ) {
-        this.forceUpdate()
       }
 
       if (this.props.optionsToolbarRef?._isMounted) {
@@ -1871,7 +1859,6 @@ export default class QueryOutput extends React.Component {
           data={supportsPivot ? this.pivotTableData : this.tableData}
           columns={supportsPivot ? this.pivotTableColumns : this.tableColumns}
           isPivot={supportsPivot}
-          isShowingInterpretation={this.state.isShowingInterpretation}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
