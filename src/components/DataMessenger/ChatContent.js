@@ -67,8 +67,6 @@ export default class ChatContent extends React.Component {
     inputPlaceholder: PropTypes.string.isRequired,
     enableDynamicCharting: PropTypes.bool.isRequired,
     autoChartAggregations: PropTypes.bool.isRequired,
-    enableQueryInterpretation: PropTypes.bool.isRequired,
-    defaultShowInterpretation: PropTypes.bool.isRequired,
     enableFilterLocking: PropTypes.bool.isRequired,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
