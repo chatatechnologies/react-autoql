@@ -254,7 +254,10 @@ export default class QueryInput extends React.Component {
 
   onKeyDown = (e) => {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
-      this.setState({ inputValue: localStorage.getItem('inputValue') })
+      const lastQuery = localStorage.getItem('inputValue')
+      if (lastQuery) {
+        this.setState({ inputValue: lastQuery })
+      }
     }
   }
 
