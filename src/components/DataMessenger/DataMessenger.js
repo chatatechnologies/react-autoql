@@ -93,6 +93,7 @@ export default class DataMessenger extends React.Component {
       width: props.width,
       height: props.height,
       isResizing: false,
+      isWindowResizing: false,
       placement: this.getPlacementProp(props.placement),
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
@@ -293,11 +294,11 @@ export default class DataMessenger extends React.Component {
       })
   }
 
-  rebuildTooltips = () => {
+  rebuildTooltips = (delay = 500) => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 1000)
+    }, delay)
   }
 
   getMaxWidthAndHeightFromDocument = () => {
@@ -890,6 +891,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          rebuildTooltips={this.rebuildTooltips}
         />
       </ErrorBoundary>
     )

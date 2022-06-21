@@ -104,7 +104,7 @@ export default class Columns extends Component {
                 width={barWidth}
                 onClick={() => this.onColumnClick(d, colIndex, index)}
                 data-tip={tooltip}
-                data-for="chart-element-tooltip"
+                data-for={this.props.tooltipID}
                 style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
               />
             )

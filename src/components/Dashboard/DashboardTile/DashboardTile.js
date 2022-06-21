@@ -1049,6 +1049,7 @@ class DashboardTile extends React.Component {
               '--react-autoql-background-color-primary'
             )}
             enableAjaxTableData={this.props.enableAjaxTableData}
+            rebuildTooltips={this.props.rebuildTooltips}
             {...queryOutputProps}
           />
         )}

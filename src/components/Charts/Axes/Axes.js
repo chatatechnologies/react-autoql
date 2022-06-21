@@ -35,7 +35,7 @@ export default class Axes extends React.Component {
       return (
         <tspan
           data-tip={title}
-          data-for="chart-element-tooltip"
+          data-for={this.props.tooltipID}
           data-test="axis-label"
         >
           {`${title.substring(0, 35)}...`}

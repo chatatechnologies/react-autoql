@@ -344,7 +344,7 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', '0.7')
       .style('font-family', 'inherit')
-      .attr('data-for', 'chart-element-tooltip')
+      .attr('data-for', this.props.tooltipID)
       .attr('data-tip', function(d) {
         const { fullWidthLabel, isTruncated } = formatChartLabel({
           d,

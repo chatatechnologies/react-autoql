@@ -159,6 +159,7 @@ export default class QueryOutput extends React.Component {
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -323,6 +324,18 @@ export default class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     ReactTooltip.hide()
+    clearTimeout(this.rebuildTooltipsTimer)
+  }
+
+  rebuildTooltips = (delay = 500) => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips(delay)
+    } else {
+      clearTimeout(this.rebuildTooltipsTimer)
+      this.rebuildTooltipsTimer = setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, delay)
+    }
   }
 
   hasError = (response) => {
@@ -1873,6 +1886,8 @@ export default class QueryOutput extends React.Component {
           isResizing={this.props.isResizing}
           isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
+          tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+          rebuildTooltips={this.rebuildTooltips}
         />
       </ErrorBoundary>
     )
@@ -2167,7 +2182,7 @@ export default class QueryOutput extends React.Component {
         />
         <ReactTooltip
           className="react-autoql-chart-tooltip"
-          id="chart-element-tooltip"
+          id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           html
         />

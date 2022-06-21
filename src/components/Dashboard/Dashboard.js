@@ -500,6 +500,7 @@ class Dashboard extends React.Component {
             )}
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
+            rebuildTooltips={this.rebuildTooltips}
           />
         )}
       </div>
@@ -741,6 +742,7 @@ class Dashboard extends React.Component {
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
+            rebuildTooltips={this.rebuildTooltips}
           />
         ))}
       </ReactGridLayout>

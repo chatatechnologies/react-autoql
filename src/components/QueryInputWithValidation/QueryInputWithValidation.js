@@ -7,7 +7,7 @@ import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
-import { throttle } from 'throttle-debounce'
+import { debounce } from 'throttle-debounce'
 
 import { Select } from '../Select'
 
@@ -414,7 +414,7 @@ export default class QueryValidationMessage extends React.Component {
     return elementToGetText.innerText
   }
 
-  runQueryValidation = throttle(300, ({ text }) => {
+  runQueryValidation = debounce(300, ({ text }) => {
     runQueryValidation({
       text,
       ...getAuthentication(this.props.authentication),

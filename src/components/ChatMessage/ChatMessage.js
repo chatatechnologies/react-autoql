@@ -296,9 +296,7 @@ export default class ChatMessage extends React.Component {
             )}
             onErrorCallback={this.props.onErrorCallback}
             enableColumnHeaderContextMenu={true}
-            isResizing={
-              this.props.isResizing || !this.props.isDataMessengerOpen
-            }
+            isResizing={this.props.isResizing}
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
             tableConfig={this.state.dataConfig}
@@ -310,6 +308,7 @@ export default class ChatMessage extends React.Component {
             onRecommendedDisplayType={this.switchView}
             enableFilterLocking={this.props.enableFilterLocking}
             onRTValueLabelClick={this.props.onRTValueLabelClick}
+            rebuildTooltips={this.props.rebuildTooltips}
             reportProblemCallback={() => {
               if (this.optionsToolbarRef?._isMounted) {
                 this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
@@ -428,7 +427,7 @@ export default class ChatMessage extends React.Component {
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
-            {this.props.isDataMessengerOpen && !this.props.isResizing && (
+            {!this.props.isResizing && (
               <Fragment>
                 {this.renderRightToolbar()}
                 {this.renderLeftToolbar()}
