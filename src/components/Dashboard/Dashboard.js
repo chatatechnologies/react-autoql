@@ -150,15 +150,6 @@ class Dashboard extends React.Component {
       _get(prevProps, `tiles[${prevProps.tiles.length} - 1].y`) !==
         Number.MAX_VALUE
     ) {
-      // Do not scroll to the bottom if new tile is added because of undo
-      // if (
-      //   this.props.isEditing &&
-      //   prevProps.tiles.length < this.props.tiles.length &&
-      //   !this.state.justPerformedUndo
-      // ) {
-      //   this.scrollToNewTile()
-      // }
-
       this.setState({
         justPerformedUndo: false,
       })
