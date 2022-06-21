@@ -9,8 +9,7 @@ import { ConfirmModal } from '../ConfirmModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
-import { setCSSVars } from '../../js/Util'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './Modal.scss'
 

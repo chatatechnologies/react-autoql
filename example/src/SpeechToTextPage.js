@@ -126,7 +126,6 @@ export default class SpeechToTextPage extends React.Component {
     return (
       <Fragment>
         <SpeechToTextButton
-          themeConfig={this.props.themeConfig}
           onRecordStop={(file, blob) => {
             this.setState({
               isConfirmingRecording: true,

@@ -78,7 +78,7 @@ export default class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this.getNotifications()
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps) => {
@@ -88,7 +88,7 @@ export default class NotificationFeed extends React.Component {
         getThemeConfig(prevProps.themeConfig)
       )
     ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
+      setCSSVars(this.props.themeConfig)
     }
   }
 
@@ -264,7 +264,7 @@ export default class NotificationFeed extends React.Component {
       <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentDataAlert={this.state.activeDataAlert}
@@ -346,7 +346,7 @@ export default class NotificationFeed extends React.Component {
                       authentication={getAuthentication(
                         this.props.authentication
                       )}
-                      themeConfig={getThemeConfig(this.props.themeConfig)}
+                      themeConfig={this.props.themeConfig}
                       notification={notification}
                       onClick={this.onItemClick}
                       onDismissCallback={this.onDismissClick}

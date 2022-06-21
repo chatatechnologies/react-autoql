@@ -7,12 +7,7 @@ import axios from 'axios'
 import { Icon } from '../Icon'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import PropTypes from 'prop-types'
-import { setCSSVars } from '../../js/Util'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getThemeConfig,
-} from '../../props/defaults'
+import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
 import { authenticationType, themeConfigType } from '../../props/types'
 import Popover from 'react-tiny-popover'
 import './SpeechToTextButton.scss'
@@ -42,10 +37,6 @@ export default class SpeechToTextBtn extends React.Component {
     currentBlob: '',
     showPopoverMessage: false,
     errorMessage: '',
-  }
-
-  componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps) => {

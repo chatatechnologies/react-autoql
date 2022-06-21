@@ -18,7 +18,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../props/defaults'
 import {
   fetchNotificationChannels,
@@ -247,7 +246,7 @@ export default class SendToTeamsModal extends React.Component {
           <div className="select-channel-titles">
             Post to:{' '}
             <Select
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               options={options}
               value={this.state.selectedChannel}
               style={{ width: '300px' }}
@@ -458,7 +457,7 @@ export default class SendToTeamsModal extends React.Component {
   render() {
     return (
       <Modal
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         title={

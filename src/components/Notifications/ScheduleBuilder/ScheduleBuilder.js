@@ -8,7 +8,7 @@ import { TimezoneSelector } from '../../TimezoneSelector'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../../props/defaults'
+import { themeConfigDefault } from '../../../props/defaults'
 
 import './ScheduleBuilder.scss'
 
@@ -141,7 +141,7 @@ export default class ScheduleBuilder extends React.Component {
               want to be notified?
             </p>
             <Radio
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               options={[
                 'Every time this happens',
                 'Only once per day',

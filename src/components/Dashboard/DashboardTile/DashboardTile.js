@@ -49,6 +49,7 @@ class DashboardTile extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.QUERY_RESPONSE_KEY = uuid()
     this.autoCompleteTimer = undefined
+    this.debounceTime = 50
 
     const supportedDisplayTypes =
       getSupportedDisplayTypes({ response: props.queryResponse }) || []
@@ -190,6 +191,19 @@ class DashboardTile extends React.Component {
     // todo: Cancel all dashboard calls here
   }
 
+  debouncedSetParamsForTile = (params) => {
+    this.paramsToSet = {
+      ...this.paramsToSet,
+      ...params,
+    }
+
+    clearTimeout(this.setParamsForTileTimout)
+    this.setParamsForTileTimout = setTimeout(() => {
+      this.props.setParamsForTile(this.paramsToSet, this.props.tile.i)
+      this.paramsToSet = {}
+    }, this.debounceTime)
+  }
+
   getFilteredProps = (props) => {
     return {
       ...props,
@@ -210,7 +224,7 @@ class DashboardTile extends React.Component {
     // so QueryOutput completely resets
     this.QUERY_RESPONSE_KEY = uuid()
 
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         queryResponse: response,
         selectedSuggestion: undefined,
@@ -227,7 +241,7 @@ class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         secondQueryResponse: response,
         secondSelectedSuggestion: undefined,
@@ -283,7 +297,7 @@ class DashboardTile extends React.Component {
         : undefined)
 
     // New query is running, reset temporary state fields
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         query,
         dataConfig:
@@ -340,7 +354,7 @@ class DashboardTile extends React.Component {
         : undefined)
 
     // New query is running, reset temporary state fields
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         secondQuery: query,
         secondDataConfig:
@@ -375,7 +389,7 @@ class DashboardTile extends React.Component {
       isTopExecuted: false,
       customMessage: undefined,
     })
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         queryResponse: undefined,
         secondQueryResponse: undefined,
@@ -433,7 +447,7 @@ class DashboardTile extends React.Component {
         source,
       })
     } else {
-      this.props.setParamsForTile(
+      this.debouncedSetParamsForTile(
         { selectedSuggestion: query },
         this.props.tile.i
       )
@@ -449,7 +463,7 @@ class DashboardTile extends React.Component {
     this.setState({ secondQuery: query })
 
     if (isButtonClick) {
-      this.props.setParamsForTile(
+      this.debouncedSetParamsForTile(
         { secondQuery: query, secondQueryValidationSelections: userSelection },
         this.props.tile.i
       )
@@ -460,7 +474,7 @@ class DashboardTile extends React.Component {
         source,
       })
     } else {
-      this.props.setParamsForTile({ secondQuery: query }, this.props.tile.i)
+      this.debouncedSetParamsForTile({ secondQuery: query }, this.props.tile.i)
     }
   }
 
@@ -524,7 +538,7 @@ class DashboardTile extends React.Component {
       this.userSelectedValue = newQuery
       this.userSelectedSuggestion = true
       this.setState({ query: newQuery })
-      this.props.setParamsForTile({ query: newQuery }, this.props.tile.i)
+      this.debouncedSetParamsForTile({ query: newQuery }, this.props.tile.i)
     }
   }
 
@@ -543,11 +557,11 @@ class DashboardTile extends React.Component {
   }
 
   onDisplayTypeChange = (displayType) => {
-    this.props.setParamsForTile({ displayType }, this.props.tile.i)
+    this.debouncedSetParamsForTile({ displayType }, this.props.tile.i)
   }
 
   onSecondDisplayTypeChange = (secondDisplayType) => {
-    this.props.setParamsForTile({ secondDisplayType }, this.props.tile.i)
+    this.debouncedSetParamsForTile({ secondDisplayType }, this.props.tile.i)
   }
 
   getIsSplitView = () => {
@@ -599,7 +613,7 @@ class DashboardTile extends React.Component {
                     onKeyDown: this.onQueryTextKeyDown,
                     onBlur: (e) => {
                       if (_get(this.props, 'tile.query') !== e.target.value) {
-                        this.props.setParamsForTile(
+                        this.debouncedSetParamsForTile(
                           {
                             query: e.target.value,
                             dataConfig: undefined,
@@ -627,7 +641,7 @@ class DashboardTile extends React.Component {
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
                   onBlur={(e) => {
                     if (_get(this.props, 'tile.query') !== e.target.value) {
-                      this.props.setParamsForTile(
+                      this.debouncedSetParamsForTile(
                         {
                           query: e.target.value,
                           dataConfig: undefined,
@@ -654,7 +668,7 @@ class DashboardTile extends React.Component {
                 onChange={(e) => this.setState({ title: e.target.value })}
                 onFocus={() => this.setState({ isTitleInputFocused: true })}
                 onBlur={(e) => {
-                  this.props.setParamsForTile(
+                  this.debouncedSetParamsForTile(
                     { title: e.target.value },
                     this.props.tile.i
                   )
@@ -763,7 +777,7 @@ class DashboardTile extends React.Component {
 
   onQueryValidationSelectOption = (queryText, suggestionList) => {
     this.setState({ query: queryText })
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         query: queryText,
         queryValidationSelections: suggestionList,
@@ -774,7 +788,7 @@ class DashboardTile extends React.Component {
 
   onSecondQueryValidationSelectOption = (queryText, suggestionList) => {
     this.setState({ secondQuery: queryText })
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         secondQuery: queryText,
         secondqueryValidationSelections: suggestionList,
@@ -788,11 +802,14 @@ class DashboardTile extends React.Component {
   }
 
   onDataConfigChange = (config) => {
-    this.props.setParamsForTile({ dataConfig: config }, this.props.tile.i)
+    this.debouncedSetParamsForTile({ dataConfig: config }, this.props.tile.i)
   }
 
   onSecondDataConfigChange = (config) => {
-    this.props.setParamsForTile({ secondDataConfig: config }, this.props.tile.i)
+    this.debouncedSetParamsForTile(
+      { secondDataConfig: config },
+      this.props.tile.i
+    )
   }
 
   reportProblemCallback = () => {
@@ -853,7 +870,7 @@ class DashboardTile extends React.Component {
             )
 
             if (!Number.isNaN(percentNumber)) {
-              this.props.setParamsForTile(
+              this.debouncedSetParamsForTile(
                 {
                   secondDisplayPercentage: percentNumber,
                 },
@@ -909,7 +926,7 @@ class DashboardTile extends React.Component {
                 onKeyDown={this.onSecondQueryTextKeyDown}
                 onBlur={(e) => {
                   if (_get(this.props, 'tile.secondQuery') !== e.target.value) {
-                    this.props.setParamsForTile(
+                    this.debouncedSetParamsForTile(
                       {
                         secondQuery: e.target.value,
                         secondDataConfig: undefined,
@@ -943,7 +960,7 @@ class DashboardTile extends React.Component {
       secondQuery = this.props.tile?.query
     }
 
-    this.props.setParamsForTile(
+    this.debouncedSetParamsForTile(
       {
         splitView,
         secondQuery,
@@ -979,13 +996,15 @@ class DashboardTile extends React.Component {
 
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
+    this.debouncedSetParamsForTile({ dataConfig: undefined }, this.props.tile.i)
   }
 
   onSecondSupportedDisplayTypesChange = (secondSupportedDisplayTypes) => {
     this.setState({ secondSupportedDisplayTypes })
-    this.props.setParamsForTile({
-      secondDataConfig: undefined,
-    })
+    this.debouncedSetParamsForTile(
+      { secondDataConfig: undefined },
+      this.props.tile.i
+    )
   }
 
   onCSVDownloadStart = (params) =>
@@ -1035,7 +1054,7 @@ class DashboardTile extends React.Component {
         {!customMessage && (
           <QueryOutput
             authentication={getAuthentication(this.props.authentication)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             renderTooltips={false}
@@ -1049,6 +1068,7 @@ class DashboardTile extends React.Component {
               '--react-autoql-background-color-primary'
             )}
             enableAjaxTableData={this.props.enableAjaxTableData}
+            rebuildTooltips={this.props.rebuildTooltips}
             {...queryOutputProps}
           />
         )}
@@ -1059,7 +1079,7 @@ class DashboardTile extends React.Component {
               showSplitViewBtn &&
               this.renderSplitViewBtn()}
             <VizToolbar
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               {...vizToolbarProps}
             />
           </div>
@@ -1068,7 +1088,6 @@ class DashboardTile extends React.Component {
           <OptionsToolbar
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessAlert={this.props.onSuccessCallback}
             onCSVDownloadStart={this.onCSVDownloadStart}

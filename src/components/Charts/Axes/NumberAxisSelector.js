@@ -105,7 +105,6 @@ export default class NumberAxisSelector extends React.Component {
                   : 'Currency'}
               </div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.currencySelectRef = r)}
                 items={currencySelectorState}
                 onSelect={() => {
@@ -144,7 +143,6 @@ export default class NumberAxisSelector extends React.Component {
                   : 'Quantity'}
               </div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.quantitySelectRef = r)}
                 items={quantitySelectorState}
                 onSelect={() => {
@@ -182,7 +180,6 @@ export default class NumberAxisSelector extends React.Component {
                   : 'Ratio'}
               </div>
               <SelectableList
-                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.ratioSelectRef = r)}
                 items={ratioSelectorState}
                 onSelect={() => {

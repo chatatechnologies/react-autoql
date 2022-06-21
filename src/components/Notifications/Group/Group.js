@@ -12,7 +12,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './Group.scss'
@@ -205,7 +204,7 @@ export default class Group extends React.Component {
       <div className="notification-rule-and-or-select">
         Notify me when{' '}
         <Radio
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           type="button"
@@ -307,7 +306,7 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    themeConfig={this.props.themeConfig}
                     ref={(r) => (this.ruleRefs[i] = r)}
                     ruleId={rule.id}
                     key={rule.id}
@@ -325,7 +324,7 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    themeConfig={this.props.themeConfig}
                     groupId={rule.id}
                     key={rule.id}
                     initialData={rule.termValue}
@@ -385,7 +384,7 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    themeConfig={this.props.themeConfig}
                     groupId={rule.id}
                     initialData={rule.termValue}
                     enableQueryValidation={false}

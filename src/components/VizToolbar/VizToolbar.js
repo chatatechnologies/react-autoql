@@ -5,8 +5,7 @@ import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
-import { setCSSVars } from '../../js/Util'
+import { themeConfigDefault } from '../../props/defaults'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
 
 import './VizToolbar.scss'
@@ -30,21 +29,6 @@ class VizToolbar extends React.Component {
     displayType: undefined,
     disableCharts: false,
     vertical: false,
-  }
-
-  componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
   }
 
   showDisplayTypeButton = (displayType) => {

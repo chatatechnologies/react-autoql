@@ -46,7 +46,7 @@ export default class QueryInput extends React.Component {
   constructor(props) {
     super(props)
 
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(props.themeConfig)
 
     this.UNIQUE_ID = uuid()
     this.autoCompleteTimer = undefined
@@ -110,7 +110,7 @@ export default class QueryInput extends React.Component {
         getThemeConfig(prevProps.themeConfig)
       )
     ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
+      setCSSVars(this.props.themeConfig)
     }
     if (this.props.inputValue !== prevProps.inputValue) {
       this.setState({ inputValue: this.props.inputValue })
@@ -455,7 +455,7 @@ export default class QueryInput extends React.Component {
             ) : (
               // <QueryInputWithValidation
               //   authentication={getAuthentication(this.props.authentication)}
-              //   themeConfig={getThemeConfig(this.props.themeConfig)}
+              //   themeConfig={this.props.themeConfig}
               //   ref={(ref) => (this.queryValidationInputRef = ref)}
               //   key={this.state.queryValidationComponentId}
               //   response={this.state.queryValidationResponse}

@@ -109,7 +109,7 @@ export default class Circles extends Component {
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
               onClick={() => this.onCircleClick(row, colIndex, index)}
               data-tip={tooltip}
-              data-for="chart-element-tooltip"
+              data-for={this.props.tooltipID}
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,

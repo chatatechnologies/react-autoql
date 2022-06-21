@@ -15,7 +15,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './ExpressionBuilderSimple.scss'
@@ -177,7 +176,7 @@ export default class ExpressionBuilderSimple extends React.Component {
           this.renderExpressionErrorMessage()
         ) : (
           <RuleSimple
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             ref={(r) => (this.ruleRef = r)}
             ruleId={_get(this.state.expression, 'id', uuid())}
             onUpdate={this.onRuleUpdate}
@@ -205,7 +204,7 @@ export default class ExpressionBuilderSimple extends React.Component {
           ) : (
             <RuleSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}

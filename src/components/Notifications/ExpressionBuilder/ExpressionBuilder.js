@@ -15,7 +15,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './ExpressionBuilder.scss'
@@ -198,7 +197,7 @@ export default class ExpressionBuilder extends React.Component {
             return (
               <div key={`expression-group-readonly-${group.id}-${i}`}>
                 <Group
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
+                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   groupId={group.id}
                   disableAddGroupBtn={true}
@@ -244,7 +243,7 @@ export default class ExpressionBuilder extends React.Component {
           >
             Notify me when{' '}
             <Radio
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               options={['ALL', 'ANY']}
               value={this.state.andOrValue}
               type="button"
@@ -262,7 +261,7 @@ export default class ExpressionBuilder extends React.Component {
               return (
                 <Group
                   authentication={getAuthentication(this.props.authentication)}
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
+                  themeConfig={this.props.themeConfig}
                   ref={(r) => (this.groupRefs[i] = r)}
                   key={`group-${group.id}-${i}`}
                   groupId={group.id}

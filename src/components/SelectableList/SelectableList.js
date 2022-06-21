@@ -8,7 +8,7 @@ import { Checkbox } from '../Checkbox'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { getThemeConfig, themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './SelectableList.scss'
 
@@ -114,7 +114,6 @@ export default class SelectableList extends React.Component {
                     <div key={`list-header-${uuid()}`}>
                       {col.name}
                       <Checkbox
-                        themeConfig={getThemeConfig(this.props.themeConfig)}
                         checked={allItemsChecked}
                         style={{ marginLeft: '10px' }}
                         onChange={() => {
@@ -158,7 +157,6 @@ export default class SelectableList extends React.Component {
                 <div>{item.content} </div>
                 <div>
                   <Checkbox
-                    themeConfig={getThemeConfig(this.props.themeConfig)}
                     checked={item.checked}
                     onChange={() => {
                       if (

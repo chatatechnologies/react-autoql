@@ -105,7 +105,7 @@ export default class StackedColumns extends Component {
               height={Math.abs(height)}
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tip={tooltip}
-              data-for="chart-element-tooltip"
+              data-for={this.props.tooltipID}
               style={{ fill: this.props.colorScale(i), fillOpacity: 0.7 }}
             />
           )
