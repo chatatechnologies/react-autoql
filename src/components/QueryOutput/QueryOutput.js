@@ -1790,6 +1790,10 @@ export default class QueryOutput extends React.Component {
   }
 
   renderTable = () => {
+    if (areAllColumnsHidden(this.queryResponse)) {
+      return this.renderAllColumnsHiddenMessage()
+    }
+
     if (
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
