@@ -16,7 +16,6 @@ import {
   themeConfigDefault,
   authenticationDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../props/defaults'
 import { themeConfigType, authenticationType } from '../../props/types'
 
@@ -75,7 +74,7 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(this.props.themeConfig)
 
     if (_get(this.props, 'response.data')) {
       this.initializeQueryValidationOptions(this.props.response.data)

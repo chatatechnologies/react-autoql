@@ -16,7 +16,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
 import { capitalizeFirstChar } from '../../../js/Util'
@@ -322,7 +321,7 @@ export default class RuleSimple extends React.Component {
   renderConditionSelector = () => {
     return (
       <Select
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         options={[
           { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
           { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

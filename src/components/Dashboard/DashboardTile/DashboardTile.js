@@ -1035,7 +1035,7 @@ class DashboardTile extends React.Component {
         {!customMessage && (
           <QueryOutput
             authentication={getAuthentication(this.props.authentication)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             renderTooltips={false}
@@ -1059,7 +1059,7 @@ class DashboardTile extends React.Component {
               showSplitViewBtn &&
               this.renderSplitViewBtn()}
             <VizToolbar
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               {...vizToolbarProps}
             />
           </div>
@@ -1068,7 +1068,6 @@ class DashboardTile extends React.Component {
           <OptionsToolbar
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessAlert={this.props.onSuccessCallback}
             onCSVDownloadStart={this.onCSVDownloadStart}

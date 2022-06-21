@@ -536,7 +536,6 @@ export default class FilterLockPopover extends React.Component {
             <span className="filter-lock-category-title">{category}</span>
             <Radio
               className="include-exclude-toggle-group"
-              themeConfig={getThemeConfig(this.props.themeConfig)}
               options={['INCLUDE', 'EXCLUDE']}
               tooltips={[
                 'Only show results with these values',

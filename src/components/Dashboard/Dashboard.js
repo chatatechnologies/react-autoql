@@ -182,7 +182,7 @@ class Dashboard extends React.Component {
   }
 
   setStyles = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(this.props.themeConfig)
   }
 
   onWindowResize = (e) => {
@@ -489,7 +489,7 @@ class Dashboard extends React.Component {
             displayType="table"
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
@@ -549,10 +549,9 @@ class Dashboard extends React.Component {
         displayType = tile.displayType
         dataConfig = tile.dataConfig
       }
-
       return (
         <Modal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           className="dashboard-drilldown-modal"
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
@@ -590,7 +589,7 @@ class Dashboard extends React.Component {
                           autoQLConfig={getAutoQLConfig(
                             this.props.autoQLConfig
                           )}
-                          themeConfig={getThemeConfig(this.props.themeConfig)}
+                          themeConfig={this.props.themeConfig}
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
@@ -717,7 +716,7 @@ class Dashboard extends React.Component {
             key={tile.key}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}

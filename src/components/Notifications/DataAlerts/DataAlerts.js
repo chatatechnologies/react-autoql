@@ -61,7 +61,7 @@ export default class DataAlerts extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._isMounted && this.getDataAlerts()
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -71,7 +71,7 @@ export default class DataAlerts extends React.Component {
         getThemeConfig(prevProps.themeConfig)
       )
     ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
+      setCSSVars(this.props.themeConfig)
     }
     if (
       !_isEqual(

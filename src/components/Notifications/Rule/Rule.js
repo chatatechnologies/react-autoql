@@ -14,7 +14,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
 import { isExpressionQueryValid } from '../../../js/notificationService'
@@ -427,7 +426,7 @@ export default class Rule extends React.Component {
             }
           </div>
           <Select
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             options={[
               { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
               { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

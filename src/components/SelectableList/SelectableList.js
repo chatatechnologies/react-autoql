@@ -8,7 +8,7 @@ import { Checkbox } from '../Checkbox'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { getThemeConfig, themeConfigDefault } from '../../props/defaults'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './SelectableList.scss'
 

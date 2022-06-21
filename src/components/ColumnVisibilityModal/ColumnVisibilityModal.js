@@ -6,7 +6,7 @@ import { Modal } from '../Modal'
 import { SelectableList } from '../SelectableList'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './ColumnVisibilityModal.scss'
 
@@ -36,7 +36,6 @@ export default class ColumnVisibilityModal extends React.Component {
   render = () => {
     return (
       <Modal
-        themeConfig={getThemeConfig(this.props.themeConfig)}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         onConfirm={() => this.props.onConfirm(this.state.columns)}
@@ -49,7 +48,6 @@ export default class ColumnVisibilityModal extends React.Component {
       >
         <div data-test="column-visibility-modal" style={{ padding: '0 15px' }}>
           <SelectableList
-            themeConfig={getThemeConfig(this.props.themeConfig)}
             columns={[{ name: 'Column Name' }, { name: 'Visibility ' }]}
             items={this.state.columns}
             onChange={(columns) => {

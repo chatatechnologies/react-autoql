@@ -11,32 +11,15 @@ import {
   dataFormattingType,
   themeConfigType,
 } from '../../props/types'
-import {
-  authenticationDefault,
-  autoQLConfigDefault,
-  dataFormattingDefault,
-  themeConfigDefault,
-  getAuthentication,
-  getAutoQLConfig,
-  getThemeConfig,
-} from '../../props/defaults'
+import { getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
-import { setCSSVars } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
-import { lang, setLanguage } from '../../js/Localization'
+import { lang } from '../../js/Localization'
 
 // Components
 import { Icon } from '../Icon'
 import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
-import { Button } from '../Button'
-import { QueryTipsTab } from '../QueryTipsTab'
-import { Cascader } from '../Cascader'
-import { DataAlertModal } from '../Notifications/DataAlertModal'
-import { NotificationIcon } from '../Notifications/NotificationIcon'
-import { NotificationFeed } from '../Notifications/NotificationFeed'
-import { fetchQueryTips, fetchTopics } from '../../js/queryService'
-import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 // Styles
@@ -322,7 +305,7 @@ export default class ChatContent extends React.Component {
         isIntroMessage={params.isIntroMessage}
         authentication={getAuthentication(this.props.authentication)}
         autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         isCSVProgressMessage={params.isCSVProgressMessage}
         initialCSVDownloadProgress={this.props.csvProgressLog[uniqueId]}
         onCSVDownloadProgress={this.onCSVDownloadProgress}
@@ -418,7 +401,7 @@ export default class ChatContent extends React.Component {
             className="chat-drawer-chat-bar"
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}

@@ -41,7 +41,7 @@ export default class ChataChart extends Component {
 
   constructor(props) {
     super(props)
-    const { chartColors } = props.themeConfig
+    const { chartColors } = getThemeConfig(props.themeConfig)
 
     this.CHART_ID = uuid()
     this.Y_AXIS_LABEL_WIDTH = 15

@@ -20,7 +20,6 @@ import {
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import { QueryOutput } from '../QueryOutput'
@@ -155,6 +154,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
+
     return true
   }
 
@@ -280,7 +280,7 @@ export default class ChatMessage extends React.Component {
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}
             isQueryRunning={this.props.isChataThinking}
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
@@ -350,7 +350,7 @@ export default class ChatMessage extends React.Component {
           className={`chat-message-toolbar right`}
           authentication={this.props.authentication}
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           responseRef={this.responseRef}
           displayType={this.state.displayType}
           onCSVDownloadStart={this.onCSVDownloadStart}
@@ -395,7 +395,7 @@ export default class ChatMessage extends React.Component {
     if (this.props.isResponse && this.props.type !== 'text') {
       return (
         <VizToolbar
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           className="chat-message-toolbar left"
           supportedDisplayTypes={this.state.supportedDisplayTypes || []}
           displayType={displayType}

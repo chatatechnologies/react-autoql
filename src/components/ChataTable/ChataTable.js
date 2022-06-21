@@ -3,18 +3,12 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import { ReactTabulator } from 'react-tabulator'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { setCSSVars } from '../../js/Util'
 import { isAggregation } from '../QueryOutput/columnHelpers'
 import { themeConfigType } from '../../props/types'
-import {
-  themeConfigDefault,
-  getThemeConfig,
-  getAuthentication,
-} from '../../props/defaults'
+import { themeConfigDefault, getAuthentication } from '../../props/defaults'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -136,8 +130,6 @@ export default class ChataTable extends React.Component {
         console.error(error)
       }
     }
-
-    setCSSVars(getThemeConfig(props.themeConfig))
 
     this.state = {
       isFilteringTable: false,
