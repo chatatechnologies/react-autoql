@@ -10,7 +10,7 @@ import { QueryValidationMessage } from '../QueryValidationMessage'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+import { themeConfigDefault } from '../../props/defaults'
 
 import './QueryTipsTab.scss'
 
@@ -46,7 +46,7 @@ export default class QueryTipsTab extends React.Component {
     if (this.props.queryTipsQueryValidationResponse) {
       return (
         <QueryValidationMessage
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           response={this.props.queryTipsQueryValidationResponse}
           onSuggestionClick={this.props.onQueryValidationSuggestionClick}
           autoSelectSuggestion={true}

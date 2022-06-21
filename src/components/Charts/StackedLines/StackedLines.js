@@ -52,7 +52,7 @@ export default class StackedLines extends Component {
         r={4}
         onClick={() => this.onDotClick(d, colIndex, i)}
         data-tip={tooltip}
-        data-for="chart-element-tooltip"
+        data-for={this.props.tooltipID}
         style={{
           opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
           cursor: 'pointer',
@@ -83,7 +83,7 @@ export default class StackedLines extends Component {
               <strong>${this.props.legendTitle}</strong>: ${this.props.legendLabels[i].label}
             </div>
           `}
-        data-for="chart-element-tooltip"
+        data-for={this.props.tooltipID}
         data-effect="float"
         style={{
           fill: this.props.colorScale(i),

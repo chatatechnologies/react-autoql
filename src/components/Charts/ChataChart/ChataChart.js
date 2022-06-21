@@ -41,7 +41,7 @@ export default class ChataChart extends Component {
 
   constructor(props) {
     super(props)
-    const { chartColors } = props.themeConfig
+    const { chartColors } = getThemeConfig(props.themeConfig)
 
     this.CHART_ID = uuid()
     this.Y_AXIS_LABEL_WIDTH = 15
@@ -73,6 +73,7 @@ export default class ChataChart extends Component {
 
   static propTypes = {
     ...chartContainerPropTypes,
+    rebuildTooltips: PropTypes.func,
     type: PropTypes.string.isRequired,
   }
 
@@ -84,7 +85,12 @@ export default class ChataChart extends Component {
     if (!this.props.isResizing && !this.props.isAnimatingContainer) {
       this.forceUpdate()
     }
-    this.rebuildTooltips()
+
+    if (this.props.isAnimatingContainer) {
+      this.rebuildTooltips(1000)
+    } else {
+      this.rebuildTooltips()
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -296,11 +302,15 @@ export default class ChataChart extends Component {
     return this.state.topMargin
   }
 
-  rebuildTooltips = () => {
-    clearTimeout(this.rebuildTooltipsTimer)
-    this.rebuildTooltipsTimer = setTimeout(() => {
-      ReactTooltip.rebuild()
-    }, 1000)
+  rebuildTooltips = (delay = 500) => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips(delay)
+    } else {
+      clearTimeout(this.rebuildTooltipsTimer)
+      this.rebuildTooltipsTimer = setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, delay)
+    }
   }
 
   updateMargins = ({ setLoading = true, delay = 100 } = {}) => {
@@ -308,13 +318,13 @@ export default class ChataChart extends Component {
       this.setState({ isLoading: true })
     }
 
-    clearTimeout(this.updateMarginsThrottled)
-    this.updateMarginsThrottled = setTimeout(() => {
-      this.updateMarginsToThrottle()
+    clearTimeout(this.updateMarginsDebounced)
+    this.updateMarginsDebounced = setTimeout(() => {
+      this.updateMarginsToDebounce()
     }, delay)
   }
 
-  updateMarginsToThrottle = () => {
+  updateMarginsToDebounce = () => {
     this.newMargins = undefined
 
     try {
@@ -521,6 +531,7 @@ export default class ChataChart extends Component {
       stringAxisTitle: this.getStringAxisTitle(),
       onStringColumnSelect: this.onStringColumnSelect,
       onLabelChange: this.updateMargins,
+      tooltipID: this.props.tooltipID,
     }
   }
 

@@ -5,6 +5,8 @@ import dayjs from './dayjsWithPlugins'
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
 import { LIGHT_THEME, DARK_THEME } from './Themes'
 
+import { getThemeConfig } from '../props/defaults'
+
 import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
@@ -819,10 +821,8 @@ export const getTickWidth = (scale, innerPadding) => {
   }
 }
 
-export const setCSSVars = (themeConfig) => {
-  if (!themeConfig) {
-    return
-  }
+export const setCSSVars = (customThemeConfig) => {
+  const themeConfig = getThemeConfig(customThemeConfig)
 
   const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME

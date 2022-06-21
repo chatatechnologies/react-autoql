@@ -10,13 +10,11 @@ import { Icon } from '../Icon'
 import { authenticationType, themeConfigType } from '../../props/types'
 import {
   themeConfigDefault,
-  getThemeConfig,
   authenticationDefault,
   getAuthentication,
 } from '../../props/defaults'
 
 import { fetchVLAutocomplete } from '../../js/queryService'
-import { setCSSVars } from '../../js/Util'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ReverseTranslation.scss'
@@ -24,8 +22,6 @@ import './ReverseTranslation.scss'
 export default class ReverseTranslation extends React.Component {
   constructor(props) {
     super(props)
-
-    setCSSVars(getThemeConfig(props.themeConfig))
 
     this.COMPONENT_KEY = uuid()
     this.reverseTranslationArray = props.reverseTranslation
@@ -66,17 +62,6 @@ export default class ReverseTranslation extends React.Component {
     }
 
     return true
-  }
-
-  componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
   }
 
   componentWillUnmount = () => {

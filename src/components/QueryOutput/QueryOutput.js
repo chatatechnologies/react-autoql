@@ -117,7 +117,7 @@ export default class QueryOutput extends React.Component {
     // Set theme colors
     const { chartColors } = getThemeConfig(props.themeConfig)
     this.colorScale = scaleOrdinal().range(chartColors)
-    setCSSVars(getThemeConfig(props.themeConfig))
+    setCSSVars(props.themeConfig)
 
     // --------- generate data before mount --------
     this.generateAllData(props.queryResponse, displayType)
@@ -159,6 +159,7 @@ export default class QueryOutput extends React.Component {
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -249,12 +250,14 @@ export default class QueryOutput extends React.Component {
       }
 
       if (
-        _isEqual(
+        prevProps.themeConfig &&
+        this.props.themeConfig &&
+        !_isEqual(
           getThemeConfig(this.props.themeConfig),
           getThemeConfig(prevProps.themeConfig)
         )
       ) {
-        setCSSVars(getThemeConfig(this.props.themeConfig))
+        setCSSVars(this.props.themeConfig)
       }
 
       if (this.props.queryResponse && !this.queryResponse) {
@@ -321,6 +324,18 @@ export default class QueryOutput extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     ReactTooltip.hide()
+    clearTimeout(this.rebuildTooltipsTimer)
+  }
+
+  rebuildTooltips = (delay = 500) => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips(delay)
+    } else {
+      clearTimeout(this.rebuildTooltipsTimer)
+      this.rebuildTooltipsTimer = setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, delay)
+    }
   }
 
   hasError = (response) => {
@@ -1775,6 +1790,10 @@ export default class QueryOutput extends React.Component {
   }
 
   renderTable = () => {
+    if (areAllColumnsHidden(this.queryResponse)) {
+      return this.renderAllColumnsHiddenMessage()
+    }
+
     if (
       !this.tableData ||
       (this.props.displayType === 'pivot_table' && !this.pivotTableData)
@@ -1788,7 +1807,7 @@ export default class QueryOutput extends React.Component {
       return (
         <ErrorBoundary>
           <ChataTable
-            themeConfig={getThemeConfig(this.props.themeConfig)}
+            themeConfig={this.props.themeConfig}
             key={this.pivotTableID}
             ref={(ref) => (this.pivotTableRef = ref)}
             columns={this.pivotTableColumns}
@@ -1809,7 +1828,7 @@ export default class QueryOutput extends React.Component {
     return (
       <ChataTable
         authentication={this.props.authentication}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
+        themeConfig={this.props.themeConfig}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.tableColumns}
@@ -1851,7 +1870,7 @@ export default class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
@@ -1871,6 +1890,8 @@ export default class QueryOutput extends React.Component {
           isResizing={this.props.isResizing}
           isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
+          tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
+          rebuildTooltips={this.rebuildTooltips}
         />
       </ErrorBoundary>
     )
@@ -2055,7 +2076,7 @@ export default class QueryOutput extends React.Component {
     if (_get(this.queryResponse, 'data.data.replacements')) {
       return (
         <QueryValidationMessage
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           key={this.QUERY_VALIDATION_KEY}
           response={this.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>
@@ -2165,7 +2186,7 @@ export default class QueryOutput extends React.Component {
         />
         <ReactTooltip
           className="react-autoql-chart-tooltip"
-          id="chart-element-tooltip"
+          id={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           html
         />

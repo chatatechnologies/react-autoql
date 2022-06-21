@@ -24,7 +24,6 @@ import {
 
 import {
   isTableType,
-  setCSSVars,
   areAllColumnsHidden,
   areSomeColumnsHidden,
   isChartType,
@@ -93,21 +92,11 @@ export default class OptionsToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    setCSSVars(getThemeConfig(this.props.themeConfig))
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
-    }
-
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
     }
   }
 
@@ -300,7 +289,7 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <ColumnVisibilityModal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           columns={columns}
           isVisible={this.state.isHideColumnsModalVisible}
           onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -321,7 +310,7 @@ export default class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <DataAlertModal
           authentication={getAuthentication(this.props.authentication)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'notification'}
           initialQuery={initialQuery}
           onClose={() => this.setState({ activeMenu: undefined })}
@@ -339,7 +328,7 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <Modal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'other-problem'}
           onClose={() => {
             this.setState({
@@ -564,7 +553,7 @@ export default class OptionsToolbar extends React.Component {
     if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
       return (
         <SendToSlackModal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           authentication={getAuthentication(this.props.authentication)}
           isVisible={this.state.activeMenu === 'slack'}
           responseRef={this.props.responseRef}
@@ -583,7 +572,7 @@ export default class OptionsToolbar extends React.Component {
       return (
         <SendToTeamsModal
           authentication={getAuthentication(this.props.authentication)}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'teams'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -605,7 +594,7 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <Modal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>

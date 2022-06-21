@@ -145,7 +145,7 @@ export default class Line extends Component {
               r={3}
               onClick={() => this.onDotClick(d, colIndex, index)}
               data-tip={tooltip}
-              data-for="chart-element-tooltip"
+              data-for={this.props.tooltipID}
               style={{
                 cursor: 'pointer',
                 stroke: this.props.colorScale(i),

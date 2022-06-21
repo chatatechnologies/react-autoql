@@ -7,8 +7,7 @@ import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
-import { setCSSVars } from '../../js/Util'
+import { themeConfigDefault } from '../../props/defaults'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Select.scss'
@@ -39,21 +38,6 @@ export default class Select extends React.Component {
 
   state = {
     isOpen: false,
-  }
-
-  componentDidMount = () => {
-    setCSSVars(getThemeConfig(this.props.themeConfig))
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(getThemeConfig(this.props.themeConfig))
-    }
   }
 
   render = () => {

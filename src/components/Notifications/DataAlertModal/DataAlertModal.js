@@ -28,7 +28,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
@@ -497,7 +496,7 @@ export default class DataAlertModal extends React.Component {
             <p>Notify me when:</p>
             <ExpressionBuilderSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={getThemeConfig(this.props.themeConfig)}
+              themeConfig={this.props.themeConfig}
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
               onChange={this.onExpressionChange}
@@ -544,7 +543,7 @@ export default class DataAlertModal extends React.Component {
     return (
       <div>
         <ScheduleBuilder
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           dataAlert={this.props.currentDataAlert}
@@ -659,7 +658,7 @@ export default class DataAlertModal extends React.Component {
           html
         />
         <Modal
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           title={this.props.title}
           titleIcon={
             !_isEmpty(this.props.currentDataAlert) ? (
@@ -713,7 +712,7 @@ export default class DataAlertModal extends React.Component {
           {this.props.isVisible && (
             <div className="notification-modal-content">
               <Steps
-                themeConfig={getThemeConfig(this.props.themeConfig)}
+                themeConfig={this.props.themeConfig}
                 ref={(r) => (this.stepsRef = r)}
                 steps={steps}
               />

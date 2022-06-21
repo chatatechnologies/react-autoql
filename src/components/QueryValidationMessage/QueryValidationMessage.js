@@ -9,7 +9,7 @@ import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getThemeConfig } from '../../props/defaults'
+import { themeConfigDefault } from '../../props/defaults'
 
 export default class QueryValidationMessage extends React.Component {
   originalReplaceWords = []
@@ -273,7 +273,7 @@ export default class QueryValidationMessage extends React.Component {
         key={`query-element-${suggestion.id}`}
       >
         <Select
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          themeConfig={this.props.themeConfig}
           options={options}
           key={uuid()}
           value={suggestion.id}

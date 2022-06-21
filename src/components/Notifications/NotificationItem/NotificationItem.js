@@ -32,7 +32,6 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './NotificationItem.scss'
@@ -351,13 +350,11 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
-                    authentication={getAuthentication(
-                      this.props.authentication
-                    )}
+                    authentication={this.props.authentication}
                     ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
-                    themeConfig={getThemeConfig(this.props.themeConfig)}
+                    themeConfig={this.props.themeConfig}
                     displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
@@ -373,7 +370,7 @@ export default class NotificationItem extends React.Component {
             {_get(this.supportedDisplayTypes, 'length') > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
-                  themeConfig={getThemeConfig(this.props.themeConfig)}
+                  themeConfig={this.props.themeConfig}
                   supportedDisplayTypes={this.supportedDisplayTypes}
                   displayType={this.state.displayType}
                   onDisplayTypeChange={(displayType) =>
@@ -391,7 +388,7 @@ export default class NotificationItem extends React.Component {
               </div>
               <ExpressionBuilderSimple
                 authentication={getAuthentication(this.props.authentication)}
-                themeConfig={getThemeConfig(this.props.themeConfig)}
+                themeConfig={this.props.themeConfig}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'expression')}
                 readOnly

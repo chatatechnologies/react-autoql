@@ -7,6 +7,7 @@ import Popover from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
+import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import ChatContent from './ChatContent'
 import TopicsCascader from './TopicsCascader'
@@ -56,12 +57,12 @@ export default class DataMessenger extends React.Component {
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
 
-    setCSSVars(getThemeConfig(this.props.themeConfig))
+    setCSSVars(props.themeConfig)
 
     this.dataMessengerIntroMessages = [
-      this.props.introMessage
-        ? `${this.props.introMessage}`
-        : `Hi ${this.props.userDisplayName ||
+      props.introMessage
+        ? `${props.introMessage}`
+        : `Hi ${props.userDisplayName ||
             'there'}! Let’s dive into your data. What can I help you discover today?`,
     ]
 
@@ -92,6 +93,7 @@ export default class DataMessenger extends React.Component {
       width: props.width,
       height: props.height,
       isResizing: false,
+      isWindowResizing: false,
       placement: this.getPlacementProp(props.placement),
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
@@ -225,10 +227,13 @@ export default class DataMessenger extends React.Component {
         this.setState({ dataMessengerId: uuid() })
       }
 
-      const thisTheme = getThemeConfig(this.props.themeConfig).theme
-      const prevTheme = getThemeConfig(prevProps.themeConfig).theme
-      if (thisTheme && thisTheme !== prevTheme) {
-        setCSSVars(getThemeConfig(this.props.themeConfig))
+      if (
+        !_isEqual(
+          getThemeConfig(this.props.themeConfig),
+          getThemeConfig(prevProps.themeConfig)
+        )
+      ) {
+        setCSSVars(this.props.themeConfig)
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -289,11 +294,11 @@ export default class DataMessenger extends React.Component {
       })
   }
 
-  rebuildTooltips = () => {
+  rebuildTooltips = (delay = 500) => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
-    }, 1000)
+    }, delay)
   }
 
   getMaxWidthAndHeightFromDocument = () => {
@@ -510,9 +515,7 @@ export default class DataMessenger extends React.Component {
                         authentication={getAuthentication(
                           getAuthentication(this.props.authentication)
                         )}
-                        themeConfig={getThemeConfig(
-                          getThemeConfig(this.props.themeConfig)
-                        )}
+                        themeConfig={this.props.themeConfig}
                         clearCountOnClick={false}
                         style={{ fontSize: '19px' }}
                         overflowCount={9}
@@ -866,30 +869,33 @@ export default class DataMessenger extends React.Component {
     }
   }
 
-  renderDataMessengerContent = () => (
-    <ErrorBoundary>
-      <ChatContent
-        {...this.props}
-        shouldRender={this.state.activePage === 'data-messenger'}
-        key={this.state.dataMessengerId}
-        ref={(r) => (this.dataMessengerContentRef = r)}
-        authentication={getAuthentication(this.props.authentication)}
-        autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-        themeConfig={getThemeConfig(this.props.themeConfig)}
-        isResizing={this.state.isResizing || this.state.isWindowResizing}
-        source={['data_messenger']}
-        rebuildTooltips={this.rebuildTooltips}
-        onRTValueLabelClick={this.onRTValueLabelClick}
-        queryFilters={this.state.sessionFilters}
-        isDataMessengerOpen={!!this.dmRef?.state?.open}
-        introMessages={this.dataMessengerIntroMessages}
-        csvProgressLog={this.csvProgressLog}
-        inputPlaceholder={this.props.inputPlaceholder}
-        enableAjaxTableData={this.props.enableAjaxTableData}
-        autoChartAggregations={this.props.autoChartAggregations}
-      />
-    </ErrorBoundary>
-  )
+  renderDataMessengerContent = () => {
+    return (
+      <ErrorBoundary>
+        <ChatContent
+          {...this.props}
+          shouldRender={this.state.activePage === 'data-messenger'}
+          key={this.state.dataMessengerId}
+          ref={(r) => (this.dataMessengerContentRef = r)}
+          authentication={this.props.authentication}
+          autoQLConfig={this.props.autoQLConfig}
+          themeConfig={this.props.themeConfig}
+          isResizing={this.state.isResizing || this.state.isWindowResizing}
+          source={['data_messenger']}
+          rebuildTooltips={this.rebuildTooltips}
+          onRTValueLabelClick={this.onRTValueLabelClick}
+          queryFilters={this.state.sessionFilters}
+          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          introMessages={this.dataMessengerIntroMessages}
+          csvProgressLog={this.csvProgressLog}
+          inputPlaceholder={this.props.inputPlaceholder}
+          enableAjaxTableData={this.props.enableAjaxTableData}
+          autoChartAggregations={this.props.autoChartAggregations}
+          rebuildTooltips={this.rebuildTooltips}
+        />
+      </ErrorBoundary>
+    )
+  }
 
   renderDPRContent = () => {
     return (
@@ -899,8 +905,8 @@ export default class DataMessenger extends React.Component {
           shouldRender={this.state.activePage === 'dpr'}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
-          authentication={{ dprKey: this.props.authentication?.dprKey }}
-          themeConfig={getThemeConfig(this.props.themeConfig)}
+          authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
@@ -927,7 +933,6 @@ export default class DataMessenger extends React.Component {
       <QueryTipsTab
         shouldRender={this.state.activePage === 'explore-queries'}
         isDataMessengerOpen={!!this.dmRef?.state?.open}
-        themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
         onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
         queryTipsQueryValidationResponse={
           this.state.queryTipsQueryValidationResponse
@@ -962,7 +967,7 @@ export default class DataMessenger extends React.Component {
       <NotificationFeed
         ref={(ref) => (this.notificationListRef = ref)}
         authentication={getAuthentication(this.props.authentication)}
-        themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
+        themeConfig={this.props.themeConfig}
         onExpandCallback={this.props.onNotificationExpandCallback}
         onCollapseCallback={this.props.onNotificationCollapseCallback}
         activeNotificationData={this.props.activeNotificationData}
@@ -1103,7 +1108,7 @@ export default class DataMessenger extends React.Component {
     return (
       <DataAlertModal
         authentication={getAuthentication(this.props.authentication)}
-        themeConfig={getThemeConfig(getThemeConfig(this.props.themeConfig))}
+        themeConfig={this.props.themeConfig}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
