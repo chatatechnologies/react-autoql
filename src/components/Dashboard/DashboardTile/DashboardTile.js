@@ -211,10 +211,6 @@ class DashboardTile extends React.Component {
     }
   }
 
-  toggleTableFilter = (ref, isFilteringTable) => {
-    ref?.toggleTableFilter({ isFilteringTable })
-  }
-
   isQueryValid = (query) => {
     return !!query && !!query.trim()
   }
@@ -1078,16 +1074,13 @@ class DashboardTile extends React.Component {
             {this.props.isEditing &&
               showSplitViewBtn &&
               this.renderSplitViewBtn()}
-            <VizToolbar
-              themeConfig={this.props.themeConfig}
-              {...vizToolbarProps}
-            />
+            <VizToolbar {...vizToolbarProps} />
           </div>
         )}
         {!this.props.isDragging && (
           <OptionsToolbar
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            authentication={this.props.authentication}
+            autoQLConfig={this.props.autoQLConfig}
             onErrorCallback={this.props.onErrorCallback}
             onSuccessAlert={this.props.onSuccessCallback}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -1118,6 +1111,7 @@ class DashboardTile extends React.Component {
       queryOutputProps: {
         ref: (ref) => (this.responseRef = ref),
         optionsToolbarRef: this.optionsToolbarRef,
+        vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         displayType,
         queryResponse: this.props.queryResponse,
@@ -1143,16 +1137,12 @@ class DashboardTile extends React.Component {
         reportProblemCallback: this.reportProblemCallback,
       },
       vizToolbarProps: {
-        displayType: displayType,
-        onDisplayTypeChange: this.onDisplayTypeChange,
-        supportedDisplayTypes: this.state.supportedDisplayTypes,
+        ref: (r) => (this.vizToolbarRef = r),
+        responseRef: this.responseRef,
       },
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.responseRef,
-        onFilterClick: ({ isFilteringTable }) =>
-          this.toggleTableFilter(this.responseRef, isFilteringTable),
-        displayType,
       },
       showSplitViewBtn: !this.getIsSplitView(),
     })
@@ -1191,6 +1181,7 @@ class DashboardTile extends React.Component {
         key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
         ref: (ref) => (this.secondResponseRef = ref),
         optionsToolbarRef: this.secondOptionsToolbarRef,
+        vizToolbarRef: this.secondVizToolbarRef,
         displayType,
         queryResponse:
           this.props.secondQueryResponse || this.props.queryResponse,
@@ -1217,16 +1208,12 @@ class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
       },
       vizToolbarProps: {
-        displayType: displayType,
-        onDisplayTypeChange: this.onSecondDisplayTypeChange,
-        supportedDisplayTypes: this.state.secondSupportedDisplayTypes,
+        ref: (r) => (this.secondVizToolbarRef = r),
+        responseRef: this.secondResponseRef,
       },
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
         responseRef: this.secondResponseRef,
-        onFilterClick: ({ isFilteringTable }) =>
-          this.toggleTableFilter(this.secondResponseRef, isFilteringTable),
-        displayType,
       },
       showSplitViewBtn: this.getIsSplitView(),
       isSecondHalf: true,

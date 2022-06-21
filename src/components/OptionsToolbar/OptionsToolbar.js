@@ -57,8 +57,6 @@ export default class OptionsToolbar extends React.Component {
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
     deleteMessageCallback: PropTypes.func,
-    onResponseCallback: PropTypes.func,
-    onFilterClick: PropTypes.func,
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
@@ -75,9 +73,7 @@ export default class OptionsToolbar extends React.Component {
     onErrorCallback: () => {},
     onNewNotificationCallback: () => {},
     deleteMessageCallback: () => {},
-    onFilterClick: () => {},
     onColumnVisibilitySave: () => {},
-    onResponseCallback: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
@@ -107,7 +103,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   onTableFilter = (newTableData) => {
-    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const displayType = this.props.responseRef?.state?.displayType
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
@@ -118,7 +114,9 @@ export default class OptionsToolbar extends React.Component {
 
   toggleTableFilter = () => {
     this.filtering = !this.filtering
-    this.props.onFilterClick({ isFilteringTable: this.filtering })
+    this.props.responseRef?.toggleTableFilter({
+      isFilteringTable: this.filtering,
+    })
   }
 
   setTemporaryState = (key, value, duration) => {
@@ -182,7 +180,7 @@ export default class OptionsToolbar extends React.Component {
 
   onCSVMenuButtonClick = () => {
     this.setState({ activeMenu: undefined })
-    const displayType = _get(this.props.responseRef, 'props.displayType')
+    const displayType = this.props.responseRef?.state?.displayType
     const isPivotTable = displayType === 'pivot_table'
     const uniqueId = uuid()
 
@@ -737,7 +735,7 @@ export default class OptionsToolbar extends React.Component {
   getShouldShouldButtonObj = () => {
     let shouldShowButton = {}
     try {
-      const displayType = _get(this.props.responseRef, 'props.displayType')
+      const displayType = this.props.responseRef?.state?.displayType
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
       const response = _get(this.props.responseRef, 'queryResponse')

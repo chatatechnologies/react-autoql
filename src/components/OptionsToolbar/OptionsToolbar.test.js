@@ -1,8 +1,6 @@
 import React from 'react'
-import { shallow, mount, exists } from 'enzyme'
+import { shallow, mount } from 'enzyme'
 
-import { testAuthentication } from '../../../test/testData'
-import { autoQLConfigDefault } from '../../props/defaults'
 import { findByTestAttr } from '../../../test/testUtils'
 
 import OptionsToolbar from './OptionsToolbar'
@@ -66,20 +64,26 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
     <OptionsToolbar {...setupProps} responseRef={responseRef} />
   )
 
-  return wrapper
+  return { wrapper, queryOutputComponent }
 }
 
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
-    const wrapper = setup(undefined, { displayType: 'table' })
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      displayType: 'table',
+    })
     const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
     expect(toolbarComponent.exists()).toBe(true)
+    queryOutputComponent.unmount()
   })
 
   test('renders correctly for single value response', () => {
-    const wrapper = setup(undefined, { displayType: 'single-value' })
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      displayType: 'single-value',
+    })
     const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
     expect(toolbarComponent.exists()).toBe(true)
+    queryOutputComponent.unmount()
   })
 })
 
@@ -92,9 +96,12 @@ describe('column visibility manager', () => {
         enableColumnVisibilityManager: false,
       },
     }
-    const wrapper = setup(propsWithColVisDisabled, { displayType: 'table' })
+    const { wrapper, queryOutputComponent } = setup(propsWithColVisDisabled, {
+      displayType: 'table',
+    })
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(false)
+    queryOutputComponent.unmount()
   })
 
   const propsWithColVisEnabled = {
@@ -146,7 +153,7 @@ describe('column visibility manager', () => {
         type: 'QUANTITY',
       },
     ]
-    const wrapper = setup(
+    const { wrapper, queryOutputComponent } = setup(
       {
         ...propsWithColVisEnabled,
         response,
@@ -155,24 +162,29 @@ describe('column visibility manager', () => {
     )
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(true)
+    queryOutputComponent.unmount()
   })
 })
 
 describe('trash button', () => {
   test('do not render trash button by default', () => {
-    const wrapper = setup()
+    const { wrapper, queryOutputComponent } = setup()
     const trashBtn = findByTestAttr(wrapper, 'options-toolbar-trash-btn')
     expect(trashBtn.exists()).toBe(false)
+    queryOutputComponent.unmount()
   })
 })
 
 describe('more options button', () => {
   test('renders by default', () => {
-    const wrapper = setup(undefined, { displayType: 'table' })
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      displayType: 'table',
+    })
     const moreOptionsBtn = findByTestAttr(
       wrapper,
       'react-autoql-toolbar-more-options-btn'
     )
     expect(moreOptionsBtn.exists()).toBe(true)
+    queryOutputComponent.unmount()
   })
 })

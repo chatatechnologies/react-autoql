@@ -15,20 +15,24 @@ import { Icon } from '../Icon'
 class VizToolbar extends React.Component {
   static propTypes = {
     themeConfig: themeConfigType,
-
-    supportedDisplayTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
-    onDisplayTypeChange: PropTypes.func.isRequired,
-    displayType: PropTypes.string,
+    onDisplayTypeChange: PropTypes.func,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
   }
 
   static defaultProps = {
+    onDisplayTypeChange: () => {},
     themeConfig: themeConfigDefault,
-
-    displayType: undefined,
     disableCharts: false,
     vertical: false,
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   showDisplayTypeButton = (displayType) => {
@@ -36,19 +40,30 @@ class VizToolbar extends React.Component {
       return false
     }
 
+    const selectedDisplayType = this.props.responseRef?.state?.displayType
+    const supportedDisplayTypes = this.props.responseRef?.supportedDisplayTypes
+
     return (
-      this.props.supportedDisplayTypes &&
-      this.props.supportedDisplayTypes.includes(displayType) &&
-      this.props.displayType !== displayType
+      supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
+      // && selectedDisplayType !== displayType
     )
+  }
+
+  onDisplayTypeChange = (displayType) => {
+    this.props.onDisplayTypeChange(displayType)
+    this.props.responseRef?.changeDisplayType(displayType)
   }
 
   createVisButton = (displayType, name, icon) => {
     if (this.showDisplayTypeButton(displayType)) {
+      const selectedDisplayType = this.props.responseRef?.state?.displayType
+
       return (
         <button
-          onClick={() => this.props.onDisplayTypeChange(displayType)}
-          className="react-autoql-toolbar-btn"
+          onClick={() => this.onDisplayTypeChange(displayType)}
+          className={`react-autoql-toolbar-btn ${
+            displayType === selectedDisplayType ? 'selected' : ''
+          }`}
           data-tip={name}
           data-for="react-autoql-toolbar-btn-tooltip"
           data-test="viz-toolbar-button"
@@ -62,7 +77,8 @@ class VizToolbar extends React.Component {
   }
 
   render = () => {
-    const { displayType, supportedDisplayTypes } = this.props
+    const displayType = this.props.responseRef?.state?.displayType
+    const supportedDisplayTypes = this.props.responseRef?.supportedDisplayTypes
 
     if (
       !supportedDisplayTypes ||

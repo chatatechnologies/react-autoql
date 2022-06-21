@@ -164,7 +164,7 @@ export default [
         columns: [
           {
             display_name: 'Quantity',
-            type: 'QUANTITY',
+            type: 'STRING',
             groupable: true,
             active: false,
             is_visible: true,

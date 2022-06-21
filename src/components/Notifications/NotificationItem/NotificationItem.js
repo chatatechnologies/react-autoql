@@ -370,12 +370,8 @@ export default class NotificationItem extends React.Component {
             {_get(this.supportedDisplayTypes, 'length') > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
-                  themeConfig={this.props.themeConfig}
-                  supportedDisplayTypes={this.supportedDisplayTypes}
-                  displayType={this.state.displayType}
-                  onDisplayTypeChange={(displayType) =>
-                    this.setState({ displayType })
-                  }
+                  ref={(r) => (this.vizToolbarRef = r)}
+                  responseRef={this.OUTPUT_REF}
                   vertical
                 />
               </div>

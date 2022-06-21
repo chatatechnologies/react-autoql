@@ -22,6 +22,10 @@
   color: var(--react-autoql-text-color-primary);
   cursor: pointer;
   outline: none !important;
+
+  &.selected {
+    color: var(--react-autoql-accent-color);
+  }
 }
 .react-autoql-toolbar-btn.green {
   color: #2ecc40;

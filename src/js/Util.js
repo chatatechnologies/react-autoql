@@ -478,8 +478,8 @@ export const getHiddenColumns = (response) => {
   return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
 }
 
-export const getVisibleColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+export const getVisibleColumns = (columns) => {
+  return _filter(columns, (col) => col.is_visible)
 }
 
 export const areSomeColumnsHidden = (response) => {
@@ -490,12 +490,13 @@ export const areSomeColumnsHidden = (response) => {
 
 export const areAllColumnsHidden = (response) => {
   const hasColumns = _get(response, 'data.data.columns.length')
-  const visibleColumns = getVisibleColumns(response)
+  const visibleColumns = getVisibleColumns(_get(response, 'data.data.columns'))
   return hasColumns && !visibleColumns.length
 }
 
 export const getSupportedDisplayTypes = ({
   response,
+  columns,
   shouldExcludePieChart,
   dataLength,
 } = {}) => {
@@ -515,9 +516,10 @@ export const getSupportedDisplayTypes = ({
     }
 
     const rows = _get(response, 'data.data.rows', [])
-    const columns = getVisibleColumns(response)
+    const allColumns = columns || _get(response, 'data.data.columns')
+    const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+    if (!_get(visibleColumns, 'length') || !_get(rows, 'length')) {
       return ['text']
     }
 
@@ -527,7 +529,7 @@ export const getSupportedDisplayTypes = ({
 
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
-    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
+    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
       if (rows.length < 1000) {
@@ -549,7 +551,7 @@ export const getSupportedDisplayTypes = ({
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(columns) && !isTableEmpty) {
+    } else if (supports2DCharts(visibleColumns) && !isTableEmpty) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -559,16 +561,16 @@ export const getSupportedDisplayTypes = ({
       }
 
       // create pivot based on month and year
-      const dateColumnIndex = columns.findIndex(
+      const dateColumnIndex = visibleColumns.findIndex(
         (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      const dateColumn = columns[dateColumnIndex]
+      const dateColumn = visibleColumns[dateColumnIndex]
 
       // Check if date pivot should be supported
       if (
         dateColumn &&
         dateColumn?.display_name?.toLowerCase().includes('month') &&
-        columns?.length === 2
+        visibleColumns?.length === 2
       ) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []

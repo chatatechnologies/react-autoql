@@ -303,8 +303,6 @@ export default class ChatContent extends React.Component {
 
     return {
       id: uniqueId,
-      displayType:
-        params.displayType || params.response?.data?.data?.display_type,
       type: params.response?.data?.data?.display_type,
       ...params,
     }
@@ -378,7 +376,6 @@ export default class ChatContent extends React.Component {
                 scrollToBottom={this.scrollToBottom}
                 onQueryOutputUpdate={this.rebuildTooltips}
                 dataFormatting={this.props.dataFormatting}
-                displayType={message.displayType}
                 onResponseCallback={this.onResponse}
                 response={message.response}
                 type={message.type}
