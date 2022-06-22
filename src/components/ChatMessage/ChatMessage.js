@@ -344,12 +344,6 @@ export default class ChatMessage extends React.Component {
           className="chat-message-toolbar left"
         />
       )
-    } else {
-      console.log(
-        'not rendering viz toolbar one of these is false:',
-        this.props.isResponse,
-        this.responseRef
-      )
     }
     return null
   }

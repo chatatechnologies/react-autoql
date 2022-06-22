@@ -171,7 +171,9 @@ export default class QueryInput extends React.Component {
 
   onResponse = (response, query) => {
     this.props.onResponseCallback(response, query)
-    localStorage.setItem('inputValue', query)
+    if (query) {
+      localStorage.setItem('inputValue', query)
+    }
 
     const newState = {
       isQueryRunning: false,
@@ -255,7 +257,7 @@ export default class QueryInput extends React.Component {
   onKeyDown = (e) => {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
       const lastQuery = localStorage.getItem('inputValue')
-      if (lastQuery) {
+      if (lastQuery && lastQuery !== 'undefined') {
         this.setState({ inputValue: lastQuery })
       }
     }
