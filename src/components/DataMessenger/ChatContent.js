@@ -159,10 +159,10 @@ export default class ChatContent extends React.Component {
     return !!response?.data?.data?.items
   }
 
-  deleteMessage = (key) => {
-    const messagesToDelete = [key]
+  deleteMessage = (id) => {
+    const messagesToDelete = [id]
     const messageIndex = this.state.messages.findIndex(
-      (message) => key === message.key
+      (message) => id === message.id
     )
 
     // If there is a query message right above it (not a drilldown), delete the query message also
@@ -171,12 +171,12 @@ export default class ChatContent extends React.Component {
     // If the messageAbove is not undefined
     if (messageAbove) {
       if (!messageAbove.isResponse) {
-        messagesToDelete.push(messageAbove.key)
+        messagesToDelete.push(messageAbove.id)
       }
     }
 
     const newMessages = this.state.messages.filter(
-      (message) => !messagesToDelete.includes(message.key)
+      (message) => !messagesToDelete.includes(message.id)
     )
 
     this.setState({
