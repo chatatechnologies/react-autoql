@@ -77,6 +77,7 @@ export default class NotificationFeed extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.getNotifications()
     setCSSVars(this.props.themeConfig)
   }
@@ -90,6 +91,10 @@ export default class NotificationFeed extends React.Component {
     ) {
       setCSSVars(this.props.themeConfig)
     }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   getNotifications = (limit) => {
@@ -109,21 +114,25 @@ export default class NotificationFeed extends React.Component {
           pagination = data.pagination
         }
 
-        this.setState({
-          notificationList,
-          pagination,
-          nextOffset,
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: null,
-        })
+        if (this._isMounted) {
+          this.setState({
+            notificationList,
+            pagination,
+            nextOffset,
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: null,
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        this.setState({
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: error,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: error,
+          })
+        }
       })
   }
 
@@ -140,23 +149,25 @@ export default class NotificationFeed extends React.Component {
         return
       }
 
-      if (newNotifications.length === 10) {
-        // Reset list and pagination to new list
-        // This will probably never happen
-        this.setState({
-          notificationList: response.items,
-          pagination: response.pagination,
-        })
-      } else {
-        const newList = [...newNotifications, ...this.state.notificationList]
+      if (this._isMounted) {
+        if (newNotifications.length === 10) {
+          // Reset list and pagination to new list
+          // This will probably never happen
+          this.setState({
+            notificationList: response.items,
+            pagination: response.pagination,
+          })
+        } else {
+          const newList = [...newNotifications, ...this.state.notificationList]
 
-        this.setState({
-          notificationList: newList,
-          pagination: {
-            ...response.pagination,
-          },
-          nextOffset: newList.length - 1,
-        })
+          this.setState({
+            notificationList: newList,
+            pagination: {
+              ...response.pagination,
+            },
+            nextOffset: newList.length - 1,
+          })
+        }
       }
     })
   }
