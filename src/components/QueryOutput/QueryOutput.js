@@ -1655,6 +1655,7 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
+          titleColumn: this.tableColumns[newLegendColumnIndex],
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
           name: columnName,

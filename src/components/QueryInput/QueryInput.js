@@ -188,10 +188,6 @@ export default class QueryInput extends React.Component {
     skipQueryValidation,
     source,
   } = {}) => {
-    if (query) {
-      localStorage.setItem('inputValue', query)
-    }
-
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
@@ -267,6 +263,9 @@ export default class QueryInput extends React.Component {
   onKeyPress = (e) => {
     if (e.key == 'Enter') {
       this.submitQuery()
+      if (this.state.inputValue) {
+        localStorage.setItem('inputValue', this.state.inputValue)
+      }
     }
   }
 

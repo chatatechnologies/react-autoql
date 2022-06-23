@@ -689,10 +689,10 @@ export const getGroupBysFromPivotTable = (cell, tableColumns) => {
       const groupBys = tableConfig.stringColumnIndices.map((nameColIndex) => {
         let value
         const name = tableColumns[nameColIndex].name
-        if (nameColIndex === tableConfig.stringColumnIndex) {
-          value = `${cell?.getRow().getData()?.[0]}`
-        } else {
+        if (name === pivotColumn?.titleColumn?.name) {
           value = pivotColumn?.name
+        } else {
+          value = `${cell?.getRow().getData()?.[0]}`
         }
         return { name, value }
       })
