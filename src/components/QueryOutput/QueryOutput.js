@@ -1818,7 +1818,7 @@ export default class QueryOutput extends React.Component {
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
-            supportsDrilldowns
+            supportsDrilldowns={true}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }

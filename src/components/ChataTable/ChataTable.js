@@ -26,8 +26,8 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
-    this.supportsDrilldown =
-      props.supportsDrilldown || isAggregation(props.columns)
+    this.supportsDrilldowns =
+      props.supportsDrilldowns || isAggregation(props.columns)
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
@@ -293,7 +293,7 @@ export default class ChataTable extends React.Component {
           ref={(ref) => (this.tableContainer = ref)}
           data-test="react-autoql-table"
           className={`react-autoql-table-container 
-          ${this.supportsDrilldown ? 'supports-drilldown' : ''}
+          ${this.supportsDrilldowns ? 'supports-drilldown' : ''}
           ${this.state.isFilteringTable ? ' filtering' : ''}
           ${this.props.isResizing ? ' resizing' : ''}`}
           style={{
