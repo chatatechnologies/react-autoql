@@ -9,7 +9,7 @@ import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
 import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import ChatContent from './ChatContent'
+import { ChatContent } from '../ChatContent'
 import TopicsCascader from './TopicsCascader'
 
 import {

@@ -166,6 +166,13 @@ class Dashboard extends React.Component {
     clearTimeout(this.animationTimeout)
   }
 
+  getMostRecentTiles = () => {
+    if (this.onChangeTiles) {
+      return this.onChangeTiles
+    }
+    return this.props.tiles
+  }
+
   rebuildTooltips = () => {
     clearTimeout(this.rebuildTooltipsTimer)
     this.rebuildTooltipsTimer = setTimeout(() => {
@@ -174,16 +181,14 @@ class Dashboard extends React.Component {
   }
 
   debouncedOnChange = (tiles, saveInLog = true) => {
-    clearTimeout(this.onChangeTimer)
     if (saveInLog) {
-      this.previousTileState = this.onChangeTiles
-        ? _cloneDeep(this.onChangeTiles)
-        : _cloneDeep(this.props.tiles)
+      this.previousTileState = _cloneDeep(this.getMostRecentTiles())
     }
 
     this.onChangeTiles = _cloneDeep(tiles)
     return new Promise((resolve, reject) => {
       try {
+        clearTimeout(this.onChangeTimer)
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
             this.props.onChange(this.onChangeTiles)
@@ -302,8 +307,9 @@ class Dashboard extends React.Component {
     try {
       // Update previousTileState here instead of in updateTileLayout
       // Only update if layout actually changed
-      if (this.getChangeDetection(this.props.tiles, layout, true)) {
-        this.previousTileState = this.props.tiles
+      const tiles = this.getMostRecentTiles()
+      if (this.getChangeDetection(tiles, layout, true)) {
+        this.previousTileState = tiles
       }
 
       // Delaying this makes the snap back animation much smoother
@@ -320,7 +326,7 @@ class Dashboard extends React.Component {
 
   updateTileLayout = (layout) => {
     try {
-      const oldTiles = _cloneDeep(this.props.tiles)
+      const oldTiles = this.getMostRecentTiles()
       const tiles = oldTiles.map((tile, index) => {
         return {
           ...tile,
@@ -340,7 +346,7 @@ class Dashboard extends React.Component {
 
   addTile = () => {
     try {
-      const tiles = _cloneDeep(this.props.tiles)
+      const tiles = _cloneDeep(this.getMostRecentTiles())
       const id = uuid()
       tiles.push({
         key: id,
@@ -378,7 +384,7 @@ class Dashboard extends React.Component {
 
   deleteTile = (id) => {
     try {
-      const tiles = _cloneDeep(this.props.tiles)
+      const tiles = _cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       ~tileIndex && tiles.splice(tileIndex, 1)
 
@@ -390,7 +396,8 @@ class Dashboard extends React.Component {
 
   setParamsForTile = (params, id) => {
     try {
-      const tiles = _cloneDeep(this.props.tiles)
+      const originalTiles = this.getMostRecentTiles()
+      const tiles = _cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
       tiles[tileIndex] = {
         ...tiles[tileIndex],
@@ -399,13 +406,13 @@ class Dashboard extends React.Component {
 
       if (
         Object.keys(params).includes('query') &&
-        params.query !== this.props.tiles[tileIndex].query
+        params.query !== originalTiles[tileIndex].query
       ) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
       } else if (
         Object.keys(params).includes('secondQuery') &&
-        params.secondQuery !== this.props.tiles[tileIndex].secondQuery
+        params.secondQuery !== originalTiles[tileIndex].secondQuery
       ) {
         tiles[tileIndex].secondDataConfig = undefined
         tiles[tileIndex].secondskipQueryValidation = false
@@ -547,7 +554,8 @@ class Dashboard extends React.Component {
 
   renderDrilldownModal = () => {
     try {
-      const tile = this.props.tiles.find(
+      const tiles = this.getMostRecentTiles()
+      const tile = tiles.find(
         (tile) => tile.i === this.state.activeDrilldownTile
       )
 
@@ -697,7 +705,8 @@ class Dashboard extends React.Component {
   }
 
   renderTiles = () => {
-    const tileLayout = this.props.tiles.map((tile) => {
+    const tiles = this.getMostRecentTiles()
+    const tileLayout = tiles.map((tile) => {
       return {
         ...tile,
         i: tile.key,
@@ -766,6 +775,7 @@ class Dashboard extends React.Component {
   }
 
   render = () => {
+    const tiles = this.getMostRecentTiles()
     return (
       <ErrorBoundary>
         <Fragment>
@@ -776,7 +786,7 @@ class Dashboard extends React.Component {
             }`}
             data-test="react-autoql-dashboard"
           >
-            {this.props.tiles.length
+            {tiles.length
               ? this.renderTiles()
               : this.renderEmptyDashboardMessage()}
           </div>
