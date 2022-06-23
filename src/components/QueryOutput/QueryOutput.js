@@ -61,6 +61,7 @@ import {
   getDateColumnIndex,
   getStringColumnIndices,
   isColumnDateType,
+  isAggregation,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
@@ -110,9 +111,14 @@ export default class QueryOutput extends React.Component {
     )
 
     // Set the initial display type based on prop value, response, and supported display types
-    const displayType = isProvidedDisplayTypeValid
-      ? props.displayType
-      : getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
+    let displayType = props.displayType
+    if (!isProvidedDisplayTypeValid) {
+      displayType = getDefaultDisplayType(
+        props.queryResponse,
+        props.autoChartAggregations
+      )
+      this.onRecommendedDisplayType(displayType)
+    }
 
     // Set theme colors
     const { chartColors } = getThemeConfig(props.themeConfig)
@@ -1750,7 +1756,7 @@ export default class QueryOutput extends React.Component {
     try {
       const splitErrorMessage = errorMessage.split('<report>')
       const newErrorMessage = (
-        <div>
+        <div className="query-output-error-message">
           {splitErrorMessage.map((str, index) => {
             return (
               <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
@@ -1842,6 +1848,9 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         useInfiniteScroll={this.props.enableAjaxTableData}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+        supportsDrilldowns={
+          isAggregation(this.tableColumns) && this.tableColumns.length === 2
+        }
       />
     )
   }
@@ -2004,7 +2013,6 @@ export default class QueryOutput extends React.Component {
       }
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
-
       return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)

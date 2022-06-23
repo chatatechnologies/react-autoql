@@ -12,8 +12,8 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { DashboardTile } from './DashboardTile'
 import { QueryOutput } from '../QueryOutput'
-import { runDrilldown } from '../../js/queryService'
 import { LoadingDots } from '../LoadingDots'
+import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
 import { setCSSVars } from '../../js/Util'
@@ -115,6 +115,8 @@ class Dashboard extends React.Component {
 
   state = {
     isDragging: false,
+    drilldownDisplayType: 'table',
+    isReportProblemOpen: false,
   }
 
   componentDidMount = () => {
@@ -436,31 +438,31 @@ class Dashboard extends React.Component {
       console.error(error)
     }
   }
-  runDrilldownFromAPI = (data, queryID) => {
-    runDrilldown({
-      queryID,
-      data,
-      ...getAuthentication(this.props.authentication),
-      ...getAutoQLConfig(this.props.autoQLConfig),
-    })
-      .then((drilldownResponse) => {
-        if (this._isMounted) {
-          this.setState({
-            activeDrilldownResponse: drilldownResponse,
-            isDrilldownRunning: false,
-          })
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-        if (this._isMounted) {
-          this.setState({
-            isDrilldownRunning: false,
-            activeDrilldownResponse: undefined,
-          })
-        }
-      })
-  }
+  // runDrilldownFromAPI = (data, queryID) => {
+  //   runDrilldown({
+  //     queryID,
+  //     data,
+  //     ...getAuthentication(this.props.authentication),
+  //     ...getAutoQLConfig(this.props.autoQLConfig),
+  //   })
+  //     .then((drilldownResponse) => {
+  //       if (this._isMounted) {
+  //         this.setState({
+  //           activeDrilldownResponse: drilldownResponse,
+  //           isDrilldownRunning: false,
+  //         })
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       console.error(error)
+  //       if (this._isMounted) {
+  //         this.setState({
+  //           isDrilldownRunning: false,
+  //           activeDrilldownResponse: undefined,
+  //         })
+  //       }
+  //     })
+  // }
 
   onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
@@ -512,6 +514,10 @@ class Dashboard extends React.Component {
     return CHART_TYPES.includes(displayType)
   }
 
+  reportProblemCallback = () => {
+    this.setState({ isReportProblemOpen: true })
+  }
+
   renderDrilldownTable = () => {
     return (
       <div className="react-autoql-dashboard-drilldown-table">
@@ -522,7 +528,10 @@ class Dashboard extends React.Component {
         ) : (
           <QueryOutput
             ref={(r) => (this.drilldownTableRef = r)}
-            displayType="table"
+            displayType={this.state.drilldownDisplayType}
+            onRecommendedDisplayType={(drilldownDisplayType) => {
+              this.setState({ drilldownDisplayType })
+            }}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             themeConfig={this.props.themeConfig}
@@ -565,6 +574,34 @@ class Dashboard extends React.Component {
     )
   }
 
+  renderReportProblemModal = () => {
+    return (
+      <ReportProblemModal
+        authentication={this.props.authentication}
+        contentClassName="dashboard-drilldown-report-problem-modal"
+        onClose={() => {
+          this.setState({
+            isReportProblemOpen: false,
+          })
+        }}
+        onReportProblem={({ successMessage, error }) => {
+          if (successMessage) {
+            this.props.onSuccessCallback(successMessage)
+            if (this._isMounted) {
+              this.setState({
+                isReportProblemOpen: false,
+              })
+            }
+          } else if (error) {
+            this.props.onErrorCallback(error)
+          }
+        }}
+        responseRef={this.drilldownTableRef}
+        isVisible={this.state.isReportProblemOpen}
+      />
+    )
+  }
+
   renderDrilldownModal = () => {
     try {
       const tiles = this.getMostRecentTiles()
@@ -591,6 +628,7 @@ class Dashboard extends React.Component {
         <Modal
           themeConfig={this.props.themeConfig}
           className="dashboard-drilldown-modal"
+          contentClassName="dashboard-drilldown-modal-content"
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
           width="90vw"
@@ -600,6 +638,7 @@ class Dashboard extends React.Component {
           onClose={() => {
             this.setState({
               isDrilldownModalVisible: false,
+              drilldownDisplayType: 'table',
               activeDrilldownTile: null,
             })
           }}
@@ -653,6 +692,7 @@ class Dashboard extends React.Component {
                             '--react-autoql-background-color-primary'
                           )}
                           enableAjaxTableData={this.props.enableAjaxTableData}
+                          reportProblemCallback={this.reportProblemCallback}
                         />
                       )}
                       {this.renderChartCollapseBtn('bottom')}
@@ -804,6 +844,7 @@ class Dashboard extends React.Component {
               : this.renderEmptyDashboardMessage()}
           </div>
           {!this.state.isDragging && this.renderDrilldownModal()}
+          {this.renderReportProblemModal()}
           <ReactTooltip
             className="react-autoql-dashboard-tooltip"
             id="react-autoql-dashboard-toolbar-btn-tooltip"

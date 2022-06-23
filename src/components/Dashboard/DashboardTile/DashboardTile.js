@@ -1066,8 +1066,7 @@ class DashboardTile extends React.Component {
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         onSupportedDisplayTypesChange: this.onSupportedDisplayTypesChange,
-        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
-          this.onSupportedDisplayTypesChange(supportedDisplayTypes)
+        onRecommendedDisplayType: (displayType) => {
           this.onDisplayTypeChange(displayType)
         },
         reportProblemCallback: this.reportProblemCallback,
@@ -1132,8 +1131,7 @@ class DashboardTile extends React.Component {
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
         onSupportedDisplayTypesChange: this.onSecondSupportedDisplayTypesChange,
-        onRecommendedDisplayType: (displayType, supportedDisplayTypes) => {
-          this.onSecondSupportedDisplayTypesChange(supportedDisplayTypes)
+        onRecommendedDisplayType: (displayType) => {
           this.onSecondDisplayTypeChange(displayType)
         },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,

@@ -25,6 +25,7 @@ import {
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
+import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -35,7 +36,6 @@ import {
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
-import { Spinner } from '../Spinner'
 
 export default class ChatMessage extends React.Component {
   constructor(props) {
