@@ -63,6 +63,7 @@ class Dashboard extends React.Component {
   tileRefs = {}
   debounceTime = 50
   onChangeTiles = null
+  callbackSubsciptions = []
 
   static propTypes = {
     // Global
@@ -180,7 +181,11 @@ class Dashboard extends React.Component {
     }, 500)
   }
 
-  debouncedOnChange = (tiles, saveInLog = true) => {
+  subscribeToCallback = (callback) => {
+    this.callbackSubsciptions.push(callback)
+  }
+
+  debouncedOnChange = (tiles, saveInLog = true, callback) => {
     if (saveInLog) {
       this.previousTileState = _cloneDeep(this.getMostRecentTiles())
     }
@@ -188,17 +193,25 @@ class Dashboard extends React.Component {
     this.onChangeTiles = _cloneDeep(tiles)
     return new Promise((resolve, reject) => {
       try {
+        if (typeof callback === 'function') {
+          this.subscribeToCallback(callback)
+        }
         clearTimeout(this.onChangeTimer)
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
             this.props.onChange(this.onChangeTiles)
             this.onChangeTiles = null
+            if (this.callbackSubsciptions?.length) {
+              this.callbackSubsciptions.forEach((callback) => callback())
+              this.callbackSubsciptions = []
+            }
             return resolve()
           }
           return resolve()
         }, this.debounceTime)
       } catch (error) {
         console.error(error)
+        this.callbackSubsciptions = []
         return reject()
       }
     })
@@ -394,7 +407,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  setParamsForTile = (params, id) => {
+  setParamsForTile = (params, id, callback) => {
     try {
       const originalTiles = this.getMostRecentTiles()
       const tiles = _cloneDeep(this.getMostRecentTiles())
@@ -418,7 +431,7 @@ class Dashboard extends React.Component {
         tiles[tileIndex].secondskipQueryValidation = false
       }
 
-      this.debouncedOnChange(tiles)
+      this.debouncedOnChange(tiles, undefined, callback)
     } catch (error) {
       console.error(error)
     }

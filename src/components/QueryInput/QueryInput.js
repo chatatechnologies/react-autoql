@@ -171,7 +171,6 @@ export default class QueryInput extends React.Component {
 
   onResponse = (response, query) => {
     this.props.onResponseCallback(response, query)
-    localStorage.setItem('inputValue', query)
 
     const newState = {
       isQueryRunning: false,
@@ -189,6 +188,10 @@ export default class QueryInput extends React.Component {
     skipQueryValidation,
     source,
   } = {}) => {
+    if (query) {
+      localStorage.setItem('inputValue', query)
+    }
+
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)

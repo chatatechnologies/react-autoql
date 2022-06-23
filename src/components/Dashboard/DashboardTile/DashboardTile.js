@@ -148,38 +148,6 @@ class DashboardTile extends React.Component {
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
     }
-
-    // Keep this for a deep compare to debug
-    // if (!_isEqual(this.props, prevProps)) {
-    //   console.log(
-    //     'PROPS were not equal!! Re-rendering',
-    //     _reduce(
-    //       prevProps,
-    //       (result, value, key) => {
-    //         return _isEqual(value, this.props[key])
-    //           ? result
-    //           : result.concat(key)
-    //       },
-    //       []
-    //     )
-    //   )
-    // }
-
-    // Keep this for a deep compare to debug
-    // if (!_isEqual(this.state, prevState)) {
-    //   console.log(
-    //     'STATE were not equal!! Re-rendering',
-    //     _reduce(
-    //       prevState,
-    //       (result, value, key) => {
-    //         return _isEqual(value, this.state[key])
-    //           ? result
-    //           : result.concat(key)
-    //       },
-    //       []
-    //     )
-    //   )
-    // }
   }
 
   componentWillUnmount = () => {
@@ -199,11 +167,8 @@ class DashboardTile extends React.Component {
 
     clearTimeout(this.setParamsForTileTimout)
     this.setParamsForTileTimout = setTimeout(() => {
-      this.props.setParamsForTile(this.paramsToSet, this.props.tile.i)
+      this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, callback)
       this.paramsToSet = {}
-      if (typeof callback === 'function') {
-        callback()
-      }
     }, this.debounceTime)
   }
 
@@ -222,6 +187,15 @@ class DashboardTile extends React.Component {
     return !!query && !!query.trim()
   }
 
+  setTopExecuted = () => {
+    if (this._isMounted) {
+      this.setState({
+        isTopExecuting: false,
+        isTopExecuted: true,
+      })
+    }
+  }
+
   endTopQuery = ({ response }) => {
     // Update component key after getting new response
     // so QueryOutput completely resets
@@ -232,27 +206,27 @@ class DashboardTile extends React.Component {
         queryResponse: response,
         selectedSuggestion: undefined,
       },
-      () => {
-        if (this._isMounted) {
-          this.setState({
-            isTopExecuting: false,
-            isTopExecuted: true,
-          })
-        }
-      }
+      this.setTopExecuted
     )
   }
 
-  endBottomQuery = ({ response }) => {
-    this.debouncedSetParamsForTile({
-      secondQueryResponse: response,
-      secondSelectedSuggestion: undefined,
-    })
+  setBottomExecuted = () => {
+    if (this._isMounted) {
+      this.setState({
+        isBottomExecuting: false,
+        isBottomExecuted: true,
+      })
+    }
+  }
 
-    this.setState({
-      isBottomExecuting: false,
-      isBottomExecuted: true,
-    })
+  endBottomQuery = ({ response }) => {
+    this.debouncedSetParamsForTile(
+      {
+        secondQueryResponse: response,
+        secondSelectedSuggestion: undefined,
+      },
+      this.setBottomExecuted
+    )
   }
 
   processQuery = ({ query, userSelection, skipQueryValidation, source }) => {
