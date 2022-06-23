@@ -822,12 +822,7 @@ export default class QueryOutput extends React.Component {
   onTableCellClick = (cell) => {
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(
-        cell,
-        this.tableColumns,
-        this.pivotTableColumns,
-        this.pivotOriginalColumnData
-      )
+      groupBys = getGroupBysFromPivotTable(cell, this.tableColumns)
     } else {
       groupBys = getGroupBysFromTable(cell, this.tableColumns)
     }
@@ -844,6 +839,7 @@ export default class QueryOutput extends React.Component {
     numberColumnIndex,
     activeKey
   ) => {
+    // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
 
@@ -1523,6 +1519,9 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
+          origDateColField: this.tableColumns[dateColumnIndex].field,
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: year,
           title: year,
           field: `${i + 1}`,
@@ -1650,6 +1649,8 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
@@ -1817,6 +1818,7 @@ export default class QueryOutput extends React.Component {
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
+            supportsDrilldowns
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1865,7 +1867,7 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
 
     return (
       <ErrorBoundary>
@@ -1874,7 +1876,7 @@ export default class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
-          {...dataConfig}
+          {...tableConfig}
           data={supportsPivot ? this.pivotTableData : this.tableData}
           columns={supportsPivot ? this.pivotTableColumns : this.tableColumns}
           isPivot={supportsPivot}

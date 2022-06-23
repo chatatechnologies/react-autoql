@@ -26,7 +26,8 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
-    this.supportsDrilldown = isAggregation(props.columns)
+    this.supportsDrilldown =
+      props.supportsDrilldown || isAggregation(props.columns)
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
