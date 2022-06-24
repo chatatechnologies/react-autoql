@@ -849,6 +849,8 @@ export default class QueryOutput extends React.Component {
     const drilldownData = {}
     const groupBys = []
 
+    const column = columns[columnIndex]
+
     const stringColumn =
       columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
@@ -868,10 +870,13 @@ export default class QueryOutput extends React.Component {
     }
 
     if (legendColumn?.groupable) {
-      groupBys.push({
-        name: legendColumn.name,
-        value: `${columns?.[numberColumnIndex]?.name}`,
-      })
+      if (column.origColumn) {
+        // It is pivot data, add extra groupby
+        groupBys.push({
+          name: legendColumn.name,
+          value: `${columns?.[numberColumnIndex]?.name}`,
+        })
+      }
     }
 
     drilldownData.data = groupBys
