@@ -14,6 +14,7 @@ import { Modal } from '../Modal'
 import { SendToSlackModal } from '../SendToSlackModal'
 import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
+import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -326,68 +327,36 @@ export default class OptionsToolbar extends React.Component {
 
   renderReportProblemModal = () => {
     return (
-      <ErrorBoundary>
-        <Modal
-          themeConfig={this.props.themeConfig}
-          isVisible={this.state.activeMenu === 'other-problem'}
-          onClose={() => {
-            this.setState({
-              activeMenu: undefined,
-              reportProblemMessage: undefined,
-            })
-          }}
-          onConfirm={() => {
-            this.reportQueryProblem(this.state.reportProblemMessage)
-            this.setState({
-              reportProblemMessage: undefined,
-            })
-          }}
-          confirmLoading={this.state.isReportingProblem}
-          title="Report a Problem"
-          enableBodyScroll={true}
-          width="600px"
-          confirmText="Report"
-          confirmDisabled={this.state.reportProblemMessage ? false : true}
-        >
-          Please tell us more about the problem you are experiencing:
-          <textarea
-            className="report-problem-text-area"
-            onChange={(e) =>
+      <ReportProblemModal
+        ref={(r) => (this.reportProblemRef = r)}
+        authentication={this.props.authentication}
+        onClose={() => {
+          this.setState({
+            activeMenu: undefined,
+          })
+        }}
+        onReportProblem={({ successMessage, error }) => {
+          if (successMessage) {
+            this.props.onSuccessAlert(successMessage)
+            if (this._isMounted) {
               this.setState({
-                reportProblemMessage: e.target.value,
+                activeMenu: undefined,
               })
             }
-          />
-        </Modal>
-      </ErrorBoundary>
+          } else if (error) {
+            this.props.onErrorCallback(error)
+          }
+        }}
+        responseRef={this.props.responseRef}
+        isVisible={this.state.activeMenu === 'other-problem'}
+      />
     )
   }
 
   reportQueryProblem = (reason) => {
-    const queryId = _get(
-      this.props.responseRef,
-      'queryResponse.data.data.query_id'
-    )
-    this.setState({ isReportingProblem: true })
-    reportProblem({
-      message: reason,
-      queryId,
-      ...getAuthentication(this.props.authentication),
-    })
-      .then(() => {
-        this.props.onSuccessAlert(
-          'Thank you for your feedback! To continue, try asking another query.'
-        )
-        if (this._isMounted) {
-          this.setState({ activeMenu: undefined, isReportingProblem: false })
-        }
-      })
-      .catch((error) => {
-        this.props.onErrorCallback(error)
-        if (this._isMounted) {
-          this.setState({ isReportingProblem: false })
-        }
-      })
+    if (this.reportProblemRef?._isMounted) {
+      this.reportProblemRef.reportQueryProblem(reason)
+    }
   }
 
   renderReportProblemMenu = () => {

@@ -668,37 +668,36 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
   return 'text'
 }
 
-export const getGroupBysFromPivotTable = (
-  cell,
-  tableColumns,
-  pivotTableColumns,
-  originalColumnData
-) => {
+export const getGroupBysFromPivotTable = (cell, tableColumns) => {
   try {
-    let drilldownData = []
-    if (
-      cell &&
-      cell.getColumn() &&
-      cell.getColumn().getDefinition() &&
-      cell.getColumn().getDefinition().drilldownData
-    ) {
-      drilldownData = cell.getColumn().getDefinition().drilldownData
-    }
+    const pivotColumn = cell?.getColumn()?.getDefinition()
+    const tableConfig = pivotColumn?.tableConfig
 
-    if (!drilldownData.length) {
-      return undefined
-    }
-
-    if (tableColumns.length === 2) {
+    if (pivotColumn?.origDateColField) {
       // This is a date pivot
-      const year = Number(pivotTableColumns[cell.getField()].name)
+      const dateColumnIndex = Number(pivotColumn?.origDateColField)
+      const year = Number(pivotColumn.name)
       const month = cell.getData()[0]
-      drilldownData[0].value = `${originalColumnData[year][month]}`
+      const groupBys = [
+        {
+          name: tableColumns[dateColumnIndex].name,
+          value: dayjs(`${month} ${year}`).format('YYYY-MM'),
+        },
+      ]
+      return groupBys
     } else {
-      drilldownData[0].value = `${cell.getData()[0]}`
+      const groupBys = tableConfig.stringColumnIndices.map((nameColIndex) => {
+        let value
+        const name = tableColumns[nameColIndex].name
+        if (name === pivotColumn?.titleColumn?.name) {
+          value = pivotColumn?.name
+        } else {
+          value = `${cell?.getRow().getData()?.[0]}`
+        }
+        return { name, value }
+      })
+      return groupBys
     }
-
-    return drilldownData
   } catch (error) {
     console.error(error)
     return undefined

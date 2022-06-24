@@ -171,7 +171,6 @@ export default class QueryInput extends React.Component {
 
   onResponse = (response, query) => {
     this.props.onResponseCallback(response, query)
-    localStorage.setItem('inputValue', query)
 
     const newState = {
       isQueryRunning: false,
@@ -264,6 +263,9 @@ export default class QueryInput extends React.Component {
   onKeyPress = (e) => {
     if (e.key == 'Enter') {
       this.submitQuery()
+      if (this.state.inputValue) {
+        localStorage.setItem('inputValue', this.state.inputValue)
+      }
     }
   }
 

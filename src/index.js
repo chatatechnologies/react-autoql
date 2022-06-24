@@ -7,6 +7,7 @@ export * from './components/FilterLockPopover'
 export * from './components/ReverseTranslation'
 export * from './components/OptionsToolbar'
 export * from './components/VizToolbar'
+export * from './components/ExploreQueries'
 export {
   NotificationIcon,
   NotificationFeed,

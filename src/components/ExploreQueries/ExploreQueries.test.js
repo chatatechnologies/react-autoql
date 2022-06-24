@@ -2,13 +2,13 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
-import QueryTipsTab from './QueryTipsTab'
+import ExploreQueries from './ExploreQueries'
 
-const defaultProps = QueryTipsTab.defaultProps
+const defaultProps = ExploreQueries.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<QueryTipsTab {...setupProps} />)
+  const wrapper = shallow(<ExploreQueries {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }

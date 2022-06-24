@@ -9,7 +9,7 @@ import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
 import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import ChatContent from './ChatContent'
+import { ChatContent } from '../ChatContent'
 import TopicsCascader from './TopicsCascader'
 
 import {
@@ -34,7 +34,7 @@ import { lang, setLanguage } from '../../js/Localization'
 // Components
 import { Icon } from '../Icon'
 import { Button } from '../Button'
-import { QueryTipsTab } from '../QueryTipsTab'
+import { ExploreQueries } from '../ExploreQueries'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
@@ -682,6 +682,8 @@ export default class DataMessenger extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
+        position="bottom"
+        align="end"
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
@@ -930,7 +932,7 @@ export default class DataMessenger extends React.Component {
 
   renderQueryTipsContent = () => (
     <ErrorBoundary>
-      <QueryTipsTab
+      <ExploreQueries
         shouldRender={this.state.activePage === 'explore-queries'}
         isDataMessengerOpen={!!this.dmRef?.state?.open}
         onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
