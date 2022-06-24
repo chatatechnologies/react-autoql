@@ -874,7 +874,7 @@ export default class QueryOutput extends React.Component {
         // It is pivot data, add extra groupby
         groupBys.push({
           name: legendColumn.name,
-          value: `${columns?.[numberColumnIndex]?.name}`,
+          value: `${column?.name}`,
         })
       }
     }
