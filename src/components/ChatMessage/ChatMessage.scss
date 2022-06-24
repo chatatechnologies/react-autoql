@@ -30,6 +30,15 @@
     }
   }
 
+  .react-autoql-response-content-container {
+    .query-output-error-message,
+    .no-columns-error-message,
+    .feedback-message {
+      margin: 0;
+      text-align: left;
+    }
+  }
+
   .spinner-loader:after {
     border: 1px solid var(--react-autoql-accent-color);
     border-color: var(--react-autoql-accent-color) transparent

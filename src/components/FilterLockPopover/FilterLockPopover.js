@@ -680,6 +680,7 @@ export default class FilterLockPopover extends React.Component {
           align={this.props.align}
           content={this.renderContent()}
           containerClassName="filter-lock-menu"
+          padding={0}
         >
           <ErrorBoundary>{this.props.children || null}</ErrorBoundary>
         </Popover>

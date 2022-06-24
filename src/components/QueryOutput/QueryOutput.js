@@ -61,6 +61,7 @@ import {
   getDateColumnIndex,
   getStringColumnIndices,
   isColumnDateType,
+  isAggregation,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
@@ -110,9 +111,14 @@ export default class QueryOutput extends React.Component {
     )
 
     // Set the initial display type based on prop value, response, and supported display types
-    const displayType = isProvidedDisplayTypeValid
-      ? props.displayType
-      : getDefaultDisplayType(props.queryResponse, props.autoChartAggregations)
+    let displayType = props.displayType
+    if (!isProvidedDisplayTypeValid) {
+      displayType = getDefaultDisplayType(
+        props.queryResponse,
+        props.autoChartAggregations
+      )
+      this.onRecommendedDisplayType(displayType)
+    }
 
     // Set theme colors
     const { chartColors } = getThemeConfig(props.themeConfig)
@@ -822,12 +828,7 @@ export default class QueryOutput extends React.Component {
   onTableCellClick = (cell) => {
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(
-        cell,
-        this.tableColumns,
-        this.pivotTableColumns,
-        this.pivotOriginalColumnData
-      )
+      groupBys = getGroupBysFromPivotTable(cell, this.tableColumns)
     } else {
       groupBys = getGroupBysFromTable(cell, this.tableColumns)
     }
@@ -844,6 +845,7 @@ export default class QueryOutput extends React.Component {
     numberColumnIndex,
     activeKey
   ) => {
+    // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
 
@@ -1523,6 +1525,9 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
+          origDateColField: this.tableColumns[dateColumnIndex].field,
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: year,
           title: year,
           field: `${i + 1}`,
@@ -1650,6 +1655,9 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
+          titleColumn: this.tableColumns[newLegendColumnIndex],
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
@@ -1749,7 +1757,7 @@ export default class QueryOutput extends React.Component {
     try {
       const splitErrorMessage = errorMessage.split('<report>')
       const newErrorMessage = (
-        <div>
+        <div className="query-output-error-message">
           {splitErrorMessage.map((str, index) => {
             return (
               <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
@@ -1817,6 +1825,7 @@ export default class QueryOutput extends React.Component {
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
+            supportsDrilldowns={true}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1840,6 +1849,9 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         useInfiniteScroll={this.props.enableAjaxTableData}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+        supportsDrilldowns={
+          isAggregation(this.tableColumns) && this.tableColumns.length === 2
+        }
       />
     )
   }
@@ -1865,7 +1877,7 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
 
     return (
       <ErrorBoundary>
@@ -1874,7 +1886,7 @@ export default class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
-          {...dataConfig}
+          {...tableConfig}
           data={supportsPivot ? this.pivotTableData : this.tableData}
           columns={supportsPivot ? this.pivotTableColumns : this.tableColumns}
           isPivot={supportsPivot}
@@ -2002,7 +2014,6 @@ export default class QueryOutput extends React.Component {
       }
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
-
       return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)
