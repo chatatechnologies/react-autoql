@@ -443,31 +443,6 @@ class Dashboard extends React.Component {
       console.error(error)
     }
   }
-  // runDrilldownFromAPI = (data, queryID) => {
-  //   runDrilldown({
-  //     queryID,
-  //     data,
-  //     ...getAuthentication(this.props.authentication),
-  //     ...getAutoQLConfig(this.props.autoQLConfig),
-  //   })
-  //     .then((drilldownResponse) => {
-  //       if (this._isMounted) {
-  //         this.setState({
-  //           activeDrilldownResponse: drilldownResponse,
-  //           isDrilldownRunning: false,
-  //         })
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error(error)
-  //       if (this._isMounted) {
-  //         this.setState({
-  //           isDrilldownRunning: false,
-  //           activeDrilldownResponse: undefined,
-  //         })
-  //       }
-  //     })
-  // }
 
   onDrilldownStart = ({ tileId, activeKey, isSecondHalf }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {

@@ -12,35 +12,34 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault } from '../../props/defaults'
 
-import './QueryTipsTab.scss'
+import './ExploreQueries.scss'
 
-export default class QueryTipsTab extends React.Component {
+export default class ExploreQueries extends React.Component {
   static propTypes = {
     themeConfig: themeConfigType,
-    onQueryTipsInputKeyPress: PropTypes.func,
     loading: PropTypes.bool,
-    error: PropTypes.bool,
     queryTipsList: PropTypes.array,
-    executeQuery: PropTypes.func,
     shouldRender: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
+    queryTipsInputValue: PropTypes.string,
+    queryTipsQueryValidationResponse: PropTypes.shape({}),
+    executeQuery: PropTypes.func,
+    onQueryTipsInputKeyPress: PropTypes.func,
+    onQueryValidationSuggestionClick: PropTypes.func,
   }
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
     loading: false,
-    error: false,
     queryTipsList: undefined,
     shouldRender: true,
     isDataMessengerOpen: true,
+    queryTipsInputValue: '',
+    queryTipsQueryValidationResponse: undefined,
     executeQuery: () => {},
     onQueryTipsInputKeyPress: () => {},
+    onQueryValidationSuggestionClick: () => {},
   }
-
-  // state = {
-  //   queryTipsInputValue: '',
-  //   queryTipsList: []
-  // }
 
   renderQueryTipsContent = () => {
     if (this.props.queryTipsQueryValidationResponse) {
@@ -94,19 +93,9 @@ export default class QueryTipsTab extends React.Component {
                 style={{ display: 'block' }}
               >
                 {query}
-                {
-                  // <span className="execute-btn">
-                  //   <MdPlayCircleOutline />
-                  // </span>
-                }
               </div>
             )
           })}
-          {
-            //   this.props.loading && (
-            //   <Spinner />
-            // )
-          }
         </div>
         <div id="react-paginate" className="animated-item">
           <ReactPaginate

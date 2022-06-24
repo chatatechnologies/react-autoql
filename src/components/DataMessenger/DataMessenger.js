@@ -34,7 +34,7 @@ import { lang, setLanguage } from '../../js/Localization'
 // Components
 import { Icon } from '../Icon'
 import { Button } from '../Button'
-import { QueryTipsTab } from '../QueryTipsTab'
+import { ExploreQueries } from '../ExploreQueries'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
@@ -932,7 +932,7 @@ export default class DataMessenger extends React.Component {
 
   renderQueryTipsContent = () => (
     <ErrorBoundary>
-      <QueryTipsTab
+      <ExploreQueries
         shouldRender={this.state.activePage === 'explore-queries'}
         isDataMessengerOpen={!!this.dmRef?.state?.open}
         onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
