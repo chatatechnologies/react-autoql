@@ -50,6 +50,8 @@ class DashboardTile extends React.Component {
     this.QUERY_RESPONSE_KEY = uuid()
     this.autoCompleteTimer = undefined
     this.debounceTime = 50
+    this.paramsToSet = {}
+    this.callbackArray = []
 
     const supportedDisplayTypes =
       getSupportedDisplayTypes({ response: props.queryResponse }) || []
@@ -165,10 +167,19 @@ class DashboardTile extends React.Component {
       ...params,
     }
 
+    if (typeof callback === 'function') {
+      this.callbackArray = [...this.callbackArray, callback]
+    }
+
     clearTimeout(this.setParamsForTileTimout)
     this.setParamsForTileTimout = setTimeout(() => {
-      this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, callback)
+      this.props.setParamsForTile(
+        this.paramsToSet,
+        this.props.tile.i,
+        _cloneDeep(this.callbackArray)
+      )
       this.paramsToSet = {}
+      this.callbackArray = []
     }, this.debounceTime)
   }
 
@@ -200,7 +211,6 @@ class DashboardTile extends React.Component {
     // Update component key after getting new response
     // so QueryOutput completely resets
     this.QUERY_RESPONSE_KEY = uuid()
-
     this.debouncedSetParamsForTile(
       {
         queryResponse: response,

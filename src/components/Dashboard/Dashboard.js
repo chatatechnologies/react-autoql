@@ -183,11 +183,11 @@ class Dashboard extends React.Component {
     }, 500)
   }
 
-  subscribeToCallback = (callback) => {
-    this.callbackSubsciptions.push(callback)
+  subscribeToCallback = (callbackArray) => {
+    this.callbackSubsciptions = [...this.callbackSubsciptions, ...callbackArray]
   }
 
-  debouncedOnChange = (tiles, saveInLog = true, callback) => {
+  debouncedOnChange = (tiles, saveInLog = true, callbackArray = []) => {
     if (saveInLog) {
       this.previousTileState = _cloneDeep(this.getMostRecentTiles())
     }
@@ -195,8 +195,8 @@ class Dashboard extends React.Component {
     this.onChangeTiles = _cloneDeep(tiles)
     return new Promise((resolve, reject) => {
       try {
-        if (typeof callback === 'function') {
-          this.subscribeToCallback(callback)
+        if (callbackArray?.length) {
+          this.subscribeToCallback(callbackArray)
         }
         clearTimeout(this.onChangeTimer)
         this.onChangeTimer = setTimeout(() => {
@@ -204,8 +204,13 @@ class Dashboard extends React.Component {
             this.props.onChange(this.onChangeTiles)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
-              this.callbackSubsciptions.forEach((callback) => callback())
+              const callbackArray = _cloneDeep(this.callbackSubsciptions)
               this.callbackSubsciptions = []
+              callbackArray.forEach((callback, i) => {
+                this.callbackSubsciptionTimer = setTimeout(() => {
+                  callback()
+                }, (i + 1) * 50)
+              })
             }
             return resolve()
           }
@@ -409,7 +414,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  setParamsForTile = (params, id, callback) => {
+  setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
       const tiles = _cloneDeep(this.getMostRecentTiles())
@@ -433,7 +438,7 @@ class Dashboard extends React.Component {
         tiles[tileIndex].secondskipQueryValidation = false
       }
 
-      this.debouncedOnChange(tiles, undefined, callback)
+      this.debouncedOnChange(tiles, undefined, callbackArray)
     } catch (error) {
       console.error(error)
     }

@@ -682,6 +682,8 @@ export default class DataMessenger extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
+        position="bottom"
+        align="end"
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
