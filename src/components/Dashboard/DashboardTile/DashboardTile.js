@@ -1061,8 +1061,8 @@ class DashboardTile extends React.Component {
         key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         displayType,
         queryResponse: this.props.queryResponse,
-        dataConfig: this.props.tile.dataConfig,
-        onDataConfigChange: this.onDataConfigChange,
+        tableConfigs: this.props.tile.dataConfig,
+        onTableConfigChange: this.onDataConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
@@ -1133,8 +1133,8 @@ class DashboardTile extends React.Component {
         displayType,
         queryResponse:
           this.props.secondQueryResponse || this.props.queryResponse,
-        dataConfig: this.props.tile.secondDataConfig,
-        onDataConfigChange: this.onSecondDataConfigChange,
+        tableConfigs: this.props.tile.secondDataConfig,
+        onTableConfigChange: this.onSecondDataConfigChange,
         queryValidationSelections: this.props.tile
           .secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,

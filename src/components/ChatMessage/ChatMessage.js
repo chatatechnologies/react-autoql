@@ -236,10 +236,6 @@ export default class ChatMessage extends React.Component {
     this.setState({ displayType }, this.scrollIntoView)
   }
 
-  updateDataConfig = (config) => {
-    this.setState({ dataConfig: config })
-  }
-
   onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
     this.setState({ supportedDisplayTypes })
   }
@@ -299,8 +295,6 @@ export default class ChatMessage extends React.Component {
             isResizing={this.props.isResizing}
             isAnimatingContainer={this.state.isAnimatingMessageBubble}
             enableDynamicCharting={this.props.enableDynamicCharting}
-            tableConfig={this.state.dataConfig}
-            onTableConfigChange={this.updateDataConfig}
             optionsToolbarRef={this.optionsToolbarRef}
             onNoneOfTheseClick={this.props.onNoneOfTheseClick}
             autoChartAggregations={this.props.autoChartAggregations}

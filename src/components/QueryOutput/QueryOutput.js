@@ -101,8 +101,13 @@ export default class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (props.tableConfig && this.isTableConfigValid(props.tableConfig)) {
-      this.tableConfig = _cloneDeep(props.tableConfig)
+    if (
+      props.tableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.tableConfigs?.tableConfig)
+    ) {
+      const { tableConfig, pivotTableConfig } = props.tableConfigs
+      this.tableConfig = _cloneDeep(tableConfig)
+      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
     const isProvidedDisplayTypeValid = isDisplayTypeValid(
@@ -193,6 +198,7 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -239,9 +245,11 @@ export default class QueryOutput extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     try {
       // If data config was changed by a prop, change data config here
-      if (!_isEqual(this.props.tableConfig, prevProps.tableConfig)) {
-        if (this.props.tableConfig) {
-          this.tableConfig = _cloneDeep(this.props.tableConfig)
+      if (!_isEqual(this.props.tableConfigs, prevProps.tableConfigs)) {
+        if (this.props.tableConfigs) {
+          const { tableConfig, pivotTableConfig } = this.props.tableConfigs
+          this.tableConfig = _cloneDeep(tableConfig)
+          this.pivotTableConfig = _cloneDeep(pivotTableConfig)
         } else {
           this.setTableConfig()
         }
@@ -249,10 +257,16 @@ export default class QueryOutput extends React.Component {
 
       // If data config was changed here, tell the parent
       if (
-        !_isEqual(this.props.tableConfig, this.tableConfig) &&
+        !_isEqual(this.props.tableConfigs, {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }) &&
         this.props.onTableConfigChange
       ) {
-        this.props.onTableConfigChange(this.tableConfig)
+        this.props.onTableConfigChange({
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        })
       }
 
       if (
@@ -1097,6 +1111,11 @@ export default class QueryOutput extends React.Component {
     )
     if (legendColumnIndex >= 0)
       this.tableConfig.legendColumnIndex = legendColumnIndex
+
+    this.props.onTableConfigChange({
+      tableConfig: this.tableConfig,
+      pivotTableConfig: this.pivotTableConfig,
+    })
   }
 
   setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
