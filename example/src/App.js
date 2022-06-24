@@ -151,6 +151,7 @@ export default class App extends Component {
     apiKey: getStoredProp('api-key') || '',
     domain: getStoredProp('domain-url') || '',
     dprKey: getStoredProp('dpr-key') || '',
+    dprDomain: getStoredProp('dpr-domain') || '',
     projectId: getStoredProp('customer-id') || '',
     themeCode: getStoredProp('theme-code') || '',
     displayName: getStoredProp('user-id') || '',
@@ -193,6 +194,7 @@ export default class App extends Component {
       apiKey: this.state.apiKey,
       domain: this.state.domain,
       dprKey: this.state.dprKey,
+      dprDomain: this.state.dprDomain,
     }
   }
 
@@ -837,16 +839,6 @@ export default class App extends Component {
               // autoComplete="on"
             />
           </Form.Item>
-          <Form.Item label="AutoAE API key" name="dprKey">
-            <Input
-              name="dpr-key"
-              onChange={(e) => {
-                this.setState({ dprKey: e.target.value })
-              }}
-              onBlur={(e) => setStoredProp('dpr-key', e.target.value)}
-              value={this.state.dprKey}
-            />
-          </Form.Item>
           <Form.Item
             label="Domain URL"
             name="domain"
@@ -889,6 +881,26 @@ export default class App extends Component {
               }}
               value={this.state.password}
               // autoComplete="on"
+            />
+          </Form.Item>
+          <Form.Item label="DPR API key" name="dprKey">
+            <Input
+              name="dpr-key"
+              onChange={(e) => {
+                this.setState({ dprKey: e.target.value })
+              }}
+              onBlur={(e) => setStoredProp('dpr-key', e.target.value)}
+              value={this.state.dprKey}
+            />
+          </Form.Item>
+          <Form.Item label="DPR Domain" name="dprDomain">
+            <Input
+              name="dpr-domain"
+              onChange={(e) => {
+                this.setState({ dprDomain: e.target.value })
+              }}
+              onBlur={(e) => setStoredProp('dpr-domain', e.target.value)}
+              value={this.state.dprDomain}
             />
           </Form.Item>
           <Form.Item {...tailLayout}>

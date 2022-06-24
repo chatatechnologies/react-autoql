@@ -160,6 +160,7 @@ export default class QueryInput extends React.Component {
   submitDprQuery = (query) => {
     dprQuery({
       dprKey: this.props.authentication?.dprKey,
+      dprDomain: this.props.authentication?.dprDomain,
       query,
     })
       .then((response) => this.onResponse(response, query))
