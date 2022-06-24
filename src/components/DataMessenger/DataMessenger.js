@@ -907,7 +907,10 @@ export default class DataMessenger extends React.Component {
           shouldRender={this.state.activePage === 'dpr'}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
-          authentication={this.props.authentication}
+          authentication={{
+            dprKey: this.props.authentication?.dprKey,
+            dprDomain: this.props.authentication?.dprDomain,
+          }}
           themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
