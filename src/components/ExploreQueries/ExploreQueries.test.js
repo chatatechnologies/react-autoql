@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const queryTipsComponent = findByTestAttr(wrapper, 'query-tips-tab')
-    expect(queryTipsComponent.exists()).toBe(true)
+    const exploreQueriesComponent = findByTestAttr(wrapper, 'query-tips-tab')
+    expect(exploreQueriesComponent.exists()).toBe(true)
   })
 })
