@@ -277,15 +277,17 @@ export default class ExploreQueries extends React.Component {
                 }}
               />
             </div>
-            {(!!this.state.queryList?.length || !!this.state.inputValue) && (
-              <div
-                className="chat-bar-clear-btn"
-                data-for="explore-queries-tooltips"
-                data-tip="Clear Search"
-              >
-                <Icon type="close" onClick={this.clearExploreQueries} />
-              </div>
-            )}
+            <div
+              className={`chat-bar-clear-btn ${
+                this.state.queryList?.length || this.state.inputValue
+                  ? 'visible'
+                  : ''
+              }`}
+              data-for="explore-queries-tooltips"
+              data-tip="Clear Search"
+            >
+              <Icon type="close" onClick={this.clearExploreQueries} />
+            </div>
           </div>
           <div className="query-tips-result-container">
             {this.renderQueryList()}
