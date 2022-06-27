@@ -301,7 +301,9 @@ export default class ChataTable extends React.Component {
           {this.props.data && this.props.columns && (
             <TableWrapper
               tableRef={(ref) => (this.ref = ref)}
+              tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
+              key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test="autoql-tabulator-table"
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}

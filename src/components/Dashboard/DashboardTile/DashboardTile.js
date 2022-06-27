@@ -681,11 +681,7 @@ class DashboardTile extends React.Component {
     )
   }
 
-  renderContentPlaceholder = ({
-    isExecuting,
-    isExecuted,
-    showSplitViewBtn,
-  } = {}) => {
+  renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
     let content = null
     if (isExecuting) {
       // This should always take priority over the other conditions below
@@ -722,18 +718,7 @@ class DashboardTile extends React.Component {
       )
     }
 
-    return (
-      <div className="loading-container-centered">
-        {content}
-        {!this.props.isDragging && this.props.isEditing && (
-          <div className="dashboard-tile-viz-toolbar-container">
-            {this.props.isEditing &&
-              showSplitViewBtn &&
-              this.renderSplitViewBtn()}
-          </div>
-        )}
-      </div>
-    )
+    return <div className="loading-container-centered">{content}</div>
   }
 
   onQueryValidationSelectOption = (queryText, suggestionList) => {
@@ -975,20 +960,73 @@ class DashboardTile extends React.Component {
     )
   }
 
-  renderResponse = ({
-    queryOutputProps = {},
-    vizToolbarProps = {},
-    optionsToolbarProps = {},
-    showSplitViewBtn,
+  renderToolbars = ({
+    queryOutputProps,
+    vizToolbarProps,
+    optionsToolbarProps,
     isSecondHalf,
   }) => {
+    const dataLimitWarningIcon = document.querySelector(
+      `#${queryOutputProps.key} .dashboard-data-limit-warning-icon`
+    )
+
+    return (
+      <div
+        className={`dashboard-tile-toolbars-container ${
+          !!dataLimitWarningIcon ? 'left-padding' : ''
+        }`}
+      >
+        <div className="dashboard-tile-toolbars-left-container">
+          {this.props.isEditing &&
+            (isSecondHalf || !this.getIsSplitView()) &&
+            this.renderSplitViewBtn()}
+          {!this.props.isDragging && this.props.isEditing && (
+            <VizToolbar
+              themeConfig={this.props.themeConfig}
+              {...vizToolbarProps}
+            />
+          )}
+        </div>
+        <div className="dashboard-tile-toolbars-right-container">
+          {!this.props.isDragging && (
+            <OptionsToolbar
+              authentication={getAuthentication(this.props.authentication)}
+              autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              onErrorCallback={this.props.onErrorCallback}
+              onSuccessAlert={this.props.onSuccessCallback}
+              onCSVDownloadStart={this.onCSVDownloadStart}
+              onCSVDownloadProgress={this.onCSVDownloadProgress}
+              onCSVDownloadFinish={this.onCSVDownloadFinish}
+              rebuildTooltips={this.props.rebuildTooltips}
+              {...optionsToolbarProps}
+            />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  renderResponseContent = ({
+    queryOutputProps,
+    isSecondHalf,
+    isExecuting,
+    isExecuted,
+    renderPlaceholder,
+  }) => {
+    if (renderPlaceholder) {
+      return this.renderContentPlaceholder({
+        isExecuting,
+        isExecuted,
+      })
+    }
+
     let customMessage = this.state.customMessage
     if (isSecondHalf) {
       customMessage = this.state.secondCustomMessage
     }
 
     return (
-      <div className="loading-container-centered">
+      <>
         {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
           this.renderSuggestionMessage(customMessage)}
         {!customMessage && (
@@ -1012,31 +1050,34 @@ class DashboardTile extends React.Component {
             {...queryOutputProps}
           />
         )}
+      </>
+    )
+  }
 
-        {!this.props.isDragging && this.props.isEditing && (
-          <div className="dashboard-tile-viz-toolbar-container">
-            {this.props.isEditing &&
-              showSplitViewBtn &&
-              this.renderSplitViewBtn()}
-            <VizToolbar
-              themeConfig={this.props.themeConfig}
-              {...vizToolbarProps}
-            />
-          </div>
-        )}
-        {!this.props.isDragging && (
-          <OptionsToolbar
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            onErrorCallback={this.props.onErrorCallback}
-            onSuccessAlert={this.props.onSuccessCallback}
-            onCSVDownloadStart={this.onCSVDownloadStart}
-            onCSVDownloadProgress={this.onCSVDownloadProgress}
-            onCSVDownloadFinish={this.onCSVDownloadFinish}
-            rebuildTooltips={this.props.rebuildTooltips}
-            {...optionsToolbarProps}
-          />
-        )}
+  renderResponse = ({
+    queryOutputProps = {},
+    vizToolbarProps = {},
+    optionsToolbarProps = {},
+    isSecondHalf,
+    isExecuting,
+    isExecuted,
+    renderPlaceholder,
+  }) => {
+    return (
+      <div className="loading-container-centered" id={queryOutputProps.key}>
+        {this.renderResponseContent({
+          queryOutputProps,
+          isSecondHalf,
+          isExecuting,
+          isExecuted,
+          renderPlaceholder,
+        })}
+        {this.renderToolbars({
+          queryOutputProps,
+          vizToolbarProps,
+          optionsToolbarProps,
+          isSecondHalf,
+        })}
       </div>
     )
   }
@@ -1045,17 +1086,15 @@ class DashboardTile extends React.Component {
     const isExecuting = this.state.isTopExecuting
     const isExecuted = this.state.isTopExecuted
 
-    if (!this.props.queryResponse || isExecuting || !isExecuted) {
-      return this.renderContentPlaceholder({
-        isExecuting,
-        isExecuted,
-        showSplitViewBtn: !this.getIsSplitView(),
-      })
-    }
+    const renderPlaceholder =
+      !this.props.queryResponse || isExecuting || !isExecuted
 
     const displayType = _get(this.props, 'tile.displayType')
 
     return this.renderResponse({
+      renderPlaceholder,
+      isExecuting,
+      isExecuted,
       queryOutputProps: {
         ref: (ref) => (this.responseRef = ref),
         optionsToolbarRef: this.optionsToolbarRef,
@@ -1083,6 +1122,7 @@ class DashboardTile extends React.Component {
         reportProblemCallback: this.reportProblemCallback,
       },
       vizToolbarProps: {
+        ref: (r) => (this.vizToolbarRef = r),
         displayType: displayType,
         onDisplayTypeChange: this.onDisplayTypeChange,
         supportedDisplayTypes: this.state.supportedDisplayTypes,
@@ -1094,7 +1134,6 @@ class DashboardTile extends React.Component {
           this.toggleTableFilter(this.responseRef, isFilteringTable),
         displayType,
       },
-      showSplitViewBtn: !this.getIsSplitView(),
     })
   }
 
@@ -1111,22 +1150,18 @@ class DashboardTile extends React.Component {
       isExecuted = this.state.isTopExecuted
     }
 
-    if (
+    const renderPlaceholder =
       (!isQuerySameAsTop && !this.props.secondQueryResponse) ||
       (isQuerySameAsTop && !this.props.queryResponse) ||
       isExecuting ||
       !isExecuted
-    ) {
-      return this.renderContentPlaceholder({
-        isExecuting,
-        isExecuted,
-        showSplitViewBtn: this.getIsSplitView(),
-      })
-    }
 
     const displayType = _get(this.props, 'tile.secondDisplayType', 'table')
 
     return this.renderResponse({
+      renderPlaceholder,
+      isExecuting,
+      isExecuted,
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
         ref: (ref) => (this.secondResponseRef = ref),
@@ -1146,16 +1181,18 @@ class DashboardTile extends React.Component {
           this.onSecondDisplayTypeChange(displayType)
         },
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
-        onDrilldownStart: (activeKey) =>
+        onDrilldownStart: (activeKey) => {
           this.props.onDrilldownStart({
             tileId: this.props.tile.i,
             isSecondHalf: true,
             activeKey,
-          }),
+          })
+        },
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
       },
       vizToolbarProps: {
+        ref: (r) => (this.secondVizToolbarRef = r),
         displayType: displayType,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
         supportedDisplayTypes: this.state.secondSupportedDisplayTypes,
@@ -1167,7 +1204,6 @@ class DashboardTile extends React.Component {
           this.toggleTableFilter(this.secondResponseRef, isFilteringTable),
         displayType,
       },
-      showSplitViewBtn: this.getIsSplitView(),
       isSecondHalf: true,
     })
   }

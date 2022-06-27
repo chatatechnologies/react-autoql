@@ -1,10 +1,12 @@
 .viz-toolbar {
-  position: absolute;
   background: inherit;
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
   border: 1px solid #d3d3d352;
+  text-align: left;
+  display: inline-block;
+  background: var(--react-autoql-background-color-primary);
 
   &.vertical .react-autoql-toolbar-btn {
     display: block;
@@ -31,4 +33,46 @@
 }
 .react-autoql-toolbar-btn:hover {
   opacity: 0.7;
+}
+
+/* Chart icon styles */
+.chart-icon-svg-0,
+.react-autoql-icon-svg-0 {
+  fill: currentColor;
+}
+.react-autoql-icon-outlined {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 10;
+}
+.hm0 {
+  opacity: 0.5;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm1 {
+  fill: currentColor;
+}
+.hm2 {
+  opacity: 0.15;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm3 {
+  opacity: 0.6;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm4 {
+  opacity: 0.65;
+  fill: currentColor;
+  enable-background: new;
+}
+.hm5 {
+  fill: currentColor;
+}
+.hm6 {
+  fill: currentColor;
 }

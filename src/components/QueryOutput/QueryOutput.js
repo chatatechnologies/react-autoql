@@ -225,9 +225,9 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
         )
-      } else {
-        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
       }
+
+      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -305,7 +305,7 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
-        } else {
+        } else if (!this.tableData) {
           this.setResponseData()
           this.forceUpdate()
         }
@@ -437,7 +437,6 @@ export default class QueryOutput extends React.Component {
       response: this.queryResponse,
     })
     this.setSupportedDisplayTypes(newSupportedDisplayTypes)
-    this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
     if (areAllColumnsHidden(this.queryResponse)) {
       // If all columns are hidden, display warning message instead of table
@@ -490,7 +489,6 @@ export default class QueryOutput extends React.Component {
   setResponseData = () => {
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
-
     this.generateAllData(this.queryResponse, this.props.displayType)
   }
 
@@ -1133,9 +1131,8 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
         )
-      } else {
-        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
       }
+      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     }
   }
 
@@ -1404,29 +1401,31 @@ export default class QueryOutput extends React.Component {
       //   col.type = 'PERCENT'
       // }
 
-      col.field = `${i}`
-      col.title = col.display_name
-      col.id = uuid()
+      const newCol = _cloneDeep(col)
+
+      newCol.field = `${i}`
+      newCol.title = col.display_name
+      newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
-      col.visible = col.is_visible
+      newCol.visible = col.is_visible
 
       // Cell alignment
       if (
-        col.type === 'DOLLAR_AMT' ||
-        col.type === 'RATIO' ||
-        col.type === 'NUMBER'
+        newCol.type === 'DOLLAR_AMT' ||
+        newCol.type === 'RATIO' ||
+        newCol.type === 'NUMBER'
       ) {
-        col.hozAlign = 'right'
+        newCol.hozAlign = 'right'
       } else {
-        col.hozAlign = 'center'
+        newCol.hozAlign = 'center'
       }
 
       // Cell formattingg
-      col.formatter = (cell, formatterParams, onRendered) => {
+      newCol.formatter = (cell, formatterParams, onRendered) => {
         return formatElement({
           element: cell.getValue(),
-          column: col,
+          column: newCol,
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
@@ -1434,7 +1433,7 @@ export default class QueryOutput extends React.Component {
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
-      col.headerFilter = 'input'
+      newCol.headerFilter = 'input'
 
       if (
         !this.props.enableAjaxTableData ||
@@ -1442,14 +1441,14 @@ export default class QueryOutput extends React.Component {
       ) {
         // Need to set custom filters for cells that are
         // displayed differently than the data (ie. dates)
-        col.headerFilterFunc = this.setFilterFunction(col)
+        newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
         // Allow proper chronological sorting for date strings
-        col.sorter = this.setSorterFunction(col)
+        newCol.sorter = this.setSorterFunction(newCol)
       }
 
       // Context menu when right clicking on column header
-      col.headerContext = (e, column) => {
+      newCol.headerContext = (e, column) => {
         // Do not show native context menu
         e.preventDefault()
         this.setState({
@@ -1459,7 +1458,7 @@ export default class QueryOutput extends React.Component {
         })
       }
 
-      return col
+      return newCol
     })
 
     return formattedColumns
