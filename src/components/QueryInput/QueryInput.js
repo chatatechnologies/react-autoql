@@ -212,6 +212,7 @@ export default class QueryInput extends React.Component {
 
     if (query.trim()) {
       this.props.onSubmit(query)
+      localStorage.setItem('inputValue', query)
 
       if (
         !this.props.authentication?.token &&
@@ -264,9 +265,6 @@ export default class QueryInput extends React.Component {
   onKeyPress = (e) => {
     if (e.key == 'Enter') {
       this.submitQuery()
-      if (this.state.inputValue) {
-        localStorage.setItem('inputValue', this.state.inputValue)
-      }
     }
   }
 
