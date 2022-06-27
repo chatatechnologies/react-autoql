@@ -355,6 +355,7 @@ export default class ChatMessage extends React.Component {
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
           }
+          rebuildTooltips={this.props.rebuildTooltips}
           onFilterClick={this.toggleTableFilter}
           onResponseCallback={this.props.onResponseCallback}
         />
