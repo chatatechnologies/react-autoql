@@ -137,8 +137,13 @@
 
 .chat-bar-input-icon {
   position: absolute;
-  color: #28a8e0; // For chata logo
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  left: 0;
+  top: 0;
+  width: 46px;
+  height: 100%;
   font-size: 20px;
-  left: 30px;
-  top: 15px;
+  color: #28a8e0; // For chata logo
 }
