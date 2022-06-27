@@ -1033,6 +1033,7 @@ class DashboardTile extends React.Component {
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadProgress={this.onCSVDownloadProgress}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
+            rebuildTooltips={this.props.rebuildTooltips}
             {...optionsToolbarProps}
           />
         )}
