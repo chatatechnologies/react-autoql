@@ -409,7 +409,11 @@ export default class ChatMessage extends React.Component {
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}
-            ${this.props.disableMaxHeight ? ' no-max-height' : ''}
+            ${
+              this.props.disableMaxHeight || this.props.isIntroMessage
+                ? ' no-max-height'
+                : ''
+            }
           `}
         >
           <div
