@@ -513,7 +513,7 @@ export const sendSuggestion = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchQueryTips = ({
+export const fetchExploreQueries = ({
   keywords,
   pageSize,
   pageNumber,
@@ -523,7 +523,7 @@ export const fetchQueryTips = ({
   skipQueryValidation,
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
-  const queryTipsUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+  const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     commaSeparatedKeywords
   )}&page_size=${pageSize}&page=${pageNumber}`
 
@@ -551,20 +551,20 @@ export const fetchQueryTips = ({
           return Promise.resolve(queryValidationResponse)
         }
         return axios
-          .get(queryTipsUrl, config)
+          .get(exploreQueriesUrl, config)
           .then((response) => Promise.resolve(response))
           .catch((error) => Promise.reject(_get(error, 'response.data')))
       })
       .catch(() => {
         return axios
-          .get(queryTipsUrl, config)
+          .get(exploreQueriesUrl, config)
           .then((response) => Promise.resolve(response))
           .catch((error) => Promise.reject(_get(error, 'response.data')))
       })
   }
 
   return axios
-    .get(queryTipsUrl, config)
+    .get(exploreQueriesUrl, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

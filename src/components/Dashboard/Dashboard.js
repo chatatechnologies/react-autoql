@@ -652,7 +652,7 @@ class Dashboard extends React.Component {
                           )}
                           queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
-                          tableConfig={_cloneDeep(dataConfig)}
+                          tableConfigs={_cloneDeep(dataConfig)}
                           onUpdate={this.rebuildTooltips}
                           isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={

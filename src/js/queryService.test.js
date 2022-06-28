@@ -11,7 +11,7 @@ import {
   fetchSuggestions,
   runDrilldown,
   setColumnVisibility,
-  fetchQueryTips,
+  fetchExploreQueries,
 } from './queryService'
 
 import responseTestCases from '../../test/responseTestCases'
@@ -536,16 +536,18 @@ describe('fetchSuggestions', () => {
   })
 })
 
-describe('fetchQueryTips', () => {
+describe('fetchExploreQueries', () => {
   const data = relatedQueriesTestCases[0]
 
   test('fetches related queries successfully with all params provided', async () => {
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchQueryTips(allRelatedQueriesParams)).resolves.toEqual(data)
+    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(
+      data
+    )
   })
 
   test('throws unauthenticated error if no params provided', async () => {
-    await expect(fetchQueryTips()).rejects.toThrow('Unauthenticated')
+    await expect(fetchExploreQueries()).rejects.toThrow('Unauthenticated')
   })
 
   test('fetches validation response when skipQueryValidation is false', async () => {
@@ -557,7 +559,9 @@ describe('fetchQueryTips', () => {
     axios.get.mockImplementationOnce(() =>
       Promise.resolve(validationTestCases[0])
     )
-    await expect(fetchQueryTips(input)).resolves.toEqual(validationTestCases[0])
+    await expect(fetchExploreQueries(input)).resolves.toEqual(
+      validationTestCases[0]
+    )
   })
 
   test('fetches correctly when validation suggestions are empty', async () => {
@@ -567,14 +571,16 @@ describe('fetchQueryTips', () => {
     }
 
     axios.get.mockImplementationOnce(() => Promise.resolve(data))
-    await expect(fetchQueryTips(allRelatedQueriesParams)).resolves.toEqual(data)
+    await expect(fetchExploreQueries(allRelatedQueriesParams)).resolves.toEqual(
+      data
+    )
   })
 
   test('doesnt crash if call fails', async () => {
     axios.get.mockImplementationOnce(() =>
       Promise.reject({ response: { data: { message: 'an error occurred' } } })
     )
-    await expect(fetchQueryTips(allRelatedQueriesParams)).rejects.toEqual({
+    await expect(fetchExploreQueries(allRelatedQueriesParams)).rejects.toEqual({
       message: 'an error occurred',
     })
   })

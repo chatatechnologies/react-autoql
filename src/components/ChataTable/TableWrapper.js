@@ -15,6 +15,12 @@ export default class TableWrapper extends React.Component {
   }
 
   render = () => {
-    return <ReactTabulator {...this.props} ref={this.props.tableRef} />
+    return (
+      <ReactTabulator
+        {...this.props}
+        key={this.props.tableKey}
+        ref={this.props.tableRef}
+      />
+    )
   }
 }

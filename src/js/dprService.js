@@ -2,8 +2,9 @@ import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 const sessionId = uuid()
 
-export const dprQuery = ({ query, dprKey }) => {
-  const url = `https://autoae-api-staging.chata.io/api/v1/query?key=${dprKey}`
+export const dprQuery = ({ query, dprKey, dprDomain }) => {
+  const domain = dprDomain || 'https://autoae-api-staging.chata.io'
+  const url = `${domain}/api/v1/query?key=${dprKey}`
   const body = { query }
 
   const config = {

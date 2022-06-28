@@ -177,9 +177,11 @@ export const getTooltipContent = ({
       config: dataFormatting,
     })
 
-    const tooltipLine1 = !!legendColumn
-      ? `<div><strong>${legendColumn.title}:</strong> ${columns?.[colIndex]?.title}</div>`
-      : ''
+    const column = columns[colIndex]
+    const tooltipLine1 =
+      !!legendColumn && !!column?.origColumn
+        ? `<div><strong>${legendColumn.title}:</strong> ${column.title}</div>`
+        : ''
     const tooltipLine2 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
     const tooltipLine3 = `<div><strong>${numberTitle}:</strong> ${numberValue}</div>`
 
@@ -459,8 +461,8 @@ export const doesElementOverflowContainer = (element, container) => {
 
 export const getTickValues = (labelWidth, fullWidth, labelArray) => {
   try {
-    const interval = Math.ceil((labelArray.length * 20) / fullWidth)
-    if (labelWidth < 20) {
+    const interval = Math.ceil((labelArray.length * 25) / fullWidth)
+    if (labelWidth < 25) {
       const tickValues = []
       labelArray.forEach((label, index) => {
         if (index % interval === 0) {

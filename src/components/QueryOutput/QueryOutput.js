@@ -101,8 +101,13 @@ export default class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (props.tableConfig && this.isTableConfigValid(props.tableConfig)) {
-      this.tableConfig = _cloneDeep(props.tableConfig)
+    if (
+      props.tableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.tableConfigs?.tableConfig)
+    ) {
+      const { tableConfig, pivotTableConfig } = props.tableConfigs
+      this.tableConfig = _cloneDeep(tableConfig)
+      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
     const isProvidedDisplayTypeValid = isDisplayTypeValid(
@@ -193,6 +198,7 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -219,9 +225,9 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
         )
-      } else {
-        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
       }
+
+      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -239,9 +245,11 @@ export default class QueryOutput extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     try {
       // If data config was changed by a prop, change data config here
-      if (!_isEqual(this.props.tableConfig, prevProps.tableConfig)) {
-        if (this.props.tableConfig) {
-          this.tableConfig = _cloneDeep(this.props.tableConfig)
+      if (!_isEqual(this.props.tableConfigs, prevProps.tableConfigs)) {
+        if (this.props.tableConfigs) {
+          const { tableConfig, pivotTableConfig } = this.props.tableConfigs
+          this.tableConfig = _cloneDeep(tableConfig)
+          this.pivotTableConfig = _cloneDeep(pivotTableConfig)
         } else {
           this.setTableConfig()
         }
@@ -249,10 +257,16 @@ export default class QueryOutput extends React.Component {
 
       // If data config was changed here, tell the parent
       if (
-        !_isEqual(this.props.tableConfig, this.tableConfig) &&
+        !_isEqual(this.props.tableConfigs, {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }) &&
         this.props.onTableConfigChange
       ) {
-        this.props.onTableConfigChange(this.tableConfig)
+        this.props.onTableConfigChange({
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        })
       }
 
       if (
@@ -291,7 +305,7 @@ export default class QueryOutput extends React.Component {
             this.props.autoChartAggregations
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
-        } else {
+        } else if (!this.tableData) {
           this.setResponseData()
           this.forceUpdate()
         }
@@ -423,7 +437,6 @@ export default class QueryOutput extends React.Component {
       response: this.queryResponse,
     })
     this.setSupportedDisplayTypes(newSupportedDisplayTypes)
-    this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
 
     if (areAllColumnsHidden(this.queryResponse)) {
       // If all columns are hidden, display warning message instead of table
@@ -476,7 +489,6 @@ export default class QueryOutput extends React.Component {
   setResponseData = () => {
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
-
     this.generateAllData(this.queryResponse, this.props.displayType)
   }
 
@@ -849,6 +861,8 @@ export default class QueryOutput extends React.Component {
     const drilldownData = {}
     const groupBys = []
 
+    const column = columns[columnIndex]
+
     const stringColumn =
       columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
@@ -868,10 +882,13 @@ export default class QueryOutput extends React.Component {
     }
 
     if (legendColumn?.groupable) {
-      groupBys.push({
-        name: legendColumn.name,
-        value: `${columns?.[numberColumnIndex]?.name}`,
-      })
+      if (column.origColumn) {
+        // It is pivot data, add extra groupby
+        groupBys.push({
+          name: legendColumn.name,
+          value: `${column?.name}`,
+        })
+      }
     }
 
     drilldownData.data = groupBys
@@ -1092,6 +1109,11 @@ export default class QueryOutput extends React.Component {
     )
     if (legendColumnIndex >= 0)
       this.tableConfig.legendColumnIndex = legendColumnIndex
+
+    this.props.onTableConfigChange({
+      tableConfig: this.tableConfig,
+      pivotTableConfig: this.pivotTableConfig,
+    })
   }
 
   setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
@@ -1103,15 +1125,9 @@ export default class QueryOutput extends React.Component {
       this.supportedDisplayTypes = supportedDisplayTypes
 
       if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.onRecommendedDisplayType(
-          getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations
-          )
-        )
-      } else {
-        this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
+        this.onRecommendedDisplayType(getDefaultDisplayType(this.queryResponse))
       }
+      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     }
   }
 
@@ -1380,29 +1396,31 @@ export default class QueryOutput extends React.Component {
       //   col.type = 'PERCENT'
       // }
 
-      col.field = `${i}`
-      col.title = col.display_name
-      col.id = uuid()
+      const newCol = _cloneDeep(col)
+
+      newCol.field = `${i}`
+      newCol.title = col.display_name
+      newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
-      col.visible = col.is_visible
+      newCol.visible = col.is_visible
 
       // Cell alignment
       if (
-        col.type === 'DOLLAR_AMT' ||
-        col.type === 'RATIO' ||
-        col.type === 'NUMBER'
+        newCol.type === 'DOLLAR_AMT' ||
+        newCol.type === 'RATIO' ||
+        newCol.type === 'NUMBER'
       ) {
-        col.hozAlign = 'right'
+        newCol.hozAlign = 'right'
       } else {
-        col.hozAlign = 'center'
+        newCol.hozAlign = 'center'
       }
 
       // Cell formattingg
-      col.formatter = (cell, formatterParams, onRendered) => {
+      newCol.formatter = (cell, formatterParams, onRendered) => {
         return formatElement({
           element: cell.getValue(),
-          column: col,
+          column: newCol,
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
@@ -1410,7 +1428,7 @@ export default class QueryOutput extends React.Component {
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
-      col.headerFilter = 'input'
+      newCol.headerFilter = 'input'
 
       if (
         !this.props.enableAjaxTableData ||
@@ -1418,14 +1436,14 @@ export default class QueryOutput extends React.Component {
       ) {
         // Need to set custom filters for cells that are
         // displayed differently than the data (ie. dates)
-        col.headerFilterFunc = this.setFilterFunction(col)
+        newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
         // Allow proper chronological sorting for date strings
-        col.sorter = this.setSorterFunction(col)
+        newCol.sorter = this.setSorterFunction(newCol)
       }
 
       // Context menu when right clicking on column header
-      col.headerContext = (e, column) => {
+      newCol.headerContext = (e, column) => {
         // Do not show native context menu
         e.preventDefault()
         this.setState({
@@ -1435,7 +1453,7 @@ export default class QueryOutput extends React.Component {
         })
       }
 
-      return col
+      return newCol
     })
 
     return formattedColumns

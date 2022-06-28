@@ -3,7 +3,7 @@ import axios from 'axios'
 import _ from 'lodash'
 import { Input, Button, Form, Table } from 'antd'
 import { PlayCircleOutlined } from '@ant-design/icons'
-import { SpeechToTextButton, fetchQueryTips } from 'react-autoql'
+import { SpeechToTextButton, fetchExploreQueries } from 'react-autoql'
 
 export default class SpeechToTextPage extends React.Component {
   state = {
@@ -20,7 +20,7 @@ export default class SpeechToTextPage extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._isMounted &&
-      fetchQueryTips({
+      fetchExploreQueries({
         ...this.props.authentication,
         keywords: '',
         pageSize: 200,
