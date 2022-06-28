@@ -87,7 +87,10 @@ export default class ExploreQueries extends React.Component {
         } else {
           const currentPage = response?.data?.data?.pagination?.current_page
           const totalPages = response?.data?.data?.pagination?.total_pages
-          if (currentPage === totalPages) {
+          if (
+            currentPage >= totalPages ||
+            !response?.data?.data?.items?.length
+          ) {
             finishedState.hasMore = false
           }
 
