@@ -99,6 +99,7 @@ export default class Modal extends React.Component {
           bodyOpenClassName={`react-autoql-modal-container${
             this.props.className ? ` ${this.props.className}` : ''
           }`}
+          className={this.props.contentClassName}
           ariaHideApp={false}
           contentLocation={{ top: 0, left: 0 }}
           closeTimeoutMS={200}

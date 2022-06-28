@@ -11,8 +11,9 @@ import { Icon } from '../../Icon'
 import { NotificationItem } from '../NotificationItem'
 import { DataAlertModal } from '../DataAlertModal'
 import { Button } from '../../Button'
+import { CustomScrollbars } from '../../CustomScrollbars'
+import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import {
   fetchNotificationFeed,
@@ -28,11 +29,11 @@ import {
 } from '../../../props/defaults'
 import { setCSSVars } from '../../../js/Util'
 
+import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import './NotificationFeed.scss'
 
 export default class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid()
-  NOTIFICATION_LIST_KEY = uuid()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
   // notificationEventSource = new EventSource(
@@ -74,6 +75,7 @@ export default class NotificationFeed extends React.Component {
     notificationList: [],
     pagination: {},
     nextOffset: 0,
+    hasMore: true,
   }
 
   componentDidMount = () => {
@@ -97,11 +99,11 @@ export default class NotificationFeed extends React.Component {
     this._isMounted = false
   }
 
-  getNotifications = (limit) => {
+  getNotifications = () => {
     fetchNotificationFeed({
-      ...getAuthentication(this.props.authentication),
+      ...this.props.authentication,
       offset: this.state.nextOffset,
-      limit: limit || this.NOTIFICATION_FETCH_LIMIT,
+      limit: this.NOTIFICATION_FETCH_LIMIT,
     })
       .then((data) => {
         let notificationList = _cloneDeep(this.state.notificationList)
@@ -114,11 +116,16 @@ export default class NotificationFeed extends React.Component {
           pagination = data.pagination
         }
 
+        const hasMore =
+          !data?.items?.length ||
+          notificationList?.length === data?.pagination?.total_items
+
         if (this._isMounted) {
           this.setState({
             notificationList,
             pagination,
             nextOffset,
+            hasMore,
             isFetchingFirstNotifications: false,
             fetchNotificationsError: null,
           })
@@ -331,62 +338,69 @@ export default class NotificationFeed extends React.Component {
             delayShow={500}
             html
           />
-
           {_get(this.state.notificationList, 'length') ? (
             <Fragment>
               {this.renderDismissAllButton()}
-              <InfiniteScroll
-                initialLoad={false}
-                pageStart={0}
-                loadMore={this.getNotifications}
-                hasMore={
-                  this.state.pagination.total_items >
-                  this.state.notificationList.length
-                }
-                // loader={
-                //   <div className="loader" key={0}>
-                //     Loading ...
-                //   </div>
-                // }
-                useWindow={false}
-              >
-                {this.state.notificationList.map((notification, i) => {
-                  return (
-                    <NotificationItem
-                      key={`notification-item-${i}`}
-                      authentication={getAuthentication(
-                        this.props.authentication
-                      )}
-                      themeConfig={this.props.themeConfig}
-                      notification={notification}
-                      onClick={this.onItemClick}
-                      onDismissCallback={this.onDismissClick}
-                      onDeleteCallback={this.onDeleteClick}
-                      onDeleteSuccessCallback={() => {
-                        this.getNotifications(1)
-                      }}
-                      onExpandCallback={(notification) => {
-                        this.props.onExpandCallback(notification)
-                        this.setState({
-                          activeNotificationId: notification.id,
-                        })
-                      }}
-                      onCollapseCallback={this.props.onCollapseCallback}
-                      activeNotificationData={this.props.activeNotificationData}
-                      autoChartAggregations={this.props.autoChartAggregations}
-                      showNotificationDetails={
-                        this.props.showNotificationDetails
-                      }
-                      onErrorCallback={this.props.onErrorCallback}
-                      onEditClick={(dataAlert) => {
-                        this.setState({ activeDataAlert: dataAlert })
-                        this.showEditDataAlertModal()
-                      }}
-                      enableAjaxTableData={this.props.enableAjaxTableData}
-                    />
-                  )
-                })}
-              </InfiniteScroll>
+              <CustomScrollbars>
+                <InfiniteScroll
+                  initialLoad={false}
+                  pageStart={0}
+                  loadMore={this.getNotifications}
+                  hasMore={
+                    this.state.pagination.total_items >
+                    this.state.notificationList.length
+                  }
+                  loader={
+                    <div className="loader" key={0}>
+                      <Spinner />
+                    </div>
+                  }
+                  useWindow={false}
+                >
+                  <div className="notification-feed-list">
+                    {this.state.notificationList.map((notification, i) => {
+                      return (
+                        <NotificationItem
+                          key={`notification-item-${i}`}
+                          authentication={getAuthentication(
+                            this.props.authentication
+                          )}
+                          themeConfig={this.props.themeConfig}
+                          notification={notification}
+                          onClick={this.onItemClick}
+                          onDismissCallback={this.onDismissClick}
+                          onDeleteCallback={this.onDeleteClick}
+                          onDeleteSuccessCallback={() => {
+                            this.getNotifications()
+                          }}
+                          onExpandCallback={(notification) => {
+                            this.props.onExpandCallback(notification)
+                            this.setState({
+                              activeNotificationId: notification.id,
+                            })
+                          }}
+                          onCollapseCallback={this.props.onCollapseCallback}
+                          activeNotificationData={
+                            this.props.activeNotificationData
+                          }
+                          autoChartAggregations={
+                            this.props.autoChartAggregations
+                          }
+                          showNotificationDetails={
+                            this.props.showNotificationDetails
+                          }
+                          onErrorCallback={this.props.onErrorCallback}
+                          onEditClick={(dataAlert) => {
+                            this.setState({ activeDataAlert: dataAlert })
+                            this.showEditDataAlertModal()
+                          }}
+                          enableAjaxTableData={this.props.enableAjaxTableData}
+                        />
+                      )
+                    })}
+                  </div>
+                </InfiniteScroll>
+              </CustomScrollbars>
             </Fragment>
           ) : (
             <div className="empty-notifications-message">

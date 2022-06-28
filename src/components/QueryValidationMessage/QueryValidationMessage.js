@@ -336,10 +336,12 @@ export default class QueryValidationMessage extends React.Component {
     return (
       <div className="react-autoql-query-validation-container">
         <div className="react-autoql-query-validation-description">
-          {this.props.message ||
-            `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
+          <span>
+            {this.props.message ||
+              `I need your help matching a term you used to the exact corresponding term in your database. Verify by selecting the correct term from the menu below:`}
+          </span>
         </div>
-        <span>
+        <div>
           {this.renderQueryValidationQuery()}
           <button
             className="react-autoql-query-validation-execute-btn"
@@ -358,7 +360,7 @@ export default class QueryValidationMessage extends React.Component {
             />
             {this.props.submitText || 'Run Query'}
           </button>
-        </span>
+        </div>
       </div>
     )
   }

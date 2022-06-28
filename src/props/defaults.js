@@ -2,6 +2,8 @@ export const authenticationDefault = {
   token: undefined,
   apiKey: undefined,
   domain: undefined,
+  dprKey: undefined,
+  dprDomain: undefined,
 }
 
 export const dataFormattingDefault = {

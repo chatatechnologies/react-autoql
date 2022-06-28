@@ -61,6 +61,7 @@ import {
   getDateColumnIndex,
   getStringColumnIndices,
   isColumnDateType,
+  isAggregation,
 } from './columnHelpers.js'
 
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
@@ -101,8 +102,13 @@ export default class QueryOutput extends React.Component {
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
-    if (props.tableConfig && this.isTableConfigValid(props.tableConfig)) {
-      this.tableConfig = _cloneDeep(props.tableConfig)
+    if (
+      props.tableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.tableConfigs?.tableConfig)
+    ) {
+      const { tableConfig, pivotTableConfig } = props.tableConfigs
+      this.tableConfig = _cloneDeep(tableConfig)
+      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
     const displayType = this.getDisplayTypeFromInitial(props)
@@ -184,6 +190,7 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
@@ -223,9 +230,11 @@ export default class QueryOutput extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     try {
       // If data config was changed by a prop, change data config here
-      if (!_isEqual(this.props.tableConfig, prevProps.tableConfig)) {
-        if (this.props.tableConfig) {
-          this.tableConfig = _cloneDeep(this.props.tableConfig)
+      if (!_isEqual(this.props.tableConfigs, prevProps.tableConfigs)) {
+        if (this.props.tableConfigs) {
+          const { tableConfig, pivotTableConfig } = this.props.tableConfigs
+          this.tableConfig = _cloneDeep(tableConfig)
+          this.pivotTableConfig = _cloneDeep(pivotTableConfig)
         } else {
           this.setTableConfig(this.state.columns)
         }
@@ -233,10 +242,16 @@ export default class QueryOutput extends React.Component {
 
       // If data config was changed here, tell the parent
       if (
-        !_isEqual(this.props.tableConfig, this.tableConfig) &&
+        !_isEqual(this.props.tableConfigs, {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }) &&
         this.props.onTableConfigChange
       ) {
-        this.props.onTableConfigChange(this.tableConfig)
+        this.props.onTableConfigChange({
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        })
       }
 
       if (
@@ -783,13 +798,8 @@ export default class QueryOutput extends React.Component {
 
   onTableCellClick = (cell) => {
     let groupBys = {}
-    if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(
-        cell,
-        this.state.columns,
-        this.pivotTableColumns,
-        this.pivotOriginalColumnData
-      )
+    if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
+      groupBys = getGroupBysFromPivotTable(cell, this.tableColumns)
     } else {
       groupBys = getGroupBysFromTable(cell, this.state.columns)
     }
@@ -806,8 +816,11 @@ export default class QueryOutput extends React.Component {
     numberColumnIndex,
     activeKey
   ) => {
+    // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
+
+    const column = columns[columnIndex]
 
     const stringColumn =
       columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
@@ -828,10 +841,13 @@ export default class QueryOutput extends React.Component {
     }
 
     if (legendColumn?.groupable) {
-      groupBys.push({
-        name: legendColumn.name,
-        value: `${columns?.[numberColumnIndex]?.name}`,
-      })
+      if (column.origColumn) {
+        // It is pivot data, add extra groupby
+        groupBys.push({
+          name: legendColumn.name,
+          value: `${column?.name}`,
+        })
+      }
     }
 
     drilldownData.data = groupBys
@@ -1073,6 +1089,11 @@ export default class QueryOutput extends React.Component {
     )
     if (legendColumnIndex >= 0)
       this.tableConfig.legendColumnIndex = legendColumnIndex
+
+    this.props.onTableConfigChange({
+      tableConfig: this.tableConfig,
+      pivotTableConfig: this.pivotTableConfig,
+    })
   }
 
   setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
@@ -1367,29 +1388,31 @@ export default class QueryOutput extends React.Component {
       //   col.type = 'PERCENT'
       // }
 
-      col.field = `${i}`
-      col.title = col.display_name
-      col.id = uuid()
+      const newCol = _cloneDeep(col)
+
+      newCol.field = `${i}`
+      newCol.title = col.display_name
+      newCol.id = uuid()
 
       // Visibility flag: this can be changed through the column visibility editor modal
-      col.visible = col.is_visible
+      newCol.visible = col.is_visible
 
       // Cell alignment
       if (
-        col.type === 'DOLLAR_AMT' ||
-        col.type === 'RATIO' ||
-        col.type === 'NUMBER'
+        newCol.type === 'DOLLAR_AMT' ||
+        newCol.type === 'RATIO' ||
+        newCol.type === 'NUMBER'
       ) {
-        col.hozAlign = 'right'
+        newCol.hozAlign = 'right'
       } else {
-        col.hozAlign = 'center'
+        newCol.hozAlign = 'center'
       }
 
       // Cell formattingg
-      col.formatter = (cell, formatterParams, onRendered) => {
+      newCol.formatter = (cell, formatterParams, onRendered) => {
         return formatElement({
           element: cell.getValue(),
-          column: col,
+          column: newCol,
           config: getDataFormatting(this.props.dataFormatting),
           htmlElement: cell.getElement(),
         })
@@ -1397,7 +1420,7 @@ export default class QueryOutput extends React.Component {
 
       // Always have filtering enabled, but only
       // display if filtering is toggled by user
-      col.headerFilter = 'input'
+      newCol.headerFilter = 'input'
 
       if (
         !this.props.enableAjaxTableData ||
@@ -1405,14 +1428,14 @@ export default class QueryOutput extends React.Component {
       ) {
         // Need to set custom filters for cells that are
         // displayed differently than the data (ie. dates)
-        col.headerFilterFunc = this.setFilterFunction(col)
+        newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
         // Allow proper chronological sorting for date strings
-        col.sorter = this.setSorterFunction(col)
+        newCol.sorter = this.setSorterFunction(newCol)
       }
 
       // Context menu when right clicking on column header
-      col.headerContext = (e, column) => {
+      newCol.headerContext = (e, column) => {
         // Do not show native context menu
         e.preventDefault()
         this.setState({
@@ -1422,7 +1445,7 @@ export default class QueryOutput extends React.Component {
         })
       }
 
-      return col
+      return newCol
     })
 
     return formattedColumns
@@ -1512,6 +1535,9 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.state.columns[numberColumnIndex],
           origColumn: this.state.columns[numberColumnIndex],
+          origDateColField: this.tableColumns[dateColumnIndex].field,
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: year,
           title: year,
           field: `${i + 1}`,
@@ -1643,6 +1669,9 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.state.columns[numberColumnIndex],
           origColumn: this.state.columns[numberColumnIndex],
+          titleColumn: this.tableColumns[newLegendColumnIndex],
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
@@ -1743,7 +1772,7 @@ export default class QueryOutput extends React.Component {
     try {
       const splitErrorMessage = errorMessage.split('<report>')
       const newErrorMessage = (
-        <div>
+        <div className="query-output-error-message">
           {splitErrorMessage.map((str, index) => {
             return (
               <span key={`error-message-part-${this.COMPONENT_KEY}-${index}`}>
@@ -1811,6 +1840,7 @@ export default class QueryOutput extends React.Component {
             onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
+            supportsDrilldowns={true}
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1834,6 +1864,9 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         useInfiniteScroll={this.props.enableAjaxTableData}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+        supportsDrilldowns={
+          isAggregation(this.tableColumns) && this.tableColumns.length === 2
+        }
       />
     )
   }
@@ -1859,7 +1892,7 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const dataConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
 
     return (
       <ErrorBoundary>
@@ -1868,7 +1901,7 @@ export default class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
-          {...dataConfig}
+          {...tableConfig}
           data={supportsPivot ? this.pivotTableData : this.tableData}
           columns={supportsPivot ? this.pivotTableColumns : this.state.columns}
           isPivot={supportsPivot}
@@ -1996,7 +2029,6 @@ export default class QueryOutput extends React.Component {
       }
 
       const errorMessage = error || errorMessages.GENERAL_QUERY
-
       return <div className="query-output-error-message">{errorMessage}</div>
     } catch (error) {
       console.warn(error)

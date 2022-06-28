@@ -9,7 +9,7 @@ import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
 import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import ChatContent from './ChatContent'
+import { ChatContent } from '../ChatContent'
 import TopicsCascader from './TopicsCascader'
 
 import {
@@ -34,11 +34,11 @@ import { lang, setLanguage } from '../../js/Localization'
 // Components
 import { Icon } from '../Icon'
 import { Button } from '../Button'
-import { QueryTipsTab } from '../QueryTipsTab'
+import { ExploreQueries } from '../ExploreQueries'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import { fetchQueryTips, fetchTopics } from '../../js/queryService'
+import { fetchTopics } from '../../js/queryService'
 import { FilterLockPopover } from '../FilterLockPopover'
 
 // Styles
@@ -98,12 +98,6 @@ export default class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
       selectedValueLabel: undefined,
-      queryTipsList: undefined,
-      queryTipsLoading: false,
-      queryTipsError: false,
-      queryTipsTotalPages: undefined,
-      queryTipsCurrentPage: 1,
-      queryTipsInputValue: '',
       isSizeMaximum: false,
     }
   }
@@ -332,7 +326,7 @@ export default class DataMessenger extends React.Component {
     if (topic) {
       clearTimeout(this.exploreQueriesTimeout)
       this.exploreQueriesTimeout = setTimeout(() => {
-        this.animateQITextAndSubmit(topic)
+        this.exploreQueriesRef?.animateQITextAndSubmit(topic)
       }, 500)
     }
   }
@@ -682,6 +676,8 @@ export default class DataMessenger extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
+        position="bottom"
+        align="end"
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
@@ -748,25 +744,11 @@ export default class DataMessenger extends React.Component {
     return (
       <>
         {this.renderDataMessengerContent()}
-        {this.renderQueryTipsContent()}
+        {this.renderExploreQueriesContent()}
         {this.renderNotificationsContent()}
         {this.renderDPRContent()}
       </>
     )
-    switch (this.state.activePage) {
-      case 'data-messenger': {
-        return this.renderDataMessengerContent()
-      }
-      case 'explore-queries': {
-        return this.renderQueryTipsContent()
-      }
-      case 'notifications': {
-        return this.renderNotificationsContent()
-      }
-      case 'dpr': {
-        return this.renderDPRContent()
-      }
-    }
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
@@ -775,97 +757,6 @@ export default class DataMessenger extends React.Component {
       this.messageRefs[id].setState({
         csvDownloadProgress: progress,
       })
-    }
-  }
-
-  fetchQueryTipsList = (keywords, pageNumber, skipQueryValidation) => {
-    this.setState({ queryTipsLoading: true, queryTipsKeywords: keywords })
-
-    // todo: use infinite scroll to simplify this
-    let pageSize = 10
-    if (this.queryTipsPage) {
-      pageSize = Math.floor((this.queryTipsPage.clientHeight - 150) / 50)
-    }
-
-    fetchQueryTips({
-      ...getAuthentication(this.props.authentication),
-      keywords,
-      pageSize,
-      pageNumber,
-      skipQueryValidation,
-    })
-      .then((response) => {
-        // if caught by validation...
-        if (_get(response, 'data.full_suggestion')) {
-          this.setState({
-            queryTipsLoading: false,
-            queryTipsQueryValidationResponse: response,
-          })
-        } else {
-          const totalQueries = Number(
-            _get(response, 'data.data.pagination.total_items')
-          )
-          const totalPages = Number(
-            _get(response, 'data.data.pagination.total_pages')
-          )
-          const pageNumber = Number(
-            _get(response, 'data.data.pagination.current_page')
-          )
-
-          this.setState({
-            queryTipsList: _get(response, 'data.data.items'),
-            queryTipsLoading: false,
-            queryTipsError: false,
-            queryTipsTotalPages: totalPages,
-            queryTipsCurrentPage: pageNumber,
-            queryTipsTotalQueries: totalQueries,
-            queryTipsQueryValidationResponse: undefined,
-          })
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-        this.setState({
-          queryTipsLoading: false,
-          queryTipsError: true,
-          queryTipsQueryValidationResponse: undefined,
-        })
-      })
-  }
-
-  onQueryTipsInputKeyPress = (e) => {
-    if (e.key == 'Enter') {
-      this.fetchQueryTipsList(e.target.value, 1)
-    } else {
-      this.setState({ queryTipsInputValue: e.target.value })
-    }
-  }
-
-  onQueryTipsPageChange = ({ selected }) => {
-    const nextPage = selected + 1 // Because ReactPaginate is 0 indexed
-    this.fetchQueryTipsList(this.state.queryTipsKeywords, nextPage, true)
-  }
-
-  onQueryTipsQueryValidationSuggestionClick = (queryValidationObj) => {
-    const keywords = queryValidationObj.query
-    this.setState({ queryTipsInputValue: keywords })
-    this.fetchQueryTipsList(keywords, 1, true)
-  }
-
-  animateQITextAndSubmit = (text) => {
-    if (typeof text === 'string' && _get(text, 'length')) {
-      for (let i = 1; i <= text.length; i++) {
-        clearTimeout(this.animateTextTimeout)
-        this.animateTextTimeout = setTimeout(() => {
-          this.setState({
-            queryTipsInputValue: text.slice(0, i),
-          })
-          if (i === text.length) {
-            this.fetchQueryTipsList(text, 1)
-          }
-        }, i * 50)
-      }
     }
   }
 
@@ -905,7 +796,10 @@ export default class DataMessenger extends React.Component {
           shouldRender={this.state.activePage === 'dpr'}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
-          authentication={this.props.authentication}
+          authentication={{
+            dprKey: this.props.authentication?.dprKey,
+            dprDomain: this.props.authentication?.dprDomain,
+          }}
           themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
@@ -928,26 +822,15 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderQueryTipsContent = () => (
+  renderExploreQueriesContent = () => (
     <ErrorBoundary>
-      <QueryTipsTab
-        shouldRender={this.state.activePage === 'explore-queries'}
-        isDataMessengerOpen={!!this.dmRef?.state?.open}
-        onQueryTipsInputKeyPress={this.onQueryTipsInputKeyPress}
-        queryTipsQueryValidationResponse={
-          this.state.queryTipsQueryValidationResponse
+      <ExploreQueries
+        ref={(r) => (this.exploreQueriesRef = r)}
+        authentication={this.props.authentication}
+        shouldRender={
+          this.state.activePage === 'explore-queries' &&
+          !!this.dmRef?.state?.open
         }
-        onQueryValidationSuggestionClick={
-          this.onQueryTipsQueryValidationSuggestionClick
-        }
-        loading={this.state.queryTipsLoading}
-        error={this.state.queryTipsError}
-        queryTipsList={this.state.queryTipsList}
-        queryTipsInputValue={this.state.queryTipsInputValue}
-        totalPages={this.state.queryTipsTotalPages}
-        currentPage={this.state.queryTipsCurrentPage}
-        queryTipsPageRef={(r) => (this.queryTipsPage = r)}
-        onPageChange={this.onQueryTipsPageChange}
         executeQuery={(query) => {
           this.setState({ activePage: 'data-messenger' })
           clearTimeout(this.executeQueryTimeout)

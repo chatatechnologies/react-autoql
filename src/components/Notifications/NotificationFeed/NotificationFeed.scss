@@ -3,7 +3,6 @@
   padding-top: 100px;
   color: var(--react-autoql-text-color-primary);
   height: 100%;
-  overflow: hidden;
   background: var(--react-autoql-background-color-secondary);
 }
 
@@ -29,16 +28,26 @@
 }
 
 .react-autoql-notification-list-container {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  padding: 20px;
-  overflow-y: auto;
   background: var(--react-autoql-background-color-secondary);
+
+  .notification-feed-list {
+    padding: 0 20px;
+    padding-top: 0;
+  }
+
+  .loader {
+    text-align: center;
+    margin: 10px;
+  }
 }
 
 .react-autoql-notification-dismiss-all {
+  flex: 0;
   text-align: right;
-  margin-bottom: 12px;
-  padding-right: 10px;
+  margin: 12px;
   color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
   transition: color 0.1s ease;
 

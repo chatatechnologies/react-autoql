@@ -2,13 +2,13 @@ import React from 'react'
 import { shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
-import QueryTipsTab from './QueryTipsTab'
+import ExploreQueries from './ExploreQueries'
 
-const defaultProps = QueryTipsTab.defaultProps
+const defaultProps = ExploreQueries.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<QueryTipsTab {...setupProps} />)
+  const wrapper = shallow(<ExploreQueries {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }
@@ -18,7 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const queryTipsComponent = findByTestAttr(wrapper, 'query-tips-tab')
-    expect(queryTipsComponent.exists()).toBe(true)
+    const exploreQueriesComponent = findByTestAttr(wrapper, 'query-tips-tab')
+    expect(exploreQueriesComponent.exists()).toBe(true)
   })
 })

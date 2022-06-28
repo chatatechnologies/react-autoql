@@ -160,6 +160,7 @@ export default class QueryInput extends React.Component {
   submitDprQuery = (query) => {
     dprQuery({
       dprKey: this.props.authentication?.dprKey,
+      dprDomain: this.props.authentication?.dprDomain,
       query,
     })
       .then((response) => this.onResponse(response, query))
@@ -171,9 +172,6 @@ export default class QueryInput extends React.Component {
 
   onResponse = (response, query) => {
     this.props.onResponseCallback(response, query)
-    if (query) {
-      localStorage.setItem('inputValue', query)
-    }
 
     const newState = {
       isQueryRunning: false,
@@ -214,6 +212,7 @@ export default class QueryInput extends React.Component {
 
     if (query.trim()) {
       this.props.onSubmit(query)
+      localStorage.setItem('inputValue', query)
 
       if (
         !this.props.authentication?.token &&

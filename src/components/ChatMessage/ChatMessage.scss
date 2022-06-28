@@ -30,185 +30,113 @@
     }
   }
 
+  .react-autoql-response-content-container {
+    .query-output-error-message,
+    .no-columns-error-message,
+    .feedback-message {
+      margin: 0;
+      text-align: left;
+    }
+  }
+
   .spinner-loader:after {
     border: 1px solid var(--react-autoql-accent-color);
     border-color: var(--react-autoql-accent-color) transparent
       var(--react-autoql-accent-color) transparent;
   }
-}
 
-.chat-condition-item-container {
-  position: absolute;
-  background: inherit;
-  bottom: 0px;
-  padding: 5px;
-  border-radius: 6px;
-}
-.chat-condition-item {
-  background: none !important;
-  border: none;
-  margin-top: -20px !important;
-  padding: 0 !important;
-  font-family: var(--react-autoql-font-family);
-  color: var(--react-autoql-accent-color);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.chat-single-message-container.response {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 20px;
-  animation: scale-up-bl 0.5s ease;
-}
-.chat-single-message-container.request {
-  display: flex;
-  justify-content: flex-end;
-  padding-right: 20px;
-  animation: scale-up-br 0.5s ease;
-}
-.chat-single-message-container .chat-message-bubble {
-  position: relative;
-  padding: 13px;
-  border-radius: 10px;
-  max-width: calc(100% - 20px);
-  word-wrap: break-word;
-  font-family: inherit;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  box-sizing: border-box;
-  /* make small margin on bottom because sometimes react
-  custom scrollbar cuts off a pixel or 2 at the bottom */
-  margin-bottom: 6px;
-  // padding-bottom: 30px;
-}
-.chat-single-message-container .chat-message-bubble.text {
-  max-width: 85%;
-}
+  &.response {
+    display: flex;
+    justify-content: flex-start;
+    padding-left: 20px;
+    animation: scale-up-bl 0.5s ease;
 
-.chat-single-message-container .chat-message-bubble.full-width {
-  width: calc(100% - 20px) !important;
-  min-width: calc(100% - 20px) !important;
-  max-width: calc(100% - 20px) !important;
-}
-.chat-single-message-container.response .chat-message-bubble.active {
-  border: 1px solid #c3c3c3;
-}
-.chat-single-message-container.response .chat-message-bubble {
-  background: var(--react-autoql-background-color-primary);
-  color: var(--react-autoql-text-color-primary);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-}
-.chat-single-message-container.response .chat-message-bubble:not(.text) {
-  min-width: 125px;
-  padding-bottom: 15px;
-}
-.chat-single-message-container.request .chat-message-bubble {
-  background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-}
-.chat-message-toolbar,
-.chat-message-toolbar.autoql-options-toolbar {
-  display: none;
-  position: absolute;
-  background: inherit;
-  top: -31px;
-  padding: 5px;
-  border-radius: 6px;
-  line-height: 28px;
-  background: var(--react-autoql-background-color-primary);
-  border: 1px solid var(--react-autoql-border-color);
-  color: var(--react-autoql-text-color-primary);
-}
-.chat-message-toolbar.right {
-  right: -9px;
-}
-.chat-message-toolbar.left {
-  left: -9px;
-}
-.chat-message-bubble:hover .chat-message-toolbar,
-.chat-message-bubble .chat-message-toolbar.active {
-  display: block;
-}
-.report-problem-text-area {
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  margin-top: 10px;
-  padding: 5px 10px;
-  outline: none !important;
-}
-.condition-info-icon-left-align {
-  color: var(--react-autoql-accent-color) !important;
-  position: absolute !important;
-  bottom: 2px;
-  right: 10px;
-  font-size: 20px;
-}
-.condition-info-icon {
-  color: var(--react-autoql-accent-color) !important;
-  position: absolute !important;
-  bottom: 2px;
-  right: 4px;
-  font-size: 20px;
-}
+    .chat-message-bubble {
+      background: var(--react-autoql-background-color-primary);
+      color: var(--react-autoql-text-color-primary);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+    }
 
-.more-options-menu,
-.report-problem-menu {
-  background: var(--react-autoql-background-color-primary);
-  padding: 10px 0;
-
-  span.react-autoql-icon svg {
-    margin-right: 3px;
+    .chat-message-bubble:not(.text) {
+      min-width: 125px;
+      padding-bottom: 15px;
+    }
   }
-}
 
-.interpretation-icon {
-  vertical-align: top;
-  height: 26px;
-  margin: 0 3px;
-  font-size: 18px;
-}
+  &.request {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 20px;
+    animation: scale-up-br 0.5s ease;
 
-/* Chart icon styles */
-.chart-icon-svg-0,
-.react-autoql-icon-svg-0 {
-  fill: currentColor;
-}
-.react-autoql-icon-outlined {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-miterlimit: 10;
-}
-.hm0 {
-  opacity: 0.5;
-  fill: currentColor;
-  enable-background: new;
-}
-.hm1 {
-  fill: currentColor;
-}
-.hm2 {
-  opacity: 0.15;
-  fill: currentColor;
-  enable-background: new;
-}
-.hm3 {
-  opacity: 0.6;
-  fill: currentColor;
-  enable-background: new;
-}
-.hm4 {
-  opacity: 0.65;
-  fill: currentColor;
-  enable-background: new;
-}
-.hm5 {
-  fill: currentColor;
-}
-.hm6 {
-  fill: currentColor;
+    .chat-message-bubble {
+      background: var(--react-autoql-accent-color);
+      color: var(--react-autoql-accent-text-color);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+    }
+  }
+
+  .chat-message-bubble {
+    position: relative;
+    padding: 13px;
+    border-radius: 10px;
+    max-width: calc(100% - 20px);
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    box-sizing: border-box;
+    /* make small margin on bottom because sometimes react
+    custom scrollbar cuts off a pixel or 2 at the bottom */
+    margin-bottom: 6px;
+
+    &.text {
+      max-width: 85%;
+    }
+
+    &.full-width {
+      width: calc(100% - 20px) !important;
+      min-width: calc(100% - 20px) !important;
+      max-width: calc(100% - 20px) !important;
+    }
+
+    &.active {
+      border: 1px solid #c3c3c3;
+    }
+
+    .chat-message-toolbars-container {
+      display: flex;
+      position: absolute;
+      align-items: flex-start;
+      justify-content: space-between;
+      transition: opacity 0.3s ease, color 0.3s ease;
+      width: 100%;
+      top: -31px;
+      right: 0;
+      z-index: 1;
+
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+
+      .chat-message-toolbar.left {
+        margin-left: -5px;
+      }
+      .chat-message-toolbar.right {
+        margin-right: -5px;
+      }
+
+      .chat-message-toolbar.right,
+      .chat-message-toolbar.left {
+        pointer-events: auto;
+      }
+    }
+
+    &:hover .chat-message-toolbars-container {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
 }
 
 /* animations */

@@ -15,38 +15,40 @@
     max-height: 93vh !important;
   }
 
-  .react-autoql-modal-body {
-    padding: 0;
-  }
-
-  .react-autoql-table {
-    opacity: 0.9;
-    font-size: 11px;
-  }
-
-  .splitter-layout {
-    height: calc(100% - 55px);
-  }
-
-  .react-autoql-dashboard-drilldown-original {
-    padding: 20px;
-    padding-bottom: 10px;
-  }
-  .drilldown-hide-chart-btn {
-    text-align: right;
-    width: 100%;
-    padding-right: 20px;
-
-    &.bottom {
-      position: absolute;
-      bottom: 5px;
-      width: 100px;
-      right: 0;
+  .dashboard-drilldown-modal-content {
+    .react-autoql-modal-body {
+      padding: 0;
     }
 
-    &.top {
-      padding-top: 10px;
-      margin-bottom: -8px;
+    .react-autoql-table {
+      opacity: 0.9;
+      font-size: 11px;
+    }
+
+    .splitter-layout {
+      height: calc(100% - 55px);
+    }
+
+    .react-autoql-dashboard-drilldown-original {
+      padding: 20px;
+      padding-bottom: 10px;
+    }
+    .drilldown-hide-chart-btn {
+      text-align: right;
+      width: 100%;
+      padding-right: 20px;
+
+      &.bottom {
+        position: absolute;
+        bottom: 5px;
+        width: 100px;
+        right: 0;
+      }
+
+      &.top {
+        padding-top: 10px;
+        margin-bottom: -8px;
+      }
     }
   }
 

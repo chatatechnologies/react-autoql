@@ -25,13 +25,13 @@ import {
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
+import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { isChartType } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
-import { Spinner } from '../Spinner'
 
 export default class ChatMessage extends React.Component {
   constructor(props) {
@@ -325,6 +325,7 @@ export default class ChatMessage extends React.Component {
           onSuccessAlert={this.props.onSuccessAlert}
           onErrorCallback={this.props.onErrorCallback}
           enableDeleteBtn={!this.props.isIntroMessage}
+          rebuildTooltips={this.props.rebuildTooltips}
           deleteMessageCallback={() =>
             this.props.deleteMessageCallback(this.props.id)
           }
@@ -357,7 +358,11 @@ export default class ChatMessage extends React.Component {
           data-test="chat-message"
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}
-            ${this.props.disableMaxHeight ? ' no-max-height' : ''}
+            ${
+              this.props.disableMaxHeight || this.props.isIntroMessage
+                ? ' no-max-height'
+                : ''
+            }
           `}
         >
           <div
@@ -374,10 +379,10 @@ export default class ChatMessage extends React.Component {
           >
             {this.renderContent()}
             {!this.props.isResizing && (
-              <Fragment>
-                {this.renderRightToolbar()}
+              <div className="chat-message-toolbars-container">
                 {this.renderLeftToolbar()}
-              </Fragment>
+                {this.renderRightToolbar()}
+              </div>
             )}
           </div>
         </div>

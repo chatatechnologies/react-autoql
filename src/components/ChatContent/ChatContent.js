@@ -11,7 +11,6 @@ import {
   dataFormattingType,
   themeConfigType,
 } from '../../props/types'
-import { getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
 import errorMessages from '../../js/errorMessages'
 import { lang } from '../../js/Localization'
@@ -21,11 +20,10 @@ import { Icon } from '../Icon'
 import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { LoadingDots } from '../LoadingDots'
 
 // Styles
-import 'rc-drawer/assets/index.css'
-import './DataMessenger.scss'
-import { LoadingDots } from '../LoadingDots'
+import './ChatContent.scss'
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -303,6 +301,8 @@ export default class ChatContent extends React.Component {
 
     return {
       id: uniqueId,
+      displayType:
+        params.displayType || params.response?.data?.data?.display_type,
       type: params.response?.data?.data?.display_type,
       ...params,
     }
@@ -354,7 +354,7 @@ export default class ChatContent extends React.Component {
                 ref={(r) => (this.messageRefs[message.id] = r)}
                 isIntroMessage={message.isIntroMessage}
                 authentication={this.props.authentication}
-                autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+                autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
                 isCSVProgressMessage={message.isCSVProgressMessage}
                 initialCSVDownloadProgress={
@@ -376,6 +376,7 @@ export default class ChatContent extends React.Component {
                 scrollToBottom={this.scrollToBottom}
                 onQueryOutputUpdate={this.rebuildTooltips}
                 dataFormatting={this.props.dataFormatting}
+                displayType={message.displayType}
                 onResponseCallback={this.onResponse}
                 response={message.response}
                 type={message.type}

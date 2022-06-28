@@ -14,6 +14,7 @@ import { Modal } from '../Modal'
 import { SendToSlackModal } from '../SendToSlackModal'
 import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
+import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -46,6 +47,8 @@ import {
 import './OptionsToolbar.scss'
 
 export default class OptionsToolbar extends React.Component {
+  COMPONENT_KEY = uuid()
+
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -60,6 +63,7 @@ export default class OptionsToolbar extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
@@ -88,18 +92,28 @@ export default class OptionsToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.rebuildTooltips()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }
+    this.rebuildTooltips()
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.temporaryStateTimeout)
     clearTimeout(this.pivotTableCSVDownloadTimeout)
+  }
+
+  rebuildTooltips = () => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips()
+    } else {
+      ReactTooltip.rebuild()
+    }
   }
 
   onTableFilter = (newTableData) => {
@@ -324,68 +338,36 @@ export default class OptionsToolbar extends React.Component {
 
   renderReportProblemModal = () => {
     return (
-      <ErrorBoundary>
-        <Modal
-          themeConfig={this.props.themeConfig}
-          isVisible={this.state.activeMenu === 'other-problem'}
-          onClose={() => {
-            this.setState({
-              activeMenu: undefined,
-              reportProblemMessage: undefined,
-            })
-          }}
-          onConfirm={() => {
-            this.reportQueryProblem(this.state.reportProblemMessage)
-            this.setState({
-              reportProblemMessage: undefined,
-            })
-          }}
-          confirmLoading={this.state.isReportingProblem}
-          title="Report a Problem"
-          enableBodyScroll={true}
-          width="600px"
-          confirmText="Report"
-          confirmDisabled={this.state.reportProblemMessage ? false : true}
-        >
-          Please tell us more about the problem you are experiencing:
-          <textarea
-            className="report-problem-text-area"
-            onChange={(e) =>
+      <ReportProblemModal
+        ref={(r) => (this.reportProblemRef = r)}
+        authentication={this.props.authentication}
+        onClose={() => {
+          this.setState({
+            activeMenu: undefined,
+          })
+        }}
+        onReportProblem={({ successMessage, error }) => {
+          if (successMessage) {
+            this.props.onSuccessAlert(successMessage)
+            if (this._isMounted) {
               this.setState({
-                reportProblemMessage: e.target.value,
+                activeMenu: undefined,
               })
             }
-          />
-        </Modal>
-      </ErrorBoundary>
+          } else if (error) {
+            this.props.onErrorCallback(error)
+          }
+        }}
+        responseRef={this.props.responseRef}
+        isVisible={this.state.activeMenu === 'other-problem'}
+      />
     )
   }
 
   reportQueryProblem = (reason) => {
-    const queryId = _get(
-      this.props.responseRef,
-      'queryResponse.data.data.query_id'
-    )
-    this.setState({ isReportingProblem: true })
-    reportProblem({
-      message: reason,
-      queryId,
-      ...getAuthentication(this.props.authentication),
-    })
-      .then(() => {
-        this.props.onSuccessAlert(
-          'Thank you for your feedback! To continue, try asking another query.'
-        )
-        if (this._isMounted) {
-          this.setState({ activeMenu: undefined, isReportingProblem: false })
-        }
-      })
-      .catch((error) => {
-        this.props.onErrorCallback(error)
-        if (this._isMounted) {
-          this.setState({ isReportingProblem: false })
-        }
-      })
+    if (this.reportProblemRef?._isMounted) {
+      this.reportProblemRef.reportQueryProblem(reason)
+    }
   }
 
   renderReportProblemMenu = () => {
@@ -414,6 +396,11 @@ export default class OptionsToolbar extends React.Component {
         </ul>
       </div>
     )
+  }
+
+  getMenuItemClass = (shouldShowButton) => {
+    return 'react-autoql-toolbar-btn'
+    return `react-autoql-toolbar-btn ${shouldShowButton ? 'visible' : ''}`
   }
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
@@ -645,9 +632,11 @@ export default class OptionsToolbar extends React.Component {
           {shouldShowButton.showFilterButton && (
             <button
               onClick={this.toggleTableFilter}
-              className="react-autoql-toolbar-btn"
+              className={this.getMenuItemClass(
+                shouldShowButton.showFilterButton
+              )}
               data-tip="Filter table"
-              data-for="react-autoql-toolbar-btn-tooltip"
+              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
             >
               <Icon type="filter" />
             </button>
@@ -655,9 +644,11 @@ export default class OptionsToolbar extends React.Component {
           {shouldShowButton.showHideColumnsButton && (
             <button
               onClick={this.showHideColumnsModal}
-              className="react-autoql-toolbar-btn"
+              className={this.getMenuItemClass(
+                shouldShowButton.showHideColumnsButton
+              )}
               data-tip="Show/hide columns"
-              data-for="react-autoql-toolbar-btn-tooltip"
+              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               data-test="options-toolbar-col-vis"
             >
               <Icon
@@ -681,9 +672,11 @@ export default class OptionsToolbar extends React.Component {
                 onClick={() => {
                   this.setState({ activeMenu: 'report-problem' })
                 }}
-                className="react-autoql-toolbar-btn"
+                className={this.getMenuItemClass(
+                  shouldShowButton.showReportProblemButton
+                )}
                 data-tip="Report a problem"
-                data-for="react-autoql-toolbar-btn-tooltip"
+                data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               >
                 <Icon type="warning-triangle" />
               </button>
@@ -692,9 +685,11 @@ export default class OptionsToolbar extends React.Component {
           {shouldShowButton.showDeleteButton && (
             <button
               onClick={this.deleteMessage}
-              className="react-autoql-toolbar-btn"
+              className={this.getMenuItemClass(
+                shouldShowButton.showDeleteButton
+              )}
               data-tip="Delete data response"
-              data-for="react-autoql-toolbar-btn-tooltip"
+              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               data-test="options-toolbar-trash-btn"
             >
               <Icon type="trash" />
@@ -718,9 +713,11 @@ export default class OptionsToolbar extends React.Component {
                   ReactTooltip.hide()
                   this.setState({ activeMenu: 'more-options' })
                 }}
-                className="react-autoql-toolbar-btn"
+                className={this.getMenuItemClass(
+                  shouldShowButton.showMoreOptionsButton
+                )}
                 data-tip="More options"
-                data-for="react-autoql-toolbar-btn-tooltip"
+                data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
                 data-test="react-autoql-toolbar-more-options-btn"
               >
                 <Icon type="more-vertical" />
@@ -812,6 +809,12 @@ export default class OptionsToolbar extends React.Component {
           this.renderReportProblemModal()}
         {shouldShowButton.showMoreOptionsButton && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
+        <ReactTooltip
+          className="react-autoql-tooltip"
+          id={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          effect="solid"
+          delayShow={800}
+        />
       </ErrorBoundary>
     )
   }

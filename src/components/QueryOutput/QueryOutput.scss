@@ -24,6 +24,7 @@
   .no-columns-error-message,
   .feedback-message {
     margin: auto;
+    text-align: center;
   }
 }
 
@@ -156,16 +157,18 @@
   text-align: center;
 }
 .react-autoql-query-validation-execute-btn {
-  height: 38px;
-  background: none;
+  background: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
+  height: 38px;
+  width: calc(100% - 15px);
+  margin: 5px;
   margin-top: 24px;
-  width: 100%;
   color: inherit;
   cursor: pointer;
   outline: none !important;
-  border-color: #e2e2e26e;
   transition: all 0.2s ease;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 0px;
 }
 .react-autoql-query-validation-execute-btn:hover {
   border-color: #28a8e0;

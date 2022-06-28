@@ -6,7 +6,6 @@ import _isEqual from 'lodash.isequal'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { isAggregation } from '../QueryOutput/columnHelpers'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getAuthentication } from '../../props/defaults'
 
@@ -26,7 +25,6 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
-    this.supportsDrilldown = isAggregation(props.columns)
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
@@ -292,7 +290,7 @@ export default class ChataTable extends React.Component {
           ref={(ref) => (this.tableContainer = ref)}
           data-test="react-autoql-table"
           className={`react-autoql-table-container 
-          ${this.supportsDrilldown ? 'supports-drilldown' : ''}
+          ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
           ${this.state.isFilteringTable ? ' filtering' : ''}
           ${this.props.isResizing ? ' resizing' : ''}`}
           style={{
@@ -303,7 +301,9 @@ export default class ChataTable extends React.Component {
           {this.props.data && this.props.columns && (
             <TableWrapper
               tableRef={(ref) => (this.ref = ref)}
+              tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
+              key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test="autoql-tabulator-table"
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
