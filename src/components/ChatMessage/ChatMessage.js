@@ -331,39 +331,6 @@ export default class ChatMessage extends React.Component {
     })
   }
 
-  renderRightToolbar = () => {
-    if (
-      this.props.isResponse &&
-      this.state.displayType !== 'help' &&
-      this.state.displayType !== 'suggestion'
-    ) {
-      return (
-        <OptionsToolbar
-          ref={(r) => (this.optionsToolbarRef = r)}
-          className={`chat-message-toolbar right`}
-          authentication={this.props.authentication}
-          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-          themeConfig={this.props.themeConfig}
-          responseRef={this.responseRef}
-          displayType={this.state.displayType}
-          onCSVDownloadStart={this.onCSVDownloadStart}
-          onCSVDownloadFinish={this.onCSVDownloadFinish}
-          onCSVDownloadProgress={this.props.onCSVDownloadProgress}
-          onSuccessAlert={this.props.onSuccessAlert}
-          onErrorCallback={this.props.onErrorCallback}
-          enableDeleteBtn={!this.props.isIntroMessage}
-          deleteMessageCallback={() =>
-            this.props.deleteMessageCallback(this.props.id)
-          }
-          onFilterClick={this.toggleTableFilter}
-          onResponseCallback={this.props.onResponseCallback}
-        />
-      )
-    }
-
-    return null
-  }
-
   onDisplayTypeChange = (displayType) => {
     // Reset table filters when display type is changed
     this.toggleTableFilter({ isFilteringTable: false })
@@ -373,6 +340,39 @@ export default class ChatMessage extends React.Component {
 
     // Then switch to the appropriate view
     this.switchView(displayType)
+  }
+
+  renderRightToolbar = () => {
+    return (
+      <div className="chat-message-toolbar right">
+        {this.props.isResponse &&
+        this.state.displayType !== 'help' &&
+        this.state.displayType !== 'suggestion' ? (
+          <OptionsToolbar
+            ref={(r) => (this.optionsToolbarRef = r)}
+            authentication={this.props.authentication}
+            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+            themeConfig={this.props.themeConfig}
+            responseRef={this.responseRef}
+            displayType={this.state.displayType}
+            onCSVDownloadStart={this.onCSVDownloadStart}
+            onCSVDownloadFinish={this.onCSVDownloadFinish}
+            onCSVDownloadProgress={this.props.onCSVDownloadProgress}
+            onSuccessAlert={this.props.onSuccessAlert}
+            onErrorCallback={this.props.onErrorCallback}
+            enableDeleteBtn={!this.props.isIntroMessage}
+            deleteMessageCallback={() =>
+              this.props.deleteMessageCallback(this.props.id)
+            }
+            rebuildTooltips={this.props.rebuildTooltips}
+            onFilterClick={this.toggleTableFilter}
+            onResponseCallback={this.props.onResponseCallback}
+          />
+        ) : null}
+      </div>
+    )
+
+    return null
   }
 
   renderLeftToolbar = () => {
@@ -385,19 +385,19 @@ export default class ChatMessage extends React.Component {
       displayType = 'table'
     }
 
-    if (this.props.isResponse && this.props.type !== 'text') {
-      return (
-        <VizToolbar
-          themeConfig={this.props.themeConfig}
-          className="chat-message-toolbar left"
-          supportedDisplayTypes={this.state.supportedDisplayTypes || []}
-          displayType={displayType}
-          onDisplayTypeChange={this.onDisplayTypeChange}
-          disableCharts={this.state.disableChartingOptions}
-        />
-      )
-    }
-    return null
+    return (
+      <div className="chat-message-toolbar left">
+        {this.props.isResponse && this.props.type !== 'text' ? (
+          <VizToolbar
+            themeConfig={this.props.themeConfig}
+            supportedDisplayTypes={this.state.supportedDisplayTypes || []}
+            displayType={displayType}
+            onDisplayTypeChange={this.onDisplayTypeChange}
+            disableCharts={this.state.disableChartingOptions}
+          />
+        ) : null}
+      </div>
+    )
   }
 
   render = () => {
@@ -426,10 +426,10 @@ export default class ChatMessage extends React.Component {
           >
             {this.renderContent()}
             {!this.props.isResizing && (
-              <Fragment>
-                {this.renderRightToolbar()}
+              <div className="chat-message-toolbars-container">
                 {this.renderLeftToolbar()}
-              </Fragment>
+                {this.renderRightToolbar()}
+              </div>
             )}
           </div>
         </div>

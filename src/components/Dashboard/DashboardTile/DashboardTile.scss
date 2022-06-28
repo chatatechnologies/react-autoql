@@ -59,62 +59,62 @@
 }
 
 // Toolbars
-.react-autoql-dashboard-tile .autoql-options-toolbar {
-  transition: opacity 0.3s ease, color 0.3s ease;
-  visibility: hidden;
-  opacity: 0;
-  bottom: 8px;
-  right: 8px;
-  z-index: 1;
-}
-
-.dashboard-tile-viz-toolbar-container {
-  transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--react-autoql-accent-color);
+.dashboard-tile-toolbars-container {
+  display: flex;
   position: absolute;
-  bottom: 0;
-  left: 0;
+  align-items: flex-end;
+  justify-content: space-between;
+  transition: opacity 0.3s ease, color 0.3s ease;
   padding: 7px;
+  width: 100%;
   z-index: 1;
-  opacity: 0;
-  visibility: hidden;
+  bottom: 0;
+  right: 0;
 
-  .viz-toolbar,
-  .split-view-btn {
-    position: relative;
-    display: inline-block;
-    background: var(--react-autoql-background-color-primary);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+
+  .dashboard-tile-toolbars-right-container,
+  .dashboard-tile-toolbars-left-container {
+    pointer-events: auto;
+  }
+
+  &.left-padding {
+    width: calc(100% - 40px);
   }
 
   .split-view-btn {
+    background: var(--react-autoql-background-color-primary);
+    display: inline-block;
     margin-right: 7px;
     .react-autoql-icon {
       font-size: 14px;
     }
   }
 }
-// For the second query input expand button
-.split-view-btn {
-  z-index: 1;
+
+.react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container,
+.react-autoql-dashboard-tile:hover .split-view-query-btn {
+  visibility: visible;
+  opacity: 1;
 }
+
+// For the second query input expand button
+// .split-view-btn {
+//   z-index: 1;
+// }
 
 .split-view-query-btn {
   transition: opacity 0.3s ease, color 0.3s ease;
   color: var(--react-autoql-accent-color);
   position: absolute;
   top: 7px;
-  left: 7px;
+  left: 13px;
   bottom: unset;
   z-index: 1;
   visibility: hidden;
   opacity: 0;
-}
-
-.react-autoql-dashboard-tile:hover .dashboard-tile-viz-toolbar-container,
-.react-autoql-dashboard-tile:hover .split-view-query-btn,
-.react-autoql-dashboard-tile:hover .autoql-options-toolbar {
-  visibility: visible;
-  opacity: 1;
 }
 
 .react-autoql-dashboard-tile-inner-div .single-value-response {
@@ -141,12 +141,20 @@
     color: var(--react-autoql-text-color-primary);
     font-size: 11px;
   }
+
+  .react-autoql-response-content-container.table .query-output-footer {
+    min-height: 33px;
+  }
 }
 .react-autoql-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
   padding: 0;
 }
 .react-autoql-dashboard-tile-inner-div
   .dashboard-tile-response-wrapper.editing {
+  .dashboard-tile-toolbars-container {
+    padding: 13px;
+  }
+
   .layout-splitter {
     display: block;
     pointer-events: unset;
@@ -185,8 +193,7 @@
   cursor: default;
 
   .react-autoql-table-container {
-    padding: 20px;
-    padding-top: 15px;
+    padding: 15px 20px 0px 20px;
   }
 
   .react-autoql-response-content-container {
