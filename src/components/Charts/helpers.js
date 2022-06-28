@@ -3,12 +3,11 @@ import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
-import { formatElement, onlyUnique } from '../../js/Util'
-import { themeConfigType, dataFormattingType } from '../../props/types'
-import { themeConfigDefault, dataFormattingDefault } from '../../props/defaults'
+import { formatElement } from '../../js/Util'
+import { dataFormattingType } from '../../props/types'
+import { dataFormattingDefault } from '../../props/defaults'
 
 export const chartContainerPropTypes = {
-  themeConfig: themeConfigType,
   dataFormatting: dataFormattingType,
 
   data: PropTypes.arrayOf(PropTypes.array).isRequired,
@@ -27,7 +26,6 @@ export const chartContainerPropTypes = {
 }
 
 export const chartContainerDefaultProps = {
-  themeConfig: themeConfigDefault,
   dataFormatting: dataFormattingDefault,
 
   enableDynamicCharting: true,

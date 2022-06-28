@@ -26,7 +26,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<DataMessenger {...setupProps} />)
+  const wrapper = shallow(<DataMessenger {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

@@ -7,12 +7,8 @@ import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  themeConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import { fetchVLAutocomplete } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -33,7 +29,6 @@ export default class ReverseTranslation extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     interpretation: PropTypes.array,
     onValueLabelClick: PropTypes.func,
     appliedFilters: PropTypes.array,
@@ -42,7 +37,6 @@ export default class ReverseTranslation extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     interpretation: [],
     appliedFilters: [],
     reverseTranslation: [],

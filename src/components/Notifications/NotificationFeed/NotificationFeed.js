@@ -20,19 +20,17 @@ import {
   dismissAllNotifications,
 } from '../../../js/notificationService'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
-import { setCSSVars } from '../../../js/Util'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import './NotificationFeed.scss'
+import { withTheme } from '../../../theme'
 
-export default class NotificationFeed extends React.Component {
+class NotificationFeed extends React.Component {
   MODAL_COMPONENT_KEY = uuid()
   NOTIFICATION_FETCH_LIMIT = 10
   // Open event source http connection here to receive SSE
@@ -42,7 +40,6 @@ export default class NotificationFeed extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
     activeNotificationData: PropTypes.shape({}),
@@ -57,7 +54,6 @@ export default class NotificationFeed extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
     autoChartAggregations: false,
@@ -80,18 +76,6 @@ export default class NotificationFeed extends React.Component {
 
   componentDidMount = () => {
     this.getNotifications()
-    setCSSVars(this.props.themeConfig)
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
   }
 
   getNotifications = () => {
@@ -271,7 +255,6 @@ export default class NotificationFeed extends React.Component {
       <DataAlertModal
         key={this.MODAL_COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
-        themeConfig={this.props.themeConfig}
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentDataAlert={this.state.activeDataAlert}
@@ -354,7 +337,6 @@ export default class NotificationFeed extends React.Component {
                           authentication={getAuthentication(
                             this.props.authentication
                           )}
-                          themeConfig={this.props.themeConfig}
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
@@ -416,3 +398,5 @@ export default class NotificationFeed extends React.Component {
     )
   }
 }
+
+export default withTheme(NotificationFeed)

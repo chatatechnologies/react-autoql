@@ -23,10 +23,9 @@ import {
 import dayjs from '../../../js/dayjsWithPlugins'
 import { getDefaultDisplayType, capitalizeFirstChar } from '../../../js/Util'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
 } from '../../../props/defaults'
 
@@ -40,7 +39,6 @@ export default class NotificationItem extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     notification: PropTypes.shape({}).isRequired,
     activeNotificationData: PropTypes.shape({}),
     showNotificationDetails: PropTypes.bool,
@@ -56,7 +54,6 @@ export default class NotificationItem extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     activeNotificationData: undefined,
     showNotificationDetails: true,
     autoChartAggregations: false,
@@ -348,7 +345,6 @@ export default class NotificationItem extends React.Component {
                     ref={(r) => (this.OUTPUT_REF = r)}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
-                    themeConfig={this.props.themeConfig}
                     displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
@@ -370,7 +366,6 @@ export default class NotificationItem extends React.Component {
             {_get(this.state.supportedDisplayTypes, 'length') > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
-                  themeConfig={this.props.themeConfig}
                   supportedDisplayTypes={this.state.supportedDisplayTypes}
                   displayType={this.state.displayType}
                   onDisplayTypeChange={(displayType) =>
@@ -388,7 +383,6 @@ export default class NotificationItem extends React.Component {
               </div>
               <ExpressionBuilderSimple
                 authentication={getAuthentication(this.props.authentication)}
-                themeConfig={this.props.themeConfig}
                 key={`expression-builder-${this.COMPONENT_KEY}`}
                 expression={_get(notification, 'expression')}
                 readOnly

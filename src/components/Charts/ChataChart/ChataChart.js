@@ -20,7 +20,6 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { getThemeConfig } from '../../../props/defaults'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { svgToPng } from '../../../js/Util.js'
 
@@ -34,6 +33,7 @@ import {
 
 import './ChataChart.scss'
 import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
+import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 
 export default class ChataChart extends Component {
   INNER_PADDING = 0.25
@@ -41,7 +41,7 @@ export default class ChataChart extends Component {
 
   constructor(props) {
     super(props)
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
 
     this.CHART_ID = uuid()
     this.Y_AXIS_LABEL_WIDTH = 15
@@ -614,6 +614,11 @@ export default class ChataChart extends Component {
     this.chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
     this.chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
 
+    // We need to set these inline in order for them to be applied in the exported PNG
+    const chartFontFamily = getThemeValue('font-family')
+    const chartTextColor = getThemeValue('text-color-primary')
+    const chartBackgroundColor = getThemeValue('background-color')
+
     return (
       <ErrorBoundary>
         <div
@@ -639,28 +644,15 @@ export default class ChataChart extends Component {
                 width={this.chartWidth}
                 height={this.chartHeight}
                 style={{
-                  fontFamily: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'font-family',
-                    'sans-serif'
-                  ),
-                  color: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'text-color-primary',
-                    'inherit'
-                  ),
-                  background: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'background-color',
-                    'inherit'
-                  ),
+                  fontFamily: chartFontFamily,
+                  color: chartTextColor,
+                  background: chartBackgroundColor,
                 }}
               >
                 <g className="react-autoql-chart-content-container">
                   {this.renderChart()}
                 </g>
               </svg>
-              {/* {this.renderAxisSelectors()} */}
             </Fragment>
           )}
         </div>

@@ -8,19 +8,14 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
-
-import { setCSSVars } from '../../js/Util'
 
 import { Icon } from '../Icon'
 import {
@@ -39,14 +34,13 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './QueryInput.scss'
 import { dprQuery } from '../../js/dprService'
+import { withTheme } from '../../theme'
 
 let autoCompleteArray = []
 
-export default class QueryInput extends React.Component {
+class QueryInput extends React.Component {
   constructor(props) {
     super(props)
-
-    setCSSVars(props.themeConfig)
 
     this.UNIQUE_ID = uuid()
     this.autoCompleteTimer = undefined
@@ -63,7 +57,6 @@ export default class QueryInput extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
     enableVoiceRecord: PropTypes.bool,
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
@@ -74,7 +67,7 @@ export default class QueryInput extends React.Component {
     showChataIcon: PropTypes.bool,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
-    placeholder: PropTypes.string.isRequired,
+    placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
   }
 
@@ -82,7 +75,6 @@ export default class QueryInput extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
     enableVoiceRecord: false,
     isDisabled: false,
     autoCompletePlacement: 'above',
@@ -94,6 +86,7 @@ export default class QueryInput extends React.Component {
     source: [],
     queryFilters: undefined,
     clearQueryOnSubmit: true,
+    placeholder: 'Type your queries here',
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
@@ -104,14 +97,6 @@ export default class QueryInput extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
     if (this.props.inputValue !== prevProps.inputValue) {
       this.setState({ inputValue: this.props.inputValue })
     }
@@ -456,7 +441,6 @@ export default class QueryInput extends React.Component {
             ) : (
               // <QueryInputWithValidation
               //   authentication={getAuthentication(this.props.authentication)}
-              //   themeConfig={this.props.themeConfig}
               //   ref={(ref) => (this.queryValidationInputRef = ref)}
               //   key={this.state.queryValidationComponentId}
               //   response={this.state.queryValidationResponse}
@@ -505,13 +489,11 @@ export default class QueryInput extends React.Component {
             // <SpeechToTextBtn
             //   onTranscriptChange={this.onTranscriptChange}
             //   onFinalTranscript={this.onFinalTranscript}
-            //   themeConfig={this.props.themeConfig}
             //   authentication={getAuthentication(this.props.authentication)}
             // />
             <SpeechToTextButtonBrowser
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
-              themeConfig={this.props.themeConfig}
               authentication={getAuthentication(this.props.authentication)}
             />
           )}
@@ -520,3 +502,5 @@ export default class QueryInput extends React.Component {
     )
   }
 }
+
+export default withTheme(QueryInput)

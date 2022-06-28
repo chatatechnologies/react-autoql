@@ -3,9 +3,6 @@ import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
 import { CHART_TYPES, TABLE_TYPES } from './Constants'
-import { LIGHT_THEME, DARK_THEME } from './Themes'
-
-import { getThemeConfig } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
@@ -817,65 +814,6 @@ export const getTickWidth = (scale, innerPadding) => {
   } catch (error) {
     console.error(error)
     return 0
-  }
-}
-
-export const setCSSVars = (customThemeConfig) => {
-  const themeConfig = getThemeConfig(customThemeConfig)
-
-  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
-  const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-  if (accentColor) {
-    themeStyles['accent-color'] = accentColor
-  }
-  if (fontFamily) {
-    themeStyles['font-family'] = fontFamily
-  }
-  if (accentTextColor) {
-    themeStyles['accent-text-color'] = accentTextColor
-  } else {
-    let accentTextColor = accentColor
-    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-
-    if (accentTextColor.slice(0, 1) === '#') {
-      accentTextColor = accentTextColor.slice(1)
-    }
-
-    // If a three-character hexcode, make six-character
-    if (accentTextColor.length === 3) {
-      accentTextColor = accentTextColor
-        .split('')
-        .map(function(accentTextColor) {
-          return accentTextColor + accentTextColor
-        })
-        .join('')
-    }
-    // Convert to RGB value
-    let r = parseInt(accentTextColor.substr(0, 2), 16)
-    let g = parseInt(accentTextColor.substr(2, 2), 16)
-    let b = parseInt(accentTextColor.substr(4, 2), 16)
-    // Get YIQ ratio
-    let yiq = (r * 299 + g * 587 + b * 114) / 1000
-    // Check contrast
-
-    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
-  }
-
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `--react-autoql-${property}`,
-      themeStyles[property]
-    )
-  }
-}
-
-export const setStyleVars = ({ themeStyles, prefix }) => {
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `${prefix}${property}`,
-      themeStyles[property]
-    )
   }
 }
 
