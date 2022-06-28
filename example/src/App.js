@@ -1551,6 +1551,7 @@ export default class App extends Component {
 
             <Dashboard
               ref={(ref) => (this.dashboardRef = ref)}
+              key={this.state.activeDashboardId}
               authentication={this.getAuthProp()}
               autoQLConfig={this.getAutoQLConfigProp()}
               dataFormatting={this.getDataFormattingProp()}

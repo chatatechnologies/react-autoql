@@ -326,7 +326,7 @@ export default class DataMessenger extends React.Component {
     if (topic) {
       clearTimeout(this.exploreQueriesTimeout)
       this.exploreQueriesTimeout = setTimeout(() => {
-        this.animateQITextAndSubmit(topic)
+        this.exploreQueriesRef?.animateQITextAndSubmit(topic)
       }, 500)
     }
   }
@@ -825,6 +825,7 @@ export default class DataMessenger extends React.Component {
   renderExploreQueriesContent = () => (
     <ErrorBoundary>
       <ExploreQueries
+        ref={(r) => (this.exploreQueriesRef = r)}
         authentication={this.props.authentication}
         shouldRender={
           this.state.activePage === 'explore-queries' &&

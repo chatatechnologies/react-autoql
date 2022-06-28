@@ -21,11 +21,7 @@ import {
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
-import {
-  getSupportedDisplayTypes,
-  getDefaultDisplayType,
-  capitalizeFirstChar,
-} from '../../../js/Util'
+import { getDefaultDisplayType, capitalizeFirstChar } from '../../../js/Util'
 
 import { authenticationType, themeConfigType } from '../../../props/types'
 import {
@@ -73,6 +69,7 @@ export default class NotificationItem extends React.Component {
   }
 
   state = {
+    supportedDisplayTypes: [],
     ruleStatus: undefined,
     ruleDetails: undefined,
     fullyExpanded: false,
@@ -86,12 +83,9 @@ export default class NotificationItem extends React.Component {
       const queryResponse = {
         data: this.props.activeNotificationData,
       }
-      this.supportedDisplayTypes = getSupportedDisplayTypes({
-        response: queryResponse,
-      })
       const displayType =
         this.props.autoChartAggregations &&
-        this.supportedDisplayTypes.includes('column')
+        this.state.supportedDisplayTypes.includes('column')
           ? 'column'
           : getDefaultDisplayType(
               queryResponse,
@@ -359,6 +353,12 @@ export default class NotificationItem extends React.Component {
                     autoChartAggregations={this.props.autoChartAggregations}
                     style={{ flex: '1' }}
                     enableAjaxTableData={this.props.enableAjaxTableData}
+                    onSupportedDisplayTypesChange={(supportedDisplayTypes) =>
+                      this.setState({ supportedDisplayTypes })
+                    }
+                    onRecommendedDisplayType={(displayType) =>
+                      this.setState({ displayType })
+                    }
                   />
                 </Fragment>
               ) : (
@@ -367,11 +367,11 @@ export default class NotificationItem extends React.Component {
                 </div>
               )}
             </div>
-            {_get(this.supportedDisplayTypes, 'length') > 1 && (
+            {_get(this.state.supportedDisplayTypes, 'length') > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
                   themeConfig={this.props.themeConfig}
-                  supportedDisplayTypes={this.supportedDisplayTypes}
+                  supportedDisplayTypes={this.state.supportedDisplayTypes}
                   displayType={this.state.displayType}
                   onDisplayTypeChange={(displayType) =>
                     this.setState({ displayType })
