@@ -1125,12 +1125,7 @@ export default class QueryOutput extends React.Component {
       this.supportedDisplayTypes = supportedDisplayTypes
 
       if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.onRecommendedDisplayType(
-          getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations
-          )
-        )
+        this.onRecommendedDisplayType(getDefaultDisplayType(this.queryResponse))
       }
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     }
