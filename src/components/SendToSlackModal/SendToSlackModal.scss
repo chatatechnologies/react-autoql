@@ -103,7 +103,7 @@
 
     &.selected {
       background-color: var(--react-autoql-accent-color);
-      color: #fff;
+      color: var(--react-autoql-accent-text-color);
     }
 
     &:hover:not(.selected) {
