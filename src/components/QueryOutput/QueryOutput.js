@@ -90,12 +90,12 @@ export default class QueryOutput extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
 
-    this.queryResponse = props.queryResponse
+    this.queryResponse = _cloneDeep(props.queryResponse)
     this.supportedDisplayTypes = getSupportedDisplayTypes({
-      response: props.queryResponse,
+      response: this.queryResponse,
     })
-    this.queryID = _get(props.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(props.queryResponse, 'data.data.interpretation')
+    this.queryID = _get(this.queryResponse, 'data.data.query_id')
+    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
     this.tableID = uuid()
     this.pivotTableID = uuid()
 
@@ -111,7 +111,7 @@ export default class QueryOutput extends React.Component {
     }
 
     const isProvidedDisplayTypeValid = isDisplayTypeValid(
-      props.queryResponse,
+      this.queryResponse,
       props.displayType
     )
 
@@ -119,7 +119,7 @@ export default class QueryOutput extends React.Component {
     let displayType = props.displayType
     if (!isProvidedDisplayTypeValid) {
       displayType = getDefaultDisplayType(
-        props.queryResponse,
+        this.queryResponse,
         props.autoChartAggregations
       )
       this.onRecommendedDisplayType(displayType)
@@ -131,7 +131,7 @@ export default class QueryOutput extends React.Component {
     setCSSVars(props.themeConfig)
 
     // --------- generate data before mount --------
-    this.generateAllData(props.queryResponse, displayType)
+    this.generateAllData(this.queryResponse, displayType)
     // -------------------------------------------
 
     this.state = {
@@ -216,12 +216,10 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      if (
-        !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
-      ) {
+      if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
-            this.props.queryResponse,
+            this.queryResponse,
             this.props.autoChartAggregations
           )
         )
@@ -270,11 +268,10 @@ export default class QueryOutput extends React.Component {
       }
 
       if (this.props.queryResponse && !this.queryResponse) {
-        if (
-          !isDisplayTypeValid(this.props.queryResponse, this.props.displayType)
-        ) {
+        this.queryResponse = _cloneDeep(this.props.queryResponse)
+        if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
           const recommendedDisplayType = getDefaultDisplayType(
-            this.props.queryResponse,
+            this.queryResponse,
             this.props.autoChartAggregations
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
