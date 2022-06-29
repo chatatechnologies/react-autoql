@@ -84,7 +84,6 @@ export default class ChatMessage extends React.Component {
     onSuggestionClick: PropTypes.func,
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
-    tableOptions: PropTypes.shape({}),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
@@ -117,7 +116,6 @@ export default class ChatMessage extends React.Component {
     isActive: false,
     type: 'text',
     text: null,
-    tableOptions: undefined,
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
@@ -267,49 +265,46 @@ export default class ChatMessage extends React.Component {
       return errorMessages.UNAUTHENTICATED
     } else if (this.props.response) {
       return (
-        <Fragment>
-          <QueryOutput
-            ref={(ref) => (this.responseRef = ref)}
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            queryResponse={this.props.response}
-            displayType={this.state.displayType}
-            onSuggestionClick={this.props.onSuggestionClick}
-            isQueryRunning={this.props.isChataThinking}
-            themeConfig={this.props.themeConfig}
-            copyToClipboard={this.copyToClipboard}
-            tableOptions={this.props.tableOptions}
-            dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            appliedFilters={this.props.appliedFilters}
-            onUpdate={this.props.onQueryOutputUpdate}
-            onDrilldownStart={this.props.onDrilldownStart}
-            onDrilldownEnd={this.props.onDrilldownEnd}
-            demo={getAuthentication(this.props.authentication).demo}
-            enableAjaxTableData={this.props.enableAjaxTableData}
-            onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
-            )}
-            onErrorCallback={this.props.onErrorCallback}
-            enableColumnHeaderContextMenu={true}
-            isResizing={this.props.isResizing}
-            isAnimatingContainer={this.state.isAnimatingMessageBubble}
-            enableDynamicCharting={this.props.enableDynamicCharting}
-            optionsToolbarRef={this.optionsToolbarRef}
-            onNoneOfTheseClick={this.props.onNoneOfTheseClick}
-            autoChartAggregations={this.props.autoChartAggregations}
-            showQueryInterpretation
-            onRecommendedDisplayType={this.switchView}
-            enableFilterLocking={this.props.enableFilterLocking}
-            onRTValueLabelClick={this.props.onRTValueLabelClick}
-            rebuildTooltips={this.props.rebuildTooltips}
-            reportProblemCallback={() => {
-              if (this.optionsToolbarRef?._isMounted) {
-                this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
-              }
-            }}
-          />
-        </Fragment>
+        <QueryOutput
+          ref={(ref) => (this.responseRef = ref)}
+          authentication={getAuthentication(this.props.authentication)}
+          autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+          queryResponse={this.props.response}
+          displayType={this.state.displayType}
+          onSuggestionClick={this.props.onSuggestionClick}
+          isQueryRunning={this.props.isChataThinking}
+          themeConfig={this.props.themeConfig}
+          copyToClipboard={this.copyToClipboard}
+          dataFormatting={getDataFormatting(this.props.dataFormatting)}
+          appliedFilters={this.props.appliedFilters}
+          onUpdate={this.props.onQueryOutputUpdate}
+          onDrilldownStart={this.props.onDrilldownStart}
+          onDrilldownEnd={this.props.onDrilldownEnd}
+          demo={getAuthentication(this.props.authentication).demo}
+          enableAjaxTableData={this.props.enableAjaxTableData}
+          onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
+          backgroundColor={document.documentElement.style.getPropertyValue(
+            '--react-autoql-background-color-primary'
+          )}
+          onErrorCallback={this.props.onErrorCallback}
+          enableColumnHeaderContextMenu={true}
+          isResizing={this.props.isResizing}
+          isAnimatingContainer={this.state.isAnimatingMessageBubble}
+          enableDynamicCharting={this.props.enableDynamicCharting}
+          optionsToolbarRef={this.optionsToolbarRef}
+          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          autoChartAggregations={this.props.autoChartAggregations}
+          showQueryInterpretation
+          onRecommendedDisplayType={this.switchView}
+          enableFilterLocking={this.props.enableFilterLocking}
+          onRTValueLabelClick={this.props.onRTValueLabelClick}
+          rebuildTooltips={this.props.rebuildTooltips}
+          reportProblemCallback={() => {
+            if (this.optionsToolbarRef?._isMounted) {
+              this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
+            }
+          }}
+        />
       )
     }
     return errorMessages.GENERAL_QUERY
