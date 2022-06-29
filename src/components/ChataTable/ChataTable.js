@@ -25,6 +25,7 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
+    this.headerFilters = []
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
@@ -54,7 +55,11 @@ export default class ChataTable extends React.Component {
         // We only use header filters so we have to use the function below
         if (this._isMounted && this.ref && !this.firstRender) {
           const tableFilters = this.ref.table.getHeaderFilters()
-          props.onFilterCallback(tableFilters, rows)
+
+          if (!_isEqual(tableFilters, this.headerFilters)) {
+            this.headerFilters = tableFilters
+            props.onFilterCallback(tableFilters, rows)
+          }
         }
       },
       downloadReady: (fileContents, blob) => blob,
