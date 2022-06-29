@@ -234,7 +234,7 @@ export default class ChataTable extends React.Component {
   }
 
   resetFilterTags = () => {
-    if (this.filterTagElements.length) {
+    if (this.filterTagElements?.length) {
       this.filterTagElements.forEach((filterTag) => {
         try {
           if (filterTag.parentNode && this._isMounted)
