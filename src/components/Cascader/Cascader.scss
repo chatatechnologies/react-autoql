@@ -59,7 +59,7 @@
       }
       .option-execute-icon {
         opacity: 0;
-        color: #fff;
+        color: var(--react-autoql-accent-text-color);
         font-size: 16px;
         vertical-align: middle;
       }
@@ -67,7 +67,7 @@
       &:hover,
       &.active {
         background-color: var(--react-autoql-accent-color, #26a7df);
-        color: #fff;
+        color: var(--react-autoql-accent-text-color);
 
         .option-execute-icon {
           opacity: 1;

@@ -73,7 +73,7 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 
   /* Default styles outside of data messenger */
-  background-color: white;
+  background-color: var(--react-autoql-background-color-primary);
   color: #5d5d5d;
 }
 

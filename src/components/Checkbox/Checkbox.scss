@@ -22,7 +22,7 @@
 .react-autoql-checkbox__label {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
-  color: #fff;
+  color: var(--react-autoql-accent-text-color);
   cursor: pointer;
 }
 .react-autoql-checkbox__input {
@@ -54,7 +54,7 @@
 
 .react-autoql-checkbox-tick {
   position: absolute;
-  color: white;
+  color: var(--react-autoql-accent-text-color);
   left: 3px;
   line-height: 20px;
   pointer-events: none;
@@ -110,7 +110,7 @@
   bottom: 2px;
   left: 2px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--react-autoql-accent-text-color);
 }
 .react-autoql-checkbox--switch__input:checked
   + .react-autoql-checkbox--switch__label::after {
