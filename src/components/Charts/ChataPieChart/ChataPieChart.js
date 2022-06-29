@@ -13,13 +13,13 @@ import { legendColor } from 'd3-svg-legend'
 import 'd3-transition'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
-import { getDataFormatting, getThemeConfig } from '../../../props/defaults'
 import {
   chartDefaultProps,
   chartPropTypes,
   getTooltipContent,
 } from '../helpers'
 import ReactTooltip from 'react-tooltip'
+import { getChartColorVars } from '../../../theme/configureTheme'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -36,7 +36,7 @@ export default class Axis extends Component {
         return parseFloat(b) - parseFloat(a)
       })
 
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
     this.colorScale = scaleOrdinal()
       .domain(
         this.sortedData.map((d) => {
@@ -257,7 +257,7 @@ export default class Axis extends Component {
   renderLegend = () => {
     const self = this
     const { height } = this.props
-    const { chartColors } = getThemeConfig(this.props.themeConfig)
+    const chartColors = getChartColorVars()
 
     let legendScale
     if (this.state.legendLabels) {

@@ -7,20 +7,15 @@ import { v4 as uuid } from 'uuid'
 import { Checkbox } from '../Checkbox'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './SelectableList.scss'
 
 export default class SelectableList extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     items: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     onChange: () => {},
     onSelect: () => {},
     columns: [],

@@ -8,7 +8,7 @@ const defaultProps = {}
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<Dashboard {...setupProps} />)
+  const wrapper = shallow(<Dashboard {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

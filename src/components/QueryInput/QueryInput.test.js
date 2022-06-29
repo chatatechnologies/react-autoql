@@ -5,7 +5,7 @@ import { findByTestAttr } from '../../../test/testUtils'
 import QueryInput from './QueryInput'
 import LocalStorageMock from '../../../test/localStorageMock'
 
-const defaultProps = {}
+const defaultProps = QueryInput.defaultProps
 
 beforeAll(() => {
   global.localStorage = {
@@ -17,20 +17,20 @@ beforeAll(() => {
 })
 
 const setup = (props = {}, state = null) => {
-  // const setupProps = { ...defaultProps, ...props }
-  // const wrapper = shallow(<QueryInput {...setupProps} />)
-  // if (state) {
-  //   wrapper.setState(state)
-  // }
-  // return wrapper
+  const setupProps = { ...defaultProps, ...props }
+  const wrapper = shallow(<QueryInput {...setupProps} />).dive()
+  if (state) {
+    wrapper.setState(state)
+  }
+  return wrapper
 }
 
 describe('renders correctly', () => {
-  // test('renders correctly with required props', () => {
-  //   const wrapper = setup()
-  //   const queryInputComponent = findByTestAttr(wrapper, 'chat-bar')
-  //   expect(queryInputComponent.exists()).toBe(true)
-  // })
+  test('renders correctly with required props', () => {
+    const wrapper = setup()
+    const queryInputComponent = findByTestAttr(wrapper, 'chat-bar')
+    expect(queryInputComponent.exists()).toBe(true)
+  })
 })
 
 describe('validation call', () => {

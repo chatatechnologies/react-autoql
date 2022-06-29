@@ -25,20 +25,17 @@ import {
   fetchFilters,
 } from '../../js/queryService'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-  getThemeConfig,
-  themeConfigDefault,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import './FilterLockPopover.scss'
 import 'react-toastify/dist/ReactToastify.css'
+import { getThemeType } from '../../theme/configureTheme'
+import { withTheme } from '../../theme'
 
 let autoCompleteArray = []
 
-export default class FilterLockPopover extends React.Component {
+class FilterLockPopover extends React.Component {
   constructor(props) {
     super(props)
 
@@ -53,7 +50,6 @@ export default class FilterLockPopover extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
     position: PropTypes.string,
@@ -64,7 +60,6 @@ export default class FilterLockPopover extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     isOpen: false,
     position: 'bottom',
@@ -648,7 +643,7 @@ export default class FilterLockPopover extends React.Component {
           pauseOnHover={false}
           closeButton={false}
           limit={1}
-          theme={getThemeConfig(this.props.themeConfig).theme}
+          theme={getThemeType()}
         />
         <div
           className="filter-lock-menu-content"
@@ -689,3 +684,5 @@ export default class FilterLockPopover extends React.Component {
     return this.props.children || null
   }
 }
+
+export default withTheme(FilterLockPopover)

@@ -5,19 +5,14 @@ import _cloneDeep from 'lodash.clonedeep'
 import { Modal } from '../Modal'
 import { SelectableList } from '../SelectableList'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './ColumnVisibilityModal.scss'
 
 export default class ColumnVisibilityModal extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     isSettingColumns: PropTypes.bool,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     isSettingColumns: false,
   }
 

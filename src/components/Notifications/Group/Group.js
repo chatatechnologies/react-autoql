@@ -7,10 +7,9 @@ import { Icon } from '../../Icon'
 import { Rule } from '../Rule'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
 } from '../../../props/defaults'
 
@@ -61,7 +60,6 @@ export default class Group extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     groupId: PropTypes.string,
     onDelete: PropTypes.func,
     onUpdate: PropTypes.func,
@@ -73,7 +71,6 @@ export default class Group extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     groupId: undefined,
     disableAddGroupBtn: false,
     hideTopCondition: false,
@@ -204,7 +201,6 @@ export default class Group extends React.Component {
       <div className="notification-rule-and-or-select">
         Notify me when{' '}
         <Radio
-          themeConfig={this.props.themeConfig}
           options={['ALL', 'ANY']}
           value={this.state.andOrSelectValue}
           type="button"
@@ -306,7 +302,6 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={this.props.themeConfig}
                     ref={(r) => (this.ruleRefs[i] = r)}
                     ruleId={rule.id}
                     key={rule.id}
@@ -324,7 +319,6 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={this.props.themeConfig}
                     groupId={rule.id}
                     key={rule.id}
                     initialData={rule.termValue}
@@ -384,7 +378,6 @@ export default class Group extends React.Component {
                     authentication={getAuthentication(
                       this.props.authentication
                     )}
-                    themeConfig={this.props.themeConfig}
                     groupId={rule.id}
                     initialData={rule.termValue}
                     enableQueryValidation={false}

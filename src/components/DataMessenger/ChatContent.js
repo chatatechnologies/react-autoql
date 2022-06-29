@@ -9,9 +9,8 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
-import { getAuthentication, getAutoQLConfig } from '../../props/defaults'
+import { getAutoQLConfig } from '../../props/defaults'
 
 import errorMessages from '../../js/errorMessages'
 import { lang } from '../../js/Localization'
@@ -42,7 +41,6 @@ export default class ChatContent extends React.Component {
     authentication: authenticationType.isRequired,
     autoQLConfig: autoQLConfigType.isRequired,
     dataFormatting: dataFormattingType.isRequired,
-    themeConfig: themeConfigType.isRequired,
     clearOnClose: PropTypes.bool.isRequired,
     enableVoiceRecord: PropTypes.bool.isRequired,
     maxMessages: PropTypes.number.isRequired,
@@ -355,7 +353,6 @@ export default class ChatContent extends React.Component {
                 isIntroMessage={message.isIntroMessage}
                 authentication={this.props.authentication}
                 autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-                themeConfig={this.props.themeConfig}
                 isCSVProgressMessage={message.isCSVProgressMessage}
                 initialCSVDownloadProgress={
                   this.props.csvProgressLog[message.id]
@@ -411,7 +408,6 @@ export default class ChatContent extends React.Component {
             className="chat-drawer-chat-bar"
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}

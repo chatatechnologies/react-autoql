@@ -16,22 +16,19 @@ import { LoadingDots } from '../LoadingDots'
 import ReportProblemModal from '../OptionsToolbar/ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { CHART_TYPES } from '../../js/Constants'
-import { setCSSVars } from '../../js/Util'
+import { withTheme } from '../../theme'
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 import 'react-grid-layout/css/styles.css'
 import 'react-splitter-layout/lib/index.css'
@@ -59,7 +56,7 @@ const unExecuteDashboard = (ref) => {
   }
 }
 
-class Dashboard extends React.Component {
+class DashboardWithoutTheme extends React.Component {
   tileRefs = {}
   debounceTime = 50
   onChangeTiles = null
@@ -70,7 +67,6 @@ class Dashboard extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
@@ -94,7 +90,6 @@ class Dashboard extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
 
     tiles: [],
     executeOnMount: true,
@@ -124,20 +119,10 @@ class Dashboard extends React.Component {
     if (this.props.executeOnMount) {
       this.executeDashboard()
     }
-    this.setStyles()
     window.addEventListener('resize', this.onWindowResize)
   }
 
   componentDidUpdate = (prevProps) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      this.setStyles()
-    }
-
     // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (
       prevProps.isEditing &&
@@ -222,10 +207,6 @@ class Dashboard extends React.Component {
         return reject()
       }
     })
-  }
-
-  setStyles = () => {
-    setCSSVars(this.props.themeConfig)
   }
 
   onWindowResize = (e) => {
@@ -514,7 +495,6 @@ class Dashboard extends React.Component {
             }}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
@@ -606,9 +586,10 @@ class Dashboard extends React.Component {
       }
       return (
         <Modal
-          themeConfig={this.props.themeConfig}
           className="dashboard-drilldown-modal"
-          contentClassName="dashboard-drilldown-modal-content"
+          contentClassName={`dashboard-drilldown-modal-content ${
+            this.state.isDrilldownChartHidden ? 'chart-hidden' : ''
+          }`}
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
           width="90vw"
@@ -625,59 +606,52 @@ class Dashboard extends React.Component {
         >
           {this.state.isDrilldownModalVisible && (
             <Fragment>
-              {tile &&
-                this.shouldShowOriginalQuery(tile) &&
-                !this.state.isDrilldownChartHidden && (
-                  <SplitterLayout
-                    vertical={true}
-                    percentage={true}
-                    secondaryInitialSize={50}
-                    primaryMinSize={this.state.isDrilldownChartHidden ? 0 : 35}
-                    onDragEnd={() => {
-                      this.setState({})
-                    }}
-                  >
-                    <div className="react-autoql-dashboard-drilldown-original">
-                      {!this.state.isDrilldownChartHidden && (
-                        <QueryOutput
-                          key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
-                          authentication={this.props.authentication}
-                          autoQLConfig={this.props.autoQLConfig}
-                          themeConfig={this.props.themeConfig}
-                          dataFormatting={getDataFormatting(
-                            this.props.dataFormatting
-                          )}
-                          queryResponse={_cloneDeep(queryResponse)}
-                          displayType={displayType}
-                          tableConfigs={_cloneDeep(dataConfig)}
-                          onUpdate={this.rebuildTooltips}
-                          isAnimatingContainer={this.state.isAnimatingModal}
-                          autoChartAggregations={
-                            this.props.autoChartAggregations
-                          }
-                          onDrilldownStart={(activeKey) =>
-                            this.onDrilldownStart({
-                              tileId: tile.i,
-                              activeKey,
-                              isSecondHalf: this.state.isDrilldownSecondHalf,
-                            })
-                          }
-                          onDrilldownEnd={this.onDrilldownEnd}
-                          activeChartElementKey={
-                            this.state.activeDrilldownChartElementKey
-                          }
-                          backgroundColor={document.documentElement.style.getPropertyValue(
-                            '--react-autoql-background-color-primary'
-                          )}
-                          enableAjaxTableData={this.props.enableAjaxTableData}
-                          reportProblemCallback={this.reportProblemCallback}
-                        />
+              {tile && this.shouldShowOriginalQuery(tile) && (
+                <SplitterLayout
+                  vertical={true}
+                  percentage={true}
+                  secondaryInitialSize={50}
+                  primaryMinSize={this.state.isDrilldownChartHidden ? 0 : 35}
+                  onDragEnd={() => {
+                    this.setState({})
+                  }}
+                >
+                  <div className="react-autoql-dashboard-drilldown-original">
+                    <QueryOutput
+                      key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
+                      authentication={this.props.authentication}
+                      autoQLConfig={this.props.autoQLConfig}
+                      dataFormatting={getDataFormatting(
+                        this.props.dataFormatting
                       )}
-                      {this.renderChartCollapseBtn('bottom')}
-                    </div>
-                    {this.renderDrilldownTable()}
-                  </SplitterLayout>
-                )}
+                      queryResponse={_cloneDeep(queryResponse)}
+                      displayType={displayType}
+                      tableConfigs={_cloneDeep(dataConfig)}
+                      onUpdate={this.rebuildTooltips}
+                      isAnimatingContainer={this.state.isAnimatingModal}
+                      autoChartAggregations={this.props.autoChartAggregations}
+                      onDrilldownStart={(activeKey) =>
+                        this.onDrilldownStart({
+                          tileId: tile.i,
+                          activeKey,
+                          isSecondHalf: this.state.isDrilldownSecondHalf,
+                        })
+                      }
+                      onDrilldownEnd={this.onDrilldownEnd}
+                      activeChartElementKey={
+                        this.state.activeDrilldownChartElementKey
+                      }
+                      backgroundColor={document.documentElement.style.getPropertyValue(
+                        '--react-autoql-background-color-primary'
+                      )}
+                      enableAjaxTableData={this.props.enableAjaxTableData}
+                      reportProblemCallback={this.reportProblemCallback}
+                    />
+                    {this.renderChartCollapseBtn('bottom')}
+                  </div>
+                  {this.renderDrilldownTable()}
+                </SplitterLayout>
+              )}
               {this.shouldShowOriginalQuery(tile) &&
                 this.state.isDrilldownChartHidden &&
                 this.renderChartCollapseBtn('top')}
@@ -773,7 +747,6 @@ class Dashboard extends React.Component {
             key={tile.key}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -843,4 +816,5 @@ class Dashboard extends React.Component {
   }
 }
 
+const Dashboard = withTheme(DashboardWithoutTheme)
 export { Dashboard, executeDashboard, unExecuteDashboard }

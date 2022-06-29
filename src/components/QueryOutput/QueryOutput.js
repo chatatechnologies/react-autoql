@@ -13,19 +13,16 @@ import { scaleOrdinal } from 'd3-scale'
 
 import {
   dataFormattingType,
-  themeConfigType,
   autoQLConfigType,
   authenticationType,
 } from '../../props/types'
 import {
   dataFormattingDefault,
-  themeConfigDefault,
   autoQLConfigDefault,
   authenticationDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import { ChataTable } from '../ChataTable'
@@ -48,7 +45,6 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  setCSSVars,
   getNumberOfGroupables,
   areAllColumnsHidden,
 } from '../../js/Util.js'
@@ -69,6 +65,8 @@ import { sendSuggestion, runDrilldown } from '../../js/queryService'
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
+import { getChartColorVars } from '../../theme/configureTheme'
+import { withTheme } from '../../theme'
 
 String.prototype.isUpperCase = function() {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -83,7 +81,7 @@ String.prototype.toProperCase = function() {
   })
 }
 
-export default class QueryOutput extends React.Component {
+export class QueryOutputWithoutTheme extends React.Component {
   constructor(props) {
     super(props)
 
@@ -114,9 +112,8 @@ export default class QueryOutput extends React.Component {
     const displayType = this.getDisplayTypeFromInitial(props)
 
     // Set theme colors
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
     this.colorScale = scaleOrdinal().range(chartColors)
-    setCSSVars(props.themeConfig)
 
     const columns = this.formatColumnsForTable(
       props.queryResponse?.data?.data?.columns
@@ -137,7 +134,6 @@ export default class QueryOutput extends React.Component {
     queryResponse: PropTypes.shape({}),
     queryInputRef: PropTypes.instanceOf(QueryInput),
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     tableConfig: PropTypes.shape({}),
@@ -167,7 +163,6 @@ export default class QueryOutput extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
     tableConfig: undefined,
@@ -252,17 +247,6 @@ export default class QueryOutput extends React.Component {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
         })
-      }
-
-      if (
-        prevProps.themeConfig &&
-        this.props.themeConfig &&
-        !_isEqual(
-          getThemeConfig(this.props.themeConfig),
-          getThemeConfig(prevProps.themeConfig)
-        )
-      ) {
-        setCSSVars(this.props.themeConfig)
       }
 
       if (this.props.queryResponse && !this.queryResponse) {
@@ -1830,7 +1814,6 @@ export default class QueryOutput extends React.Component {
       return (
         <ErrorBoundary>
           <ChataTable
-            themeConfig={this.props.themeConfig}
             key={this.pivotTableID}
             ref={(ref) => (this.pivotTableRef = ref)}
             columns={this.pivotTableColumns}
@@ -1852,7 +1835,6 @@ export default class QueryOutput extends React.Component {
     return (
       <ChataTable
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
         columns={this.state.columns}
@@ -1897,7 +1879,6 @@ export default class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
-          themeConfig={this.props.themeConfig}
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
@@ -2102,7 +2083,6 @@ export default class QueryOutput extends React.Component {
     if (_get(this.queryResponse, 'data.data.replacements')) {
       return (
         <QueryValidationMessage
-          themeConfig={this.props.themeConfig}
           key={this.QUERY_VALIDATION_KEY}
           response={this.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>
@@ -2220,3 +2200,5 @@ export default class QueryOutput extends React.Component {
     )
   }
 }
+
+export default withTheme(QueryOutputWithoutTheme)

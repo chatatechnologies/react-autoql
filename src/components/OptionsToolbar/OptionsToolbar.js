@@ -30,18 +30,12 @@ import {
   isChartType,
 } from '../../js/Util'
 
-import {
-  autoQLConfigType,
-  authenticationType,
-  themeConfigType,
-} from '../../props/types'
+import { autoQLConfigType, authenticationType } from '../../props/types'
 import {
   autoQLConfigDefault,
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
@@ -52,7 +46,6 @@ export default class OptionsToolbar extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
-    themeConfig: themeConfigType,
 
     responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
@@ -69,7 +62,6 @@ export default class OptionsToolbar extends React.Component {
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
-    themeConfig: themeConfigDefault,
 
     responseRef: undefined,
     enableDeleteBtn: false,
@@ -301,7 +293,6 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <ColumnVisibilityModal
-          themeConfig={this.props.themeConfig}
           columns={columns}
           isVisible={this.state.isHideColumnsModalVisible}
           onClose={() => this.setState({ isHideColumnsModalVisible: false })}
@@ -322,7 +313,6 @@ export default class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <DataAlertModal
           authentication={getAuthentication(this.props.authentication)}
-          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'notification'}
           initialQuery={initialQuery}
           onClose={() => this.setState({ activeMenu: undefined })}
@@ -538,7 +528,6 @@ export default class OptionsToolbar extends React.Component {
     if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
       return (
         <SendToSlackModal
-          themeConfig={this.props.themeConfig}
           authentication={getAuthentication(this.props.authentication)}
           isVisible={this.state.activeMenu === 'slack'}
           responseRef={this.props.responseRef}
@@ -557,7 +546,6 @@ export default class OptionsToolbar extends React.Component {
       return (
         <SendToTeamsModal
           authentication={getAuthentication(this.props.authentication)}
-          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'teams'}
           responseRef={this.props.responseRef}
           onErrorCallback={this.props.onErrorCallback}
@@ -579,7 +567,6 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <Modal
-          themeConfig={this.props.themeConfig}
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>

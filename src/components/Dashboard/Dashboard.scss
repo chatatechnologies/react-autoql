@@ -1,5 +1,5 @@
 .react-autoql-dashboard-container {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-dashboard-background-color);
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -16,6 +16,16 @@
   }
 
   .dashboard-drilldown-modal-content {
+    &.chart-hidden {
+      .react-autoql-dashboard-drilldown-original,
+      .layout-splitter {
+        display: none;
+      }
+      .layout-pane:not(.layout-pane-primary) {
+        height: calc(100% - 50px) !important;
+      }
+    }
+
     .react-autoql-modal-body {
       padding: 0;
     }

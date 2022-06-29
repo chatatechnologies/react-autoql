@@ -13,12 +13,8 @@ import { LoadingDots } from '../LoadingDots'
 import { Select } from '../Select'
 
 import errorMessages from '../../js/errorMessages'
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  themeConfigDefault,
-  getAuthentication,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
 import {
   fetchNotificationChannels,
   createNotificationChannel,
@@ -31,7 +27,6 @@ import { isChartType } from '../../js/Util'
 
 export default class SendToSlackModal extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     authentication: authenticationType,
     isVisible: PropTypes.bool,
   }
@@ -42,7 +37,6 @@ export default class SendToSlackModal extends React.Component {
   }
 
   state = {
-    themeConfig: themeConfigDefault,
     channels: undefined,
     activePage: undefined,
     selectedChannel: undefined,
@@ -246,7 +240,6 @@ export default class SendToSlackModal extends React.Component {
           <div className="select-channel-titles">
             Post to:{' '}
             <Select
-              themeConfig={this.props.themeConfig}
               options={options}
               value={this.state.selectedChannel}
               style={{ width: '300px' }}
@@ -456,7 +449,6 @@ export default class SendToSlackModal extends React.Component {
   render() {
     return (
       <Modal
-        themeConfig={this.props.themeConfig}
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         title={

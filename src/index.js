@@ -28,3 +28,4 @@ export {
 } from './js/Util.js'
 export { fetchExploreQueries } from './js/queryService'
 export { LoadingDots } from './components/LoadingDots'
+export { configureTheme } from './theme'

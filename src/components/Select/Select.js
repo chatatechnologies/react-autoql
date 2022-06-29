@@ -6,8 +6,6 @@ import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Select.scss'
@@ -16,7 +14,6 @@ export default class Select extends React.Component {
   ID = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
@@ -26,7 +23,6 @@ export default class Select extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     onChange: () => {},
     options: [],
     popupClassname: undefined,

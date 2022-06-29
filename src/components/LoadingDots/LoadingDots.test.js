@@ -6,7 +6,7 @@ import LoadingDots from './LoadingDots'
 
 describe('renders correctly', () => {
   test('renders without crashing', () => {
-    const wrapper = shallow(<LoadingDots />)
+    const wrapper = shallow(<LoadingDots />).dive()
     const loadingDotsComponent = findByTestAttr(wrapper, 'loading-dots')
     expect(loadingDotsComponent.exists()).toBe(true)
   })

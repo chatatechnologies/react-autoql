@@ -2,19 +2,14 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
+import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'
 
-import { Icon } from '../Icon'
-
 class VizToolbar extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     onDisplayTypeChange: PropTypes.func,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
@@ -22,7 +17,6 @@ class VizToolbar extends React.Component {
 
   static defaultProps = {
     onDisplayTypeChange: () => {},
-    themeConfig: themeConfigDefault,
     disableCharts: false,
     vertical: false,
   }
