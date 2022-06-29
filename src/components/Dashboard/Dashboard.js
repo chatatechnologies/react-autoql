@@ -619,12 +619,9 @@ class DashboardWithoutTheme extends React.Component {
                     <div className="react-autoql-dashboard-drilldown-original">
                       {!this.state.isDrilldownChartHidden && (
                         <QueryOutput
-                          authentication={getAuthentication(
-                            this.props.authentication
-                          )}
-                          autoQLConfig={getAutoQLConfig(
-                            this.props.autoQLConfig
-                          )}
+                          key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
+                          authentication={this.props.authentication}
+                          autoQLConfig={this.props.autoQLConfig}
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
@@ -640,6 +637,7 @@ class DashboardWithoutTheme extends React.Component {
                             this.onDrilldownStart({
                               tileId: tile.i,
                               activeKey,
+                              isSecondHalf: this.state.isDrilldownSecondHalf,
                             })
                           }
                           onDrilldownEnd={this.onDrilldownEnd}

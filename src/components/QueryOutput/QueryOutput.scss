@@ -57,7 +57,7 @@
 }
 .react-autoql-suggestion-btn:hover {
   border-color: transparent;
-  color: white;
+  color: var(--react-autoql-accent-text-color);
   background: var(--react-autoql-accent-color);
 }
 .react-autoql-help-link-btn {
