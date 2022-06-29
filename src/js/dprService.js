@@ -9,7 +9,7 @@ export const dprQuery = ({ query, dprKey, dprDomain }) => {
 
   const config = {
     headers: {
-      ['AutoAE-Referer-URL']: 'http://localhost:3000',
+      ['AutoAE-Referer-URL']: window.location.origin,
       ['AutoAE-Session-ID']: sessionId,
       ['AutoAE-Activity-ID']: sessionId,
     },
