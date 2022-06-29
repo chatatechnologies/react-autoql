@@ -244,17 +244,6 @@ export default class QueryOutput extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     try {
-      // If data config was changed by a prop, change data config here
-      if (!_isEqual(this.props.tableConfigs, prevProps.tableConfigs)) {
-        if (this.props.tableConfigs) {
-          const { tableConfig, pivotTableConfig } = this.props.tableConfigs
-          this.tableConfig = _cloneDeep(tableConfig)
-          this.pivotTableConfig = _cloneDeep(pivotTableConfig)
-        } else {
-          this.setTableConfig()
-        }
-      }
-
       // If data config was changed here, tell the parent
       if (
         !_isEqual(this.props.tableConfigs, {
@@ -436,13 +425,8 @@ export default class QueryOutput extends React.Component {
     const newSupportedDisplayTypes = getSupportedDisplayTypes({
       response: this.queryResponse,
     })
-    this.setSupportedDisplayTypes(newSupportedDisplayTypes)
 
-    if (areAllColumnsHidden(this.queryResponse)) {
-      // If all columns are hidden, display warning message instead of table
-      this.onRecommendedDisplayType('text')
-      return
-    }
+    this.setSupportedDisplayTypes(newSupportedDisplayTypes, undefined, 'table')
 
     // Reset persisted column config data
     this.tableConfig = undefined
@@ -451,9 +435,6 @@ export default class QueryOutput extends React.Component {
       this.generateTableData(columns)
       if (this.shouldGeneratePivotData()) {
         this.generatePivotTableData({ isFirstGeneration: true })
-      } else {
-        this.pivotTableColumns = undefined
-        this.pivotTableData = undefined
       }
     }
 
@@ -1063,6 +1044,7 @@ export default class QueryOutput extends React.Component {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
         columns
       )
+
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
     }
@@ -1116,17 +1098,27 @@ export default class QueryOutput extends React.Component {
     })
   }
 
-  setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
+  setSupportedDisplayTypes = (
+    supportedDisplayTypes,
+    justMounted,
+    preferredDisplayType
+  ) => {
     if (
       supportedDisplayTypes &&
       (justMounted ||
         !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes))
     ) {
       this.supportedDisplayTypes = supportedDisplayTypes
-
-      if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
+      if (
+        preferredDisplayType &&
+        preferredDisplayType !== this.props.displayType &&
+        this.supportedDisplayTypes.includes(preferredDisplayType)
+      ) {
+        this.onRecommendedDisplayType(preferredDisplayType)
+      } else if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
         this.onRecommendedDisplayType(getDefaultDisplayType(this.queryResponse))
       }
+
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
     }
   }
