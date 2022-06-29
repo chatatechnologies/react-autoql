@@ -9,14 +9,12 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
@@ -72,7 +70,6 @@ export default class ChatMessage extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
@@ -106,7 +103,6 @@ export default class ChatMessage extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
 
     enableAjaxTableData: false,
     isDataMessengerOpen: false,
@@ -276,7 +272,6 @@ export default class ChatMessage extends React.Component {
             displayType={this.state.displayType}
             onSuggestionClick={this.props.onSuggestionClick}
             isQueryRunning={this.props.isChataThinking}
-            themeConfig={this.props.themeConfig}
             copyToClipboard={this.copyToClipboard}
             tableOptions={this.props.tableOptions}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
@@ -352,7 +347,6 @@ export default class ChatMessage extends React.Component {
             ref={(r) => (this.optionsToolbarRef = r)}
             authentication={this.props.authentication}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
             responseRef={this.responseRef}
             displayType={this.state.displayType}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -389,7 +383,6 @@ export default class ChatMessage extends React.Component {
       <div className="chat-message-toolbar left">
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
-            themeConfig={this.props.themeConfig}
             supportedDisplayTypes={this.state.supportedDisplayTypes || []}
             displayType={displayType}
             onDisplayTypeChange={this.onDisplayTypeChange}

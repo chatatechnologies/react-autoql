@@ -25,17 +25,14 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DashboardTile.scss'
@@ -77,7 +74,6 @@ class DashboardTile extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
 
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
@@ -98,7 +94,6 @@ class DashboardTile extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
 
     query: '',
     title: '',
@@ -904,19 +899,14 @@ class DashboardTile extends React.Component {
       <div className="viz-toolbar split-view-btn" data-test="split-view-btn">
         <button
           onClick={this.onSplitViewClick}
-          className="react-autoql-toolbar-btn"
+          className={`react-autoql-toolbar-btn ${
+            this.getIsSplitView() ? 'active' : ''
+          }`}
           data-tip={this.props.tile.splitView ? 'Single View' : 'Split View'}
           data-for="react-autoql-dashboard-toolbar-btn-tooltip"
           data-test="viz-toolbar-button"
         >
-          <Icon
-            type={this.getIsSplitView() ? 'single-view' : 'split-view'}
-            style={{
-              color: this.props.tile.splitView
-                ? getThemeConfig(this.props.themeConfig).accentColor
-                : 'inherit',
-            }}
-          />
+          <Icon type={this.getIsSplitView() ? 'single-view' : 'split-view'} />
         </button>
       </div>
     )
@@ -981,10 +971,7 @@ class DashboardTile extends React.Component {
             (isSecondHalf || !this.getIsSplitView()) &&
             this.renderSplitViewBtn()}
           {!this.props.isDragging && this.props.isEditing && (
-            <VizToolbar
-              themeConfig={this.props.themeConfig}
-              {...vizToolbarProps}
-            />
+            <VizToolbar {...vizToolbarProps} />
           )}
         </div>
         <div className="dashboard-tile-toolbars-right-container">
@@ -1032,7 +1019,6 @@ class DashboardTile extends React.Component {
         {!customMessage && (
           <QueryOutput
             authentication={getAuthentication(this.props.authentication)}
-            themeConfig={this.props.themeConfig}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             renderTooltips={false}

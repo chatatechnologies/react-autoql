@@ -27,14 +27,6 @@ export const autoQLConfigType = PropTypes.shape({
   enableNotifications: PropTypes.bool,
 })
 
-export const themeConfigType = PropTypes.shape({
-  theme: PropTypes.oneOf(['light', 'dark']),
-  chartColors: PropTypes.arrayOf(PropTypes.string),
-  accentColor: PropTypes.string,
-  fontFamily: PropTypes.string,
-  dashboardBackground: PropTypes.string,
-})
-
 export const dataConfigType = PropTypes.shape({
   stringColumnIndices: PropTypes.arrayOf(PropTypes.number),
   numberColumnIndices: PropTypes.arrayOf(PropTypes.number),

@@ -6,7 +6,7 @@ import { autoQLConfigDefault } from '../../props/defaults'
 import { findByTestAttr } from '../../../test/testUtils'
 
 import OptionsToolbar from './OptionsToolbar'
-import { QueryOutput } from '../QueryOutput'
+import { QueryOutputWithoutTheme } from '../QueryOutput/QueryOutput'
 
 var responseRef
 
@@ -50,7 +50,7 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
   // Create a query output component from the sample response,
   // then pass that into the toolbar component
   const queryOutputComponent = mount(
-    <QueryOutput
+    <QueryOutputWithoutTheme
       authentication={defaultProps.authentication}
       ref={(r) => {
         responseRef = r

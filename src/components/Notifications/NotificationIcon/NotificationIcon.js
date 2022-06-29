@@ -17,8 +17,9 @@ import {
 } from '../../../props/defaults'
 
 import './NotificationIcon.scss'
+import { withTheme } from '../../../theme'
 
-export default class NotificationIcon extends React.Component {
+class NotificationIcon extends React.Component {
   NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
   FAILED_POLL_ATTEMPTS = 0
 
@@ -31,7 +32,7 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
-    isAlreadyMountedInDOM: PropTypes.bool
+    isAlreadyMountedInDOM: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -49,7 +50,7 @@ export default class NotificationIcon extends React.Component {
     count: 0,
   }
 
-  timerID;
+  timerID
   componentDidMount = async () => {
     this._isMounted = true
 
@@ -57,18 +58,18 @@ export default class NotificationIcon extends React.Component {
      * If Data Messenger has enableNotificationsTab = true and
      * the NotificationIcon is also present, subscribeToNotificationCount()
      * will occasionally trigger an infinite loop.
-     * 
+     *
      * Data Messenger will first check to see that the NotificationIcon
      * isn't already present before triggering this function inside.
      */
-    if(!this.props.isAlreadyMountedInDOM) {
+    if (!this.props.isAlreadyMountedInDOM) {
       this.subscribeToNotificationCount()
     }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearInterval(this.timerID);
+    clearInterval(this.timerID)
   }
 
   getNotificationCount = (currentCount) => {
@@ -94,41 +95,42 @@ export default class NotificationIcon extends React.Component {
     if (this._isMounted) {
       /**
        * For short polling notifications, we needed to set the interval on FE side.
-       * Interval set to trigger every 90 seconds. 
+       * Interval set to trigger every 90 seconds.
        */
-      if(this.timerID) { clearInterval(this.timerID); }
+      if (this.timerID) {
+        clearInterval(this.timerID)
+      }
       this.timerID = setInterval(() => {
-          this.getNotificationCount(count)
-        .then((newCount) => {
-          // Got a new count, now we want to reconnect
-          this.subscribeToNotificationCount(newCount)
-          this.FAILED_POLL_ATTEMPTS = 0
-        })
-        .catch((error) => {
-          if (this.FAILED_POLL_ATTEMPTS === 5) {
-            const error = new Error(
-              'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.'
-            )
-            console.error(error)
-            this.props.onErrorCallback(error)
+        this.getNotificationCount(count)
+          .then((newCount) => {
+            // Got a new count, now we want to reconnect
+            this.subscribeToNotificationCount(newCount)
+            this.FAILED_POLL_ATTEMPTS = 0
+          })
+          .catch((error) => {
+            if (this.FAILED_POLL_ATTEMPTS === 5) {
+              const error = new Error(
+                'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.'
+              )
+              console.error(error)
+              this.props.onErrorCallback(error)
 
-            clearInterval(this.timerID);
-            
-            throw new Error(error)
+              clearInterval(this.timerID)
 
-          } else if (_get(error, 'response.status') == 504) {
-            // Timed out because there were no changes
-            // Let's connect again
-            this.subscribeToNotificationCount()
-          } else {
-            // Something else went wrong, wait one second and reconnect
-            new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+              throw new Error(error)
+            } else if (_get(error, 'response.status') == 504) {
+              // Timed out because there were no changes
+              // Let's connect again
               this.subscribeToNotificationCount()
-            })
-          }
-          this.FAILED_POLL_ATTEMPTS += 1
-        })
-      }, 90 * 1000); 
+            } else {
+              // Something else went wrong, wait one second and reconnect
+              new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+                this.subscribeToNotificationCount()
+              })
+            }
+            this.FAILED_POLL_ATTEMPTS += 1
+          })
+      }, 90 * 1000)
     }
   }
 
@@ -188,3 +190,5 @@ export default class NotificationIcon extends React.Component {
     )
   }
 }
+
+export default withTheme(NotificationIcon)

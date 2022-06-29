@@ -13,7 +13,7 @@ const sampleAuth = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, authentication: sampleAuth, ...props }
-  const wrapper = shallow(<FilterLockPopover {...setupProps} />)
+  const wrapper = shallow(<FilterLockPopover {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

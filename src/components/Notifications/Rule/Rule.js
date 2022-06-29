@@ -9,10 +9,9 @@ import { Select } from '../../Select'
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
 } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
@@ -68,7 +67,6 @@ export default class Rule extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     ruleId: PropTypes.string,
     onAdd: PropTypes.func,
     onDelete: PropTypes.func,
@@ -80,7 +78,6 @@ export default class Rule extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     ruleId: undefined,
     onAdd: () => {},
     onDelete: () => {},
@@ -426,7 +423,6 @@ export default class Rule extends React.Component {
             }
           </div>
           <Select
-            themeConfig={this.props.themeConfig}
             options={[
               { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
               { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

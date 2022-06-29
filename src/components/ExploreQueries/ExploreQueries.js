@@ -12,8 +12,9 @@ import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 
 import './ExploreQueries.scss'
+import { withTheme } from '../../theme'
 
-export default class ExploreQueries extends React.Component {
+class ExploreQueries extends React.Component {
   constructor(props) {
     super(props)
 
@@ -306,3 +307,5 @@ export default class ExploreQueries extends React.Component {
     )
   }
 }
+
+export default withTheme(ExploreQueries)

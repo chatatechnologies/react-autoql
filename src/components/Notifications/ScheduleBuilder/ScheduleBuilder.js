@@ -7,9 +7,6 @@ import { Radio } from '../../Radio'
 import { TimezoneSelector } from '../../TimezoneSelector'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../../props/types'
-import { themeConfigDefault } from '../../../props/defaults'
-
 import './ScheduleBuilder.scss'
 
 const getFrequencyValue = (dataAlert) => {
@@ -38,7 +35,6 @@ export default class ScheduleBuilder extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     dataAlert: PropTypes.shape({}),
     onChange: PropTypes.func,
     onCompletedChange: PropTypes.func,
@@ -46,7 +42,6 @@ export default class ScheduleBuilder extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     dataAlert: undefined,
     onChange: () => {},
     onCompletedChange: () => {},
@@ -141,7 +136,6 @@ export default class ScheduleBuilder extends React.Component {
               want to be notified?
             </p>
             <Radio
-              themeConfig={this.props.themeConfig}
               options={[
                 'Every time this happens',
                 'Only once per day',

@@ -6,8 +6,7 @@ import _isEqual from 'lodash.isequal'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getAuthentication } from '../../props/defaults'
+import { getAuthentication } from '../../props/defaults'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -135,7 +134,6 @@ export default class ChataTable extends React.Component {
   }
 
   static propTypes = {
-    themeConfig: themeConfigType,
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
@@ -145,7 +143,6 @@ export default class ChataTable extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     data: undefined,
     columns: undefined,
     isResizing: false,

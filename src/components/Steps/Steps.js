@@ -4,8 +4,6 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Steps.scss'
@@ -14,14 +12,12 @@ export default class Steps extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
