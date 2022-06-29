@@ -466,7 +466,7 @@
 }
 .page-switcher-container.bottom .tab.active {
   background: var(--react-autoql-accent-color);
-  color: #fff;
+  color: var(--react-autoql-accent-text-color);
   font-weight: bold;
 }
 

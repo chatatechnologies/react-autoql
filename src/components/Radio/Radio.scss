@@ -77,7 +77,7 @@
     &.active {
       background-color: var(--react-autoql-accent-color, #26a7df);
       border-color: var(--react-autoql-accent-color, #26a7df);
-      color: #fff;
+      color: var(--react-autoql-accent-text-color);
     }
     &.active.outlined {
       background-color: inherit;

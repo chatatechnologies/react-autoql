@@ -49,6 +49,6 @@
 
   &:hover {
     background-color: var(--react-autoql-danger-color, #ca0b00);
-    color: #fff;
+    color: var(--react-autoql-accent-text-color);
   }
 }
