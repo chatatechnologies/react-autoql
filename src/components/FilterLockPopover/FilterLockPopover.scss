@@ -152,7 +152,7 @@
 
     .react-autoql-highlight-row {
       background-color: var(--react-autoql-accent-color);
-      color: white;
+      color: var(--react-autoql-accent-text-color);
       animation-name: highlightIn, highlightOut;
       animation-duration: 300ms, 300ms;
       animation-delay: 0ms, 1000ms;
@@ -250,13 +250,13 @@
   }
   0% {
     background-color: var(--react-autoql-accent-color);
-    color: white;
+    color: var(--react-autoql-accent-text-color);
   }
 }
 @keyframes highlightIn {
   100% {
     background-color: var(--react-autoql-accent-color);
-    color: white;
+    color: var(--react-autoql-accent-text-color);
   }
   0% {
     background-color: var(--react-autoql-background-color-primary);

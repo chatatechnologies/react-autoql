@@ -15,7 +15,7 @@
     .react-autoql-step-dot {
       border-color: var(--react-autoql-accent-color, #26a7df);
       background: var(--react-autoql-accent-color, #26a7df);
-      color: #fff;
+      color: var(--react-autoql-accent-text-color);
     }
   }
 
@@ -24,7 +24,7 @@
     .react-autoql-step-dot {
       border-color: var(--react-autoql-warning-color);
       background: var(--react-autoql-warning-color);
-      color: white;
+      color: #fff;
     }
   }
 
