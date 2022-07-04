@@ -790,7 +790,7 @@ export default class App extends Component {
           }}
           style={{ marginTop: '20px' }}
           onFinish={this.onLogin}
-          onFinishFailed={(errorInfo) => console.log('Failed:', errorInfo)}
+          onFinishFailed={(errorInfo) => console.error('Failed:', errorInfo)}
         >
           <Form.Item
             label="Project ID"
