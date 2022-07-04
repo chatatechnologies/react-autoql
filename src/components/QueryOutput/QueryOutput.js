@@ -1526,6 +1526,7 @@ export default class QueryOutput extends React.Component {
           type: 'DATE_STRING',
           datePivot: true,
           origColumn: this.tableColumns[dateColumnIndex],
+          pivot: true,
         },
       ]
 
@@ -1651,6 +1652,7 @@ export default class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           field: '0',
+          pivot: true,
         },
       ]
 
@@ -1886,6 +1888,11 @@ export default class QueryOutput extends React.Component {
     }
 
     const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
+
+    console.log(
+      'sending in these number col indices to chatachart',
+      tableConfig?.numberColumnIndices
+    )
 
     return (
       <ErrorBoundary>
