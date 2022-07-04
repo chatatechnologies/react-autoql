@@ -685,10 +685,6 @@ class Dashboard extends React.Component {
               {this.shouldShowOriginalQuery(tile) &&
                 this.state.isDrilldownChartHidden &&
                 this.renderChartCollapseBtn('top')}
-              {(!this.shouldShowOriginalQuery(tile) ||
-                (this.shouldShowOriginalQuery(tile) &&
-                  this.state.isDrilldownChartHidden)) &&
-                this.renderDrilldownTable()}
             </Fragment>
           )}
         </Modal>
