@@ -1889,11 +1889,6 @@ export default class QueryOutput extends React.Component {
 
     const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
 
-    console.log(
-      'sending in these number col indices to chatachart',
-      tableConfig?.numberColumnIndices
-    )
-
     return (
       <ErrorBoundary>
         <ChataChart
