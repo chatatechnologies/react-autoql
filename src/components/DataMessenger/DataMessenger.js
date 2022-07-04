@@ -808,6 +808,7 @@ export default class DataMessenger extends React.Component {
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder="Type your questions here"
+          sessionId={this.COMPONENT_KEY}
           autoQLConfig={{
             enableAutocomplete: false,
             enableQueryValidation: false,
