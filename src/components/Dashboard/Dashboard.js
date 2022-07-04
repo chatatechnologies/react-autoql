@@ -193,12 +193,17 @@ class Dashboard extends React.Component {
     }
 
     this.onChangeTiles = _cloneDeep(tiles)
-    return new Promise((resolve, reject) => {
+    const debouncedPromise = new Promise((resolve, reject) => {
       try {
+        this.subscribeToCallback([resolve])
         if (callbackArray?.length) {
           this.subscribeToCallback(callbackArray)
         }
-        clearTimeout(this.onChangeTimer)
+
+        if (this.onChangeTimer) {
+          clearTimeout(this.onChangeTimer)
+        }
+
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
             this.props.onChange(this.onChangeTiles)
@@ -211,6 +216,7 @@ class Dashboard extends React.Component {
                   callback()
                 }, (i + 1) * 50)
               })
+              return
             }
             return resolve()
           }
@@ -222,6 +228,8 @@ class Dashboard extends React.Component {
         return reject()
       }
     })
+
+    return debouncedPromise
   }
 
   setStyles = () => {
@@ -677,10 +685,6 @@ class Dashboard extends React.Component {
               {this.shouldShowOriginalQuery(tile) &&
                 this.state.isDrilldownChartHidden &&
                 this.renderChartCollapseBtn('top')}
-              {(!this.shouldShowOriginalQuery(tile) ||
-                (this.shouldShowOriginalQuery(tile) &&
-                  this.state.isDrilldownChartHidden)) &&
-                this.renderDrilldownTable()}
             </Fragment>
           )}
         </Modal>
@@ -787,7 +791,6 @@ class Dashboard extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
-            onQueryOutputUpdate={this.rebuildTooltips}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
             onCSVDownloadStart={this.props.onCSVDownloadStart}

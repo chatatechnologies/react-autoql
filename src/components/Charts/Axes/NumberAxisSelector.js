@@ -55,7 +55,7 @@ export default class NumberAxisSelector extends React.Component {
     const ratioItems = []
 
     columns.forEach((col, i) => {
-      if (!col.is_visible) {
+      if (!col.is_visible || col.pivot) {
         return
       }
 

@@ -211,6 +211,7 @@ export default class QueryOutput extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.props.onUpdate()
     try {
       if (this.props.optionsToolbarRef?._isMounted) {
         this.props.optionsToolbarRef.forceUpdate()
@@ -1525,6 +1526,7 @@ export default class QueryOutput extends React.Component {
           type: 'DATE_STRING',
           datePivot: true,
           origColumn: this.tableColumns[dateColumnIndex],
+          pivot: true,
         },
       ]
 
@@ -1650,6 +1652,7 @@ export default class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           field: '0',
+          pivot: true,
         },
       ]
 

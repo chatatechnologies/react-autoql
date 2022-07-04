@@ -76,6 +76,7 @@ export default class QueryInput extends React.Component {
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string.isRequired,
     clearQueryOnSubmit: PropTypes.bool,
+    sessionId: PropTypes.string,
   }
 
   static defaultProps = {
@@ -162,6 +163,7 @@ export default class QueryInput extends React.Component {
       dprKey: this.props.authentication?.dprKey,
       dprDomain: this.props.authentication?.dprDomain,
       query,
+      sessionId: this.props.sessionId,
     })
       .then((response) => this.onResponse(response, query))
       .catch((error) => {
