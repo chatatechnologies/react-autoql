@@ -57,6 +57,7 @@ export default class ChatContent extends React.Component {
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
+    sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
   }
 
@@ -424,6 +425,7 @@ export default class ChatContent extends React.Component {
             hideInput={this.props.hideInput}
             source={this.props.source}
             queryFilters={this.props.queryFilters}
+            sessionId={this.props.sessionId}
           />
         </div>
       </ErrorBoundary>
