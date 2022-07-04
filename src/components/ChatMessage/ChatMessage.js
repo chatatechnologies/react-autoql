@@ -277,7 +277,6 @@ export default class ChatMessage extends React.Component {
           copyToClipboard={this.copyToClipboard}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           appliedFilters={this.props.appliedFilters}
-          onUpdate={this.props.onQueryOutputUpdate}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
           demo={getAuthentication(this.props.authentication).demo}

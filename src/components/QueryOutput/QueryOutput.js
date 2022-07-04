@@ -211,6 +211,7 @@ export default class QueryOutput extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.props.onUpdate()
     try {
       if (this.props.optionsToolbarRef?._isMounted) {
         this.props.optionsToolbarRef.forceUpdate()
