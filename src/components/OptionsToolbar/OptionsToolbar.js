@@ -41,7 +41,6 @@ import {
   themeConfigDefault,
   getAuthentication,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
@@ -731,7 +730,7 @@ export default class OptionsToolbar extends React.Component {
     )
   }
 
-  getShouldShouldButtonObj = () => {
+  getShouldShowButtonObj = () => {
     let shouldShowButton = {}
     try {
       const displayType = _get(this.props.responseRef, 'props.displayType')
@@ -793,7 +792,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   render = () => {
-    const shouldShowButton = this.getShouldShouldButtonObj()
+    const shouldShowButton = this.getShouldShowButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
     if (

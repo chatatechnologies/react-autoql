@@ -374,7 +374,6 @@ export default class ChatContent extends React.Component {
                 onSuggestionClick={this.animateInputTextAndSubmit}
                 content={message.content}
                 scrollToBottom={this.scrollToBottom}
-                onQueryOutputUpdate={this.rebuildTooltips}
                 dataFormatting={this.props.dataFormatting}
                 displayType={message.displayType}
                 onResponseCallback={this.onResponse}

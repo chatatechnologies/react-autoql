@@ -787,7 +787,6 @@ class Dashboard extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
-            onQueryOutputUpdate={this.rebuildTooltips}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
             onCSVDownloadStart={this.props.onCSVDownloadStart}

@@ -135,7 +135,7 @@ class DashboardTile extends React.Component {
     return false
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     // If query or title change from props (due to undo for example), update state
     if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
       this.setState({ query: _get(this.props, 'tile.query') }, () => {
@@ -149,6 +149,14 @@ class DashboardTile extends React.Component {
 
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
+    }
+
+    if (this.secondOptionsToolbarRef?._isMounted) {
+      this.secondOptionsToolbarRef.forceUpdate()
+    }
+
+    if (this.optionsToolbarRef?._isMounted) {
+      this.optionsToolbarRef.forceUpdate()
     }
   }
 
@@ -1041,7 +1049,6 @@ class DashboardTile extends React.Component {
             isResizing={this.props.isDragging}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
-            onUpdate={this.props.onQueryOutputUpdate}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
@@ -1096,7 +1103,7 @@ class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        ref: (ref) => (this.responseRef = ref),
+        ref: (ref) => this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         displayType,
@@ -1123,15 +1130,18 @@ class DashboardTile extends React.Component {
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
+        key: `viz-toolbar-${this.QUERY_RESPONSE_KEY}`,
         displayType: displayType,
         onDisplayTypeChange: this.onDisplayTypeChange,
         supportedDisplayTypes: this.state.supportedDisplayTypes,
       },
       optionsToolbarProps: {
         ref: (r) => (this.optionsToolbarRef = r),
-        responseRef: this.responseRef,
+        key: `options-toolbar-${this.QUERY_RESPONSE_KEY}`,
+        responseRef: this.state.responseRef,
+        queryResponse: this.props.queryResponse,
         onFilterClick: ({ isFilteringTable }) =>
-          this.toggleTableFilter(this.responseRef, isFilteringTable),
+          this.toggleTableFilter(this.state.responseRef, isFilteringTable),
         displayType,
       },
     })
@@ -1164,7 +1174,7 @@ class DashboardTile extends React.Component {
       isExecuted,
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
-        ref: (ref) => (this.secondResponseRef = ref),
+        ref: (ref) => this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         displayType,
         queryResponse:
@@ -1193,15 +1203,22 @@ class DashboardTile extends React.Component {
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
+        key: `viz-toolbar-${this.QUERY_RESPONSE_KEY}`,
         displayType: displayType,
         onDisplayTypeChange: this.onSecondDisplayTypeChange,
         supportedDisplayTypes: this.state.secondSupportedDisplayTypes,
       },
       optionsToolbarProps: {
         ref: (r) => (this.secondOptionsToolbarRef = r),
-        responseRef: this.secondResponseRef,
+        key: `options-toolbar-${this.QUERY_RESPONSE_KEY}`,
+        queryResponse:
+          this.props.secondQueryResponse || this.props.queryResponse,
+        responseRef: this.state.secondResponseRef,
         onFilterClick: ({ isFilteringTable }) =>
-          this.toggleTableFilter(this.secondResponseRef, isFilteringTable),
+          this.toggleTableFilter(
+            this.state.secondResponseRef,
+            isFilteringTable
+          ),
         displayType,
       },
       isSecondHalf: true,
