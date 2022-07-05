@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
+import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
@@ -14,6 +15,7 @@ import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
+import { setCSSVars } from '../../../js/Util'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -28,6 +30,7 @@ import {
   authenticationDefault,
   themeConfigDefault,
   getAuthentication,
+  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
@@ -88,10 +91,20 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
+    setCSSVars(this.props.themeConfig)
     this.initializeFields()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (
+      !_isEqual(
+        getThemeConfig(this.props.themeConfig),
+        getThemeConfig(prevProps.themeConfig)
+      )
+    ) {
+      setCSSVars(this.props.themeConfig)
+    }
+
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
     }
