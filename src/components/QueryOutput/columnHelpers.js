@@ -45,7 +45,7 @@ export const getNumberColumnIndices = (columns) => {
 
   columns.forEach((col, index) => {
     const { type } = col
-    if (col.is_visible) {
+    if (col.is_visible && !col.pivot) {
       if (type === 'DOLLAR_AMT') {
         dollarAmtIndices.push(index)
       } else if (type === 'QUANTITY') {

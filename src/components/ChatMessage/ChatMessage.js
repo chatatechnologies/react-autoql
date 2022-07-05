@@ -63,7 +63,6 @@ export default class ChatMessage extends React.Component {
     onSuggestionClick: PropTypes.func,
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
-    tableOptions: PropTypes.shape({}),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
@@ -94,7 +93,6 @@ export default class ChatMessage extends React.Component {
     isActive: false,
     type: 'text',
     text: null,
-    tableOptions: undefined,
     enableColumnVisibilityManager: true,
     isResizing: false,
     enableDynamicCharting: true,
@@ -265,7 +263,7 @@ export default class ChatMessage extends React.Component {
           isResizing={this.props.isResizing}
           isAnimatingContainer={this.state.isAnimatingMessageBubble}
           enableDynamicCharting={this.props.enableDynamicCharting}
-          tableConfig={this.state.dataConfig}
+          tableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}

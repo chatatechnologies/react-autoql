@@ -88,13 +88,12 @@ export class QueryOutputWithoutTheme extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.QUERY_VALIDATION_KEY = uuid()
 
-    this.queryResponse = props.queryResponse
+    this.queryResponse = _cloneDeep(props.queryResponse)
     this.supportedDisplayTypes = getSupportedDisplayTypes({
-      response: props.queryResponse,
+      response: this.queryResponse,
     })
-
-    this.queryID = _get(props.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(props.queryResponse, 'data.data.interpretation')
+    this.queryID = _get(this.queryResponse, 'data.data.query_id')
+    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
     this.tableID = uuid()
     this.pivotTableID = uuid()
 
@@ -119,7 +118,7 @@ export class QueryOutputWithoutTheme extends React.Component {
       props.queryResponse?.data?.data?.columns
     )
     // --------- generate data before mount --------
-    this.generateAllData(props.queryResponse, displayType, columns)
+    this.generateAllData(this.queryResponse, displayType, columns)
     // -------------------------------------------
 
     this.state = {
@@ -197,6 +196,7 @@ export class QueryOutputWithoutTheme extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.props.onUpdate()
     try {
       this.updateToolbars()
 
@@ -250,9 +250,8 @@ export class QueryOutputWithoutTheme extends React.Component {
       }
 
       if (this.props.queryResponse && !this.queryResponse) {
-        if (
-          !isDisplayTypeValid(this.props.queryResponse, this.state.displayType)
-        ) {
+        this.queryResponse = _cloneDeep(this.props.queryResponse)
+        if (!isDisplayTypeValid(this.queryResponse, this.state.displayType)) {
           const displayType = this.getDisplayTypeFromInitial(this.props)
           this.setState({ displayType }, () => {
             this.displayTypeInvalidWarning()
@@ -382,6 +381,7 @@ export class QueryOutputWithoutTheme extends React.Component {
       response: this.queryResponse,
       columns,
     })
+
     if (!_isEqual(newSupportedDisplayTypes, this.supportedDisplayTypes)) {
       this.setSupportedDisplayTypes(newSupportedDisplayTypes, undefined, true)
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
@@ -402,10 +402,7 @@ export class QueryOutputWithoutTheme extends React.Component {
     if (this.shouldGenerateTableData()) {
       this.generateTableData(columns)
       if (this.shouldGeneratePivotData()) {
-        this.generatePivotTableData({ isFirstGeneration: true, columns })
-      } else {
-        this.pivotTableColumns = undefined
-        this.pivotTableData = undefined
+        this.generatePivotTableData({ isFirstGeneration: true })
       }
     }
   }
@@ -1029,6 +1026,7 @@ export class QueryOutputWithoutTheme extends React.Component {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
         columns
       )
+
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
     }
@@ -1080,7 +1078,11 @@ export class QueryOutputWithoutTheme extends React.Component {
     })
   }
 
-  setSupportedDisplayTypes = (supportedDisplayTypes, justMounted) => {
+  setSupportedDisplayTypes = (
+    supportedDisplayTypes,
+    justMounted,
+    preferredDisplayType
+  ) => {
     if (
       supportedDisplayTypes &&
       (justMounted ||
@@ -1512,6 +1514,7 @@ export class QueryOutputWithoutTheme extends React.Component {
           type: 'DATE_STRING',
           datePivot: true,
           origColumn: this.state.columns[dateColumnIndex],
+          pivot: true,
         },
       ]
 
@@ -1641,6 +1644,7 @@ export class QueryOutputWithoutTheme extends React.Component {
           visible: true,
           is_visible: true,
           field: '0',
+          pivot: true,
         },
       ]
 

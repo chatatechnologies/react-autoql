@@ -34,11 +34,13 @@ class ExploreQueries extends React.Component {
   static propTypes = {
     shouldRender: PropTypes.bool,
     executeQuery: PropTypes.func,
+    inputPlaceholder: PropTypes.string,
   }
 
   static defaultProps = {
     shouldRender: true,
     executeQuery: () => {},
+    inputPlaceholder: 'Search relevant queries by topic',
   }
 
   componentDidUpdate = (prevProps) => {
@@ -264,7 +266,7 @@ class ExploreQueries extends React.Component {
           >
             <input
               className="react-autoql-chatbar-input left-padding right-padding"
-              placeholder="Search relevant queries by topic"
+              placeholder={this.props.inputPlaceholder}
               value={this.state.inputValue}
               onChange={this.onInputChange}
               onKeyPress={this.onKeyPress}

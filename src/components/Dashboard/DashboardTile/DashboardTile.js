@@ -130,7 +130,7 @@ class DashboardTile extends React.Component {
     return false
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     // If query or title change from props (due to undo for example), update state
     if (_get(this.props, 'tile.query') !== _get(prevProps, 'tile.query')) {
       this.setState({ query: _get(this.props, 'tile.query') }, () => {
@@ -144,6 +144,14 @@ class DashboardTile extends React.Component {
 
     if (_get(this.props, 'tile.title') !== _get(prevProps, 'tile.title')) {
       this.setState({ title: _get(this.props, 'tile.title') })
+    }
+
+    if (this.secondOptionsToolbarRef?._isMounted) {
+      this.secondOptionsToolbarRef.forceUpdate()
+    }
+
+    if (this.optionsToolbarRef?._isMounted) {
+      this.optionsToolbarRef.forceUpdate()
     }
   }
 
@@ -1023,7 +1031,6 @@ class DashboardTile extends React.Component {
             isResizing={this.props.isDragging}
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
-            onUpdate={this.props.onQueryOutputUpdate}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
@@ -1078,7 +1085,7 @@ class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        ref: (ref) => (this.responseRef = ref),
+        ref: (ref) => this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
@@ -1142,7 +1149,7 @@ class DashboardTile extends React.Component {
       isExecuted,
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.QUERY_RESPONSE_KEY}`,
-        ref: (ref) => (this.secondResponseRef = ref),
+        ref: (ref) => this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,
         displayType,

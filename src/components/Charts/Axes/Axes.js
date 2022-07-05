@@ -190,13 +190,15 @@ export default class Axes extends React.Component {
       !this.props.yScale ||
       !this.props.xScale ||
       !this.props.height ||
-      !this.props.width
+      !this.props.width ||
+      !this.props.xCol ||
+      !this.props.yCol
     ) {
       return null
     }
 
-    const xAxisTitle = this.props.xAxisTitle || this.props.xCol.display_name
-    const yAxisTitle = this.props.yAxisTitle || this.props.yCol.display_name
+    const xAxisTitle = this.props.xAxisTitle || this.props.xCol?.display_name
+    const yAxisTitle = this.props.yAxisTitle || this.props.yCol?.display_name
 
     return (
       <g>
