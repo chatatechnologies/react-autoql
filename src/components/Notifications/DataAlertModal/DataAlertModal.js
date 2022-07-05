@@ -15,7 +15,6 @@ import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
-import { setCSSVars } from '../../../js/Util'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -89,20 +88,10 @@ class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
     this.initializeFields()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
-
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
     }
