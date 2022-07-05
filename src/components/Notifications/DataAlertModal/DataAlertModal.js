@@ -92,6 +92,7 @@ export default class DataAlertModal extends React.Component {
 
   componentDidMount = () => {
     setCSSVars(this.props.themeConfig)
+
     this.initializeFields()
   }
 

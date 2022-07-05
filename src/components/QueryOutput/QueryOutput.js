@@ -361,6 +361,10 @@ export default class QueryOutput extends React.Component {
     return this.supportedDisplayTypes.includes('pivot_table')
   }
 
+  supportsDatePivot = () => {
+    return this.supportsPivot() && this.tableColumns.length === 2
+  }
+
   onRecommendedDisplayType = (recommendedDisplayType) => {
     this.props.onRecommendedDisplayType(
       recommendedDisplayType,
@@ -833,7 +837,6 @@ export default class QueryOutput extends React.Component {
     columns,
     stringColumnIndex,
     legendColumn,
-    numberColumnIndex,
     activeKey
   ) => {
     // todo: do we need to provide all those params or can we grab them from this component?
@@ -965,7 +968,7 @@ export default class QueryOutput extends React.Component {
   }
 
   onChangeStringColumnIndex = (index) => {
-    if (this.supportsPivot()) {
+    if (this.supportsPivot() && !this.supportsDatePivot()) {
       if (this.pivotTableConfig.legendColumnIndex === index) {
         this.pivotTableConfig.legendColumnIndex = undefined
       }
@@ -982,7 +985,7 @@ export default class QueryOutput extends React.Component {
   }
 
   onChangeLegendColumnIndex = (index) => {
-    if (this.supportsPivot()) {
+    if (this.supportsPivot() && !this.supportsDatePivot()) {
       if (this.pivotTableConfig.stringColumnIndex === index) {
         this.pivotTableConfig.stringColumnIndex = undefined
       }
@@ -1003,7 +1006,7 @@ export default class QueryOutput extends React.Component {
       return
     }
 
-    if (this.supportsPivot()) {
+    if (this.supportsPivot() && !this.supportsDatePivot()) {
       this.pivotTableConfig.numberColumnIndices = indices
       this.pivotTableConfig.numberColumnIndex = indices[0]
     } else {
@@ -1874,9 +1877,9 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const supportsPivot = this.supportsPivot()
+    const usePivotData = this.supportsPivot() && !this.supportsDatePivot()
     if (
-      supportsPivot &&
+      usePivotData &&
       (!this.pivotTableData ||
         !this.pivotTableColumns ||
         !this.pivotTableConfig)
@@ -1887,7 +1890,7 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const tableConfig = supportsPivot ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
 
     return (
       <ErrorBoundary>
@@ -1897,9 +1900,9 @@ export default class QueryOutput extends React.Component {
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
           {...tableConfig}
-          data={supportsPivot ? this.pivotTableData : this.tableData}
-          columns={supportsPivot ? this.pivotTableColumns : this.tableColumns}
-          isPivot={supportsPivot}
+          data={usePivotData ? this.pivotTableData : this.tableData}
+          columns={usePivotData ? this.pivotTableColumns : this.tableColumns}
+          isPivot={usePivotData}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
