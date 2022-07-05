@@ -10,14 +10,15 @@ import React, { useEffect } from 'react'
 
 import { configureTheme, getThemeValue } from './configureTheme'
 
-export const withTheme = (Component) => ({ ...props }) => {
-  useEffect(() => {
-    const hasTheme = !!getThemeValue('accent-color')
+export const withTheme = (Component) =>
+  React.forwardRef(({ ...props }, ref) => {
+    useEffect(() => {
+      const hasTheme = !!getThemeValue('accent-color')
 
-    if (!hasTheme) {
-      configureTheme()
-    }
-  }, [])
+      if (!hasTheme) {
+        configureTheme()
+      }
+    }, [])
 
-  return <Component {...props} />
-}
+    return <Component ref={ref} {...props} />
+  })

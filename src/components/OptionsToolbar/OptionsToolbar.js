@@ -2,26 +2,20 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
-import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 import { format } from 'sql-formatter'
 import { Icon } from '../Icon'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import { DataAlertModal } from '../Notifications'
-import { QueryOutput } from '../QueryOutput'
 import { Modal } from '../Modal'
-import { SendToSlackModal } from '../SendToSlackModal'
-import { SendToTeamsModal } from '../SendToTeamsModal'
+// import { SendToSlackModal } from '../SendToSlackModal'
+// import { SendToTeamsModal } from '../SendToTeamsModal'
 import { Button } from '../Button'
 import ReportProblemModal from './ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  setColumnVisibility,
-  reportProblem,
-  exportCSV,
-} from '../../js/queryService'
+import { setColumnVisibility, exportCSV } from '../../js/queryService'
 
 import {
   isTableType,
@@ -39,6 +33,7 @@ import {
 } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
+import { QueryOutputWithoutTheme } from '../QueryOutput/QueryOutput'
 
 export default class OptionsToolbar extends React.Component {
   COMPONENT_KEY = uuid()
@@ -47,7 +42,6 @@ export default class OptionsToolbar extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
 
-    responseRef: PropTypes.instanceOf(QueryOutput),
     enableDeleteBtn: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
@@ -63,7 +57,6 @@ export default class OptionsToolbar extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
 
-    responseRef: undefined,
     enableDeleteBtn: false,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
@@ -113,7 +106,7 @@ export default class OptionsToolbar extends React.Component {
     if (displayType === 'table') {
       // this shouldn't be affected when editing a pivot table
       this.setState({
-        disableChartingOptions: _get(newTableData, 'length') < 2,
+        disableChartingOptions: newTableData?.length < 2,
       })
     }
   }
@@ -134,7 +127,7 @@ export default class OptionsToolbar extends React.Component {
 
   copyTableToClipboard = () => {
     if (this.props.responseRef) {
-      this.props.responseRef.copyTableToClipboard()
+      this.props.responseRef?.copyTableToClipboard()
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
       this.setTemporaryState('copiedTable', true, 1000)
       ReactTooltip.hide()
@@ -191,10 +184,10 @@ export default class OptionsToolbar extends React.Component {
     const uniqueId = uuid()
 
     if (isPivotTable) {
-      if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
+      if (this.props.responseRef?.pivotTableRef?._isMounted) {
         this.props.onCSVDownloadStart({ id: uniqueId })
         this.pivotTableCSVDownloadTimeout = setTimeout(() => {
-          this.props.responseRef.pivotTableRef.saveAsCSV().then(() => {
+          this.props.responseRef?.pivotTableRef?.saveAsCSV().then(() => {
             this.props.onCSVDownloadProgress({ id: uniqueId, progress: 100 })
             this.props.onCSVDownloadFinish({ id: uniqueId })
           })
@@ -206,9 +199,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   saveChartAsPNG = () => {
-    if (this.props.responseRef) {
-      this.props.responseRef.saveChartAsPNG()
-    }
+    this.props.responseRef?.saveChartAsPNG()
   }
 
   deleteMessage = () => {
@@ -217,7 +208,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   copySQL = () => {
-    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql')
+    const sql = this.props.responseRef?.queryResponse?.data?.data?.sql
     const el = document.createElement('textarea')
     el.value = sql
     document.body.appendChild(el)
@@ -261,7 +252,7 @@ export default class OptionsToolbar extends React.Component {
         }
 
         if (this.props.responseRef) {
-          this.props.responseRef.updateColumns(formattedColumns)
+          this.props.responseRef?.updateColumns(formattedColumns)
         }
 
         this.props.onColumnVisibilitySave(formattedColumns)
@@ -277,7 +268,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    const cols = _get(this.props.responseRef, 'queryResponse.data.data.columns')
+    const cols = this.props.responseRef?.queryResponse?.data?.data?.columns
     if (!cols || !cols.length) {
       return null
     }
@@ -304,10 +295,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderDataAlertModal = () => {
-    const initialQuery = _get(
-      this.props.responseRef,
-      'queryResponse.data.data.text'
-    )
+    const initialQuery = this.props.responseRef?.queryResponse?.data?.data?.text
 
     return (
       <ErrorBoundary>
@@ -511,10 +499,8 @@ export default class OptionsToolbar extends React.Component {
 
   isDrilldownResponse = () => {
     try {
-      const queryText = _get(
-        this.props.responseRef,
-        'queryResponse.data.data.text'
-      )
+      const queryText = this.props.responseRef?.queryResponse?.data?.data?.text
+
       if (queryText.split(' ')[0] === 'Drilldown:') {
         return true
       }
@@ -524,42 +510,42 @@ export default class OptionsToolbar extends React.Component {
     }
   }
 
-  renderSendToSlackModal = () => {
-    if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
-      return (
-        <SendToSlackModal
-          authentication={getAuthentication(this.props.authentication)}
-          isVisible={this.state.activeMenu === 'slack'}
-          responseRef={this.props.responseRef}
-          onErrorCallback={this.props.onErrorCallback}
-          onClose={() => {
-            this.setState({ activeMenu: undefined })
-          }}
-        />
-      )
-    }
-    return null
-  }
+  // renderSendToSlackModal = () => {
+  //   if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
+  //     return (
+  //       <SendToSlackModal
+  //         authentication={getAuthentication(this.props.authentication)}
+  //         isVisible={this.state.activeMenu === 'slack'}
+  //         responseRef={this.props.responseRef}
+  //         onErrorCallback={this.props.onErrorCallback}
+  //         onClose={() => {
+  //           this.setState({ activeMenu: undefined })
+  //         }}
+  //       />
+  //     )
+  //   }
+  //   return null
+  // }
 
-  renderSendToTeamsModal = () => {
-    if (getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing) {
-      return (
-        <SendToTeamsModal
-          authentication={getAuthentication(this.props.authentication)}
-          isVisible={this.state.activeMenu === 'teams'}
-          responseRef={this.props.responseRef}
-          onErrorCallback={this.props.onErrorCallback}
-          onClose={() => {
-            this.setState({ activeMenu: undefined })
-          }}
-        />
-      )
-    }
-    return null
-  }
+  // renderSendToTeamsModal = () => {
+  //   if (getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing) {
+  //     return (
+  //       <SendToTeamsModal
+  //         authentication={getAuthentication(this.props.authentication)}
+  //         isVisible={this.state.activeMenu === 'teams'}
+  //         responseRef={this.props.responseRef}
+  //         onErrorCallback={this.props.onErrorCallback}
+  //         onClose={() => {
+  //           this.setState({ activeMenu: undefined })
+  //         }}
+  //       />
+  //     )
+  //   }
+  //   return null
+  // }
 
   renderSQLModal = () => {
-    const sql = _get(this.props.responseRef, 'queryResponse.data.data.sql[0]')
+    const sql = this.props.responseRef?.queryResponse?.data?.data?.sql?.[0]
     if (!sql) {
       return null
     }
@@ -722,11 +708,11 @@ export default class OptionsToolbar extends React.Component {
       const displayType = this.props.responseRef?.state?.displayType
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
-      const response = _get(this.props.responseRef, 'queryResponse')
-      const isDataResponse = _get(response, 'data.data.display_type') === 'data'
+      const response = this.props.responseRef?.queryResponse
+      const isDataResponse = response?.data?.data?.display_type === 'data'
       const allColumnsHidden = areAllColumnsHidden(response)
       const someColumnsHidden = areSomeColumnsHidden(response)
-      const numRows = _get(response, 'data.data.rows.length')
+      const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
       const hasMoreThanOneRow = numRows > 1
       const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
@@ -746,8 +732,7 @@ export default class OptionsToolbar extends React.Component {
           isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: this.props.enableDeleteBtn,
         showReportProblemButton:
-          autoQLConfig.enableReportProblem &&
-          !!_get(response, 'data.data.query_id'),
+          autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           isDataResponse &&
           autoQLConfig.enableNotifications &&
