@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
@@ -28,7 +27,6 @@ import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
