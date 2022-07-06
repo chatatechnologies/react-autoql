@@ -1409,6 +1409,8 @@ export default class QueryOutput extends React.Component {
         newCol.hozAlign = 'center'
       }
 
+      newCol.cssClass = newCol.type
+
       // Cell formattingg
       newCol.formatter = (cell, formatterParams, onRendered) => {
         return formatElement({
@@ -1847,6 +1849,9 @@ export default class QueryOutput extends React.Component {
       )
     }
 
+    const useInfiniteScroll =
+      this.props.enableAjaxTableData && this.isDataLimited()
+
     return (
       <ChataTable
         authentication={this.props.authentication}
@@ -1860,7 +1865,7 @@ export default class QueryOutput extends React.Component {
         headerFilters={this.headerFilters}
         onFilterCallback={this.onTableFilter}
         isResizing={this.props.isResizing}
-        useInfiniteScroll={this.props.enableAjaxTableData}
+        useInfiniteScroll={useInfiniteScroll}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         supportsDrilldowns={
           isAggregation(this.tableColumns) && this.tableColumns.length === 2
@@ -1970,9 +1975,14 @@ export default class QueryOutput extends React.Component {
     return this.renderMessage()
   }
 
-  renderDataLimitWarning = () => {
+  isDataLimited = () => {
     const numRows = this.queryResponse?.data?.data?.rows?.length
     const maxRowLimit = this.queryResponse?.data?.data?.row_limit
+    return maxRowLimit && numRows === maxRowLimit
+  }
+
+  renderDataLimitWarning = () => {
+    const dataLimited = this.isDataLimited()
 
     const isReverseTranslationRendered =
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
@@ -1980,7 +1990,7 @@ export default class QueryOutput extends React.Component {
 
     const isTableAndAjax =
       this.props.enableAjaxTableData && this.props.displayType === 'table'
-    if (maxRowLimit && numRows === maxRowLimit && !isTableAndAjax) {
+    if (dataLimited && !isTableAndAjax) {
       return (
         <div className="dashboard-data-limit-warning-icon">
           <Icon

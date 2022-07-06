@@ -297,7 +297,8 @@ export default class ChataTable extends React.Component {
           className={`react-autoql-table-container 
           ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
           ${this.state.isFilteringTable ? ' filtering' : ''}
-          ${this.props.isResizing ? ' resizing' : ''}`}
+          ${this.props.isResizing ? ' resizing' : ''}
+          ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}`}
           style={{
             ...this.props.style,
             flexBasis: height,
