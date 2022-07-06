@@ -612,13 +612,17 @@ class Dashboard extends React.Component {
         displayType = tile.displayType
         dataConfig = tile.dataConfig
       }
+
+      const renderTopHalf =
+        this.state.isDrilldownChartHidden || !this.shouldShowOriginalQuery(tile)
+
       return (
         <Modal
           themeConfig={this.props.themeConfig}
           className="dashboard-drilldown-modal"
-          contentClassName={`dashboard-drilldown-modal-content ${
-            this.state.isDrilldownChartHidden ? 'chart-hidden' : ''
-          }`}
+          contentClassName={`dashboard-drilldown-modal-content
+            ${this.state.isDrilldownChartHidden ? 'chart-hidden' : ''}
+            ${!this.shouldShowOriginalQuery(tile) ? 'top-hidden' : ''}`}
           title={title}
           isVisible={this.state.isDrilldownModalVisible}
           width="90vw"
@@ -635,49 +639,55 @@ class Dashboard extends React.Component {
         >
           {this.state.isDrilldownModalVisible && (
             <Fragment>
-              {tile && this.shouldShowOriginalQuery(tile) && (
+              {tile && (
                 <SplitterLayout
                   vertical={true}
                   percentage={true}
                   secondaryInitialSize={50}
-                  primaryMinSize={this.state.isDrilldownChartHidden ? 0 : 35}
+                  primaryMinSize={renderTopHalf ? 0 : 35}
                   onDragEnd={() => {
                     this.setState({})
                   }}
                 >
                   <div className="react-autoql-dashboard-drilldown-original">
-                    <QueryOutput
-                      key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
-                      authentication={this.props.authentication}
-                      autoQLConfig={this.props.autoQLConfig}
-                      themeConfig={this.props.themeConfig}
-                      dataFormatting={getDataFormatting(
-                        this.props.dataFormatting
-                      )}
-                      queryResponse={_cloneDeep(queryResponse)}
-                      displayType={displayType}
-                      tableConfigs={_cloneDeep(dataConfig)}
-                      onUpdate={this.rebuildTooltips}
-                      isAnimatingContainer={this.state.isAnimatingModal}
-                      autoChartAggregations={this.props.autoChartAggregations}
-                      onDrilldownStart={(activeKey) =>
-                        this.onDrilldownStart({
-                          tileId: tile.i,
-                          activeKey,
-                          isSecondHalf: this.state.isDrilldownSecondHalf,
-                        })
-                      }
-                      onDrilldownEnd={this.onDrilldownEnd}
-                      activeChartElementKey={
-                        this.state.activeDrilldownChartElementKey
-                      }
-                      backgroundColor={document.documentElement.style.getPropertyValue(
-                        '--react-autoql-background-color-primary'
-                      )}
-                      enableAjaxTableData={this.props.enableAjaxTableData}
-                      reportProblemCallback={this.reportProblemCallback}
-                    />
-                    {this.renderChartCollapseBtn('bottom')}
+                    {this.shouldShowOriginalQuery(tile) && (
+                      <>
+                        <QueryOutput
+                          key={`dashboard-drilldown-chart-${this.state.activeDrilldownTile}`}
+                          authentication={this.props.authentication}
+                          autoQLConfig={this.props.autoQLConfig}
+                          themeConfig={this.props.themeConfig}
+                          dataFormatting={getDataFormatting(
+                            this.props.dataFormatting
+                          )}
+                          queryResponse={_cloneDeep(queryResponse)}
+                          displayType={displayType}
+                          tableConfigs={_cloneDeep(dataConfig)}
+                          onUpdate={this.rebuildTooltips}
+                          isAnimatingContainer={this.state.isAnimatingModal}
+                          autoChartAggregations={
+                            this.props.autoChartAggregations
+                          }
+                          onDrilldownStart={(activeKey) =>
+                            this.onDrilldownStart({
+                              tileId: tile.i,
+                              activeKey,
+                              isSecondHalf: this.state.isDrilldownSecondHalf,
+                            })
+                          }
+                          onDrilldownEnd={this.onDrilldownEnd}
+                          activeChartElementKey={
+                            this.state.activeDrilldownChartElementKey
+                          }
+                          backgroundColor={document.documentElement.style.getPropertyValue(
+                            '--react-autoql-background-color-primary'
+                          )}
+                          enableAjaxTableData={this.props.enableAjaxTableData}
+                          reportProblemCallback={this.reportProblemCallback}
+                        />
+                        {this.renderChartCollapseBtn('bottom')}
+                      </>
+                    )}
                   </div>
                   {this.renderDrilldownTable()}
                 </SplitterLayout>
