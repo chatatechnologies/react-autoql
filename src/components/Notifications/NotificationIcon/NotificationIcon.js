@@ -142,7 +142,7 @@ export default class NotificationIcon extends React.Component {
             }
             this.FAILED_POLL_ATTEMPTS += 1
           })
-      }, 3000)
+      }, 90 * 1000)
     }
   }
 
