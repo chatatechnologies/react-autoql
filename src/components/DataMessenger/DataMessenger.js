@@ -138,6 +138,7 @@ export default class DataMessenger extends React.Component {
     enableAjaxTableData: PropTypes.bool,
 
     // Callbacks
+    onNotificationExpandCallback: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
@@ -180,6 +181,7 @@ export default class DataMessenger extends React.Component {
     enableDPRTab: false,
 
     // Callbacks
+    onNotificationExpandCallback: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -527,6 +529,7 @@ export default class DataMessenger extends React.Component {
                           }
                         }}
                         onErrorCallback={this.props.onErrorCallback}
+                        pausePolling={!this.dmRef?.state?.open}
                       />
                     </div>
                   </div>
@@ -782,7 +785,6 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
-          rebuildTooltips={this.rebuildTooltips}
         />
       </ErrorBoundary>
     )
