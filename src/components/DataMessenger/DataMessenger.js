@@ -49,7 +49,6 @@ export default class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
-    this.csvProgressLog = {}
     this.minWidth = 400
     this.minHeight = 400
 
@@ -754,15 +753,6 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  onCSVDownloadProgress = ({ id, progress }) => {
-    this.csvProgressLog[id] = progress
-    if (this.messageRefs[id]) {
-      this.messageRefs[id].setState({
-        csvDownloadProgress: progress,
-      })
-    }
-  }
-
   renderDataMessengerContent = () => {
     return (
       <ErrorBoundary>
@@ -781,7 +771,6 @@ export default class DataMessenger extends React.Component {
           queryFilters={this.state.sessionFilters}
           isDataMessengerOpen={!!this.dmRef?.state?.open}
           introMessages={this.dataMessengerIntroMessages}
-          csvProgressLog={this.csvProgressLog}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
