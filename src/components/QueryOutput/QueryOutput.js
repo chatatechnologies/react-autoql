@@ -603,15 +603,18 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  generateTableData = (columns) => {
-    this.tableID = uuid()
-    this.tableColumns = this.formatColumnsForTable(columns)
+  generateTableData = (columns, newTableData) => {
+    if (newTableData) {
+      this.tableData = newTableData
+    } else {
+      this.tableID = uuid()
+      this.tableColumns = this.formatColumnsForTable(columns)
+      this.tableData = this.sortTableDataByDate(
+        this.queryResponse?.data?.data?.rows
+      )
 
-    this.tableData = this.sortTableDataByDate(
-      this.queryResponse?.data?.data?.rows
-    )
-
-    this.setTableConfig()
+      this.setTableConfig()
+    }
   }
 
   generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
@@ -645,7 +648,7 @@ export default class QueryOutput extends React.Component {
                     this.setState({ selectedSuggestion: e.target.value })
                     this.onSuggestionClick({
                       query: e.target.value,
-                      source: 'suggestion',
+                      source: ['suggestion'],
                       queryId,
                     })
                   }
@@ -670,7 +673,7 @@ export default class QueryOutput extends React.Component {
                         this.onSuggestionClick({
                           query: suggestion,
                           isButtonClick: true,
-                          source: 'suggestion',
+                          source: ['suggestion'],
                           queryId,
                         })
                       }
@@ -795,9 +798,7 @@ export default class QueryOutput extends React.Component {
           this.props.onDrilldownStart(activeKey)
           try {
             const response = await runDrilldown({
-              ...getAuthentication(
-                getAuthentication(this.props.authentication)
-              ),
+              ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
               queryID: this.queryID,
               groupBys,
@@ -896,6 +897,18 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  onNewPage = (rows) => {
+    try {
+      this.tableData = [...this.tableData, ...rows]
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  onNewData = (rows) => {
+    this.tableData = rows
+  }
+
   onTableFilter = async (filters, rows) => {
     if (this.props.displayType === 'table') {
       this.headerFilters = filters
@@ -904,6 +917,8 @@ export default class QueryOutput extends React.Component {
       rows.forEach((row) => {
         newTableData.push(row.getData())
       })
+
+      this.setState({ visibleRows: newTableData })
 
       const numRows = newTableData.length
       const prevRows =
@@ -916,7 +931,6 @@ export default class QueryOutput extends React.Component {
         //   getSupportedDisplayTypes({
         //     response: this.queryResponse,
         //     dataLength: this.tableData?.length,
-        //     pivotDataLength: this.pivotTableData?.length,
         //   })
         // )
 
@@ -1796,6 +1810,16 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  isDrilldown = () => {
+    try {
+      const queryText = this.queryResponse?.data?.data?.text || ''
+      const isDrilldown = queryText.split(':')[0] === 'Drilldown'
+      return isDrilldown
+    } catch (error) {
+      return false
+    }
+  }
+
   renderAllColumnsHiddenMessage = () => {
     return (
       <div
@@ -1852,6 +1876,12 @@ export default class QueryOutput extends React.Component {
     const useInfiniteScroll =
       this.props.enableAjaxTableData && this.isDataLimited()
 
+    // const queryFunction = () => () => {
+    //   if (this.isDrilldown()) {
+    //     return runDrilldown()
+    //   }
+    // }
+
     return (
       <ChataTable
         authentication={this.props.authentication}
@@ -1864,9 +1894,18 @@ export default class QueryOutput extends React.Component {
         queryID={this.queryID}
         headerFilters={this.headerFilters}
         onFilterCallback={this.onTableFilter}
+        onNewPage={this.onNewPage}
+        onNewData={this.onNewData}
         isResizing={this.props.isResizing}
-        useInfiniteScroll={useInfiniteScroll}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
+        useInfiniteScroll={useInfiniteScroll}
+        queryRequestData={{
+          // this.queryResponse?.data?.data?.original_request
+          query: this.queryResponse?.data?.data?.text,
+          session_filter_locks: this.queryResponse?.data?.data
+            ?.session_locked_conditions,
+          source: this.props.source,
+        }}
         supportsDrilldowns={
           isAggregation(this.tableColumns) && this.tableColumns.length === 2
         }
@@ -1905,7 +1944,11 @@ export default class QueryOutput extends React.Component {
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
           {...tableConfig}
-          data={usePivotData ? this.pivotTableData : this.tableData}
+          data={
+            usePivotData
+              ? this.pivotTableData
+              : this.state.visibleRows || this.tableData
+          }
           columns={usePivotData ? this.pivotTableColumns : this.tableColumns}
           isPivot={usePivotData}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
@@ -1978,6 +2021,7 @@ export default class QueryOutput extends React.Component {
   isDataLimited = () => {
     const numRows = this.queryResponse?.data?.data?.rows?.length
     const maxRowLimit = this.queryResponse?.data?.data?.row_limit
+
     return maxRowLimit && numRows === maxRowLimit
   }
 
@@ -1995,7 +2039,7 @@ export default class QueryOutput extends React.Component {
         <div className="dashboard-data-limit-warning-icon">
           <Icon
             type="warning"
-            data-tip={`The display limit of ${numRows} rows has been reached.<br />
+            data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
             Try querying a smaller time-frame to ensure<br />
             all your data is displayed.`}
             data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
@@ -2119,7 +2163,7 @@ export default class QueryOutput extends React.Component {
               userSelection,
               isButtonClick: true,
               skipQueryValidation: true,
-              source: 'validation',
+              source: ['validation'],
             })
           }
           onQueryValidationSelectOption={

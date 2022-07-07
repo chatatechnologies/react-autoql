@@ -53,7 +53,7 @@ export default class TopicsCascader extends React.Component {
               onFinalOptionClick={(option) => {
                 this.props.onTopicClick({
                   query: option.label,
-                  source: 'welcome_prompt',
+                  source: ['welcome_prompt'],
                 })
               }}
               showSeeMoreButton={this.props.enableExploreQueriesTab}

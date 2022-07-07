@@ -3,6 +3,34 @@
   max-width: 100%;
   width: 100%;
   background-color: inherit;
+  position: relative;
+
+  &.infinite:not(.last-page) .tabulator-row:last-child {
+    margin-bottom: 40px;
+  }
+
+  .table-loader {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    background-color: transparent;
+    color: var(--react-autoql-accent-color);
+
+    &.table-page-loader {
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+    }
+
+    &.table-scroll-loader {
+      bottom: 20px;
+      width: 100%;
+      z-index: 0;
+    }
+  }
 }
 
 .react-autoql-table {
@@ -46,6 +74,8 @@
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--react-autoql-border-color);
+  background-color: var(--react-autoql-background-color-primary);
+  z-index: 1;
 }
 .tabulator-cell:not(:first-child) {
   border-left: 1px solid !important;

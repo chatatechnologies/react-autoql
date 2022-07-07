@@ -66,7 +66,6 @@ class DashboardTile extends React.Component {
       isBottomExecuting: false,
       suggestions: [],
       isSecondQueryInputOpen: false,
-      currentSource: 'user',
       supportedDisplayTypes,
       secondSupportedDisplayTypes,
     }
@@ -247,7 +246,13 @@ class DashboardTile extends React.Component {
     )
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source }) => {
+  processQuery = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    pageSize,
+  }) => {
     if (this.isQueryValid(query)) {
       const finalSource = ['dashboards']
       if (source) {
@@ -265,6 +270,7 @@ class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         source: finalSource,
+        pageSize,
         skipQueryValidation: skipQueryValidation,
       })
         .then((response) => {

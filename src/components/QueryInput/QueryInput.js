@@ -190,6 +190,7 @@ export default class QueryInput extends React.Component {
     userSelection,
     skipQueryValidation,
     source,
+    pageSize,
   } = {}) => {
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
@@ -230,6 +231,7 @@ export default class QueryInput extends React.Component {
           source: newSource,
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
+          pageSize,
         })
           .then((response) => this.onResponse(response, query))
           .catch((error) => console.error(error))
@@ -241,6 +243,7 @@ export default class QueryInput extends React.Component {
           source: newSource,
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
+          pageSize,
         })
           .then((response) => this.onResponse(response, query))
           .catch((error) => {

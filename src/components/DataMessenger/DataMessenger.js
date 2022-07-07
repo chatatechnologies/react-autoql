@@ -415,20 +415,6 @@ export default class DataMessenger extends React.Component {
     this.dataMessengerContentRef?.animateInputTextAndSubmit(...params)
   }
 
-  getAppliedFilters = (response) => {
-    try {
-      let persistedFilters = response?.data?.data?.persistent_locked_conditions
-      let sessionFilters = response?.data?.data?.session_locked_conditions
-
-      if (!Array.isArray(persistedFilters)) persistedFilters = []
-      if (!Array.isArray(sessionFilters)) sessionFilters = []
-
-      return [...persistedFilters, ...sessionFilters]
-    } catch (error) {
-      return []
-    }
-  }
-
   handleClearQueriesDropdown = () => {
     if (!this.clearQueriesDropdown) {
       return
@@ -829,7 +815,7 @@ export default class DataMessenger extends React.Component {
           this.executeQueryTimeout = setTimeout(() => {
             this.dataMessengerContentRef?.animateInputTextAndSubmit({
               query,
-              source: 'explore_queries',
+              source: ['explore_queries'],
             })
           }, 500)
         }}

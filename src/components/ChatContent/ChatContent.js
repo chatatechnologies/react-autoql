@@ -388,6 +388,7 @@ export default class ChatContent extends React.Component {
                 disableMaxHeight={this.props.disableMaxMessageHeight}
                 enableAjaxTableData={this.props.enableAjaxTableData}
                 rebuildTooltips={this.props.rebuildTooltips}
+                source={this.props.source}
               />
             )
           })}
