@@ -82,7 +82,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll
         ? 'scroll'
         : undefined
-      this.tableOptions.ajaxProgressiveLoadScrollMargin = 1500 // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
+      this.tableOptions.ajaxProgressiveLoadScrollMargin = 800 // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxSorting = true
       this.tableOptions.ajaxFiltering = true
@@ -123,15 +123,16 @@ export default class ChataTable extends React.Component {
               queryId: this.queryID,
             })
             this.props.onNewPage(response?.rows)
+          } else if (!props.queryRequestData) {
+            console.warn(
+              'Original request data was not provided to ChataTable, unable to filter or sort table'
+            )
           } else {
             this.setState({ pageLoading: true })
+
             const responseWrapper = await runQueryOnly({
               ...getAuthentication(props.authentication),
               ...props.queryRequestData,
-              // text: this.props.queryText,
-              // source: [...this.props.source, 'table-sort-filter'],
-              // user_selection: [],
-              // session_filter_locks: this.props.sessionFilters,
               pageSize: props.pageSize,
               orders: tableConfigState?.sorters,
               tableFilters: tableConfigState?.filters,
