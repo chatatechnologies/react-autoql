@@ -66,7 +66,6 @@ class DashboardTile extends React.Component {
       isBottomExecuting: false,
       suggestions: [],
       isSecondQueryInputOpen: false,
-      currentSource: 'user',
       supportedDisplayTypes,
       secondSupportedDisplayTypes,
     }
@@ -82,6 +81,7 @@ class DashboardTile extends React.Component {
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
+    dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
     notExecutedText: PropTypes.string,
     onErrorCallback: PropTypes.func,
@@ -103,6 +103,7 @@ class DashboardTile extends React.Component {
     query: '',
     title: '',
     displayType: 'table',
+    dataPageSize: undefined,
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
@@ -265,6 +266,7 @@ class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         source: finalSource,
+        pageSize: this.props.dataPageSize,
         skipQueryValidation: skipQueryValidation,
       })
         .then((response) => {
@@ -275,7 +277,13 @@ class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  processTileTop = ({ query, userSelection, skipQueryValidation, source }) => {
+  processTileTop = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    pageSize,
+  }) => {
     this.setState({ isTopExecuting: true, customMessage: undefined })
 
     const skipValidation =
@@ -306,6 +314,7 @@ class DashboardTile extends React.Component {
       userSelection: queryValidationSelections,
       skipQueryValidation: skipQueryValidation,
       source,
+      pageSize,
     })
       .then((response) => {
         if (this._isMounted) this.endTopQuery({ response })

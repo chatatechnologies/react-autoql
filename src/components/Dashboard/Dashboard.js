@@ -64,6 +64,7 @@ class Dashboard extends React.Component {
   debounceTime = 50
   onChangeTiles = null
   callbackSubsciptions = []
+  DEFAULT_AJAX_PAGE_SIZE = 50
 
   static propTypes = {
     // Global
@@ -74,6 +75,7 @@ class Dashboard extends React.Component {
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
+    dataPageSize: PropTypes.number,
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
@@ -98,6 +100,7 @@ class Dashboard extends React.Component {
 
     tiles: [],
     executeOnMount: true,
+    dataPageSize: undefined,
     executeOnStopEditing: true,
     isEditing: false,
     isEditable: true,
@@ -757,6 +760,11 @@ class Dashboard extends React.Component {
       }
     })
 
+    let dataPageSize = this.props.dataPageSize
+    if (this.props.enableAjaxTableData && !dataPageSize) {
+      dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
+    }
+
     return (
       <ReactGridLayout
         onLayoutChange={(layout) => {
@@ -808,6 +816,7 @@ class Dashboard extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
+            dataPageSize={dataPageSize}
           />
         ))}
       </ReactGridLayout>

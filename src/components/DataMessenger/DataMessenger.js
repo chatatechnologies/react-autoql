@@ -55,6 +55,7 @@ export default class DataMessenger extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
+    this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     setCSSVars(props.themeConfig)
 
@@ -128,6 +129,7 @@ export default class DataMessenger extends React.Component {
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
+    dataPageSize: PropTypes.number,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -170,6 +172,7 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
+    dataPageSize: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -413,20 +416,6 @@ export default class DataMessenger extends React.Component {
 
   onTopicClick = (...params) => {
     this.dataMessengerContentRef?.animateInputTextAndSubmit(...params)
-  }
-
-  getAppliedFilters = (response) => {
-    try {
-      let persistedFilters = response?.data?.data?.persistent_locked_conditions
-      let sessionFilters = response?.data?.data?.session_locked_conditions
-
-      if (!Array.isArray(persistedFilters)) persistedFilters = []
-      if (!Array.isArray(sessionFilters)) sessionFilters = []
-
-      return [...persistedFilters, ...sessionFilters]
-    } catch (error) {
-      return []
-    }
   }
 
   handleClearQueriesDropdown = () => {
@@ -754,6 +743,11 @@ export default class DataMessenger extends React.Component {
   }
 
   renderDataMessengerContent = () => {
+    let dataPageSize = this.props.dataPageSize
+    if (this.props.enableAjaxTableData && !dataPageSize) {
+      dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
+    }
+
     return (
       <ErrorBoundary>
         <ChatContent
@@ -774,6 +768,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          dataPageSize={dataPageSize}
         />
       </ErrorBoundary>
     )
@@ -829,7 +824,7 @@ export default class DataMessenger extends React.Component {
           this.executeQueryTimeout = setTimeout(() => {
             this.dataMessengerContentRef?.animateInputTextAndSubmit({
               query,
-              source: 'explore_queries',
+              source: ['explore_queries'],
             })
           }, 500)
         }}

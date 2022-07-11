@@ -56,6 +56,7 @@ export default class ChatContent extends React.Component {
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
+    dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
   }
@@ -65,6 +66,7 @@ export default class ChatContent extends React.Component {
     enableAjaxTableData: false,
     isDataMessengerOpen: true,
     isResizing: false,
+    dataPageSize: undefined,
     onRTValueLabelClick: () => {},
   }
 
@@ -388,6 +390,7 @@ export default class ChatContent extends React.Component {
                 disableMaxHeight={this.props.disableMaxMessageHeight}
                 enableAjaxTableData={this.props.enableAjaxTableData}
                 rebuildTooltips={this.props.rebuildTooltips}
+                source={this.props.source}
               />
             )
           })}
@@ -421,6 +424,7 @@ export default class ChatContent extends React.Component {
             source={this.props.source}
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
+            dataPageSize={this.props.dataPageSize}
           />
         </div>
       </ErrorBoundary>

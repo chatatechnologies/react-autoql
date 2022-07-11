@@ -77,6 +77,7 @@ export default class QueryInput extends React.Component {
     placeholder: PropTypes.string.isRequired,
     clearQueryOnSubmit: PropTypes.bool,
     sessionId: PropTypes.string,
+    dataPageSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -95,6 +96,7 @@ export default class QueryInput extends React.Component {
     source: [],
     queryFilters: undefined,
     clearQueryOnSubmit: true,
+    dataPageSize: undefined,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
@@ -211,6 +213,7 @@ export default class QueryInput extends React.Component {
 
     const query = queryText || this.state.inputValue
     const newSource = [...this.props.source, source || 'user']
+    const pageSize = this.props.dataPageSize
 
     if (query.trim()) {
       this.props.onSubmit(query)
@@ -230,6 +233,7 @@ export default class QueryInput extends React.Component {
           source: newSource,
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
+          pageSize,
         })
           .then((response) => this.onResponse(response, query))
           .catch((error) => console.error(error))
@@ -241,6 +245,7 @@ export default class QueryInput extends React.Component {
           source: newSource,
           AutoAEId: this.props.AutoAEId,
           filters: this.props.queryFilters,
+          pageSize,
         })
           .then((response) => this.onResponse(response, query))
           .catch((error) => {
