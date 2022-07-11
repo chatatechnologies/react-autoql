@@ -55,6 +55,7 @@ export default class DataMessenger extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
+    this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     setCSSVars(props.themeConfig)
 
@@ -742,6 +743,11 @@ export default class DataMessenger extends React.Component {
   }
 
   renderDataMessengerContent = () => {
+    let dataPageSize = this.props.dataPageSize
+    if (this.props.enableAjaxTableData && !dataPageSize) {
+      dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
+    }
+
     return (
       <ErrorBoundary>
         <ChatContent
@@ -762,7 +768,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
-          dataPageSize={this.props.dataPageSize}
+          dataPageSize={dataPageSize}
         />
       </ErrorBoundary>
     )
