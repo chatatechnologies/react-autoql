@@ -250,9 +250,9 @@ class DashboardTile extends React.Component {
 
   processQuery = ({ query, userSelection, skipQueryValidation, source }) => {
     if (this.isQueryValid(query)) {
-      const finalSource = ['dashboards']
-      if (source) {
-        finalSource.push(source)
+      let finalSource = ['dashboards']
+      if (source?.length) {
+        finalSource = [...finalSource, ...source]
       } else {
         finalSource.push('user')
       }

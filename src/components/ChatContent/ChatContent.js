@@ -59,6 +59,7 @@ export default class ChatContent extends React.Component {
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
+    source: PropTypes.arrayOf(PropTypes.string),
   }
 
   static defaultProps = {
@@ -67,6 +68,7 @@ export default class ChatContent extends React.Component {
     isDataMessengerOpen: true,
     isResizing: false,
     dataPageSize: undefined,
+    source: [],
     onRTValueLabelClick: () => {},
   }
 
@@ -249,12 +251,12 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  onInputSubmit = (text) => {
-    this.addRequestMessage(text)
+  onInputSubmit = (query) => {
+    this.addRequestMessage(query)
     this.setState({ isChataThinking: true })
   }
 
-  onResponse = (response, query) => {
+  onResponse = (response, query, queryRequestData) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
@@ -276,7 +278,7 @@ export default class ChatContent extends React.Component {
           ),
         })
       } else {
-        this.addResponseMessage({ response, query })
+        this.addResponseMessage({ response, query, queryRequestData })
       }
 
       this.setState({ isChataThinking: false })
@@ -374,7 +376,6 @@ export default class ChatContent extends React.Component {
                 scrollToBottom={this.scrollToBottom}
                 dataFormatting={this.props.dataFormatting}
                 displayType={message.displayType}
-                onResponseCallback={this.onResponse}
                 response={message.response}
                 type={message.type}
                 onErrorCallback={this.props.onErrorCallback}
@@ -390,6 +391,7 @@ export default class ChatContent extends React.Component {
                 disableMaxHeight={this.props.disableMaxMessageHeight}
                 enableAjaxTableData={this.props.enableAjaxTableData}
                 rebuildTooltips={this.props.rebuildTooltips}
+                queryRequestData={message.queryRequestData}
                 source={this.props.source}
               />
             )

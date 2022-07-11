@@ -94,11 +94,11 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
-    onResponseCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    source: PropTypes.arrayOf(PropTypes.string),
   }
 
   static defaultProps = {
@@ -110,6 +110,7 @@ export default class ChatMessage extends React.Component {
     enableAjaxTableData: false,
     isDataMessengerOpen: false,
     isIntroMessage: false,
+    source: [],
     displayType: undefined,
     response: undefined,
     content: undefined,
@@ -125,7 +126,6 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
-    onResponseCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onRTValueLabelClick: () => {},
@@ -292,6 +292,7 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           optionsToolbarRef={this.optionsToolbarRef}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          queryRequestData={this.props.queryRequestData}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
           onRecommendedDisplayType={this.switchView}
@@ -361,7 +362,6 @@ export default class ChatMessage extends React.Component {
             }
             rebuildTooltips={this.props.rebuildTooltips}
             onFilterClick={this.toggleTableFilter}
-            onResponseCallback={this.props.onResponseCallback}
           />
         ) : null}
       </div>
