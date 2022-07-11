@@ -151,7 +151,7 @@ export const runQueryOnly = (params = {}) => {
     session_filter_locks: filters,
     orders,
     filters: tableFilters,
-    page_size: 50,
+    page_size: pageSize,
   }
 
   if (!query || !query.trim()) {

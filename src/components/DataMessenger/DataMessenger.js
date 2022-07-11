@@ -128,6 +128,7 @@ export default class DataMessenger extends React.Component {
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
+    dataPageSize: PropTypes.number,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -170,6 +171,7 @@ export default class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
+    dataPageSize: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -760,6 +762,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          dataPageSize={this.props.dataPageSize}
         />
       </ErrorBoundary>
     )

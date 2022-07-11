@@ -74,6 +74,7 @@ class Dashboard extends React.Component {
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
+    dataPageSize: PropTypes.number,
     executeOnStopEditing: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
@@ -98,6 +99,7 @@ class Dashboard extends React.Component {
 
     tiles: [],
     executeOnMount: true,
+    dataPageSize: undefined,
     executeOnStopEditing: true,
     isEditing: false,
     isEditable: true,
@@ -808,6 +810,7 @@ class Dashboard extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
+            dataPageSize={this.props.dataPageSize}
           />
         ))}
       </ReactGridLayout>
