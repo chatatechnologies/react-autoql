@@ -496,7 +496,6 @@ export const areAllColumnsHidden = (response) => {
 
 export const getSupportedDisplayTypes = ({
   response,
-  shouldExcludePieChart,
   dataLength,
   pivotDataLength,
 } = {}) => {
@@ -528,15 +527,16 @@ export const getSupportedDisplayTypes = ({
 
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
+    const isPivotTableEmpty = pivotDataLength === 0
     if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
 
-      if (rows.length < 1000) {
+      if (numRows < 1000) {
         supportedDisplayTypes.push('pivot_table')
       }
 
-      if (rows.length < 1000 && pivotDataLength !== 0) {
+      if (numRows < 1000 && !isPivotTableEmpty) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -559,7 +559,7 @@ export const getSupportedDisplayTypes = ({
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (numRows <= 10 && !shouldExcludePieChart) {
+      if (numRows <= 10) {
         supportedDisplayTypes.push('pie')
       }
 

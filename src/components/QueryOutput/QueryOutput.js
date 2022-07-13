@@ -91,9 +91,7 @@ export default class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = _cloneDeep(props.queryResponse)
-    this.supportedDisplayTypes = getSupportedDisplayTypes({
-      response: this.queryResponse,
-    })
+    this.supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
     this.tableID = uuid()
@@ -326,22 +324,12 @@ export default class QueryOutput extends React.Component {
           })
         }
 
-        this.setSupportedDisplayTypes(
-          getSupportedDisplayTypes({
-            response: this.queryResponse,
-            dataLength: this.state.visibleRows?.length,
-          })
-        )
+        this.setSupportedDisplayTypes(this.getCurrentSupportedDisplayTypes())
       } else if (
         this.usePivotDataForChart() &&
         this.state.visiblePivotRows !== prevState.visiblePivotRows
       ) {
-        this.setSupportedDisplayTypes(
-          getSupportedDisplayTypes({
-            response: this.queryResponse,
-            pivotDataLength: this.state.visiblePivotRows?.length,
-          })
-        )
+        this.setSupportedDisplayTypes(this.getCurrentSupportedDisplayTypes())
       }
 
       if (this.props.optionsToolbarRef?._isMounted) {
@@ -454,9 +442,7 @@ export default class QueryOutput extends React.Component {
     }
 
     // Get new supported display types after column change
-    const newSupportedDisplayTypes = getSupportedDisplayTypes({
-      response: this.queryResponse,
-    })
+    const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     this.setSupportedDisplayTypes(newSupportedDisplayTypes, undefined, 'table')
 
@@ -1124,6 +1110,22 @@ export default class QueryOutput extends React.Component {
     })
   }
 
+  getCurrentSupportedDisplayTypes = () => {
+    const dataLength = this.state?.visibleRows
+      ? this.state?.visibleRows?.length
+      : this.tableData?.length
+
+    const pivotDataLength = this.state?.visiblePivotRows
+      ? this.state?.visiblePivotRows?.length
+      : this.pivotTableData?.length
+
+    return getSupportedDisplayTypes({
+      response: this.queryResponse,
+      dataLength,
+      pivotDataLength,
+    })
+  }
+
   setSupportedDisplayTypes = (
     supportedDisplayTypes,
     justMounted,
@@ -1724,9 +1726,7 @@ export default class QueryOutput extends React.Component {
       })
 
       // Pie charts might be available if dataset is small enough
-      const newSupportedDisplayTypes = getSupportedDisplayTypes({
-        response: this.queryResponse,
-      })
+      const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
       if (!_isEqual(newSupportedDisplayTypes, this.supportedDisplayTypes)) {
         this.setSupportedDisplayTypes(newSupportedDisplayTypes)
       }
