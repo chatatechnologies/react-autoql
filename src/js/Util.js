@@ -528,15 +528,17 @@ export const getSupportedDisplayTypes = ({
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
     const isPivotTableEmpty = pivotDataLength === 0
+    const maxRowsForPivot = 1000
+    const maxRowsForPieChart = 10
     if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
 
-      if (numRows < 1000) {
+      if (numRows <= maxRowsForPivot) {
         supportedDisplayTypes.push('pivot_table')
       }
 
-      if (numRows < 1000 && !isPivotTableEmpty) {
+      if (numRows <= maxRowsForPivot && !isPivotTableEmpty) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -547,7 +549,7 @@ export const getSupportedDisplayTypes = ({
           'bubble',
           'heatmap'
         )
-      } else {
+      } else if (numRows > maxRowsForPivot) {
         console.warn(
           'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
         )
@@ -559,7 +561,7 @@ export const getSupportedDisplayTypes = ({
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (numRows <= 10) {
+      if (numRows <= maxRowsForPieChart) {
         supportedDisplayTypes.push('pie')
       }
 
