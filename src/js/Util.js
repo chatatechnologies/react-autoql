@@ -498,6 +498,7 @@ export const getSupportedDisplayTypes = ({
   response,
   shouldExcludePieChart,
   dataLength,
+  pivotDataLength,
 } = {}) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
@@ -530,9 +531,13 @@ export const getSupportedDisplayTypes = ({
     if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
+
       if (rows.length < 1000) {
+        supportedDisplayTypes.push('pivot_table')
+      }
+
+      if (rows.length < 1000 && pivotDataLength !== 0) {
         supportedDisplayTypes.push(
-          'pivot_table',
           'stacked_column',
           'stacked_bar',
           'stacked_line',
