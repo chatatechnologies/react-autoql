@@ -12,8 +12,10 @@ import { themeConfigDefault, getAuthentication } from '../../props/defaults'
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
-import { runSubQuery } from '../../js/queryService'
+import { runQueryOnly, runQueryNewPage } from '../../js/queryService'
 import { getTableConfigState } from './tableHelpers'
+import { Spinner } from '../Spinner'
+import { removeFromDOM } from '../../js/Util'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -26,6 +28,7 @@ export default class ChataTable extends React.Component {
     this.currentPage = 1
     this.filterTagElements = []
     this.headerFilters = []
+    this.queryID = props.queryID
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
@@ -51,11 +54,21 @@ export default class ChataTable extends React.Component {
         }
       },
       dataFiltered: (filters, rows) => {
+        const tableFilters = this.ref?.table?.getHeaderFilters()
+
+        if (this.supportsInfiniteScroll) {
+          props.onFilterCallback(tableFilters, rows)
+          return
+        }
+
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
-        if (this._isMounted && this.ref && !this.firstRender) {
-          const tableFilters = this.ref.table.getHeaderFilters()
-
+        if (
+          !this.supportsInfiniteScroll &&
+          this._isMounted &&
+          this.ref &&
+          !this.firstRender
+        ) {
           if (!_isEqual(tableFilters, this.headerFilters)) {
             this.headerFilters = tableFilters
             props.onFilterCallback(tableFilters, rows)
@@ -69,7 +82,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll
         ? 'scroll'
         : undefined
-      this.tableOptions.ajaxProgressiveLoadScrollMargin = 2000 // Trigger next ajax load when scroll bar is 2000px or less from the bottom of the table.
+      this.tableOptions.ajaxProgressiveLoadScrollMargin = 800 // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxSorting = true
       this.tableOptions.ajaxFiltering = true
@@ -101,13 +114,38 @@ export default class ChataTable extends React.Component {
             return Promise.resolve({ rows: this.props.data, page: 1 })
           }
 
-          const response = await runSubQuery({
-            ...getAuthentication(props.authentication),
-            ...tableConfigState,
-            queryId: props.queryID,
-          })
+          let response
+          if (params?.page > 1) {
+            this.setState({ scrollLoading: true })
+            response = await runQueryNewPage({
+              ...getAuthentication(props.authentication),
+              ...tableConfigState,
+              queryId: this.queryID,
+            })
+            this.props.onNewPage(response?.rows)
+          } else if (!props.queryRequestData) {
+            console.warn(
+              'Original request data was not provided to ChataTable, unable to filter or sort table'
+            )
+          } else {
+            this.setState({ pageLoading: true })
+
+            const responseWrapper = await runQueryOnly({
+              ...getAuthentication(props.authentication),
+              ...props.queryRequestData,
+              pageSize: props.pageSize,
+              orders: tableConfigState?.sorters,
+              tableFilters: tableConfigState?.filters,
+            })
+            this.queryID = responseWrapper?.data?.data?.query_id
+            response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+            this.props.onNewData(response?.rows)
+          }
+
+          this.setState({ scrollLoading: false, pageLoading: false })
           return response
         } catch (error) {
+          this.setState({ scrollLoading: false, pageLoading: false })
           // Send empty promise so data doesn't change
           return Promise.resolve()
         }
@@ -124,6 +162,12 @@ export default class ChataTable extends React.Component {
         const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
         this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
+        if (isLastPage) {
+          this.setState({ isLastPage: true })
+        } else {
+          this.setState({ isLastPage: false })
+        }
+
         let modResponse = {}
         modResponse.data = response.rows
         modResponse.last_page = this.lastPage
@@ -136,6 +180,9 @@ export default class ChataTable extends React.Component {
 
     this.state = {
       isFilteringTable: false,
+      pageLoading: false,
+      scrollLoading: false,
+      isLastPage: false,
     }
   }
 
@@ -151,11 +198,13 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     themeConfig: themeConfigDefault,
+    queryRequestData: {},
     data: undefined,
     columns: undefined,
     isResizing: false,
     pageSize: 0,
     useInfiniteScroll: true,
+    source: [],
     onFilterCallback: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
@@ -286,6 +335,22 @@ export default class ChataTable extends React.Component {
     return `${_get(this.props, 'style.height')}px`
   }
 
+  renderPageLoader = () => {
+    return (
+      <div className="table-loader table-page-loader">
+        <Spinner />
+      </div>
+    )
+  }
+
+  renderScrollLoader = () => {
+    return (
+      <div className="table-loader table-scroll-loader">
+        <Spinner />
+      </div>
+    )
+  }
+
   render = () => {
     const height = this.getTableHeight()
     return (
@@ -296,8 +361,10 @@ export default class ChataTable extends React.Component {
           data-test="react-autoql-table"
           className={`react-autoql-table-container 
           ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
-          ${this.state.isFilteringTable ? ' filtering' : ''}
-          ${this.props.isResizing ? ' resizing' : ''}`}
+          ${this.state.isFilteringTable ? 'filtering' : ''}
+          ${this.props.isResizing ? 'resizing' : ''}
+          ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
+          ${this.state.isLastPage ? 'last-page' : ''}`}
           style={{
             ...this.props.style,
             flexBasis: height,
@@ -320,6 +387,8 @@ export default class ChataTable extends React.Component {
               download
             />
           )}
+          {this.state.pageLoading && this.renderPageLoader()}
+          {this.state.scrollLoading && this.renderScrollLoader()}
         </div>
       </ErrorBoundary>
     )

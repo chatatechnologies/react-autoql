@@ -66,7 +66,6 @@ class DashboardTile extends React.Component {
       isBottomExecuting: false,
       suggestions: [],
       isSecondQueryInputOpen: false,
-      currentSource: 'user',
       supportedDisplayTypes,
       secondSupportedDisplayTypes,
     }
@@ -82,6 +81,7 @@ class DashboardTile extends React.Component {
     isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
     deleteTile: PropTypes.func.isRequired,
+    dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
     notExecutedText: PropTypes.string,
     onErrorCallback: PropTypes.func,
@@ -103,6 +103,7 @@ class DashboardTile extends React.Component {
     query: '',
     title: '',
     displayType: 'table',
+    dataPageSize: undefined,
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
@@ -247,16 +248,22 @@ class DashboardTile extends React.Component {
     )
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source }) => {
+  processQuery = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    isSecondHalf,
+  }) => {
     if (this.isQueryValid(query)) {
-      const finalSource = ['dashboards']
-      if (source) {
-        finalSource.push(source)
+      let finalSource = ['dashboards']
+      if (source?.length) {
+        finalSource = [...finalSource, ...source]
       } else {
         finalSource.push('user')
       }
 
-      return runQuery({
+      const requestData = {
         query,
         userSelection,
         ...getAuthentication(this.props.authentication),
@@ -265,9 +272,17 @@ class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         source: finalSource,
+        pageSize: this.props.dataPageSize,
         skipQueryValidation: skipQueryValidation,
-      })
+      }
+
+      return runQuery(requestData)
         .then((response) => {
+          if (isSecondHalf) {
+            this.bottomRequestData = requestData
+          } else {
+            this.topRequestData = requestData
+          }
           return Promise.resolve(response)
         })
         .catch((error) => Promise.reject(error))
@@ -275,7 +290,13 @@ class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  processTileTop = ({ query, userSelection, skipQueryValidation, source }) => {
+  processTileTop = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    pageSize,
+  }) => {
     this.setState({ isTopExecuting: true, customMessage: undefined })
 
     const skipValidation =
@@ -306,6 +327,8 @@ class DashboardTile extends React.Component {
       userSelection: queryValidationSelections,
       skipQueryValidation: skipQueryValidation,
       source,
+      pageSize,
+      isSecondHalf: false,
     })
       .then((response) => {
         if (this._isMounted) this.endTopQuery({ response })
@@ -358,6 +381,7 @@ class DashboardTile extends React.Component {
       userSelection: queryValidationSelections,
       skipQueryValidation: skipQueryValidation,
       source,
+      isSecondHalf: true,
     })
       .then((response) => {
         if (this._isMounted) this.endBottomQuery({ response })
@@ -1017,10 +1041,10 @@ class DashboardTile extends React.Component {
 
   renderResponseContent = ({
     queryOutputProps,
-    isSecondHalf,
     isExecuting,
     isExecuted,
     renderPlaceholder,
+    isSecondHalf,
   }) => {
     if (renderPlaceholder) {
       return this.renderContentPlaceholder({
@@ -1037,7 +1061,7 @@ class DashboardTile extends React.Component {
     return (
       <>
         {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
-          this.renderSuggestionMessage(customMessage)}
+          this.renderSuggestionMessage(queryOutputProps.customMessage)}
         {!customMessage && (
           <QueryOutput
             authentication={getAuthentication(this.props.authentication)}
@@ -1075,10 +1099,10 @@ class DashboardTile extends React.Component {
       <div className="loading-container-centered" id={queryOutputProps.key}>
         {this.renderResponseContent({
           queryOutputProps,
-          isSecondHalf,
           isExecuting,
           isExecuted,
           renderPlaceholder,
+          isSecondHalf,
         })}
         {this.renderToolbars({
           queryOutputProps,
@@ -1128,6 +1152,8 @@ class DashboardTile extends React.Component {
           this.onDisplayTypeChange(displayType)
         },
         reportProblemCallback: this.reportProblemCallback,
+        customMessage: this.state.customMessage,
+        queryRequestData: this.topRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1155,10 +1181,12 @@ class DashboardTile extends React.Component {
 
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
+    let queryRequestData = this.bottomRequestData
 
     if (isQuerySameAsTop) {
       isExecuting = this.state.isTopExecuting
       isExecuted = this.state.isTopExecuted
+      queryRequestData = this.topRequestData
     }
 
     const renderPlaceholder =
@@ -1201,6 +1229,7 @@ class DashboardTile extends React.Component {
         },
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
+        queryRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

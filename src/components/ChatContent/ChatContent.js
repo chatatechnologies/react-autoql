@@ -30,6 +30,7 @@ export default class ChatContent extends React.Component {
     super(props)
 
     this.messageRefs = {}
+    this.csvProgressLog = {}
 
     this.state = {
       messages: [],
@@ -51,23 +52,23 @@ export default class ChatContent extends React.Component {
     enableFilterLocking: PropTypes.bool.isRequired,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
-    onCSVDownloadProgress: PropTypes.func,
-    csvProgressLog: PropTypes.shape({}),
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
     isDataMessengerOpen: PropTypes.bool,
+    dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
+    source: PropTypes.arrayOf(PropTypes.string),
   }
 
   static defaultProps = {
-    csvProgressLog: {},
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
     isDataMessengerOpen: true,
     isResizing: false,
-    onCSVDownloadProgress: () => {},
+    dataPageSize: undefined,
+    source: [],
     onRTValueLabelClick: () => {},
   }
 
@@ -93,6 +94,15 @@ export default class ChatContent extends React.Component {
   scrollToBottom = () => {
     if (this.messengerScrollComponent) {
       this.messengerScrollComponent.scrollToBottom()
+    }
+  }
+
+  onCSVDownloadProgress = ({ id, progress }) => {
+    this.csvProgressLog[id] = progress
+    if (this.messageRefs[id]) {
+      this.messageRefs[id].setState({
+        csvDownloadProgress: progress,
+      })
     }
   }
 
@@ -125,15 +135,6 @@ export default class ChatContent extends React.Component {
         })
       }
     }, 1000)
-  }
-
-  onCSVDownloadProgress = ({ id, progress }) => {
-    this.props.onCSVDownloadProgress({ id, progress })
-    if (this.messageRefs[id]?._isMounted) {
-      this.messageRefs[id]?.setState({
-        csvDownloadProgress: progress,
-      })
-    }
   }
 
   onDrilldownStart = () => {
@@ -250,12 +251,12 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  onInputSubmit = (text) => {
-    this.addRequestMessage(text)
+  onInputSubmit = (query) => {
+    this.addRequestMessage(query)
     this.setState({ isChataThinking: true })
   }
 
-  onResponse = (response, query) => {
+  onResponse = (response, query, queryRequestData) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
@@ -277,7 +278,7 @@ export default class ChatContent extends React.Component {
           ),
         })
       } else {
-        this.addResponseMessage({ response, query })
+        this.addResponseMessage({ response, query, queryRequestData })
       }
 
       this.setState({ isChataThinking: false })
@@ -358,9 +359,7 @@ export default class ChatContent extends React.Component {
                 autoQLConfig={this.props.autoQLConfig}
                 themeConfig={this.props.themeConfig}
                 isCSVProgressMessage={message.isCSVProgressMessage}
-                initialCSVDownloadProgress={
-                  this.props.csvProgressLog[message.id]
-                }
+                initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                 onCSVDownloadProgress={this.onCSVDownloadProgress}
                 queryId={message.queryId}
                 queryText={message.query}
@@ -377,7 +376,6 @@ export default class ChatContent extends React.Component {
                 scrollToBottom={this.scrollToBottom}
                 dataFormatting={this.props.dataFormatting}
                 displayType={message.displayType}
-                onResponseCallback={this.onResponse}
                 response={message.response}
                 type={message.type}
                 onErrorCallback={this.props.onErrorCallback}
@@ -393,6 +391,8 @@ export default class ChatContent extends React.Component {
                 disableMaxHeight={this.props.disableMaxMessageHeight}
                 enableAjaxTableData={this.props.enableAjaxTableData}
                 rebuildTooltips={this.props.rebuildTooltips}
+                queryRequestData={message.queryRequestData}
+                source={this.props.source}
               />
             )
           })}
@@ -426,6 +426,7 @@ export default class ChatContent extends React.Component {
             source={this.props.source}
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
+            dataPageSize={this.props.dataPageSize}
           />
         </div>
       </ErrorBoundary>
