@@ -318,6 +318,32 @@ export default class QueryOutput extends React.Component {
         disableScroll.off()
       }
 
+      if (this.state.visibleRows !== prevState.visibleRows) {
+        if (this.shouldGeneratePivotData(this.state.visibleRows)) {
+          this.generatePivotData({
+            isFirstGeneration: true,
+            newTableData: this.state.visibleRows,
+          })
+        }
+
+        this.setSupportedDisplayTypes(
+          getSupportedDisplayTypes({
+            response: this.queryResponse,
+            dataLength: this.state.visibleRows?.length,
+          })
+        )
+      } else if (
+        this.usePivotDataForChart() &&
+        this.state.visiblePivotRows !== prevState.visiblePivotRows
+      ) {
+        this.setSupportedDisplayTypes(
+          getSupportedDisplayTypes({
+            response: this.queryResponse,
+            pivotDataLength: this.state.visiblePivotRows?.length,
+          })
+        )
+      }
+
       if (this.props.optionsToolbarRef?._isMounted) {
         this.props.optionsToolbarRef.forceUpdate()
       }
@@ -363,6 +389,10 @@ export default class QueryOutput extends React.Component {
 
   supportsDatePivot = () => {
     return this.supportsPivot() && this.tableColumns.length === 2
+  }
+
+  usePivotDataForChart = () => {
+    return this.supportsPivot() && !this.supportsDatePivot()
   }
 
   onRecommendedDisplayType = (recommendedDisplayType) => {
@@ -910,49 +940,20 @@ export default class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
-    if (this.props.displayType === 'table') {
-      this.headerFilters = filters
-
+    const { displayType } = this.props
+    if (displayType === 'table' || displayType === 'pivot_table') {
       const newTableData = []
       rows.forEach((row) => {
         newTableData.push(row.getData())
       })
 
-      this.setState({ visibleRows: newTableData })
-
-      const numRows = newTableData.length
-      const prevRows =
-        this.prevRows >= 0 ? this.prevRows : this.tableData?.length
-
-      if (numRows !== prevRows) {
-        // We dont use filtered table to chart currently.
-        // We can enable this if we add that feature back
-        // this.setSupportedDisplayTypes(
-        //   getSupportedDisplayTypes({
-        //     response: this.queryResponse,
-        //     dataLength: this.tableData?.length,
-        //   })
-        // )
-
-        if (this.shouldGeneratePivotData(newTableData)) {
-          this.generatePivotData({ isFirstGeneration: true, newTableData })
-        }
-
-        if (this.props.optionsToolbarRef?._isMounted) {
-          this.props.optionsToolbarRef.forceUpdate()
-        }
-
-        this.prevRows = numRows
+      if (displayType === 'table') {
+        this.headerFilters = filters
+        this.setState({ visibleRows: newTableData })
+      } else if (displayType === 'pivot_table') {
+        this.pivotHeaderFilters = filters
+        this.setState({ visiblePivotRows: newTableData })
       }
-    } else if (this.props.displayType === 'pivot_table') {
-      this.pivotHeaderFilters = filters
-
-      const newTableData = []
-      rows.forEach((row) => {
-        newTableData.push(row.getData())
-      })
-
-      this.setState({ visiblePivotRows: newTableData })
     }
   }
 
@@ -1925,7 +1926,7 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const usePivotData = this.supportsPivot() && !this.supportsDatePivot()
+    const usePivotData = this.usePivotDataForChart()
     if (
       usePivotData &&
       (!this.pivotTableData ||
