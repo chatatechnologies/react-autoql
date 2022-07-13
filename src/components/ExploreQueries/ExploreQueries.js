@@ -163,6 +163,28 @@ export default class ExploreQueries extends React.Component {
     )
   }
 
+  renderIntroMessage = () => {
+    return (
+      <div className="query-tips-result-placeholder">
+        <h2>Welcome to Explore Queries</h2>
+        {this.props.introMessage ? (
+          <p>{this.props.introMessage}</p>
+        ) : (
+          <>
+            <p>
+              Discover what you can ask by entering a topic in the search bar
+              above.
+            </p>
+            <p>
+              Simply click on any of the returned options to run the query in
+              Data Messenger.
+            </p>
+          </>
+        )}
+      </div>
+    )
+  }
+
   renderQueryList = () => {
     if (this.state.initialLoading) {
       return (
@@ -187,19 +209,7 @@ export default class ExploreQueries extends React.Component {
     }
 
     if (!this.state.queryList) {
-      return (
-        <div className="query-tips-result-placeholder">
-          <h2>Welcome to Explore Queries</h2>
-          <p>
-            Discover what you can ask by entering a topic in the search bar
-            above.
-          </p>
-          <p>
-            Simply click on any of the returned options to run the query in Data
-            Messenger.
-          </p>
-        </div>
-      )
+      return this.renderIntroMessage()
     }
 
     if (this.state.queryList?.length === 0) {
