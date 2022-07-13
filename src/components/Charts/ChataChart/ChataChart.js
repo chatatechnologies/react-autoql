@@ -502,7 +502,7 @@ export default class ChataChart extends Component {
     const hasMultipleStringColumns = amountOfStringColumns > 1
 
     const visibleSeriesIndices = numberColumnIndices.filter(
-      (colIndex) => !columns[colIndex].isSeriesHidden
+      (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden
     )
 
     return {

@@ -935,7 +935,7 @@ export default class QueryOutput extends React.Component {
         // )
 
         if (this.shouldGeneratePivotData(newTableData)) {
-          this.generatePivotData({ newTableData })
+          this.generatePivotData({ isFirstGeneration: true, newTableData })
         }
 
         if (this.props.optionsToolbarRef?._isMounted) {
@@ -944,6 +944,15 @@ export default class QueryOutput extends React.Component {
 
         this.prevRows = numRows
       }
+    } else if (this.props.displayType === 'pivot_table') {
+      this.pivotHeaderFilters = filters
+
+      const newTableData = []
+      rows.forEach((row) => {
+        newTableData.push(row.getData())
+      })
+
+      this.setState({ visiblePivotRows: newTableData })
     }
   }
 
@@ -1031,7 +1040,7 @@ export default class QueryOutput extends React.Component {
     this.forceUpdate()
   }
 
-  setPivotTableConfig = () => {
+  setPivotTableConfig = (isFirstGeneration) => {
     const columns = this.pivotTableColumns
 
     if (!columns) {
@@ -1044,6 +1053,7 @@ export default class QueryOutput extends React.Component {
 
     // Set string type columns (ordinal axis)
     if (
+      isFirstGeneration ||
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
@@ -1055,7 +1065,7 @@ export default class QueryOutput extends React.Component {
     }
 
     // Set number type columns and number series columns (linear axis)
-    if (!this.pivotTableConfig.numberColumnIndices) {
+    if (isFirstGeneration || !this.pivotTableConfig.numberColumnIndices) {
       const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
         columns
       )
@@ -1723,7 +1733,7 @@ export default class QueryOutput extends React.Component {
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = _get(this.pivotTableData, 'length', 0)
-      this.setPivotTableConfig()
+      this.setPivotTableConfig(isFirstGeneration)
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -1940,7 +1950,7 @@ export default class QueryOutput extends React.Component {
           {...tableConfig}
           data={
             usePivotData
-              ? this.pivotTableData
+              ? this.state.visiblePivotRows || this.pivotTableData
               : this.state.visibleRows || this.tableData
           }
           columns={usePivotData ? this.pivotTableColumns : this.tableColumns}
