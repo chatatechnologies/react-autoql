@@ -1465,15 +1465,15 @@ export default class QueryOutput extends React.Component {
       }
 
       // Context menu when right clicking on column header
-      newCol.headerContext = (e, column) => {
-        // Do not show native context menu
-        e.preventDefault()
-        this.setState({
-          isContextMenuOpen: true,
-          activeColumn: column,
-          contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
-        })
-      }
+      // newCol.headerContext = (e, column) => {
+      //   // Do not show native context menu
+      //   e.preventDefault()
+      //   this.setState({
+      //     isContextMenuOpen: true,
+      //     activeColumn: column,
+      //     contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
+      //   })
+      // }
 
       return newCol
     })
