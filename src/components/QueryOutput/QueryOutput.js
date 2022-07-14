@@ -539,7 +539,6 @@ export default class QueryOutput extends React.Component {
             return bDayIndex - aDayIndex
           }
 
-          console.log('one index was not found... sorting by string')
           return b - a
         }
       }
