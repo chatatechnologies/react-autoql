@@ -67,7 +67,7 @@ import {
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
 
 import './QueryOutput.scss'
-import { MONTH_NAMES } from '../../js/Constants'
+import { MONTH_NAMES, WEEKDAY_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 
 String.prototype.isUpperCase = function() {
@@ -532,63 +532,20 @@ export default class QueryOutput extends React.Component {
         }
         //If one is one of a weekday
         else {
-          const days = [
-            {
-              description: 'Sunday',
-              value: 1,
-              label: 'S',
-            },
-            {
-              description: 'Monday',
-              value: 2,
-              label: 'M',
-            },
-            {
-              description: 'Tuesday',
-              value: 3,
-              label: 'T',
-            },
-            {
-              description: 'Wednesday',
-              value: 4,
-              label: 'W',
-            },
-            {
-              description: 'Thursday',
-              value: 5,
-              label: 'T',
-            },
-            {
-              description: 'Friday',
-              value: 6,
-              label: 'F',
-            },
-            {
-              description: 'Saturday',
-              value: 7,
-              label: 'S',
-            },
-          ]
-          let aWeekDay = null
-          let bWeekDay = null
-          days.forEach((weekdays) => {
-            if (a.trim() === weekdays.description) {
-              return (aWeekDay = weekdays.value)
-            }
-          })
-          days.forEach((weekdays) => {
-            if (b.trim() === weekdays.description) {
-              return (bWeekDay = weekdays.value)
-            }
-          })
-          if (aWeekDay === null || bWeekDay === null) {
-            return b - a
+          const aDayIndex = WEEKDAY_NAMES.findIndex((day) => day === a.trim())
+          const bDayIndex = WEEKDAY_NAMES.findIndex((day) => day === b.trim())
+
+          if (aDayIndex >= 0 && bDayIndex >= 0) {
+            return bDayIndex - aDayIndex
           }
-          return bWeekDay - aWeekDay
+
+          console.log('one index was not found... sorting by string')
+          return b - a
         }
       }
       return bDate - aDate
     } catch (error) {
+      console.error(error)
       return -1
     }
   }
