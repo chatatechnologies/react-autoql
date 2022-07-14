@@ -108,10 +108,7 @@ export default class QueryOutput extends React.Component {
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
-    const isProvidedDisplayTypeValid = isDisplayTypeValid(
-      this.queryResponse,
-      props.displayType
-    )
+    const isProvidedDisplayTypeValid = this.isCurrentDisplayTypeValid(props)
 
     // Set the initial display type based on prop value, response, and supported display types
     let displayType = props.displayType
@@ -215,7 +212,7 @@ export default class QueryOutput extends React.Component {
         this.props.optionsToolbarRef.forceUpdate()
       }
 
-      if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
+      if (!this.isCurrentDisplayTypeValid(this.props)) {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.queryResponse,
@@ -268,7 +265,7 @@ export default class QueryOutput extends React.Component {
 
       if (this.props.queryResponse && !this.queryResponse) {
         this.queryResponse = _cloneDeep(this.props.queryResponse)
-        if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
+        if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
             this.props.autoChartAggregations
@@ -284,7 +281,7 @@ export default class QueryOutput extends React.Component {
       if (!prevProps.displayType && this.props.displayType) {
         ReactTooltip.hide()
 
-        if (!isDisplayTypeValid(this.queryResponse, this.props.displayType)) {
+        if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
             this.props.autoChartAggregations
@@ -300,7 +297,7 @@ export default class QueryOutput extends React.Component {
       // the display type is valid before updating the state
       if (
         this.props.displayType !== prevProps.displayType &&
-        !isDisplayTypeValid(this.queryResponse, this.props.displayType)
+        !this.isCurrentDisplayTypeValid(this.props)
       ) {
         const recommendedDisplayType = getDefaultDisplayType(
           this.queryResponse,
@@ -1108,6 +1105,23 @@ export default class QueryOutput extends React.Component {
       tableConfig: this.tableConfig,
       pivotTableConfig: this.pivotTableConfig,
     })
+  }
+
+  isCurrentDisplayTypeValid = (props, displayType) => {
+    const dataLength = this.state?.visibleRows
+      ? this.state?.visibleRows?.length
+      : this.tableData?.length
+
+    const pivotDataLength = this.state?.visiblePivotRows
+      ? this.state?.visiblePivotRows?.length
+      : this.pivotTableData?.length
+
+    return isDisplayTypeValid(
+      this.queryResponse,
+      props.displayType,
+      dataLength,
+      pivotDataLength
+    )
   }
 
   getCurrentSupportedDisplayTypes = () => {
