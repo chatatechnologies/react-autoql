@@ -37,12 +37,12 @@ export const MONTH_NAMES = {
   12: dayjs('2020-12-12').format('MMMM'),
 }
 
-export const WEEKDAY_NAMES = {
-  1: 'Sunday',
-  2: 'Monday',
-  3: 'Tuesday',
-  4: 'Wednesday',
-  5: 'Thursday',
-  6: 'Friday',
-  7: 'Saturday',
-}
+export const WEEKDAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+]
