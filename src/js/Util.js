@@ -525,11 +525,11 @@ export const getSupportedDisplayTypes = ({
       return ['single-value']
     }
 
+    const maxRowsForPivot = 1000
+    const maxRowsForPieChart = 10
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
     const isPivotTableEmpty = pivotDataLength === 0
-    const maxRowsForPivot = 1000
-    const maxRowsForPieChart = 10
     if (supportsRegularPivotTable(columns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
@@ -561,7 +561,7 @@ export const getSupportedDisplayTypes = ({
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (numRows <= maxRowsForPieChart) {
+      if (numRows > 1 && numRows <= maxRowsForPieChart) {
         supportedDisplayTypes.push('pie')
       }
 
@@ -607,8 +607,17 @@ export const getSupportedDisplayTypes = ({
   }
 }
 
-export const isDisplayTypeValid = (response, displayType) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
+export const isDisplayTypeValid = (
+  response,
+  displayType,
+  dataLength,
+  pivotDataLength
+) => {
+  const supportedDisplayTypes = getSupportedDisplayTypes({
+    response,
+    dataLength,
+    pivotDataLength,
+  })
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
 
   return isValid
