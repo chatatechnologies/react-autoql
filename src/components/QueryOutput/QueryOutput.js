@@ -518,7 +518,7 @@ export default class QueryOutput extends React.Component {
 
       // Finally if all else fails, just compare the 2 values directly
       if (!aDate || !bDate) {
-        //If one is a YYYY-WW
+        // If one is a YYYY-WW
         if (a.includes('-W')) {
           let aDateYear = a.substring(0, 4)
           let bDateYear = b.substring(0, 4)
@@ -530,13 +530,24 @@ export default class QueryOutput extends React.Component {
             return bDateWeek - aDateWeek
           }
         }
-        //If one is one of a weekday
-        else {
-          const aDayIndex = WEEKDAY_NAMES.findIndex((day) => day === a.trim())
-          const bDayIndex = WEEKDAY_NAMES.findIndex((day) => day === b.trim())
+        // If one is a weekday name
+        else if (WEEKDAY_NAMES.includes(a.trim())) {
+          const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
+          const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
 
           if (aDayIndex >= 0 && bDayIndex >= 0) {
             return bDayIndex - aDayIndex
+          }
+
+          return b - a
+        }
+        // If one is a month name
+        else if (MONTH_NAMES.includes(a.trim())) {
+          const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+          const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+
+          if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+            return bMonthIndex - aMonthIndex
           }
 
           return b - a
@@ -1470,22 +1481,6 @@ export default class QueryOutput extends React.Component {
 
   generateDatePivotData = (newTableData) => {
     try {
-      // todo: just make this from a simple array
-      const uniqueMonths = {
-        [MONTH_NAMES[1]]: 0,
-        [MONTH_NAMES[2]]: 1,
-        [MONTH_NAMES[3]]: 2,
-        [MONTH_NAMES[4]]: 3,
-        [MONTH_NAMES[5]]: 4,
-        [MONTH_NAMES[6]]: 5,
-        [MONTH_NAMES[7]]: 6,
-        [MONTH_NAMES[8]]: 7,
-        [MONTH_NAMES[9]]: 8,
-        [MONTH_NAMES[10]]: 9,
-        [MONTH_NAMES[11]]: 10,
-        [MONTH_NAMES[12]]: 11,
-      }
-
       const dateColumnIndex = getDateColumnIndex(this.tableColumns)
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
@@ -1552,18 +1547,19 @@ export default class QueryOutput extends React.Component {
       const pivotOriginalColumnData = {}
 
       // Populate first column
-      Object.keys(uniqueMonths).forEach((month, i) => {
+      MONTH_NAMES.forEach((month, i) => {
         pivotTableData[i][0] = month
       })
+
       // Populate remaining columns
       tableData.forEach((row) => {
         const year = this.formatDatePivotYear(row, dateColumnIndex)
         const month = this.formatDatePivotMonth(row, dateColumnIndex)
 
         const yearNumber = uniqueYears[year]
-        const monthNumber = uniqueMonths[month]
+        const monthNumber = MONTH_NAMES.findIndex((m) => month === m)
 
-        if (monthNumber && yearNumber) {
+        if (monthNumber >= 0 && yearNumber) {
           pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
