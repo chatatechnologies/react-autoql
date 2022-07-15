@@ -2001,34 +2001,42 @@ export default class QueryOutput extends React.Component {
     const numRows = this.queryResponse?.data?.data?.rows?.length
     const maxRowLimit = this.queryResponse?.data?.data?.row_limit
 
-    return maxRowLimit && numRows === maxRowLimit
+    if (!numRows || !maxRowLimit) {
+      return false
+    }
+
+    return numRows === maxRowLimit
+  }
+
+  noDataFound = () => {
+    return this.queryResponse?.data?.data?.rows?.length === 0
   }
 
   renderDataLimitWarning = () => {
     const dataLimited = this.isDataLimited()
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+
+    if (!dataLimited || isTableAndAjax) {
+      return null
+    }
 
     const isReverseTranslationRendered =
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation
 
-    const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
-    if (dataLimited && !isTableAndAjax) {
-      return (
-        <div className="dashboard-data-limit-warning-icon">
-          <Icon
-            type="warning"
-            data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
+    return (
+      <div className="dashboard-data-limit-warning-icon">
+        <Icon
+          type="warning"
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
             Try querying a smaller time-frame to ensure<br />
             all your data is displayed.`}
-            data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            data-place={isReverseTranslationRendered ? 'left' : 'right'}
-          />
-        </div>
-      )
-    }
-
-    return null
+          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-place={isReverseTranslationRendered ? 'left' : 'right'}
+        />
+      </div>
+    )
   }
 
   renderMessage = (error) => {
@@ -2155,7 +2163,7 @@ export default class QueryOutput extends React.Component {
     }
 
     // This is not technically an error. There is just no data in the DB
-    if (!_get(this.queryResponse, 'data.data.rows.length')) {
+    if (this.noDataFound()) {
       return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
     }
 
@@ -2187,7 +2195,8 @@ export default class QueryOutput extends React.Component {
   renderReverseTranslation = () => {
     if (
       !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
-      !this.props.showQueryInterpretation
+      !this.props.showQueryInterpretation ||
+      !this.queryResponse?.data?.data?.interpretation
     ) {
       return null
     }
@@ -2207,11 +2216,6 @@ export default class QueryOutput extends React.Component {
   }
 
   renderFooter = () => {
-    const displayType = this.props.displayType
-    if (['html', 'text', 'help', 'suggestion'].includes(displayType)) {
-      return null
-    }
-
     return (
       <div className="query-output-footer">
         {this.renderReverseTranslation()}
