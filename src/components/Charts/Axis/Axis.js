@@ -102,7 +102,9 @@ export default class Axis extends Component {
         .select('.legendTitle')
         .node()
         .getBBox()
-    } catch (error) {}
+    } catch (error) {
+      console.error(error)
+    }
 
     select(this.legendBorder)
       .attr('class', 'legend-title-border')
@@ -306,7 +308,7 @@ export default class Axis extends Component {
         }).formattedLabel
       })
 
-    if (this.props.ticks) {
+    if (this.props.ticks?.length) {
       axis.tickValues(this.props.ticks)
     }
 
