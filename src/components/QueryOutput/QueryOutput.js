@@ -804,7 +804,7 @@ export default class QueryOutput extends React.Component {
   onTableCellClick = (cell) => {
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(cell, this.tableColumns)
+      groupBys = getGroupBysFromPivotTable(cell)
     } else {
       groupBys = getGroupBysFromTable(cell, this.tableColumns)
     }
@@ -1536,9 +1536,7 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
-          origDateColField: this.tableColumns[dateColumnIndex].field,
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
+          origValues: {},
           name: year,
           title: year,
           field: `${i + 1}`,
@@ -1565,11 +1563,19 @@ export default class QueryOutput extends React.Component {
         const yearNumber = uniqueYears[year]
         const monthNumber = MONTH_NAMES.findIndex((m) => month === m)
 
+        const pivotColumnIndex = pivotTableColumns.findIndex(
+          (col) => col.name === year
+        )
+
         if (monthNumber >= 0 && yearNumber) {
           pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
             [month]: row[dateColumnIndex],
+          }
+          pivotTableColumns[pivotColumnIndex].origValues[month] = {
+            name: this.tableColumns[dateColumnIndex]?.name,
+            value: row[dateColumnIndex],
           }
         }
       })
@@ -1670,9 +1676,8 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
-          titleColumn: this.tableColumns[newLegendColumnIndex],
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
+          origPivotColumn: this.tableColumns[newLegendColumnIndex],
+          origValues: {},
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
@@ -1690,13 +1695,19 @@ export default class QueryOutput extends React.Component {
 
       tableData.forEach((row) => {
         // Populate first column
-        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][0] =
-          row[newStringColumnIndex]
+        const pivotCategoryIndex = uniqueValues0[row[newStringColumnIndex]]
+        const pivotCategoryValue = row[newStringColumnIndex]
+        pivotTableData[pivotCategoryIndex][0] = pivotCategoryValue
 
         // Populate remaining columns
-        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][
-          uniqueValues1[row[newLegendColumnIndex]] + 1
-        ] = row[numberColumnIndex]
+        const pivotColumnIndex = uniqueValues1[row[newLegendColumnIndex]] + 1
+        const pivotValue = row[numberColumnIndex]
+        pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
+
+        pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
+          name: this.tableColumns[newStringColumnIndex]?.name,
+          value: pivotCategoryValue,
+        }
       })
 
       // Pie charts might be available if dataset is small enough
