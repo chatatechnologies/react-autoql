@@ -459,10 +459,14 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
-export const getTickValues = (labelWidth, fullWidth, labelArray) => {
+export const getTickValues = (tickHeight, fullHeight, labelArray) => {
   try {
-    const interval = Math.ceil((labelArray.length * 25) / fullWidth)
-    if (labelWidth < 25) {
+    const textHeightInPx = 30
+    const interval = Math.ceil(
+      (labelArray.length * textHeightInPx) / fullHeight
+    )
+
+    if (tickHeight < textHeightInPx) {
       const tickValues = []
       labelArray.forEach((label, index) => {
         if (index % interval === 0) {

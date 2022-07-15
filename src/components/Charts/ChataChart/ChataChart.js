@@ -199,7 +199,7 @@ export default class ChataChart extends Component {
 
     let rowSum = _cloneDeep(sortedData[0])
     sortedData.forEach((currentRow, i) => {
-      if (i === 0) {
+      if (i === 0 && i < sortedData.length - 1) {
         return
       } else if (
         currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
@@ -231,6 +231,7 @@ export default class ChataChart extends Component {
     const containerLeft = chartContainerBbox.x
     const axesLeft = axesBbox.x + containerLeft
     let leftMargin = this.state.leftMargin
+
     leftMargin +=
       containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH + this.PADDING
     return leftMargin
