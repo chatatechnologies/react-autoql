@@ -200,12 +200,16 @@ export default class OptionsToolbar extends React.Component {
     if (isPivotTable) {
       if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
         this.props.onCSVDownloadStart({ id: uniqueId })
-        this.pivotTableCSVDownloadTimeout = setTimeout(() => {
-          this.props.responseRef.pivotTableRef.saveAsCSV().then(() => {
+        this.props.responseRef?.pivotTableRef
+          ?.saveAsCSV(2000)
+          .then(() => {
             this.props.onCSVDownloadProgress({ id: uniqueId, progress: 100 })
             this.props.onCSVDownloadFinish({ id: uniqueId })
           })
-        }, 2000)
+          .catch((error) => {
+            console.error(error)
+            this.props.onCSVDownloadFinish({ id: uniqueId })
+          })
       }
     } else {
       this.fetchCSVAndExport()

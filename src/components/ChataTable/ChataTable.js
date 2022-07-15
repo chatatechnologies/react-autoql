@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _cloneDeep from 'lodash.clonedeep'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -272,12 +273,22 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  saveAsCSV = () => {
-    if (this._isMounted && this.ref?.table) {
-      this.ref.table.download('csv', 'export.csv', {
-        delimiter: ',',
-      })
-      return Promise.resolve()
+  saveAsCSV = (delay) => {
+    try {
+      if (this._isMounted && this.ref?.table) {
+        let tableClone = _cloneDeep(this.ref.table)
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            tableClone.download('csv', 'export.csv', {
+              delimiter: ',',
+            })
+            tableClone = undefined
+            resolve()
+          }, delay)
+        })
+      }
+    } catch (error) {
+      console.error(error)
     }
     return Promise.reject()
   }
