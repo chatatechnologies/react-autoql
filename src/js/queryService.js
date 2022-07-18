@@ -77,18 +77,9 @@ export const runQueryNewPage = ({
   domain,
   apiKey,
   token,
-  debug,
   page,
-  sorters,
-  filters,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
-
-  const data = {
-    translation: debug ? 'include' : 'exclude',
-    orders: sorters,
-    filters,
-  }
 
   if (!queryId) {
     return Promise.reject({ error: 'No query ID supplied' })
@@ -105,7 +96,7 @@ export const runQueryNewPage = ({
   }
 
   return axios
-    .post(url, data, config)
+    .post(url, {}, config)
     .then((response) => {
       if (response.data && typeof response.data === 'string') {
         throw new Error('Parse error')
