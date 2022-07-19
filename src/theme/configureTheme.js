@@ -5,9 +5,8 @@ const defaultThemeConfig = {
   chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
   accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
-  color: undefined,
-  dashboardTitleColor: '#356f90',
-  dashboardBackground: '#fafafa',
+  dashboardTitleColor: undefined,
+  dashboardBackground: undefined,
 }
 
 const getThemeConfig = (customThemeConfig = {}) => {
@@ -138,15 +137,11 @@ export const configureTheme = (customThemeConfig = {}) => {
     themeStyles['font-family'] = fontFamily
   }
 
-  if (dashboardBackground) {
-    themeStyles['dashboard-background-color'] =
-      dashboardBackground || themeStyles['background-color-secondary']
-  }
+  themeStyles['dashboard-background-color'] =
+    dashboardBackground || themeStyles['background-color-secondary']
 
-  if (dashboardTitleColor) {
-    themeStyles['dashboard-title-color'] =
-      dashboardTitleColor || themeStyles['accent-color']
-  }
+  themeStyles['dashboard-title-color'] =
+    dashboardTitleColor || themeStyles['accent-color']
 
   // Apply values to css variables with --react-autoql prefix
   for (let property in themeStyles) {
