@@ -40,6 +40,7 @@ import { FiSettings } from '@react-icons/all-files/fi/FiSettings'
 import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
 import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
 import { FiMinimize } from '@react-icons/all-files/fi/FiMinimize'
+import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
 
 import { GoReport } from '@react-icons/all-files/go/GoReport'
 
@@ -332,6 +333,10 @@ export default class Icon extends React.Component {
       }
       case 'question': {
         icon = <AiOutlineQuestionCircle />
+        break
+      }
+      case 'refresh': {
+        icon = <FiRefreshCw />
         break
       }
       case 'report': {

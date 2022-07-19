@@ -395,7 +395,6 @@ class DataAlertModal extends React.Component {
             </div>
           )}
         <Button
-          type="default"
           onClick={this.validateExpression}
           loading={this.state.isValidating}
           type="primary"

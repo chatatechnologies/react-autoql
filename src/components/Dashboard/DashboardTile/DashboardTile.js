@@ -978,6 +978,7 @@ class DashboardTile extends React.Component {
             <OptionsToolbar
               authentication={getAuthentication(this.props.authentication)}
               autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+              themeConfig={getThemeConfig(this.props.themeConfig)}
               onErrorCallback={this.props.onErrorCallback}
               onSuccessAlert={this.props.onSuccessCallback}
               onCSVDownloadStart={this.onCSVDownloadStart}
