@@ -21,7 +21,7 @@ import {
   fetchRule,
 } from '../../../js/notificationService'
 import dayjs from '../../../js/dayjsWithPlugins'
-import { getDefaultDisplayType, capitalizeFirstChar } from '../../../js/Util'
+import { capitalizeFirstChar } from '../../../js/Util'
 
 import { authenticationType } from '../../../props/types'
 import {
@@ -35,7 +35,6 @@ dayjs.extend(advancedFormat)
 
 export default class NotificationItem extends React.Component {
   COMPONENT_KEY = uuid()
-  supportedDisplayTypes = []
 
   static propTypes = {
     authentication: authenticationType,
@@ -66,30 +65,9 @@ export default class NotificationItem extends React.Component {
   }
 
   state = {
-    supportedDisplayTypes: [],
     ruleStatus: undefined,
     ruleDetails: undefined,
     fullyExpanded: false,
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (
-      !prevProps.activeNotificationData &&
-      this.props.activeNotificationData
-    ) {
-      const queryResponse = {
-        data: this.props.activeNotificationData,
-      }
-      const displayType =
-        this.props.autoChartAggregations &&
-        this.state.supportedDisplayTypes.includes('column')
-          ? 'column'
-          : getDefaultDisplayType(
-              queryResponse,
-              this.props.autoChartAggregations
-            )
-      this.setState({ displayType })
-    }
   }
 
   getIsTriggered = (state) => {
@@ -341,20 +319,14 @@ export default class NotificationItem extends React.Component {
                     {queryTitleCapitalized}
                   </div>
                   <QueryOutput
+                    style={{ flex: '1' }}
                     authentication={this.props.authentication}
                     ref={(r) => (this.OUTPUT_REF = r)}
+                    key={queryResponse?.data?.data?.query_id}
                     queryResponse={queryResponse}
                     autoQLConfig={{ enableDrilldowns: false }}
-                    displayType={this.state.displayType}
                     autoChartAggregations={this.props.autoChartAggregations}
-                    style={{ flex: '1' }}
                     enableAjaxTableData={this.props.enableAjaxTableData}
-                    onSupportedDisplayTypesChange={(supportedDisplayTypes) =>
-                      this.setState({ supportedDisplayTypes })
-                    }
-                    onRecommendedDisplayType={(displayType) =>
-                      this.setState({ displayType })
-                    }
                   />
                 </Fragment>
               ) : (
@@ -363,7 +335,7 @@ export default class NotificationItem extends React.Component {
                 </div>
               )}
             </div>
-            {_get(this.state.supportedDisplayTypes, 'length') > 1 && (
+            {this.OUTPUT_REF?.supportedDisplayTypes?.length > 1 && (
               <div className="react-autoql-notification-viz-switcher">
                 <VizToolbar
                   ref={(r) => (this.vizToolbarRef = r)}

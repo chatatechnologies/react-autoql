@@ -33,6 +33,8 @@ class NotificationIcon extends React.Component {
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
     isAlreadyMountedInDOM: PropTypes.bool,
+    pausePolling: PropTypes.bool,
+    count: PropTypes.number,
   }
 
   static defaultProps = {
@@ -44,6 +46,8 @@ class NotificationIcon extends React.Component {
     onNewNotification: () => {},
     onErrorCallback: () => {},
     isAlreadyMountedInDOM: false,
+    pausePolling: false,
+    count: undefined,
   }
 
   state = {
@@ -74,6 +78,13 @@ class NotificationIcon extends React.Component {
 
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
+
+    if (this.props.pausePolling) {
+      return Promise.resolve(count)
+    } else if (!Number.isNaN(this.props.count)) {
+      return Promise.resolve(count)
+    }
+
     return fetchNotificationCount({
       ...getAuthentication(this.props.authentication),
       unacknowledged: count,

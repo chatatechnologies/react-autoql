@@ -72,7 +72,7 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
-export const runSubQuery = ({
+export const runQueryNewPage = ({
   queryId,
   domain,
   apiKey,
@@ -82,7 +82,7 @@ export const runSubQuery = ({
   sorters,
   filters,
 } = {}) => {
-  const url = `${domain}/autoql/api/v1/query/${queryId}/subquery?key=${apiKey}&page=${page}`
+  const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
 
   const data = {
     translation: debug ? 'include' : 'exclude',
@@ -124,17 +124,21 @@ export const runSubQuery = ({
     })
 }
 
-export const runQueryOnly = ({
-  query,
-  userSelection,
-  debug,
-  test,
-  domain,
-  apiKey,
-  token,
-  source,
-  filters,
-} = {}) => {
+export const runQueryOnly = (params = {}) => {
+  const {
+    query,
+    userSelection,
+    debug,
+    test,
+    domain,
+    apiKey,
+    token,
+    source,
+    filters,
+    orders,
+    tableFilters,
+    pageSize,
+  } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
 
@@ -145,6 +149,9 @@ export const runQueryOnly = ({
     user_selection: finalUserSelection,
     test,
     session_filter_locks: filters,
+    orders,
+    filters: tableFilters,
+    page_size: pageSize,
   }
 
   if (!query || !query.trim()) {
@@ -175,6 +182,8 @@ export const runQueryOnly = ({
       if (reverseTranslation) {
         response.data.data.reverse_translation = reverseTranslation
       }
+
+      response.data.data.requestParams = params
 
       return Promise.resolve(response)
     })

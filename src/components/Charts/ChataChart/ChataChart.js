@@ -184,9 +184,7 @@ export default class ChataChart extends Component {
 
     let rowSum = _cloneDeep(sortedData[0])
     sortedData.forEach((currentRow, i) => {
-      if (i === sortedData.length - 1) {
-        aggregatedData.push(rowSum)
-      } else if (i === 0) {
+      if (i === 0) {
         return
       } else if (
         currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
@@ -202,7 +200,12 @@ export default class ChataChart extends Component {
           if (isNaN(sumValue)) sumValue = 0
           newRow[columnIndex] = currentValue + sumValue
         })
+
         rowSum = newRow
+      }
+
+      if (i === sortedData.length - 1) {
+        aggregatedData.push(rowSum)
       }
     })
 
@@ -502,7 +505,7 @@ export default class ChataChart extends Component {
     const hasMultipleStringColumns = amountOfStringColumns > 1
 
     const visibleSeriesIndices = numberColumnIndices.filter(
-      (colIndex) => !columns[colIndex].isSeriesHidden
+      (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden
     )
 
     return {

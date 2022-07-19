@@ -47,13 +47,13 @@ class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
-    this.csvProgressLog = {}
     this.minWidth = 400
     this.minHeight = 400
 
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
+    this.DEFAULT_AJAX_PAGE_SIZE = 50
 
     this.dataMessengerIntroMessages = [
       props.introMessage
@@ -124,6 +124,7 @@ class DataMessenger extends React.Component {
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
+    dataPageSize: PropTypes.number,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -133,6 +134,7 @@ class DataMessenger extends React.Component {
     enableAjaxTableData: PropTypes.bool,
 
     // Callbacks
+    onNotificationExpandCallback: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
@@ -164,6 +166,7 @@ class DataMessenger extends React.Component {
     enableNotificationsTab: false,
     resizable: true,
     inputPlaceholder: 'Type your queries here',
+    dataPageSize: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -174,6 +177,7 @@ class DataMessenger extends React.Component {
     enableDPRTab: false,
 
     // Callbacks
+    onNotificationExpandCallback: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -399,20 +403,6 @@ class DataMessenger extends React.Component {
     this.dataMessengerContentRef?.animateInputTextAndSubmit(...params)
   }
 
-  getAppliedFilters = (response) => {
-    try {
-      let persistedFilters = response?.data?.data?.persistent_locked_conditions
-      let sessionFilters = response?.data?.data?.session_locked_conditions
-
-      if (!Array.isArray(persistedFilters)) persistedFilters = []
-      if (!Array.isArray(sessionFilters)) sessionFilters = []
-
-      return [...persistedFilters, ...sessionFilters]
-    } catch (error) {
-      return []
-    }
-  }
-
   handleClearQueriesDropdown = () => {
     if (!this.clearQueriesDropdown) {
       return
@@ -511,6 +501,7 @@ class DataMessenger extends React.Component {
                           }
                         }}
                         onErrorCallback={this.props.onErrorCallback}
+                        pausePolling={!this.dmRef?.state?.open}
                       />
                     </div>
                   </div>
@@ -734,16 +725,12 @@ class DataMessenger extends React.Component {
     )
   }
 
-  onCSVDownloadProgress = ({ id, progress }) => {
-    this.csvProgressLog[id] = progress
-    if (this.messageRefs[id]) {
-      this.messageRefs[id].setState({
-        csvDownloadProgress: progress,
-      })
-    }
-  }
-
   renderDataMessengerContent = () => {
+    let dataPageSize = this.props.dataPageSize
+    if (this.props.enableAjaxTableData && !dataPageSize) {
+      dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
+    }
+
     return (
       <ErrorBoundary>
         <ChatContent
@@ -760,11 +747,10 @@ class DataMessenger extends React.Component {
           queryFilters={this.state.sessionFilters}
           isDataMessengerOpen={!!this.dmRef?.state?.open}
           introMessages={this.dataMessengerIntroMessages}
-          csvProgressLog={this.csvProgressLog}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
-          rebuildTooltips={this.rebuildTooltips}
+          dataPageSize={dataPageSize}
         />
       </ErrorBoundary>
     )
@@ -819,7 +805,7 @@ class DataMessenger extends React.Component {
           this.executeQueryTimeout = setTimeout(() => {
             this.dataMessengerContentRef?.animateInputTextAndSubmit({
               query,
-              source: 'explore_queries',
+              source: ['explore_queries'],
             })
           }, 500)
         }}

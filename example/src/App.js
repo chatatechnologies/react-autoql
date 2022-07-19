@@ -1720,7 +1720,7 @@ export default class App extends Component {
       <QueryOutput
         authentication={this.getAuthProp()}
         queryResponse={this.state.activeNotificationContent}
-        displayType="table"
+        initialDisplayType="table"
       />
     )
   }

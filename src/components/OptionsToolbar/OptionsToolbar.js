@@ -268,7 +268,7 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderHideColumnsModal = () => {
-    const cols = this.props.responseRef?.queryResponse?.data?.data?.columns
+    const cols = this.props.responseRef?.getColumns()
     if (!cols || !cols.length) {
       return null
     }
@@ -710,7 +710,9 @@ export default class OptionsToolbar extends React.Component {
       const isChart = isChartType(displayType)
       const response = this.props.responseRef?.queryResponse
       const isDataResponse = response?.data?.data?.display_type === 'data'
-      const allColumnsHidden = areAllColumnsHidden(response)
+      const allColumnsHidden = areAllColumnsHidden(
+        this.props.responseRef?.getColumns()
+      )
       const someColumnsHidden = areSomeColumnsHidden(response)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0

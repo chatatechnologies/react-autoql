@@ -70,6 +70,7 @@ class QueryInput extends React.Component {
     placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
     sessionId: PropTypes.string,
+    dataPageSize: PropTypes.number,
   }
 
   static defaultProps = {
@@ -88,6 +89,7 @@ class QueryInput extends React.Component {
     queryFilters: undefined,
     clearQueryOnSubmit: true,
     placeholder: 'Type your queries here',
+    dataPageSize: undefined,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
@@ -157,8 +159,8 @@ class QueryInput extends React.Component {
       })
   }
 
-  onResponse = (response, query) => {
-    this.props.onResponseCallback(response, query)
+  onResponse = (response, query, queryRequestData) => {
+    this.props.onResponseCallback(response, query, queryRequestData)
 
     const newState = {
       isQueryRunning: false,
@@ -195,7 +197,25 @@ class QueryInput extends React.Component {
     if (this._isMounted) this.setState(newState)
 
     const query = queryText || this.state.inputValue
-    const newSource = [...this.props.source, source || 'user']
+    const pageSize = this.props.dataPageSize
+
+    let newSource = this.props.source
+    if (source?.length) {
+      newSource = [...this.props.source, ...source]
+    } else if (source) {
+      newSource.push('user')
+    }
+
+    const requestData = {
+      query,
+      userSelection,
+      ...getAuthentication(this.props.authentication),
+      ...getAutoQLConfig(this.props.autoQLConfig),
+      source: newSource,
+      AutoAEId: this.props.AutoAEId,
+      filters: this.props.queryFilters,
+      pageSize,
+    }
 
     if (query.trim()) {
       this.props.onSubmit(query)
@@ -207,27 +227,12 @@ class QueryInput extends React.Component {
       ) {
         this.submitDprQuery(query)
       } else if (skipQueryValidation) {
-        runQueryOnly({
-          query,
-          userSelection,
-          ...getAuthentication(this.props.authentication),
-          ...getAutoQLConfig(this.props.autoQLConfig),
-          source: newSource,
-          AutoAEId: this.props.AutoAEId,
-          filters: this.props.queryFilters,
-        })
-          .then((response) => this.onResponse(response, query))
+        runQueryOnly(requestData)
+          .then((response) => this.onResponse(response, query, requestData))
           .catch((error) => console.error(error))
       } else {
-        runQuery({
-          query,
-          ...getAuthentication(this.props.authentication),
-          ...getAutoQLConfig(this.props.autoQLConfig),
-          source: newSource,
-          AutoAEId: this.props.AutoAEId,
-          filters: this.props.queryFilters,
-        })
-          .then((response) => this.onResponse(response, query))
+        runQuery(requestData)
+          .then((response) => this.onResponse(response, query, requestData))
           .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error

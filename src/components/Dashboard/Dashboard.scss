@@ -16,14 +16,20 @@
   }
 
   .dashboard-drilldown-modal-content {
-    &.chart-hidden {
+    &.chart-hidden,
+    &.top-hidden {
       .react-autoql-dashboard-drilldown-original,
       .layout-splitter {
         display: none;
       }
-      .layout-pane:not(.layout-pane-primary) {
-        height: calc(100% - 50px) !important;
-      }
+    }
+
+    &.chart-hidden .layout-pane:not(.layout-pane-primary) {
+      height: calc(100% - 50px) !important;
+    }
+
+    &.top-hidden .layout-pane:not(.layout-pane-primary) {
+      height: 100% !important;
     }
 
     .react-autoql-modal-body {

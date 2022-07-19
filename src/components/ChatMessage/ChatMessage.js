@@ -73,11 +73,11 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
-    onResponseCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
     csvDownloadProgress: PropTypes.number,
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    source: PropTypes.arrayOf(PropTypes.string),
   }
 
   static defaultProps = {
@@ -88,6 +88,7 @@ export default class ChatMessage extends React.Component {
     enableAjaxTableData: false,
     isDataMessengerOpen: false,
     isIntroMessage: false,
+    source: [],
     response: undefined,
     content: undefined,
     isActive: false,
@@ -102,7 +103,6 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
-    onResponseCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onRTValueLabelClick: () => {},
@@ -250,7 +250,6 @@ export default class ChatMessage extends React.Component {
           tableOptions={this.props.tableOptions}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           appliedFilters={this.props.appliedFilters}
-          onUpdate={this.props.onQueryOutputUpdate}
           onDrilldownStart={this.props.onDrilldownStart}
           onDrilldownEnd={this.props.onDrilldownEnd}
           demo={getAuthentication(this.props.authentication).demo}
@@ -266,11 +265,13 @@ export default class ChatMessage extends React.Component {
           tableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          queryRequestData={this.props.queryRequestData}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
+          source={this.props.source}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
@@ -302,8 +303,8 @@ export default class ChatMessage extends React.Component {
     return (
       <div className="chat-message-toolbar right">
         {this.props.isResponse &&
-        this.state.displayType !== 'help' &&
-        this.state.displayType !== 'suggestion' ? (
+        this.responseRef?.state?.displayType !== 'help' &&
+        this.responseRef?.state?.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
@@ -317,6 +318,7 @@ export default class ChatMessage extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
+            onFilterClick={this.toggleTableFilter}
             deleteMessageCallback={() =>
               this.props.deleteMessageCallback(this.props.id)
             }

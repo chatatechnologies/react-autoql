@@ -52,19 +52,21 @@ describe('test each response case', () => {
 
 describe('test table edge cases', () => {
   describe('all columns initially hidden then visibility changed', () => {
-    test('columns hidden message shows when all columns are hidden', () => {
-      const testCaseHiddenColumns = _cloneDeep(testCases[8])
-      testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map(
-        (column) => {
-          return {
-            ...column,
-            is_visible: false,
-          }
+    const testCaseHiddenColumns = _cloneDeep(testCases[8])
+    testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map(
+      (column) => {
+        return {
+          ...column,
+          is_visible: false,
         }
-      )
-
+      }
+    )
+    test('columns hidden message shows when all columns are hidden', () => {
       const queryOutput = mount(
-        <QueryOutput queryResponse={testCaseHiddenColumns} displayType="text" />
+        <QueryOutput
+          queryResponse={testCaseHiddenColumns}
+          initialDisplayType="text"
+        />
       )
 
       const hiddenColMessage = findByTestAttr(
@@ -74,30 +76,34 @@ describe('test table edge cases', () => {
       expect(hiddenColMessage.exists()).toBe(true)
       queryOutput.unmount()
     })
-    test('column headers are visible when column visibility is updated', () => {
+    describe('display type is updated when column visibility is changed', () => {
       const queryOutputVisible = mount(
-        <QueryOutput queryResponse={testCases[8]} displayType="table" />
+        <QueryOutput queryResponse={testCaseHiddenColumns} />
       )
 
-      const idBeforeUpdate = queryOutputVisible
-        .find(QueryOutputWithoutTheme)
-        .instance().tableID
+      test('display type is text if all columns hidden', () => {
+        const displayType = queryOutputVisible
+          .find(QueryOutputWithoutTheme)
+          .instance().state.displayType
 
-      const newColumns = _cloneDeep(testCases[8].data.data.columns)
-      newColumns[0].is_visible = false
-      queryOutputVisible
-        .find(QueryOutputWithoutTheme)
-        .instance()
-        .updateColumns(newColumns)
-      const idAfterUpdate = queryOutputVisible
-        .find(QueryOutputWithoutTheme)
-        .instance().tableID
+        expect(displayType).toBe('text')
+      })
 
-      const didIdChange =
-        idBeforeUpdate && idAfterUpdate && idBeforeUpdate !== idAfterUpdate
+      test('display type is table after columns are unhidden', () => {
+        const newColumns = _cloneDeep(testCases[8].data.data.columns)
 
-      queryOutputVisible.unmount()
-      expect(didIdChange).toBe(true)
+        queryOutputVisible
+          .find(QueryOutputWithoutTheme)
+          .instance()
+          .updateColumns(newColumns)
+
+        const displayType = queryOutputVisible
+          .find(QueryOutputWithoutTheme)
+          .instance().state.displayType
+
+        queryOutputVisible.unmount()
+        expect(displayType).toBe('table')
+      })
     })
   })
 })

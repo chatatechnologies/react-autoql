@@ -34,13 +34,8 @@ class VizToolbar extends React.Component {
       return false
     }
 
-    const selectedDisplayType = this.props.responseRef?.state?.displayType
-    const supportedDisplayTypes = this.props.responseRef?.supportedDisplayTypes
-
-    return (
-      supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
-      // && selectedDisplayType !== displayType
-    )
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    return supportedDisplayTypes && supportedDisplayTypes.includes(displayType)
   }
 
   onDisplayTypeChange = (displayType) => {
@@ -48,9 +43,17 @@ class VizToolbar extends React.Component {
     this.props.responseRef?.changeDisplayType(displayType)
   }
 
+  getCurrentDisplayType = () => {
+    return this.props.responseRef?.state?.displayType
+  }
+
+  getCurrentSupportedDisplayTypes = () => {
+    return this.props.responseRef?.state?.supportedDisplayTypes
+  }
+
   createVisButton = (displayType, name, icon) => {
     if (this.showDisplayTypeButton(displayType)) {
-      const selectedDisplayType = this.props.responseRef?.state?.displayType
+      const selectedDisplayType = this.getCurrentDisplayType()
 
       return (
         <button
@@ -71,8 +74,8 @@ class VizToolbar extends React.Component {
   }
 
   render = () => {
-    const displayType = this.props.responseRef?.state?.displayType
-    const supportedDisplayTypes = this.props.responseRef?.supportedDisplayTypes
+    const displayType = this.getCurrentDisplayType()
+    const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     if (
       !supportedDisplayTypes ||

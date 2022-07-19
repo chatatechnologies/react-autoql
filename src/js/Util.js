@@ -485,17 +485,16 @@ export const areSomeColumnsHidden = (response) => {
   return hasColumns && !!hiddenColumns.length
 }
 
-export const areAllColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const visibleColumns = getVisibleColumns(_get(response, 'data.data.columns'))
-  return hasColumns && !visibleColumns.length
+export const areAllColumnsHidden = (columns) => {
+  const visibleColumns = getVisibleColumns(columns)
+  return columns?.length && !visibleColumns.length
 }
 
 export const getSupportedDisplayTypes = ({
   response,
   columns,
-  shouldExcludePieChart,
   dataLength,
+  pivotDataLength,
 } = {}) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
@@ -524,14 +523,22 @@ export const getSupportedDisplayTypes = ({
       return ['single-value']
     }
 
+    const maxRowsForPivot = 1000
+    const maxRowsForPieChart = 10
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
+    const isPivotTableEmpty = pivotDataLength === 0
+
     if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
-      if (rows.length < 1000) {
+
+      if (numRows <= maxRowsForPivot) {
+        supportedDisplayTypes.push('pivot_table')
+      }
+
+      if (numRows <= maxRowsForPivot && !isPivotTableEmpty) {
         supportedDisplayTypes.push(
-          'pivot_table',
           'stacked_column',
           'stacked_bar',
           'stacked_line',
@@ -541,7 +548,7 @@ export const getSupportedDisplayTypes = ({
           'bubble',
           'heatmap'
         )
-      } else {
+      } else if (numRows > maxRowsForPivot) {
         console.warn(
           'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
         )
@@ -553,7 +560,7 @@ export const getSupportedDisplayTypes = ({
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
 
-      if (numRows <= 10 && !shouldExcludePieChart) {
+      if (numRows > 1 && numRows <= maxRowsForPieChart) {
         supportedDisplayTypes.push('pie')
       }
 
@@ -599,8 +606,19 @@ export const getSupportedDisplayTypes = ({
   }
 }
 
-export const isDisplayTypeValid = (response, displayType) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
+export const isDisplayTypeValid = (
+  response,
+  displayType,
+  dataLength,
+  pivotDataLength,
+  columns
+) => {
+  const supportedDisplayTypes = getSupportedDisplayTypes({
+    response,
+    columns,
+    dataLength,
+    pivotDataLength,
+  })
   const isValid = displayType && supportedDisplayTypes.includes(displayType)
 
   return isValid
@@ -617,8 +635,28 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
   return fallback
 }
 
-export const getDefaultDisplayType = (response, defaultToChart) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
+export const getDefaultDisplayType = (
+  response,
+  defaultToChart,
+  columns,
+  dataLength,
+  pivotDataLength,
+  preferredDisplayType
+) => {
+  const supportedDisplayTypes = getSupportedDisplayTypes({
+    response,
+    columns,
+    dataLength,
+    pivotDataLength,
+  })
+
+  if (
+    preferredDisplayType &&
+    supportedDisplayTypes.includes(preferredDisplayType)
+  ) {
+    return preferredDisplayType
+  }
+
   const responseDisplayType = _get(response, 'data.data.display_type')
 
   // If the display type is a recognized non-chart or non-table type
