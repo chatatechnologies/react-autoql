@@ -540,8 +540,7 @@ export class QueryOutputWithoutTheme extends React.Component {
       columns
     )
 
-      this.setTableConfig()
-    }
+    this.setTableConfig()
   }
 
   generatePivotData = ({ isFirstGeneration } = {}) => {
@@ -860,7 +859,7 @@ export class QueryOutputWithoutTheme extends React.Component {
     if (!filters?.length && !rows?.length) {
       return
     }
-    
+
     const { displayType } = this.state
     if (displayType === 'table' || displayType === 'pivot_table') {
       const newTableData = []

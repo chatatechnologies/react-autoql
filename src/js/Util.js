@@ -528,7 +528,7 @@ export const getSupportedDisplayTypes = ({
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
     const isPivotTableEmpty = pivotDataLength === 0
-    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
+    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
 
