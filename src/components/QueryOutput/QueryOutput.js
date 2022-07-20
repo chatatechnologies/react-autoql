@@ -2003,7 +2003,11 @@ export default class QueryOutput extends React.Component {
     const isTableAndAjax =
       this.props.enableAjaxTableData && this.props.displayType === 'table'
 
-    if (!dataLimited || isTableAndAjax) {
+    if (
+      !dataLimited ||
+      isTableAndAjax ||
+      areAllColumnsHidden(this.queryResponse)
+    ) {
       return null
     }
 
@@ -2182,7 +2186,8 @@ export default class QueryOutput extends React.Component {
     if (
       !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
       !this.props.showQueryInterpretation ||
-      !this.queryResponse?.data?.data?.interpretation
+      !this.queryResponse?.data?.data?.interpretation ||
+      areAllColumnsHidden(this.queryResponse)
     ) {
       return null
     }
