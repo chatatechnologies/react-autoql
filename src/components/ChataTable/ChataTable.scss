@@ -102,10 +102,10 @@
     height: 72px !important;
   }
 
-  &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
-  &.infinite .tabulator-col.DATE .tabulator-header-filter {
-    display: none;
-  }
+  // &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
+  // &.infinite .tabulator-col.DATE .tabulator-header-filter {
+  //   display: none;
+  // }
 
   &.limited .tabulator-col .tabulator-header-filter,
   &.infinite

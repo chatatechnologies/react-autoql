@@ -9,14 +9,13 @@ import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { themeConfigType } from '../../props/types'
 import { themeConfigDefault, getAuthentication } from '../../props/defaults'
-
-import 'react-tabulator/lib/styles.css' // default theme
-import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
-import './ChataTable.scss'
+import { DatePicker } from '../DatePicker'
 import { runQueryOnly, runQueryNewPage } from '../../js/queryService'
 import { getTableConfigState } from './tableHelpers'
 import { Spinner } from '../Spinner'
-import { removeFromDOM } from '../../js/Util'
+
+import './ChataTable.scss'
+import Popover from 'react-tiny-popover'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -92,15 +91,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.progressiveRenderMargin = 100
       this.tableOptions.ajaxLoader = true
       this.tableOptions.ajaxLoaderLoading = ''
-      // todo: figure out how to show this
-      // `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
-      //   Loading...
-      // </div>`
       this.tableOptions.ajaxLoaderError = ''
-      // todo: figure out how to show this
-      //  `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
-      //     Oops! Something went wrong, please try again.
-      //   </div>`
       this.tableOptions.ajaxRequestFunc = async (url, config, params) => {
         try {
           const tableConfigState = getTableConfigState(params, this.ref)
@@ -217,6 +208,7 @@ export default class ChataTable extends React.Component {
     this.setTableHeaderValues = setTimeout(() => {
       this.setInitialHeaderFilters()
       this.setFilterTags({ isFilteringTable: false })
+      this.setDateFilterClickListeners()
     }, 100)
   }
 
@@ -239,6 +231,7 @@ export default class ChataTable extends React.Component {
     if (!this.state.isFilteringTable && prevState.isFilteringTable) {
       try {
         this.setFilterTags({ isFilteringTable: this.state.isFilteringTable })
+        this.setDateFilterClickListeners()
       } catch (error) {
         console.error(error)
         this.props.onErrorCallback(error)
@@ -293,6 +286,38 @@ export default class ChataTable extends React.Component {
     return Promise.reject()
   }
 
+  setDateFilterClickListeners = () => {
+    const columns = this.ref?.table?.getColumnDefinitions()
+    if (!columns) {
+      return
+    }
+
+    columns.forEach((col) => {
+      // if ((col.type === 'DATE' || col.type === 'DATE_STRING') && !col.pivot) {
+      const inputElement = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${col.field}"] .tabulator-col-content input`
+      )
+
+      console.log('table ID:', this.TABLE_ID)
+
+      if (inputElement) {
+        inputElement.addEventListener('click', (e) => {
+          const coords = inputElement.getBoundingClientRect()
+          console.log('input x and y:', {
+            top: coords.top,
+            left: coords.left,
+          })
+          this.setState({
+            datePickerLocation: { top: coords.top, left: coords.left },
+            datePickerColumn: col,
+          })
+          console.log('COLUMN INPUT CLICKED!', e, col)
+        })
+      }
+      // }
+    })
+  }
+
   resetFilterTags = () => {
     if (this.filterTagElements?.length) {
       this.filterTagElements.forEach((filterTag) => {
@@ -335,6 +360,10 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  handleSelect = (date) => {
+    console.log(date)
+  }
+
   toggleTableFilter = ({ isFilteringTable }) => {
     this.setState({ isFilteringTable })
   }
@@ -344,6 +373,29 @@ export default class ChataTable extends React.Component {
       return `${this.tableHeight}px`
     }
     return `${_get(this.props, 'style.height')}px`
+  }
+
+  getDocumentHeightAndWidth = () => {
+    const body = document.body
+    const html = document.documentElement
+
+    const documentHeight = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    )
+
+    const documentWidth = Math.max(
+      body.scrollWidth,
+      body.offsetWidth,
+      html.clientWidth,
+      html.scrollWidth,
+      html.offsetWidth
+    )
+
+    return { documentHeight, documentWidth }
   }
 
   renderPageLoader = () => {
@@ -359,6 +411,76 @@ export default class ChataTable extends React.Component {
       <div className="table-loader table-scroll-loader">
         <Spinner />
       </div>
+    )
+  }
+
+  renderDatePickerPopover = () => {
+    // if (!this.columnHeaderElements?.length) {
+    //   return null
+    // }
+
+    return (
+      <Popover
+        isOpen={!!this.state.datePickerLocation}
+        // align="end"
+        // position="bottom"
+        reposition={false}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          this.setState({
+            datePickerLocation: undefined,
+            datePickerColumn: undefined,
+          })
+        }}
+        content={
+          <div style={{ padding: '20px', background: 'white' }}>
+            <h3 style={{ marginTop: 0 }}>
+              {this.state.datePickerColumn?.display_name}
+            </h3>
+            <DatePicker themeConfig={this.props.themeConfig} />
+          </div>
+        }
+        contentLocation={({
+          targetRect,
+          popoverRect,
+          position,
+          align,
+          nudgedLeft,
+          nudgedTop,
+        }) => {
+          console.log({
+            targetRect,
+            popoverRect,
+            position,
+            align,
+            nudgedLeft,
+            nudgedTop,
+          })
+          let top = this.state.datePickerLocation.top
+          let left = this.state.datePickerLocation.left
+
+          // const {
+          //   documentHeight,
+          //   documentWidth,
+          // } = this.getDocumentHeightAndWidth()
+
+          // const datePickerBottom = top + popoverRect.height
+          // console.log('bottom comparison:', datePickerBottom, documentHeight)
+          // if (datePickerBottom > documentHeight) {
+          //   top = top - (datePickerBottom - documentHeight)
+          // }
+
+          // const datePickerRight = left + popoverRect.width
+          // console.log('right comparison:', datePickerRight, documentWidth)
+          // if (datePickerRight > documentWidth) {
+          //   left = left - (datePickerRight - documentWidth)
+          // }
+
+          return { top, left }
+        }}
+      >
+        <div />
+      </Popover>
     )
   }
 
@@ -381,6 +503,7 @@ export default class ChataTable extends React.Component {
             flexBasis: height,
           }}
         >
+          {/* <DatePicker /> */}
           {this.props.data && this.props.columns && (
             <TableWrapper
               tableRef={(ref) => (this.ref = ref)}
@@ -400,6 +523,7 @@ export default class ChataTable extends React.Component {
           )}
           {this.state.pageLoading && this.renderPageLoader()}
           {this.state.scrollLoading && this.renderScrollLoader()}
+          {this.renderDatePickerPopover()}
         </div>
       </ErrorBoundary>
     )
