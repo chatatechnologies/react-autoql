@@ -152,7 +152,6 @@ export default class QueryOutput extends React.Component {
     renderSuggestionsAsDropdown: PropTypes.bool,
     selectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
-    enableColumnHeaderContextMenu: PropTypes.bool,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
@@ -184,7 +183,6 @@ export default class QueryOutput extends React.Component {
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
     activeChartElementKey: undefined,
-    enableColumnHeaderContextMenu: false,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -438,9 +436,10 @@ export default class QueryOutput extends React.Component {
       this.queryResponse.data.data.columns = columns
     }
 
+    this.tableID = uuid()
+
     // Get new supported display types after column change
     const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
-
     this.setSupportedDisplayTypes(newSupportedDisplayTypes, undefined, 'table')
 
     // Reset persisted column config data
@@ -1443,21 +1442,7 @@ export default class QueryOutput extends React.Component {
 
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
-
-      if (isColumnDateType(col) && this.props.enableAjaxTableData) {
-        newCol.headerSort = false
-      }
-
-      // Context menu when right clicking on column header
-      // newCol.headerContext = (e, column) => {
-      //   // Do not show native context menu
-      //   e.preventDefault()
-      //   this.setState({
-      //     isContextMenuOpen: true,
-      //     activeColumn: column,
-      //     contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
-      //   })
-      // }
+      newCol.headerSort = true
 
       return newCol
     })
@@ -1517,6 +1502,8 @@ export default class QueryOutput extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
+          ...this.tableColumns[dateColumnIndex],
+          origColumn: this.tableColumns[dateColumnIndex],
           title: 'Month',
           name: 'Month',
           field: '0',
@@ -1525,10 +1512,7 @@ export default class QueryOutput extends React.Component {
           is_visible: true,
           type: 'DATE_STRING',
           datePivot: true,
-          origColumn: this.tableColumns[dateColumnIndex],
           pivot: true,
-          headerSort: true,
-          sorter: this.dateSortFn,
         },
       ]
 
@@ -1540,10 +1524,8 @@ export default class QueryOutput extends React.Component {
           name: year,
           title: year,
           field: `${i + 1}`,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 
@@ -1658,12 +1640,10 @@ export default class QueryOutput extends React.Component {
         {
           ...this.tableColumns[newStringColumnIndex],
           frozen: true,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
           field: '0',
           pivot: true,
-          headerSort: true,
         },
       ]
 
@@ -1681,10 +1661,8 @@ export default class QueryOutput extends React.Component {
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 
@@ -1861,9 +1839,6 @@ export default class QueryOutput extends React.Component {
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
-            enableColumnHeaderContextMenu={
-              this.props.enableColumnHeaderContextMenu
-            }
           />
         </ErrorBoundary>
       )
