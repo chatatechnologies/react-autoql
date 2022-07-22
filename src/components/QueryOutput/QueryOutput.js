@@ -1443,10 +1443,7 @@ export default class QueryOutput extends React.Component {
 
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
-
-      if (isColumnDateType(col) && this.props.enableAjaxTableData) {
-        newCol.headerSort = false
-      }
+      newCol.headerSort = true
 
       // Context menu when right clicking on column header
       // newCol.headerContext = (e, column) => {
@@ -1527,7 +1524,6 @@ export default class QueryOutput extends React.Component {
           datePivot: true,
           origColumn: this.tableColumns[dateColumnIndex],
           pivot: true,
-          headerSort: true,
           sorter: this.dateSortFn,
         },
       ]
@@ -1543,7 +1539,6 @@ export default class QueryOutput extends React.Component {
           headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 
@@ -1663,7 +1658,6 @@ export default class QueryOutput extends React.Component {
           is_visible: true,
           field: '0',
           pivot: true,
-          headerSort: true,
         },
       ]
 
@@ -1684,7 +1678,6 @@ export default class QueryOutput extends React.Component {
           headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 

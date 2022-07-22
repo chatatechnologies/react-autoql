@@ -64,7 +64,7 @@
   display: block;
   width: calc(100% - 20px);
   height: unset;
-  border-radius: 24px;
+  border-radius: 15px;
   font-family: inherit;
   font-size: 15px;
   font-weight: normal;
@@ -74,7 +74,7 @@
 
   /* Default styles outside of data messenger */
   background-color: var(--react-autoql-background-color-primary);
-  color: #5d5d5d;
+  color: var(--react-autoql-text-color-primary);
 }
 
 .react-autoql-bar-container.autosuggest-top

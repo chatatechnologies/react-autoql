@@ -13,8 +13,12 @@ import { AiOutlineEdit } from '@react-icons/all-files/ai/AiOutlineEdit'
 import { AiOutlineFileText } from '@react-icons/all-files/ai/AiOutlineFileText'
 import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
+import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
+import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
+import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
+import { BiBook } from '@react-icons/all-files/bi/BiBook'
 
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
@@ -86,7 +90,7 @@ import './Icon.scss'
 
 export default class Icon extends React.Component {
   static propTypes = {
-    type: PropTypes.string.isRequired,
+    type: PropTypes.string,
     size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
     color: PropTypes.string,
@@ -113,6 +117,11 @@ export default class Icon extends React.Component {
     } = this.props
 
     let icon = null
+
+    if (!this.props.type) {
+      return null
+    }
+
     switch (this.props.type) {
       case 'back': {
         icon = <FiArrowLeft />
@@ -120,6 +129,14 @@ export default class Icon extends React.Component {
       }
       case 'bar-chart': {
         icon = barChartIcon
+        break
+      }
+      case 'book': {
+        icon = <BiBook />
+        break
+      }
+      case 'bookmark': {
+        icon = <BiBookmark />
         break
       }
       case 'stacked-bar-chart': {
@@ -347,6 +364,10 @@ export default class Icon extends React.Component {
         icon = <IoIosSearch />
         break
       }
+      case 'data-search': {
+        icon = <BiSearchAlt />
+        break
+      }
       case 'send': {
         icon = <FiSend />
         break
@@ -377,6 +398,10 @@ export default class Icon extends React.Component {
       }
       case 'table': {
         icon = tableIcon
+        break
+      }
+      case 'tag': {
+        icon = <AiOutlineTag />
         break
       }
       case 'title': {

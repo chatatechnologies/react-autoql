@@ -4,6 +4,7 @@ export const lang = new LocalizedStrings({
   en: {
     introPrompt: 'Some things you can ask me: ',
     use: 'Use',
+    dataExplorer: 'Data Explorer',
     exploreQueries: 'Explore Queries',
     explorePrompt: 'to further explore the possibilities.',
     run: 'We run on AutoQL by Chata',
@@ -47,6 +48,7 @@ export const lang = new LocalizedStrings({
   sp: {
     introPrompt: 'Cosas que puedes preguntarme:',
     use: 'Utiliza',
+    dataExplorer: 'Explorador de datos',
     exploreQueries: 'Explorar Consultas',
     explorePrompt: 'para ampliar las posibilidades.',
     run: 'Corremos en AutoQL de Chata',
