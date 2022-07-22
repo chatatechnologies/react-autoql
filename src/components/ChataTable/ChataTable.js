@@ -134,6 +134,7 @@ export default class ChataTable extends React.Component {
             const responseWrapper = await runQueryOnly({
               ...getAuthentication(props.authentication),
               ...props.queryRequestData,
+              query: props.queryText,
               pageSize: props.pageSize,
               orders: tableConfigState?.sorters,
               tableFilters: tableConfigState?.filters,

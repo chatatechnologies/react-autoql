@@ -173,8 +173,8 @@ export default class QueryInput extends React.Component {
       })
   }
 
-  onResponse = (response, query, queryRequestData) => {
-    this.props.onResponseCallback(response, query, queryRequestData)
+  onResponse = (response, query) => {
+    this.props.onResponseCallback(response, query)
 
     const newState = {
       isQueryRunning: false,
@@ -244,11 +244,11 @@ export default class QueryInput extends React.Component {
         this.submitDprQuery(query)
       } else if (skipQueryValidation) {
         runQueryOnly(requestData)
-          .then((response) => this.onResponse(response, query, requestData))
+          .then((response) => this.onResponse(response, query))
           .catch((error) => console.error(error))
       } else {
         runQuery(requestData)
-          .then((response) => this.onResponse(response, query, requestData))
+          .then((response) => this.onResponse(response, query))
           .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error

@@ -292,7 +292,6 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           optionsToolbarRef={this.optionsToolbarRef}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
-          queryRequestData={this.props.queryRequestData}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
           onRecommendedDisplayType={this.switchView}

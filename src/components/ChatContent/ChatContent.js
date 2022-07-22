@@ -256,7 +256,7 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onResponse = (response, query, queryRequestData) => {
+  onResponse = (response, query) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
@@ -278,7 +278,7 @@ export default class ChatContent extends React.Component {
           ),
         })
       } else {
-        this.addResponseMessage({ response, query, queryRequestData })
+        this.addResponseMessage({ response, query })
       }
 
       this.setState({ isChataThinking: false })
@@ -391,7 +391,6 @@ export default class ChatContent extends React.Component {
                 disableMaxHeight={this.props.disableMaxMessageHeight}
                 enableAjaxTableData={this.props.enableAjaxTableData}
                 rebuildTooltips={this.props.rebuildTooltips}
-                queryRequestData={message.queryRequestData}
                 source={this.props.source}
               />
             )

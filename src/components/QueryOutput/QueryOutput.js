@@ -1888,7 +1888,8 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         useInfiniteScroll={useInfiniteScroll}
-        queryRequestData={this.props.queryRequestData}
+        queryRequestData={this.queryResponse.fe_req}
+        queryText={this.queryResponse?.data?.data?.text}
         supportsDrilldowns={
           isAggregation(this.tableColumns) && this.tableColumns.length === 2
         }
