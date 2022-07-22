@@ -40,8 +40,6 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './QueryInput.scss'
 import { dprQuery } from '../../js/dprService'
 
-let autoCompleteArray = []
-
 export default class QueryInput extends React.Component {
   constructor(props) {
     super(props)
@@ -50,6 +48,7 @@ export default class QueryInput extends React.Component {
 
     this.UNIQUE_ID = uuid()
     this.autoCompleteTimer = undefined
+    this.autoCompleteArray = []
 
     this.state = {
       inputValue: '',
@@ -193,6 +192,11 @@ export default class QueryInput extends React.Component {
     skipQueryValidation,
     source,
   } = {}) => {
+    const query = queryText || this.state.inputValue
+    if (!query) {
+      return
+    }
+
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
@@ -211,9 +215,6 @@ export default class QueryInput extends React.Component {
 
     if (this._isMounted) this.setState(newState)
 
-    const query = queryText || this.state.inputValue
-    const pageSize = this.props.dataPageSize
-
     let newSource = this.props.source
     if (source?.length) {
       newSource = [...this.props.source, ...source]
@@ -229,7 +230,7 @@ export default class QueryInput extends React.Component {
       source: newSource,
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
-      pageSize,
+      pageSize: this.props.dataPageSize,
     }
 
     if (query.trim()) {
@@ -361,7 +362,7 @@ export default class QueryInput extends React.Component {
 
           const sortingArray = []
           let suggestionsMatchArray = []
-          autoCompleteArray = []
+          this.autoCompleteArray = []
           suggestionsMatchArray = body.matches
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
@@ -376,11 +377,11 @@ export default class QueryInput extends React.Component {
             const anObject = {
               name: sortingArray[idx],
             }
-            autoCompleteArray.push(anObject)
+            this.autoCompleteArray.push(anObject)
           }
 
           this.setState({
-            suggestions: autoCompleteArray,
+            suggestions: this.autoCompleteArray,
           })
         })
         .catch((error) => {
@@ -435,7 +436,6 @@ export default class QueryInput extends React.Component {
           <div className="react-autoql-chatbar-input-container">
             {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
               <Autosuggest
-                lassName="auto-complete-chata"
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
                 getSuggestionValue={this.userSelectedSuggestionHandler}
@@ -519,7 +519,7 @@ export default class QueryInput extends React.Component {
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               themeConfig={this.props.themeConfig}
-              authentication={getAuthentication(this.props.authentication)}
+              authentication={this.props.authentication}
             />
           )}
         </div>
