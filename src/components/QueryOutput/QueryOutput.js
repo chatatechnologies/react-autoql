@@ -115,7 +115,8 @@ export default class QueryOutput extends React.Component {
     if (!isProvidedDisplayTypeValid) {
       displayType = getDefaultDisplayType(
         this.queryResponse,
-        props.autoChartAggregations
+        props.autoChartAggregations,
+        this.props.preferredDisplayType
       )
       this.onRecommendedDisplayType(displayType)
     }
@@ -153,6 +154,7 @@ export default class QueryOutput extends React.Component {
     selectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     enableColumnHeaderContextMenu: PropTypes.bool,
+    preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
@@ -193,6 +195,7 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    preferredDisplayType: undefined,
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -216,7 +219,8 @@ export default class QueryOutput extends React.Component {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
         )
       }
@@ -268,7 +272,8 @@ export default class QueryOutput extends React.Component {
         if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
         } else {
@@ -284,7 +289,8 @@ export default class QueryOutput extends React.Component {
         if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
         } else if (!this.tableData) {
@@ -301,7 +307,8 @@ export default class QueryOutput extends React.Component {
       ) {
         const recommendedDisplayType = getDefaultDisplayType(
           this.queryResponse,
-          this.props.autoChartAggregations
+          this.props.autoChartAggregations,
+          this.props.preferredDisplayType
         )
         this.onRecommendedDisplayType(recommendedDisplayType)
       }
@@ -1129,7 +1136,13 @@ export default class QueryOutput extends React.Component {
       ) {
         this.onRecommendedDisplayType(preferredDisplayType)
       } else if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.onRecommendedDisplayType(getDefaultDisplayType(this.queryResponse))
+        this.onRecommendedDisplayType(
+          getDefaultDisplayType(
+            this.queryResponse,
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
+          )
+        )
       }
 
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
