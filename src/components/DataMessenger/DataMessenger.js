@@ -894,7 +894,6 @@ export default class DataMessenger extends React.Component {
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
-          containerWidth: newWidth,
           isSizeMaximum: false,
         })
       }
@@ -906,7 +905,6 @@ export default class DataMessenger extends React.Component {
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
-          containerWidth: newWidth,
           isSizeMaximum: false,
         })
       }
@@ -939,7 +937,6 @@ export default class DataMessenger extends React.Component {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
       this.setState({
         isResizing: false,
-        containerWidth: this.state.width,
       })
     } else if (
       this.state.placement === 'top' ||

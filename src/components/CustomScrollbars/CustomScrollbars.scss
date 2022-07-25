@@ -1,0 +1,10 @@
+::-webkit-scrollbar {
+  visibility: hidden;
+}
+
+.thumb-vertical,
+.thumb-horizontal {
+  border-radius: 3px;
+  background-color: var(--react-autoql-highlight-color);
+  opacity: 0.3;
+}

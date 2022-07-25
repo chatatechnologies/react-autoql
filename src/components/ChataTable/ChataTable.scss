@@ -1,9 +1,10 @@
 .react-autoql-table-container {
   flex: 1;
-  max-width: 100%;
+  max-width: calc(100% - 10px);
   width: 100%;
   background-color: inherit;
   position: relative;
+  display: flex;
 
   &.infinite:not(.last-page) .tabulator-row:last-child {
     margin-bottom: 40px;
@@ -46,13 +47,21 @@
 .react-autoql-table.tabulator .tabulator-tableHolder .tabulator-table {
   background-color: inherit;
 }
-// .tabulator-loader {
-//   display: none;
-// }
+.react-autoql-table-container:not(.supports-drilldown)
+  .react-autoql-table.tabulator
+  .tabulator-row
+  .tabulator-cell {
+  cursor: default;
+}
 .react-autoql-table-container.supports-drilldown
   .react-autoql-table.tabulator
-  .tabulator-row.tabulator-unselectable:hover {
-  cursor: pointer !important;
+  .tabulator-row
+  .tabulator-cell:not(.pivot-category) {
+  cursor: pointer;
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    transition: color 0.2s ease;
+  }
 }
 .react-autoql-table.tabulator
   .tabulator-header
@@ -69,13 +78,17 @@
 }
 .react-autoql-table.tabulator {
   background-color: inherit;
-  height: 100%;
+  flex: 1;
 }
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--react-autoql-border-color);
   background-color: var(--react-autoql-background-color-primary);
   z-index: 1;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 .tabulator-cell:not(:first-child) {
   border-left: 1px solid !important;
@@ -187,9 +200,12 @@
   height: 7px;
   transition: all 0.3s ease;
 }
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
-.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
+.react-autoql-table .tabulator-tableHolder::-webkit-scrollbar-corner {
   background-color: transparent;
 }
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-thumb {

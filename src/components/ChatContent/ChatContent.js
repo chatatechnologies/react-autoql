@@ -343,10 +343,7 @@ export default class ChatContent extends React.Component {
           innerRef={(c) => {
             this.messengerScrollComponent = c
           }}
-          className="chat-message-container"
-          renderView={(props) => (
-            <div {...props} className="custom-scrollbar-container" />
-          )}
+          className="chat-message-scroll-container"
         >
           {this.state.messages.map((message) => {
             return (

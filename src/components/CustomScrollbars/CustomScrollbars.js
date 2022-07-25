@@ -13,22 +13,35 @@ export default class CustomScrollbars extends React.Component {
   render = () => {
     return (
       <Scrollbars
-        className={this.props.className}
+        {...this.props}
         ref={this.props.innerRef}
-        renderTrackHorizontal={({ style, ...props }) => (
-          <div
-            {...props}
-            style={{
-              ...style,
-              left: '50%',
-              width: '100px',
-              top: 0,
-              transform: 'translateX(-50%)',
-            }}
-          />
+        className={`react-autoql-custom-scrollbars ${this.props.className}`}
+        renderTrackVertical={(props) => (
+          <div {...props} className="track-vertical" />
         )}
+        renderTrackHorizontal={(props) => (
+          <div {...props} className="track-horizontal" />
+        )}
+        renderThumbVertical={(props) => (
+          <div {...props} className="thumb-vertical" />
+        )}
+        renderThumbHorizontal={(props) => (
+          <div {...props} className="thumb-horizontal" />
+        )}
+        renderView={(props) => (
+          <div {...props} className="custom-scrollbar-view" />
+        )}
+        autoHide
       >
-        {this.props.children}
+        <div
+          style={{
+            position: 'absolute',
+            height: '100%',
+            width: '100%',
+          }}
+        >
+          {this.props.children}
+        </div>
       </Scrollbars>
     )
   }

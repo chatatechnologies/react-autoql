@@ -41,12 +41,6 @@ export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
 
-    this.filtering = false
-    this.PIE_CHART_HEIGHT = 330
-    this.MESSAGE_HEIGHT_MARGINS = 40
-    this.MESSAGE_WIDTH_MARGINS = 40
-    this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
-
     const displayType = getDefaultDisplayType(
       props.response,
       props.autoChartAggregations
@@ -143,9 +137,6 @@ export default class ChatMessage extends React.Component {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
     }, 500)
-
-    this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
-    this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -230,7 +221,6 @@ export default class ChatMessage extends React.Component {
   }
 
   switchView = (displayType) => {
-    this.filtering = false
     this.setState({ displayType }, this.scrollIntoView)
   }
 
@@ -365,8 +355,6 @@ export default class ChatMessage extends React.Component {
         ) : null}
       </div>
     )
-
-    return null
   }
 
   renderLeftToolbar = () => {
