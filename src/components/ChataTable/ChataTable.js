@@ -92,15 +92,7 @@ export default class ChataTable extends React.Component {
       this.tableOptions.progressiveRenderMargin = 100
       this.tableOptions.ajaxLoader = true
       this.tableOptions.ajaxLoaderLoading = ''
-      // todo: figure out how to show this
-      // `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
-      //   Loading...
-      // </div>`
       this.tableOptions.ajaxLoaderError = ''
-      // todo: figure out how to show this
-      //  `<div style="display:inline-block; border:2px solid var(--react-autoql-danger-color); border-radius:5px; background: var(--react-autoql-background-color-primary); font-weight:bold; font-size:16px; color:var(--react-autoql-text-color-primary); padding:10px 20px;">
-      //     Oops! Something went wrong, please try again.
-      //   </div>`
       this.tableOptions.ajaxRequestFunc = async (url, config, params) => {
         try {
           const tableConfigState = getTableConfigState(params, this.ref)
@@ -222,6 +214,12 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (prevProps.isResizing && this.props.isResizing) {
+      this.justResized = true
+    } else {
+      this.justResized = false
+    }
+
     if (this.ref) {
       this.setDimensionsTimeout = setTimeout(() => {
         if (this._isMounted) {
@@ -343,8 +341,11 @@ export default class ChataTable extends React.Component {
   getTableHeight = () => {
     if (this.tableHeight) {
       return `${this.tableHeight}px`
+    } else if (_get(this.props, 'style.height')) {
+      return `${this.props.style.height}px`
     }
-    return `${_get(this.props, 'style.height')}px`
+
+    return undefined
   }
 
   renderPageLoader = () => {
@@ -379,7 +380,12 @@ export default class ChataTable extends React.Component {
           ${this.state.isLastPage ? 'last-page' : ''}`}
           style={{
             ...this.props.style,
-            flexBasis: height,
+            flexBasis:
+              this.props.isResizing ||
+              this.state.pageLoading ||
+              this.justResized
+                ? height
+                : 'auto',
           }}
         >
           {this.props.data && this.props.columns && (

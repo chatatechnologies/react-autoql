@@ -20,7 +20,7 @@
     color: var(--react-autoql-accent-color);
 
     &.table-page-loader {
-      top: 0;
+      top: 50px;
       bottom: 0;
       right: 0;
       left: 0;
@@ -51,16 +51,18 @@
   .react-autoql-table.tabulator
   .tabulator-row
   .tabulator-cell {
-  cursor: default;
+  cursor: text;
 }
 .react-autoql-table-container.supports-drilldown
   .react-autoql-table.tabulator
   .tabulator-row
   .tabulator-cell:not(.pivot-category) {
+  transition: color 0.2s ease;
   cursor: pointer;
+
   &:hover {
     color: var(--react-autoql-accent-color);
-    transition: color 0.2s ease;
+    font-weight: 600;
   }
 }
 .react-autoql-table.tabulator
@@ -225,7 +227,7 @@
   border: 1px solid #28a8e0;
 }
 .tabulator-table .tabulator-row .tabulator-cell {
-  min-height: 38px;
+  min-height: 32px;
 }
 
 /* Center header titles */

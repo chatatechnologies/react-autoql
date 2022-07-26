@@ -105,6 +105,14 @@ export default class QueryInput extends React.Component {
     this.focus()
   }
 
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing || nextProps.isResizing) {
+      return false
+    }
+
+    return true
+  }
+
   componentDidUpdate = (prevProps) => {
     if (
       !_isEqual(
