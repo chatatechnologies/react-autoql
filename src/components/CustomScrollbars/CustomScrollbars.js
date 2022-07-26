@@ -1,21 +1,26 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Scrollbars } from 'react-custom-scrollbars-2'
 
 import './CustomScrollbars.scss'
 
 export default class CustomScrollbars extends React.Component {
-  static propTypes = {}
+  static propTypes = {
+    style: PropTypes.shape({}),
+  }
 
-  static defaultProps = {}
+  static defaultProps = {
+    style: {},
+  }
 
   state = {}
 
   render = () => {
     return (
       <Scrollbars
-        {...this.props}
         ref={this.props.innerRef}
         className={`react-autoql-custom-scrollbars ${this.props.className}`}
+        style={this.props.style}
         renderTrackVertical={(props) => (
           <div {...props} className="track-vertical" />
         )}

@@ -423,6 +423,7 @@ export default class ChatContent extends React.Component {
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
+            isResizing={this.props.isResizing}
           />
         </div>
       </ErrorBoundary>

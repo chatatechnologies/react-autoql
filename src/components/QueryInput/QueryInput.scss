@@ -126,7 +126,7 @@
 .react-autoql-bar-container .react-autosuggest__section-title {
   padding: 10px 0 0 10px;
   font-size: 12px;
-  color: #777;
+  color: var(--react-autoql-text-color-placeholder);
 }
 
 .input-response-loading-container {

@@ -168,6 +168,7 @@ export default class QueryOutput extends React.Component {
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     rebuildTooltips: PropTypes.func,
+    onRowChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -196,6 +197,7 @@ export default class QueryOutput extends React.Component {
     isTaskModule: false,
     enableAjaxTableData: false,
     preferredDisplayType: undefined,
+    onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -320,7 +322,11 @@ export default class QueryOutput extends React.Component {
         disableScroll.off()
       }
 
-      if (this.state.visibleRows !== prevState.visibleRows) {
+      if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
+        this.props.onRowChange()
+      }
+
+      if (!_isEqual(this.state.visibleRows, prevState.visibleRows)) {
         if (this.shouldGeneratePivotData(this.state.visibleRows)) {
           this.generatePivotData({
             isFirstGeneration: true,

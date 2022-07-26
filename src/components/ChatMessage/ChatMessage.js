@@ -289,6 +289,7 @@ export default class ChatMessage extends React.Component {
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
+          onRowChange={this.scrollIntoView}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
