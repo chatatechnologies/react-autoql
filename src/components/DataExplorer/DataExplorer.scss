@@ -4,9 +4,23 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  flex-wrap: wrap;
+  flex: 1 1;
+  min-height: 0;
 
-  h2 {
+  h2,
+  .data-explorer-title {
     color: var(--react-autoql-text-color-primary);
+  }
+
+  .data-explorer-title {
+    font-size: 18px;
+    margin: 15px 0px 10px 0px;
+    font-weight: 500;
+  }
+
+  .data-explorer-topic-icon {
+    margin-right: 5px;
   }
 
   .react-autoql-chatbar-input-container {
@@ -29,10 +43,6 @@
       width: 100%;
       padding-left: 46px;
       padding-right: 46px;
-    }
-
-    .data-explorer-autocomplete-icon {
-      margin-right: 5px;
     }
 
     .data-explorer-no-suggestions {
@@ -58,6 +68,8 @@
       font-weight: normal;
       z-index: 2;
       overflow: auto;
+      margin-top: 3px;
+      border: 1px solid var(--react-autoql-border-color);
       box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
       background-color: var(--react-autoql-background-color-primary);
       color: var(--react-autoql-text-color-primary);
@@ -87,7 +99,7 @@
     .react-autosuggest__section-title {
       padding: 10px 0 0 10px;
       font-size: 12px;
-      color: #777;
+      color: var(--react-autoql-text-color-placeholder);
     }
   }
 
@@ -97,10 +109,56 @@
     margin: 50px auto;
   }
 
+  .data-explorer-selected-topics-container {
+    flex: 0;
+    margin: 0 10px;
+  }
+
+  .data-preview-section {
+    flex: 1;
+    min-height: 0;
+    max-height: 50%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .data-preview-title {
+      flex: 0;
+    }
+    .data-preview-header {
+      flex: 0;
+      text-align: center;
+    }
+    .data-preview-content {
+      flex: 1;
+      min-height: 0;
+      align-items: flex-start;
+      justify-content: stretch;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .data-explorer-data-preview {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
   .data-explorer-result-container {
     color: var(--react-autoql-text-color-primary);
-    text-align: center;
     flex: 1;
+    width: 100%;
+    overflow: hidden;
+    padding: 0 5px;
+    min-height: 0;
+
+    .data-explorer-selected-text {
+      opacity: 0.8;
+      font-weight: 600;
+    }
   }
 
   .chat-bar-clear-btn {

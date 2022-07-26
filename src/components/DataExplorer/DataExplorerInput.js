@@ -5,23 +5,11 @@ import Autosuggest from 'react-autosuggest'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 
+import DEConstants from './constants'
 import { authenticationType } from '../../props/types'
-import { fetchVLAutocomplete } from '../../js/queryService'
+import { fetchVLAutocomplete, fetchSubjectList } from '../../js/queryService'
 import { Icon } from '../Icon'
-
-const mockSubjectRequest = () => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve([
-        'Sales',
-        'Bills',
-        'Accounts Receivable',
-        'Accounts Payable',
-        'Customers',
-      ])
-    }, 1000)
-  })
-}
+import { TopicName } from './TopicName'
 
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
@@ -29,8 +17,6 @@ export default class DataExplorerInput extends React.Component {
 
     this.componentKey = uuid()
     this.userSelectedValue = null
-    this.subjectType = 'subject'
-    this.VLType = 'VL'
 
     this.state = {
       inputValue: '',
@@ -49,7 +35,7 @@ export default class DataExplorerInput extends React.Component {
 
   static defaultProps = {
     authentication: {},
-    inputPlaceholder: 'Find a subject...',
+    inputPlaceholder: 'Search subjects or values...',
     onSelection: () => {},
   }
 
@@ -64,13 +50,8 @@ export default class DataExplorerInput extends React.Component {
   }
 
   fetchAllSubjects = () => {
-    mockSubjectRequest().then((subjects) => {
-      const allSubjects = subjects?.length
-        ? subjects.map((subject) => ({
-            name: subject,
-            type: this.subjectType,
-          }))
-        : []
+    fetchSubjectList({ ...this.props.authentication }).then((response) => {
+      const allSubjects = response?.data?.data?.subjects || []
 
       if (this._isMounted) {
         this.setState({
@@ -81,7 +62,11 @@ export default class DataExplorerInput extends React.Component {
   }
 
   focusInput = () => {
-    this.inputRef?.focus()
+    this.autoSuggest?.input?.focus()
+  }
+
+  blurInput = () => {
+    this.autoSuggest?.input?.blur()
   }
 
   getNewRecentSuggestions = (subject) => {
@@ -123,10 +108,6 @@ export default class DataExplorerInput extends React.Component {
         // DO NOTHING
       }
 
-      if (e.key === 'Enter') {
-        console.log('enter pressed')
-      }
-
       if (e?.target?.value || e?.target?.value === '') {
         this.setState({ inputValue: e.target.value })
       } else {
@@ -149,13 +130,9 @@ export default class DataExplorerInput extends React.Component {
   }
 
   onKeyPress = (e) => {
-    console.log(
-      'on key press.. this is the user selected value:',
-      this.userSelectedValue
-    )
     if (e.key == 'Enter' && this.userSelectedValue) {
-      console.log('just selected by hitting enter')
       this.selectSubject(this.userSelectedValue)
+      this.blurInput()
     }
   }
 
@@ -191,7 +168,7 @@ export default class DataExplorerInput extends React.Component {
                 return {
                   ...match,
                   name: `${match.keyword} (${match.show_message})`,
-                  type: this.VLType,
+                  type: DEConstants.VL_TYPE,
                 }
               }
             )
@@ -296,19 +273,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   renderSuggestion = (suggestion) => {
-    let iconType = null
-    if (suggestion.type === this.subjectType) {
-      iconType = 'book'
-    } else if (suggestion.type === this.VLType) {
-      iconType = 'bookmark'
-    }
-
-    return (
-      <span>
-        <Icon className="data-explorer-autocomplete-icon" type={iconType} />
-        {suggestion.name}
-      </span>
-    )
+    return <TopicName topic={suggestion} />
   }
 
   renderInputIcon = () => {

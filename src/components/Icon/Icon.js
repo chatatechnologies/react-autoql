@@ -14,6 +14,7 @@ import { AiOutlineFileText } from '@react-icons/all-files/ai/AiOutlineFileText'
 import { AiOutlineMenu } from '@react-icons/all-files/ai/AiOutlineMenu'
 import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQuestionCircle'
 import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
+import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
@@ -346,6 +347,10 @@ export default class Icon extends React.Component {
       }
       case 'plus': {
         icon = <FiPlus />
+        break
+      }
+      case 'preview': {
+        icon = <AiOutlineFileSearch />
         break
       }
       case 'question': {

@@ -833,6 +833,7 @@ export default class DataMessenger extends React.Component {
       <DataExplorer
         ref={(r) => (this.exploreQueriesRef = r)}
         authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
         shouldRender={
           this.state.activePage === 'data-explorer' && !!this.dmRef?.state?.open
         }

@@ -1,0 +1,12 @@
+.data-explorer-data-preview {
+  .tabulator-col-content,
+  .tabulator-cell {
+    cursor: pointer !important;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--react-autoql-accent-color);
+      font-weight: 600;
+    }
+  }
+}

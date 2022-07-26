@@ -127,6 +127,7 @@ export default class App extends Component {
     enableQuerySuggestions: true,
     enableDrilldowns: true,
     enableExploreQueriesTab: true,
+    enableDataExplorerTab: true,
     enableNotificationsTab: true,
     enableNotifications: true,
     enableColumnVisibilityManager: true,
@@ -1325,6 +1326,7 @@ export default class App extends Component {
         title={this.state.title}
         maxMessages={this.state.maxMessages}
         enableExploreQueriesTab={this.state.enableExploreQueriesTab}
+        enableDataExplorerTab={this.state.enableDataExplorerTab}
         enableNotificationsTab={this.state.enableNotificationsTab}
         onErrorCallback={this.onError}
         onSuccessAlert={this.onSuccess}

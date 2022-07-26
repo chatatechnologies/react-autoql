@@ -1,6 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { constructRTArray } from './reverseTranslationHelpers'
+import responseSamples from '../../test/responseTestCases'
 
 var autoCompleteCall = null
 
@@ -599,6 +600,77 @@ export const reportProblem = ({
 
   return axios
     .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchSubjectList = ({ domain, apiKey, token }) => {
+  const subjectList = [
+    'Sales',
+    'Bills',
+    'Accounts Receivable',
+    'Accounts Payable',
+    'Customers',
+  ]
+
+  const formattedSubjectList = subjectList.map((subject) => ({
+    name: subject,
+    type: 'subject',
+  }))
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ data: { data: { subjects: formattedSubjectList } } })
+    }, 1000)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/subjects?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
+  if (!subject) {
+    return Promise.reject(new Error('No subject supplied for data preview'))
+  }
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(responseSamples[9])
+    }, 2000)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/data-preview`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {
+    subject,
+  }
+
+  return axios
+    .post(url, data, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

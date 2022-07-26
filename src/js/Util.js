@@ -634,9 +634,17 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
   return fallback
 }
 
-export const getDefaultDisplayType = (response, defaultToChart) => {
+export const getDefaultDisplayType = (
+  response,
+  defaultToChart,
+  preferredDisplayType
+) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({ response })
   const responseDisplayType = _get(response, 'data.data.display_type')
+
+  if (supportedDisplayTypes.includes(preferredDisplayType)) {
+    return preferredDisplayType
+  }
 
   // If the display type is a recognized non-chart or non-table type
   if (
