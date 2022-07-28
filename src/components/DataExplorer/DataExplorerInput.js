@@ -156,9 +156,7 @@ export default class DataExplorerInput extends React.Component {
 
   clearInput = () => {
     if (this._isMounted) {
-      this.setState({ inputValue: '' }, () => {
-        this.focusInput()
-      })
+      this.setState({ inputValue: '' })
       this.userTypedValue = null
       this.userSelectedValue = null
     }

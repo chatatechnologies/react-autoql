@@ -62,15 +62,19 @@ export default class DataExplorer extends React.Component {
     if (listItem?.type === DEConstants.SUBJECT_TYPE) {
       this.setState({
         selectedSubject: listItem,
+        selectedKeywords: null,
         activeTopicType: listItem?.type,
       })
     } else if (listItem?.type === DEConstants.VL_TYPE) {
       this.setState({
         selectedVL: listItem,
+        selectedKeywords: null,
         activeTopicType: listItem?.type,
       })
     } else if (listItem?.type === 'text') {
       this.setState({
+        selectedSubject: null,
+        selectedVL: null,
         selectedKeywords: listItem,
         activeTopicType: listItem?.type,
       })
@@ -187,18 +191,10 @@ export default class DataExplorer extends React.Component {
   }
 
   renderQuerySuggestions = () => {
-    if (
-      !this.state.selectedVL &&
-      !this.state.selectedSubject &&
-      !this.state.selectedKeywords
-    ) {
+    const selectedTopic = this.getSelectedTopic()
+    if (!selectedTopic) {
       return null
     }
-
-    const selected =
-      this.state.selectedVL ||
-      this.state.selectedSubject ||
-      this.state.selectedKeywords
 
     return (
       <div className="data-preview-section query-suggestions">
@@ -210,7 +206,7 @@ export default class DataExplorer extends React.Component {
                   style={{ fontSize: '20px' }}
                   type="react-autoql-bubbles-outlined"
                 />
-                Query Suggestions for "{selected?.name}"
+                Query Suggestions for "{selectedTopic?.name}"
               </div>
               <Icon type="caret-down" />
             </div>
@@ -221,7 +217,7 @@ export default class DataExplorer extends React.Component {
           <div className="data-explorer-query-suggestion-list">
             <QuerySuggestionList
               authentication={this.props.authentication}
-              topicText={selected?.name}
+              topicText={selectedTopic?.name}
               executeQuery={this.props.executeQuery}
             />
           </div>
@@ -230,14 +226,27 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  getSelectedTopic = () => {
+    const activeType = this.state.activeTopicType
+    if (activeType === DEConstants.SUBJECT_TYPE) {
+      return this.state.selectedSubject
+    }
+    if (activeType === DEConstants.VL_TYPE) {
+      return this.state.selectedVL
+    }
+    if (activeType === 'text') {
+      return this.state.selectedKeywords
+    }
+
+    return null
+  }
+
   // renderTopicChips = () => {
   //   const subject = this.state.selectedSubject
   //   const vl = this.state.selectedVL
-
   //   if (!subject && !vl) {
   //     return null
   //   }
-
   //   return (
   //     <div className="data-explorer-selected-topics-container">
   //       <div className="data-explorer-selected-text">Selected topics:</div>
@@ -258,18 +267,15 @@ export default class DataExplorer extends React.Component {
   }
 
   renderSelectionTitle = () => {
-    if (
-      !this.state.selectedSubject &&
-      !this.state.selectedVL &&
-      !this.state.selectedKeywords
-    ) {
+    const selectedTopic = this.getSelectedTopic()
+    if (!selectedTopic) {
       return null
     }
 
     return (
       <div className="data-explorer-title exploring-title">
         <div>
-          Exploring "<TopicName topic={this.state.selectedSubject} />"
+          Exploring "<TopicName topic={selectedTopic} />"
         </div>
         <div className="clear-explorer-content-btn" onClick={this.clearContent}>
           <Icon type="close" /> <u>Clear</u>
@@ -279,11 +285,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataExplorerContent = () => {
-    if (
-      !this.state.selectedSubject &&
-      !this.state.selectedVL &&
-      !this.state.selectedKeywords
-    ) {
+    if (!this.getSelectedTopic()) {
       return this.renderIntroMessage()
     }
 
@@ -340,8 +342,12 @@ export default class DataExplorer extends React.Component {
   }
 
   renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.name
-    const lowerCaseSubject = subject?.toLowerCase()
+    const subject = this.state.selectedSubject?.name || ''
+    if (!subject) {
+      return null
+    }
+
+    const lowerCaseSubject = subject.toLowerCase()
     const titleCaseSubject =
       lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
     const lowerCaseColumn = column?.display_name?.toLowerCase()
