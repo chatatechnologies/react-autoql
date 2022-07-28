@@ -7,12 +7,20 @@ import _isEqual from 'lodash.isequal'
 import DataExplorerInput from './DataExplorerInput'
 import DataPreview from './DataPreview'
 import DEConstants from './constants'
+import { CustomScrollbars } from '../CustomScrollbars'
 import { authenticationType } from '../../props/types'
+import { QuerySuggestionList } from '../ExploreQueries'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { Chip } from '../Chip'
+
+import {
+  isColumnDateType,
+  isColumnNumberType,
+  isColumnStringType,
+} from '../QueryOutput/columnHelpers'
 
 import './DataExplorer.scss'
 
@@ -20,6 +28,7 @@ export default class DataExplorer extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      activeTopicType: null,
       selectedSubject: null,
       selectedVL: null,
     }
@@ -29,12 +38,14 @@ export default class DataExplorer extends React.Component {
     authentication: authenticationType,
     shouldRender: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
+    rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: {},
     shouldRender: true,
     inputPlaceholder: undefined,
+    rebuildTooltips: () => {},
   }
 
   componentDidMount = () => {
@@ -48,38 +59,59 @@ export default class DataExplorer extends React.Component {
   }
 
   onInputSelection = (listItem) => {
-    if (
-      listItem?.type === DEConstants.SUBJECT_TYPE &&
-      !_isEqual(listItem, this.state.selectedSubject)
-    ) {
+    if (listItem?.type === DEConstants.SUBJECT_TYPE) {
       this.setState({
         selectedSubject: listItem,
         activeTopicType: listItem?.type,
       })
-    } else if (
-      listItem?.type === DEConstants.VL_TYPE &&
-      !_isEqual(listItem, this.state.selectedVL)
-    ) {
+    } else if (listItem?.type === DEConstants.VL_TYPE) {
       this.setState({
         selectedVL: listItem,
         activeTopicType: listItem?.type,
       })
+    } else if (listItem?.type === 'text') {
+      this.setState({
+        selectedKeywords: listItem,
+        activeTopicType: listItem?.type,
+      })
     }
+
+    this.inputRef?.blurInput()
   }
 
   renderIntroMessage = () => {
     return (
       <div className="data-explorer-intro-message">
-        <h2>Welcome to Data Explorer</h2>
+        <h2>
+          Welcome to <Icon type="data-search" />
+          Data Explorer
+        </h2>
         {this.props.introMessage ? (
           <p>{this.props.introMessage}</p>
         ) : (
           <div>
-            <p>Pick one or more data subjects and</p>
-            <br />
-            <p>Preview raw data structures</p>
-            <p>Get query suggestions</p>
-            <p>Explore value label categories</p>
+            <p>
+              Explore your data and discover what you can ask AutoQL. Simply
+              enter a topic in the search bar above and:
+            </p>
+            <div className="intro-message-list-container">
+              <div>
+                <p>
+                  <Icon type="table" /> Preview available data in a snapshot
+                </p>
+                <p>
+                  <Icon type="abacus" /> Explore data structure and column types
+                </p>
+                <p>
+                  <Icon
+                    style={{ marginLeft: '-5px' }}
+                    type="react-autoql-bubbles-outlined"
+                  />
+                  View a variety of query suggestions
+                </p>
+                {/* <p><Icon /> Explore value label categories</p> */}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -126,14 +158,13 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className="data-preview-section">
-        {/* <div>
-          All <TopicName topic={this.state.selectedSubject} />
-        </div> */}
         <DataPreview
           authentication={this.props.authentication}
           themeConfig={this.props.themeConfig}
+          dataFormatting={this.props.dataFormatting}
           subject={this.state.selectedSubject}
           shouldRender={this.props.shouldRender}
+          rebuildTooltips={this.props.rebuildTooltips}
         />
       </div>
     )
@@ -156,46 +187,221 @@ export default class DataExplorer extends React.Component {
   }
 
   renderQuerySuggestions = () => {
-    if (!this.state.selectedVL && !this.state.selectedSubject) {
+    if (
+      !this.state.selectedVL &&
+      !this.state.selectedSubject &&
+      !this.state.selectedKeywords
+    ) {
       return null
     }
 
+    const selected =
+      this.state.selectedVL ||
+      this.state.selectedSubject ||
+      this.state.selectedKeywords
+
     return (
-      <div>
-        <div className="data-explorer-title">Query Suggestion List</div>
-        <p>explore queries list goes here</p>
+      <div className="data-preview-section query-suggestions">
+        <div className="react-autoql-card">
+          <div className="data-explorer-section-title-container">
+            <div className="data-explorer-section-title">
+              <div>
+                <Icon
+                  style={{ fontSize: '20px' }}
+                  type="react-autoql-bubbles-outlined"
+                />
+                Query Suggestions for "{selected?.name}"
+              </div>
+              <Icon type="caret-down" />
+            </div>
+            <div className="data-explorer-subtitle">
+              <em>Click on a query to run it in Data Messenger</em>
+            </div>
+          </div>
+          <div className="data-explorer-query-suggestion-list">
+            <QuerySuggestionList
+              authentication={this.props.authentication}
+              topicText={selected?.name}
+              executeQuery={this.props.executeQuery}
+            />
+          </div>
+        </div>
       </div>
     )
   }
 
-  renderTopicChips = () => {
-    const subject = this.state.selectedSubject
-    const vl = this.state.selectedVL
+  // renderTopicChips = () => {
+  //   const subject = this.state.selectedSubject
+  //   const vl = this.state.selectedVL
 
-    if (!subject && !vl) {
+  //   if (!subject && !vl) {
+  //     return null
+  //   }
+
+  //   return (
+  //     <div className="data-explorer-selected-topics-container">
+  //       <div className="data-explorer-selected-text">Selected topics:</div>
+  //       {this.renderTopicChip(subject)}
+  //       {this.renderTopicChip(vl)}
+  //     </div>
+  //   )
+  // }
+
+  clearContent = () => {
+    this.setState({
+      activeTopicType: null,
+      selectedSubject: null,
+      selectedVL: null,
+      selectedKeywords: null,
+    })
+    this.inputRef?.clearInput()
+  }
+
+  renderSelectionTitle = () => {
+    if (
+      !this.state.selectedSubject &&
+      !this.state.selectedVL &&
+      !this.state.selectedKeywords
+    ) {
       return null
     }
 
     return (
-      <div className="data-explorer-selected-topics-container">
-        <div className="data-explorer-selected-text">Selected topics:</div>
-        {this.renderTopicChip(subject)}
-        {this.renderTopicChip(vl)}
+      <div className="data-explorer-title exploring-title">
+        <div>
+          Exploring "<TopicName topic={this.state.selectedSubject} />"
+        </div>
+        <div className="clear-explorer-content-btn" onClick={this.clearContent}>
+          <Icon type="close" /> <u>Clear</u>
+        </div>
       </div>
     )
   }
 
   renderDataExplorerContent = () => {
-    if (!this.state.selectedSubject && !this.state.selectedVL) {
+    if (
+      !this.state.selectedSubject &&
+      !this.state.selectedVL &&
+      !this.state.selectedKeywords
+    ) {
       return this.renderIntroMessage()
     }
 
     return (
       <div className="data-explorer-result-container">
-        {this.renderTopicChips()}
-        {this.renderDataPreview()}
-        {/* {this.renderVLSubjectList()} */}
-        {/* {this.renderQuerySuggestions()} */}
+        <CustomScrollbars>
+          {/* {this.renderTopicChips()} */}
+          {this.renderDataPreview()}
+          {/* {this.renderVLSubjectList()} */}
+          {this.renderQuerySuggestions()}
+        </CustomScrollbars>
+      </div>
+    )
+  }
+
+  formatColumnType = (type) => {
+    switch (type) {
+      case 'DATE': {
+        return (
+          <span>
+            <Icon type="calendar" /> Date
+          </span>
+        )
+      }
+      case 'DATE_STRING': {
+        return (
+          <span>
+            <Icon type="calendar" /> Date
+          </span>
+        )
+      }
+      case 'STRING': {
+        return (
+          <span>
+            <Icon type="note" /> Description
+          </span>
+        )
+      }
+      case 'DOLLAR_AMT': {
+        return (
+          <span>
+            <Icon type="money" /> Currency
+          </span>
+        )
+      }
+      case 'QUANTITY': {
+        return (
+          <span>
+            <Icon type="abacus" /> Quantity
+          </span>
+        )
+      }
+    }
+  }
+
+  renderColumnQuerySuggestions = (column) => {
+    const subject = this.state.selectedSubject?.name
+    const lowerCaseSubject = subject?.toLowerCase()
+    const titleCaseSubject =
+      lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
+    const lowerCaseColumn = column?.display_name?.toLowerCase()
+    const suggestions = []
+
+    if (column.type === 'STRING') {
+      suggestions.push(`Total ${lowerCaseSubject} by ${lowerCaseColumn}`)
+      suggestions.push(`List all ${lowerCaseColumn}s`)
+    }
+
+    if (column.type === 'DATE') {
+      suggestions.push(`${titleCaseSubject} by month this year`)
+      suggestions.push(`All ${lowerCaseSubject} in the last 2 weeks`)
+      suggestions.push(`Total ${lowerCaseSubject} last year`)
+      suggestions.push(`Number of ${lowerCaseSubject} yesterday`)
+    }
+
+    if (column.type === 'DOLLAR_AMT') {
+      suggestions.push(`Top 5 ${lowerCaseSubject} ${lowerCaseColumn}`)
+    }
+
+    return (
+      <>
+        {suggestions.map((query, i) => {
+          return (
+            <div
+              key={i}
+              onClick={() => this.props.executeQuery(query)}
+              className="data-explorer-tooltip-query"
+            >
+              <Icon type="react-autoql-bubbles-outlined" />
+              {query}
+            </div>
+          )
+        })}
+      </>
+    )
+  }
+
+  renderHeaderTooltipContent = (dataTip = '') => {
+    const column = JSON.parse(dataTip)
+    if (!column) {
+      return null
+    }
+
+    const formattedType = this.formatColumnType(column?.type)
+
+    return (
+      <div>
+        <div className="data-explorer-tooltip-title">
+          {column?.display_name}
+        </div>
+        {!!formattedType && (
+          <div className="data-explorer-tooltip-section">{formattedType}</div>
+        )}
+        <div className="data-explorer-tooltip-section">
+          <strong>Query suggestions:</strong>
+          <br />
+          {this.renderColumnQuerySuggestions(column)}
+        </div>
       </div>
     )
   }
@@ -207,6 +413,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <ErrorBoundary>
+        {/* <CustomScrollbars autoHeight> */}
         <div
           ref={(r) => (this.dataExplorerPage = r)}
           className="data-explorer-page-container"
@@ -218,14 +425,29 @@ export default class DataExplorer extends React.Component {
             inputPlaceholder={this.props.inputPlaceholder}
             onSelection={this.onInputSelection}
           />
+          {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}
+          <ReactTooltip
+            className="data-preview-tooltip"
+            id="data-preview-tooltip"
+            place="right"
+            delayHide={200}
+            delayUpdate={200}
+            // delayShow={200}
+            effect="solid"
+            // arrowColor="transparent"
+            // offset={{ top: -10 }}
+            // border={true}
+            // borderColor="black"
+            // arrowColor="white"
+            getContent={this.renderHeaderTooltipContent}
+            clickable
+            // html
+          />
+          {/* <input type="text" placeholder="Type something..." />
+          </ReactTooltip> */}
         </div>
-        <ReactTooltip
-          className="react-autoql-tooltip"
-          id="explore-queries-tooltips"
-          delayShow={800}
-          effect="solid"
-        />
+        {/* </CustomScrollbars> */}
       </ErrorBoundary>
     )
   }

@@ -14,10 +14,20 @@
 // }
 
 .react-autoql-card {
-  border-radius: 10px;
   background: var(--react-autoql-background-color-primary);
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
-    rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
   padding: 10px;
   margin: 10px;
+  overflow: hidden;
+}
+
+.react-autoql-spinner-centered {
+  width: 100%;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar {
+  visibility: visible !important;
 }

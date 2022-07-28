@@ -50,7 +50,7 @@ export default class ExploreQueries extends React.Component {
 
   loadMore = (page, skipQueryValidation) => {
     if (this.state.loading) {
-      return
+      return Promise.resolve()
     }
 
     const newState = {
@@ -71,7 +71,7 @@ export default class ExploreQueries extends React.Component {
 
     this.setState(newState)
 
-    fetchExploreQueries({
+    return fetchExploreQueries({
       ...this.props.authentication,
       keywords: inputValue,
       pageSize: this.pageSize,
@@ -107,10 +107,12 @@ export default class ExploreQueries extends React.Component {
         }
 
         this.setState(finishedState)
+        return Promise.resolve()
       })
       .catch((error) => {
         this.setState({ loading: false, initialLoading: false })
         console.error(error)
+        return Promise.reject()
       })
   }
 
@@ -233,7 +235,7 @@ export default class ExploreQueries extends React.Component {
           initialLoad={false}
           threshold={100}
           loader={
-            <div className="loader" key={0}>
+            <div className="react-autoql-spinner-centered" key={0}>
               <Spinner
                 style={{ width: '19px', height: '20px', color: '#999' }}
               />

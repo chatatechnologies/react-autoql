@@ -44,6 +44,7 @@ export const lang = new LocalizedStrings({
     visibility: 'Visibility',
     cancel: 'Cancel',
     apply: 'Apply',
+    education: 'Education',
   },
   sp: {
     introPrompt: 'Cosas que puedes preguntarme:',
@@ -88,6 +89,7 @@ export const lang = new LocalizedStrings({
     visibility: 'Visibilidad',
     cancel: 'Cancelar',
     apply: 'Aplicar',
+    education: 'Educación',
   },
 })
 

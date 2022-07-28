@@ -641,12 +641,16 @@ export default class DataMessenger extends React.Component {
         title = lang.exploreQueries
         break
       }
+      case 'data-explorer': {
+        title = lang.dataExplorer
+        break
+      }
       case 'notifications': {
         title = lang.exploreQueries
         break
       }
       case 'dpr': {
-        title = 'Education'
+        title = lang.education
         break
       }
     }
@@ -834,9 +838,21 @@ export default class DataMessenger extends React.Component {
         ref={(r) => (this.exploreQueriesRef = r)}
         authentication={this.props.authentication}
         themeConfig={this.props.themeConfig}
+        dataFormatting={this.props.dataFormatting}
+        rebuildTooltips={this.rebuildTooltips}
         shouldRender={
           this.state.activePage === 'data-explorer' && !!this.dmRef?.state?.open
         }
+        executeQuery={(query) => {
+          this.setState({ activePage: 'data-messenger' })
+          clearTimeout(this.executeQueryTimeout)
+          this.executeQueryTimeout = setTimeout(() => {
+            this.dataMessengerContentRef?.animateInputTextAndSubmit({
+              query,
+              source: ['data_explorer'],
+            })
+          }, 500)
+        }}
       />
     </ErrorBoundary>
   )

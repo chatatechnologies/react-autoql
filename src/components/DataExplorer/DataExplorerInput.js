@@ -4,6 +4,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import Autosuggest from 'react-autosuggest'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
+import _isEqual from 'lodash.isequal'
 
 import DEConstants from './constants'
 import { authenticationType } from '../../props/types'
@@ -11,11 +12,14 @@ import { fetchVLAutocomplete, fetchSubjectList } from '../../js/queryService'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 
+import './DataExplorerInput.scss'
+
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
     super(props)
 
     this.componentKey = uuid()
+    this.userTypedValue = null
     this.userSelectedValue = null
 
     this.state = {
@@ -35,7 +39,8 @@ export default class DataExplorerInput extends React.Component {
 
   static defaultProps = {
     authentication: {},
-    inputPlaceholder: 'Search subjects or values...',
+    // inputPlaceholder: 'Search subjects or values...',
+    inputPlaceholder: 'Search subjects...',
     onSelection: () => {},
   }
 
@@ -73,9 +78,7 @@ export default class DataExplorerInput extends React.Component {
     const recentSuggestions = _cloneDeep(this.state.recentSuggestions)
 
     // If value already exists in recent list, move it to the top
-    const index = recentSuggestions.findIndex(
-      (subj) => subj.name === subject.name
-    )
+    const index = recentSuggestions.findIndex((subj) => _isEqual(subj, subject))
     if (index > -1) {
       recentSuggestions.splice(index, 1)
     }
@@ -93,7 +96,7 @@ export default class DataExplorerInput extends React.Component {
     if (this._isMounted) {
       this.userSelectedValue = null
       this.setState({
-        inputValue: '',
+        inputValue: subject.name,
         recentSuggestions: this.getNewRecentSuggestions(subject),
       })
       this.props.onSelection(subject)
@@ -102,13 +105,17 @@ export default class DataExplorerInput extends React.Component {
 
   onInputChange = (e) => {
     if (this._isMounted) {
-      if (!!this.userSelectedValue && (e.keyCode === 38 || e.keyCode === 40)) {
+      if (
+        !!this.userSelectedValue &&
+        (e.key === 'ArrowDown' || e.key === 'ArrowUp')
+      ) {
         // keyup or keydown
-        // return // return to let the component handle it...
-        // DO NOTHING
+        return // return to let the component handle it...
       }
 
-      if (e?.target?.value || e?.target?.value === '') {
+      if ((e?.target?.value || e?.target?.value === '') && e.key !== 'Enter') {
+        this.userSelectedValue = null
+        this.userTypedValue = e.target.value
         this.setState({ inputValue: e.target.value })
       } else {
         // User clicked on autosuggest item
@@ -130,15 +137,29 @@ export default class DataExplorerInput extends React.Component {
   }
 
   onKeyPress = (e) => {
-    if (e.key == 'Enter' && this.userSelectedValue) {
-      this.selectSubject(this.userSelectedValue)
+    if (e.key == 'Enter') {
+      if (this.userSelectedValue) {
+        this.selectSubject(this.userSelectedValue)
+      } else if (!!this.state.inputValue) {
+        const subject = {
+          type: 'text',
+          name: this.state.inputValue,
+        }
+        this.props.onSelection(subject)
+        this.setState({
+          recentSuggestions: this.getNewRecentSuggestions(subject),
+        })
+      }
       this.blurInput()
     }
   }
 
   clearInput = () => {
     if (this._isMounted) {
-      this.setState({ inputValue: '' })
+      this.setState({ inputValue: '' }, () => {
+        this.focusInput()
+      })
+      this.userTypedValue = null
       this.userSelectedValue = null
     }
   }
@@ -230,14 +251,14 @@ export default class DataExplorerInput extends React.Component {
     return (
       !this.state.suggestions?.length &&
       !this.state.loadingAutocomplete &&
-      !!this.state.inputValue
+      !!this.userTypedValue
     )
   }
 
   getSuggestions = () => {
     const sections = []
     const hasRecentSuggestions = !!this.state.recentSuggestions?.length
-    const inputIsEmpty = !this.state.inputValue
+    const inputIsEmpty = !this.userTypedValue
     const doneLoading = !this.state.loadingAutocomplete
     const hasSuggestions = !!this.state.suggestions?.length && doneLoading
     const noSuggestions = !this.state.suggestions?.length && doneLoading
@@ -258,12 +279,12 @@ export default class DataExplorerInput extends React.Component {
       })
     } else if (hasSuggestions) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title: `Related to "${this.userTypedValue}"`,
         suggestions: this.state.suggestions,
       })
     } else if (noSuggestions) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title: `Related to "${this.userTypedValue}"`,
         suggestions: [{ name: '' }],
         emptyState: true,
       })
@@ -326,6 +347,7 @@ export default class DataExplorerInput extends React.Component {
             shouldRenderSuggestions={() => true}
             ref={(ref) => (this.autoSuggest = ref)}
             renderSuggestion={this.renderSuggestion}
+            focusInputOnSuggestionClick={false}
             inputProps={{
               className: `react-autoql-chatbar-input`,
               placeholder: this.props.inputPlaceholder,

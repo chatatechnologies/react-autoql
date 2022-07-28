@@ -20,6 +20,8 @@ import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
 import { BiBookmark } from '@react-icons/all-files/bi/BiBookmark'
 import { BiBook } from '@react-icons/all-files/bi/BiBook'
+import { BiNote } from '@react-icons/all-files/bi/BiNote'
+import { BiAbacus } from '@react-icons/all-files/bi/BiAbacus'
 
 import { BsArrowBarDown } from '@react-icons/all-files/bs/BsArrowBarDown'
 import { BsArrowBarUp } from '@react-icons/all-files/bs/BsArrowBarUp'
@@ -61,8 +63,7 @@ import { MdInfoOutline } from '@react-icons/all-files/md/MdInfoOutline'
 import { MdLock } from '@react-icons/all-files/md/MdLock'
 import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
-
-import { TiSortNumerically } from '@react-icons/all-files/ti/TiSortNumerically'
+import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 
 import {
   bubblesIcon,
@@ -200,7 +201,10 @@ export default class Icon extends React.Component {
         icon = <FiMinimize />
         break
       }
-
+      case 'money': {
+        icon = <MdAttachMoney />
+        break
+      }
       case 'close-circle': {
         icon = <IoIosCloseCircleOutline />
         break
@@ -317,6 +321,10 @@ export default class Icon extends React.Component {
         icon = <FiMoreHorizontal />
         break
       }
+      case 'note': {
+        icon = <BiNote />
+        break
+      }
       case 'notification': {
         icon = <FiBell />
         break
@@ -329,8 +337,8 @@ export default class Icon extends React.Component {
         icon = <FiPauseCircle />
         break
       }
-      case 'numbers': {
-        icon = <TiSortNumerically />
+      case 'abacus': {
+        icon = <BiAbacus />
         break
       }
       case 'pie-chart': {

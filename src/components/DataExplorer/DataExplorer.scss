@@ -1,149 +1,50 @@
 .data-explorer-page-container {
   height: 100%;
-  padding: 10px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1 1;
   min-height: 0;
+  color: var(--react-autoql-text-color-primary);
 
-  h2,
-  .data-explorer-title {
+  .data-explorer-intro-message {
     color: var(--react-autoql-text-color-primary);
-  }
+    text-align: center;
+    margin: 50px auto;
+    padding: 0 40px;
+    font-size: 15px;
 
-  .data-explorer-title {
-    font-size: 18px;
-    margin: 15px 0px 10px 0px;
-    font-weight: 500;
+    .intro-message-list-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: left;
+    }
   }
 
   .data-explorer-topic-icon {
     margin-right: 5px;
   }
 
-  .react-autoql-chatbar-input-container {
-    flex: 0;
-    padding: 10px;
-
-    &.no-suggestions
-      .react-autosuggest__suggestions-container--open
-      .react-autosuggest__section-container:last-child
-      ul {
-      pointer-events: none;
-    }
-
-    &.data-explorer {
-      animation: slideDown 0.5s ease;
-    }
-
-    .react-autoql-chatbar-input {
-      margin: 0;
-      width: 100%;
-      padding-left: 46px;
-      padding-right: 46px;
-    }
-
-    .data-explorer-no-suggestions {
-      padding-left: 10px;
-      font-size: 14px;
-    }
-
-    .react-autosuggest__container {
-      position: relative;
-    }
-    .react-autosuggest__suggestions-container--open {
-      position: absolute;
-      margin: 0;
-      padding-top: 5px;
-      padding-bottom: 5px;
-      display: block;
-      width: 100%;
-      height: unset;
-      max-height: 400px;
-      border-radius: 15px;
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: normal;
-      z-index: 2;
-      overflow: auto;
-      margin-top: 3px;
-      border: 1px solid var(--react-autoql-border-color);
-      box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
-      background-color: var(--react-autoql-background-color-primary);
-      color: var(--react-autoql-text-color-primary);
-    }
-    .react-autosuggest__suggestions-list {
-      margin: 0;
-      padding: 0;
-      list-style-type: none;
-    }
-    .react-autosuggest__input--focused {
-      outline: none;
-    }
-    .react-autosuggest__input::-ms-clear,
-    .react-autosuggest__suggestions-container {
-      display: none;
-    }
-    .react-autosuggest__suggestion {
-      cursor: pointer;
-      padding: 2px;
-      padding-left: 18px;
-      letter-spacing: 0.05em;
-      line-height: 22.5px;
-    }
-    .react-autosuggest__suggestion--highlighted {
-      background-color: rgba(0, 0, 0, 0.1) !important;
-    }
-    .react-autosuggest__section-title {
-      padding: 10px 0 0 10px;
-      font-size: 12px;
-      color: var(--react-autoql-text-color-placeholder);
-    }
-  }
-
-  .data-explorer-intro-message {
-    color: var(--react-autoql-text-color-primary);
-    text-align: center;
-    margin: 50px auto;
-  }
-
-  .data-explorer-selected-topics-container {
-    flex: 0;
-    margin: 0 10px;
-  }
-
-  .data-preview-section {
-    flex: 1;
-    min-height: 0;
-    max-height: 50%;
-    position: relative;
-    overflow: hidden;
+  .exploring-title {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding: 0px 30px;
 
-    .data-preview-title {
-      flex: 0;
-    }
-    .data-preview-header {
-      flex: 0;
-      text-align: center;
-    }
-    .data-preview-content {
-      flex: 1;
-      min-height: 0;
-      align-items: flex-start;
-      justify-content: stretch;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .data-explorer-data-preview {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
+    .clear-explorer-content-btn {
+      cursor: pointer;
+      font-size: 14px;
+
+      &:hover {
+        color: var(--react-autoql-accent-color);
+      }
     }
   }
 
@@ -151,13 +52,96 @@
     color: var(--react-autoql-text-color-primary);
     flex: 1;
     width: 100%;
-    overflow: hidden;
-    padding: 0 5px;
+    overflow: auto;
+    padding-left: 5px;
     min-height: 0;
+
+    .data-preview-section:last-of-type {
+      padding-bottom: 10px;
+    }
+
+    .data-preview-section.query-suggestions
+      .data-explorer-section-title
+      .react-autoql-icon {
+      margin-left: -3px;
+      margin-right: 2px;
+    }
+
+    .data-explorer-section-title-container {
+      padding: 0 10px;
+      flex: 0;
+
+      .data-explorer-section-title {
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
+        font-size: 18px;
+        margin: 10px 0px 4px 0px;
+        font-weight: 600;
+      }
+    }
 
     .data-explorer-selected-text {
       opacity: 0.8;
       font-weight: 600;
+    }
+
+    .data-explorer-query-suggestion-list {
+      flex: 1 1 auto;
+      padding: 5px;
+    }
+
+    // .query-suggestion-execute-btn {
+    //   transition: opacity 0.2s ease;
+    //   visibility: hidden;
+    //   opacity: 0;
+    //   padding-left: 10px;
+    // }
+    // &:hover .query-suggestion-execute-btn {
+    //   visibility: visible;
+    //   opacity: 1;
+    // }
+  }
+
+  .query-suggestion-list-scroll-container {
+    color: var(--react-autoql-text-color-primary);
+    flex: 1;
+
+    .query-tip-item {
+      cursor: pointer;
+      position: relative;
+      padding: 3px;
+      color: var(--react-autoql-accent-color);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      align-items: center;
+      font-weight: 600;
+
+      &:hover {
+        text-decoration: underline;
+      }
+
+      .query-suggestion-text svg {
+        stroke-width: 1px;
+        stroke: currentColor;
+      }
+
+      .animated-item {
+        animation: fadeIn 0.3s linear;
+        animation-fill-mode: both;
+      }
+
+      .query-suggestion-list {
+        padding-top: 5px;
+      }
+
+      .query-tips-result-placeholder {
+        margin-top: 50px;
+      }
     }
   }
 
@@ -184,23 +168,23 @@
 }
 
 // Set delay per List Item, max out at 15 as it shouldnt exceed this
-@for $i from 1 through 15 {
-  .animated-item:nth-child(#{$i}) {
-    animation-delay: 0.08s * $i;
-  }
-}
+// @for $i from 1 through 15 {
+//   .animated-item:nth-child(#{$i}) {
+//     animation-delay: 0.08s * $i;
+//   }
+// }
 
-// Keyframe animation
-@-webkit-keyframes fadeIn {
-  0% {
-    opacity: 0;
-    top: 100px;
-  }
-  75% {
-    opacity: 0.5;
-    top: 0px;
-  }
-  100% {
-    opacity: 1;
-  }
-}
+// // Keyframe animation
+// @-webkit-keyframes fadeIn {
+//   0% {
+//     opacity: 0;
+//     top: 100px;
+//   }
+//   75% {
+//     opacity: 0.5;
+//     top: 0px;
+//   }
+//   100% {
+//     opacity: 1;
+//   }
+// }

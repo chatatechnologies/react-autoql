@@ -6,10 +6,12 @@ import './CustomScrollbars.scss'
 
 export default class CustomScrollbars extends React.Component {
   static propTypes = {
+    autoHeight: PropTypes.bool,
     style: PropTypes.shape({}),
   }
 
   static defaultProps = {
+    autoHeight: false,
     style: {},
   }
 
@@ -30,6 +32,7 @@ export default class CustomScrollbars extends React.Component {
         renderView={(props) => (
           <div {...props} className="custom-scrollbar-view" />
         )}
+        autoHeight={this.props.autoHeight}
         autoHide
       >
         <div

@@ -606,11 +606,12 @@ export const reportProblem = ({
 
 export const fetchSubjectList = ({ domain, apiKey, token }) => {
   const subjectList = [
-    'Sales',
-    'Bills',
-    'Accounts Receivable',
-    'Accounts Payable',
+    'Online Sales',
     'Customers',
+    'Shippers',
+    'Promotions',
+    'Warehouses',
+    'Inventory',
   ]
 
   const formattedSubjectList = subjectList.map((subject) => ({
@@ -650,7 +651,7 @@ export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve(responseSamples[9])
-    }, 2000)
+    }, 500)
   })
 
   if (!token || !domain || !apiKey) {

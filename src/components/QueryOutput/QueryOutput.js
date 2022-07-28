@@ -1403,6 +1403,10 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
+  setHeaderTooltipFn = (e, cell, onRendered) => {
+    return <div></div>
+  }
+
   formatColumnsForTable = (cols) => {
     const columns = cols || this.queryResponse?.data?.data?.columns
     if (!columns) {
@@ -1469,6 +1473,10 @@ export default class QueryOutput extends React.Component {
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
       newCol.headerSort = !!this.props.enableTableSorting
+
+      // newCol.headerTooltip = true
+      // newCol.tooltip = true
+      // this.setHeaderTooltipFn
 
       // Context menu when right clicking on column header
       // newCol.headerContext = (e, column) => {

@@ -48,7 +48,7 @@ import {
 import SentimentAnalysisPage from './SentimentAnalysisPage'
 import SpeechToTextPage from './SpeechToTextPage'
 
-import 'antd/dist/antd.css'
+// import 'antd/dist/antd.css'
 import 'react-autoql/dist/autoql.esm.css'
 import './index.css'
 
