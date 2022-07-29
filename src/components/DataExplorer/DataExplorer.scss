@@ -56,31 +56,25 @@
     padding-left: 5px;
     min-height: 0;
 
-    .data-preview-section:last-of-type {
+    .data-explorer-sections-container {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+
+    .data-explorer-section:last-of-type {
       padding-bottom: 10px;
     }
 
-    .data-preview-section.query-suggestions
-      .data-explorer-section-title
+    .data-explorer-section.query-suggestions
+      .react-autoql-card-title
       .react-autoql-icon {
       margin-left: -3px;
       margin-right: 2px;
-    }
-
-    .data-explorer-section-title-container {
-      padding: 0 10px;
-      flex: 0;
-
-      .data-explorer-section-title {
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: nowrap;
-        font-size: 18px;
-        margin: 10px 0px 4px 0px;
-        font-weight: 600;
-      }
     }
 
     .data-explorer-selected-text {
@@ -89,8 +83,10 @@
     }
 
     .data-explorer-query-suggestion-list {
-      flex: 1 1 auto;
-      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      height: 100%;
     }
 
     // .query-suggestion-execute-btn {
@@ -105,7 +101,11 @@
     // }
   }
 
-  .query-suggestion-list-scroll-container {
+  .data-preview-scroll-component {
+    // height: 100%;
+    flex: 1;
+  }
+  .query-suggestion-list-scroll-component {
     color: var(--react-autoql-text-color-primary);
     flex: 1;
 

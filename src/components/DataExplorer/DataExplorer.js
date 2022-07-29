@@ -15,6 +15,7 @@ import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { Chip } from '../Chip'
+import { Card } from '../Card'
 
 import {
   isColumnDateType,
@@ -31,6 +32,7 @@ export default class DataExplorer extends React.Component {
       activeTopicType: null,
       selectedSubject: null,
       selectedVL: null,
+      isQuerySuggestionSectionVisible: true,
     }
   }
 
@@ -161,7 +163,7 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-preview-section">
+      <div className="data-explorer-section data-preview-section">
         <DataPreview
           authentication={this.props.authentication}
           themeConfig={this.props.themeConfig}
@@ -190,6 +192,18 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  renderQuerySuggestionCardTitle = (selectedTopic) => {
+    return (
+      <div>
+        <Icon
+          style={{ fontSize: '20px' }}
+          type="react-autoql-bubbles-outlined"
+        />
+        Query Suggestions for "{selectedTopic?.name}"
+      </div>
+    )
+  }
+
   renderQuerySuggestions = () => {
     const selectedTopic = this.getSelectedTopic()
     if (!selectedTopic) {
@@ -197,23 +211,11 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-preview-section query-suggestions">
-        <div className="react-autoql-card">
-          <div className="data-explorer-section-title-container">
-            <div className="data-explorer-section-title">
-              <div>
-                <Icon
-                  style={{ fontSize: '20px' }}
-                  type="react-autoql-bubbles-outlined"
-                />
-                Query Suggestions for "{selectedTopic?.name}"
-              </div>
-              <Icon type="caret-down" />
-            </div>
-            <div className="data-explorer-subtitle">
-              <em>Click on a query to run it in Data Messenger</em>
-            </div>
-          </div>
+      <div className="data-explorer-section query-suggestions">
+        <Card
+          title={this.renderQuerySuggestionCardTitle(selectedTopic)}
+          subtitle={<em>Click on a query to run it in Data Messenger</em>}
+        >
           <div className="data-explorer-query-suggestion-list">
             <QuerySuggestionList
               authentication={this.props.authentication}
@@ -221,7 +223,7 @@ export default class DataExplorer extends React.Component {
               executeQuery={this.props.executeQuery}
             />
           </div>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -292,10 +294,12 @@ export default class DataExplorer extends React.Component {
     return (
       <div className="data-explorer-result-container">
         <CustomScrollbars>
-          {/* {this.renderTopicChips()} */}
-          {this.renderDataPreview()}
-          {/* {this.renderVLSubjectList()} */}
-          {this.renderQuerySuggestions()}
+          <div className="data-explorer-sections-container">
+            {/* {this.renderTopicChips()} */}
+            {this.renderDataPreview()}
+            {/* {this.renderVLSubjectList()} */}
+            {this.renderQuerySuggestions()}
+          </div>
         </CustomScrollbars>
       </div>
     )

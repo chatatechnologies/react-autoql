@@ -161,11 +161,11 @@ export default class QuerySuggestionList extends React.Component {
     }
 
     return (
-      // <CustomScrollbars autoHeight>
       <Scrollbars
-        autoHide
         autoHeight
-        className="query-suggestion-list-scroll-container"
+        autoHeightMin={0}
+        autoHeightMax={800}
+        className="query-suggestion-list-scroll-component"
         renderView={(props) => (
           <div {...props} className="data-preview-scroll-container" />
         )}
@@ -197,16 +197,12 @@ export default class QuerySuggestionList extends React.Component {
                     <Icon type="react-autoql-bubbles-outlined" />
                     {query}
                   </div>
-                  <div className="query-suggestion-execute-btn">
-                    {/* <Icon type="play" /> */}
-                  </div>
                 </div>
               )
             })}
           </div>
         </InfiniteScroll>
       </Scrollbars>
-      // </CustomScrollbars>
     )
   }
 }

@@ -21,6 +21,7 @@ import { dataFormattingType, themeConfigType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
 
 import './DataPreview.scss'
+import { Card } from '../Card'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -132,8 +133,10 @@ export default class DataExplorer extends React.Component {
     return (
       <div className="data-preview">
         <Scrollbars
-          autoHide
           autoHeight
+          autoHeightMin={0}
+          autoHeightMax={800}
+          className="data-preview-scroll-component"
           renderView={(props) => (
             <div {...props} className="data-preview-scroll-container" />
           )}
@@ -180,7 +183,37 @@ export default class DataExplorer extends React.Component {
     )
   }
 
+  renderDataPreviewTitle = () => {
+    return (
+      <div>
+        <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview - "All{' '}
+        {this.props.subject?.name}"
+      </div>
+    )
+  }
+
   render = () => {
+    if (!this.props.shouldRender) {
+      return null
+    }
+
+    return (
+      <ErrorBoundary>
+        <Card
+          className="data-explorer-data-preview"
+          data-test="data-explorer-data-preview"
+          title={this.renderDataPreviewTitle()}
+          subtitle={<em>{this.props.subject?.name} data snapshot</em>}
+        >
+          {this.state.loading
+            ? this.renderLoadingContainer()
+            : this.renderDataPreviewGrid()}
+        </Card>
+      </ErrorBoundary>
+    )
+  }
+
+  render2 = () => {
     if (!this.props.shouldRender) {
       return null
     }
@@ -192,8 +225,8 @@ export default class DataExplorer extends React.Component {
           className="data-explorer-data-preview react-autoql-card"
           data-test="data-explorer-data-preview"
         >
-          <div className="data-explorer-section-title-container">
-            <div className="data-explorer-section-title">
+          <div className="react-autoql-card-title-container">
+            <div className="react-autoql-card-title">
               <div>
                 <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview
                 - "All {this.props.subject?.name}"
