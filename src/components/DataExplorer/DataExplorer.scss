@@ -105,6 +105,14 @@
     // height: 100%;
     flex: 1;
   }
+  .data-explorer-card-placeholder {
+    min-height: 90px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
   .query-suggestion-list-scroll-component {
     color: var(--react-autoql-text-color-primary);
     flex: 1;

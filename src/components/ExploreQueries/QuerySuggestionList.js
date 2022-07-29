@@ -125,7 +125,7 @@ export default class QuerySuggestionList extends React.Component {
   render = () => {
     if (this.state.initialLoading) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className="data-explorer-card-placeholder">
           <LoadingDots />
         </div>
       )
@@ -133,7 +133,7 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.validationResponse) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className="data-explorer-card-placeholder">
           <QueryValidationMessage
             response={this.state.validationResponse}
             onSuggestionClick={this.onValidationSuggestionClick}
@@ -151,7 +151,7 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.queryList?.length === 0) {
       return (
-        <div className="query-tips-result-placeholder">
+        <div className="data-explorer-card-placeholder">
           <p>
             Sorry, I couldn’t find any queries matching your input. Try entering
             a different topic or keyword instead.
