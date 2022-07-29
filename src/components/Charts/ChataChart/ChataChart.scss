@@ -15,51 +15,59 @@
     opacity: 0;
     transition: none;
   }
-}
 
-/* These are not inline styles since they do not apply to saved PNG charts */
-.react-autoql-chart-container .square,
-.react-autoql-chart-container .line-dot {
-  transition: fill-opacity 0.3s ease;
-  outline: none !important;
-}
+  /* These are not inline styles since they do not apply to saved PNG charts */
+  .bar,
+  .stacked-bar,
+  .stacked-column,
+  .circle,
+  .stacked-area {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 0.7 !important;
+    outline: none !important;
+    &:hover,
+    &.active {
+      fill-opacity: 1 !important;
+    }
+  }
+  .line-dot,
+  .vertex-dot {
+    transition: opacity 0.3s ease;
+    opacity: 0 !important;
+    outline: none !important;
+    &:hover,
+    &.active {
+      opacity: 1 !important;
+    }
+  }
+  .square {
+    transition: fill 0.2s ease;
+    outline: none !important;
+    &:hover,
+    &.active {
+      stroke-opacity: 0.5;
+      stroke: currentColor;
+      stroke-width: 1px;
+      fill: currentColor;
+    }
+  }
 
-.react-autoql-chart-container .bar,
-.react-autoql-chart-container .stacked-bar,
-.react-autoql-chart-container .circle {
-  transition: fill-opacity 0.3s ease;
-  fill-opacity: 0.7 !important;
-  outline: none !important;
-}
+  g.tick {
+    transition: opacity 0.3s ease;
+  }
+  .react-autoql-heatmap-chart g.tick line,
+  .react-autoql-bubble-chart g.tick line {
+    opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
+  }
 
-.react-autoql-chart-container .bar:hover,
-.react-autoql-chart-container .circle:hover,
-.react-autoql-chart-container .square:hover,
-.react-autoql-chart-container .line-dot:hover,
-.react-autoql-chart-container .vertex-dot:hover,
-.react-autoql-chart-container .stacked-bar:hover,
-.react-autoql-chart-container .bar.active,
-.react-autoql-chart-container .line-dot.active,
-.react-autoql-chart-container .stacked-bar.active {
-  fill-opacity: 1 !important;
-}
+  .axis {
+    font-family: inherit;
+  }
 
-.react-autoql-chart-container .react-autoql-heatmap-chart g.tick line,
-.react-autoql-chart-container .react-autoql-bubble-chart g.tick line {
-  opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
-}
-
-.axis {
-  font-family: inherit;
-}
-
-.pie-chart .labels {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.react-autoql-chart-container g.tick {
-  transition: opacity 0.3s ease;
+  .pie-chart .labels {
+    font-size: 12px;
+    font-weight: 600;
+  }
 }
 
 .axis-selector-container {

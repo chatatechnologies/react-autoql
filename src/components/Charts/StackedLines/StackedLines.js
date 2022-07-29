@@ -77,6 +77,9 @@ export default class StackedLines extends Component {
     return (
       <polygon
         key={`polygon-${getKey(stringColumnIndex, i)}`}
+        className={`stacked-area${
+          this.state.activeKey === getKey(stringColumnIndex, i) ? ' active' : ''
+        }`}
         points={polygonPoints}
         data-tip={`
             <div>
