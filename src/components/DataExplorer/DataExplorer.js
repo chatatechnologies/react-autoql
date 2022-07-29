@@ -109,11 +109,8 @@ export default class DataExplorer extends React.Component {
                   <Icon type="abacus" /> Explore data structure and column types
                 </p>
                 <p>
-                  <Icon
-                    style={{ marginLeft: '-5px' }}
-                    type="react-autoql-bubbles-outlined"
-                  />
-                  View a variety of query suggestions
+                  <Icon type="react-autoql-bubbles-outlined" /> View a variety
+                  of query suggestions
                 </p>
                 {/* <p><Icon /> Explore value label categories</p> */}
               </div>
@@ -198,7 +195,7 @@ export default class DataExplorer extends React.Component {
         <Icon
           style={{ fontSize: '20px' }}
           type="react-autoql-bubbles-outlined"
-        />
+        />{' '}
         Query Suggestions for "{selectedTopic?.name}"
       </div>
     )
@@ -293,7 +290,7 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className="data-explorer-result-container">
-        <CustomScrollbars>
+        <CustomScrollbars autoHide={false}>
           <div className="data-explorer-sections-container">
             {/* {this.renderTopicChips()} */}
             {this.renderDataPreview()}

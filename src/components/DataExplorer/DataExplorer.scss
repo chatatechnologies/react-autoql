@@ -70,13 +70,6 @@
       padding-bottom: 10px;
     }
 
-    .data-explorer-section.query-suggestions
-      .react-autoql-card-title
-      .react-autoql-icon {
-      margin-left: -3px;
-      margin-right: 2px;
-    }
-
     .data-explorer-selected-text {
       opacity: 0.8;
       font-weight: 600;
@@ -87,22 +80,11 @@
       flex-direction: column;
       flex-wrap: nowrap;
       height: 100%;
+      padding-left: 8px;
     }
-
-    // .query-suggestion-execute-btn {
-    //   transition: opacity 0.2s ease;
-    //   visibility: hidden;
-    //   opacity: 0;
-    //   padding-left: 10px;
-    // }
-    // &:hover .query-suggestion-execute-btn {
-    //   visibility: visible;
-    //   opacity: 1;
-    // }
   }
 
   .data-preview-scroll-component {
-    // height: 100%;
     flex: 1;
   }
   .data-explorer-card-placeholder {
@@ -141,10 +123,6 @@
       .animated-item {
         animation: fadeIn 0.3s linear;
         animation-fill-mode: both;
-      }
-
-      .query-suggestion-list {
-        padding-top: 5px;
       }
 
       .query-tips-result-placeholder {

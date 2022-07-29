@@ -7,11 +7,13 @@ import './CustomScrollbars.scss'
 export default class CustomScrollbars extends React.Component {
   static propTypes = {
     autoHeight: PropTypes.bool,
+    autoHide: PropTypes.bool,
     style: PropTypes.shape({}),
   }
 
   static defaultProps = {
     autoHeight: false,
+    autoHide: true,
     style: {},
   }
 
@@ -33,7 +35,7 @@ export default class CustomScrollbars extends React.Component {
           <div {...props} className="custom-scrollbar-view" />
         )}
         autoHeight={this.props.autoHeight}
-        autoHide
+        autoHide={this.props.autoHide}
       >
         <div
           style={{

@@ -194,8 +194,7 @@ export default class QuerySuggestionList extends React.Component {
                   key={`query-tip-${i}`}
                 >
                   <div className="query-suggestion-text">
-                    <Icon type="react-autoql-bubbles-outlined" />
-                    {query}
+                    <Icon type="react-autoql-bubbles-outlined" /> {query}
                   </div>
                 </div>
               )
