@@ -92,9 +92,7 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.messengerScrollComponent) {
-      this.messengerScrollComponent.scrollToBottom()
-    }
+    this.messengerScrollComponent?.ref?.scrollToBottom()
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
@@ -340,11 +338,7 @@ export default class ChatContent extends React.Component {
     return (
       <ErrorBoundary>
         <div className="chat-content-scroll-container">
-          <CustomScrollbars
-            innerRef={(c) => {
-              this.messengerScrollComponent = c
-            }}
-          >
+          <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
                 <ChatMessage
@@ -360,7 +354,7 @@ export default class ChatContent extends React.Component {
                   onCSVDownloadProgress={this.onCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
-                  scrollRef={this.messengerScrollComponent}
+                  scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
@@ -378,7 +372,7 @@ export default class ChatContent extends React.Component {
                   onErrorCallback={this.props.onErrorCallback}
                   onSuccessAlert={this.props.onSuccessAlert}
                   deleteMessageCallback={this.deleteMessage}
-                  scrollContainerRef={this.messengerScrollComponent}
+                  scrollContainerRef={this.messengerScrollComponent?.ref}
                   isResizing={this.props.isResizing}
                   enableDynamicCharting={this.props.enableDynamicCharting}
                   onNoneOfTheseClick={this.onNoneOfTheseClick}

@@ -5,6 +5,11 @@ import { Scrollbars } from 'react-custom-scrollbars-2'
 import './CustomScrollbars.scss'
 
 export default class CustomScrollbars extends React.Component {
+  constructor(props) {
+    super(props)
+    this.viewRef = React.createRef()
+  }
+
   static propTypes = {
     autoHeight: PropTypes.bool,
     autoHide: PropTypes.bool,
@@ -17,35 +22,42 @@ export default class CustomScrollbars extends React.Component {
     style: {},
   }
 
-  state = {}
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  getView = () => {
+    return this.scrollComponent?.view
+  }
+
+  getClassName = () =>
+    `react-autoql-custom-scrollbars ${this.props.className || ''}`
+
+  renderThumbHorizontal = (props) => (
+    <div {...props} className="thumb-horizontal" />
+  )
+
+  renderThumbVertical = (props) => <div {...props} className="thumb-vertical" />
+
+  renderView = (props) => <div {...props} className="custom-scrollbar-view" />
 
   render = () => {
     return (
       <Scrollbars
-        ref={this.props.innerRef}
-        className={`react-autoql-custom-scrollbars ${this.props.className}`}
+        ref={(r) => (this.scrollComponent = r)}
+        className={this.getClassName()}
         style={this.props.style}
-        renderThumbVertical={(props) => (
-          <div {...props} className="thumb-vertical" />
-        )}
-        renderThumbHorizontal={(props) => (
-          <div {...props} className="thumb-horizontal" />
-        )}
-        renderView={(props) => (
-          <div {...props} className="custom-scrollbar-view" />
-        )}
-        autoHeight={this.props.autoHeight}
+        renderView={this.renderView}
         autoHide={this.props.autoHide}
+        autoHeight={this.props.autoHeight}
+        renderThumbVertical={this.renderThumbVertical}
+        renderThumbHorizontal={this.renderThumbHorizontal}
       >
-        <div
-          style={{
-            position: 'absolute',
-            height: '100%',
-            width: '100%',
-          }}
-        >
-          {this.props.children}
-        </div>
+        {this.props.children}
       </Scrollbars>
     )
   }

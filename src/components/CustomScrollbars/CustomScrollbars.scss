@@ -4,6 +4,12 @@
   height: 6px;
 }
 
+.scrollbar-content-container {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
 .thumb-vertical,
 .thumb-horizontal {
   border-radius: 3px;

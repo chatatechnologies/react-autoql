@@ -156,9 +156,9 @@ export default class ChataTable extends React.Component {
         const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
         this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
 
-        if (isLastPage) {
+        if (isLastPage && !this.state.isLastPage) {
           this.setState({ isLastPage: true })
-        } else {
+        } else if (this.state.isLastPage) {
           this.setState({ isLastPage: false })
         }
 

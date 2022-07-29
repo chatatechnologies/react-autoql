@@ -167,7 +167,11 @@ export default class QuerySuggestionList extends React.Component {
         autoHeightMax={800}
         className="query-suggestion-list-scroll-component"
         renderView={(props) => (
-          <div {...props} className="data-preview-scroll-container" />
+          <div
+            {...props}
+            ref={(r) => (this.scrollbarRef = r)}
+            className="data-preview-scroll-container"
+          />
         )}
       >
         <InfiniteScroll
