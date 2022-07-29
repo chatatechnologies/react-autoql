@@ -339,60 +339,61 @@ export default class ChatContent extends React.Component {
 
     return (
       <ErrorBoundary>
-        <CustomScrollbars
-          innerRef={(c) => {
-            this.messengerScrollComponent = c
-          }}
-          className="chat-message-scroll-container"
-        >
-          {this.state.messages.map((message) => {
-            return (
-              <ChatMessage
-                key={message.id}
-                id={message.id}
-                ref={(r) => (this.messageRefs[message.id] = r)}
-                isIntroMessage={message.isIntroMessage}
-                authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
-                themeConfig={this.props.themeConfig}
-                isCSVProgressMessage={message.isCSVProgressMessage}
-                initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                onCSVDownloadProgress={this.onCSVDownloadProgress}
-                queryId={message.queryId}
-                queryText={message.query}
-                scrollRef={this.messengerScrollComponent}
-                isDataMessengerOpen={this.props.isDataMessengerOpen}
-                isActive={this.state.activeMessageId === message.id}
-                addMessageToDM={this.addResponseMessage}
-                onDrilldownStart={this.onDrilldownStart}
-                onDrilldownEnd={this.onDrilldownEnd}
-                isResponse={message.isResponse}
-                isChataThinking={this.state.isChataThinking}
-                onSuggestionClick={this.animateInputTextAndSubmit}
-                content={message.content}
-                scrollToBottom={this.scrollToBottom}
-                dataFormatting={this.props.dataFormatting}
-                displayType={message.displayType}
-                response={message.response}
-                type={message.type}
-                onErrorCallback={this.props.onErrorCallback}
-                onSuccessAlert={this.props.onSuccessAlert}
-                deleteMessageCallback={this.deleteMessage}
-                scrollContainerRef={this.messengerScrollComponent}
-                isResizing={this.props.isResizing}
-                enableDynamicCharting={this.props.enableDynamicCharting}
-                onNoneOfTheseClick={this.onNoneOfTheseClick}
-                autoChartAggregations={this.props.autoChartAggregations}
-                onRTValueLabelClick={this.props.onRTValueLabelClick}
-                appliedFilters={message.appliedFilters}
-                disableMaxHeight={this.props.disableMaxMessageHeight}
-                enableAjaxTableData={this.props.enableAjaxTableData}
-                rebuildTooltips={this.props.rebuildTooltips}
-                source={this.props.source}
-              />
-            )
-          })}
-        </CustomScrollbars>
+        <div className="chat-content-scroll-container">
+          <CustomScrollbars
+            innerRef={(c) => {
+              this.messengerScrollComponent = c
+            }}
+          >
+            {this.state.messages.map((message) => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
+                  isIntroMessage={message.isIntroMessage}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
+                  queryId={message.queryId}
+                  queryText={message.query}
+                  scrollRef={this.messengerScrollComponent}
+                  isDataMessengerOpen={this.props.isDataMessengerOpen}
+                  isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
+                  onDrilldownStart={this.onDrilldownStart}
+                  onDrilldownEnd={this.onDrilldownEnd}
+                  isResponse={message.isResponse}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.animateInputTextAndSubmit}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  dataFormatting={this.props.dataFormatting}
+                  displayType={message.displayType}
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent}
+                  isResizing={this.props.isResizing}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
+                  onRTValueLabelClick={this.props.onRTValueLabelClick}
+                  appliedFilters={message.appliedFilters}
+                  disableMaxHeight={this.props.disableMaxMessageHeight}
+                  enableAjaxTableData={this.props.enableAjaxTableData}
+                  rebuildTooltips={this.props.rebuildTooltips}
+                  source={this.props.source}
+                />
+              )
+            })}
+          </CustomScrollbars>
+        </div>
         {this.state.isChataThinking && (
           <div className="response-loading-container">
             <LoadingDots />

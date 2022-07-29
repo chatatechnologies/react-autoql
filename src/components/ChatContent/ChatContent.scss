@@ -1,14 +1,5 @@
-.react-autoql-drawer .chat-message-scroll-container {
-  // scroll-behavior: smooth !important;
-  // max-height: calc(100% - 140px);
-  // overflow-y: auto;
-  // overflow-x: hidden;
-  // flex: 1;
-}
-
-.custom-scrollbar-container {
-  overflow-x: hidden !important;
-  margin-bottom: 0 !important;
+.chat-content-scroll-container {
+  flex: 1 0 0px;
 }
 
 .react-autoql-drawer .response-loading-container {
@@ -18,6 +9,7 @@
 }
 
 .react-autoql-drawer .chat-bar-container {
+  flex: 0 0 auto;
   position: relative;
   padding: 10px;
 }

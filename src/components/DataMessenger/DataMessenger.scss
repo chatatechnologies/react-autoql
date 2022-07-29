@@ -15,7 +15,6 @@
   overflow: hidden;
   border-radius: 4px;
   flex-direction: column;
-  justify-content: stretch;
 }
 
 .react-autoql-drawer .chat-header-container {
@@ -26,8 +25,7 @@
   background: var(--react-autoql-accent-color);
   color: var(--react-autoql-accent-text-color);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
-  flex-grow: 0;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   z-index: 1;
 }
 .react-autoql-drawer .react-autoql-header-left-container {
