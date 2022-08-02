@@ -227,7 +227,7 @@ export default class DataMessenger extends React.Component {
         typeof this.props.notificationCount === 'number' &&
         this.props.notificationCount !== prevProps.notificationCount
       ) {
-        this.notificationListRef?.refreshNotifications()
+        this.refreshNotifications()
       }
 
       if (
@@ -310,6 +310,10 @@ export default class DataMessenger extends React.Component {
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
     }, delay)
+  }
+
+  refreshNotifications = () => {
+    this.notificationListRef?.refreshNotifications('dm')
   }
 
   getMaxWidthAndHeightFromDocument = () => {
@@ -519,10 +523,10 @@ export default class DataMessenger extends React.Component {
                       count={this.props.notificationCount}
                       useDot
                       onCount={this.props.onNotificationCount}
+                      onErrorCallback={this.props.onErrorCallback}
                       onNewNotification={(count) => {
                         this.props.onNewNotification(count)
                       }}
-                      onErrorCallback={this.props.onErrorCallback}
                     />
                   </div>
                 </div>
