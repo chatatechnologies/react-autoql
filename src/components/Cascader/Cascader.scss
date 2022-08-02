@@ -16,11 +16,9 @@
     white-space: pre-wrap;
 
     &.hidden {
-      // width: 0;
       max-width: 0;
 
       span {
-        // display: none;
         white-space: nowrap;
       }
 

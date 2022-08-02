@@ -240,21 +240,6 @@ export default class DataExplorer extends React.Component {
     return null
   }
 
-  // renderTopicChips = () => {
-  //   const subject = this.state.selectedSubject
-  //   const vl = this.state.selectedVL
-  //   if (!subject && !vl) {
-  //     return null
-  //   }
-  //   return (
-  //     <div className="data-explorer-selected-topics-container">
-  //       <div className="data-explorer-selected-text">Selected topics:</div>
-  //       {this.renderTopicChip(subject)}
-  //       {this.renderTopicChip(vl)}
-  //     </div>
-  //   )
-  // }
-
   clearContent = () => {
     this.setState({
       activeTopicType: null,
@@ -292,7 +277,6 @@ export default class DataExplorer extends React.Component {
       <div className="data-explorer-result-container">
         <CustomScrollbars autoHide={false}>
           <div className="data-explorer-sections-container">
-            {/* {this.renderTopicChips()} */}
             {this.renderDataPreview()}
             {/* {this.renderVLSubjectList()} */}
             {this.renderQuerySuggestions()}
@@ -420,7 +404,6 @@ export default class DataExplorer extends React.Component {
 
     return (
       <ErrorBoundary>
-        {/* <CustomScrollbars autoHeight> */}
         <div
           ref={(r) => (this.dataExplorerPage = r)}
           className="data-explorer-page-container"
@@ -440,21 +423,11 @@ export default class DataExplorer extends React.Component {
             place="right"
             delayHide={200}
             delayUpdate={200}
-            // delayShow={200}
             effect="solid"
-            // arrowColor="transparent"
-            // offset={{ top: -10 }}
-            // border={true}
-            // borderColor="black"
-            // arrowColor="white"
             getContent={this.renderHeaderTooltipContent}
             clickable
-            // html
           />
-          {/* <input type="text" placeholder="Type something..." />
-          </ReactTooltip> */}
         </div>
-        {/* </CustomScrollbars> */}
       </ErrorBoundary>
     )
   }

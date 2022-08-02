@@ -139,13 +139,13 @@ export default class ChatMessage extends React.Component {
     }, 500)
   }
 
-  // shouldComponentUpdate = (nextProps) => {
-  //   if (this.props.isResizing && nextProps.isResizing) {
-  //     return false
-  //   }
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing && nextProps.isResizing) {
+      return false
+    }
 
-  //   return true
-  // }
+    return true
+  }
 
   componentDidUpdate = (prevProps, prevState) => {
     ReactTooltip.hide()

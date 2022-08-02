@@ -152,25 +152,3 @@
     }
   }
 }
-
-// Set delay per List Item, max out at 15 as it shouldnt exceed this
-// @for $i from 1 through 15 {
-//   .animated-item:nth-child(#{$i}) {
-//     animation-delay: 0.08s * $i;
-//   }
-// }
-
-// // Keyframe animation
-// @-webkit-keyframes fadeIn {
-//   0% {
-//     opacity: 0;
-//     top: 100px;
-//   }
-//   75% {
-//     opacity: 0.5;
-//     top: 0px;
-//   }
-//   100% {
-//     opacity: 1;
-//   }
-// }

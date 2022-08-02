@@ -1,5 +1,4 @@
 import React from 'react'
-// import axios from 'axios'
 import { mount, shallow } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
@@ -138,9 +137,3 @@ describe('calls autocomplete at the right time', () => {
     wrapper.unmount()
   })
 })
-
-// describe('always shows recently clicked list after clicking on an item', () => {
-//   test('shows recently clicked list when input is empty', () => {})
-//   test('shows recently clicked list when there are suggestions', () => {})
-//   test('shows recently clicked list when there are no suggestions', () => {})
-// })
