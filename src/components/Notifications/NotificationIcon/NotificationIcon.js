@@ -27,6 +27,7 @@ export default class NotificationIcon extends React.Component {
     this.INTERVAL_LENGTH = 90 * 1000
     this.FAILED_POLL_ATTEMPTS = 0
     this.COMPONENT_KEY = uuid()
+    this.HAS_FETCHED_COUNT = false
     this.pollInterval = undefined
 
     this.state = {
@@ -95,8 +96,11 @@ export default class NotificationIcon extends React.Component {
         const newCount = _get(response, 'data.data.unacknowledged')
         if (newCount && newCount !== this.state.count) {
           this.setState({ count: newCount })
-          this.props.onNewNotification(newCount)
+          if (this.HAS_FETCHED_COUNT) {
+            this.props.onNewNotification(newCount)
+          }
         }
+        this.HAS_FETCHED_COUNT = true
         return Promise.resolve(newCount)
       })
       .catch((error) => {
@@ -172,12 +176,17 @@ export default class NotificationIcon extends React.Component {
       })
   }
 
+  getCurrentCount = () => {
+    if (typeof this.props.count === 'number') {
+      return this.props.count
+    }
+
+    return this.state.count
+  }
+
   renderBadge = () => {
     const { overflowCount } = this.props
-    let count = this.state.count
-    if (typeof this.props.count === 'number') {
-      count = this.props.count
-    }
+    const count = this.getCurrentCount()
 
     if (!count) {
       return null

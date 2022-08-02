@@ -49,6 +49,7 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: PropTypes.func,
     onDeleteCallback: PropTypes.func,
     onDeleteSuccessCallback: PropTypes.func,
+    onDismissSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool.isRequired,
@@ -65,6 +66,7 @@ export default class NotificationItem extends React.Component {
     onDismissCallback: () => {},
     onDeleteCallback: () => {},
     onDeleteSuccessCallback: () => {},
+    onDismissSuccessCallback: () => {},
     onErrorCallback: () => {},
   }
 
@@ -142,10 +144,14 @@ export default class NotificationItem extends React.Component {
     dismissNotification({
       ...getAuthentication(this.props.authentication),
       notificationId: notification.id,
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDismissSuccessCallback()
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   onDeleteClick = (e, notification) => {

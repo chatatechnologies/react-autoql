@@ -122,7 +122,7 @@ export const fetchNotificationChannels = ({
     })
 }
 
-export const fetchDataAlerts = ({ domain, apiKey, token, type = 'user' }) => {
+export const fetchDataAlerts = ({ domain, apiKey, token }) => {
   // If there is missing data, dont bother making the call
   if (!token || !apiKey || !domain) {
     return Promise.reject(new Error('UNAUTHORIZED'))
