@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _get from 'lodash.get'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
@@ -19,8 +20,20 @@ import {
 import './NotificationIcon.scss'
 
 export default class NotificationIcon extends React.Component {
-  NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
-  FAILED_POLL_ATTEMPTS = 0
+  constructor(props) {
+    super(props)
+
+    this.NUMBER_OF_NOTIFICATIONS_TO_FETCH = 10
+    this.INTERVAL_LENGTH = 90 * 1000
+    this.FAILED_POLL_ATTEMPTS = 0
+    this.COMPONENT_KEY = uuid()
+    this.HAS_FETCHED_COUNT = false
+    this.pollInterval = undefined
+
+    this.state = {
+      count: 0,
+    }
+  }
 
   static propTypes = {
     authentication: authenticationType,
@@ -31,9 +44,9 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
-    isAlreadyMountedInDOM: PropTypes.bool,
     pausePolling: PropTypes.bool,
     count: PropTypes.number,
+    onCount: PropTypes.func,
   }
 
   static defaultProps = {
@@ -44,44 +57,34 @@ export default class NotificationIcon extends React.Component {
     clearCountOnClick: true,
     onNewNotification: () => {},
     onErrorCallback: () => {},
-    isAlreadyMountedInDOM: false,
     pausePolling: false,
     count: undefined,
+    onCount: () => {},
   }
 
-  state = {
-    count: 0,
-  }
-
-  timerID
   componentDidMount = async () => {
     this._isMounted = true
+    this.getNotificationCount()
+    this.clearPollingComponent()
+    this.subscribeToNotificationCount()
+  }
 
-    /**
-     * If Data Messenger has enableNotificationsTab = true and
-     * the NotificationIcon is also present, subscribeToNotificationCount()
-     * will occasionally trigger an infinite loop.
-     *
-     * Data Messenger will first check to see that the NotificationIcon
-     * isn't already present before triggering this function inside.
-     */
-
-    if (!this.props.isAlreadyMountedInDOM) {
-      this.subscribeToNotificationCount()
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.count !== prevState.count) {
+      this.props.onCount(this.state.count)
     }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearInterval(this.timerID)
+    this.clearPollingComponent()
+    clearInterval(this.pollInterval)
   }
 
   getNotificationCount = (currentCount) => {
     const count = currentCount || this.state.count
 
     if (this.props.pausePolling) {
-      return Promise.resolve(count)
-    } else if (!Number.isNaN(this.props.count)) {
       return Promise.resolve(count)
     }
 
@@ -93,8 +96,11 @@ export default class NotificationIcon extends React.Component {
         const newCount = _get(response, 'data.data.unacknowledged')
         if (newCount && newCount !== this.state.count) {
           this.setState({ count: newCount })
-          this.props.onNewNotification()
+          if (this.HAS_FETCHED_COUNT) {
+            this.props.onNewNotification(newCount)
+          }
         }
+        this.HAS_FETCHED_COUNT = true
         return Promise.resolve(newCount)
       })
       .catch((error) => {
@@ -102,17 +108,31 @@ export default class NotificationIcon extends React.Component {
       })
   }
 
+  clearPollingComponent = () => {
+    sessionStorage.setItem('pollingComponent', '')
+  }
+
+  setPollingComponent = () => {
+    sessionStorage.setItem('pollingComponent', this.COMPONENT_KEY)
+  }
+
+  getPollingComponent = () => {
+    return sessionStorage.getItem('pollingComponent')
+  }
+
   subscribeToNotificationCount = (count) => {
-    if (this._isMounted) {
+    const pollingComponent = this.getPollingComponent()
+    const shouldPoll =
+      !pollingComponent || pollingComponent === this.COMPONENT_KEY
+
+    if (this._isMounted && shouldPoll) {
       /**
        * For short polling notifications, we needed to set the interval on FE side.
        * Interval set to trigger every 90 seconds.
        */
-      if (this.timerID) {
-        clearInterval(this.timerID)
-      }
-
-      this.timerID = setInterval(() => {
+      clearInterval(this.pollInterval)
+      this.setPollingComponent()
+      this.pollInterval = setInterval(() => {
         this.getNotificationCount(count)
           .then((newCount) => {
             // Got a new count, now we want to reconnect
@@ -127,7 +147,7 @@ export default class NotificationIcon extends React.Component {
               console.error(error)
               this.props.onErrorCallback(error)
 
-              clearInterval(this.timerID)
+              clearInterval(this.pollInterval)
 
               throw new Error(error)
             } else if (_get(error, 'response.status') == 504) {
@@ -142,7 +162,7 @@ export default class NotificationIcon extends React.Component {
             }
             this.FAILED_POLL_ATTEMPTS += 1
           })
-      }, 90 * 1000)
+      }, this.INTERVAL_LENGTH)
     }
   }
 
@@ -156,9 +176,17 @@ export default class NotificationIcon extends React.Component {
       })
   }
 
+  getCurrentCount = () => {
+    if (typeof this.props.count === 'number') {
+      return this.props.count
+    }
+
+    return this.state.count
+  }
+
   renderBadge = () => {
     const { overflowCount } = this.props
-    const { count } = this.state
+    const count = this.getCurrentCount()
 
     if (!count) {
       return null
@@ -183,7 +211,8 @@ export default class NotificationIcon extends React.Component {
           className={`react-autoql-notifications-button-container ${
             this.props.useDot ? 'dot' : ''
           }
-        ${!this.state.count ? 'no-badge' : ''}`}
+          ${this.props.className || ''}
+        ${!this.state.count && !this.props.count ? 'no-badge' : ''}`}
           data-test="notification-button"
           style={{ ...this.props.style }}
           onClick={() => {

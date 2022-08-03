@@ -304,6 +304,12 @@
   align-items: center;
   pointer-events: none;
 
+  &.hidden {
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+  }
+
   &.right {
     height: 100vh;
     width: 60px;
