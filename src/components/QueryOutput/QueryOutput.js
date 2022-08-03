@@ -193,11 +193,11 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    onRTValueLabelClick: undefined,
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
-    onRTValueLabelClick: () => {},
     onRecommendedDisplayType: () => {},
     onUpdate: () => {},
     onDrilldownStart: () => {},
@@ -2220,7 +2220,7 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         reverseTranslation={_get(
           this.queryResponse,
-          'data.data.reverse_translation'
+          'data.data.parsed_interpretation'
         )}
       />
     )

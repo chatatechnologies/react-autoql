@@ -1,6 +1,5 @@
 import axios from 'axios'
 import _get from 'lodash.get'
-import { constructRTArray } from './reverseTranslationHelpers'
 import { responseErrors } from './errorMessages'
 
 const formatSourceString = (sourceArray) => {
@@ -189,13 +188,6 @@ export const runQueryOnly = (params = {}) => {
         throw new Error('Parse error')
       }
 
-      const reverseTranslation = constructRTArray(response)
-      if (reverseTranslation) {
-        response.data.data.reverse_translation = reverseTranslation
-      }
-
-      response.data.data.requestParams = params
-
       return Promise.resolve(response)
     })
     .catch((error) => {
@@ -339,14 +331,7 @@ export const runDrilldown = ({
 
   return axios
     .post(url, requestData, config)
-    .then((response) => {
-      const reverseTranslation = constructRTArray(response)
-      if (reverseTranslation) {
-        response.data.data.reverse_translation = reverseTranslation
-      }
-
-      return Promise.resolve(response)
-    })
+    .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {

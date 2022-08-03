@@ -122,13 +122,13 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
+    onRTValueLabelClick: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
-    onRTValueLabelClick: () => {},
   }
 
   componentDidMount = () => {
