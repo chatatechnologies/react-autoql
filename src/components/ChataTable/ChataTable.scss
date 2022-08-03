@@ -57,14 +57,23 @@
   .react-autoql-table.tabulator
   .tabulator-row
   .tabulator-cell:not(.pivot-category) {
-  transition: color 0.2s ease;
+  transition: color 0.1s ease;
   cursor: pointer;
+}
 
-  &:hover {
+.react-autoql-table-container.supports-drilldown {
+  &.pivot
+    .react-autoql-table.tabulator
+    .tabulator-row
+    .tabulator-cell:not(.pivot-category):hover,
+  &:not(.pivot)
+    .react-autoql-table.tabulator
+    .tabulator-row:hover
+    .tabulator-cell {
     color: var(--react-autoql-accent-color);
-    font-weight: 600;
   }
 }
+
 .react-autoql-table.tabulator
   .tabulator-header
   .tabulator-col.tabulator-sortable:hover {

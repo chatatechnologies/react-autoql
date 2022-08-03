@@ -1870,6 +1870,7 @@ export default class QueryOutput extends React.Component {
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
+            pivot
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }

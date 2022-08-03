@@ -503,24 +503,6 @@ export default class DataMessenger extends React.Component {
                 <Icon type="light-bulb" size={22} />
               </div>
             )}
-            {this.props.enableNotificationsTab &&
-              getAutoQLConfig(this.props.autoQLConfig).enableNotifications && (
-                <div
-                  className={`tab${
-                    page === 'notifications' ? ' active' : ''
-                  } react-autoql-notifications`}
-                  onClick={() => {
-                    if (this.notificationBadgeRef) {
-                      this.notificationBadgeRef.resetCount()
-                    }
-                    this.setState({ activePage: 'notifications' })
-                  }}
-                  data-tip="Notifications"
-                  data-for="react-autoql-header-tooltip"
-                >
-                  <Icon type="light-bulb" size={22} />
-                </div>
-              )}
             {this.props.enableDataExplorerTab && (
               <div
                 className={`tab${

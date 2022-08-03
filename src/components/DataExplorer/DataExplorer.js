@@ -363,8 +363,7 @@ export default class DataExplorer extends React.Component {
               onClick={() => this.props.executeQuery(query)}
               className="data-explorer-tooltip-query"
             >
-              <Icon type="react-autoql-bubbles-outlined" />
-              {query}
+              <Icon type="react-autoql-bubbles-outlined" /> {query}
             </div>
           )
         })}
