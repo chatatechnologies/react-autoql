@@ -15,9 +15,8 @@ const isIsoDate = (str) => {
   }
 }
 
-export const constructRTArray = (response) => {
+export const constructRTArray = (interpretation) => {
   try {
-    const interpretation = _get(response, 'data.data.parsed_interpretation')
     if (!interpretation) {
       return undefined
     }

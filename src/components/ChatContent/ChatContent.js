@@ -69,7 +69,7 @@ export default class ChatContent extends React.Component {
     isResizing: false,
     dataPageSize: undefined,
     source: [],
-    onRTValueLabelClick: () => {},
+    onRTValueLabelClick: undefined,
   }
 
   componentDidMount = () => {
