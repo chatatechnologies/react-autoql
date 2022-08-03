@@ -1271,6 +1271,11 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
+          'Enable Data Explorer Tab',
+          'enableDataExplorerTab',
+          [true, false]
+        )}
+        {this.createBooleanRadioGroup(
           'Enable Notifications Tab',
           'enableNotificationsTab',
           [true, false]

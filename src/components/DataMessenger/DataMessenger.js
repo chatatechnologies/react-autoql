@@ -510,10 +510,10 @@ export default class DataMessenger extends React.Component {
                     page === 'notifications' ? ' active' : ''
                   } react-autoql-notifications`}
                   onClick={() => {
-                    this.setState({ activePage: 'notifications' })
                     if (this.notificationBadgeRef) {
                       this.notificationBadgeRef.resetCount()
                     }
+                    this.setState({ activePage: 'notifications' })
                   }}
                   data-tip="Notifications"
                   data-for="react-autoql-header-tooltip"

@@ -377,6 +377,11 @@
       height: 22px;
       width: 23px;
     }
+
+    .react-autoql-icon.data-search svg {
+      stroke: var(--react-autoql-accent-color);
+      stroke-width: 0.1px;
+    }
   }
 
   &.right {
@@ -460,6 +465,11 @@
 .page-switcher-container.bottom .tab {
   background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-background-color-secondary);
+    stroke-width: 0.1px;
+  }
 }
 .page-switcher-container .tab.active {
   background: var(--react-autoql-background-color-secondary);
@@ -468,11 +478,21 @@
   font-weight: bold;
   position: relative;
   z-index: 2;
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-background-color-secondary);
+    stroke-width: 0.1px;
+  }
 }
 .page-switcher-container.bottom .tab.active {
   background: var(--react-autoql-accent-color);
   color: var(--react-autoql-accent-text-color);
   font-weight: bold;
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-accent-color);
+    stroke-width: 0.1px;
+  }
 }
 
 /* animations */
