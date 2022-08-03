@@ -102,7 +102,9 @@ export default class Axis extends Component {
         .select('.legendTitle')
         .node()
         .getBBox()
-    } catch (error) {}
+    } catch (error) {
+      console.error(error)
+    }
 
     select(this.legendBorder)
       .attr('class', 'legend-title-border')
@@ -306,7 +308,7 @@ export default class Axis extends Component {
         }).formattedLabel
       })
 
-    if (this.props.ticks) {
+    if (this.props.ticks?.length) {
       axis.tickValues(this.props.ticks)
     }
 
@@ -382,6 +384,15 @@ export default class Axis extends Component {
     const legendDx = (this.LEGEND_PADDING * (numSeries - 1)) / 2
     const marginLeft = this.props.leftMargin || 0
 
+    let legendClippingHeight =
+      this.props.height -
+      this.props.topMargin -
+      // make legend smaller if labels are not rotated
+      // because they might overlap the legend
+      (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
+      20
+    if (legendClippingHeight < 0) legendClippingHeight = 0
+
     return (
       <g data-test="axis">
         <g
@@ -410,14 +421,7 @@ export default class Axis extends Component {
                   this.legendClippingContainer = el
                 }}
                 id={`legend-bounding-box-${this.LEGEND_ID}`}
-                height={
-                  this.props.height -
-                  this.props.topMargin -
-                  // make legend smaller if labels are not rotated
-                  // because they might overlap the legend
-                  (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
-                  20 // account for translation
-                }
+                height={legendClippingHeight}
                 width={this.props.rightMargin + 30}
                 style={{ transform: 'translate(-30px, -30px)' }}
               />

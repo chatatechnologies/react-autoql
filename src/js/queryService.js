@@ -35,6 +35,21 @@ const transformUserSelection = (userSelection) => {
   return finalUserSelection
 }
 
+export const isError500Type = (referenceId) => {
+  try {
+    const parsedReferenceId = referenceId?.split('.')
+    const errorCode = Number(parsedReferenceId?.[2])
+
+    if (errorCode >= 500 && errorCode < 600) {
+      return true
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  return false
+}
+
 const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
@@ -54,9 +69,13 @@ export const fetchSuggestions = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+  let relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     query
-  )}&scope=narrow&query_id=${queryId}`
+  )}&scope=narrow`
+
+  if (queryId) {
+    relatedQueriesUrl = `${relatedQueriesUrl}&query_id=${queryId}`
+  }
 
   const config = {
     headers: {
@@ -77,18 +96,9 @@ export const runQueryNewPage = ({
   domain,
   apiKey,
   token,
-  debug,
   page,
-  sorters,
-  filters,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
-
-  const data = {
-    translation: debug ? 'include' : 'exclude',
-    orders: sorters,
-    filters,
-  }
 
   if (!queryId) {
     return Promise.reject({ error: 'No query ID supplied' })
@@ -105,7 +115,7 @@ export const runQueryNewPage = ({
   }
 
   return axios
-    .post(url, data, config)
+    .post(url, {}, config)
     .then((response) => {
       if (response.data && typeof response.data === 'string') {
         throw new Error('Parse error')
@@ -173,8 +183,8 @@ export const runQueryOnly = (params = {}) => {
   return axios
     .post(url, data, config)
     .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
+      if (!response?.data?.data) {
+        // JSON response is invalid
         throw new Error('Parse error')
       }
 
@@ -189,20 +199,22 @@ export const runQueryOnly = (params = {}) => {
     })
     .catch((error) => {
       console.error(error)
-      if (error.message === 'Parse error') {
+      if (error?.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
-      if (error.response === 401 || !_get(error, 'response.data')) {
+      if (error?.response === 401 || !error?.response?.data) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
       // if (axios.isCancel(error)) {
       //   return Promise.reject({ error: 'Query Cancelled' })
       // }
+      const referenceId = error?.response?.data?.reference_id
       if (
-        _get(error, 'response.data.reference_id') === '1.1.430' ||
-        _get(error, 'response.data.reference_id') === '1.1.431'
+        referenceId === '1.1.430' ||
+        referenceId === '1.1.431' ||
+        isError500Type(referenceId)
       ) {
-        const queryId = _get(error, 'response.data.data.query_id')
+        const queryId = error?.response?.data?.data?.query_id
         return fetchSuggestions({ query, queryId, domain, apiKey, token })
       }
       return Promise.reject(_get(error, 'response'))

@@ -239,8 +239,13 @@ export default class QueryValidationMessage extends React.Component {
     }
 
     const wordList = this.suggestionLists[suggestionDropdownIndex]
+    const options = []
 
-    const options = wordList.map((suggestionItem, i) => {
+    wordList.forEach((suggestionItem, i) => {
+      if (!suggestionItem?.text) {
+        return
+      }
+
       const option = {
         value: suggestionItem.id,
         label: suggestionItem.text,
@@ -255,7 +260,7 @@ export default class QueryValidationMessage extends React.Component {
         }`
       }
 
-      return option
+      options.push(option)
     })
 
     options.push({

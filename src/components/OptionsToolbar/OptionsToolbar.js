@@ -200,12 +200,16 @@ export default class OptionsToolbar extends React.Component {
     if (isPivotTable) {
       if (_get(this.props, 'responseRef.pivotTableRef._isMounted')) {
         this.props.onCSVDownloadStart({ id: uniqueId })
-        this.pivotTableCSVDownloadTimeout = setTimeout(() => {
-          this.props.responseRef.pivotTableRef.saveAsCSV().then(() => {
+        this.props.responseRef?.pivotTableRef
+          ?.saveAsCSV(2000)
+          .then(() => {
             this.props.onCSVDownloadProgress({ id: uniqueId, progress: 100 })
             this.props.onCSVDownloadFinish({ id: uniqueId })
           })
-        }, 2000)
+          .catch((error) => {
+            console.error(error)
+            this.props.onCSVDownloadFinish({ id: uniqueId })
+          })
       }
     } else {
       this.fetchCSVAndExport()
@@ -397,9 +401,13 @@ export default class OptionsToolbar extends React.Component {
     )
   }
 
+  refreshData = () => {
+    // todo: Refresh data inside QueryOutput
+    return
+  }
+
   getMenuItemClass = (shouldShowButton) => {
     return 'react-autoql-toolbar-btn'
-    return `react-autoql-toolbar-btn ${shouldShowButton ? 'visible' : ''}`
   }
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
@@ -681,6 +689,19 @@ export default class OptionsToolbar extends React.Component {
               </button>
             </Popover>
           )}
+          {shouldShowButton.showRefreshDataButton && (
+            <button
+              onClick={this.refreshData}
+              className={this.getMenuItemClass(
+                shouldShowButton.showRefreshDataButton
+              )}
+              data-tip="Re-run query"
+              data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-test="options-toolbar-trash-btn"
+            >
+              <Icon type="refresh" />
+            </button>
+          )}
           {shouldShowButton.showDeleteButton && (
             <button
               onClick={this.deleteMessage}
@@ -764,6 +785,7 @@ export default class OptionsToolbar extends React.Component {
           isDataResponse &&
           autoQLConfig.enableNotifications &&
           !this.isDrilldownResponse(),
+        showRefreshDataButton: false,
         showShareToSlackButton: false,
         // This feature is disabled indefinitely
         // isDataResponse &&

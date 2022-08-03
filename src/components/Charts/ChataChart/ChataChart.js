@@ -110,8 +110,7 @@ export default class ChataChart extends Component {
     let shouldForceUpdate = false
     let shouldUpdateMargins = false
 
-    const chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
-    const chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
+    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
 
     if (
       !this.state.isLoading &&
@@ -125,6 +124,9 @@ export default class ChataChart extends Component {
         this.recursiveUpdateCount = 0
       }, 500)
     }
+
+    this.chartHeight = chartHeight
+    this.chartWidth = chartWidth
 
     if (!this.props.isResizing && prevProps.isResizing) {
       // Fill max message container after resize
@@ -177,6 +179,19 @@ export default class ChataChart extends Component {
     this.axes = undefined
   }
 
+  getChartHeightAndWidth = () => {
+    const chartWidth =
+      this.chartContainerRef?.offsetWidth >= 0
+        ? this.chartContainerRef?.offsetWidth
+        : 0
+    const chartHeight =
+      this.chartContainerRef?.offsetHeight >= 0
+        ? this.chartContainerRef?.offsetHeight
+        : 0
+
+    return { chartHeight, chartWidth }
+  }
+
   aggregateRowData = (props) => {
     const { stringColumnIndex, numberColumnIndices } = props
     const sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
@@ -184,7 +199,7 @@ export default class ChataChart extends Component {
 
     let rowSum = _cloneDeep(sortedData[0])
     sortedData.forEach((currentRow, i) => {
-      if (i === 0) {
+      if (i === 0 && i < sortedData.length - 1) {
         return
       } else if (
         currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
@@ -216,6 +231,7 @@ export default class ChataChart extends Component {
     const containerLeft = chartContainerBbox.x
     const axesLeft = axesBbox.x + containerLeft
     let leftMargin = this.state.leftMargin
+
     leftMargin +=
       containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH + this.PADDING
     return leftMargin
@@ -302,7 +318,7 @@ export default class ChataChart extends Component {
 
   // Keep this in case we need it later
   getNewTopMargin = () => {
-    return this.state.topMargin
+    return this.PADDING
   }
 
   rebuildTooltips = (delay = 500) => {
@@ -508,6 +524,8 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden
     )
 
+    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
+
     return {
       ...this.props,
       key: undefined,
@@ -516,8 +534,8 @@ export default class ChataChart extends Component {
       innerPadding,
       outerPadding: this.OUTER_PADDING,
       colorScale: this.colorScale,
-      height: this.chartHeight,
-      width: this.chartWidth,
+      height: chartHeight,
+      width: chartWidth,
       topMargin,
       bottomMargin,
       rightMargin,
@@ -614,8 +632,7 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    this.chartWidth = _get(this.chartContainerRef, 'offsetWidth', 0)
-    this.chartHeight = _get(this.chartContainerRef, 'offsetHeight', 0)
+    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
 
     return (
       <ErrorBoundary>
@@ -631,7 +648,7 @@ export default class ChataChart extends Component {
               : ''
           }`}
           style={{
-            flexBasis: this.chartHeight ? `${this.chartHeight}px` : '100vh',
+            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
           }}
         >
           {!this.firstRender && !this.props.isAnimatingContainer && (
@@ -639,8 +656,8 @@ export default class ChataChart extends Component {
               <svg
                 ref={(r) => (this.chartRef = r)}
                 xmlns="http://www.w3.org/2000/svg"
-                width={this.chartWidth}
-                height={this.chartHeight}
+                width={chartWidth}
+                height={chartHeight}
                 style={{
                   fontFamily: _get(
                     getThemeConfig(this.props.themeConfig),

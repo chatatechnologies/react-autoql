@@ -81,12 +81,6 @@ export default class DataAlerts extends React.Component {
     ) {
       this.getDataAlerts()
     }
-    if (
-      !_isEqual(this.state.projectAlertsList, prevState.projectAlertsList) ||
-      !_isEqual(this.state.customAlertsList, prevState.customAlertsList)
-    ) {
-      this.getDataAlerts()
-    }
   }
 
   componentWillUnmount = () => {
@@ -125,30 +119,11 @@ export default class DataAlerts extends React.Component {
     })
   }
 
-  onDataAlertSave = (dataAlertResponse) => {
-    let newDataAlertList = [...this.state.customAlertsList]
-    if (this.state.activeDataAlert) {
-      // Update existing data
-      newDataAlertList = this.state.customAlertsList.map((r) => {
-        if (r.id === this.state.activeDataAlert.id) {
-          return _get(
-            dataAlertResponse,
-            'data.data',
-            this.state.activeDataAlert
-          )
-        }
-        return r
-      })
-    } else {
-      // Add new data alert to top of list
-      if (_get(dataAlertResponse, 'data.data')) {
-        newDataAlertList.unshift(_get(dataAlertResponse, 'data.data'))
-      }
-    }
+  onDataAlertSave = () => {
+    this.getDataAlerts()
     this.props.onSuccessAlert('Notification created!')
     this.setState({
       isEditModalVisible: false,
-      customAlertsList: newDataAlertList,
     })
   }
 
@@ -168,7 +143,6 @@ export default class DataAlerts extends React.Component {
     let listType =
       dataAlert.type === 'CUSTOM' ? 'customAlertsList' : 'projectAlertsList'
 
-    const oldList = _cloneDeep(this.state[listType])
     const newList = this.state[listType].map((n) => {
       if (dataAlert.id === n.id) {
         return {
@@ -187,12 +161,13 @@ export default class DataAlerts extends React.Component {
       status: newStatus,
       ...getAuthentication(this.props.authentication),
     }).catch((error) => {
+      console.error(error)
       this.props.onErrorCallback(
         new Error('Something went wrong. Please try again.')
       )
 
-      // Switch flip back
-      this.setState({ [`${listType}`]: oldList })
+      // Get original state
+      this.getDataAlerts()
     })
   }
   renderNotificationEditModal = () => {

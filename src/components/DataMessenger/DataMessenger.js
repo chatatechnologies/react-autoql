@@ -224,6 +224,13 @@ export default class DataMessenger extends React.Component {
       }
 
       if (
+        typeof this.props.notificationCount === 'number' &&
+        this.props.notificationCount !== prevProps.notificationCount
+      ) {
+        this.refreshNotifications()
+      }
+
+      if (
         !this.state.isVisible &&
         prevState.isVisible &&
         this.props.clearOnClose
@@ -303,6 +310,10 @@ export default class DataMessenger extends React.Component {
     this.rebuildTooltipsTimer = setTimeout(() => {
       ReactTooltip.rebuild()
     }, delay)
+  }
+
+  refreshNotifications = () => {
+    this.notificationListRef?.refreshNotifications('dm')
   }
 
   getMaxWidthAndHeightFromDocument = () => {
@@ -491,10 +502,10 @@ export default class DataMessenger extends React.Component {
                     page === 'notifications' ? ' active' : ''
                   } react-autoql-notifications`}
                   onClick={() => {
+                    this.setState({ activePage: 'notifications' })
                     if (this.notificationBadgeRef) {
                       this.notificationBadgeRef.resetCount()
                     }
-                    this.setState({ activePage: 'notifications' })
                   }}
                   data-tip="Notifications"
                   data-for="react-autoql-header-tooltip"
@@ -512,18 +523,10 @@ export default class DataMessenger extends React.Component {
                       count={this.props.notificationCount}
                       useDot
                       onCount={this.props.onNotificationCount}
+                      onErrorCallback={this.props.onErrorCallback}
                       onNewNotification={(count) => {
-                        // If a new notification is detected, refresh the list
-                        if (
-                          this.notificationListRef &&
-                          this.state.activePage === 'notifications'
-                        ) {
-                          this.notificationListRef.refreshNotifications()
-                        }
                         this.props.onNewNotification(count)
                       }}
-                      onErrorCallback={this.props.onErrorCallback}
-                      // pausePolling={!this.dmRef?.state?.open}
                     />
                   </div>
                 </div>
@@ -629,7 +632,7 @@ export default class DataMessenger extends React.Component {
         break
       }
       case 'notifications': {
-        title = lang.exploreQueries
+        title = lang.notifications
         break
       }
       case 'dpr': {

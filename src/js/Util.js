@@ -684,36 +684,31 @@ export const getDefaultDisplayType = (response, defaultToChart) => {
   return 'text'
 }
 
-export const getGroupBysFromPivotTable = (cell, tableColumns) => {
+export const getGroupBysFromPivotTable = (cell) => {
   try {
-    const pivotColumn = cell?.getColumn()?.getDefinition()
-    const tableConfig = pivotColumn?.tableConfig
+    const groupBys = []
 
-    if (pivotColumn?.origDateColField) {
-      // This is a date pivot
-      const dateColumnIndex = Number(pivotColumn?.origDateColField)
-      const year = Number(pivotColumn.name)
-      const month = cell.getData()[0]
-      const groupBys = [
-        {
-          name: tableColumns[dateColumnIndex].name,
-          value: dayjs(`${month} ${year}`).format('YYYY-MM'),
-        },
-      ]
-      return groupBys
-    } else {
-      const groupBys = tableConfig.stringColumnIndices.map((nameColIndex) => {
-        let value
-        const name = tableColumns[nameColIndex].name
-        if (name === pivotColumn?.titleColumn?.name) {
-          value = pivotColumn?.name
-        } else {
-          value = `${cell?.getRow().getData()?.[0]}`
-        }
-        return { name, value }
+    const pivotColumn = cell?.getColumn()?.getDefinition()
+    const pivotCategory = cell.getData()[0]
+
+    const pivotCategoryName = pivotColumn.origValues?.[pivotCategory].name
+    const pivotCategoryValue = pivotColumn.origValues?.[pivotCategory].value
+    groupBys.push({
+      name: pivotCategoryName,
+      value: pivotCategoryValue,
+    })
+
+    if (pivotColumn?.origPivotColumn) {
+      // Not a date pivot
+      const pivotColumnName = pivotColumn.name
+      const origColumnName = pivotColumn.origPivotColumn?.name
+      groupBys.push({
+        name: origColumnName,
+        value: pivotColumnName,
       })
-      return groupBys
     }
+
+    return groupBys
   } catch (error) {
     console.error(error)
     return undefined

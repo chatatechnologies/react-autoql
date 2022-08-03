@@ -67,7 +67,7 @@ import {
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
 
 import './QueryOutput.scss'
-import { MONTH_NAMES } from '../../js/Constants'
+import { MONTH_NAMES, WEEKDAY_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 
 String.prototype.isUpperCase = function() {
@@ -518,7 +518,7 @@ export default class QueryOutput extends React.Component {
 
       // Finally if all else fails, just compare the 2 values directly
       if (!aDate || !bDate) {
-        //If one is a YYYY-WW
+        // If one is a YYYY-WW
         if (a.includes('-W')) {
           let aDateYear = a.substring(0, 4)
           let bDateYear = b.substring(0, 4)
@@ -530,65 +530,32 @@ export default class QueryOutput extends React.Component {
             return bDateWeek - aDateWeek
           }
         }
-        //If one is one of a weekday
-        else {
-          const days = [
-            {
-              description: 'Sunday',
-              value: 1,
-              label: 'S',
-            },
-            {
-              description: 'Monday',
-              value: 2,
-              label: 'M',
-            },
-            {
-              description: 'Tuesday',
-              value: 3,
-              label: 'T',
-            },
-            {
-              description: 'Wednesday',
-              value: 4,
-              label: 'W',
-            },
-            {
-              description: 'Thursday',
-              value: 5,
-              label: 'T',
-            },
-            {
-              description: 'Friday',
-              value: 6,
-              label: 'F',
-            },
-            {
-              description: 'Saturday',
-              value: 7,
-              label: 'S',
-            },
-          ]
-          let aWeekDay = null
-          let bWeekDay = null
-          days.forEach((weekdays) => {
-            if (a.trim() === weekdays.description) {
-              return (aWeekDay = weekdays.value)
-            }
-          })
-          days.forEach((weekdays) => {
-            if (b.trim() === weekdays.description) {
-              return (bWeekDay = weekdays.value)
-            }
-          })
-          if (aWeekDay === null || bWeekDay === null) {
-            return b - a
+        // If one is a weekday name
+        else if (WEEKDAY_NAMES.includes(a.trim())) {
+          const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
+          const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
+
+          if (aDayIndex >= 0 && bDayIndex >= 0) {
+            return bDayIndex - aDayIndex
           }
-          return bWeekDay - aWeekDay
+
+          return b - a
+        }
+        // If one is a month name
+        else if (MONTH_NAMES.includes(a.trim())) {
+          const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+          const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+
+          if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+            return bMonthIndex - aMonthIndex
+          }
+
+          return b - a
         }
       }
       return bDate - aDate
     } catch (error) {
+      console.error(error)
       return -1
     }
   }
@@ -837,7 +804,7 @@ export default class QueryOutput extends React.Component {
   onTableCellClick = (cell) => {
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
-      groupBys = getGroupBysFromPivotTable(cell, this.tableColumns)
+      groupBys = getGroupBysFromPivotTable(cell)
     } else {
       groupBys = getGroupBysFromTable(cell, this.tableColumns)
     }
@@ -923,6 +890,10 @@ export default class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
+    if (!filters?.length && !rows?.length) {
+      return
+    }
+
     const { displayType } = this.props
     if (displayType === 'table' || displayType === 'pivot_table') {
       const newTableData = []
@@ -1466,16 +1437,15 @@ export default class QueryOutput extends React.Component {
       // display if filtering is toggled by user
       newCol.headerFilter = 'input'
 
-      if (
-        !this.props.enableAjaxTableData ||
-        this.props.displayType === 'pivot_table'
-      ) {
-        // Need to set custom filters for cells that are
-        // displayed differently than the data (ie. dates)
-        newCol.headerFilterFunc = this.setFilterFunction(newCol)
+      // Need to set custom filters for cells that are
+      // displayed differently than the data (ie. dates)
+      newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
-        // Allow proper chronological sorting for date strings
-        newCol.sorter = this.setSorterFunction(newCol)
+      // Allow proper chronological sorting for date strings
+      newCol.sorter = this.setSorterFunction(newCol)
+
+      if (isColumnDateType(col) && this.props.enableAjaxTableData) {
+        newCol.headerSort = false
       }
 
       // Context menu when right clicking on column header
@@ -1514,22 +1484,6 @@ export default class QueryOutput extends React.Component {
 
   generateDatePivotData = (newTableData) => {
     try {
-      // todo: just make this from a simple array
-      const uniqueMonths = {
-        [MONTH_NAMES[1]]: 0,
-        [MONTH_NAMES[2]]: 1,
-        [MONTH_NAMES[3]]: 2,
-        [MONTH_NAMES[4]]: 3,
-        [MONTH_NAMES[5]]: 4,
-        [MONTH_NAMES[6]]: 5,
-        [MONTH_NAMES[7]]: 6,
-        [MONTH_NAMES[8]]: 7,
-        [MONTH_NAMES[9]]: 8,
-        [MONTH_NAMES[10]]: 9,
-        [MONTH_NAMES[11]]: 10,
-        [MONTH_NAMES[12]]: 11,
-      }
-
       const dateColumnIndex = getDateColumnIndex(this.tableColumns)
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
@@ -1573,6 +1527,8 @@ export default class QueryOutput extends React.Component {
           datePivot: true,
           origColumn: this.tableColumns[dateColumnIndex],
           pivot: true,
+          headerSort: true,
+          sorter: this.dateSortFn,
         },
       ]
 
@@ -1580,15 +1536,14 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
-          origDateColField: this.tableColumns[dateColumnIndex].field,
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
+          origValues: {},
           name: year,
           title: year,
           field: `${i + 1}`,
           headerContext: undefined,
           visible: true,
           is_visible: true,
+          headerSort: true,
         })
       })
 
@@ -1596,22 +1551,31 @@ export default class QueryOutput extends React.Component {
       const pivotOriginalColumnData = {}
 
       // Populate first column
-      Object.keys(uniqueMonths).forEach((month, i) => {
+      MONTH_NAMES.forEach((month, i) => {
         pivotTableData[i][0] = month
       })
+
       // Populate remaining columns
       tableData.forEach((row) => {
         const year = this.formatDatePivotYear(row, dateColumnIndex)
         const month = this.formatDatePivotMonth(row, dateColumnIndex)
 
         const yearNumber = uniqueYears[year]
-        const monthNumber = uniqueMonths[month]
+        const monthNumber = MONTH_NAMES.findIndex((m) => month === m)
 
-        if (monthNumber && yearNumber) {
+        const pivotColumnIndex = pivotTableColumns.findIndex(
+          (col) => col.name === year
+        )
+
+        if (monthNumber >= 0 && yearNumber) {
           pivotTableData[monthNumber][yearNumber] = row[numberColumnIndex]
           pivotOriginalColumnData[year] = {
             ...pivotOriginalColumnData[year],
             [month]: row[dateColumnIndex],
+          }
+          pivotTableColumns[pivotColumnIndex].origValues[month] = {
+            name: this.tableColumns[dateColumnIndex]?.name,
+            value: row[dateColumnIndex],
           }
         }
       })
@@ -1699,6 +1663,7 @@ export default class QueryOutput extends React.Component {
           is_visible: true,
           field: '0',
           pivot: true,
+          headerSort: true,
         },
       ]
 
@@ -1711,15 +1676,15 @@ export default class QueryOutput extends React.Component {
         pivotTableColumns.push({
           ...this.tableColumns[numberColumnIndex],
           origColumn: this.tableColumns[numberColumnIndex],
-          titleColumn: this.tableColumns[newLegendColumnIndex],
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
+          origPivotColumn: this.tableColumns[newLegendColumnIndex],
+          origValues: {},
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
           headerContext: undefined,
           visible: true,
           is_visible: true,
+          headerSort: true,
         })
       })
 
@@ -1730,13 +1695,19 @@ export default class QueryOutput extends React.Component {
 
       tableData.forEach((row) => {
         // Populate first column
-        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][0] =
-          row[newStringColumnIndex]
+        const pivotCategoryIndex = uniqueValues0[row[newStringColumnIndex]]
+        const pivotCategoryValue = row[newStringColumnIndex]
+        pivotTableData[pivotCategoryIndex][0] = pivotCategoryValue
 
         // Populate remaining columns
-        pivotTableData[uniqueValues0[row[newStringColumnIndex]]][
-          uniqueValues1[row[newLegendColumnIndex]] + 1
-        ] = row[numberColumnIndex]
+        const pivotColumnIndex = uniqueValues1[row[newLegendColumnIndex]] + 1
+        const pivotValue = row[numberColumnIndex]
+        pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
+
+        pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
+          name: this.tableColumns[newStringColumnIndex]?.name,
+          value: pivotCategoryValue,
+        }
       })
 
       // Pie charts might be available if dataset is small enough
@@ -2041,34 +2012,42 @@ export default class QueryOutput extends React.Component {
     const numRows = this.queryResponse?.data?.data?.rows?.length
     const maxRowLimit = this.queryResponse?.data?.data?.row_limit
 
-    return maxRowLimit && numRows === maxRowLimit
+    if (!numRows || !maxRowLimit) {
+      return false
+    }
+
+    return numRows === maxRowLimit
+  }
+
+  noDataFound = () => {
+    return this.queryResponse?.data?.data?.rows?.length === 0
   }
 
   renderDataLimitWarning = () => {
     const dataLimited = this.isDataLimited()
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+
+    if (!dataLimited || isTableAndAjax) {
+      return null
+    }
 
     const isReverseTranslationRendered =
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation
 
-    const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
-    if (dataLimited && !isTableAndAjax) {
-      return (
-        <div className="dashboard-data-limit-warning-icon">
-          <Icon
-            type="warning"
-            data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
+    return (
+      <div className="dashboard-data-limit-warning-icon">
+        <Icon
+          type="warning"
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
             Try querying a smaller time-frame to ensure<br />
             all your data is displayed.`}
-            data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-            data-place={isReverseTranslationRendered ? 'left' : 'right'}
-          />
-        </div>
-      )
-    }
-
-    return null
+          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-place={isReverseTranslationRendered ? 'left' : 'right'}
+        />
+      </div>
+    )
   }
 
   renderMessage = (error) => {
@@ -2195,7 +2174,7 @@ export default class QueryOutput extends React.Component {
     }
 
     // This is not technically an error. There is just no data in the DB
-    if (!_get(this.queryResponse, 'data.data.rows.length')) {
+    if (this.noDataFound()) {
       return this.replaceErrorTextWithLinks(this.queryResponse.data.message)
     }
 
@@ -2227,7 +2206,8 @@ export default class QueryOutput extends React.Component {
   renderReverseTranslation = () => {
     if (
       !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
-      !this.props.showQueryInterpretation
+      !this.props.showQueryInterpretation ||
+      !this.queryResponse?.data?.data?.interpretation
     ) {
       return null
     }
@@ -2247,11 +2227,6 @@ export default class QueryOutput extends React.Component {
   }
 
   renderFooter = () => {
-    const displayType = this.props.displayType
-    if (['html', 'text', 'help', 'suggestion'].includes(displayType)) {
-      return null
-    }
-
     return (
       <div className="query-output-footer">
         {this.renderReverseTranslation()}
