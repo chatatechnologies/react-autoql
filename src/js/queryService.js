@@ -1,8 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { constructRTArray } from './reverseTranslationHelpers'
-
-var autoCompleteCall = null
+import { responseErrors } from './errorMessages'
 
 const formatSourceString = (sourceArray) => {
   try {
@@ -148,6 +147,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     tableFilters,
     pageSize,
+    cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
@@ -178,6 +178,7 @@ export const runQueryOnly = (params = {}) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -198,6 +199,12 @@ export const runQueryOnly = (params = {}) => {
       return Promise.resolve(response)
     })
     .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
       console.error(error)
       if (error?.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
@@ -205,9 +212,6 @@ export const runQueryOnly = (params = {}) => {
       if (error?.response === 401 || !error?.response?.data) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
-      // if (axios.isCancel(error)) {
-      //   return Promise.reject({ error: 'Query Cancelled' })
-      // }
       const referenceId = error?.response?.data?.reference_id
       if (
         referenceId === '1.1.430' ||
@@ -349,12 +353,15 @@ export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
+
   const url = `${domain}/autoql/api/v1/topic-set?key=${apiKey}`
+
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   }
+
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))

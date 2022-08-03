@@ -1,8 +1,10 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import { responseErrors } from '../../js/errorMessages'
 
 import {
   authenticationType,
@@ -186,6 +188,10 @@ export default class QueryInput extends React.Component {
     }
   }
 
+  cancelQuery = () => {
+    this.axiosSource.cancel(responseErrors.CANCELLED)
+  }
+
   submitQuery = ({
     queryText,
     userSelection,
@@ -222,6 +228,7 @@ export default class QueryInput extends React.Component {
       newSource.push('user')
     }
 
+    this.axiosSource = axios.CancelToken.source()
     const requestData = {
       query,
       userSelection,
@@ -231,12 +238,12 @@ export default class QueryInput extends React.Component {
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,
+      cancelToken: this.axiosSource.token,
     }
 
     if (query.trim()) {
       this.props.onSubmit(query)
       localStorage.setItem('inputValue', query)
-
       if (
         !this.props.authentication?.token &&
         !!this.props.authentication?.dprKey
