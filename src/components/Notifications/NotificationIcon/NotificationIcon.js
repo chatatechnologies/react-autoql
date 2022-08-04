@@ -148,8 +148,7 @@ export default class NotificationIcon extends React.Component {
               this.props.onErrorCallback(error)
 
               clearInterval(this.pollInterval)
-
-              throw new Error(error)
+              return
             } else if (_get(error, 'response.status') == 504) {
               // Timed out because there were no changes
               // Let's connect again

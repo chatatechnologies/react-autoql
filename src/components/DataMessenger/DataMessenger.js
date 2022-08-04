@@ -779,6 +779,11 @@ export default class DataMessenger extends React.Component {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
     }
 
+    const valueLabelClickFn = getAutoQLConfig(this.props.autoQLConfig)
+      .enableFilterLocking
+      ? this.onRTValueLabelClick
+      : undefined
+
     return (
       <ErrorBoundary>
         <ChatContent
@@ -792,7 +797,7 @@ export default class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          onRTValueLabelClick={this.onRTValueLabelClick}
+          onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
           isDataMessengerOpen={!!this.dmRef?.state?.open}
           introMessages={this.dataMessengerIntroMessages}
