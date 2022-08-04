@@ -375,7 +375,8 @@ export default class ChataTable extends React.Component {
           ${this.state.isFilteringTable ? 'filtering' : ''}
           ${this.props.isResizing ? 'resizing' : ''}
           ${this.supportsInfiniteScroll ? 'infinite' : 'limited'}
-          ${this.state.isLastPage ? 'last-page' : ''}`}
+          ${this.state.isLastPage ? 'last-page' : ''}
+          ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,
             flexBasis: height,
