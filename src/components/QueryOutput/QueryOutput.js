@@ -798,7 +798,10 @@ export default class QueryOutput extends React.Component {
               queryID: this.queryID,
               groupBys,
             })
-            this.props.onDrilldownEnd({ response })
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+            })
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
@@ -1905,8 +1908,10 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         useInfiniteScroll={useInfiniteScroll}
-        queryRequestData={this.queryResponse.fe_req}
+        queryRequestData={this.queryResponse?.data?.data?.fe_req}
         queryText={this.queryResponse?.data?.data?.text}
+        originalQueryID={this.props.originalQueryID}
+        isDrilldown={this.isDrilldown()}
         supportsDrilldowns={
           isAggregation(this.tableColumns) &&
           getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns

@@ -139,12 +139,12 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onDrilldownEnd = ({ response, error } = {}) => {
+  onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
       this.setState({ isChataThinking: false })
 
       if (response) {
-        this.addResponseMessage({ response })
+        this.addResponseMessage({ response, originalQueryID })
       } else if (error) {
         this.addResponseMessage({
           content: error,
@@ -354,6 +354,7 @@ export default class ChatContent extends React.Component {
                   onCSVDownloadProgress={this.onCSVDownloadProgress}
                   queryId={message.queryId}
                   queryText={message.query}
+                  originalQueryID={message.originalQueryID}
                   scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}

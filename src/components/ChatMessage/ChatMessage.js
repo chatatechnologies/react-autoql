@@ -271,6 +271,7 @@ export default class ChatMessage extends React.Component {
           onDrilldownEnd={this.props.onDrilldownEnd}
           demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
+          originalQueryID={this.props.originalQueryID}
           onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'

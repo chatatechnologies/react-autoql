@@ -1,22 +1,31 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { responseErrors } from '../../js/errorMessages'
 import { themeConfigType } from '../../props/types'
-import { themeConfigDefault, getAuthentication } from '../../props/defaults'
+import {
+  themeConfigDefault,
+  getAuthentication,
+  getAutoQLConfig,
+} from '../../props/defaults'
+import {
+  runQueryOnly,
+  runQueryNewPage,
+  runDrilldown,
+} from '../../js/queryService'
+import { getTableConfigState } from './tableHelpers'
+import { Spinner } from '../Spinner'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
-import { runQueryOnly, runQueryNewPage } from '../../js/queryService'
-import { getTableConfigState } from './tableHelpers'
-import { Spinner } from '../Spinner'
-import { removeFromDOM } from '../../js/Util'
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -33,9 +42,7 @@ export default class ChataTable extends React.Component {
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
 
     this.tableOptions = {
-      dataLoadError: (error) => {
-        console.error(error)
-      },
+      dataLoadError: (error) => console.error(error),
       selectableCheck: () => false,
       layout: 'fitDataFill',
       textSize: '9px',
@@ -93,80 +100,10 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxLoader = true
       this.tableOptions.ajaxLoaderLoading = ''
       this.tableOptions.ajaxLoaderError = ''
-      this.tableOptions.ajaxRequestFunc = async (url, config, params) => {
-        try {
-          const tableConfigState = getTableConfigState(params, this.ref)
-          if (_isEqual(this.previousTableConfigState, tableConfigState)) {
-            return Promise.resolve()
-          }
-
-          this.previousTableConfigState = tableConfigState
-
-          if (!this.hasSetInitialData) {
-            this.hasSetInitialData = true
-            return Promise.resolve({ rows: this.props.data, page: 1 })
-          }
-
-          let response
-          if (params?.page > 1) {
-            this.setState({ scrollLoading: true })
-            response = await runQueryNewPage({
-              ...getAuthentication(props.authentication),
-              ...tableConfigState,
-              queryId: this.queryID,
-            })
-            this.props.onNewPage(response?.rows)
-          } else if (!props.queryRequestData) {
-            console.warn(
-              'Original request data was not provided to ChataTable, unable to filter or sort table'
-            )
-          } else {
-            this.setState({ pageLoading: true })
-
-            const responseWrapper = await runQueryOnly({
-              ...getAuthentication(props.authentication),
-              ...props.queryRequestData,
-              query: props.queryText,
-              pageSize: props.pageSize,
-              orders: tableConfigState?.sorters,
-              tableFilters: tableConfigState?.filters,
-            })
-            this.queryID = responseWrapper?.data?.data?.query_id
-            response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
-            this.props.onNewData(response?.rows)
-          }
-
-          this.setState({ scrollLoading: false, pageLoading: false })
-          return response
-        } catch (error) {
-          this.setState({ scrollLoading: false, pageLoading: false })
-          // Send empty promise so data doesn't change
-          return Promise.resolve()
-        }
-      }
-      this.tableOptions.ajaxResponse = (url, params, response) => {
-        if (!response) {
-          return {
-            data: this.data,
-            last_page: this.lastPage,
-          }
-        }
-
-        this.currentPage = response.page
-        const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
-        this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
-
-        if (isLastPage && !this.state.isLastPage) {
-          this.setState({ isLastPage: true })
-        } else if (this.state.isLastPage) {
-          this.setState({ isLastPage: false })
-        }
-
-        let modResponse = {}
-        modResponse.data = response.rows
-        modResponse.last_page = this.lastPage
-        return modResponse
-      }
+      this.tableOptions.ajaxRequestFunc = (url, config, params) =>
+        this.ajaxRequestFunc(props, params)
+      this.tableOptions.ajaxResponse = (url, params, response) =>
+        this.ajaxResponseFunc(props, response)
       this.tableOptions.ajaxError = (error) => {
         console.error(error)
       }
@@ -249,9 +186,125 @@ export default class ChataTable extends React.Component {
     this._isMounted = false
     clearTimeout(this.setTableHeaderValues)
     clearTimeout(this.setDimensionsTimeout)
+    this.cancelCurrentRequest()
     this.resetFilterTags()
     this.existingFilterTag = undefined
     this.filterTagElements = undefined
+  }
+
+  cancelCurrentRequest = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
+  ajaxRequestFunc = async (props, params) => {
+    try {
+      const tableConfigState = getTableConfigState(params, this.ref)
+      if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+        return Promise.resolve()
+      }
+
+      this.previousTableConfigState = tableConfigState
+
+      if (!this.hasSetInitialData) {
+        this.hasSetInitialData = true
+        return Promise.resolve({ rows: this.props.data, page: 1 })
+      }
+
+      if (!props.queryRequestData) {
+        console.warn(
+          'Original request data was not provided to ChataTable, unable to filter or sort table'
+        )
+        return Promise.resolve()
+      }
+
+      this.cancelCurrentRequest()
+      this.axiosSource = axios.CancelToken.source()
+
+      let response
+      if (params?.page > 1) {
+        this.setState({ scrollLoading: true })
+        response = await this.getNewPage(props, tableConfigState)
+        this.props.onNewPage(response?.rows)
+      } else {
+        this.setState({ pageLoading: true })
+        const responseWrapper = await this.sortOrFilterData(
+          props,
+          tableConfigState
+        )
+        this.queryID = responseWrapper?.data?.data?.query_id
+        response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+        this.props.onNewData(response?.rows)
+      }
+
+      this.setState({ scrollLoading: false, pageLoading: false })
+      return response
+    } catch (error) {
+      if (error?.data?.message === responseErrors.CANCELLED) {
+        return Promise.resolve()
+      }
+
+      console.error(error)
+      this.setState({ scrollLoading: false, pageLoading: false })
+      // Send empty promise so data doesn't change
+      return Promise.resolve()
+    }
+  }
+
+  getNewPage = (props, tableConfigState) => {
+    return runQueryNewPage({
+      ...getAuthentication(props.authentication),
+      ...tableConfigState,
+      queryId: this.queryID,
+      cancelToken: this.axiosSource.token,
+    })
+  }
+
+  sortOrFilterData = (props, tableConfigState) => {
+    if (props.isDrilldown) {
+      return runDrilldown({
+        ...getAuthentication(props.authentication),
+        ...props.queryRequestData,
+        groupBys: props.queryRequestData?.columns,
+        queryID: props.originalQueryID, // todo: get original query ID from drillown response
+        orders: tableConfigState?.sorters,
+        tableFilters: tableConfigState?.filters,
+        cancelToken: this.axiosSource.token,
+      })
+    } else {
+      return runQueryOnly({
+        ...getAuthentication(props.authentication),
+        ...props.queryRequestData,
+        query: props.queryText,
+        pageSize: props.pageSize,
+        orders: tableConfigState?.sorters,
+        tableFilters: tableConfigState?.filters,
+        cancelToken: this.axiosSource.token,
+      })
+    }
+  }
+
+  ajaxResponseFunc = (props, response) => {
+    if (!response) {
+      return {
+        data: this.data,
+        last_page: this.lastPage,
+      }
+    }
+
+    this.currentPage = response.page
+    const isLastPage = _get(response, 'rows.length', 0) < props.pageSize
+    this.lastPage = isLastPage ? this.currentPage : this.currentPage + 1
+
+    if (isLastPage && !this.state.isLastPage) {
+      this.setState({ isLastPage: true })
+    } else if (this.state.isLastPage) {
+      this.setState({ isLastPage: false })
+    }
+
+    let modResponse = {}
+    modResponse.data = response.rows
+    modResponse.last_page = this.lastPage
+    return modResponse
   }
 
   setInitialHeaderFilters = () => {

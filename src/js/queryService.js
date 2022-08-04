@@ -96,6 +96,7 @@ export const runQueryNewPage = ({
   apiKey,
   token,
   page,
+  cancelToken,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
 
@@ -111,6 +112,7 @@ export const runQueryNewPage = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -123,6 +125,11 @@ export const runQueryNewPage = ({
       return Promise.resolve({ ..._get(response, 'data.data', {}), page })
     })
     .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
@@ -307,18 +314,25 @@ export const runDrilldown = ({
   domain,
   apiKey,
   token,
+  orders,
+  tableFilters,
+  cancelToken,
 } = {}) => {
   if (!queryID) {
+    console.error('No query ID supplied to drilldown function')
     return Promise.reject(new Error('Query ID not supplied'))
   }
 
   if (!token || !domain || !apiKey) {
+    console.error('Unauthenticated')
     return Promise.reject(new Error('Unauthenticated'))
   }
 
   const requestData = {
     translation: debug ? 'include' : 'exclude',
     columns: groupBys,
+    filters: tableFilters,
+    orders,
     test,
   }
 
@@ -326,6 +340,7 @@ export const runDrilldown = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   const url = `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
@@ -333,7 +348,15 @@ export const runDrilldown = ({
   return axios
     .post(url, requestData, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response'))
+    })
 }
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
