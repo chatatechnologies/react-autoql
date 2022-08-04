@@ -332,7 +332,7 @@ export const runDrilldown = ({
   return axios
     .post(url, requestData, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
