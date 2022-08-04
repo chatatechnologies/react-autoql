@@ -31,7 +31,7 @@ export default class CustomScrollbars extends React.Component {
   }
 
   getView = () => {
-    return this.scrollComponent?.view
+    return this.ref?.view
   }
 
   getClassName = () =>
@@ -48,7 +48,7 @@ export default class CustomScrollbars extends React.Component {
   render = () => {
     return (
       <Scrollbars
-        ref={(r) => (this.scrollComponent = r)}
+        ref={(r) => (this.ref = r)}
         className={this.getClassName()}
         style={this.props.style}
         renderView={this.renderView}
