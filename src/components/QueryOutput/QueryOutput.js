@@ -802,6 +802,10 @@ export default class QueryOutput extends React.Component {
   }
 
   onTableCellClick = (cell) => {
+    if (cell?.getColumn()?.getDefinition()?.pivot) {
+      return
+    }
+
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
       groupBys = getGroupBysFromPivotTable(cell)
@@ -1528,6 +1532,7 @@ export default class QueryOutput extends React.Component {
           origColumn: this.tableColumns[dateColumnIndex],
           pivot: true,
           headerSort: true,
+          cssClass: 'pivot-category',
           sorter: this.dateSortFn,
         },
       ]
@@ -1664,6 +1669,7 @@ export default class QueryOutput extends React.Component {
           field: '0',
           pivot: true,
           headerSort: true,
+          cssClass: 'pivot-category',
         },
       ]
 
@@ -1861,6 +1867,7 @@ export default class QueryOutput extends React.Component {
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
+            pivot
             enableColumnHeaderContextMenu={
               this.props.enableColumnHeaderContextMenu
             }
@@ -1871,12 +1878,6 @@ export default class QueryOutput extends React.Component {
 
     const useInfiniteScroll =
       this.props.enableAjaxTableData && this.isDataLimited()
-
-    // const queryFunction = () => () => {
-    //   if (this.isDrilldown()) {
-    //     return runDrilldown()
-    //   }
-    // }
 
     return (
       <ChataTable
@@ -1897,7 +1898,8 @@ export default class QueryOutput extends React.Component {
         useInfiniteScroll={useInfiniteScroll}
         queryRequestData={this.props.queryRequestData}
         supportsDrilldowns={
-          isAggregation(this.tableColumns) && this.tableColumns.length === 2
+          isAggregation(this.tableColumns) &&
+          getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
       />
     )
