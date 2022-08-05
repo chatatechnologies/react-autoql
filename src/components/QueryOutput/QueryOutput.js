@@ -1885,12 +1885,6 @@ export default class QueryOutput extends React.Component {
     const useInfiniteScroll =
       this.props.enableAjaxTableData && this.isDataLimited()
 
-    // const queryFunction = () => () => {
-    //   if (this.isDrilldown()) {
-    //     return runDrilldown()
-    //   }
-    // }
-
     return (
       <ChataTable
         authentication={this.props.authentication}

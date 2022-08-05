@@ -56,6 +56,12 @@
 .react-autoql-table-container.supports-drilldown
   .react-autoql-table.tabulator
   .tabulator-row
+  .tabulator-cell.pivot-category {
+  font-weight: 600;
+}
+.react-autoql-table-container.supports-drilldown
+  .react-autoql-table.tabulator
+  .tabulator-row
   .tabulator-cell:not(.pivot-category) {
   transition: color 0.1s ease;
   cursor: pointer;
