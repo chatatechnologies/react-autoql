@@ -322,21 +322,23 @@ class Dashboard extends React.Component {
 
   scrollToNewTile = (key) => {
     this.scrollToNewTileTimeout = setTimeout(() => {
-      const newTileRef = this.tileRefs?.[key]?.ref
-      if (newTileRef) {
-        const dashboardBbox = this.ref?.parentElement?.getBoundingClientRect()
-        const dashboardTop = dashboardBbox.y
-        const dashboardBottom = dashboardTop + dashboardBbox.height
-        const tileBbox = newTileRef?.getBoundingClientRect()
-        const tileTop = tileBbox.y
-        const tileBottom = tileTop + tileBbox.height
+      try {
+        const newTileRef = this.tileRefs?.[key]?.ref
+        if (newTileRef) {
+          const dashboardBbox = this.ref?.parentElement?.getBoundingClientRect()
+          const dashboardTop = dashboardBbox.y
+          const dashboardBottom = dashboardTop + dashboardBbox.height
+          const tileBbox = newTileRef?.getBoundingClientRect()
+          const tileTop = tileBbox.y
+          const tileBottom = tileTop + tileBbox.height
 
-        if (tileBottom > dashboardBottom) {
-          newTileRef.scrollIntoView(false)
-        } else if (tileTop < dashboardTop) {
-          newTileRef.scrollIntoView(true)
+          if (tileBottom > dashboardBottom) {
+            newTileRef.scrollIntoView(false)
+          } else if (tileTop < dashboardTop) {
+            newTileRef.scrollIntoView(true)
+          }
         }
-      }
+      } catch (error) {}
     }, 200)
   }
 
