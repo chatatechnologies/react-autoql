@@ -1310,6 +1310,7 @@ class DashboardTile extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          ref={(r) => (this.ref = r)}
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
