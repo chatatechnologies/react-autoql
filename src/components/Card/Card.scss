@@ -1,0 +1,57 @@
+.react-autoql-card {
+  background: var(--react-autoql-background-color-primary);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  padding: 15px;
+  margin: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+
+  .react-autoql-card-content {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: hidden;
+
+    .react-autoql-card-user-content {
+      flex: 0 1 auto;
+      min-height: 100px;
+      max-height: 100%;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+    }
+  }
+
+  &.collapsed {
+    .react-autoql-card-content {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  .react-autoql-card-title {
+    cursor: pointer;
+    padding: 0 10px;
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    font-size: 18px;
+    margin: 4px 0px;
+    font-weight: 600;
+  }
+  .react-autoql-card-subtitle {
+    padding: 0px 10px 5px 10px;
+    flex: 0 0 auto;
+  }
+}

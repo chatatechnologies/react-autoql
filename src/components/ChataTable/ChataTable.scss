@@ -4,6 +4,7 @@
   width: 100%;
   background-color: inherit;
   position: relative;
+  display: flex;
 
   &.infinite:not(.last-page) .tabulator-row:last-child {
     margin-bottom: 40px;
@@ -19,7 +20,7 @@
     color: var(--react-autoql-accent-color);
 
     &.table-page-loader {
-      top: 0;
+      top: 50px;
       bottom: 0;
       right: 0;
       left: 0;
@@ -34,7 +35,7 @@
 }
 
 .react-autoql-table {
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
 }
 
 /* tabulator */
@@ -94,13 +95,17 @@
 }
 .react-autoql-table.tabulator {
   background-color: inherit;
-  height: 100%;
+  flex: 1;
 }
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--react-autoql-border-color);
   background-color: var(--react-autoql-background-color-primary);
   z-index: 1;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 .tabulator-cell:not(:first-child) {
   border-left: 1px solid !important;
@@ -114,7 +119,7 @@
   width: 100vw;
 
   .react-autoql-table {
-    display: none;
+    visibility: hidden;
   }
 }
 
@@ -155,9 +160,9 @@
     display: none;
   }
   .react-autoql-table .tabulator-tableHolder {
-    min-height: calc(100% - 40px) !important;
-    height: calc(100% - 40px) !important;
-    max-height: calc(100% - 40px) !important;
+    min-height: calc(100% - 34px) !important;
+    height: calc(100% - 34px) !important;
+    max-height: calc(100% - 34px) !important;
   }
 }
 
@@ -212,9 +217,12 @@
   height: 7px;
   transition: all 0.3s ease;
 }
+.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track,
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-track-piece,
-.react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-corner {
+.react-autoql-table .tabulator-tableHolder::-webkit-scrollbar-corner {
   background-color: transparent;
 }
 .react-autoql-table .tabulator-tableHolder:hover::-webkit-scrollbar-thumb {
@@ -233,7 +241,7 @@
   border: 1px solid #28a8e0;
 }
 .tabulator-table .tabulator-row .tabulator-cell {
-  min-height: 38px;
+  min-height: 32px;
 }
 
 /* Center header titles */

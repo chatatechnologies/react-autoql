@@ -357,7 +357,7 @@ export default class NotificationFeed extends React.Component {
                     this.state.notificationList.length
                   }
                   loader={
-                    <div className="loader" key={0}>
+                    <div className="react-autoql-spinner-centered" key={0}>
                       <Spinner />
                     </div>
                   }

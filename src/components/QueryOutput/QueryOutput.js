@@ -115,7 +115,8 @@ export default class QueryOutput extends React.Component {
     if (!isProvidedDisplayTypeValid) {
       displayType = getDefaultDisplayType(
         this.queryResponse,
-        props.autoChartAggregations
+        props.autoChartAggregations,
+        this.props.preferredDisplayType
       )
       this.onRecommendedDisplayType(displayType)
     }
@@ -153,6 +154,7 @@ export default class QueryOutput extends React.Component {
     selectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     enableColumnHeaderContextMenu: PropTypes.bool,
+    preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
@@ -165,7 +167,9 @@ export default class QueryOutput extends React.Component {
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    enableTableSorting: PropTypes.bool,
     rebuildTooltips: PropTypes.func,
+    onRowChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -193,7 +197,10 @@ export default class QueryOutput extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    enableTableSorting: true,
+    preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
+    onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onSupportedDisplayTypesChange: () => {},
@@ -216,7 +223,8 @@ export default class QueryOutput extends React.Component {
         this.onRecommendedDisplayType(
           getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
         )
       }
@@ -268,7 +276,8 @@ export default class QueryOutput extends React.Component {
         if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
         } else {
@@ -284,7 +293,8 @@ export default class QueryOutput extends React.Component {
         if (!this.isCurrentDisplayTypeValid(this.props)) {
           const recommendedDisplayType = getDefaultDisplayType(
             this.queryResponse,
-            this.props.autoChartAggregations
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
           )
           this.onRecommendedDisplayType(recommendedDisplayType)
         } else if (!this.tableData) {
@@ -301,7 +311,8 @@ export default class QueryOutput extends React.Component {
       ) {
         const recommendedDisplayType = getDefaultDisplayType(
           this.queryResponse,
-          this.props.autoChartAggregations
+          this.props.autoChartAggregations,
+          this.props.preferredDisplayType
         )
         this.onRecommendedDisplayType(recommendedDisplayType)
       }
@@ -313,7 +324,11 @@ export default class QueryOutput extends React.Component {
         disableScroll.off()
       }
 
-      if (this.state.visibleRows !== prevState.visibleRows) {
+      if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
+        this.props.onRowChange()
+      }
+
+      if (!_isEqual(this.state.visibleRows, prevState.visibleRows)) {
         if (this.shouldGeneratePivotData(this.state.visibleRows)) {
           this.generatePivotData({
             isFirstGeneration: true,
@@ -783,7 +798,10 @@ export default class QueryOutput extends React.Component {
               queryID: this.queryID,
               groupBys,
             })
-            this.props.onDrilldownEnd({ response })
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+            })
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
@@ -1133,7 +1151,13 @@ export default class QueryOutput extends React.Component {
       ) {
         this.onRecommendedDisplayType(preferredDisplayType)
       } else if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.onRecommendedDisplayType(getDefaultDisplayType(this.queryResponse))
+        this.onRecommendedDisplayType(
+          getDefaultDisplayType(
+            this.queryResponse,
+            this.props.autoChartAggregations,
+            this.props.preferredDisplayType
+          )
+        )
       }
 
       this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
@@ -1447,21 +1471,7 @@ export default class QueryOutput extends React.Component {
 
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
-
-      if (isColumnDateType(col) && this.props.enableAjaxTableData) {
-        newCol.headerSort = false
-      }
-
-      // Context menu when right clicking on column header
-      // newCol.headerContext = (e, column) => {
-      //   // Do not show native context menu
-      //   e.preventDefault()
-      //   this.setState({
-      //     isContextMenuOpen: true,
-      //     activeColumn: column,
-      //     contextMenuPosition: { top: e.clientY + 10, left: e.clientX - 20 },
-      //   })
-      // }
+      newCol.headerSort = !!this.props.enableTableSorting
 
       return newCol
     })
@@ -1531,7 +1541,6 @@ export default class QueryOutput extends React.Component {
           datePivot: true,
           origColumn: this.tableColumns[dateColumnIndex],
           pivot: true,
-          headerSort: true,
           cssClass: 'pivot-category',
           sorter: this.dateSortFn,
         },
@@ -1548,7 +1557,6 @@ export default class QueryOutput extends React.Component {
           headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 
@@ -1667,9 +1675,8 @@ export default class QueryOutput extends React.Component {
           visible: true,
           is_visible: true,
           field: '0',
-          pivot: true,
-          headerSort: true,
           cssClass: 'pivot-category',
+          pivot: true,
         },
       ]
 
@@ -1690,7 +1697,6 @@ export default class QueryOutput extends React.Component {
           headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
         })
       })
 
@@ -1896,7 +1902,10 @@ export default class QueryOutput extends React.Component {
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         useInfiniteScroll={useInfiniteScroll}
-        queryRequestData={this.props.queryRequestData}
+        queryRequestData={this.queryResponse?.data?.data?.fe_req}
+        queryText={this.queryResponse?.data?.data?.text}
+        originalQueryID={this.props.originalQueryID}
+        isDrilldown={this.isDrilldown()}
         supportsDrilldowns={
           isAggregation(this.tableColumns) &&
           getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
@@ -2023,33 +2032,6 @@ export default class QueryOutput extends React.Component {
 
   noDataFound = () => {
     return this.queryResponse?.data?.data?.rows?.length === 0
-  }
-
-  renderDataLimitWarning = () => {
-    const dataLimited = this.isDataLimited()
-    const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
-
-    if (!dataLimited || isTableAndAjax) {
-      return null
-    }
-
-    const isReverseTranslationRendered =
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-      this.props.showQueryInterpretation
-
-    return (
-      <div className="dashboard-data-limit-warning-icon">
-        <Icon
-          type="warning"
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
-            Try querying a smaller time-frame to ensure<br />
-            all your data is displayed.`}
-          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-          data-place={isReverseTranslationRendered ? 'left' : 'right'}
-        />
-      </div>
-    )
   }
 
   renderMessage = (error) => {
@@ -2205,15 +2187,15 @@ export default class QueryOutput extends React.Component {
     return null
   }
 
-  renderReverseTranslation = () => {
-    if (
-      !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
-      !this.props.showQueryInterpretation ||
-      !this.queryResponse?.data?.data?.interpretation
-    ) {
-      return null
-    }
+  shouldRenderReverseTranslation = () => {
+    return (
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation &&
+      this.queryResponse?.data?.data?.interpretation
+    )
+  }
 
+  renderReverseTranslation = () => {
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
@@ -2228,11 +2210,45 @@ export default class QueryOutput extends React.Component {
     )
   }
 
-  renderFooter = () => {
+  shouldRenderDataLimitWarning = () => {
+    const dataLimited = this.isDataLimited()
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+
+    return dataLimited && !isTableAndAjax
+  }
+
+  renderDataLimitWarning = () => {
+    const isReverseTranslationRendered =
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation
+
     return (
-      <div className="query-output-footer">
-        {this.renderReverseTranslation()}
-        {this.renderDataLimitWarning()}
+      <div className="dashboard-data-limit-warning-icon">
+        <Icon
+          type="warning"
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
+            Try querying a smaller time-frame to ensure<br />
+            all your data is displayed.`}
+          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-place={isReverseTranslationRendered ? 'left' : 'right'}
+        />
+      </div>
+    )
+  }
+
+  renderFooter = () => {
+    const shouldRenderRT = this.shouldRenderReverseTranslation()
+    const shouldRenderDLW = this.shouldRenderDataLimitWarning()
+
+    return (
+      <div
+        className={`query-output-footer${
+          !shouldRenderRT && !shouldRenderDLW ? ' no-margin' : ''
+        }`}
+      >
+        {shouldRenderRT && this.renderReverseTranslation()}
+        {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
     )
   }
