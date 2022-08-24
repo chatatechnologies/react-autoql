@@ -61,8 +61,9 @@ export default class DataMessenger extends React.Component {
     this.dataMessengerIntroMessages = [
       props.introMessage
         ? `${props.introMessage}`
-        : `Hi ${props.userDisplayName ||
-            'there'}! Let’s dive into your data. What can I help you discover today?`,
+        : `Hi ${
+            props.userDisplayName || 'there'
+          }! Let’s dive into your data. What can I help you discover today?`,
     ]
 
     this.dprMessengerIntroMessages = [
@@ -1017,14 +1018,6 @@ export default class DataMessenger extends React.Component {
           id="react-autoql-header-tooltip"
           effect="solid"
           delayShow={800}
-          place="top"
-          html
-        />
-        <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="react-autoql-toolbar-btn-tooltip"
-          effect="solid"
-          delayShow={500}
           place="top"
           html
         />
