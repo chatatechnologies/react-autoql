@@ -2166,7 +2166,8 @@ export default class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.queryResponse?.data?.data?.interpretation
+      this.queryResponse?.data?.data?.interpretation &&
+      !areAllColumnsHidden(this.queryResponse)
     )
   }
 
@@ -2186,11 +2187,14 @@ export default class QueryOutput extends React.Component {
   }
 
   shouldRenderDataLimitWarning = () => {
-    const dataLimited = this.isDataLimited()
     const isTableAndAjax =
       this.props.enableAjaxTableData && this.props.displayType === 'table'
 
-    return dataLimited && !isTableAndAjax
+    return (
+      !isTableAndAjax &&
+      this.isDataLimited() &&
+      !areAllColumnsHidden(this.queryResponse)
+    )
   }
 
   renderDataLimitWarning = () => {
