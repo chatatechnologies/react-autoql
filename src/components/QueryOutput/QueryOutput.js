@@ -70,11 +70,11 @@ import './QueryOutput.scss'
 import { MONTH_NAMES, WEEKDAY_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 
-String.prototype.isUpperCase = function() {
+String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()
 }
 
-String.prototype.toProperCase = function() {
+String.prototype.toProperCase = function () {
   return this.replace(/\w\S*/g, (txt) => {
     if (txt.isUpperCase()) {
       return txt
@@ -941,8 +941,8 @@ export default class QueryOutput extends React.Component {
       const newColumns = this.supportsPivot()
         ? [...this.pivotTableColumns]
         : [...this.tableColumns]
-      newColumns[columnIndex].isSeriesHidden = !newColumns[columnIndex]
-        .isSeriesHidden
+      newColumns[columnIndex].isSeriesHidden =
+        !newColumns[columnIndex].isSeriesHidden
 
       if (this.supportsPivot()) {
         this.pivotTableColumns = newColumns
@@ -1034,18 +1034,16 @@ export default class QueryOutput extends React.Component {
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns
-      )
+      const { stringColumnIndices, stringColumnIndex } =
+        getStringColumnIndices(columns)
       this.pivotTableConfig.stringColumnIndices = stringColumnIndices
       this.pivotTableConfig.stringColumnIndex = stringColumnIndex
     }
 
     // Set number type columns and number series columns (linear axis)
     if (isFirstGeneration || !this.pivotTableConfig.numberColumnIndices) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
-        columns
-      )
+      const { numberColumnIndex, numberColumnIndices } =
+        getNumberColumnIndices(columns)
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
@@ -1068,9 +1066,8 @@ export default class QueryOutput extends React.Component {
       !this.tableConfig.stringColumnIndices ||
       !(this.tableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns
-      )
+      const { stringColumnIndices, stringColumnIndex } =
+        getStringColumnIndices(columns)
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1080,9 +1077,8 @@ export default class QueryOutput extends React.Component {
       !this.tableConfig.numberColumnIndices ||
       !(this.tableConfig.numberColumnIndex >= 0)
     ) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
-        columns
-      )
+      const { numberColumnIndex, numberColumnIndices } =
+        getNumberColumnIndices(columns)
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
     }
@@ -1168,15 +1164,12 @@ export default class QueryOutput extends React.Component {
     let tooltipElement = null
     try {
       if (this.supportsPivot()) {
-        const stringColumn = this.tableColumns[
-          this.tableConfig.stringColumnIndex
-        ]
-        const numberColumn = this.tableColumns[
-          this.tableConfig.numberColumnIndex
-        ]
-        const legendColumn = this.tableColumns[
-          this.tableConfig.legendColumnIndex
-        ]
+        const stringColumn =
+          this.tableColumns[this.tableConfig.stringColumnIndex]
+        const numberColumn =
+          this.tableColumns[this.tableConfig.numberColumnIndex]
+        const legendColumn =
+          this.tableColumns[this.tableConfig.legendColumnIndex]
 
         const tooltipLine1 = `<div>
           <strong>${this.pivotTableColumns[0].title}:</strong>${formatElement({
@@ -1207,9 +1200,8 @@ export default class QueryOutput extends React.Component {
           ${tooltipLine3}
         </div>`
       } else {
-        const stringColumn = this.tableColumns[
-          this.tableConfig.stringColumnIndex
-        ]
+        const stringColumn =
+          this.tableColumns[this.tableConfig.stringColumnIndex]
         const numberColumn = this.tableColumns[columnIndex]
 
         tooltipElement = `<div>
@@ -1481,10 +1473,7 @@ export default class QueryOutput extends React.Component {
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     if (this.tableColumns[dateColumnIndex].type === 'DATE') {
-      return dayjs
-        .unix(data[dateColumnIndex])
-        .utc()
-        .format('YYYY')
+      return dayjs.unix(data[dateColumnIndex]).utc().format('YYYY')
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
@@ -1510,12 +1499,7 @@ export default class QueryOutput extends React.Component {
 
       const allYears = tableData.map((d) => {
         if (this.tableColumns[dateColumnIndex].type === 'DATE') {
-          return Number(
-            dayjs
-              .unix(d[dateColumnIndex])
-              .utc()
-              .format('YYYY')
-          )
+          return Number(dayjs.unix(d[dateColumnIndex]).utc().format('YYYY'))
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
@@ -1625,11 +1609,8 @@ export default class QueryOutput extends React.Component {
         _get(this.queryResponse, 'data.data.rows')
       tableData = tableData.filter((row) => row[0] !== null)
 
-      const {
-        legendColumnIndex,
-        stringColumnIndex,
-        numberColumnIndex,
-      } = this.tableConfig
+      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } =
+        this.tableConfig
 
       let uniqueValues0 = this.sortTableDataByDate(tableData)
         .map((d) => d[stringColumnIndex])
@@ -1758,17 +1739,16 @@ export default class QueryOutput extends React.Component {
     if (query === 'None of these') {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
-      } else {
-        this.setState({
-          customResponse: (
-            <div className="feedback-message">
-              Thank you for your feedback!
-              <br />
-              To continue, try asking another query.
-            </div>
-          ),
-        })
       }
+      this.setState({
+        customResponse: (
+          <div className="feedback-message">
+            Thank you for your feedback!
+            <br />
+            To continue, try asking another query.
+          </div>
+        ),
+      })
     } else {
       if (this.props.onSuggestionClick) {
         this.props.onSuggestionClick({
