@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
@@ -16,6 +17,7 @@ import { OptionsToolbar } from '../../OptionsToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
+import { responseErrors } from '../../../js/errorMessages'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
@@ -167,7 +169,12 @@ class DashboardTile extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.dragEndTimeout)
 
-    // todo: Cancel all dashboard calls here
+    this.cancelAllQueries()
+  }
+
+  cancelAllQueries = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -274,6 +281,9 @@ class DashboardTile extends React.Component {
         source: finalSource,
         pageSize: this.props.dataPageSize,
         skipQueryValidation: skipQueryValidation,
+        cancelToken: isSecondHalf
+          ? this.secondAxiosSource.token
+          : this.axiosSource.token,
       }
 
       return runQuery(requestData)
@@ -410,6 +420,9 @@ class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
+    this.axiosSource = axios.CancelToken.source()
+    this.secondAxiosSource = axios.CancelToken.source()
+
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -1153,7 +1166,6 @@ class DashboardTile extends React.Component {
         },
         reportProblemCallback: this.reportProblemCallback,
         customMessage: this.state.customMessage,
-        queryRequestData: this.topRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1181,12 +1193,10 @@ class DashboardTile extends React.Component {
 
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
-    let queryRequestData = this.bottomRequestData
 
     if (isQuerySameAsTop) {
       isExecuting = this.state.isTopExecuting
       isExecuted = this.state.isTopExecuted
-      queryRequestData = this.topRequestData
     }
 
     const renderPlaceholder =
@@ -1229,7 +1239,6 @@ class DashboardTile extends React.Component {
         },
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
-        queryRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
@@ -1297,6 +1306,7 @@ class DashboardTile extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          ref={(r) => (this.ref = r)}
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}

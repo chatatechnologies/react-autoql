@@ -12,6 +12,7 @@ import {
   runDrilldown,
   setColumnVisibility,
   fetchExploreQueries,
+  isError500Type,
 } from './queryService'
 
 import responseTestCases from '../../test/responseTestCases'
@@ -582,6 +583,25 @@ describe('fetchExploreQueries', () => {
     )
     await expect(fetchExploreQueries(allRelatedQueriesParams)).rejects.toEqual({
       message: 'an error occurred',
+    })
+  })
+
+  describe('error 500 type', () => {
+    test('1.1.430 is not 500 type', () => {
+      const referenceId = '1.1.430'
+      expect(isError500Type(referenceId)).toBe(false)
+    })
+    test('1.1.500 is 500 type', () => {
+      const referenceId = '1.1.500'
+      expect(isError500Type(referenceId)).toBe(true)
+    })
+    test('1.1.530 is error type', () => {
+      const referenceId = '1.1.530'
+      expect(isError500Type(referenceId)).toBe(true)
+    })
+    test('undefined is not 500 type', () => {
+      const referenceId = undefined
+      expect(isError500Type(referenceId)).toBe(false)
     })
   })
 })

@@ -1,8 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
-import { constructRTArray } from './reverseTranslationHelpers'
-
-var autoCompleteCall = null
+import { responseErrors } from './errorMessages'
+import responseSamples from '../../test/responseTestCases'
 
 const formatSourceString = (sourceArray) => {
   try {
@@ -35,6 +34,21 @@ const transformUserSelection = (userSelection) => {
   return finalUserSelection
 }
 
+export const isError500Type = (referenceId) => {
+  try {
+    const parsedReferenceId = referenceId?.split('.')
+    const errorCode = Number(parsedReferenceId?.[2])
+
+    if (errorCode >= 500 && errorCode < 600) {
+      return true
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  return false
+}
+
 const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
@@ -54,9 +68,13 @@ export const fetchSuggestions = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
+  let relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
     query
-  )}&scope=narrow&query_id=${queryId}`
+  )}&scope=narrow`
+
+  if (queryId) {
+    relatedQueriesUrl = `${relatedQueriesUrl}&query_id=${queryId}`
+  }
 
   const config = {
     headers: {
@@ -78,6 +96,7 @@ export const runQueryNewPage = ({
   apiKey,
   token,
   page,
+  cancelToken,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
 
@@ -93,6 +112,7 @@ export const runQueryNewPage = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -105,6 +125,11 @@ export const runQueryNewPage = ({
       return Promise.resolve({ ..._get(response, 'data.data', {}), page })
     })
     .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
@@ -129,6 +154,7 @@ export const runQueryOnly = (params = {}) => {
     orders,
     tableFilters,
     pageSize,
+    cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
   const finalUserSelection = transformUserSelection(userSelection)
@@ -159,41 +185,40 @@ export const runQueryOnly = (params = {}) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
     .post(url, data, config)
     .then((response) => {
-      if (response.data && typeof response.data === 'string') {
-        // There was an error parsing the json
+      if (!response?.data?.data) {
+        // JSON response is invalid
         throw new Error('Parse error')
       }
-
-      const reverseTranslation = constructRTArray(response)
-      if (reverseTranslation) {
-        response.data.data.reverse_translation = reverseTranslation
-      }
-
-      response.data.data.requestParams = params
 
       return Promise.resolve(response)
     })
     .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
       console.error(error)
-      if (error.message === 'Parse error') {
+      if (error?.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
-      if (error.response === 401 || !_get(error, 'response.data')) {
+      if (error?.response === 401 || !error?.response?.data) {
         return Promise.reject({ error: 'Unauthenticated' })
       }
-      // if (axios.isCancel(error)) {
-      //   return Promise.reject({ error: 'Query Cancelled' })
-      // }
+      const referenceId = error?.response?.data?.reference_id
       if (
-        _get(error, 'response.data.reference_id') === '1.1.430' ||
-        _get(error, 'response.data.reference_id') === '1.1.431'
+        referenceId === '1.1.430' ||
+        referenceId === '1.1.431' ||
+        isError500Type(referenceId)
       ) {
-        const queryId = _get(error, 'response.data.data.query_id')
+        const queryId = error?.response?.data?.data?.query_id
         return fetchSuggestions({ query, queryId, domain, apiKey, token })
       }
       return Promise.reject(_get(error, 'response'))
@@ -289,18 +314,25 @@ export const runDrilldown = ({
   domain,
   apiKey,
   token,
+  orders,
+  tableFilters,
+  cancelToken,
 } = {}) => {
   if (!queryID) {
+    console.error('No query ID supplied to drilldown function')
     return Promise.reject(new Error('Query ID not supplied'))
   }
 
   if (!token || !domain || !apiKey) {
+    console.error('Unauthenticated')
     return Promise.reject(new Error('Unauthenticated'))
   }
 
   const requestData = {
     translation: debug ? 'include' : 'exclude',
     columns: groupBys,
+    filters: tableFilters,
+    orders,
     test,
   }
 
@@ -308,32 +340,37 @@ export const runDrilldown = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   const url = `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
 
   return axios
     .post(url, requestData, config)
-    .then((response) => {
-      const reverseTranslation = constructRTArray(response)
-      if (reverseTranslation) {
-        response.data.data.reverse_translation = reverseTranslation
+    .then((response) => Promise.resolve(response))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
       }
 
-      return Promise.resolve(response)
+      return Promise.reject(_get(error, 'response'))
     })
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
   }
+
   const url = `${domain}/autoql/api/v1/topic-set?key=${apiKey}`
+
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   }
+
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
@@ -599,6 +636,78 @@ export const reportProblem = ({
 
   return axios
     .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchSubjectList = ({ domain, apiKey, token }) => {
+  const subjectList = [
+    'Online Sales',
+    'Customers',
+    'Shippers',
+    'Promotions',
+    'Warehouses',
+    'Inventory',
+  ]
+
+  const formattedSubjectList = subjectList.map((subject) => ({
+    name: subject,
+    type: 'subject',
+  }))
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ data: { data: { subjects: formattedSubjectList } } })
+    }, 1000)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/subjects?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
+  if (!subject) {
+    return Promise.reject(new Error('No subject supplied for data preview'))
+  }
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(responseSamples[9])
+    }, 500)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/data-preview`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {
+    subject,
+  }
+
+  return axios
+    .post(url, data, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

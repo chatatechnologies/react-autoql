@@ -41,12 +41,6 @@ export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
 
-    this.filtering = false
-    this.PIE_CHART_HEIGHT = 330
-    this.MESSAGE_HEIGHT_MARGINS = 40
-    this.MESSAGE_WIDTH_MARGINS = 40
-    this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
-
     const displayType = getDefaultDisplayType(
       props.response,
       props.autoChartAggregations
@@ -122,13 +116,13 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
+    onRTValueLabelClick: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
-    onRTValueLabelClick: () => {},
   }
 
   componentDidMount = () => {
@@ -143,9 +137,6 @@ export default class ChatMessage extends React.Component {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
     }, 500)
-
-    this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
-    this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -230,7 +221,6 @@ export default class ChatMessage extends React.Component {
   }
 
   switchView = (displayType) => {
-    this.filtering = false
     this.setState({ displayType }, this.scrollIntoView)
   }
 
@@ -281,6 +271,7 @@ export default class ChatMessage extends React.Component {
           onDrilldownEnd={this.props.onDrilldownEnd}
           demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
+          originalQueryID={this.props.originalQueryID}
           onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
@@ -292,7 +283,6 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           optionsToolbarRef={this.optionsToolbarRef}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
-          queryRequestData={this.props.queryRequestData}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
           onRecommendedDisplayType={this.switchView}
@@ -300,6 +290,7 @@ export default class ChatMessage extends React.Component {
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
+          onRowChange={this.scrollIntoView}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
@@ -366,8 +357,6 @@ export default class ChatMessage extends React.Component {
         ) : null}
       </div>
     )
-
-    return null
   }
 
   renderLeftToolbar = () => {

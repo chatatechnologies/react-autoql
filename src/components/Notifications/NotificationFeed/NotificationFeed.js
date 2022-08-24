@@ -49,6 +49,9 @@ export default class NotificationFeed extends React.Component {
     showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
+    onDismissCallback: PropTypes.func,
+    onDeleteCallback: PropTypes.func,
+    onChange: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     showCreateAlertBtn: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
@@ -68,6 +71,9 @@ export default class NotificationFeed extends React.Component {
     onExpandCallback: () => {},
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
+    onDismissCallback: () => {},
+    onDeleteCallback: () => {},
+    onChange: () => {},
   }
 
   state = {
@@ -143,13 +149,12 @@ export default class NotificationFeed extends React.Component {
     }).then((response) => {
       const newNotifications = this.detectNewNotifications(response.items)
 
-      if (!newNotifications.length) {
+      if (_isEqual(response.items, this.state.notificationList)) {
         return
       }
 
-      if (newNotifications.length === 10) {
+      if (!newNotifications?.length || newNotifications?.length === 10) {
         // Reset list and pagination to new list
-        // This will probably never happen
         this.setState({
           notificationList: response.items,
           pagination: response.pagination,
@@ -215,10 +220,15 @@ export default class NotificationFeed extends React.Component {
 
     dismissAllNotifications({
       ...getAuthentication(this.props.authentication),
-    }).catch((error) => {
-      console.error(error)
-      this.props.onErrorCallback(error)
     })
+      .then(() => {
+        this.props.onDismissCallback(newList)
+        this.props.onChange(newList)
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
   }
 
   onDismissClick = (notification) => {
@@ -231,17 +241,24 @@ export default class NotificationFeed extends React.Component {
       }
       return n
     })
-    this.setState({ notificationList: newList })
+    this.setState({ notificationList: newList }, () => {
+      this.props.onDismissCallback(newList)
+    })
   }
 
   onDeleteClick = (notification) => {
     const newList = this.state.notificationList.filter(
       (n) => n.id !== notification.id
     )
-    this.setState({
-      notificationList: newList,
-      nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
-    })
+    this.setState(
+      {
+        notificationList: newList,
+        nextOffset: this.state.nextOffset > 0 ? this.state.nextOffset - 1 : 0,
+      },
+      () => {
+        this.props.onDeleteCallback(newList)
+      }
+    )
   }
 
   onDataAlertSave = () => {
@@ -340,7 +357,7 @@ export default class NotificationFeed extends React.Component {
                     this.state.notificationList.length
                   }
                   loader={
-                    <div className="loader" key={0}>
+                    <div className="react-autoql-spinner-centered" key={0}>
                       <Spinner />
                     </div>
                   }
@@ -358,8 +375,12 @@ export default class NotificationFeed extends React.Component {
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
+                          onDismissSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
+                          }}
                           onDeleteCallback={this.onDeleteClick}
                           onDeleteSuccessCallback={() => {
+                            this.props.onChange(this.state.notificationList)
                             this.getNotifications()
                           }}
                           onExpandCallback={(notification) => {

@@ -69,7 +69,7 @@ export default class ChatContent extends React.Component {
     isResizing: false,
     dataPageSize: undefined,
     source: [],
-    onRTValueLabelClick: () => {},
+    onRTValueLabelClick: undefined,
   }
 
   componentDidMount = () => {
@@ -92,9 +92,7 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.messengerScrollComponent) {
-      this.messengerScrollComponent.scrollToBottom()
-    }
+    this.messengerScrollComponent?.ref?.scrollToBottom()
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
@@ -141,12 +139,12 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onDrilldownEnd = ({ response, error } = {}) => {
+  onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
       this.setState({ isChataThinking: false })
 
       if (response) {
-        this.addResponseMessage({ response })
+        this.addResponseMessage({ response, originalQueryID })
       } else if (error) {
         this.addResponseMessage({
           content: error,
@@ -256,7 +254,7 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onResponse = (response, query, queryRequestData) => {
+  onResponse = (response, query) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
@@ -278,7 +276,7 @@ export default class ChatContent extends React.Component {
           ),
         })
       } else {
-        this.addResponseMessage({ response, query, queryRequestData })
+        this.addResponseMessage({ response, query })
       }
 
       this.setState({ isChataThinking: false })
@@ -339,64 +337,58 @@ export default class ChatContent extends React.Component {
 
     return (
       <ErrorBoundary>
-        <CustomScrollbars
-          innerRef={(c) => {
-            this.messengerScrollComponent = c
-          }}
-          className="chat-message-container"
-          renderView={(props) => (
-            <div {...props} className="custom-scrollbar-container" />
-          )}
-        >
-          {this.state.messages.map((message) => {
-            return (
-              <ChatMessage
-                key={message.id}
-                id={message.id}
-                ref={(r) => (this.messageRefs[message.id] = r)}
-                isIntroMessage={message.isIntroMessage}
-                authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
-                themeConfig={this.props.themeConfig}
-                isCSVProgressMessage={message.isCSVProgressMessage}
-                initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                onCSVDownloadProgress={this.onCSVDownloadProgress}
-                queryId={message.queryId}
-                queryText={message.query}
-                scrollRef={this.messengerScrollComponent}
-                isDataMessengerOpen={this.props.isDataMessengerOpen}
-                isActive={this.state.activeMessageId === message.id}
-                addMessageToDM={this.addResponseMessage}
-                onDrilldownStart={this.onDrilldownStart}
-                onDrilldownEnd={this.onDrilldownEnd}
-                isResponse={message.isResponse}
-                isChataThinking={this.state.isChataThinking}
-                onSuggestionClick={this.animateInputTextAndSubmit}
-                content={message.content}
-                scrollToBottom={this.scrollToBottom}
-                dataFormatting={this.props.dataFormatting}
-                displayType={message.displayType}
-                response={message.response}
-                type={message.type}
-                onErrorCallback={this.props.onErrorCallback}
-                onSuccessAlert={this.props.onSuccessAlert}
-                deleteMessageCallback={this.deleteMessage}
-                scrollContainerRef={this.messengerScrollComponent}
-                isResizing={this.props.isResizing}
-                enableDynamicCharting={this.props.enableDynamicCharting}
-                onNoneOfTheseClick={this.onNoneOfTheseClick}
-                autoChartAggregations={this.props.autoChartAggregations}
-                onRTValueLabelClick={this.props.onRTValueLabelClick}
-                appliedFilters={message.appliedFilters}
-                disableMaxHeight={this.props.disableMaxMessageHeight}
-                enableAjaxTableData={this.props.enableAjaxTableData}
-                rebuildTooltips={this.props.rebuildTooltips}
-                queryRequestData={message.queryRequestData}
-                source={this.props.source}
-              />
-            )
-          })}
-        </CustomScrollbars>
+        <div className="chat-content-scroll-container">
+          <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
+            {this.state.messages.map((message) => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
+                  isIntroMessage={message.isIntroMessage}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  themeConfig={this.props.themeConfig}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
+                  queryId={message.queryId}
+                  queryText={message.query}
+                  originalQueryID={message.originalQueryID}
+                  scrollRef={this.messengerScrollComponent?.ref}
+                  isDataMessengerOpen={this.props.isDataMessengerOpen}
+                  isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
+                  onDrilldownStart={this.onDrilldownStart}
+                  onDrilldownEnd={this.onDrilldownEnd}
+                  isResponse={message.isResponse}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.animateInputTextAndSubmit}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  dataFormatting={this.props.dataFormatting}
+                  displayType={message.displayType}
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent?.ref}
+                  isResizing={this.props.isResizing}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
+                  onRTValueLabelClick={this.props.onRTValueLabelClick}
+                  appliedFilters={message.appliedFilters}
+                  disableMaxHeight={this.props.disableMaxMessageHeight}
+                  enableAjaxTableData={this.props.enableAjaxTableData}
+                  rebuildTooltips={this.props.rebuildTooltips}
+                  source={this.props.source}
+                />
+              )
+            })}
+          </CustomScrollbars>
+        </div>
         {this.state.isChataThinking && (
           <div className="response-loading-container">
             <LoadingDots />
@@ -427,6 +419,7 @@ export default class ChatContent extends React.Component {
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
+            isResizing={this.props.isResizing}
           />
         </div>
       </ErrorBoundary>
