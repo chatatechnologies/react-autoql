@@ -300,6 +300,10 @@ class Dashboard extends React.Component {
     try {
       if (tiles?.length) {
         const newTiles = tiles.map((tile) => {
+          if (!tile) {
+            return
+          }
+
           return {
             query: !ignoreInputs && tile.query,
             title: !ignoreInputs && tile.title,
@@ -340,6 +344,16 @@ class Dashboard extends React.Component {
         }
       } catch (error) {}
     }, 200)
+  }
+
+  refreshLayout = () => {
+    window.dispatchEvent(new Event('resize'))
+    this.setState({ isWindowResizing: true })
+    this.stopDraggingTimeout = setTimeout(() => {
+      this.setState({
+        isWindowResizing: false,
+      })
+    }, 100)
   }
 
   onMoveStart = () => {
