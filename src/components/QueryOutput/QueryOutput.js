@@ -1527,6 +1527,7 @@ export default class QueryOutput extends React.Component {
           pivot: true,
           cssClass: 'pivot-category',
           sorter: this.dateSortFn,
+          headerFilter: false,
         },
       ]
 
@@ -1540,6 +1541,7 @@ export default class QueryOutput extends React.Component {
           field: `${i + 1}`,
           visible: true,
           is_visible: true,
+          headerFilter: false,
         })
       })
 
@@ -1656,6 +1658,7 @@ export default class QueryOutput extends React.Component {
           field: '0',
           cssClass: 'pivot-category',
           pivot: true,
+          headerFilter: false,
         },
       ]
 
@@ -1675,6 +1678,7 @@ export default class QueryOutput extends React.Component {
           field: `${i + 1}`,
           visible: true,
           is_visible: true,
+          headerFilter: false,
         })
       })
 
