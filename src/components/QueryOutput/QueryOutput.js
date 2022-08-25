@@ -1647,6 +1647,7 @@ export default class QueryOutput extends React.Component {
       }
 
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
+      this.tableConfig.stringColumnIndex = newStringColumnIndex
 
       // Generate new column array
       const pivotTableColumns = [
