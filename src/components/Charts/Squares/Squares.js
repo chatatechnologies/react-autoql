@@ -115,22 +115,9 @@ export default class Squares extends Component {
               onClick={() => this.onSquareClick(row, colIndex, index)}
               data-tip={tooltip}
               data-for={this.props.tooltipID}
-              stroke={activeFillColor}
-              strokeWidth="2px"
-              strokeOpacity={
-                this.state.activeKey === getKey(colIndex, index) ? 1 : 0
-              }
-              // chosen color for positive values and red for negative values
-              fill={
-                this.state.activeKey === getKey(colIndex, index)
-                  ? activeFillColor
-                  : fillColor
-              }
-              fillOpacity={
-                this.state.activeKey === getKey(colIndex, index)
-                  ? 1
-                  : this.opacityScale(Math.abs(value))
-              }
+              style={{ color: activeFillColor }}
+              fill={fillColor}
+              fillOpacity={this.opacityScale(Math.abs(value))}
             />
           )
         }

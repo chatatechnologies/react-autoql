@@ -703,7 +703,8 @@ export default class DataAlertModal extends React.Component {
               </div>
               <div>
                 <Button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     if (this.modalRef) {
                       this.modalRef.onClose()
                     }

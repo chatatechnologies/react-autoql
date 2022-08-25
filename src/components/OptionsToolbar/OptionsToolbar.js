@@ -644,6 +644,7 @@ export default class OptionsToolbar extends React.Component {
               )}
               data-tip="Filter table"
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
+              data-test="react-autoql-filter-button"
             >
               <Icon type="filter" />
             </button>
@@ -755,6 +756,7 @@ export default class OptionsToolbar extends React.Component {
       const displayType = _get(this.props.responseRef, 'props.displayType')
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
+      const isPivotTable = displayType === 'pivot_table'
       const response = _get(this.props.responseRef, 'queryResponse')
       const isDataResponse = _get(response, 'data.data.display_type') === 'data'
       const allColumnsHidden = areAllColumnsHidden(response)
@@ -765,7 +767,8 @@ export default class OptionsToolbar extends React.Component {
       const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
       shouldShowButton = {
-        showFilterButton: isTable && !allColumnsHidden && hasMoreThanOneRow,
+        showFilterButton:
+          isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:

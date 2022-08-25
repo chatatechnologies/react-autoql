@@ -1,6 +1,7 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
+import responseSamples from '../../test/responseTestCases'
 
 const formatSourceString = (sourceArray) => {
   try {
@@ -95,6 +96,7 @@ export const runQueryNewPage = ({
   apiKey,
   token,
   page,
+  cancelToken,
 } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
 
@@ -110,6 +112,7 @@ export const runQueryNewPage = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -122,6 +125,11 @@ export const runQueryNewPage = ({
       return Promise.resolve({ ..._get(response, 'data.data', {}), page })
     })
     .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
       if (error.message === 'Parse error') {
         return Promise.reject({ error: 'Parse error' })
       }
@@ -306,18 +314,25 @@ export const runDrilldown = ({
   domain,
   apiKey,
   token,
+  orders,
+  tableFilters,
+  cancelToken,
 } = {}) => {
   if (!queryID) {
+    console.error('No query ID supplied to drilldown function')
     return Promise.reject(new Error('Query ID not supplied'))
   }
 
   if (!token || !domain || !apiKey) {
+    console.error('Unauthenticated')
     return Promise.reject(new Error('Unauthenticated'))
   }
 
   const requestData = {
     translation: debug ? 'include' : 'exclude',
     columns: groupBys,
+    filters: tableFilters,
+    orders,
     test,
   }
 
@@ -325,6 +340,7 @@ export const runDrilldown = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   const url = `${domain}/autoql/api/v1/query/${queryID}/drilldown?key=${apiKey}`
@@ -332,7 +348,15 @@ export const runDrilldown = ({
   return axios
     .post(url, requestData, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response'))
+    })
 }
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
@@ -612,6 +636,78 @@ export const reportProblem = ({
 
   return axios
     .put(url, data, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchSubjectList = ({ domain, apiKey, token }) => {
+  const subjectList = [
+    'Online Sales',
+    'Customers',
+    'Shippers',
+    'Promotions',
+    'Warehouses',
+    'Inventory',
+  ]
+
+  const formattedSubjectList = subjectList.map((subject) => ({
+    name: subject,
+    type: 'subject',
+  }))
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ data: { data: { subjects: formattedSubjectList } } })
+    }, 1000)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/subjects?key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
+}
+
+export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
+  if (!subject) {
+    return Promise.reject(new Error('No subject supplied for data preview'))
+  }
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(responseSamples[9])
+    }, 500)
+  })
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/data-preview`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  const data = {
+    subject,
+  }
+
+  return axios
+    .post(url, data, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }

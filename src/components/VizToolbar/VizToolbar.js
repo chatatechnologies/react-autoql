@@ -1,6 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import ReactTooltip from 'react-tooltip'
+import { v4 as uuid } from 'uuid'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -13,6 +15,8 @@ import './VizToolbar.scss'
 import { Icon } from '../Icon'
 
 class VizToolbar extends React.Component {
+  COMPONENT_KEY = uuid()
+
   static propTypes = {
     themeConfig: themeConfigType,
 
@@ -29,6 +33,22 @@ class VizToolbar extends React.Component {
     displayType: undefined,
     disableCharts: false,
     vertical: false,
+  }
+
+  componentDidMount = () => {
+    this.rebuildTooltips()
+  }
+
+  componentDidUpdate = () => {
+    this.rebuildTooltips()
+  }
+
+  rebuildTooltips = () => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips()
+    } else {
+      ReactTooltip.rebuild()
+    }
   }
 
   showDisplayTypeButton = (displayType) => {
@@ -50,7 +70,7 @@ class VizToolbar extends React.Component {
           onClick={() => this.props.onDisplayTypeChange(displayType)}
           className="react-autoql-toolbar-btn"
           data-tip={name}
-          data-for="react-autoql-toolbar-btn-tooltip"
+          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test="viz-toolbar-button"
         >
           {icon}
@@ -88,7 +108,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('table', 'Table', <Icon type="table" />)}
             {this.createVisButton(
               'pivot_table',
-              'Pivot Table',
+              'Pivot View',
               <Icon type="pivot-table" />
             )}
             {this.createVisButton(
@@ -137,6 +157,12 @@ class VizToolbar extends React.Component {
               <Icon type="stacked-line-chart" />
             )}
           </div>
+          <ReactTooltip
+            className="react-autoql-tooltip"
+            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+            effect="solid"
+            delayShow={800}
+          />
         </ErrorBoundary>
       )
     }

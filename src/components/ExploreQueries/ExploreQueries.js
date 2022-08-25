@@ -1,12 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import InfiniteScroll from 'react-infinite-scroller'
 import ReactTooltip from 'react-tooltip'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
-import { CustomScrollbars } from '../CustomScrollbars'
+import { InfiniteScrollAutoQL } from '../InfiniteScroll'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
@@ -50,7 +49,7 @@ export default class ExploreQueries extends React.Component {
 
   loadMore = (page, skipQueryValidation) => {
     if (this.state.loading) {
-      return
+      return Promise.resolve()
     }
 
     const newState = {
@@ -71,7 +70,7 @@ export default class ExploreQueries extends React.Component {
 
     this.setState(newState)
 
-    fetchExploreQueries({
+    return fetchExploreQueries({
       ...this.props.authentication,
       keywords: inputValue,
       pageSize: this.pageSize,
@@ -107,10 +106,12 @@ export default class ExploreQueries extends React.Component {
         }
 
         this.setState(finishedState)
+        return Promise.resolve()
       })
       .catch((error) => {
         this.setState({ loading: false, initialLoading: false })
         console.error(error)
+        return Promise.reject()
       })
   }
 
@@ -224,36 +225,32 @@ export default class ExploreQueries extends React.Component {
     }
 
     return (
-      <CustomScrollbars>
-        <InfiniteScroll
-          pageStart={1}
-          loadMore={this.loadMore}
-          hasMore={this.state.hasMore}
-          useWindow={false}
-          initialLoad={false}
-          threshold={100}
-          loader={
-            <div className="loader" key={0}>
-              <Spinner
-                style={{ width: '19px', height: '20px', color: '#999' }}
-              />
+      <InfiniteScrollAutoQL
+        pageStart={1}
+        loadMore={this.loadMore}
+        hasMore={this.state.hasMore}
+        useWindow={false}
+        initialLoad={false}
+        threshold={100}
+        loader={
+          <div className="react-autoql-spinner-centered" key={0}>
+            <Spinner style={{ width: '19px', height: '20px', color: '#999' }} />
+          </div>
+        }
+      >
+        {this.state.queryList.map((query, i) => {
+          return (
+            <div
+              className="query-tip-item animated-item"
+              onClick={() => this.props.executeQuery(query)}
+              key={`query-tip-${i}`}
+              style={{ display: 'block' }}
+            >
+              {query}
             </div>
-          }
-        >
-          {this.state.queryList.map((query, i) => {
-            return (
-              <div
-                className="query-tip-item animated-item"
-                onClick={() => this.props.executeQuery(query)}
-                key={`query-tip-${i}`}
-                style={{ display: 'block' }}
-              >
-                {query}
-              </div>
-            )
-          })}
-        </InfiniteScroll>
-      </CustomScrollbars>
+          )
+        })}
+      </InfiniteScrollAutoQL>
     )
   }
 
