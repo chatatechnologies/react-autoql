@@ -9,7 +9,7 @@ import analyzer from 'rollup-plugin-analyzer'
 import gzipPlugin from 'rollup-plugin-gzip'
 import { visualizer } from 'rollup-plugin-visualizer'
 import bundleSize from 'rollup-plugin-bundle-size'
-import commonjs from '@rollup/plugin-commonjs'
+import commonjs from 'rollup-plugin-commonjs'
 
 import pkg from './package.json'
 
@@ -35,12 +35,13 @@ const makeExternalPredicate = (externalArr) => {
 const common = {
   input: 'src/index.js',
   plugins: [
-    commonjs(),
-    resolve(),
+    resolve({
+      mainFields: ['main', 'module'],
+    }),
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
-      extract: 'dist/react-autoql.esm.css',
+      extract: 'autoql.esm.css',
       minimize: false,
     }),
     image(),
@@ -49,6 +50,7 @@ const common = {
       exclude: 'node_modules/**',
       ignore: ['./example'],
     }),
+    commonjs(),
     !development && terser(),
     gzipPlugin(),
     test && visualizer(),

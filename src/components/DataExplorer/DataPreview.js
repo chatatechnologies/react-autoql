@@ -3,12 +3,10 @@ import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
 import { Scrollbars } from 'react-custom-scrollbars-2'
-import ReactDOMServer from 'react-dom/server'
 
 import { LoadingDots } from '../LoadingDots'
 import { authenticationType } from '../../props/types'
 import { fetchDataPreview } from '../../js/queryService'
-import { TopicName } from './TopicName'
 import { Icon } from '../Icon'
 
 import {
