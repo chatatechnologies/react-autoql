@@ -9,6 +9,7 @@ import analyzer from 'rollup-plugin-analyzer'
 import gzipPlugin from 'rollup-plugin-gzip'
 import { visualizer } from 'rollup-plugin-visualizer'
 import bundleSize from 'rollup-plugin-bundle-size'
+import commonjs from '@rollup/plugin-commonjs'
 
 import pkg from './package.json'
 
@@ -34,11 +35,12 @@ const makeExternalPredicate = (externalArr) => {
 const common = {
   input: 'src/index.js',
   plugins: [
+    commonjs(),
     resolve(),
     postcss({
       plugins: [autoprefixer],
       extensions: ['.css, .scss'],
-      extract: true,
+      extract: 'dist/react-autoql.esm.css',
       minimize: false,
     }),
     image(),
@@ -63,6 +65,10 @@ const outputs = [
   {
     file: `${dist}/${bundle}.esm.js`,
     format: 'esm', // use ES modules to support tree-shaking
+  },
+  {
+    file: `${dist}/${bundle}.cjs.js`,
+    format: 'cjs',
   },
 ]
 
