@@ -169,6 +169,7 @@ export default class QueryOutput extends React.Component {
     enableTableSorting: PropTypes.bool,
     rebuildTooltips: PropTypes.func,
     onRowChange: PropTypes.func,
+    mutable: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -198,6 +199,7 @@ export default class QueryOutput extends React.Component {
     enableTableSorting: true,
     preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
+    mutable: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -1742,15 +1744,18 @@ export default class QueryOutput extends React.Component {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
       }
-      this.setState({
-        customResponse: (
-          <div className="feedback-message">
-            Thank you for your feedback!
-            <br />
-            To continue, try asking another query.
-          </div>
-        ),
-      })
+
+      if (this.props.mutable) {
+        this.setState({
+          customResponse: (
+            <div className="feedback-message">
+              Thank you for your feedback!
+              <br />
+              To continue, try asking another query.
+            </div>
+          ),
+        })
+      }
     } else {
       if (this.props.onSuggestionClick) {
         this.props.onSuggestionClick({
