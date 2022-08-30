@@ -131,6 +131,7 @@ export default class DataMessenger extends React.Component {
     enableDPRTab: PropTypes.bool,
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
+    defaultOpen: PropTypes.bool,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -177,6 +178,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: 'Type your queries here',
     dataPageSize: undefined,
     notificationCount: undefined,
+    defaultOpen: false,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -207,6 +209,15 @@ export default class DataMessenger extends React.Component {
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
+    }
+
+    if (this.props.defaultOpen && !this.isOpen()) {
+      const handle = document.getElementById(
+        `${this.COMPONENT_KEY}-drawer-handle`
+      )
+      if (handle) {
+        handle.click()
+      }
     }
 
     setTimeout(this.rebuildTooltips, 1000)
@@ -270,9 +281,6 @@ export default class DataMessenger extends React.Component {
       document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.windowResizeTimer)
-      clearTimeout(this.feedbackTimeout)
-      clearTimeout(this.animateTextTimeout)
-      clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {}
@@ -342,14 +350,11 @@ export default class DataMessenger extends React.Component {
   }
 
   openExploreQueries = (topic) => {
-    this.setState({ activePage: 'explore-queries' })
-
-    if (topic) {
-      clearTimeout(this.exploreQueriesTimeout)
-      this.exploreQueriesTimeout = setTimeout(() => {
+    this.setState({ activePage: 'explore-queries' }, () => {
+      if (topic && this.exploreQueriesRef?.animateQITextAndSubmit) {
         this.exploreQueriesRef?.animateQITextAndSubmit(topic)
-      }, 500)
-    }
+      }
+    })
   }
 
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
@@ -367,10 +372,12 @@ export default class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
+          id={`${this.COMPONENT_KEY}-drawer-handle`}
           className={`drawer-handle
             ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
           style={this.props.handleStyles}
+          data-test="data-messenger-handle"
         >
           {this.props.handleImage ? (
             <img
@@ -688,6 +695,10 @@ export default class DataMessenger extends React.Component {
     this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
   }
 
+  isOpen = () => {
+    return !!this.dmRef?.state?.open
+  }
+
   renderFilterLockPopover = () => {
     return (
       <FilterLockPopover
@@ -789,6 +800,7 @@ export default class DataMessenger extends React.Component {
       <ErrorBoundary>
         <ChatContent
           {...this.props}
+          data-test="data-messenger-chat-content"
           shouldRender={this.state.activePage === 'data-messenger'}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dataMessengerContentRef = r)}
@@ -800,7 +812,7 @@ export default class DataMessenger extends React.Component {
           rebuildTooltips={this.rebuildTooltips}
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
-          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
@@ -827,7 +839,7 @@ export default class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder="Type your questions here"
@@ -849,13 +861,13 @@ export default class DataMessenger extends React.Component {
   renderDataExplorerContent = () => (
     <ErrorBoundary>
       <DataExplorer
-        ref={(r) => (this.exploreQueriesRef = r)}
+        ref={(r) => (this.dataExplorerRef = r)}
         authentication={this.props.authentication}
         themeConfig={this.props.themeConfig}
         dataFormatting={this.props.dataFormatting}
         rebuildTooltips={this.rebuildTooltips}
         shouldRender={
-          this.state.activePage === 'data-explorer' && !!this.dmRef?.state?.open
+          this.state.activePage === 'data-explorer' && this.isOpen()
         }
         executeQuery={(query) => {
           this.setState({ activePage: 'data-messenger' })
@@ -877,8 +889,7 @@ export default class DataMessenger extends React.Component {
         ref={(r) => (this.exploreQueriesRef = r)}
         authentication={this.props.authentication}
         shouldRender={
-          this.state.activePage === 'explore-queries' &&
-          !!this.dmRef?.state?.open
+          this.state.activePage === 'explore-queries' && this.isOpen()
         }
         executeQuery={(query) => {
           this.setState({ activePage: 'data-messenger' })
@@ -907,7 +918,7 @@ export default class DataMessenger extends React.Component {
         onSuccessCallback={this.props.onSuccessCallback}
         showNotificationDetails={false}
         shouldRender={
-          !!this.dmRef?.state?.open && this.state.activePage === 'notifications'
+          this.isOpen() && this.state.activePage === 'notifications'
         }
       />
     </ErrorBoundary>

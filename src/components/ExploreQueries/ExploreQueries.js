@@ -47,6 +47,11 @@ export default class ExploreQueries extends React.Component {
     }
   }
 
+  componentWillUnmount = () => {
+    clearTimeout(this.animateTextDelay)
+    clearTimeout(this.animateTextTimeout)
+  }
+
   loadMore = (page, skipQueryValidation) => {
     if (this.state.loading) {
       return Promise.resolve()
@@ -131,23 +136,33 @@ export default class ExploreQueries extends React.Component {
   }
 
   animateQITextAndSubmit = (text) => {
-    if (typeof text === 'string' && text?.length) {
-      clearTimeout(this.animateTextTimeout)
-      for (let i = 1; i <= text.length; i++) {
-        this.animateTextTimeout = setTimeout(() => {
-          this.setState(
-            {
-              inputValue: text.slice(0, i),
-            },
-            () => {
-              if (i === text.length) {
-                this.loadMore(1)
-              }
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof text === 'string' && text?.length) {
+          this.animateTextDelay = setTimeout(() => {
+            for (let i = 1; i <= text.length; i++) {
+              this.animateTextTimeout = setTimeout(() => {
+                this.setState(
+                  {
+                    inputValue: text.slice(0, i),
+                  },
+                  () => {
+                    if (i === text.length) {
+                      resolve()
+                      this.loadMore(1)
+                    }
+                  }
+                )
+              }, i * 50)
             }
-          )
-        }, i * 50)
+          }, 500)
+        } else {
+          reject()
+        }
+      } catch (error) {
+        reject()
       }
-    }
+    })
   }
 
   clearExploreQueries = () => {
@@ -277,6 +292,7 @@ export default class ExploreQueries extends React.Component {
               onChange={this.onInputChange}
               onKeyPress={this.onKeyPress}
               ref={(ref) => (this.inputRef = ref)}
+              data-test="explore-queries-input-bar"
               autoFocus
             />
             <div className="chat-bar-input-icon">

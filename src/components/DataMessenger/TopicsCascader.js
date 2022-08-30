@@ -44,7 +44,7 @@ export default class TopicsCascader extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div>
+        <div data-test="topics-message-cascader-component">
           {lang.introPrompt}
           <br />
           <div className="topics-container">

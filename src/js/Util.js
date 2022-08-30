@@ -703,7 +703,7 @@ export const getGroupBysFromPivotTable = (cell) => {
     const pivotCategoryValue = pivotColumn.origValues?.[pivotCategory].value
     groupBys.push({
       name: pivotCategoryName,
-      value: pivotCategoryValue,
+      value: `${pivotCategoryValue}`,
     })
 
     if (pivotColumn?.origPivotColumn) {
@@ -712,7 +712,7 @@ export const getGroupBysFromPivotTable = (cell) => {
       const origColumnName = pivotColumn.origPivotColumn?.name
       groupBys.push({
         name: origColumnName,
-        value: pivotColumnName,
+        value: `${pivotColumnName}`,
       })
     }
 

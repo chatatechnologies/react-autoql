@@ -84,27 +84,25 @@ export default [
     // 5. valid suggestion response
     data: {
       data: {
-        columns: [
-          {
-            type: 'STRING',
-            groupable: false,
-            active: false,
-            name: 'query_suggestion',
-          },
+        items: [
+          'Total trade size by contract',
+          'Total trade size by contract this year',
+          'Total trade size by contract for financial conglomerates',
+          'Total trade size by contract for zcpbto',
+          'None of these',
         ],
-        display_type: 'suggestion',
-        interpretation: '',
-        query_id: 'q_3Kh8CIxGS5SYwmIt4aqeuQ',
-        rows: [
-          ['All invoices in this year'],
-          ['All expenses in this year'],
-          ['Show me all invoices in this month'],
-          ['List all customers'],
-          ['None of these'],
-        ],
+        query_id: 'q_NQvh-_v1RBSMZrtP9F7BTQ',
+        pagination: {
+          page_size: 5,
+          total_items: 5,
+          total_pages: 1,
+          current_page: 1,
+          next_url: null,
+          previous_url: null,
+        },
       },
       message: 'Success',
-      reference_id: '1.1.210',
+      reference_id: '1.1.200',
     },
   },
   {

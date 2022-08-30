@@ -63,16 +63,19 @@ const common = {
   external: makeExternalPredicate(external),
 }
 
-const outputs = [
-  {
-    file: `${dist}/${bundle}.esm.js`,
-    format: 'esm', // use ES modules to support tree-shaking
-  },
-  {
+const outputs = []
+
+outputs.push({
+  file: `${dist}/${bundle}.esm.js`,
+  format: 'esm', // use ES modules to support tree-shaking
+})
+
+if (!development) {
+  outputs.push({
     file: `${dist}/${bundle}.cjs.js`,
     format: 'cjs',
-  },
-]
+  })
+}
 
 export default outputs.map((output) => ({
   ...common,
