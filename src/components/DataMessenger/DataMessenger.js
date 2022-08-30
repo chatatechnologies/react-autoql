@@ -131,6 +131,7 @@ export default class DataMessenger extends React.Component {
     enableDPRTab: PropTypes.bool,
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
+    defaultOpen: PropTypes.bool,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -177,6 +178,7 @@ export default class DataMessenger extends React.Component {
     inputPlaceholder: 'Type your queries here',
     dataPageSize: undefined,
     notificationCount: undefined,
+    defaultOpen: false,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -207,6 +209,15 @@ export default class DataMessenger extends React.Component {
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
+    }
+
+    if (this.props.defaultOpen && !this.isOpen()) {
+      const handle = document.getElementById(
+        `${this.COMPONENT_KEY}-drawer-handle`
+      )
+      if (handle) {
+        handle.click()
+      }
     }
 
     setTimeout(this.rebuildTooltips, 1000)
@@ -270,9 +281,6 @@ export default class DataMessenger extends React.Component {
       document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.windowResizeTimer)
-      clearTimeout(this.feedbackTimeout)
-      clearTimeout(this.animateTextTimeout)
-      clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {}
@@ -342,14 +350,11 @@ export default class DataMessenger extends React.Component {
   }
 
   openExploreQueries = (topic) => {
-    this.setState({ activePage: 'explore-queries' })
-
-    if (topic) {
-      clearTimeout(this.exploreQueriesTimeout)
-      this.exploreQueriesTimeout = setTimeout(() => {
+    this.setState({ activePage: 'explore-queries' }, () => {
+      if (topic && this.exploreQueriesRef?.animateQITextAndSubmit) {
         this.exploreQueriesRef?.animateQITextAndSubmit(topic)
-      }, 500)
-    }
+      }
+    })
   }
 
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
@@ -367,6 +372,7 @@ export default class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
+          id={`${this.COMPONENT_KEY}-drawer-handle`}
           className={`drawer-handle
             ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
@@ -855,7 +861,7 @@ export default class DataMessenger extends React.Component {
   renderDataExplorerContent = () => (
     <ErrorBoundary>
       <DataExplorer
-        ref={(r) => (this.exploreQueriesRef = r)}
+        ref={(r) => (this.dataExplorerRef = r)}
         authentication={this.props.authentication}
         themeConfig={this.props.themeConfig}
         dataFormatting={this.props.dataFormatting}

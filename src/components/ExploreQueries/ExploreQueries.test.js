@@ -22,3 +22,14 @@ describe('renders correctly', () => {
     expect(exploreQueriesComponent.exists()).toBe(true)
   })
 })
+
+describe('text input animation', () => {
+  test('', async () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const testInputText = 'This is a test!'
+    await instance.animateQITextAndSubmit(testInputText)
+    const inputText = findByTestAttr(wrapper, 'explore-queries-input-bar')
+    expect(inputText.props().value).toBe(testInputText)
+  })
+})

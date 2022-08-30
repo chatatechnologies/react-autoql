@@ -4,7 +4,10 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from '../..'
 import responseTestCases from '../../../test/responseTestCases'
+import * as queryService from '../../js/queryService'
+import sampleTopicsResponse from '../../../test/sampleTopicsResponse.json'
 
+queryService.fetchTopics = jest.fn().mockResolvedValue(sampleTopicsResponse)
 const defaultProps = DataMessenger.defaultProps
 
 const setup = (props = {}, state = null) => {
@@ -173,5 +176,40 @@ describe('Suggestion query response flow', () => {
         messengerComponent.unmount()
       })
     })
+  })
+})
+
+describe('Query topics flow', () => {
+  const messengerComponent = mount(<DataMessenger defaultOpen />)
+  const exploreQueriesInstance = messengerComponent
+    .find('ExploreQueries')
+    .instance()
+  jest.spyOn(exploreQueriesInstance, 'animateQITextAndSubmit')
+  var topicsMessage
+
+  test('topics render if provided by endpoint', () => {
+    messengerComponent.update()
+    topicsMessage = findByTestAttr(
+      messengerComponent,
+      'topics-message-cascader-component'
+    )
+    expect(topicsMessage.exists()).toBe(true)
+  })
+  test('default active page is data-messenger', () => {
+    expect(messengerComponent.state(['activePage'])).toBe('data-messenger')
+  })
+  test('explore queries opens on "see more" click', () => {
+    const firstOption = findByTestAttr(topicsMessage, 'options-item-0-0')
+    firstOption.simulate('click')
+    messengerComponent.update()
+    const seeMoreButton = findByTestAttr(messengerComponent, 'see-more-option')
+    seeMoreButton.simulate('click')
+    messengerComponent.update()
+    expect(messengerComponent.state(['activePage'])).toBe('explore-queries')
+  })
+  test('explore queries input populates automatically on "see more" click', () => {
+    expect(exploreQueriesInstance.animateQITextAndSubmit).toHaveBeenCalledWith(
+      'Order Flow'
+    )
   })
 })
