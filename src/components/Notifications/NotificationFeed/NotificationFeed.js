@@ -85,6 +85,7 @@ export default class NotificationFeed extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.getNotifications()
     setCSSVars(this.props.themeConfig)
   }
@@ -98,6 +99,10 @@ export default class NotificationFeed extends React.Component {
     ) {
       setCSSVars(this.props.themeConfig)
     }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   getNotifications = () => {
@@ -121,22 +126,26 @@ export default class NotificationFeed extends React.Component {
           !data?.items?.length ||
           notificationList?.length === data?.pagination?.total_items
 
-        this.setState({
-          notificationList,
-          pagination,
-          nextOffset,
-          hasMore,
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: null,
-        })
+        if (this._isMounted) {
+          this.setState({
+            notificationList,
+            pagination,
+            nextOffset,
+            hasMore,
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: null,
+          })
+        }
       })
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        this.setState({
-          isFetchingFirstNotifications: false,
-          fetchNotificationsError: error,
-        })
+        if (this._isMounted) {
+          this.setState({
+            isFetchingFirstNotifications: false,
+            fetchNotificationsError: error,
+          })
+        }
       })
   }
 

@@ -634,7 +634,10 @@ export default class QueryOutput extends React.Component {
 
     try {
       suggestionListMessage = (
-        <div className="react-autoql-suggestion-message">
+        <div
+          className="react-autoql-suggestion-message"
+          data-test="suggestion-message-container"
+        >
           <div className="react-autoql-suggestions-container">
             {this.props.renderSuggestionsAsDropdown ? (
               <select
@@ -663,7 +666,7 @@ export default class QueryOutput extends React.Component {
             ) : (
               suggestions.map((suggestion) => {
                 return (
-                  <div key={uuid()}>
+                  <div key={uuid()} data-test="suggestion-list-button">
                     <button
                       onClick={() =>
                         this.onSuggestionClick({

@@ -575,9 +575,7 @@ describe('getDefaultDisplayType', () => {
   })
 
   test('returns "suggestion" for suggestion response', () => {
-    expect(getDefaultDisplayType(responseTestCases[5], true)).toEqual(
-      'suggestion'
-    )
+    expect(getDefaultDisplayType(responseTestCases[5], true)).toEqual('text')
   })
 
   test('returns "text" as default', () => {
