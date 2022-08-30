@@ -136,7 +136,6 @@ export default class ExploreQueries extends React.Component {
   }
 
   animateQITextAndSubmit = (text) => {
-    console.log('STARTING QI TEXT ANIMATION')
     return new Promise((resolve, reject) => {
       try {
         if (typeof text === 'string' && text?.length) {
