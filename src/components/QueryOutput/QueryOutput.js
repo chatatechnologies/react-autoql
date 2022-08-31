@@ -512,7 +512,7 @@ export default class QueryOutput extends React.Component {
     return _get(this.queryResponse, 'data.data.rows.length')
   }
 
-  dateSortFn = (a, b) => {
+  dateSortFn = (a, b, isChart) => {
     try {
       if (!a && !b) {
         return 0
@@ -539,10 +539,16 @@ export default class QueryOutput extends React.Component {
           let aDateYear = a.substring(0, 4)
           let bDateYear = b.substring(0, 4)
           if (aDateYear !== bDateYear) {
+            if (isChart) {
+              return aDateYear - bDateYear
+            }
             return bDateYear - aDateYear
           } else {
             let aDateWeek = a.substring(6, 8)
             let bDateWeek = b.substring(6, 8)
+            if (isChart) {
+              return aDateWeek - bDateWeek
+            }
             return bDateWeek - aDateWeek
           }
         }
@@ -554,20 +560,20 @@ export default class QueryOutput extends React.Component {
           if (aDayIndex >= 0 && bDayIndex >= 0) {
             return bDayIndex - aDayIndex
           }
-
           return b - a
         }
         // If one is a month name
         else if (MONTH_NAMES.includes(a.trim())) {
           const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
           const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
-
           if (aMonthIndex >= 0 && bMonthIndex >= 0) {
             return bMonthIndex - aMonthIndex
           }
-
           return b - a
         }
+      }
+      if (isChart) {
+        return aDate - bDate
       }
       return bDate - aDate
     } catch (error) {
@@ -576,7 +582,7 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  sortTableDataByDate = (data) => {
+  sortTableDataByDate = (data, isChart) => {
     try {
       if (!data || typeof data !== 'object') {
         return undefined
@@ -586,7 +592,7 @@ export default class QueryOutput extends React.Component {
 
       if (dateColumnIndex >= 0) {
         let sortedData = [...data].sort((a, b) =>
-          this.dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+          this.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], isChart)
         )
 
         return sortedData
@@ -1923,7 +1929,6 @@ export default class QueryOutput extends React.Component {
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
-
     return (
       <ErrorBoundary>
         <ChataChart
@@ -1953,6 +1958,7 @@ export default class QueryOutput extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
+          dateSortFn={this.dateSortFn}
         />
       </ErrorBoundary>
     )
