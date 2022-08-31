@@ -4,7 +4,6 @@ import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
 
