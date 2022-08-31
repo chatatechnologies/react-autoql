@@ -66,11 +66,11 @@ import { withTheme } from '../../theme'
 
 import './QueryOutput.scss'
 
-String.prototype.isUpperCase = function() {
+String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()
 }
 
-String.prototype.toProperCase = function() {
+String.prototype.toProperCase = function () {
   return this.replace(/\w\S*/g, (txt) => {
     if (txt.isUpperCase()) {
       return txt
@@ -145,7 +145,7 @@ export class QueryOutputWithoutTheme extends React.Component {
     renderSuggestionsAsDropdown: PropTypes.bool,
     selectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
-    enableColumnHeaderContextMenu: PropTypes.bool,
+    preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
@@ -156,7 +156,10 @@ export class QueryOutputWithoutTheme extends React.Component {
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
+    enableTableSorting: PropTypes.bool,
     rebuildTooltips: PropTypes.func,
+    onRowChange: PropTypes.func,
+    mutable: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -173,7 +176,6 @@ export class QueryOutputWithoutTheme extends React.Component {
     renderSuggestionsAsDropdown: false,
     selectedSuggestion: undefined,
     activeChartElementKey: undefined,
-    enableColumnHeaderContextMenu: false,
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
@@ -182,10 +184,14 @@ export class QueryOutputWithoutTheme extends React.Component {
     showQueryInterpretation: false,
     isTaskModule: false,
     enableAjaxTableData: false,
+    enableTableSorting: true,
+    preferredDisplayType: undefined,
+    onRTValueLabelClick: undefined,
+    mutable: true,
+    onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
-    onRTValueLabelClick: () => {},
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
   }
@@ -214,8 +220,26 @@ export class QueryOutputWithoutTheme extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     try {
+      // If data config was changed here, tell the parent
+      if (
+        !_isEqual(this.props.tableConfigs, {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        }) &&
+        this.props.onTableConfigChange
+      ) {
+        this.props.onTableConfigChange({
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+        })
+      }
+
       if (prevState.displayType !== this.state.displayType) {
         ReactTooltip.hide()
+      }
+
+      if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
+        this.props.onRowChange()
       }
 
       // If columns changed, regenerate data if necessary
@@ -285,8 +309,9 @@ export class QueryOutputWithoutTheme extends React.Component {
     console.warn(
       `Initial display type "${
         this.props.initialDisplayType
-      }" provided is not valid for this dataset. Using ${displayType ||
-        this.state.displayType} instead.`
+      }" provided is not valid for this dataset. Using ${
+        displayType || this.state.displayType
+      } instead.`
     )
   }
 
@@ -412,14 +437,31 @@ export class QueryOutputWithoutTheme extends React.Component {
   }
 
   updateColumns = (columns) => {
-    // Update columns
     if (columns) {
       const formattedColumns = this.formatColumnsForTable(columns)
       this.setState({
         columns: formattedColumns,
         columnChangeCount: this.state.columnChangeCount + 1,
       })
-    }
+      /* ----------- from merge conflict: uncomment this if there is a bug
+      this.tableID = uuid()
+
+      // Reset persisted column config data
+      this.tableConfig = undefined
+
+      // Generate new table data from new columns
+      if (this.shouldGenerateTableData()) {
+        this.generateTableData(columns)
+        if (this.shouldGeneratePivotData()) {
+          this.generatePivotTableData({ isFirstGeneration: true })
+        }
+      }
+
+      // If tabulator is mounted, update columns in there
+      if (_get(this.tableRef, 'ref.table')) {
+        this.tableRef.ref.table.setColumns(this.tableColumns)
+      }
+    } ---------- */
   }
 
   generateAllData = () => {
@@ -567,7 +609,10 @@ export class QueryOutputWithoutTheme extends React.Component {
 
     try {
       suggestionListMessage = (
-        <div className="react-autoql-suggestion-message">
+        <div
+          className="react-autoql-suggestion-message"
+          data-test="suggestion-message-container"
+        >
           <div className="react-autoql-suggestions-container">
             {this.props.renderSuggestionsAsDropdown ? (
               <select
@@ -596,7 +641,7 @@ export class QueryOutputWithoutTheme extends React.Component {
             ) : (
               suggestions.map((suggestion) => {
                 return (
-                  <div key={uuid()}>
+                  <div key={uuid()} data-test="suggestion-list-button">
                     <button
                       onClick={() =>
                         this.onSuggestionClick({
@@ -732,7 +777,10 @@ export class QueryOutputWithoutTheme extends React.Component {
               queryID: this.queryID,
               groupBys,
             })
-            this.props.onDrilldownEnd({ response })
+            this.props.onDrilldownEnd({
+              response,
+              originalQueryID: this.queryID,
+            })
           } catch (error) {
             this.props.onDrilldownEnd({ response: error })
           }
@@ -751,6 +799,10 @@ export class QueryOutputWithoutTheme extends React.Component {
   }
 
   onTableCellClick = (cell) => {
+    if (cell?.getColumn()?.getDefinition()?.pivot) {
+      return
+    }
+
     let groupBys = {}
     if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
       groupBys = getGroupBysFromPivotTable(cell)
@@ -888,8 +940,8 @@ export class QueryOutputWithoutTheme extends React.Component {
     const newColumns = this.supportsPivot()
       ? [...this.pivotTableColumns]
       : [...this.state.columns]
-    newColumns[columnIndex].isSeriesHidden = !newColumns[columnIndex]
-      .isSeriesHidden
+    newColumns[columnIndex].isSeriesHidden =
+      !newColumns[columnIndex].isSeriesHidden
 
     if (this.supportsPivot()) {
       this.pivotTableColumns = newColumns
@@ -971,18 +1023,16 @@ export class QueryOutputWithoutTheme extends React.Component {
       !this.pivotTableConfig.stringColumnIndices ||
       !(this.pivotTableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns
-      )
+      const { stringColumnIndices, stringColumnIndex } =
+        getStringColumnIndices(columns)
       this.pivotTableConfig.stringColumnIndices = stringColumnIndices
       this.pivotTableConfig.stringColumnIndex = stringColumnIndex
     }
 
     // Set number type columns and number series columns (linear axis)
     if (isFirstGeneration || !this.pivotTableConfig.numberColumnIndices) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
-        columns
-      )
+      const { numberColumnIndex, numberColumnIndices } =
+        getNumberColumnIndices(columns)
 
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
@@ -1013,9 +1063,8 @@ export class QueryOutputWithoutTheme extends React.Component {
       !this.tableConfig.stringColumnIndices ||
       !(this.tableConfig.stringColumnIndex >= 0)
     ) {
-      const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
-        columns
-      )
+      const { stringColumnIndices, stringColumnIndex } =
+        getStringColumnIndices(columns)
       this.tableConfig.stringColumnIndices = stringColumnIndices
       this.tableConfig.stringColumnIndex = stringColumnIndex
     }
@@ -1025,9 +1074,8 @@ export class QueryOutputWithoutTheme extends React.Component {
       !this.tableConfig.numberColumnIndices ||
       !(this.tableConfig.numberColumnIndex >= 0)
     ) {
-      const { numberColumnIndex, numberColumnIndices } = getNumberColumnIndices(
-        columns
-      )
+      const { numberColumnIndex, numberColumnIndices } =
+        getNumberColumnIndices(columns)
       this.tableConfig.numberColumnIndices = numberColumnIndices
       this.tableConfig.numberColumnIndex = numberColumnIndex
     }
@@ -1220,10 +1268,7 @@ export class QueryOutputWithoutTheme extends React.Component {
 
       // Allow proper chronological sorting for date strings
       newCol.sorter = this.setSorterFunction(newCol)
-
-      if (isColumnDateType(col) && this.props.enableAjaxTableData) {
-        newCol.headerSort = false
-      }
+      newCol.headerSort = !!this.props.enableTableSorting
 
       return newCol
     })
@@ -1234,10 +1279,7 @@ export class QueryOutputWithoutTheme extends React.Component {
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
     if (columns[dateColumnIndex].type === 'DATE') {
-      return dayjs
-        .unix(data[dateColumnIndex])
-        .utc()
-        .format('YYYY')
+      return dayjs.unix(data[dateColumnIndex]).utc().format('YYYY')
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
@@ -1264,12 +1306,7 @@ export class QueryOutputWithoutTheme extends React.Component {
 
       const allYears = tableData.map((d) => {
         if (columns[dateColumnIndex].type === 'DATE') {
-          return Number(
-            dayjs
-              .unix(d[dateColumnIndex])
-              .utc()
-              .format('YYYY')
-          )
+          return Number(dayjs.unix(d[dateColumnIndex]).utc().format('YYYY'))
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
@@ -1285,6 +1322,7 @@ export class QueryOutputWithoutTheme extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
+          ...this.tableColumns[dateColumnIndex],
           title: 'Month',
           name: 'Month',
           field: '0',
@@ -1295,8 +1333,9 @@ export class QueryOutputWithoutTheme extends React.Component {
           datePivot: true,
           origColumn: columns[dateColumnIndex],
           pivot: true,
-          headerSort: true,
+          cssClass: 'pivot-category',
           sorter: this.dateSortFn,
+          headerFilter: false,
         },
       ]
 
@@ -1308,10 +1347,9 @@ export class QueryOutputWithoutTheme extends React.Component {
           name: year,
           title: year,
           field: `${i + 1}`,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
+          headerFilter: false,
         })
       })
 
@@ -1375,11 +1413,8 @@ export class QueryOutputWithoutTheme extends React.Component {
 
       const columns = this.getColumns()
 
-      const {
-        legendColumnIndex,
-        stringColumnIndex,
-        numberColumnIndex,
-      } = this.tableConfig
+      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } =
+        this.tableConfig
 
       let uniqueValues0 = this.sortTableDataByDate(tableData, columns)
         .map((d) => d[stringColumnIndex])
@@ -1415,18 +1450,19 @@ export class QueryOutputWithoutTheme extends React.Component {
       }
 
       this.tableConfig.legendColumnIndex = newLegendColumnIndex
+      this.tableConfig.stringColumnIndex = newStringColumnIndex
 
       // Generate new column array
       const pivotTableColumns = [
         {
           ...columns[newStringColumnIndex],
           frozen: true,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
           field: '0',
+          cssClass: 'pivot-category',
           pivot: true,
-          headerSort: true,
+          headerFilter: false,
         },
       ]
 
@@ -1444,10 +1480,9 @@ export class QueryOutputWithoutTheme extends React.Component {
           name: columnName,
           title: formattedColumnName,
           field: `${i + 1}`,
-          headerContext: undefined,
           visible: true,
           is_visible: true,
-          headerSort: true,
+          headerFilter: false,
         })
       })
 
@@ -1503,7 +1538,9 @@ export class QueryOutputWithoutTheme extends React.Component {
     if (query === 'None of these') {
       if (this.props.onNoneOfTheseClick) {
         this.props.onNoneOfTheseClick()
-      } else {
+      }
+
+      if (this.props.mutable) {
         this.setState({
           customResponse: (
             <div className="feedback-message">
@@ -1617,9 +1654,7 @@ export class QueryOutputWithoutTheme extends React.Component {
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
-            enableColumnHeaderContextMenu={
-              this.props.enableColumnHeaderContextMenu
-            }
+            pivot
           />
         </ErrorBoundary>
       )
@@ -1644,9 +1679,13 @@ export class QueryOutputWithoutTheme extends React.Component {
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
         useInfiniteScroll={useInfiniteScroll}
-        queryRequestData={this.props.queryRequestData}
+        queryRequestData={this.queryResponse?.data?.data?.fe_req}
+        queryText={this.queryResponse?.data?.data?.text}
+        originalQueryID={this.props.originalQueryID}
+        isDrilldown={this.isDrilldown()}
         supportsDrilldowns={
-          isAggregation(this.tableColumns) && this.tableColumns.length === 2
+          isAggregation(this.tableColumns) &&
+          getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
       />
     )
@@ -1767,33 +1806,6 @@ export class QueryOutputWithoutTheme extends React.Component {
 
   noDataFound = () => {
     return this.queryResponse?.data?.data?.rows?.length === 0
-  }
-
-  renderDataLimitWarning = () => {
-    const dataLimited = this.isDataLimited()
-    const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
-
-    if (!dataLimited || isTableAndAjax) {
-      return null
-    }
-
-    const isReverseTranslationRendered =
-      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
-      this.props.showQueryInterpretation
-
-    return (
-      <div className="dashboard-data-limit-warning-icon">
-        <Icon
-          type="warning"
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
-            Try querying a smaller time-frame to ensure<br />
-            all your data is displayed.`}
-          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
-          data-place={isReverseTranslationRendered ? 'left' : 'right'}
-        />
-      </div>
-    )
   }
 
   renderMessage = (error) => {
@@ -1948,15 +1960,16 @@ export class QueryOutputWithoutTheme extends React.Component {
     return null
   }
 
-  renderReverseTranslation = () => {
-    if (
-      !getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation ||
-      !this.props.showQueryInterpretation ||
-      !this.queryResponse?.data?.data?.interpretation
-    ) {
-      return null
-    }
+  shouldRenderReverseTranslation = () => {
+    return (
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation &&
+      this.queryResponse?.data?.data?.interpretation &&
+      !areAllColumnsHidden(this.queryResponse)
+    )
+  }
 
+  renderReverseTranslation = () => {
     return (
       <ReverseTranslation
         authentication={this.props.authentication}
@@ -1965,17 +1978,54 @@ export class QueryOutputWithoutTheme extends React.Component {
         isResizing={this.props.isResizing}
         reverseTranslation={_get(
           this.queryResponse,
-          'data.data.reverse_translation'
+          'data.data.parsed_interpretation'
         )}
       />
     )
   }
 
-  renderFooter = () => {
+  shouldRenderDataLimitWarning = () => {
+    const isTableAndAjax =
+      this.props.enableAjaxTableData && this.props.displayType === 'table'
+
     return (
-      <div className="query-output-footer">
-        {this.renderReverseTranslation()}
-        {this.renderDataLimitWarning()}
+      !isTableAndAjax &&
+      this.isDataLimited() &&
+      !areAllColumnsHidden(this.queryResponse)
+    )
+  }
+
+  renderDataLimitWarning = () => {
+    const isReverseTranslationRendered =
+      getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
+      this.props.showQueryInterpretation
+
+    return (
+      <div className="dashboard-data-limit-warning-icon">
+        <Icon
+          type="warning"
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
+            Try querying a smaller time-frame to ensure<br />
+            all your data is displayed.`}
+          data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
+          data-place={isReverseTranslationRendered ? 'left' : 'right'}
+        />
+      </div>
+    )
+  }
+
+  renderFooter = () => {
+    const shouldRenderRT = this.shouldRenderReverseTranslation()
+    const shouldRenderDLW = this.shouldRenderDataLimitWarning()
+
+    return (
+      <div
+        className={`query-output-footer${
+          !shouldRenderRT && !shouldRenderDLW ? ' no-margin' : ''
+        }`}
+      >
+        {shouldRenderRT && this.renderReverseTranslation()}
+        {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
     )
   }

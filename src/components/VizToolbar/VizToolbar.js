@@ -1,6 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
+import ReactTooltip from 'react-tooltip'
+import { v4 as uuid } from 'uuid'
 
 import { Icon } from '../Icon'
 import { TABLE_TYPES, CHART_TYPES } from '../../js/Constants.js'
@@ -9,6 +11,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import './VizToolbar.scss'
 
 class VizToolbar extends React.Component {
+  COMPONENT_KEY = uuid()
+
   static propTypes = {
     onDisplayTypeChange: PropTypes.func,
     disableCharts: PropTypes.bool,
@@ -23,10 +27,23 @@ class VizToolbar extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.rebuildTooltips()
+  }
+
+  componentDidUpdate = () => {
+    this.rebuildTooltips()
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
+  }
+
+  rebuildTooltips = () => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips()
+    } else {
+      ReactTooltip.rebuild()
+    }
   }
 
   showDisplayTypeButton = (displayType) => {
@@ -62,7 +79,7 @@ class VizToolbar extends React.Component {
             displayType === selectedDisplayType ? 'selected' : ''
           }`}
           data-tip={name}
-          data-for="react-autoql-toolbar-btn-tooltip"
+          data-for={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
           data-test="viz-toolbar-button"
         >
           {icon}
@@ -101,7 +118,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton('table', 'Table', <Icon type="table" />)}
             {this.createVisButton(
               'pivot_table',
-              'Pivot Table',
+              'Pivot View',
               <Icon type="pivot-table" />
             )}
             {this.createVisButton(
@@ -150,6 +167,12 @@ class VizToolbar extends React.Component {
               <Icon type="stacked-line-chart" />
             )}
           </div>
+          <ReactTooltip
+            className="react-autoql-tooltip"
+            id={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+            effect="solid"
+            delayShow={800}
+          />
         </ErrorBoundary>
       )
     }

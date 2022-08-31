@@ -99,13 +99,13 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
+    onRTValueLabelClick: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
-    onRTValueLabelClick: () => {},
   }
 
   componentDidMount = () => {
@@ -120,9 +120,6 @@ export default class ChatMessage extends React.Component {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
     }, 500)
-
-    this.calculatedQueryOutputStyle = _get(this.responseRef, 'style')
-    this.calculatedQueryOutputHeight = _get(this.responseRef, 'offsetHeight')
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -254,6 +251,7 @@ export default class ChatMessage extends React.Component {
           onDrilldownEnd={this.props.onDrilldownEnd}
           demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
+          originalQueryID={this.props.originalQueryID}
           backgroundColor={document.documentElement.style.getPropertyValue(
             '--react-autoql-background-color-primary'
           )}
@@ -265,13 +263,14 @@ export default class ChatMessage extends React.Component {
           tableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
-          queryRequestData={this.props.queryRequestData}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
+          onRowChange={this.scrollIntoView}
+          mutable={false}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })

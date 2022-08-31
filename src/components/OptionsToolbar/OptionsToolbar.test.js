@@ -188,3 +188,21 @@ describe('more options button', () => {
     queryOutputComponent.unmount()
   })
 })
+
+describe('filter button', () => {
+  test('renders for regular table', () => {
+    const wrapper = setup(undefined, { displayType: 'table' })
+    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(moreOptionsBtn.exists()).toBe(true)
+  })
+  test('does not render for pivot table', () => {
+    const wrapper = setup(undefined, { displayType: 'pivot-table' })
+    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(moreOptionsBtn.exists()).toBe(false)
+  })
+  test('does not render for chart', () => {
+    const wrapper = setup(undefined, { displayType: 'column' })
+    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(moreOptionsBtn.exists()).toBe(false)
+  })
+})

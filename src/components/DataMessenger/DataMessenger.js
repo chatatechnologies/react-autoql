@@ -19,10 +19,8 @@ import {
   dataFormattingType,
 } from '../../props/types'
 import {
-  authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  getAuthentication,
   getAutoQLConfig,
 } from '../../props/defaults'
 
@@ -32,6 +30,7 @@ import { lang, setLanguage } from '../../js/Localization'
 import { Icon } from '../Icon'
 import { Button } from '../Button'
 import { ExploreQueries } from '../ExploreQueries'
+import { DataExplorer } from '../DataExplorer'
 import { DataAlertModal } from '../Notifications/DataAlertModal'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
@@ -58,8 +57,9 @@ class DataMessenger extends React.Component {
     this.dataMessengerIntroMessages = [
       props.introMessage
         ? `${props.introMessage}`
-        : `Hi ${props.userDisplayName ||
-            'there'}! Let’s dive into your data. What can I help you discover today?`,
+        : `Hi ${
+            props.userDisplayName || 'there'
+          }! Let’s dive into your data. What can I help you discover today?`,
     ]
 
     this.dprMessengerIntroMessages = [
@@ -125,6 +125,8 @@ class DataMessenger extends React.Component {
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
     dataPageSize: PropTypes.number,
+    notificationCount: PropTypes.number,
+    defaultOpen: PropTypes.bool,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -135,6 +137,8 @@ class DataMessenger extends React.Component {
 
     // Callbacks
     onNotificationExpandCallback: PropTypes.func,
+    onNewNotification: PropTypes.func,
+    onNotificationCount: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
@@ -142,7 +146,7 @@ class DataMessenger extends React.Component {
 
   static defaultProps = {
     // Global
-    authentication: authenticationDefault,
+    authentication: {},
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
 
@@ -167,6 +171,8 @@ class DataMessenger extends React.Component {
     resizable: true,
     inputPlaceholder: 'Type your queries here',
     dataPageSize: undefined,
+    notificationCount: undefined,
+    defaultOpen: false,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -178,6 +184,8 @@ class DataMessenger extends React.Component {
 
     // Callbacks
     onNotificationExpandCallback: () => {},
+    onNewNotification: () => {},
+    onNotificationCount: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -197,6 +205,15 @@ class DataMessenger extends React.Component {
       this.setState({ hasError: true })
     }
 
+    if (this.props.defaultOpen && !this.isOpen()) {
+      const handle = document.getElementById(
+        `${this.COMPONENT_KEY}-drawer-handle`
+      )
+      if (handle) {
+        handle.click()
+      }
+    }
+
     setTimeout(this.rebuildTooltips, 1000)
   }
 
@@ -209,6 +226,13 @@ class DataMessenger extends React.Component {
       }
       if (this.state.isSizeMaximum !== prevState.isSizeMaximum) {
         this.forceUpdate()
+      }
+
+      if (
+        typeof this.props.notificationCount === 'number' &&
+        this.props.notificationCount !== prevProps.notificationCount
+      ) {
+        this.refreshNotifications()
       }
 
       if (
@@ -242,16 +266,13 @@ class DataMessenger extends React.Component {
       document.removeEventListener('visibilitychange', this.onWindowResize)
 
       clearTimeout(this.windowResizeTimer)
-      clearTimeout(this.feedbackTimeout)
-      clearTimeout(this.animateTextTimeout)
-      clearTimeout(this.exploreQueriesTimeout)
       clearTimeout(this.executeQueryTimeout)
       clearTimeout(this.rebuildTooltipsTimer)
     } catch (error) {}
   }
 
   setQueryTopics = () => {
-    fetchTopics(getAuthentication(this.props.authentication))
+    fetchTopics(this.props.authentication)
       .then((response) => {
         if (
           this.dataMessengerContentRef?._isMounted &&
@@ -284,6 +305,10 @@ class DataMessenger extends React.Component {
     }, delay)
   }
 
+  refreshNotifications = () => {
+    this.notificationListRef?.refreshNotifications('dm')
+  }
+
   getMaxWidthAndHeightFromDocument = () => {
     const maxWidth =
       Math.max(document.documentElement.clientWidth, window.innerWidth || 0) -
@@ -310,14 +335,11 @@ class DataMessenger extends React.Component {
   }
 
   openExploreQueries = (topic) => {
-    this.setState({ activePage: 'explore-queries' })
-
-    if (topic) {
-      clearTimeout(this.exploreQueriesTimeout)
-      this.exploreQueriesTimeout = setTimeout(() => {
+    this.setState({ activePage: 'explore-queries' }, () => {
+      if (topic && this.exploreQueriesRef?.animateQITextAndSubmit) {
         this.exploreQueriesRef?.animateQITextAndSubmit(topic)
-      }, 500)
-    }
+      }
+    })
   }
 
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
@@ -335,10 +357,12 @@ class DataMessenger extends React.Component {
     } else if (this.props.showHandle) {
       return (
         <div
+          id={`${this.COMPONENT_KEY}-drawer-handle`}
           className={`drawer-handle
             ${this.state.isVisible ? ' hide' : ''}
             ${this.props.handleImage ? '' : ' default-logo'}`}
           style={this.props.handleStyles}
+          data-test="data-messenger-handle"
         >
           {this.props.handleImage ? (
             <img
@@ -431,98 +455,109 @@ class DataMessenger extends React.Component {
   }
 
   renderTabs = () => {
+    if (
+      !this.props.enableExploreQueriesTab &&
+      !this.props.enableNotificationsTab &&
+      !this.props.enableDPRTab &&
+      !this.props.enableDataExplorerTab
+    ) {
+      return null
+    }
+
     const page = this.state.activePage
 
-    if (this.state.isVisible) {
-      return (
-        <div className={`data-messenger-tab-container ${this.props.placement}`}>
-          <div
-            className={`page-switcher-shadow-container  ${this.props.placement}`}
-          >
-            <div className={`page-switcher-container ${this.props.placement}`}>
+    return (
+      <div
+        className={`data-messenger-tab-container ${this.props.placement} ${
+          this.state.isVisible ? 'visible' : 'hidden'
+        }`}
+      >
+        <div
+          className={`page-switcher-shadow-container  ${this.props.placement}`}
+        >
+          <div className={`page-switcher-container ${this.props.placement}`}>
+            <div
+              className={`tab${page === 'data-messenger' ? ' active' : ''}`}
+              onClick={() => this.setState({ activePage: 'data-messenger' })}
+              data-tip="Data Messenger"
+              data-for="react-autoql-header-tooltip"
+            >
+              <Icon type="react-autoql-bubbles-outlined" />
+            </div>
+            {this.props.enableExploreQueriesTab && (
               <div
-                className={`tab${page === 'data-messenger' ? ' active' : ''}`}
-                onClick={() => this.setState({ activePage: 'data-messenger' })}
-                data-tip="Data Messenger"
+                className={`tab${
+                  page === 'explore-queries' ? ' active' : ''
+                } react-autoql-explore-queries`}
+                onClick={() => this.setState({ activePage: 'explore-queries' })}
+                data-tip={lang.exploreQueries}
                 data-for="react-autoql-header-tooltip"
               >
-                <Icon type="react-autoql-bubbles-outlined" />
+                <Icon type="light-bulb" size={22} />
               </div>
-              {this.props.enableExploreQueriesTab && (
+            )}
+            {this.props.enableDataExplorerTab && (
+              <div
+                className={`tab${
+                  page === 'data-explorer' ? ' active' : ''
+                } react-autoql-data-explorer`}
+                onClick={() => this.setState({ activePage: 'data-explorer' })}
+                data-tip={lang.dataExplorer}
+                data-for="react-autoql-header-tooltip"
+              >
+                <Icon type="data-search" size={22} />
+              </div>
+            )}
+            {this.props.enableNotificationsTab &&
+              getAutoQLConfig(this.props.autoQLConfig).enableNotifications && (
                 <div
                   className={`tab${
-                    page === 'explore-queries' ? ' active' : ''
-                  } react-autoql-explore-queries`}
-                  onClick={() =>
-                    this.setState({ activePage: 'explore-queries' })
-                  }
-                  data-tip={lang.exploreQueries}
+                    page === 'notifications' ? ' active' : ''
+                  } react-autoql-notifications`}
+                  onClick={() => {
+                    if (this.notificationBadgeRef) {
+                      this.notificationBadgeRef.resetCount()
+                    }
+                    this.setState({ activePage: 'notifications' })
+                  }}
+                  data-tip="Notifications"
                   data-for="react-autoql-header-tooltip"
                 >
-                  <Icon type="light-bulb" size={22} />
-                </div>
-              )}
-              {this.props.enableNotificationsTab &&
-                getAutoQLConfig(this.props.autoQLConfig)
-                  .enableNotifications && (
-                  <div
-                    className={`tab${
-                      page === 'notifications' ? ' active' : ''
-                    } react-autoql-notifications`}
-                    onClick={() => {
-                      if (this.notificationBadgeRef) {
-                        this.notificationBadgeRef.resetCount()
-                      }
-                      this.setState({ activePage: 'notifications' })
-                    }}
-                    data-tip="Notifications"
-                    data-for="react-autoql-header-tooltip"
-                  >
-                    <div className="data-messenger-notification-btn">
-                      <NotificationIcon
-                        ref={(r) => (this.notificationBadgeRef = r)}
-                        authentication={getAuthentication(
-                          getAuthentication(this.props.authentication)
-                        )}
-                        clearCountOnClick={false}
-                        style={{ fontSize: '19px' }}
-                        overflowCount={9}
-                        useDot
-                        isAlreadyMountedInDOM={React.isValidElement(
-                          <NotificationIcon />
-                        )}
-                        onNewNotification={() => {
-                          // If a new notification is detected, refresh the list
-                          if (
-                            this.notificationListRef &&
-                            this.state.activePage === 'notifications'
-                          ) {
-                            this.notificationListRef.refreshNotifications()
-                          }
-                        }}
-                        onErrorCallback={this.props.onErrorCallback}
-                        pausePolling={!this.dmRef?.state?.open}
-                      />
-                    </div>
+                  <div className="data-messenger-notification-btn">
+                    <NotificationIcon
+                      ref={(r) => (this.notificationBadgeRef = r)}
+                      authentication={this.props.authentication}
+                      themeConfig={this.props.themeConfig}
+                      clearCountOnClick={false}
+                      style={{ fontSize: '19px' }}
+                      overflowCount={9}
+                      count={this.props.notificationCount}
+                      useDot
+                      onCount={this.props.onNotificationCount}
+                      onErrorCallback={this.props.onErrorCallback}
+                      onNewNotification={(count) => {
+                        this.props.onNewNotification(count)
+                      }}
+                    />
                   </div>
-                )}
-              {this.props.enableDPRTab && (
-                <div
-                  className={`tab${
-                    page === 'dpr' ? ' active' : ''
-                  } react-autoql-dpr`}
-                  onClick={() => this.setState({ activePage: 'dpr' })}
-                  data-tip="Education"
-                  data-for="react-autoql-header-tooltip"
-                >
-                  <Icon type="grad-cap" size={22} />
                 </div>
               )}
-            </div>
+            {this.props.enableDPRTab && (
+              <div
+                className={`tab${
+                  page === 'dpr' ? ' active' : ''
+                } react-autoql-dpr`}
+                onClick={() => this.setState({ activePage: 'dpr' })}
+                data-tip="Education"
+                data-for="react-autoql-header-tooltip"
+              >
+                <Icon type="grad-cap" size={22} />
+              </div>
+            )}
           </div>
         </div>
-      )
-    }
+      </div>
+    )
   }
 
   renderRightHeaderContent = () => {
@@ -607,12 +642,16 @@ class DataMessenger extends React.Component {
         title = lang.exploreQueries
         break
       }
+      case 'data-explorer': {
+        title = lang.dataExplorer
+        break
+      }
       case 'notifications': {
-        title = lang.exploreQueries
+        title = lang.notifications
         break
       }
       case 'dpr': {
-        title = 'Education'
+        title = lang.education
         break
       }
     }
@@ -639,6 +678,10 @@ class DataMessenger extends React.Component {
   onFilterChange = (allFilters) => {
     const sessionFilters = allFilters.filter((filter) => filter.isSession)
     this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
+  }
+
+  isOpen = () => {
+    return !!this.dmRef?.state?.open
   }
 
   renderFilterLockPopover = () => {
@@ -719,6 +762,7 @@ class DataMessenger extends React.Component {
       <>
         {this.renderDataMessengerContent()}
         {this.renderExploreQueriesContent()}
+        {this.renderDataExplorerContent()}
         {this.renderNotificationsContent()}
         {this.renderDPRContent()}
       </>
@@ -731,10 +775,16 @@ class DataMessenger extends React.Component {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
     }
 
+    const valueLabelClickFn = getAutoQLConfig(this.props.autoQLConfig)
+      .enableFilterLocking
+      ? this.onRTValueLabelClick
+      : undefined
+
     return (
       <ErrorBoundary>
         <ChatContent
           {...this.props}
+          data-test="data-messenger-chat-content"
           shouldRender={this.state.activePage === 'data-messenger'}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dataMessengerContentRef = r)}
@@ -743,9 +793,9 @@ class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          onRTValueLabelClick={this.onRTValueLabelClick}
+          onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
-          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
@@ -771,7 +821,7 @@ class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          isDataMessengerOpen={!!this.dmRef?.state?.open}
+          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder="Type your questions here"
@@ -790,14 +840,38 @@ class DataMessenger extends React.Component {
     )
   }
 
+  renderDataExplorerContent = () => (
+    <ErrorBoundary>
+      <DataExplorer
+        ref={(r) => (this.dataExplorerRef = r)}
+        authentication={this.props.authentication}
+        themeConfig={this.props.themeConfig}
+        dataFormatting={this.props.dataFormatting}
+        rebuildTooltips={this.rebuildTooltips}
+        shouldRender={
+          this.state.activePage === 'data-explorer' && this.isOpen()
+        }
+        executeQuery={(query) => {
+          this.setState({ activePage: 'data-messenger' })
+          clearTimeout(this.executeQueryTimeout)
+          this.executeQueryTimeout = setTimeout(() => {
+            this.dataMessengerContentRef?.animateInputTextAndSubmit({
+              query,
+              source: ['data_explorer'],
+            })
+          }, 500)
+        }}
+      />
+    </ErrorBoundary>
+  )
+
   renderExploreQueriesContent = () => (
     <ErrorBoundary>
       <ExploreQueries
         ref={(r) => (this.exploreQueriesRef = r)}
         authentication={this.props.authentication}
         shouldRender={
-          this.state.activePage === 'explore-queries' &&
-          !!this.dmRef?.state?.open
+          this.state.activePage === 'explore-queries' && this.isOpen()
         }
         executeQuery={(query) => {
           this.setState({ activePage: 'data-messenger' })
@@ -817,7 +891,7 @@ class DataMessenger extends React.Component {
     <ErrorBoundary>
       <NotificationFeed
         ref={(ref) => (this.notificationListRef = ref)}
-        authentication={getAuthentication(this.props.authentication)}
+        authentication={this.props.authentication}
         onExpandCallback={this.props.onNotificationExpandCallback}
         onCollapseCallback={this.props.onNotificationCollapseCallback}
         activeNotificationData={this.props.activeNotificationData}
@@ -825,7 +899,7 @@ class DataMessenger extends React.Component {
         onSuccessCallback={this.props.onSuccessCallback}
         showNotificationDetails={false}
         shouldRender={
-          !!this.dmRef?.state?.open && this.state.activePage === 'notifications'
+          this.isOpen() && this.state.activePage === 'notifications'
         }
       />
     </ErrorBoundary>
@@ -843,7 +917,6 @@ class DataMessenger extends React.Component {
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
-          containerWidth: newWidth,
           isSizeMaximum: false,
         })
       }
@@ -855,7 +928,6 @@ class DataMessenger extends React.Component {
       if (Number(newWidth)) {
         this.setState({
           width: newWidth,
-          containerWidth: newWidth,
           isSizeMaximum: false,
         })
       }
@@ -888,7 +960,6 @@ class DataMessenger extends React.Component {
     if (this.state.placement === 'right' || this.state.placement === 'left') {
       this.setState({
         isResizing: false,
-        containerWidth: this.state.width,
       })
     } else if (
       this.state.placement === 'top' ||
@@ -942,14 +1013,6 @@ class DataMessenger extends React.Component {
           place="top"
           html
         />
-        <ReactTooltip
-          className="react-autoql-drawer-tooltip"
-          id="react-autoql-toolbar-btn-tooltip"
-          effect="solid"
-          delayShow={500}
-          place="top"
-          html
-        />
       </Fragment>
     )
   }
@@ -957,7 +1020,7 @@ class DataMessenger extends React.Component {
   renderDataAlertModal = () => {
     return (
       <DataAlertModal
-        authentication={getAuthentication(this.props.authentication)}
+        authentication={this.props.authentication}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
@@ -1000,9 +1063,7 @@ class DataMessenger extends React.Component {
           keyboard={false}
         >
           {this.props.resizable && this.renderResizeHandle()}
-          {(this.props.enableExploreQueriesTab ||
-            this.props.enableNotificationsTab) &&
-            this.renderTabs()}
+          {this.renderTabs()}
           <div className="react-autoql-drawer-content-container">
             <div className="chat-header-container">
               {this.renderHeaderContent()}

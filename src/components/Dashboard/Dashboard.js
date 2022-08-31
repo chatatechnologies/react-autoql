@@ -278,34 +278,62 @@ class DashboardWithoutTheme extends React.Component {
 
   getChangeDetectionTileStructure = (tiles, ignoreInputs) => {
     try {
-      const newTiles = tiles.map((tile) => {
-        return {
-          query: !ignoreInputs && tile.query,
-          title: !ignoreInputs && tile.title,
-          i: tile.i,
-          w: tile.w,
-          h: tile.h,
-          x: tile.x,
-          y: tile.y,
-        }
-      })
+      if (tiles?.length) {
+        const newTiles = tiles.map((tile) => {
+          if (!tile) {
+            return
+          }
 
-      return newTiles
+          return {
+            query: !ignoreInputs && tile.query,
+            title: !ignoreInputs && tile.title,
+            i: tile.i,
+            w: tile.w,
+            h: tile.h,
+            x: tile.x,
+            y: tile.y,
+          }
+        })
+
+        return newTiles
+      }
     } catch (error) {
       console.error(error)
     }
+
+    return tiles
   }
 
-  scrollToNewTile = () => {
+  scrollToNewTile = (key) => {
     this.scrollToNewTileTimeout = setTimeout(() => {
-      if (this.ref) {
-        this.ref.scrollIntoView({
-          block: 'end',
-          inline: 'nearest',
-          behavior: 'smooth',
-        })
-      }
+      try {
+        const newTileRef = this.tileRefs?.[key]?.ref
+        if (newTileRef) {
+          const dashboardBbox = this.ref?.parentElement?.getBoundingClientRect()
+          const dashboardTop = dashboardBbox.y
+          const dashboardBottom = dashboardTop + dashboardBbox.height
+          const tileBbox = newTileRef?.getBoundingClientRect()
+          const tileTop = tileBbox.y
+          const tileBottom = tileTop + tileBbox.height
+
+          if (tileBottom > dashboardBottom) {
+            newTileRef.scrollIntoView(false)
+          } else if (tileTop < dashboardTop) {
+            newTileRef.scrollIntoView(true)
+          }
+        }
+      } catch (error) {}
     }, 200)
+  }
+
+  refreshLayout = () => {
+    window.dispatchEvent(new Event('resize'))
+    this.setState({ isWindowResizing: true })
+    this.stopDraggingTimeout = setTimeout(() => {
+      this.setState({
+        isWindowResizing: false,
+      })
+    }, 100)
   }
 
   onMoveStart = () => {
@@ -372,7 +400,7 @@ class DashboardWithoutTheme extends React.Component {
 
       this.debouncedOnChange(tiles)
         .then(() => {
-          this.scrollToNewTile()
+          this.scrollToNewTile(id)
         })
         .catch((error) => {
           console.error(error)

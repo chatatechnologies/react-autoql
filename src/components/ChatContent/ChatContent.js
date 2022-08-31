@@ -67,7 +67,7 @@ export default class ChatContent extends React.Component {
     isResizing: false,
     dataPageSize: undefined,
     source: [],
-    onRTValueLabelClick: () => {},
+    onRTValueLabelClick: undefined,
   }
 
   componentDidMount = () => {
@@ -90,9 +90,7 @@ export default class ChatContent extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.messengerScrollComponent) {
-      this.messengerScrollComponent.scrollToBottom()
-    }
+    this.messengerScrollComponent?.ref?.scrollToBottom()
   }
 
   onCSVDownloadProgress = ({ id, progress }) => {
@@ -139,12 +137,12 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onDrilldownEnd = ({ response, error } = {}) => {
+  onDrilldownEnd = ({ response, error, originalQueryID } = {}) => {
     if (this._isMounted) {
       this.setState({ isChataThinking: false })
 
       if (response) {
-        this.addResponseMessage({ response })
+        this.addResponseMessage({ response, originalQueryID })
       } else if (error) {
         this.addResponseMessage({
           content: error,
@@ -254,7 +252,7 @@ export default class ChatContent extends React.Component {
     this.setState({ isChataThinking: true })
   }
 
-  onResponse = (response, query, queryRequestData) => {
+  onResponse = (response, query) => {
     if (this._isMounted) {
       if (this.getIsSuggestionResponse(response)) {
         this.addResponseMessage({
@@ -276,7 +274,7 @@ export default class ChatContent extends React.Component {
           ),
         })
       } else {
-        this.addResponseMessage({ response, query, queryRequestData })
+        this.addResponseMessage({ response, query })
       }
 
       this.setState({ isChataThinking: false })
@@ -358,7 +356,8 @@ export default class ChatContent extends React.Component {
                 onCSVDownloadProgress={this.onCSVDownloadProgress}
                 queryId={message.queryId}
                 queryText={message.query}
-                scrollRef={this.messengerScrollComponent}
+                originalQueryID={message.originalQueryID}
+                scrollRef={this.messengerScrollComponent?.ref}
                 isDataMessengerOpen={this.props.isDataMessengerOpen}
                 isActive={this.state.activeMessageId === message.id}
                 addMessageToDM={this.addResponseMessage}
@@ -375,7 +374,7 @@ export default class ChatContent extends React.Component {
                 onErrorCallback={this.props.onErrorCallback}
                 onSuccessAlert={this.props.onSuccessAlert}
                 deleteMessageCallback={this.deleteMessage}
-                scrollContainerRef={this.messengerScrollComponent}
+                scrollContainerRef={this.messengerScrollComponent?.ref}
                 isResizing={this.props.isResizing}
                 enableDynamicCharting={this.props.enableDynamicCharting}
                 onNoneOfTheseClick={this.onNoneOfTheseClick}
@@ -420,6 +419,7 @@ export default class ChatContent extends React.Component {
             queryFilters={this.props.queryFilters}
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
+            isResizing={this.props.isResizing}
           />
         </div>
       </ErrorBoundary>

@@ -9,6 +9,12 @@
 //   color: var(--react-autoql-text-color-primary);
 // }
 
-// a {
-//   color: var(--react-autoql-accent-color, #26a7df);
-// }
+.react-autoql-spinner-centered {
+  width: 100%;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar {
+  visibility: visible !important;
+}

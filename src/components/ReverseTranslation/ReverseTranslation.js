@@ -9,6 +9,7 @@ import { Icon } from '../Icon'
 
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { constructRTArray } from '../../js/reverseTranslationHelpers'
 
 import { fetchVLAutocomplete } from '../../js/queryService'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -20,7 +21,7 @@ export default class ReverseTranslation extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.reverseTranslationArray = props.reverseTranslation
+    this.reverseTranslationArray = constructRTArray(props.reverseTranslation)
 
     this.state = {
       isValidated: false,

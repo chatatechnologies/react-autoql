@@ -20,3 +20,7 @@ export default {
     </span>
   ),
 }
+
+export const responseErrors = {
+  CANCELLED: 'Request cancelled',
+}

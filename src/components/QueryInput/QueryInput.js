@@ -1,8 +1,10 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import { responseErrors } from '../../js/errorMessages'
 
 import {
   authenticationType,
@@ -25,18 +27,13 @@ import {
   runQueryValidation,
 } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
-// import { QueryInputWithValidation } from '../QueryInputWithValidation'
-
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
-// import SpeechToTextBtn from '../SpeechToTextButton/SpeechToTextButton'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
-import './QueryInput.scss'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
-let autoCompleteArray = []
+import './QueryInput.scss'
 
 class QueryInput extends React.Component {
   constructor(props) {
@@ -44,6 +41,7 @@ class QueryInput extends React.Component {
 
     this.UNIQUE_ID = uuid()
     this.autoCompleteTimer = undefined
+    this.autoCompleteArray = []
 
     this.state = {
       inputValue: '',
@@ -97,6 +95,14 @@ class QueryInput extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this.focus()
+  }
+
+  shouldComponentUpdate = (nextProps) => {
+    if (this.props.isResizing || nextProps.isResizing) {
+      return false
+    }
+
+    return true
   }
 
   componentDidUpdate = (prevProps) => {
@@ -159,8 +165,8 @@ class QueryInput extends React.Component {
       })
   }
 
-  onResponse = (response, query, queryRequestData) => {
-    this.props.onResponseCallback(response, query, queryRequestData)
+  onResponse = (response, query) => {
+    this.props.onResponseCallback(response, query)
 
     const newState = {
       isQueryRunning: false,
@@ -172,12 +178,21 @@ class QueryInput extends React.Component {
     }
   }
 
+  cancelQuery = () => {
+    this.axiosSource.cancel(responseErrors.CANCELLED)
+  }
+
   submitQuery = ({
     queryText,
     userSelection,
     skipQueryValidation,
     source,
   } = {}) => {
+    const query = queryText || this.state.inputValue
+    if (!query) {
+      return
+    }
+
     // Cancel subscription to autocomplete since query was already submitted
     if (this.autoCompleteTimer) {
       clearTimeout(this.autoCompleteTimer)
@@ -196,9 +211,6 @@ class QueryInput extends React.Component {
 
     if (this._isMounted) this.setState(newState)
 
-    const query = queryText || this.state.inputValue
-    const pageSize = this.props.dataPageSize
-
     let newSource = this.props.source
     if (source?.length) {
       newSource = [...this.props.source, ...source]
@@ -206,6 +218,7 @@ class QueryInput extends React.Component {
       newSource.push('user')
     }
 
+    this.axiosSource = axios.CancelToken.source()
     const requestData = {
       query,
       userSelection,
@@ -214,13 +227,13 @@ class QueryInput extends React.Component {
       source: newSource,
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
-      pageSize,
+      pageSize: this.props.dataPageSize,
+      cancelToken: this.axiosSource.token,
     }
 
     if (query.trim()) {
       this.props.onSubmit(query)
       localStorage.setItem('inputValue', query)
-
       if (
         !this.props.authentication?.token &&
         !!this.props.authentication?.dprKey
@@ -228,11 +241,11 @@ class QueryInput extends React.Component {
         this.submitDprQuery(query)
       } else if (skipQueryValidation) {
         runQueryOnly(requestData)
-          .then((response) => this.onResponse(response, query, requestData))
+          .then((response) => this.onResponse(response, query))
           .catch((error) => console.error(error))
       } else {
         runQuery(requestData)
-          .then((response) => this.onResponse(response, query, requestData))
+          .then((response) => this.onResponse(response, query))
           .catch((error) => {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
@@ -346,7 +359,7 @@ class QueryInput extends React.Component {
 
           const sortingArray = []
           let suggestionsMatchArray = []
-          autoCompleteArray = []
+          this.autoCompleteArray = []
           suggestionsMatchArray = body.matches
           for (let i = 0; i < suggestionsMatchArray.length; i++) {
             sortingArray.push(suggestionsMatchArray[i])
@@ -361,11 +374,11 @@ class QueryInput extends React.Component {
             const anObject = {
               name: sortingArray[idx],
             }
-            autoCompleteArray.push(anObject)
+            this.autoCompleteArray.push(anObject)
           }
 
           this.setState({
-            suggestions: autoCompleteArray,
+            suggestions: this.autoCompleteArray,
           })
         })
         .catch((error) => {
@@ -420,7 +433,6 @@ class QueryInput extends React.Component {
           <div className="react-autoql-chatbar-input-container">
             {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
               <Autosuggest
-                lassName="auto-complete-chata"
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
                 getSuggestionValue={this.userSelectedSuggestionHandler}
@@ -501,7 +513,7 @@ class QueryInput extends React.Component {
             <SpeechToTextButtonBrowser
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
-              authentication={getAuthentication(this.props.authentication)}
+              authentication={this.props.authentication}
             />
           )}
         </div>

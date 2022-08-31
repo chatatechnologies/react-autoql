@@ -18,6 +18,7 @@ export default class TableWrapper extends React.Component {
     return (
       <ReactTabulator
         {...this.props}
+        className={`table-condensed ${this.props.className}`}
         key={this.props.tableKey}
         ref={this.props.tableRef}
       />

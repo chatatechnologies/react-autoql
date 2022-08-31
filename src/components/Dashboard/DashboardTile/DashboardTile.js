@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
+import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
@@ -16,6 +17,7 @@ import { OptionsToolbar } from '../../OptionsToolbar'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import { Icon } from '../../Icon'
+import { responseErrors } from '../../../js/errorMessages'
 
 import { runQuery, fetchAutocomplete } from '../../../js/queryService'
 
@@ -37,7 +39,7 @@ import './DashboardTile.scss'
 
 let autoCompleteArray = []
 
-class DashboardTile extends React.Component {
+export class DashboardTile extends React.Component {
   constructor(props) {
     super(props)
 
@@ -65,9 +67,9 @@ class DashboardTile extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
 
-    isEditing: PropTypes.bool.isRequired,
     tile: PropTypes.shape({}).isRequired,
-    deleteTile: PropTypes.func.isRequired,
+    isEditing: PropTypes.bool,
+    deleteTile: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
     notExecutedText: PropTypes.string,
@@ -77,7 +79,7 @@ class DashboardTile extends React.Component {
     onCSVDownloadStart: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onCSVDownloadFinish: PropTypes.func,
-    enableAjaxTableData: PropTypes.bool.isRequired,
+    enableAjaxTableData: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -88,12 +90,15 @@ class DashboardTile extends React.Component {
 
     query: '',
     title: '',
+    isEditing: false,
     displayType: 'table',
     dataPageSize: undefined,
     queryValidationSelections: undefined,
     selectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
+    enableAjaxTableData: false,
+    deleteTile: () => {},
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onCSVDownloadStart: () => {},
@@ -143,7 +148,12 @@ class DashboardTile extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.dragEndTimeout)
 
-    // todo: Cancel all dashboard calls here
+    this.cancelAllQueries()
+  }
+
+  cancelAllQueries = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -246,6 +256,9 @@ class DashboardTile extends React.Component {
         source: finalSource,
         pageSize: this.props.dataPageSize,
         skipQueryValidation: skipQueryValidation,
+        cancelToken: isSecondHalf
+          ? this.secondAxiosSource.token
+          : this.axiosSource.token,
       }
 
       return runQuery(requestData)
@@ -382,6 +395,9 @@ class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
+    this.axiosSource = axios.CancelToken.source()
+    this.secondAxiosSource = axios.CancelToken.source()
+
     const q1 = query || this.props.tile.selectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
@@ -1102,7 +1118,6 @@ class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         reportProblemCallback: this.reportProblemCallback,
         customMessage: this.state.customMessage,
-        queryRequestData: this.topRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1122,12 +1137,10 @@ class DashboardTile extends React.Component {
 
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
-    let queryRequestData = this.bottomRequestData
 
     if (isQuerySameAsTop) {
       isExecuting = this.state.isTopExecuting
       isExecuted = this.state.isTopExecuted
-      queryRequestData = this.topRequestData
     }
 
     const renderPlaceholder =
@@ -1152,8 +1165,8 @@ class DashboardTile extends React.Component {
           this.props.secondQueryResponse || this.props.queryResponse,
         tableConfigs: this.props.tile.secondDataConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
-        queryValidationSelections: this.props.tile
-          .secondqueryValidationSelections,
+        queryValidationSelections:
+          this.props.tile.secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
         selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
         reportProblemCallback: this.secondReportProblemCallback,
@@ -1167,7 +1180,6 @@ class DashboardTile extends React.Component {
         },
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
-        queryRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
@@ -1223,9 +1235,11 @@ class DashboardTile extends React.Component {
     return (
       <ErrorBoundary>
         <div
+          ref={(r) => (this.ref = r)}
           className={this.props.className}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
+          data-test="react-autoql-dashboard-tile"
           {...propsToPassToDragHandle}
         >
           {this.props.children}
@@ -1255,7 +1269,6 @@ export default React.forwardRef(({ style, className, key, ...props }, ref) => (
       {...props}
       ref={props.tileRef}
       className={`${props.innerDivClass} ${props.isEditing ? 'editing' : ''}`}
-      data-test="react-autoql-dashboard-tile"
     />
   </div>
 ))
