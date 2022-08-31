@@ -4,6 +4,7 @@ import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
+import _sortBy from 'lodash.sortby'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
 
@@ -195,14 +196,10 @@ export default class ChataChart extends Component {
         return undefined
       }
       const dateColumnIndex = getDateColumnIndex(props.columns)
-      if (dateColumnIndex >= 0) {
-        let sortedData = [...props.data].sort((a, b) =>
-          props.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], true)
-        )
-        return sortedData
-      }
-
-      return props.data
+      const sortedData = [...props.data].sort((a, b) =>
+        props.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], true)
+      )
+      return sortedData
     } catch (error) {
       console.error(error)
       return props.data
@@ -211,7 +208,14 @@ export default class ChataChart extends Component {
 
   aggregateRowData = (props) => {
     const { stringColumnIndex, numberColumnIndices } = props
-    const sortedData = this.sortChartDataByDate(props)
+    let sortedData
+    const dateColumnIndex = getDateColumnIndex(props.columns)
+    if (dateColumnIndex >= 0) {
+      sortedData = this.sortChartDataByDate(props)
+    } else {
+      sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
+    }
+
     if (props.isPivot) {
       return sortedData
     }
