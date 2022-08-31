@@ -491,6 +491,7 @@
 .dashboard-tile-placeholder-text {
   font-size: 15px;
   color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
+  padding: 0 10px;
 
   .play-icon {
     vertical-align: bottom;
