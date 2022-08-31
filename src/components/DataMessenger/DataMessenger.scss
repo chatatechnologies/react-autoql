@@ -202,37 +202,63 @@
 .react-autoql-drawer-resize-handle {
   position: absolute;
   background: transparent;
+  z-index: 2;
 
   &.right {
     top: 0;
-    left: -5px;
+    left: -2px;
     width: 5px;
     height: 100vh;
+    border-right-color: transparent;
+    border-right-width: 3px;
+    border-right-style: solid;
+    transition: border-right-color 0.2s ease;
     cursor: ew-resize;
+    &:hover {
+      border-right-color: var(--react-autoql-border-color);
+    }
   }
 
   &.left {
     top: 0;
-    right: -5px;
+    right: -2px;
     width: 5px;
     height: 100vh;
+    border-left-color: transparent;
+    border-left-width: 3px;
+    border-left-style: solid;
     cursor: ew-resize;
+    &:hover {
+      border-left-color: var(--react-autoql-border-color);
+    }
   }
 
   &.top {
-    bottom: -5px;
+    bottom: -2px;
     left: 0;
     height: 5px;
     width: 100vw;
+    border-top-color: transparent;
+    border-top-width: 3px;
+    border-top-style: solid;
     cursor: ns-resize;
+    &:hover {
+      border-top-color: var(--react-autoql-border-color);
+    }
   }
 
   &.bottom {
-    top: -5px;
+    top: -2px;
     left: 0;
     height: 5px;
     width: 100vw;
+    border-bottom-color: transparent;
+    border-bottom-width: 3px;
+    border-bottom-style: solid;
     cursor: ns-resize;
+    &:hover {
+      border-bottom-color: var(--react-autoql-border-color);
+    }
   }
 }
 
