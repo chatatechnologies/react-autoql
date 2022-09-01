@@ -690,15 +690,6 @@ export class DashboardTile extends React.Component {
     )
   }
 
-  renderDraggingPlaceholder = () => {
-    return (
-      <div className="react-autoql-db-dragging-placeholder-container">
-        <div className="react-autoql-db-dragging-placeholder-title"></div>
-        <div className="react-autoql-db-dragging-placeholder-content"></div>
-      </div>
-    )
-  }
-
   renderContentPlaceholder = ({ isExecuting, isExecuted } = {}) => {
     let content = null
     if (isExecuting) {

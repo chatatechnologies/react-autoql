@@ -329,15 +329,15 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   refreshLayout = () => {
-    if (this._isMounted) {
-      window.dispatchEvent(new Event('resize'))
-      this.setState({ isWindowResizing: true })
-      this.stopDraggingTimeout = setTimeout(() => {
-        this.setState({
-          isWindowResizing: false,
-        })
-      }, 100)
-    }
+    // Must dispatch a resize event for react-grid-layout to update
+    window.dispatchEvent(new Event('resize'))
+
+    // Must toggle resizing on then off for charts to detect the change and resize
+    this.setState({ isWindowResizing: true }, () => {
+      this.setState({
+        isWindowResizing: false,
+      })
+    })
   }
 
   onMoveStart = () => {
