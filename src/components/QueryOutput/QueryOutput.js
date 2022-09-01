@@ -51,6 +51,8 @@ import {
   setCSSVars,
   getNumberOfGroupables,
   areAllColumnsHidden,
+  sortDataByDate,
+  dateSortFn,
 } from '../../js/Util.js'
 
 import {
@@ -67,7 +69,7 @@ import {
 import { sendSuggestion, runDrilldown } from '../../js/queryService'
 
 import './QueryOutput.scss'
-import { MONTH_NAMES, WEEKDAY_NAMES } from '../../js/Constants'
+import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
 
 String.prototype.isUpperCase = function () {
@@ -512,107 +514,16 @@ export default class QueryOutput extends React.Component {
     return _get(this.queryResponse, 'data.data.rows.length')
   }
 
-  dateSortFn = (a, b, isChart) => {
-    try {
-      if (!a && !b) {
-        return 0
-      } else if (!a && b) {
-        return 1
-      } else if (a && !b) {
-        return -1
-      }
-
-      // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
-      let aDate = Number(a)
-      let bDate = Number(b)
-
-      // If one is not a number, use dayjs to format
-      if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
-        aDate = dayjs(a).unix()
-        bDate = dayjs(b).unix()
-      }
-
-      // Finally if all else fails, just compare the 2 values directly
-      if (!aDate || !bDate) {
-        // If one is a YYYY-WW
-        if (a.includes('-W')) {
-          let aDateYear = a.substring(0, 4)
-          let bDateYear = b.substring(0, 4)
-          if (aDateYear !== bDateYear) {
-            if (isChart) {
-              return aDateYear - bDateYear
-            }
-            return bDateYear - aDateYear
-          } else {
-            let aDateWeek = a.substring(6, 8)
-            let bDateWeek = b.substring(6, 8)
-            if (isChart) {
-              return aDateWeek - bDateWeek
-            }
-            return bDateWeek - aDateWeek
-          }
-        }
-        // If one is a weekday name
-        else if (WEEKDAY_NAMES.includes(a.trim())) {
-          const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
-          const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
-
-          if (aDayIndex >= 0 && bDayIndex >= 0) {
-            return bDayIndex - aDayIndex
-          }
-          return b - a
-        }
-        // If one is a month name
-        else if (MONTH_NAMES.includes(a.trim())) {
-          const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
-          const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
-          if (aMonthIndex >= 0 && bMonthIndex >= 0) {
-            return bMonthIndex - aMonthIndex
-          }
-          return b - a
-        }
-      }
-      if (isChart) {
-        return aDate - bDate
-      }
-      return bDate - aDate
-    } catch (error) {
-      console.error(error)
-      return -1
-    }
-  }
-
-  sortTableDataByDate = (data, isChart) => {
-    try {
-      if (!data || typeof data !== 'object') {
-        return undefined
-      }
-
-      const dateColumnIndex = getDateColumnIndex(this.tableColumns)
-
-      if (dateColumnIndex >= 0) {
-        let sortedData = [...data].sort((a, b) =>
-          this.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], isChart)
-        )
-
-        return sortedData
-      }
-
-      return data
-    } catch (error) {
-      console.error(error)
-      return data
-    }
-  }
-
   generateTableData = (columns, newTableData) => {
     if (newTableData) {
       this.tableData = newTableData
     } else {
       this.tableID = uuid()
       this.tableColumns = this.formatColumnsForTable(columns)
-      this.tableData = this.sortTableDataByDate(
-        this.queryResponse?.data?.data?.rows
+      this.tableData = sortDataByDate(
+        this.queryResponse?.data?.data?.rows,
+        this.tableColumns,
+        'table'
       )
 
       this.setTableConfig()
@@ -1397,7 +1308,7 @@ export default class QueryOutput extends React.Component {
 
   setSorterFunction = (col) => {
     if (col.type === 'DATE' || col.type === 'DATE_STRING') {
-      return (a, b) => this.dateSortFn(b, a)
+      return (a, b) => dateSortFn(b, a)
     } else if (col.type === 'STRING') {
       // There is some bug in tabulator where its not sorting
       // certain columns. This explicitly sets the sorter so
@@ -1537,7 +1448,7 @@ export default class QueryOutput extends React.Component {
           datePivot: true,
           pivot: true,
           cssClass: 'pivot-category',
-          sorter: this.dateSortFn,
+          sorter: dateSortFn,
           headerFilter: false,
         },
       ]
@@ -1624,7 +1535,11 @@ export default class QueryOutput extends React.Component {
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } =
         this.tableConfig
 
-      let uniqueValues0 = this.sortTableDataByDate(tableData)
+      let uniqueValues0 = sortDataByDate(
+        tableData,
+        this.tableColumns,
+        'pivot-table'
+      )
         .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1632,7 +1547,11 @@ export default class QueryOutput extends React.Component {
           return map
         }, {})
 
-      let uniqueValues1 = this.sortTableDataByDate(tableData)
+      let uniqueValues1 = sortDataByDate(
+        tableData,
+        this.tableColumns,
+        'pivot-table'
+      )
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1958,7 +1877,6 @@ export default class QueryOutput extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
-          dateSortFn={this.dateSortFn}
         />
       </ErrorBoundary>
     )

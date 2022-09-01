@@ -2,7 +2,12 @@ import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
-import { CHART_TYPES, TABLE_TYPES } from './Constants'
+import {
+  CHART_TYPES,
+  TABLE_TYPES,
+  WEEKDAY_NAMES,
+  MONTH_NAMES,
+} from './Constants'
 import { LIGHT_THEME, DARK_THEME } from './Themes'
 
 import { getThemeConfig } from '../props/defaults'
@@ -11,6 +16,7 @@ import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
   isAggregation,
+  getDateColumnIndex,
 } from '../components/QueryOutput/columnHelpers'
 
 export const onlyUnique = (value, index, self) => {
@@ -47,10 +53,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
 
     // Use title to determine significant digits of date format
     const title = col.title
-    let date = dayjs
-      .unix(value)
-      .utc()
-      .format(dayMonthYear)
+    let date = dayjs.unix(value).utc().format(dayMonthYear)
 
     if (Number.isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
@@ -61,15 +64,9 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
       }
       date = dayjs(value).format(dayMonthYear)
     } else if (title && title.toLowerCase().includes('year')) {
-      date = dayjs
-        .unix(value)
-        .utc()
-        .format(year)
+      date = dayjs.unix(value).utc().format(year)
     } else if (title && title.toLowerCase().includes('month')) {
-      date = dayjs
-        .unix(value)
-        .utc()
-        .format(monthYear)
+      date = dayjs.unix(value).utc().format(monthYear)
     }
 
     if (isDayJSDateValid(date)) {
@@ -221,12 +218,8 @@ export const formatElement = ({
 }) => {
   try {
     let formattedElement = element
-    const {
-      currencyCode,
-      languageCode,
-      currencyDecimals,
-      quantityDecimals,
-    } = config
+    const { currencyCode, languageCode, currencyDecimals, quantityDecimals } =
+      config
 
     if (column) {
       switch (column.type) {
@@ -369,7 +362,7 @@ export const getBBoxFromRef = (ref) => {
  * @return {Promise} a promise to the bas64 png image
  */
 export const svgToPng = (svgElement, margin = 0, fill) => {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     try {
       const image64 = getPNGBase64(svgElement)
 
@@ -389,7 +382,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
       var img = new Image()
 
       // when the image is loaded we can get it as base64 url
-      img.onload = function() {
+      img.onload = function () {
         // draw it to the canvas
         ctx.drawImage(this, margin, margin, width, height)
 
@@ -409,7 +402,7 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
         }
         resolve(canvas.toDataURL('image/png', 1))
       }
-      img.onerror = function(error) {
+      img.onerror = function (error) {
         reject('failed to load image with that url' + url)
       }
 
@@ -455,9 +448,8 @@ export const supportsRegularPivotTable = (columns) => {
 }
 
 export const supports2DCharts = (columns) => {
-  const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(
-    columns
-  )
+  const { amountOfNumberColumns, amountOfStringColumns } =
+    getColumnTypeAmounts(columns)
 
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
 }
@@ -805,8 +797,11 @@ export const getLongestLabelInPx = (labels, col, config) => {
   )
 
   labels.forEach((label) => {
-    const formattedLabel = formatChartLabel({ d: label, col, config })
-      .formattedLabel
+    const formattedLabel = formatChartLabel({
+      d: label,
+      col,
+      config,
+    }).formattedLabel
     const newLabelWidth = getChartLabelTextWidthInPx(formattedLabel)
 
     if (newLabelWidth > max) {
@@ -866,7 +861,7 @@ export const setCSSVars = (customThemeConfig) => {
     if (accentTextColor.length === 3) {
       accentTextColor = accentTextColor
         .split('')
-        .map(function(accentTextColor) {
+        .map(function (accentTextColor) {
           return accentTextColor + accentTextColor
         })
         .join('')
@@ -1037,5 +1032,94 @@ export const removeFromDOM = (elem) => {
     }
   } catch (error) {
     console.error(error)
+  }
+}
+
+export const dateSortFn = (a, b, displayType) => {
+  try {
+    if (!a && !b) {
+      return 0
+    } else if (!a && b) {
+      return 1
+    } else if (a && !b) {
+      return -1
+    }
+
+    // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+    let aDate = Number(a)
+    let bDate = Number(b)
+
+    // If one is not a number, use dayjs to format
+    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+      aDate = dayjs(a).unix()
+      bDate = dayjs(b).unix()
+    }
+
+    // Finally if all else fails, just compare the 2 values directly
+    if (!aDate || !bDate) {
+      // If one is a YYYY-WW
+      if (a.includes('-W')) {
+        let aDateYear = a.substring(0, 4)
+        let bDateYear = b.substring(0, 4)
+        if (aDateYear !== bDateYear) {
+          if (displayType === 'chart') {
+            return aDateYear - bDateYear
+          }
+          return bDateYear - aDateYear
+        } else {
+          let aDateWeek = a.substring(6, 8)
+          let bDateWeek = b.substring(6, 8)
+          if (isChart) {
+            return aDateWeek - bDateWeek
+          }
+          return bDateWeek - aDateWeek
+        }
+      }
+      // If one is a weekday name
+      else if (WEEKDAY_NAMES.includes(a.trim())) {
+        const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
+        const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
+
+        if (aDayIndex >= 0 && bDayIndex >= 0) {
+          return bDayIndex - aDayIndex
+        }
+        return b - a
+      }
+      // If one is a month name
+      else if (MONTH_NAMES.includes(a.trim())) {
+        const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+        const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+        if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+          return bMonthIndex - aMonthIndex
+        }
+        return b - a
+      }
+    }
+    if (displayType === 'chart') {
+      return aDate - bDate
+    }
+    return bDate - aDate
+  } catch (error) {
+    console.error(error)
+    return -1
+  }
+}
+
+export const sortDataByDate = (data, tableColumns, displayType) => {
+  try {
+    if (!data || typeof data !== 'object') {
+      return data
+    }
+    const dateColumnIndex = getDateColumnIndex(tableColumns)
+    if (dateColumnIndex >= 0) {
+      let sortedData = [...data].sort((a, b) =>
+        dateSortFn(a[dateColumnIndex], b[dateColumnIndex], displayType)
+      )
+      return sortedData
+    }
+    return data
+  } catch (error) {
+    console.error(error)
+    return data
   }
 }
