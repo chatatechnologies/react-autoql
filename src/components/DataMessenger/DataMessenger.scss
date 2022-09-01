@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   display: flex;
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   overflow: hidden;
   border-radius: 4px;
   flex-direction: column;
@@ -285,7 +285,7 @@
 
 // .react-autoql-condition-lock-menu {
 //   color: var(--react-autoql-text-color-primary);
-//   background: var(--react-autoql-background-color-primary);
+//   background: var(--react-autoql-background-color-secondary);
 //   min-height: 300px;
 // }
 
@@ -300,7 +300,7 @@
 
 .clear-messages-confirm-popover {
   color: var(--react-autoql-text-color-primary);
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   text-align: right;
   padding: 18px;
   width: 266px;
@@ -489,16 +489,16 @@
 }
 
 .page-switcher-container.bottom .tab {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
   .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-secondary);
+    stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;
   }
 }
 .page-switcher-container .tab.active {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
   box-shadow: -2px 0px 8px 2px rgba(0, 0, 0, 0.2);
   font-weight: bold;
@@ -506,7 +506,7 @@
   z-index: 2;
 
   .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-secondary);
+    stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;
   }
 }

@@ -538,10 +538,6 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
-    console.log(
-      'rendering toolbar... should show filter button?',
-      shouldShowButton
-    )
     return (
       <ErrorBoundary>
         <div

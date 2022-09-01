@@ -18,7 +18,7 @@
 
   color: var(--react-autoql-text-color-primary);
   border: 1px solid var(--react-autoql-border-color) !important;
-  background: var(--react-autoql-background-color-primary) !important;
+  background: var(--react-autoql-background-color-secondary) !important;
   box-shadow: 0 0 14px 1px rgba(0, 0, 0, 0.15);
   padding: 0 !important;
 
@@ -31,7 +31,7 @@
   textarea {
     border-color: var(--react-autoql-border-color);
     color: var(--react-autoql-text-color-primary);
-    background: var(--react-autoql-background-color-primary, white);
+    background: var(--react-autoql-background-color-secondary, white);
 
     &::placeholder {
       color: var(--react-autoql-text-color-placeholder);

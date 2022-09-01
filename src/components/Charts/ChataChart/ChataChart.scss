@@ -71,7 +71,7 @@
 }
 
 .axis-selector-container {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   z-index: 9999;
   padding: 5px 0;
@@ -137,6 +137,6 @@
 }
 
 .axis-selector-apply-btn {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   padding: 5px;
 }

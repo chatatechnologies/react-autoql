@@ -1043,7 +1043,7 @@ export class DashboardTile extends React.Component {
             renderSuggestionsAsDropdown={this.props.tile.h < 4}
             enableDynamicCharting={this.props.enableDynamicCharting}
             backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-primary'
+              '--react-autoql-background-color-secondary'
             )}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.props.rebuildTooltips}

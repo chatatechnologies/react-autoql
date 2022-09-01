@@ -1,5 +1,5 @@
 .react-autoql-dashboard .react-autoql-dashboard-tile {
-  background: var(--react-autoql-background-color-primary, #fff);
+  background: var(--react-autoql-background-color-secondary, #fff);
   color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
   font-family: var(--react-autoql-font-family), sans-serif;
   height: 100%;
@@ -85,7 +85,7 @@
   }
 
   .split-view-btn {
-    background: var(--react-autoql-background-color-primary);
+    background: var(--react-autoql-background-color-secondary);
     display: inline-block;
     margin-right: 7px;
     .react-autoql-icon {
@@ -305,7 +305,7 @@
     border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
     outline: none !important;
     color: var(--react-autoql-text-color-primary, #356f90);
-    background: var(--react-autoql-background-color-primary, #fff);
+    background: var(--react-autoql-background-color-secondary, #fff);
   }
 }
 
@@ -350,7 +350,7 @@
   border: 1px solid transparent;
   outline: none !important;
   color: var(--react-autoql-text-color-primary, #356f90);
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   margin: 0px;
   padding: 0px;
   width: 0px;
@@ -403,7 +403,7 @@
 }
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
 }

@@ -4,7 +4,7 @@
   padding: 5px;
   border-radius: 6px;
   line-height: 28px;
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
 
   &.vertical .react-autoql-toolbar-btn {
@@ -18,7 +18,7 @@
 
 .more-options-menu,
 .report-problem-menu {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   padding: 10px 0;
 
   span.react-autoql-icon svg {
@@ -43,12 +43,12 @@
     width: 100%;
     padding: 10px;
     resize: none;
-    background: var(--react-autoql-background-color-secondary);
+    background: var(--react-autoql-background-color-primary);
   }
 
   .copy-sql-btn {
     color: var(--react-autoql-text-color);
-    background-color: var(--react-autoql-background-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
     position: absolute;
     top: 3px;
     right: 0;

@@ -9,7 +9,7 @@
   max-width: 70vw;
   min-height: 350px;
   max-height: 90vh;
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   overflow-y: auto !important;
 
@@ -174,7 +174,7 @@
     width: 100%;
     font-family: inherit;
     border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-    background: var(--react-autoql-background-color-primary);
+    background: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
 
     &:hover {
@@ -192,7 +192,7 @@
     position: relative;
 
     .react-autosuggest__suggestions-container--open {
-      background-color: var(--react-autoql-background-color-primary);
+      background-color: var(--react-autoql-background-color-secondary);
       border: 1px solid var(--react-autoql-border-color);
       color: var(--react-autoql-text-color-primary);
       position: absolute;
@@ -245,7 +245,7 @@
 
 @keyframes highlightOut {
   100% {
-    background-color: var(--react-autoql-background-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
   }
   0% {
@@ -259,7 +259,7 @@
     color: var(--react-autoql-accent-text-color);
   }
   0% {
-    background-color: var(--react-autoql-background-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
   }
 }

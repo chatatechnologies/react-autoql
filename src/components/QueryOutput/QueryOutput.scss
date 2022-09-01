@@ -161,7 +161,7 @@
   text-align: center;
 }
 .react-autoql-query-validation-execute-btn {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
   height: 38px;
@@ -252,7 +252,7 @@
 }
 
 .context-menu {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -313,7 +313,7 @@
 .react-autoql-reverse-translation-container {
   .react-autoql-reverse-translation {
     color: var(--react-autoql-text-color-primary);
-    background-color: var(--react-autoql-background-color-secondary);
+    background-color: var(--react-autoql-background-color-primary);
     border-radius: 5px;
     padding: 5px 13px 5px 13px;
     height: 100%;

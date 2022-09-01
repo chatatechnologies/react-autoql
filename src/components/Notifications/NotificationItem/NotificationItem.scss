@@ -5,7 +5,7 @@
 
   position: relative;
   overflow: hidden;
-  background: var(--react-autoql-background-color-primary, #fff);
+  background: var(--react-autoql-background-color-secondary, #fff);
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 
@@ -206,7 +206,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--react-autoql-background-color-secondary, #ececec);
+      background-color: var(--react-autoql-background-color-primary, #ececec);
     }
   }
 
@@ -228,7 +228,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--react-autoql-background-color-secondary, #ececec);
+      background-color: var(--react-autoql-background-color-primary, #ececec);
     }
   }
 
@@ -238,7 +238,7 @@
     left: -7px;
     color: var(--react-autoql-accent-color, #26a7df);
     line-height: 10px;
-    background: var(--react-autoql-background-color-primary, #fff);
+    background: var(--react-autoql-background-color-secondary, #fff);
     border-radius: 10px;
     font-size: 17px;
   }

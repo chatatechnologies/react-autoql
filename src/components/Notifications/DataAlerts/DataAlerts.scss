@@ -1,5 +1,5 @@
 .react-autoql-notification-settings {
-  background-color: var(--react-autoql-background-color-secondary);
+  background-color: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
   padding-top: 20px;
   height: 100%;
@@ -9,7 +9,7 @@
     margin-top: 10px;
     border-radius: 4px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
-    background-color: var(--react-autoql-background-color-primary);
+    background-color: var(--react-autoql-background-color-secondary);
     overflow: hidden;
 
     .react-autoql-notification-setting-item {

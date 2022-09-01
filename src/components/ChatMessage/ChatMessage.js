@@ -253,7 +253,7 @@ export default class ChatMessage extends React.Component {
           enableAjaxTableData={this.props.enableAjaxTableData}
           originalQueryID={this.props.originalQueryID}
           backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-background-color-primary'
+            '--react-autoql-background-color-secondary'
           )}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
