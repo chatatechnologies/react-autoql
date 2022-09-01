@@ -196,7 +196,7 @@ export default class ChataChart extends Component {
       if (!props.data || typeof props.data !== 'object') {
         return undefined
       }
-      const dateColumnIndex = getDateColumnIndex(props.columns)
+      const dateColumnIndex = props.stringColumnIndex
       const sortedData = [...props.data].sort((a, b) =>
         props.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], true)
       )
