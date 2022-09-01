@@ -22,7 +22,7 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { getThemeConfig } from '../../../props/defaults'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng } from '../../../js/Util.js'
+import { svgToPng, sortDataByDate } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -33,7 +33,6 @@ import {
 import './ChataChart.scss'
 import {
   getColumnTypeAmounts,
-  getDateColumnIndex,
   isColumnDateType,
 } from '../../QueryOutput/columnHelpers'
 
@@ -191,28 +190,12 @@ export default class ChataChart extends Component {
     return { chartHeight, chartWidth }
   }
 
-  sortChartDataByDate = (props) => {
-    try {
-      if (!props.data || typeof props.data !== 'object') {
-        return undefined
-      }
-      const dateColumnIndex = props.stringColumnIndex
-      const sortedData = [...props.data].sort((a, b) =>
-        props.dateSortFn(a[dateColumnIndex], b[dateColumnIndex], true)
-      )
-      return sortedData
-    } catch (error) {
-      console.error(error)
-      return props.data
-    }
-  }
-
   aggregateRowData = (props) => {
-    const { stringColumnIndex, numberColumnIndices, columns } = props
+    const { stringColumnIndex, numberColumnIndices, data, columns } = props
     const stringColumn = columns[stringColumnIndex]
     let sortedData
     if (isColumnDateType(stringColumn)) {
-      sortedData = this.sortChartDataByDate(props)
+      sortedData = sortDataByDate(data, columns, 'chart')
     } else {
       sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
     }
