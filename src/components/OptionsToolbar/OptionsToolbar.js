@@ -470,33 +470,6 @@ export default class OptionsToolbar extends React.Component {
               Create a Data Alert...
             </li>
           )}
-          {shouldShowButton.showShareToSlackButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: 'slack' })
-              }}
-            >
-              <Icon style={{ marginRight: '5px' }} type="slack" />
-              Send to Slack...
-            </li>
-          )}
-          {shouldShowButton.showShareToTeamsButton && (
-            <li
-              onClick={() => {
-                this.setState({ activeMenu: 'teams' })
-              }}
-            >
-              <Icon
-                style={{
-                  display: 'inline-block',
-                  marginRight: '5px',
-                  marginTop: '-2px',
-                }}
-                type="teams"
-              />
-              Send to Teams...
-            </li>
-          )}
         </ul>
       </div>
     )
@@ -514,40 +487,6 @@ export default class OptionsToolbar extends React.Component {
       return false
     }
   }
-
-  // renderSendToSlackModal = () => {
-  //   if (getAutoQLConfig(this.props.autoQLConfig).enableSlackSharing) {
-  //     return (
-  //       <SendToSlackModal
-  //         authentication={getAuthentication(this.props.authentication)}
-  //         isVisible={this.state.activeMenu === 'slack'}
-  //         responseRef={this.props.responseRef}
-  //         onErrorCallback={this.props.onErrorCallback}
-  //         onClose={() => {
-  //           this.setState({ activeMenu: undefined })
-  //         }}
-  //       />
-  //     )
-  //   }
-  //   return null
-  // }
-
-  // renderSendToTeamsModal = () => {
-  //   if (getAutoQLConfig(this.props.autoQLConfig).enableTeamsSharing) {
-  //     return (
-  //       <SendToTeamsModal
-  //         authentication={getAuthentication(this.props.authentication)}
-  //         isVisible={this.state.activeMenu === 'teams'}
-  //         responseRef={this.props.responseRef}
-  //         onErrorCallback={this.props.onErrorCallback}
-  //         onClose={() => {
-  //           this.setState({ activeMenu: undefined })
-  //         }}
-  //       />
-  //     )
-  //   }
-  //   return null
-  // }
 
   renderSQLModal = () => {
     const sql = this.props.responseRef?.queryResponse?.data?.data?.sql?.[0]
@@ -599,6 +538,10 @@ export default class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
+    console.log(
+      'rendering toolbar... should show filter button?',
+      shouldShowButton
+    )
     return (
       <ErrorBoundary>
         <div
@@ -759,14 +702,6 @@ export default class OptionsToolbar extends React.Component {
           autoQLConfig.enableNotifications &&
           !this.isDrilldownResponse(),
         showRefreshDataButton: false,
-        showShareToSlackButton: false,
-        // This feature is disabled indefinitely
-        // isDataResponse &&
-        // autoQLConfig.enableSlackSharing,
-        showShareToTeamsButton: false,
-        // This feature is disabled indefinitely
-        // isDataResponse &&
-        // autoQLConfig.enableTeamsSharing,
       }
 
       shouldShowButton.showMoreOptionsButton =
@@ -774,9 +709,7 @@ export default class OptionsToolbar extends React.Component {
         shouldShowButton.showSQLButton ||
         shouldShowButton.showCreateNotificationIcon ||
         shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton ||
-        shouldShowButton.showShareToSlackButton ||
-        shouldShowButton.showShareToTeamsButton
+        shouldShowButton.showSaveAsPNGButton
     } catch (error) {
       console.error(error)
     }

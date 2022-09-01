@@ -9,13 +9,8 @@ import { authenticationType } from '../../props/types'
 import { fetchDataPreview } from '../../js/queryService'
 import { Icon } from '../Icon'
 
-import {
-  getDataFormatting,
-  getThemeConfig,
-  dataFormattingDefault,
-  themeConfigDefault,
-} from '../../props/defaults'
-import { dataFormattingType, themeConfigType } from '../../props/types'
+import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
+import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
 
 import './DataPreview.scss'
@@ -31,7 +26,6 @@ export default class DataExplorer extends React.Component {
 
   static propTypes = {
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
     authentication: authenticationType,
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
@@ -40,7 +34,6 @@ export default class DataExplorer extends React.Component {
 
   static defaultProps = {
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
     authentication: {},
     shouldRender: true,
     subject: null,

@@ -2,8 +2,8 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 
 import { findByTestAttr } from '../../../test/testUtils'
+import { QueryOutput } from '../QueryOutput/QueryOutput'
 import VizToolbar from './VizToolbar'
-import { QueryOutputWithoutTheme } from '../QueryOutput/QueryOutput'
 
 import responseTestCases from '../../../test/responseTestCases'
 
@@ -15,7 +15,7 @@ const defaultProps = VizToolbar.defaultProps
 const setup = ({ props = {}, queryOutputProps = {}, state = null } = {}) => {
   const setupProps = { ...defaultProps, ...props }
   const queryOutputWrapper = mount(
-    <QueryOutputWithoutTheme
+    <QueryOutput
       ref={(r) => {
         responseRef = r
       }}

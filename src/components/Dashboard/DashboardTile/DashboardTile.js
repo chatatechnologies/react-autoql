@@ -1118,6 +1118,7 @@ export class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         reportProblemCallback: this.reportProblemCallback,
         customMessage: this.state.customMessage,
+        queryRequestData: this.topRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1137,10 +1138,12 @@ export class DashboardTile extends React.Component {
 
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
+    let queryRequestData = this.bottomRequestData
 
     if (isQuerySameAsTop) {
       isExecuting = this.state.isTopExecuting
       isExecuted = this.state.isTopExecuted
+      queryRequestData = this.topRequestData
     }
 
     const renderPlaceholder =
@@ -1180,6 +1183,7 @@ export class DashboardTile extends React.Component {
         },
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
+        queryRequestData,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

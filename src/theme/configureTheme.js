@@ -5,8 +5,10 @@ const defaultThemeConfig = {
   chartColors: ['#26A7E9', '#A5CD39', '#DD6A6A', '#FFA700', '#00C1B2'],
   accentColor: '#26A7E9',
   fontFamily: 'sans-serif',
-  dashboardTitleColor: undefined,
-  dashboardBackground: undefined,
+  textColor: undefined,
+  accentTextColor: undefined,
+  backgroundColorPrimary: undefined,
+  backgroundColorSecondary: undefined,
 }
 
 const getThemeConfig = (customThemeConfig = {}) => {
@@ -90,7 +92,8 @@ const setAccentColorVars = (accentColor, themeStyles) => {
   themeStyles['accent-text-color'] = accentColorYIQ >= 140 ? 'black' : 'white'
 }
 
-const setChartColors = (chartColors, themeStyles) => {
+const setChartColors = (providedChartColors, themeStyles) => {
+  const chartColors = providedChartColors || defaultThemeConfig.chartColors
   if (!Array.isArray(chartColors)) {
     console.error('configureTheme chartColors option must be an array')
     return
@@ -109,39 +112,43 @@ const setChartColors = (chartColors, themeStyles) => {
 export const configureTheme = (customThemeConfig = {}) => {
   const {
     theme,
+    textColor,
     fontFamily,
     chartColors,
     accentColor,
-    color,
     dashboardTitleColor,
-    dashboardBackground,
+    backgroundColorPrimary,
+    backgroundColorSecondary,
   } = getThemeConfig(customThemeConfig)
 
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
 
-  if (color) {
-    themeStyles['accent-text-color'] = color
+  if (textColor) {
+    themeStyles['accent-text-color'] = textColor
   } else {
     setAccentColorVars(accentColor, themeStyles)
-  }
-
-  if (chartColors) {
-    setChartColors(chartColors, themeStyles)
-  }
-
-  if (accentColor) {
-    themeStyles['accent-color'] = accentColor
   }
 
   if (fontFamily) {
     themeStyles['font-family'] = fontFamily
   }
 
-  themeStyles['dashboard-background-color'] =
-    dashboardBackground || themeStyles['background-color-secondary']
+  if (accentColor) {
+    themeStyles['accent-color'] = accentColor
+  }
 
   themeStyles['dashboard-title-color'] =
     dashboardTitleColor || themeStyles['accent-color']
+
+  if (backgroundColorPrimary) {
+    themeStyles['background-color-primary'] = backgroundColorPrimary
+  }
+
+  if (backgroundColorSecondary) {
+    themeStyles['background-color-secondary'] = backgroundColorSecondary
+  }
+
+  setChartColors(chartColors, themeStyles)
 
   // Apply values to css variables with --react-autoql prefix
   for (let property in themeStyles) {

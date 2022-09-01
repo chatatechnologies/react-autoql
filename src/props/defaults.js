@@ -26,8 +26,6 @@ export const autoQLConfigDefault = {
   enableColumnVisibilityManager: true,
   enableDrilldowns: true,
   enableNotifications: false,
-  enableSlackSharing: true,
-  enableTeamsSharing: true,
   enableCSVDownload: false,
   enableReportProblem: true,
 }

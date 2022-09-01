@@ -79,7 +79,7 @@ String.prototype.toProperCase = function () {
   })
 }
 
-export class QueryOutputWithoutTheme extends React.Component {
+export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
 
@@ -460,8 +460,8 @@ export class QueryOutputWithoutTheme extends React.Component {
       // If tabulator is mounted, update columns in there
       if (_get(this.tableRef, 'ref.table')) {
         this.tableRef.ref.table.setColumns(this.tableColumns)
-      }
-    } ---------- */
+      } ---------- */
+    }
   }
 
   generateAllData = () => {
@@ -804,7 +804,7 @@ export class QueryOutputWithoutTheme extends React.Component {
     }
 
     let groupBys = {}
-    if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
+    if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
       groupBys = getGroupBysFromPivotTable(cell)
     } else {
       groupBys = getGroupBysFromTable(cell, this.state.columns)
@@ -1986,7 +1986,7 @@ export class QueryOutputWithoutTheme extends React.Component {
 
   shouldRenderDataLimitWarning = () => {
     const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
+      this.props.enableAjaxTableData && this.state.displayType === 'table'
 
     return (
       !isTableAndAjax &&
@@ -2062,4 +2062,4 @@ export class QueryOutputWithoutTheme extends React.Component {
   }
 }
 
-export default withTheme(QueryOutputWithoutTheme)
+export default withTheme(QueryOutput)

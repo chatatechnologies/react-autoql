@@ -3,7 +3,7 @@ import { shallow, mount } from 'enzyme'
 import _cloneDeep from 'lodash.clonedeep'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
-import { QueryOutputWithoutTheme } from '../../components/QueryOutput/QueryOutput'
+import { QueryOutput as QueryOutputWithoutTheme } from '../../components/QueryOutput/QueryOutput'
 import testCases from '../../../test/responseTestCases'
 
 const defaultProps = QueryOutput.defaultProps
@@ -53,14 +53,13 @@ describe('test each response case', () => {
 describe('test table edge cases', () => {
   describe('all columns initially hidden then visibility changed', () => {
     const testCaseHiddenColumns = _cloneDeep(testCases[8])
-    testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map(
-      (column) => {
+    testCaseHiddenColumns.data.data.columns =
+      testCaseHiddenColumns.data.data.columns.map((column) => {
         return {
           ...column,
           is_visible: false,
         }
-      }
-    )
+      })
     test('columns hidden message shows when all columns are hidden', () => {
       const queryOutput = mount(
         <QueryOutput

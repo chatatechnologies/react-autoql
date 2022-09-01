@@ -1,63 +1,26 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
-
 import { findByTestAttr } from '../../../test/testUtils'
-
+import { QueryOutput } from '../QueryOutput/QueryOutput'
 import OptionsToolbar from './OptionsToolbar'
-import { QueryOutputWithoutTheme } from '../QueryOutput/QueryOutput'
-
-var responseRef
-
-const sampleResponse = {
-  data: {
-    message: 'Success',
-    reference_id: '1.1.210',
-    data: {
-      columns: [
-        {
-          display_name: 'Amount (Sum)',
-          groupable: false,
-          is_visible: true,
-          name: 'sum(generalledger.amount)',
-          type: 'DOLLAR_AMT',
-        },
-        {
-          display_name: 'Test Column',
-          groupable: false,
-          is_visible: true,
-          name: 'test',
-          type: 'QUANTITY',
-        },
-      ],
-      display_type: 'data',
-      interpretation:
-        "Amount (Sum), lower of Classification of 'revenue', and, Date greater than or equal '2020-05-01T00:00:00.000Z', and, Date below '2020-05-31T23:59:59.000Z'",
-      query_id: 'q_uwOMur9eTtSxyKh_GSI1bQ',
-      rows: [
-        [148644.9600000001, 1],
-        [111, 1],
-      ],
-      sql: ['select sum()'],
-    },
-  },
-}
+import responseTestCases from '../../../test/responseTestCases'
 
 const defaultProps = OptionsToolbar.defaultProps
 
 const setup = (props = {}, queryOutputProps = {}, state = null) => {
   // Create a query output component from the sample response,
   // then pass that into the toolbar component
+  let responseRef
   const queryOutputComponent = mount(
-    <QueryOutputWithoutTheme
+    <QueryOutput
       authentication={defaultProps.authentication}
       ref={(r) => {
         responseRef = r
       }}
-      queryResponse={sampleResponse}
+      queryResponse={responseTestCases[7]}
       {...queryOutputProps}
     />
   )
-  queryOutputComponent.mount()
 
   const setupProps = { ...defaultProps, ...props }
   const wrapper = shallow(
@@ -70,7 +33,7 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const { wrapper, queryOutputComponent } = setup(undefined, {
-      displayType: 'table',
+      initialDisplayType: 'table',
     })
     const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
     expect(toolbarComponent.exists()).toBe(true)
@@ -79,7 +42,7 @@ describe('renders correctly', () => {
 
   test('renders correctly for single value response', () => {
     const { wrapper, queryOutputComponent } = setup(undefined, {
-      displayType: 'single-value',
+      initialDisplayType: 'single-value',
     })
     const toolbarComponent = findByTestAttr(wrapper, 'autoql-options-toolbar')
     expect(toolbarComponent.exists()).toBe(true)
@@ -97,7 +60,7 @@ describe('column visibility manager', () => {
       },
     }
     const { wrapper, queryOutputComponent } = setup(propsWithColVisDisabled, {
-      displayType: 'table',
+      initialDisplayType: 'table',
     })
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(false)
@@ -112,53 +75,18 @@ describe('column visibility manager', () => {
     },
   }
 
-  // describe('does not render col visibility btn for aggregation queries', () => {
-  //   const response = { ...sampleResponse }
-  //   response.data.data.columns = [
-  //     {
-  //       display_name: 'Amount (Sum)',
-  //       groupable: true,
-  //       is_visible: true,
-  //       name: 'sum(generalledger.amount)',
-  //       type: 'DOLLAR_AMT',
-  //     },
-  //     {
-  //       display_name: 'Test Column',
-  //       groupable: false,
-  //       is_visible: true,
-  //       name: 'test',
-  //       type: 'QUANTITY',
-  //     },
-  //   ]
-  //   const wrapper = setup({ ...propsWithColVisEnabled, response })
-  //   const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
-  //   expect(colVisibilityBtn.exists()).toBe(false)
-  // })
-
   test('renders col visibility btn for list queries', () => {
-    const response = { ...sampleResponse }
-    response.data.data.columns = [
-      {
-        display_name: 'Amount (Sum)',
-        groupable: false,
-        is_visible: true,
-        name: 'sum(generalledger.amount)',
-        type: 'DOLLAR_AMT',
-      },
-      {
-        display_name: 'Test Column',
-        groupable: false,
-        is_visible: true,
-        name: 'test',
-        type: 'QUANTITY',
-      },
-    ]
+    const response = responseTestCases[7]
+    response.data.data.columns = response.data.data.columns.map((column) => {
+      column.is_visible = true
+      return column
+    })
     const { wrapper, queryOutputComponent } = setup(
       {
         ...propsWithColVisEnabled,
         response,
       },
-      { displayType: 'table' }
+      { initialDisplayType: 'table' }
     )
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(true)
@@ -178,8 +106,9 @@ describe('trash button', () => {
 describe('more options button', () => {
   test('renders by default', () => {
     const { wrapper, queryOutputComponent } = setup(undefined, {
-      displayType: 'table',
+      initialDisplayType: 'table',
     })
+    queryOutputComponent.update()
     const moreOptionsBtn = findByTestAttr(
       wrapper,
       'react-autoql-toolbar-more-options-btn'
@@ -191,18 +120,31 @@ describe('more options button', () => {
 
 describe('filter button', () => {
   test('renders for regular table', () => {
-    const wrapper = setup(undefined, { displayType: 'table' })
-    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
-    expect(moreOptionsBtn.exists()).toBe(true)
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      initialDisplayType: 'table',
+    })
+    const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(filterBtn.exists()).toBe(true)
+    queryOutputComponent.unmount()
   })
-  test('does not render for pivot table', () => {
-    const wrapper = setup(undefined, { displayType: 'pivot-table' })
-    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
-    expect(moreOptionsBtn.exists()).toBe(false)
+  test('does not render for pivot table', async () => {
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      initialDisplayType: 'pivot-table',
+      queryResponse: responseTestCases[7],
+    })
+
+    const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(filterBtn.exists()).toBe(false)
+    queryOutputComponent.unmount()
   })
   test('does not render for chart', () => {
-    const wrapper = setup(undefined, { displayType: 'column' })
-    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
-    expect(moreOptionsBtn.exists()).toBe(false)
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      initialDisplayType: 'column',
+      queryResponse: responseTestCases[7],
+    })
+    queryOutputComponent.update()
+    const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
+    expect(filterBtn.exists()).toBe(false)
+    queryOutputComponent.unmount()
   })
 })

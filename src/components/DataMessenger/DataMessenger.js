@@ -40,9 +40,8 @@ import { FilterLockPopover } from '../FilterLockPopover'
 // Styles
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
-import { getThemeType } from '../../theme/configureTheme'
 
-class DataMessenger extends React.Component {
+export class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
@@ -527,7 +526,6 @@ class DataMessenger extends React.Component {
                     <NotificationIcon
                       ref={(r) => (this.notificationBadgeRef = r)}
                       authentication={this.props.authentication}
-                      themeConfig={this.props.themeConfig}
                       clearCountOnClick={false}
                       style={{ fontSize: '19px' }}
                       overflowCount={9}
@@ -845,7 +843,6 @@ class DataMessenger extends React.Component {
       <DataExplorer
         ref={(r) => (this.dataExplorerRef = r)}
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         dataFormatting={this.props.dataFormatting}
         rebuildTooltips={this.rebuildTooltips}
         shouldRender={
