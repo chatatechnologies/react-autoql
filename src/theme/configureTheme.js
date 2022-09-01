@@ -89,7 +89,7 @@ export const getChartColorVars = () => {
 
 const setAccentColorVars = (accentColor, themeStyles) => {
   const accentColorYIQ = getYIQFromHex(accentColor)
-  themeStyles['accent-text-color'] = accentColorYIQ >= 140 ? 'black' : 'white'
+  themeStyles['text-color-accent'] = accentColorYIQ >= 140 ? 'black' : 'white'
 }
 
 const setChartColors = (providedChartColors, themeStyles) => {
@@ -116,6 +116,7 @@ export const configureTheme = (customThemeConfig = {}) => {
     fontFamily,
     chartColors,
     accentColor,
+    accentTextColor,
     dashboardTitleColor,
     backgroundColorPrimary,
     backgroundColorSecondary,
@@ -124,7 +125,11 @@ export const configureTheme = (customThemeConfig = {}) => {
   const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
 
   if (textColor) {
-    themeStyles['accent-text-color'] = textColor
+    themeStyles['text-color-primary'] = textColor
+  }
+
+  if (accentTextColor) {
+    themeStyles['text-color-accent'] = accentTextColor
   } else {
     setAccentColorVars(accentColor, themeStyles)
   }

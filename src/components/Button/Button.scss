@@ -37,7 +37,7 @@
 .react-autoql-btn.primary {
   background: var(--react-autoql-accent-color);
   border: 1px solid var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   &:hover {
     opacity: 0.8;
   }
@@ -49,6 +49,6 @@
 
   &:hover {
     background-color: var(--react-autoql-danger-color, #ca0b00);
-    color: var(--react-autoql-accent-text-color);
+    color: var(--react-autoql-text-color-accent);
   }
 }

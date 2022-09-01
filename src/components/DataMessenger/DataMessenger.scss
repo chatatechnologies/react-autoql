@@ -23,7 +23,7 @@
   width: 100%;
   height: 60px;
   background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
   flex: 0 0 auto;
   z-index: 1;
@@ -42,7 +42,7 @@
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   line-height: 60px;
   font-size: 18px;
   letter-spacing: 0.05em;
@@ -92,7 +92,7 @@
 .react-autoql-drawer .chat-header-container button {
   background: transparent;
   border: none;
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   margin: 10px 0px 10px 0px;
   margin-right: 0;
   font-size: 20px;
@@ -141,7 +141,7 @@
 
     &.default-logo {
       background-color: var(--react-autoql-accent-color, #26a7df);
-      color: var(--react-autoql-accent-text-color);
+      color: var(--react-autoql-text-color-accent);
 
       .react-autoql-bubbles-outlined {
         position: absolute;
@@ -386,7 +386,7 @@
     z-index: 1;
 
     background: var(--react-autoql-accent-color);
-    color: var(--react-autoql-accent-text-color);
+    color: var(--react-autoql-text-color-accent);
     opacity: 1;
 
     font-size: 22px;
@@ -512,7 +512,7 @@
 }
 .page-switcher-container.bottom .tab.active {
   background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   font-weight: bold;
 
   .react-autoql-icon.data-search svg {

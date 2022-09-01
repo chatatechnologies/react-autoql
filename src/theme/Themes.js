@@ -1,12 +1,12 @@
 export const LIGHT_THEME = {
   'accent-color': '#28a8e0',
-  'background-color-secondary': '#ffffff',
   'background-color-primary': '#F1F3F5',
+  'background-color-secondary': '#ffffff',
   'background-color-tertiary': '#cccccc',
   'border-color': '#e6e6e6',
   'hover-color': '#ececec',
   'text-color-primary': '#4f4f4f',
-  'accent-text-color': '#ffffff',
+  'text-color-accent': '#ffffff',
   'text-color-placeholder': '#0000005e',
   'dashboard-title-color': '#28a8e0',
   'font-family': 'sans-serif',
@@ -17,14 +17,14 @@ export const LIGHT_THEME = {
 }
 
 export const DARK_THEME = {
-  'accent-color': '#193a48', // dark blue
-  'background-color-secondary': '#3B3F46',
+  'accent-color': '#193a48',
   'background-color-primary': '#20252A',
+  'background-color-secondary': '#3B3F46',
   'background-color-tertiary': '#292929',
   'border-color': '#53565c',
   'hover-color': '#4a4f56',
   'text-color-primary': '#ececec',
-  'accent-text-color': '#ffffff',
+  'text-color-accent': '#ffffff',
   'text-color-placeholder': '#ffffff9c',
   'dashboard-title-color': '#193a48',
   'font-family': 'sans-serif',
