@@ -271,6 +271,7 @@ export default class ChatMessage extends React.Component {
           source={this.props.source}
           onRowChange={this.scrollIntoView}
           mutable={false}
+          showSuggestionPrefix={false}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })

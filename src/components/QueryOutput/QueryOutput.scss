@@ -87,6 +87,10 @@
   height: 100%;
   width: 100%;
   word-break: break-word;
+
+  .react-autoql-suggestion-message-prefix {
+    margin-bottom: 10px;
+  }
 }
 .react-autoql-suggestions-select {
   position: relative;

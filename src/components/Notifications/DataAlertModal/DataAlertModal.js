@@ -480,11 +480,11 @@ class DataAlertModal extends React.Component {
               place="top"
             />
             <Icon
+              className="react-autoql-data-alert-query-name-tooltip-icon"
               data-for="react-autoql-data-alert-query-name-tooltip"
               data-tip="This will be visible to anyone who gets notified when this Alert is triggered."
               type="info"
               size={24}
-              color="#26A7Df"
             />
           </div>
         </div>

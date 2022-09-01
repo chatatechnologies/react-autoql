@@ -160,6 +160,7 @@ export class QueryOutput extends React.Component {
     rebuildTooltips: PropTypes.func,
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
+    showSuggestionPrefix: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -188,6 +189,7 @@ export class QueryOutput extends React.Component {
     preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
     mutable: true,
+    showSuggestionPrefix: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
@@ -614,6 +616,11 @@ export class QueryOutput extends React.Component {
           data-test="suggestion-message-container"
         >
           <div className="react-autoql-suggestions-container">
+            {this.props.showSuggestionPrefix && (
+              <div className="react-autoql-suggestion-message-prefix">
+                I want to make sure I understood your query. Did you mean:
+              </div>
+            )}
             {this.props.renderSuggestionsAsDropdown ? (
               <select
                 key={uuid()}

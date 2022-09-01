@@ -282,7 +282,7 @@ export class DashboardTile extends React.Component {
     source,
     pageSize,
   }) => {
-    this.setState({ isTopExecuting: true, customMessage: undefined })
+    this.setState({ isTopExecuting: true })
 
     const skipValidation =
       !!skipQueryValidation ||
@@ -332,7 +332,6 @@ export class DashboardTile extends React.Component {
     this.setState({
       isBottomExecuting: true,
       isSecondQueryInputOpen: false,
-      secondCustomMessage: undefined,
     })
 
     const skipValidation =
@@ -380,7 +379,6 @@ export class DashboardTile extends React.Component {
     this.setState({
       isTopExecuting: false,
       isTopExecuted: false,
-      customMessage: undefined,
     })
     this.debouncedSetParamsForTile({
       queryResponse: undefined,
@@ -781,34 +779,6 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  onNoneOfTheseClick = () => {
-    this.setState({
-      customMessage: (
-        <div className="feedback-message">
-          Thank you for your feedback!
-          <br />
-          To continue, try asking another query.
-        </div>
-      ),
-    })
-  }
-
-  secondOnNoneOfTheseClick = () => {
-    this.setState({
-      secondCustomMessage: (
-        <div className="feedback-message">
-          Thank you for your feedback!
-          <br />
-          To continue, try asking another query.
-        </div>
-      ),
-    })
-  }
-
-  renderSuggestionPrefix = () => {
-    return <div>I want to make sure I understood your query. Did you mean:</div>
-  }
-
   renderSplitResponse = () => {
     const secondQueryInputWidth = _get(this.tileInnerDiv, 'clientWidth')
       ? `${this.tileInnerDiv.clientWidth - 70}px`
@@ -955,16 +925,6 @@ export class DashboardTile extends React.Component {
       tileId: this.props.tile.i,
     })
 
-  renderSuggestionMessage = (customMessage) => {
-    if (customMessage) {
-      return customMessage
-    }
-
-    return (
-      <div style={{ paddingTop: '20px' }}>{this.renderSuggestionPrefix()}</div>
-    )
-  }
-
   renderToolbars = ({
     queryOutputProps,
     vizToolbarProps,
@@ -1022,35 +982,24 @@ export class DashboardTile extends React.Component {
       })
     }
 
-    let customMessage = this.state.customMessage
-    if (isSecondHalf) {
-      customMessage = this.state.secondCustomMessage
-    }
-
     return (
-      <>
-        {this.getIsSuggestionResponse(queryOutputProps.queryResponse) &&
-          this.renderSuggestionMessage(queryOutputProps.customMessage)}
-        {!customMessage && (
-          <QueryOutput
-            authentication={getAuthentication(this.props.authentication)}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            dataFormatting={getDataFormatting(this.props.dataFormatting)}
-            renderTooltips={false}
-            autoSelectQueryValidationSuggestion={false}
-            autoChartAggregations={this.props.autoChartAggregations}
-            isResizing={this.props.isDragging}
-            renderSuggestionsAsDropdown={this.props.tile.h < 4}
-            enableDynamicCharting={this.props.enableDynamicCharting}
-            backgroundColor={document.documentElement.style.getPropertyValue(
-              '--react-autoql-background-color-secondary'
-            )}
-            enableAjaxTableData={this.props.enableAjaxTableData}
-            rebuildTooltips={this.props.rebuildTooltips}
-            {...queryOutputProps}
-          />
+      <QueryOutput
+        authentication={getAuthentication(this.props.authentication)}
+        autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
+        dataFormatting={getDataFormatting(this.props.dataFormatting)}
+        renderTooltips={false}
+        autoSelectQueryValidationSuggestion={false}
+        autoChartAggregations={this.props.autoChartAggregations}
+        isResizing={this.props.isDragging}
+        renderSuggestionsAsDropdown={this.props.tile.h < 4}
+        enableDynamicCharting={this.props.enableDynamicCharting}
+        backgroundColor={document.documentElement.style.getPropertyValue(
+          '--react-autoql-background-color-secondary'
         )}
-      </>
+        enableAjaxTableData={this.props.enableAjaxTableData}
+        rebuildTooltips={this.props.rebuildTooltips}
+        {...queryOutputProps}
+      />
     )
   }
 
@@ -1117,7 +1066,6 @@ export class DashboardTile extends React.Component {
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         reportProblemCallback: this.reportProblemCallback,
-        customMessage: this.state.customMessage,
         queryRequestData: this.topRequestData,
       },
       vizToolbarProps: {

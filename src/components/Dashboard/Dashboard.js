@@ -229,19 +229,21 @@ class DashboardWithoutTheme extends React.Component {
       return
     }
 
-    if (!this.state.isWindowResizing) {
-      this.currentWindowWidth = window.innerWidth
-      this.setState({ isWindowResizing: true })
-    }
+    if (this._isMounted) {
+      if (!this.state.isWindowResizing) {
+        this.currentWindowWidth = window.innerWidth
+        this.setState({ isWindowResizing: true })
+      }
 
-    // Only re-render if width changed
-    if (hasWidthChanged) {
-      this.windowResizeTimer = setTimeout(() => {
-        if (hasWidthChanged) {
-          this.currentWindowWidth = undefined
-          this.setState({ isWindowResizing: false })
-        }
-      }, 300)
+      // Only re-render if width changed
+      if (hasWidthChanged) {
+        this.windowResizeTimer = setTimeout(() => {
+          if (hasWidthChanged) {
+            this.currentWindowWidth = undefined
+            this.setState({ isWindowResizing: false })
+          }
+        }, 300)
+      }
     }
   }
 
@@ -327,17 +329,19 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   refreshLayout = () => {
-    window.dispatchEvent(new Event('resize'))
-    this.setState({ isWindowResizing: true })
-    this.stopDraggingTimeout = setTimeout(() => {
-      this.setState({
-        isWindowResizing: false,
-      })
-    }, 100)
+    if (this._isMounted) {
+      window.dispatchEvent(new Event('resize'))
+      this.setState({ isWindowResizing: true })
+      this.stopDraggingTimeout = setTimeout(() => {
+        this.setState({
+          isWindowResizing: false,
+        })
+      }, 100)
+    }
   }
 
   onMoveStart = () => {
-    if (!this.state.isDragging) {
+    if (!this.state.isDragging && this._isMounted) {
       this.setState({ isDragging: true })
     }
   }

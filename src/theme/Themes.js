@@ -14,6 +14,7 @@ export const LIGHT_THEME = {
   'danger-color': '#ca0b00',
   'warning-color': '#ffcc00',
   'success-color': '#2aca4d',
+  'info-color': '#28a8e0',
 }
 
 export const DARK_THEME = {
@@ -32,4 +33,5 @@ export const DARK_THEME = {
   'danger-color': '#ff584e',
   'warning-color': '#ffcc00',
   'success-color': '#2aca4d',
+  'info-color': '#28a8e0',
 }
