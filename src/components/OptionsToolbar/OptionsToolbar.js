@@ -100,6 +100,9 @@ export default class OptionsToolbar extends React.Component {
     if (prevState.activeMenu === 'sql' && this.state.activeMenu !== 'sql') {
       this.setState({ sqlCopySuccess: false })
     }
+    if (prevProps.displayType !== this.props.displayType) {
+      this.setState({ activeMenu: undefined })
+    }
     this.rebuildTooltips()
   }
 
