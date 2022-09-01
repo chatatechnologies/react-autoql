@@ -34,6 +34,7 @@ import './ChataChart.scss'
 import {
   getColumnTypeAmounts,
   getDateColumnIndex,
+  isColumnDateType,
 } from '../../QueryOutput/columnHelpers'
 
 export default class ChataChart extends Component {
@@ -207,10 +208,10 @@ export default class ChataChart extends Component {
   }
 
   aggregateRowData = (props) => {
-    const { stringColumnIndex, numberColumnIndices } = props
+    const { stringColumnIndex, numberColumnIndices, columns } = props
+    const stringColumn = columns[stringColumnIndex]
     let sortedData
-    const dateColumnIndex = getDateColumnIndex(props.columns)
-    if (dateColumnIndex >= 0) {
+    if (isColumnDateType(stringColumn)) {
       sortedData = this.sortChartDataByDate(props)
     } else {
       sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
