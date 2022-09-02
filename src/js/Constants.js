@@ -39,10 +39,10 @@ export const MONTH_NAMES = [
 
 export const WEEKDAY_NAMES = [
   'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
   'Saturday',
+  'Friday',
+  'Thursday',
+  'Wednesday',
+  'Tuesday',
+  'Monday',
 ]

@@ -21,8 +21,7 @@ import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng } from '../../../js/Util.js'
-
+import { svgToPng, sortDataByDate } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -30,9 +29,11 @@ import {
   getLegendLabelsForMultiSeries,
   getLegendLocation,
 } from '../helpers.js'
-
 import './ChataChart.scss'
-import { getColumnTypeAmounts } from '../../QueryOutput/columnHelpers'
+import {
+  getColumnTypeAmounts,
+  isColumnDateType,
+} from '../../QueryOutput/columnHelpers'
 import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 
 export default class ChataChart extends Component {
@@ -52,9 +53,8 @@ export default class ChataChart extends Component {
     this.recursiveUpdateCount = 0
 
     this.colorScale = scaleOrdinal().range(chartColors)
-
     this.state = {
-      aggregatedData: !props.isPivot ? this.aggregateRowData(props) : undefined,
+      aggregatedData: this.aggregateRowData(props),
       leftMargin: this.PADDING,
       rightMargin: this.PADDING,
       topMargin: this.PADDING,
@@ -143,9 +143,7 @@ export default class ChataChart extends Component {
 
     if (dataStructureChanged(this.props, prevProps)) {
       shouldUpdateMargins = true
-      if (!this.props.isPivot) {
-        newState.aggregatedData = this.aggregateRowData(this.props)
-      }
+      newState.aggregatedData = this.aggregateRowData(this.props)
       this.rebuildTooltips()
     }
 
@@ -193,8 +191,18 @@ export default class ChataChart extends Component {
   }
 
   aggregateRowData = (props) => {
-    const { stringColumnIndex, numberColumnIndices } = props
-    const sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
+    const { stringColumnIndex, numberColumnIndices, data, columns } = props
+    const stringColumn = columns[stringColumnIndex]
+    let sortedData
+    if (isColumnDateType(stringColumn)) {
+      sortedData = sortDataByDate(data, columns, 'chart')
+    } else {
+      sortedData = _sortBy(props.data, (row) => row?.[stringColumnIndex])
+    }
+
+    if (props.isPivot) {
+      return sortedData
+    }
     const aggregatedData = []
 
     let rowSum = _cloneDeep(sortedData[0])
@@ -223,7 +231,6 @@ export default class ChataChart extends Component {
         aggregatedData.push(rowSum)
       }
     })
-
     return aggregatedData
   }
 
@@ -267,9 +274,7 @@ export default class ChataChart extends Component {
 
   getNewBottomMargin = (chartContainerBbox) => {
     let legendBBox
-    this.legend = select(this.chartRef)
-      .select('.legendOrdinal')
-      .node()
+    this.legend = select(this.chartRef).select('.legendOrdinal').node()
     legendBBox = this.legend ? this.legend.getBBox() : undefined
 
     let bottomLegendMargin = 0
@@ -281,9 +286,7 @@ export default class ChataChart extends Component {
       bottomLegendMargin = legendBBox.height + 10
     }
 
-    this.xAxis = select(this.chartRef)
-      .select('.axis-Bottom')
-      .node()
+    this.xAxis = select(this.chartRef).select('.axis-Bottom').node()
 
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 40 // margin to include axis label
@@ -513,10 +516,8 @@ export default class ChataChart extends Component {
       innerPadding = 0.1
     }
 
-    const {
-      amountOfNumberColumns,
-      amountOfStringColumns,
-    } = getColumnTypeAmounts(columns)
+    const { amountOfNumberColumns, amountOfStringColumns } =
+      getColumnTypeAmounts(columns)
     const hasMultipleNumberColumns = amountOfNumberColumns > 1
     const hasMultipleStringColumns = amountOfStringColumns > 1
 

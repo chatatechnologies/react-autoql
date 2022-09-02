@@ -2,12 +2,18 @@ import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
-import { CHART_TYPES, TABLE_TYPES } from './Constants'
+import {
+  CHART_TYPES,
+  TABLE_TYPES,
+  WEEKDAY_NAMES,
+  MONTH_NAMES,
+} from './Constants'
 
 import {
   getColumnTypeAmounts,
   shouldPlotMultiSeries,
   isAggregation,
+  getDateColumnIndex,
 } from '../components/QueryOutput/columnHelpers'
 
 export const onlyUnique = (value, index, self) => {
@@ -983,5 +989,94 @@ export const removeFromDOM = (elem) => {
     }
   } catch (error) {
     console.error(error)
+  }
+}
+
+export const dateSortFn = (a, b, displayType) => {
+  try {
+    if (!a && !b) {
+      return 0
+    } else if (!a && b) {
+      return 1
+    } else if (a && !b) {
+      return -1
+    }
+
+    // First try to convert to number. It will sort properly if its a plain year or a unix timestamp
+    let aDate = Number(a)
+    let bDate = Number(b)
+
+    // If one is not a number, use dayjs to format
+    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+      aDate = dayjs(a).unix()
+      bDate = dayjs(b).unix()
+    }
+
+    // Finally if all else fails, just compare the 2 values directly
+    if (!aDate || !bDate) {
+      // If one is a YYYY-WW
+      if (a.includes('-W')) {
+        let aDateYear = a.substring(0, 4)
+        let bDateYear = b.substring(0, 4)
+        if (aDateYear !== bDateYear) {
+          if (displayType === 'chart') {
+            return aDateYear - bDateYear
+          }
+          return bDateYear - aDateYear
+        } else {
+          let aDateWeek = a.substring(6, 8)
+          let bDateWeek = b.substring(6, 8)
+          if (isChart) {
+            return aDateWeek - bDateWeek
+          }
+          return bDateWeek - aDateWeek
+        }
+      }
+      // If one is a weekday name
+      else if (WEEKDAY_NAMES.includes(a.trim())) {
+        const aDayIndex = WEEKDAY_NAMES.findIndex((d) => d === a.trim())
+        const bDayIndex = WEEKDAY_NAMES.findIndex((d) => d === b.trim())
+
+        if (aDayIndex >= 0 && bDayIndex >= 0) {
+          return bDayIndex - aDayIndex
+        }
+        return b - a
+      }
+      // If one is a month name
+      else if (MONTH_NAMES.includes(a.trim())) {
+        const aMonthIndex = MONTH_NAMES.findIndex((m) => m === a.trim())
+        const bMonthIndex = MONTH_NAMES.findIndex((m) => m === b.trim())
+        if (aMonthIndex >= 0 && bMonthIndex >= 0) {
+          return bMonthIndex - aMonthIndex
+        }
+        return b - a
+      }
+    }
+    if (displayType === 'chart') {
+      return aDate - bDate
+    }
+    return bDate - aDate
+  } catch (error) {
+    console.error(error)
+    return -1
+  }
+}
+
+export const sortDataByDate = (data, tableColumns, displayType) => {
+  try {
+    if (!data || typeof data !== 'object') {
+      return data
+    }
+    const dateColumnIndex = getDateColumnIndex(tableColumns)
+    if (dateColumnIndex >= 0) {
+      let sortedData = [...data].sort((a, b) =>
+        dateSortFn(a[dateColumnIndex], b[dateColumnIndex], displayType)
+      )
+      return sortedData
+    }
+    return data
+  } catch (error) {
+    console.error(error)
+    return data
   }
 }
