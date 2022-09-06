@@ -1,0 +1,20 @@
+// TODO: create wrapper HOC for each component that has class 'react-autoql-styles' so we don't apply global styles outside of the widgets
+// h1,
+// h2,
+// h3,
+// h4,
+// h5,
+// h6,
+// body {
+//   color: var(--react-autoql-text-color-primary);
+// }
+
+.react-autoql-spinner-centered {
+  width: 100%;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.react-autosuggest__suggestions-container--open::-webkit-scrollbar {
+  visibility: visible !important;
+}

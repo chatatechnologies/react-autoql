@@ -1,0 +1,94 @@
+.react-autoql-dashboard-container {
+  background: var(--react-autoql-dashboard-background-color);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.react-autoql-dashboard-container.edit-mode {
+  padding-bottom: 200px;
+}
+
+.dashboard-drilldown-modal {
+  .ReactModal__Content {
+    top: unset !important;
+    margin-top: 20px !important;
+    max-height: 93vh !important;
+  }
+
+  .dashboard-drilldown-modal-content {
+    &.chart-hidden,
+    &.top-hidden {
+      .react-autoql-dashboard-drilldown-original,
+      .layout-splitter {
+        display: none;
+      }
+    }
+
+    &.chart-hidden .layout-pane:not(.layout-pane-primary) {
+      height: calc(100% - 50px) !important;
+    }
+
+    &.top-hidden .layout-pane:not(.layout-pane-primary) {
+      height: 100% !important;
+    }
+
+    .react-autoql-modal-body {
+      padding: 0;
+    }
+
+    .react-autoql-table {
+      opacity: 0.9;
+      font-size: 11px;
+    }
+
+    .splitter-layout {
+      height: calc(100% - 55px);
+    }
+
+    .react-autoql-dashboard-drilldown-original {
+      padding: 20px;
+      padding-bottom: 10px;
+    }
+    .drilldown-hide-chart-btn {
+      text-align: right;
+      width: 100%;
+      padding-right: 20px;
+
+      &.bottom {
+        position: absolute;
+        bottom: 5px;
+        width: 100px;
+        right: 0;
+      }
+
+      &.top {
+        padding-top: 10px;
+        margin-bottom: -8px;
+      }
+    }
+  }
+
+  .react-autoql-dashboard-drilldown-table {
+    padding: 20px;
+    padding-top: 10px;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+.empty-dashboard-message-container {
+  font-family: var(--react-autoql-font-family);
+  color: var(--react-autoql-text-color-primary);
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 100px;
+  height: 100%;
+  width: 100%;
+}
+
+.empty-dashboard-new-tile-btn {
+  color: var(--react-autoql-accent-color);
+  font-weight: bold;
+  cursor: pointer;
+}

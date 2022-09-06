@@ -1,0 +1,31 @@
+.chat-content-scroll-container {
+  flex: 1 0 0px;
+}
+
+.react-autoql-drawer .response-loading-container {
+  position: absolute;
+  bottom: 45px;
+  left: 20px;
+}
+
+.react-autoql-drawer .chat-bar-container {
+  flex: 0 0 auto;
+  position: relative;
+  padding: 10px;
+}
+
+.react-autoql-drawer .watermark {
+  color: var(--react-autoql-text-color-placeholder);
+  text-align: center;
+  opacity: 0.7;
+  top: 6px;
+  width: calc(100% - 10px);
+  font-size: 13px;
+}
+
+.react-autoql-drawer .chat-drawer-chat-bar {
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 60px;
+  animation: fadeIn 0.3s;
+}

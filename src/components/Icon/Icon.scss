@@ -1,0 +1,45 @@
+.react-autoql-icon {
+  position: relative;
+  opacity: 1;
+
+  &.warning {
+    color: var(--react-autoql-warning-color) !important;
+  }
+  &.danger {
+    color: var(--react-autoql-danger-color) !important;
+  }
+}
+
+span.react-autoql-icon {
+  vertical-align: unset;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  float: none !important;
+  color: inherit;
+
+  svg {
+    float: none !important;
+    color: inherit;
+    vertical-align: unset;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+    height: 1em;
+    width: 1em;
+    margin-bottom: -0.15em;
+  }
+}
+
+.react-autoql-badge {
+  position: absolute;
+  background: var(--react-autoql-warning-color);
+  border: 1px solid var(--react-autoql-background-color-secondary);
+  width: 0.5em;
+  height: 0.5em;
+  top: -0.1em;
+  right: -0.25em;
+  border-radius: 50%;
+  box-sizing: content-box;
+}

@@ -1,0 +1,265 @@
+.filter-lock-menu {
+  z-index: 99999 !important;
+  transition: opacity 0.1s ease 0s !important;
+  border: 1px solid #ababab52;
+  border-radius: 4px;
+  box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
+  opacity: 1;
+  min-width: 500px;
+  max-width: 70vw;
+  min-height: 350px;
+  max-height: 90vh;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  overflow-y: auto !important;
+
+  .filter-lock-toast-container {
+    top: 0;
+    position: absolute;
+
+    .Toastify__toast {
+      min-height: 48px;
+    }
+
+    .Toastify__toast-body {
+      justify-content: center;
+    }
+
+    .Toastify__toast-body > div:last-child {
+      flex: unset;
+    }
+  }
+
+  .include-exclude-toggle-group {
+    height: 23px;
+    font-size: 12px;
+    font-weight: 200;
+
+    .react-autoql-radio-btn.active {
+      background-color: var(--react-autoql-border-color);
+    }
+
+    :first-child.react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-accent-color);
+        border-color: var(--react-autoql-accent-color);
+      }
+    }
+
+    :nth-child(2).react-autoql-radio-btn {
+      &:hover,
+      &.active {
+        color: var(--react-autoql-danger-color);
+        border-color: var(--react-autoql-danger-color);
+      }
+    }
+  }
+}
+
+.filter-lock-menu-content {
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  height: 100%;
+
+  &.closed {
+    opacity: 0;
+  }
+
+  h3 {
+    margin-top: 3px;
+    margin-bottom: 15px;
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  h4 {
+    margin-top: 3px;
+    margin-bottom: 5px;
+    color: var(--react-autoql-text-color-primary);
+    display: inline-flex;
+  }
+
+  .react-autoql-condition-list-loading-container,
+  .react-autoql-empty-condition-list,
+  .react-autoql-filter-list-container {
+    flex: 1 1 245px;
+  }
+
+  .filter-lock-menu-header {
+    flex: 0;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    .filter-locking-close-btn {
+      border: none;
+      margin: 0;
+      padding: 0;
+      font-size: 20px;
+    }
+  }
+  .filter-lock-menu-footer {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .react-autoql-empty-condition-list {
+    opacity: 0.8;
+    width: 100%;
+    text-align: center;
+    padding-top: 70px;
+  }
+
+  .react-autoql-filter-list-container {
+    margin: 10px 0;
+
+    .flex {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      margin-bottom: 4px;
+
+      .persist-toggle-column,
+      .react-autoql-condition-table-list-item {
+        margin-right: 25px;
+        max-width: 350px;
+      }
+
+      .react-autoql-remove-filter-icon {
+        cursor: pointer;
+
+        &:hover {
+          color: var(--react-autoql-danger-color);
+        }
+      }
+    }
+
+    .filter-lock-category-title {
+      padding-right: 10px;
+      padding-top: 1px;
+      max-width: 195px;
+      overflow: hidden;
+    }
+    .persist-toggle-column .react-autoql-icon {
+      margin-left: 3px;
+    }
+
+    .react-autoql-highlight-row {
+      background-color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-text-color-accent);
+      animation-name: highlightIn, highlightOut;
+      animation-duration: 300ms, 300ms;
+      animation-delay: 0ms, 1000ms;
+      animation-timing-function: ease-in, ease-out;
+      animation-iteration-count: 1, 1;
+    }
+  }
+
+  .react-autoql-condition-locking-input {
+    padding: 5px;
+    padding-left: 20px;
+    height: 32px;
+    box-sizing: border-box;
+    border-radius: 24px;
+    font-size: 12px;
+    font-family: inherit;
+    letter-spacing: 0.04em;
+    outline: none !important;
+    width: 100%;
+    font-family: inherit;
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+
+    &:hover {
+      box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
+    }
+
+    &::placeholder {
+      color: rgba(var(--react-autoql-text-color-placeholder), 2) !important;
+      opacity: 0.5;
+    }
+  }
+
+  // ------------------- Autocomplete styles -------------------
+  .react-autosuggest__container--open {
+    position: relative;
+
+    .react-autosuggest__suggestions-container--open {
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      color: var(--react-autoql-text-color-primary);
+      position: absolute;
+      padding: 10px 0;
+      display: block;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: normal;
+      z-index: 2;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+      text-align: left;
+      border-radius: 4px;
+      height: auto;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: scroll !important;
+
+      ul.filter-lock-suggestion-item {
+        cursor: pointer;
+        width: 100%;
+        columns: 2;
+        -webkit-columns: 2;
+        list-style: none;
+        -moz-columns: 2;
+        letter-spacing: 0.05em;
+        line-height: 22.5px;
+        padding: 0px 20px 3px 20px;
+      }
+
+      .react-autosuggest__suggestion {
+        color: var(--react-autoql-text-color-primary);
+      }
+      .react-autosuggest__suggestions-list {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      .react-autosuggest__suggestion--highlighted {
+        background-color: rgba(0, 0, 0, 0.1) !important;
+      }
+      .react-autosuggest__section-title {
+        padding: 10px 0 0 10px;
+        font-size: 12px;
+        color: var(--react-autoql-text-color-placeholder);
+      }
+    }
+  }
+  // ------------------------------------------------------------------------
+}
+
+@keyframes highlightOut {
+  100% {
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+  }
+  0% {
+    background-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+  }
+}
+@keyframes highlightIn {
+  100% {
+    background-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+  }
+  0% {
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+  }
+}

@@ -1,0 +1,83 @@
+.notification-list-loading-container {
+  text-align: center;
+  padding-top: 100px;
+  color: var(--react-autoql-text-color-primary);
+  height: 100%;
+  background: var(--react-autoql-background-color-primary);
+}
+
+.empty-notifications-message {
+  color: var(--react-autoql-text-color-primary);
+  text-align: center;
+  margin-top: 75px;
+
+  div {
+    opacity: 0.6;
+  }
+
+  .empty-notifications-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .empty-notifications-img {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+.react-autoql-notification-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--react-autoql-background-color-primary);
+
+  .notification-feed-list {
+    padding: 0 20px;
+    padding-top: 0;
+  }
+}
+
+.react-autoql-notification-dismiss-all {
+  flex: 0;
+  text-align: right;
+  margin: 12px;
+  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+  transition: color 0.1s ease;
+
+  span {
+    opacity: 0.8;
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Edit Modal
+.react-autoql-notification-display-name-input {
+  width: 100%;
+  // max-width: 400px;
+}
+.react-autoql-notification-message-input {
+  width: 100%;
+}
+
+// Set delay per List Item
+@for $i from 0 through 10 {
+  .react-autoql-notification-list-item:nth-of-type(#{$i}) {
+    animation-delay: 0.1s * $i;
+  }
+}
+
+@-webkit-keyframes slideIn {
+  0% {
+    opacity: 0;
+    top: 500px;
+  }
+  100% {
+    opacity: 1;
+    top: 0;
+  }
+}

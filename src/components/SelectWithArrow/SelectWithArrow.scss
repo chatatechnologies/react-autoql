@@ -1,0 +1,34 @@
+.react-autoql-select-with-arrow div {
+  color: inherit;
+}
+
+.react-autoql-select-with-arrow > div {
+  border-color: var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background: var(--react-autoql-background-color-secondary, white);
+  transition: all 0.2s ease;
+  cursor: pointer !important;
+
+  &:hover {
+    border-color: var(--react-autoql-accent-color, #26a7df);
+  }
+
+  .react-autoql-select-with-arrow__option {
+    cursor: pointer;
+    &:hover {
+      background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.15));
+    }
+    &.react-autoql-select-with-arrow__option--is-focused,
+    &.react-autoql-select-with-arrow__option--is-selected {
+      background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.1));
+    }
+  }
+}
+
+.react-autoql-select-with-arrow:focus {
+  outline: none !important;
+}
+
+.react-autoql-select-with-arrow__control--is-focused {
+  border: 1px solid var(--react-autoql-accent-color, #26a7df) !important;
+  box-shadow: none !important;
+}

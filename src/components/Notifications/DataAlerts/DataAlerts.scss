@@ -1,0 +1,131 @@
+.react-autoql-notification-settings {
+  background-color: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+  padding-top: 20px;
+  height: 100%;
+
+  .react-autoql-notification-settings-container {
+    margin: 20px;
+    margin-top: 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+    background-color: var(--react-autoql-background-color-secondary);
+    overflow: hidden;
+
+    .react-autoql-notification-setting-item {
+      height: 55px;
+      line-height: 55px;
+      transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+
+      .react-autoql-notification-error-status-icon {
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #react-autoql-notification-error-status-icon-PROJECT {
+        margin-right: 10px;
+      }
+
+      .reset-period-info-icon {
+        padding-right: 20px;
+        font-size: 17px;
+        opacity: 1;
+        cursor: pointer;
+        color: var(--react-autoql-accent-color);
+      }
+
+      &.CUSTOM {
+        &:hover {
+          background: rgba(0, 0, 0, 0.01);
+        }
+      }
+
+      .react-autoql-notification-action-btn {
+        opacity: 0;
+        margin-right: 20px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        color: var(--react-autoql-text-color-primary);
+        cursor: pointer;
+
+        &:hover {
+          color: var(--react-autoql-accent-color);
+          opacity: 1 !important;
+        }
+      }
+
+      &:hover .react-autoql-notification-action-btn {
+        opacity: 0.5;
+      }
+    }
+
+    .react-autoql-notification-setting-item-header {
+      display: flex;
+      justify-content: space-between;
+      height: 56px;
+      padding-left: 25px;
+      padding-right: 8px;
+      border-bottom: 1px solid
+        var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+    }
+
+    .react-autoql-notification-enable-checkbox {
+      margin-bottom: 4px;
+      margin-right: 8px;
+    }
+    .react-autoql-notification-disable-checkbox {
+      margin-bottom: 4px;
+      margin-right: 8px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+
+  .react-autoql-notification-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 20px;
+    padding-bottom: 0;
+    color: var(--react-autoql-text-color-primary);
+
+    .react-autoql-notification-add-btn {
+      display: inline-block;
+      height: 35px;
+      width: 35px;
+      border-radius: 20px;
+      background: var(--react-autoql-accent-color, #26a7df);
+      color: var(--react-autoql-text-color-accent);
+      line-height: 38px;
+      text-align: center;
+      font-size: 20px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+      transition: all 0.2s ease;
+      margin-right: 5px;
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: 0 1px 3px 0px rgba(0, 0, 0, 0.32);
+      }
+    }
+  }
+
+  .react-autoql-notification-setting-display-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+    .react-autoql-notification-setting-display-name-message {
+      opacity: 0.5;
+    }
+  }
+  .react-autoql-re-initialize-btn {
+    vertical-align: middle;
+    height: 18px;
+  }
+
+  .react-autoql-re-initialize-btn-text {
+    display: flex;
+    align-items: center;
+    margin-top: -25px;
+  }
+}

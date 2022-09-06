@@ -1,0 +1,520 @@
+.react-autoql-dashboard .react-autoql-dashboard-tile {
+  background: var(--react-autoql-background-color-secondary, #fff);
+  color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
+  font-family: var(--react-autoql-font-family), sans-serif;
+  height: 100%;
+  overflow: hidden;
+
+  border-radius: 4px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+}
+
+.react-autoql-dashboard-tile-inner-div {
+  height: 100%;
+  width: 100%;
+  background: inherit;
+  position: relative;
+  text-align: center;
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: center;
+}
+
+// Drag handles
+.react-autoql-dashboard-tile-drag-handle {
+  transition: opacity 0.3s ease;
+  position: absolute;
+  background-color: var(--react-autoql-border-color, #f7f7f7);
+  cursor: move;
+  opacity: 0;
+
+  &.top {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 15px;
+  }
+  &.bottom {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15px;
+  }
+  &.left {
+    top: 0;
+    left: 0;
+    width: 15px;
+    height: 100%;
+  }
+  &.right {
+    top: 0;
+    right: 0;
+    width: 15px;
+    height: 100%;
+  }
+}
+.react-autoql-dashboard-tile:hover .react-autoql-dashboard-tile-drag-handle {
+  opacity: 1;
+}
+
+// Toolbars
+.dashboard-tile-toolbars-container {
+  display: flex;
+  position: absolute;
+  align-items: flex-end;
+  justify-content: space-between;
+  transition: opacity 0.3s ease, color 0.3s ease;
+  padding: 7px;
+  width: 100%;
+  z-index: 1;
+  bottom: 0;
+  right: 0;
+
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+
+  .dashboard-tile-toolbars-right-container,
+  .dashboard-tile-toolbars-left-container {
+    pointer-events: auto;
+  }
+
+  &.left-padding {
+    width: calc(100% - 40px);
+  }
+
+  .split-view-btn {
+    background: var(--react-autoql-background-color-secondary);
+    display: inline-block;
+    margin-right: 7px;
+    .react-autoql-icon {
+      font-size: 14px;
+    }
+  }
+}
+
+.react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container,
+.react-autoql-dashboard-tile:hover .split-view-query-btn {
+  visibility: visible;
+  opacity: 1;
+}
+
+.split-view-query-btn {
+  transition: opacity 0.3s ease, color 0.3s ease;
+  color: var(--react-autoql-accent-color);
+  position: absolute;
+  top: 7px;
+  left: 13px;
+  bottom: unset;
+  z-index: 1;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.react-autoql-dashboard-tile-inner-div .single-value-response {
+  font-size: 32px;
+  margin-top: -6px;
+  opacity: 0.9;
+}
+
+.react-autoql-dashboard-tile-inner-div .dashboard-tile-response-wrapper {
+  height: calc(100% - 47px);
+  width: 100%;
+  padding-top: 0;
+  background: inherit;
+
+  .layout-splitter {
+    height: 1px !important;
+    color: var(--react-autoql-border-color);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .react-autoql-table {
+    opacity: 0.9;
+    color: var(--react-autoql-text-color-primary);
+    font-size: 11px;
+  }
+
+  .react-autoql-response-content-container.table .query-output-footer {
+    min-height: 33px;
+  }
+}
+.react-autoql-dashboard-tile-inner-div.split .dashboard-tile-response-wrapper {
+  padding: 0;
+}
+.react-autoql-dashboard-tile-inner-div
+  .dashboard-tile-response-wrapper.editing {
+  .dashboard-tile-toolbars-container {
+    padding: 13px;
+  }
+
+  .layout-splitter {
+    display: block;
+    pointer-events: unset;
+    height: 4px !important;
+    color: var(--react-autoql-text-color-primary);
+    opacity: 0.8;
+  }
+
+  .react-autoql-toolbar-btn.active {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+/* Safetynet styles specific to dashboard tiles */
+.react-autoql-dashboard-tile-inner-div
+  .dashboard-tile-response-wrapper.editing {
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.react-autoql-dashboard-tile-inner-div .react-autoql-query-validation-query {
+  white-space: nowrap;
+}
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-description,
+.dashboard-tile-response-wrapper.small
+  .react-autoql-query-validation-execute-btn {
+  display: none;
+}
+
+.dashboard-tile-response-wrapper .dashboard-tile-response-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background: inherit;
+
+  cursor: default;
+
+  .react-autoql-table-container {
+    padding: 15px 20px 0px 20px;
+  }
+
+  .react-autoql-response-content-container {
+    padding: 7px;
+    align-items: center;
+  }
+}
+
+.dashboard-tile-title-container {
+  width: 100%;
+  text-align: left;
+  padding: 19px 25px 0 25px;
+  height: 47px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  flex-grow: 0;
+
+  .dashboard-tile-title {
+    color: var(--react-autoql-dashboard-title-color);
+  }
+}
+
+.dashboard-tile-title-container .dashboard-tile-title {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.dashboard-tile-edit-wrapper {
+  display: flex;
+  width: 100%;
+  height: 55px;
+  padding: 20px 20px 0 25px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.dashboard-tile-play-button {
+  cursor: default;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+.dashboard-tile-play-button span.react-autoql-icon svg {
+  cursor: pointer;
+  width: 25px;
+  height: 33px;
+  margin-left: 10px;
+  color: var(--react-autoql-accent-color);
+}
+.dashboard-tile-play-button.disabled svg {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dashboard-tile-play-button:not(.disabled) svg:hover {
+  opacity: 0.8;
+}
+
+.dashboard-tile-delete-button {
+  opacity: 0;
+  font-size: 17px;
+  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4));
+  position: absolute;
+  top: 0px;
+  right: 2px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+.react-grid-item:hover .dashboard-tile-delete-button {
+  opacity: 1;
+}
+
+.dashboard-tile-loading-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-tile-title-divider {
+  height: 2px;
+  background: currentColor;
+  width: 75px;
+  margin-top: 4px;
+  opacity: 0.07;
+}
+
+/* Input box styling for edit mode */
+.dashboard-tile-input-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  font-size: 15px;
+
+  .dashboard-tile-input,
+  .dashboard-tile-autocomplete-input {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    padding-left: 33px;
+
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    outline: none !important;
+    color: var(--react-autoql-text-color-primary, #356f90);
+    background: var(--react-autoql-background-color-secondary, #fff);
+  }
+}
+
+.query-focused .dashboard-tile-left-input-container,
+.title-focused .dashboard-tile-right-input-container {
+  width: 70%;
+}
+
+.dashboard-tile-right-input-container {
+  z-index: 2;
+}
+
+.dashboard-tile-right-input-container,
+.dashboard-tile-left-input-container {
+  position: relative;
+  width: 0;
+  flex-grow: 1;
+  transition: width 0.3s ease;
+
+  .query-input-icon,
+  .title-input-icon {
+    color: var(--react-autoql-accent-color);
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .query-input-icon {
+    font-size: 18px;
+    top: 4px;
+    left: 10px;
+  }
+  .title-input-icon {
+    font-size: 16px;
+    top: 7px;
+    left: 11px;
+  }
+}
+
+.dashboard-tile-input.second.query {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  outline: none !important;
+  color: var(--react-autoql-text-color-primary, #356f90);
+  background: var(--react-autoql-background-color-secondary);
+  margin: 0px;
+  padding: 0px;
+  width: 0px;
+  height: 28px;
+  pointer-events: none;
+
+  &.open {
+    width: 200px;
+    padding: 12px;
+    margin-left: 5px;
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    pointer-events: unset;
+  }
+}
+
+.dashboard-tile-input:hover,
+.dashboard-tile-input:focus,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input:hover,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input:focus {
+  border: 1px solid rgb(38, 167, 233) !important;
+  border-color: var(--react-autoql-accent-color) !important;
+}
+.dashboard-tile-input-container .dashboard-tile-input.query,
+.dashboard-tile-input-container .dashboard-tile-autocomplete-input {
+  padding-left: 36px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+.dashboard-tile-input-container .dashboard-tile-input.title {
+  border-left: none;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  z-index: 2;
+}
+.dashboard-tile-input-container .dashboard-tile-input.title:hover,
+.dashboard-tile-input-container .dashboard-tile-input.title:focus,
+.title-focused .dashboard-tile-right-input-container .dashboard-tile-input,
+.dashboard-tile-right-input-container:hover .dashboard-tile-input {
+  /* This is done to balance it because we add a 1px left border when the input is focused or hovered */
+  margin-left: -2px;
+}
+
+/* Autocomplete styles */
+.dashboard-tile-input-container .react-autosuggest__container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+.dashboard-tile-input-container
+  .react-autosuggest__suggestions-container--open {
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion {
+  color: var(--react-autoql-text-color-primary);
+}
+.dashboard-tile-input-container input::placeholder {
+  opacity: 0.5;
+}
+.react-autoql-dashboard .edit-mode-placeholder-icon {
+  display: inline-block;
+  line-height: 22px;
+  vertical-align: middle;
+  height: 23px;
+}
+.dashboard-tile-input-container
+  .react-autosuggest__suggestions-container--open {
+  position: absolute;
+  bottom: unset;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  display: block;
+  height: unset;
+  border-radius: 15px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: normal;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+  text-align: left;
+  width: 100%;
+  top: 35px;
+  border-radius: 4px;
+  margin: 0;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestions-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion {
+  cursor: pointer;
+  padding: 2px;
+  padding-left: 18px;
+  letter-spacing: 0.05em;
+  line-height: 22.5px;
+}
+.dashboard-tile-input-container .react-autosuggest__suggestion--highlighted {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+.dashboard-tile-input-container .react-autosuggest__section-title {
+  padding: 10px 0 0 10px;
+  font-size: 12px;
+  color: var(--react-autoql-text-color-placeholder);
+}
+
+.dashboard-tile-placeholder-text {
+  font-size: 15px;
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
+  padding: 0 10px;
+
+  .play-icon {
+    vertical-align: bottom;
+    line-height: 20px;
+  }
+}
+
+/* React Grid Layout overrides */
+.react-grid-item .react-resizable-handle {
+  z-index: 1;
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  bottom: 4px;
+  right: 4px;
+  opacity: 0;
+  border-right: 1px solid
+    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+  border-bottom: 1px solid
+    var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
+  transition: opacity 0.3s ease;
+  cursor: se-resize;
+}
+
+.react-autoql-dashboard-tile.editing:hover .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-placeholder {
+  background: rgba(0, 0, 0, 0.13) !important;
+}
+
+/* This fixes the flickering bug in RGL when resizing elements */
+.react-draggable-transparent-selection span::selection,
+.react-draggable-transparent-selection div::selection,
+.react-draggable-transparent-selection a::selection,
+.react-draggable-transparent-selection input::selection,
+.react-draggable-transparent-selection text::selection,
+.react-draggable-transparent-selection input::placeholder {
+  color: inherit;
+}
+
+// Splitter styles
+.dashboard-tile-response-container .layout-pane-primary {
+  overflow: hidden;
+}
+.splitter-layout,
+.layout-pane,
+.dashboard-tile-split-pane-container,
+.react-autoql-dashboard-drilldown-original {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+}
+.dashboard-tile-response-container .splitter-layout,
+.dashboard-tile-response-container .layout-pane,
+.dashboard-tile-response-container .dashboard-tile-split-pane-container {
+  background: inherit;
+}
