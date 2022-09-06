@@ -1,0 +1,334 @@
+// required for reverse translation
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+.react-autoql-response-content-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: inherit;
+  font-size: 14px;
+  overflow: hidden;
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  color: var(--react-autoql-text-color-primary);
+
+  a {
+    color: var(--react-autoql-accent-color);
+  }
+
+  .query-output-error-message,
+  .no-columns-error-message,
+  .feedback-message {
+    margin: auto;
+    text-align: center;
+  }
+}
+
+.react-autoql-response-content-container.table {
+  max-height: 100vh !important; // this safety net forces progressive rendering
+  overflow-y: scroll;
+  scrollbar-width: none;
+  margin-bottom: 0 !important;
+  height: 100%;
+  width: 100%;
+}
+.react-autoql-response-content-container.table::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.react-autoql-suggestion-btn {
+  padding: 6px 14px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  margin-bottom: 5px;
+  outline: none !important;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+  color: inherit;
+}
+.react-autoql-suggestion-btn:hover {
+  border-color: transparent;
+  color: var(--react-autoql-text-color-accent);
+  background: var(--react-autoql-accent-color);
+}
+.react-autoql-help-link-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12px;
+  margin-top: 5px;
+  outline: none !important;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+  border-color: #e2e2e26e;
+  color: inherit;
+}
+.react-autoql-help-link-btn:hover {
+  opacity: 0.7;
+}
+.react-autoql-help-link-icon {
+  width: 15px;
+  height: 15px;
+  margin-bottom: -3px;
+  margin-right: 3px;
+}
+.react-autoql-suggestion-message {
+  height: 100%;
+  width: 100%;
+  word-break: break-word;
+
+  .react-autoql-suggestion-message-prefix {
+    margin-bottom: 10px;
+  }
+}
+.react-autoql-suggestions-select {
+  position: relative;
+  display: inline-block;
+  height: 30px;
+  background: none;
+  outline: none !important;
+  border: 1px solid;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  color: #28a8e0;
+  cursor: pointer;
+  font-size: inherit;
+}
+.no-columns-error-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+
+  .warning-icon {
+    font-size: 22px;
+    display: block;
+    margin-bottom: -13px;
+    text-align: center;
+  }
+  .eye-icon {
+    vertical-align: bottom;
+    line-height: 18px;
+  }
+}
+
+.query-output-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  max-height: 150px;
+  width: 100%;
+  margin-top: 10px;
+
+  &.no-margin {
+    margin: 0;
+  }
+}
+
+.dashboard-data-limit-warning-icon {
+  color: var(--react-autoql-warning-color) !important;
+  margin-left: 10px;
+  font-size: 20px;
+}
+
+/* query validation */
+.react-autoql-query-validation-selector-container {
+  display: inline-block;
+  position: relative;
+}
+.react-autoql-select-popup-container.query-validation-select {
+  padding: 5px 0;
+  letter-spacing: 0.03em;
+  font-family: var(--react-autoql-font-family), sans-serif;
+
+  .react-autoql-select-option {
+    height: unset;
+    font-size: 14px;
+    line-height: 24px;
+    padding: 0 15px;
+  }
+  .react-autoql-select-option:last-of-type {
+    color: #d84830;
+  }
+}
+.react-autoql-query-validation-query {
+  text-align: center;
+}
+.react-autoql-query-validation-execute-btn {
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  height: 38px;
+  width: calc(100% - 15px);
+  margin: 5px;
+  margin-top: 24px;
+  color: inherit;
+  cursor: pointer;
+  outline: none !important;
+  transition: all 0.2s ease;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 0px;
+}
+.react-autoql-query-validation-execute-btn:hover {
+  border-color: #28a8e0;
+}
+.react-autoql-execute-query-icon {
+  font-size: 16px;
+  vertical-align: middle !important;
+  padding-right: 3px !important;
+
+  span.react-autoql-icon svg {
+    height: 19px;
+    width: 19px;
+    margin-top: 3px;
+    margin-right: 4px;
+    vertical-align: top;
+    fill: var(--react-autoql-accent-color);
+  }
+}
+.react-autoql-query-validation-select {
+  position: relative;
+  display: inline-block;
+  height: 2em;
+  background: none;
+  outline: none !important;
+  border: none;
+  letter-spacing: 0.05em;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  border-bottom: 1px dashed;
+  color: var(--react-autoql-accent-color);
+}
+.react-autoql-query-validation-delete-button {
+  position: relative;
+  cursor: pointer;
+  margin-bottom: -2px;
+}
+.react-autoql-chart-tooltip {
+  font-family: var(--react-autoql-font-family), sans-serif;
+  letter-spacing: 0.04em;
+  line-height: 22px;
+  font-size: 13px;
+  padding: 7px 15px;
+  transition: all 0.2s ease !important;
+  text-align: left !important;
+  opacity: 1 !important;
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+}
+
+.single-value-response-container {
+  width: 100%;
+  text-align: center;
+
+  .single-value-response {
+    color: inherit;
+    cursor: unset;
+    font-size: 20px;
+    &:hover {
+      color: inherit;
+    }
+  }
+  .single-value-response.with-drilldown:hover {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.react-autoql-query-validation-container {
+  width: 100%;
+}
+.react-autoql-query-validation-description {
+  margin-bottom: 14px;
+}
+
+.context-menu {
+  background: var(--react-autoql-background-color-secondary);
+  /* height: 100px; */
+  width: 150px;
+  padding: 10px 0;
+}
+.context-menu-list {
+  list-style-type: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.context-menu-list li {
+  color: var(--react-autoql-text-color-primary);
+  width: 100%;
+  height: 35px;
+  line-height: 35px;
+  padding: 0 20px;
+  cursor: pointer;
+}
+.context-menu-list li:hover {
+  background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.05));
+}
+
+.react-autoql-condition-link {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--react-autoql-accent-color) !important;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+.react-autoql-condition-link-filtered {
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--react-autoql-accent-color) !important;
+
+  .react-autoql-custom-icon {
+    font-size: 14px;
+    vertical-align: middle;
+    margin-top: -4px;
+  }
+
+  &:hover {
+    opacity: 0.9;
+    border: none !important;
+
+    .react-autoql-custom-icon {
+      opacity: 0.9;
+    }
+  }
+}
+
+.react-autoql-reverse-translation-container {
+  .react-autoql-reverse-translation {
+    color: var(--react-autoql-text-color-primary);
+    background-color: var(--react-autoql-background-color-primary);
+    border-radius: 5px;
+    padding: 5px 13px 5px 13px;
+    height: 100%;
+  }
+}
+
+.report-like-text-button {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  color: #26a7df;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -1,0 +1,583 @@
+.react-autoql-drawer {
+  font-family: var(--react-autoql-font-family), sans-serif;
+  line-height: 22px;
+}
+
+.react-autoql-drawer.disable-selection {
+  user-select: none;
+}
+
+.react-autoql-drawer .react-autoql-drawer-content-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background: var(--react-autoql-background-color-primary);
+  overflow: hidden;
+  border-radius: 4px;
+  flex-direction: column;
+}
+
+.react-autoql-drawer .chat-header-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  height: 60px;
+  background: var(--react-autoql-accent-color);
+  color: var(--react-autoql-text-color-accent);
+  box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
+  flex: 0 0 auto;
+  z-index: 1;
+}
+.react-autoql-drawer .react-autoql-header-left-container {
+  display: flex;
+  justify-content: left;
+  width: 100px;
+  margin-left: 10px;
+}
+.react-autoql-drawer .react-autoql-header-right-container {
+  display: flex;
+  justify-content: right;
+  width: 100px;
+  margin-right: 10px;
+}
+.react-autoql-drawer .react-autoql-header-center-container {
+  position: relative;
+  color: var(--react-autoql-text-color-accent);
+  line-height: 60px;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.react-autoql-drawer .header-title {
+  animation: fadeIn 0.3s;
+}
+
+.react-autoql-drawer .react-autoql-drawer-header-btn {
+  line-height: 1em;
+  font-weight: normal;
+  float: none;
+  opacity: 1;
+
+  &.hidden {
+    display: none;
+  }
+
+  &.close span.react-autoql-icon svg {
+    width: 27px;
+    height: 27px;
+  }
+  &.screen-mode span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &.clear-all span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &.filter-locking span.react-autoql-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.react-autoql-drawer .react-autoql-drawer:focus {
+  outline: none;
+}
+
+.react-autoql-drawer .chat-header-container button {
+  background: transparent;
+  border: none;
+  color: var(--react-autoql-text-color-accent);
+  margin: 10px 0px 10px 0px;
+  margin-right: 0;
+  font-size: 20px;
+  cursor: pointer;
+  outline: none !important;
+}
+
+.react-autoql-drawer .chat-header-container button:hover {
+  opacity: 0.7;
+}
+.react-autoql-drawer .chat-header-container button svg {
+  width: 35px;
+  height: 35px;
+}
+
+.topics-container {
+  margin: 5px 0;
+}
+.intro-qi-link {
+  cursor: pointer;
+  color: var(--react-autoql-accent-color);
+}
+
+/* rc-drawer */
+.react-autoql-drawer {
+  .drawer-content {
+    background: white;
+    border-radius: 4px;
+    overflow: visible;
+
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  &.closed .drawer-content {
+    opacity: 0;
+  }
+
+  .drawer-handle {
+    transition: opacity 0.5s ease;
+    overflow: hidden;
+    width: 50px;
+    height: 50px;
+    border-radius: 50px !important;
+    font-size: 22px;
+
+    &.default-logo {
+      background-color: var(--react-autoql-accent-color, #26a7df);
+      color: var(--react-autoql-text-color-accent);
+
+      .react-autoql-bubbles-outlined {
+        position: absolute;
+        vertical-align: top;
+        top: 11px;
+        left: 12px;
+
+        svg {
+          position: absolute;
+          width: 26px;
+          height: 26px;
+        }
+      }
+    }
+  }
+}
+
+.react-autoql-drawer.drawer-right .drawer-handle {
+  left: -70px !important;
+}
+.react-autoql-drawer.drawer-left .drawer-handle {
+  right: -60px !important;
+}
+.react-autoql-drawer.drawer-top .drawer-handle {
+  bottom: -60px !important;
+}
+.react-autoql-drawer.drawer-bottom .drawer-handle {
+  top: -60px !important;
+}
+.react-autoql-drawer .drawer-handle.hide {
+  opacity: 0;
+  visibility: hidden;
+}
+.react-autoql-drawer .drawer-handle-icon,
+.react-autoql-drawer .drawer-handle-icon::before,
+.react-autoql-drawer .drawer-handle-icon::after {
+  background: var(--react-autoql-text-color-primary);
+}
+.react-autoql-drawer .drawer-bottom .drawer-content-wrapper,
+.react-autoql-drawer .drawer-top .drawer-content-wrapper {
+  left: 0;
+}
+.react-autoql-drawer .drawer-content-wrapper {
+  background: transparent;
+}
+.react-autoql-drawer.drawer-right .drawer-content-wrapper,
+.react-autoql-drawer.drawer-left .drawer-content-wrapper {
+  max-width: calc(100vw - 45px) !important;
+  min-width: 400px !important;
+}
+.react-autoql-drawer.drawer-top .drawer-content-wrapper,
+.react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
+  max-height: calc(100vh - 45px) !important;
+  min-height: 400px !important;
+}
+.react-autoql-drawer-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 2;
+
+  &.right {
+    top: 0;
+    left: -2px;
+    width: 5px;
+    height: 100vh;
+    border-right-color: transparent;
+    border-right-width: 3px;
+    border-right-style: solid;
+    transition: border-right-color 0.2s ease;
+    cursor: ew-resize;
+    &:hover {
+      border-right-color: var(--react-autoql-border-color);
+    }
+  }
+
+  &.left {
+    top: 0;
+    right: -2px;
+    width: 5px;
+    height: 100vh;
+    border-left-color: transparent;
+    border-left-width: 3px;
+    border-left-style: solid;
+    cursor: ew-resize;
+    &:hover {
+      border-left-color: var(--react-autoql-border-color);
+    }
+  }
+
+  &.top {
+    bottom: -2px;
+    left: 0;
+    height: 5px;
+    width: 100vw;
+    border-top-color: transparent;
+    border-top-width: 3px;
+    border-top-style: solid;
+    cursor: ns-resize;
+    &:hover {
+      border-top-color: var(--react-autoql-border-color);
+    }
+  }
+
+  &.bottom {
+    top: -2px;
+    left: 0;
+    height: 5px;
+    width: 100vw;
+    border-bottom-color: transparent;
+    border-bottom-width: 3px;
+    border-bottom-style: solid;
+    cursor: ns-resize;
+    &:hover {
+      border-bottom-color: var(--react-autoql-border-color);
+    }
+  }
+}
+
+/* Tooltips */
+.react-autoql-drawer-tooltip {
+  font-family: var(--react-autoql-font-family), sans-serif;
+  letter-spacing: 0.04em;
+  line-height: 1.5em;
+  padding: 7px 15px;
+  transition: none;
+  text-align: left;
+  opacity: 1 !important;
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+}
+.interpretation-tooltip {
+  font-family: var(--react-autoql-font-family), sans-serif;
+  font-size: 12px;
+  text-align: left;
+  letter-spacing: 0.04em;
+  padding: 7px 15px;
+  max-width: 400px;
+  opacity: 1 !important;
+  transition: none;
+  z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+}
+
+// .react-autoql-condition-lock-menu {
+//   color: var(--react-autoql-text-color-primary);
+//   background: var(--react-autoql-background-color-secondary);
+//   min-height: 300px;
+// }
+
+.react-tiny-popover-container {
+  z-index: 99999;
+  border: 1px solid #ababab52;
+  border-radius: 4px;
+  box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
+  transition: opacity 0.2s ease 0s !important;
+  opacity: 1 !important;
+}
+
+.clear-messages-confirm-popover {
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
+  text-align: right;
+  padding: 18px;
+  width: 266px;
+}
+.react-autoql-confirm-text {
+  text-align: center;
+}
+.react-autoql-menu-text {
+  text-align: center;
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    cursor: pointer;
+  }
+}
+.react-autoql-confirm-icon {
+  color: #faad14 !important;
+  vertical-align: middle;
+  margin-right: 5px !important;
+  margin-bottom: 3px;
+}
+
+.data-messenger-tab-container {
+  position: absolute;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+
+  &.hidden {
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  &.right {
+    height: 100vh;
+    width: 60px;
+    left: -60px;
+  }
+  &.left {
+    height: 100vh;
+    width: 60px;
+    right: -60px;
+  }
+  &.top {
+    width: 100vw;
+    height: 60px;
+    bottom: -60px;
+  }
+  &.bottom {
+    width: 100vw;
+    height: 60px;
+    top: -60px;
+  }
+}
+
+/* Shadow container (this is used to cut off the shadow so it doesnt show in the drawer) */
+.page-switcher-shadow-container {
+  position: absolute;
+  background: transparent;
+  overflow: hidden;
+}
+.page-switcher-shadow-container.right {
+  top: 80px;
+  width: 60px;
+}
+.page-switcher-shadow-container.left {
+  top: 80px;
+  width: 60px;
+}
+
+/* Container holding the tabs */
+.page-switcher-container {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  pointer-events: all;
+
+  .tab {
+    position: relative;
+    z-index: 1;
+
+    background: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-accent);
+    opacity: 1;
+
+    font-size: 22px;
+    text-align: center;
+    transform: translate(0, 0);
+    cursor: pointer;
+
+    transition-property: background, color, transform, line-height, height,
+      width, margin-right, margin-top, margin-left, margin-bottom, z-index,
+      opacity;
+    transition-duration: 0.2s;
+
+    &.react-autoql-explore-queries span.react-autoql-icon svg {
+      height: 22px;
+      width: 23px;
+    }
+
+    .react-autoql-icon.data-search svg {
+      stroke: var(--react-autoql-accent-color);
+      stroke-width: 0.3px;
+    }
+  }
+
+  &.right {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    flex-direction: column;
+
+    .tab {
+      box-shadow: inset -18px 0px 8px -10px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &.left {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    margin-top: 20px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    margin-left: -5px;
+    flex-direction: column;
+
+    .tab {
+      box-shadow: inset 18px 0px 8px -10px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &.top {
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    margin-right: 20px;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    flex-direction: row;
+    height: 40px;
+
+    .tab {
+      box-shadow: inset 0px 12px 8px -10px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &.bottom {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+    flex-direction: row;
+    height: 40px;
+
+    .tab {
+      box-shadow: inset 0px -17px 8px -10px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+/* Individual Tabs */
+.page-switcher-container .tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.data-messenger-notification-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  line-height: inherit;
+}
+.page-switcher-container.right .tab,
+.page-switcher-container.left .tab {
+  height: 65px;
+}
+
+.page-switcher-container.top .tab,
+.page-switcher-container.bottom .tab {
+  width: 65px;
+}
+
+.page-switcher-container.bottom .tab {
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-background-color-primary);
+    stroke-width: 0.3px;
+  }
+}
+.page-switcher-container .tab.active {
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-accent-color);
+  box-shadow: -2px 0px 8px 2px rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+  position: relative;
+  z-index: 2;
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-background-color-primary);
+    stroke-width: 0.3px;
+  }
+}
+.page-switcher-container.bottom .tab.active {
+  background: var(--react-autoql-accent-color);
+  color: var(--react-autoql-text-color-accent);
+  font-weight: bold;
+
+  .react-autoql-icon.data-search svg {
+    stroke: var(--react-autoql-accent-color);
+    stroke-width: 0.3px;
+  }
+}
+
+/* animations */
+@keyframes response-loading1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes response-loading3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes response-loading2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(19px, 0);
+  }
+}
+@keyframes scale-up-center {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes slideDown {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes snackbarFadeout {
+  from {
+    top: 60px;
+    opacity: 1;
+  }
+  to {
+    top: 30px;
+    opacity: 0;
+  }
+}

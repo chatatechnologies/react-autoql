@@ -1,0 +1,277 @@
+{
+  "data": {
+    "reference_id": "29.29.200",
+    "message": "Success",
+    "data": {
+      "id": "ts_a36268545c384dfc9f2045c2b3371a37",
+      "name": "Dialect-staging-topic-set",
+      "created_at": "2022-06-29T20:06:54.039+0000",
+      "topics": [
+        {
+          "id": "tp_dca5a5d9accd4698ad39ea443b220ad5",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Order Flow",
+          "index": 0,
+          "created_at": "2022-06-29T20:06:54.510+0000",
+          "queries": [
+            {
+              "id": "tq_3df4d24653b94105a8b7c2a2fcd09640",
+              "topic_id": "tp_dca5a5d9accd4698ad39ea443b220ad5",
+              "query": "Order flow by contract for AAPL today",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.720+0000"
+            },
+            {
+              "id": "tq_b7689644a3154309bd46db9f685c965d",
+              "topic_id": "tp_dca5a5d9accd4698ad39ea443b220ad5",
+              "query": "Order flow by sector yesterday",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.723+0000"
+            },
+            {
+              "id": "tq_bbe9afc8cea646dbbcdc713e2a0944c4",
+              "topic_id": "tp_dca5a5d9accd4698ad39ea443b220ad5",
+              "query": "Order flow this week for each symbol in Airlines",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.725+0000"
+            },
+            {
+              "id": "tq_341c9516662f4cb4ba2ac936c9a9304c",
+              "topic_id": "tp_dca5a5d9accd4698ad39ea443b220ad5",
+              "query": "Order flow by day for TSLA this week",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.727+0000"
+            }
+          ]
+        },
+        {
+          "id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Trades",
+          "index": 1,
+          "created_at": "2022-06-29T20:06:54.517+0000",
+          "queries": [
+            {
+              "id": "tq_bab80cf59ad1473da0fdc36962df1d78",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "Highest trades in technology this week",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.718+0000"
+            },
+            {
+              "id": "tq_e04255adf7eb4457983b58562a43cea4",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "Bullish trades opening over 1 million",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.720+0000"
+            },
+            {
+              "id": "tq_08dd3cd5ab384d618b8186a294b6e62d",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "Trades over 2 million expiring in 14 days",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.722+0000"
+            },
+            {
+              "id": "tq_fef87ad8d45e4a7386e3287005c983a9",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "Bearish trades this week where volume > open interest",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.724+0000"
+            },
+            {
+              "id": "tq_9285e1a0bc8b43c59891811121cb1334",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "All trades with no open interest with premium over 3 million",
+              "index": 4,
+              "created_at": "2022-06-29T20:06:54.727+0000"
+            },
+            {
+              "id": "tq_883e696b000c4eacb5472f2646a42bff",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "Golden sweeps this week",
+              "index": 5,
+              "created_at": "2022-06-29T20:06:54.729+0000"
+            },
+            {
+              "id": "tq_be9f55380c9144858a4abade01c8f7b0",
+              "topic_id": "tp_8cb310381ffb4357ad892b7e2e763c9a",
+              "query": "All leaps for ETFs over 5 million",
+              "index": 6,
+              "created_at": "2022-06-29T20:06:54.731+0000"
+            }
+          ]
+        },
+        {
+          "id": "tp_16e761ad46774814b4336b3b29c4eacb",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Premium",
+          "index": 2,
+          "created_at": "2022-06-29T20:06:54.686+0000",
+          "queries": [
+            {
+              "id": "tq_b9b116bb683c4176b03525d345286895",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Daily premium by market sentiment for DIS within the last 7 days",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.894+0000"
+            },
+            {
+              "id": "tq_338778665a2b401ebed9ec1c4e6b0cd6",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Total premium by market sentiment for TSLA this week",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.895+0000"
+            },
+            {
+              "id": "tq_4713e334d371409f8c33e11b51295ce2",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Total premium by putcall by market sentiment for TSLA this month",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.897+0000"
+            },
+            {
+              "id": "tq_bc13bb165abc4e87bf6d2e6b9e311307",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Total premium for AAPL by putcall by placement this week",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.898+0000"
+            },
+            {
+              "id": "tq_c73e157da94143f6869b62a129a1b0fb",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Total premium by market sentiment by sector yesterday",
+              "index": 4,
+              "created_at": "2022-06-29T20:06:54.900+0000"
+            },
+            {
+              "id": "tq_1c21b1d257ad4a4ab5df70b6fc95661f",
+              "topic_id": "tp_16e761ad46774814b4336b3b29c4eacb",
+              "query": "Total premium for QQQ by putcall by dtx this week",
+              "index": 5,
+              "created_at": "2022-06-29T20:06:54.902+0000"
+            }
+          ]
+        },
+        {
+          "id": "tp_14c695838e194e4b8005fbfb9750b996",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Equity",
+          "index": 3,
+          "created_at": "2022-06-29T20:06:54.516+0000",
+          "queries": [
+            {
+              "id": "tq_79d828f177be40879cc4ba2b6da7b297",
+              "topic_id": "tp_14c695838e194e4b8005fbfb9750b996",
+              "query": "All equity trades over 2 million today",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.718+0000"
+            },
+            {
+              "id": "tq_a83ca7a4107e49a591a60807e7053ed4",
+              "topic_id": "tp_14c695838e194e4b8005fbfb9750b996",
+              "query": "Top darkpool equity trades today",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.720+0000"
+            },
+            {
+              "id": "tq_cf6f072886a549289edb3de8fbd6602b",
+              "topic_id": "tp_14c695838e194e4b8005fbfb9750b996",
+              "query": "All darkpool equity trades on TSLA today",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.724+0000"
+            },
+            {
+              "id": "tq_bbfde27806f5443fa37dab269831f7bb",
+              "topic_id": "tp_14c695838e194e4b8005fbfb9750b996",
+              "query": "How many darkpool trades were on AAPL today",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.725+0000"
+            },
+            {
+              "id": "tq_56c7b0f2b00f405fa9508ef53f8e1a0c",
+              "topic_id": "tp_14c695838e194e4b8005fbfb9750b996",
+              "query": "Total darkpool equity amount for each symbol in Airlines yesterday",
+              "index": 4,
+              "created_at": "2022-06-29T20:06:54.727+0000"
+            }
+          ]
+        },
+        {
+          "id": "tp_4a944098b07a48c1a8ef346e07ec4dac",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Ratios and Percent",
+          "index": 4,
+          "created_at": "2022-06-29T20:06:54.507+0000",
+          "queries": [
+            {
+              "id": "tq_2b122a99a69f4e32a3380f3a7d3e7098",
+              "topic_id": "tp_4a944098b07a48c1a8ef346e07ec4dac",
+              "query": "Sentiment for each symbol in semiconductors",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.717+0000"
+            },
+            {
+              "id": "tq_e5f232c738d04cfeb1a28a001ebb078f",
+              "topic_id": "tp_4a944098b07a48c1a8ef346e07ec4dac",
+              "query": "Placement percent for AAPL each day this week",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.720+0000"
+            },
+            {
+              "id": "tq_4e4a15e5f12c4b048ad16336c9f5e0b2",
+              "topic_id": "tp_4a944098b07a48c1a8ef346e07ec4dac",
+              "query": "Putcall premium percent for AAPL this week",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.722+0000"
+            },
+            {
+              "id": "tq_62deaa893ae04873801ebdbc5164b2b5",
+              "topic_id": "tp_4a944098b07a48c1a8ef346e07ec4dac",
+              "query": "Putcall order percent for TSLA this week",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.724+0000"
+            }
+          ]
+        },
+        {
+          "id": "tp_74fcc964ca1248edbbcd838e0d4c1e36",
+          "topic_set_id": "ts_a36268545c384dfc9f2045c2b3371a37",
+          "name": "Volume and Open Interest",
+          "index": 5,
+          "created_at": "2022-06-29T20:06:54.510+0000",
+          "queries": [
+            {
+              "id": "tq_7b9a5efb89e844cb845eb53f710429a0",
+              "topic_id": "tp_74fcc964ca1248edbbcd838e0d4c1e36",
+              "query": "Top contracts by total volume on AAPL",
+              "index": 0,
+              "created_at": "2022-06-29T20:06:54.719+0000"
+            },
+            {
+              "id": "tq_df867638e79241349e38cc2cdb48fb4b",
+              "topic_id": "tp_74fcc964ca1248edbbcd838e0d4c1e36",
+              "query": "Which contracts for SPY have the most open interest",
+              "index": 1,
+              "created_at": "2022-06-29T20:06:54.721+0000"
+            },
+            {
+              "id": "tq_ce0bb1170ece4c03b7f3d1bdf15a6935",
+              "topic_id": "tp_74fcc964ca1248edbbcd838e0d4c1e36",
+              "query": "Change in open interest for TSLA today",
+              "index": 2,
+              "created_at": "2022-06-29T20:06:54.724+0000"
+            },
+            {
+              "id": "tq_81bf4152ee2f42ad85b427b4355d6159",
+              "topic_id": "tp_74fcc964ca1248edbbcd838e0d4c1e36",
+              "query": "Highest change in volume for TSLA this week",
+              "index": 3,
+              "created_at": "2022-06-29T20:06:54.725+0000"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

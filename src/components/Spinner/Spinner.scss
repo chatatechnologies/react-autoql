@@ -1,0 +1,26 @@
+.spinner-loader {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+}
+.spinner-loader:after {
+  content: ' ';
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  border-color: currentColor transparent currentColor transparent;
+  animation: spinner-loader 1.2s linear infinite;
+}
+
+@keyframes spinner-loader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

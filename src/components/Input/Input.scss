@@ -1,0 +1,51 @@
+.react-autoql-input-container {
+  position: relative;
+  margin: 2px 5px;
+  display: inline-block;
+
+  .react-autoql-input {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    line-height: 32px;
+    min-height: 34px;
+    padding: 0 10px;
+    width: 100%;
+    outline: none !important;
+    transition: all 0.2s ease;
+    transition-property: border-color, color, opacity;
+
+    &.with-icon {
+      padding-left: 38px;
+    }
+
+    &::placeholder {
+      /* Chrome, Firefox, Opera, Safari 10.1+ */
+      color: rgba(0, 0, 0, 0.2);
+      opacity: 1; /* Firefox */
+      font-style: italic;
+    }
+  }
+
+  .react-autoql-input-icon {
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    opacity: 0.4;
+    transition: all 0.2s ease;
+
+    span.react-autoql-icon svg {
+      height: 17px;
+      width: 17px;
+    }
+  }
+
+  &:hover .react-autoql-input,
+  .react-autoql-input:focus {
+    border-color: var(--react-autoql-accent-color, #26a7df);
+  }
+  &:hover .react-autoql-input-icon,
+  .react-autoql-input-icon.focus {
+    opacity: 1;
+    color: var(--react-autoql-accent-color, #26a7df);
+  }
+}

@@ -1,0 +1,304 @@
+.react-autoql-notification-list-item {
+  display: flex;
+  flex-direction: column;
+  flex-basis: auto;
+
+  position: relative;
+  overflow: hidden;
+  background: var(--react-autoql-background-color-secondary, #fff);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
+
+  margin-bottom: 8px;
+
+  color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
+  font-family: var(--react-autoql-font-family), sans-serif;
+
+  transition: all 1s ease;
+  transition: height 0.3s cubic-bezier(0.26, 0.26, 0, 1);
+  animation: slideIn 0.5s cubic-bezier(0.26, 0.26, 0, 1);
+  animation-fill-mode: both;
+  animation-delay: 0s;
+
+  .single-value-response {
+    font-size: 32px;
+    margin-top: -6px;
+    opacity: 0.9;
+  }
+
+  .viz-toolbar {
+    border: none;
+
+    .react-autoql-toolbar-btn {
+      height: 33px;
+    }
+  }
+
+  .react-autoql-notification-details-title {
+    font-weight: 600;
+    padding-top: 20px;
+    padding-bottom: 5px;
+  }
+
+  &.expanded .react-autoql-notification-list-item-header {
+    border-bottom: 1px solid
+      var(--react-autoql-border-color, rgba(0, 0, 0, 0.04));
+  }
+
+  .react-autoql-notification-details {
+    overflow: hidden;
+  }
+  &.animation-complete .react-autoql-notification-details {
+    overflow: auto;
+  }
+
+  &:hover {
+    &:not(.expanded) {
+      background-color: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.01));
+    }
+
+    .react-autoql-notification-delete-icon {
+      opacity: 1;
+    }
+  }
+
+  &.triggered {
+    .react-autoql-notification-display-name {
+      color: var(--react-autoql-accent-color, #26a7df) !important;
+    }
+
+    .react-autoql-notification-dismiss-btn {
+      margin-top: 3px;
+      color: var(--react-autoql-accent-color, #26a7df);
+    }
+
+    .react-autoql-notification-alert-strip {
+      opacity: 1;
+    }
+  }
+
+  .react-autoql-notification-expanded-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    transition: height 0.2s ease;
+    height: 0;
+    opacity: 0;
+    &.visible {
+      height: 400px;
+      opacity: 1;
+    }
+  }
+
+  .react-autoql-notification-extra-content {
+    flex: 0;
+    flex-basis: 55px;
+
+    text-align: center;
+    padding: 8px;
+    border-top: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+
+    .notification-deleted-text {
+      line-height: 40px;
+      opacity: 0.6;
+      font-style: italic;
+    }
+  }
+
+  .react-autoql-notification-description {
+    color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
+    opacity: 0.8;
+    font-size: 14px;
+  }
+
+  .react-autoql-notification-list-item-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-left: 22px;
+    cursor: pointer;
+  }
+
+  .react-autoql-notification-query-title {
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-family: inherit;
+    color: currentcolor;
+    opacity: 0.9;
+    font-weight: 600;
+    border-bottom: 1px solid
+      var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    text-align: center;
+    margin: 0 10px;
+    padding-top: 20px;
+    padding-bottom: 7px;
+  }
+  .react-autoql-notification-details-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: stretch;
+    overflow: hidden;
+
+    .react-autoql-notification-details {
+      flex: 1 1;
+      padding: 20px;
+      padding-top: 0;
+      opacity: 0.9;
+      border-left: 1px solid
+        var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+    }
+  }
+
+  .react-autoql-notification-data-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: stretch;
+    flex: 3 3 0px;
+    overflow: hidden;
+
+    .react-autoql-notificaton-chart-container {
+      flex: 1;
+      height: 100%;
+      width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0px 20px 10px 20px;
+    }
+
+    .react-autoql-table-container {
+      padding: 0 10px;
+    }
+    .react-autoql-table {
+      opacity: 0.9;
+      color: currentColor;
+      font-size: 11px;
+    }
+  }
+
+  .react-autoql-notification-data-title {
+    line-height: 22px;
+    font-size: 12px;
+    text-align: right;
+    color: var(--react-autoql-text-color-primary);
+    opacity: 0.5;
+    padding: 8px 20px;
+
+    span.react-autoql-icon svg {
+      margin-top: -3px;
+      vertical-align: middle;
+    }
+  }
+
+  .react-autoql-notification-dismiss-icon {
+    font-size: 21px;
+    margin: 11px;
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+    border-radius: 26px;
+
+    display: inline-block;
+    line-height: 20px;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--react-autoql-background-color-primary, #ececec);
+    }
+  }
+
+  .react-autoql-notification-delete-icon {
+    font-size: 18px;
+    margin-top: 3px;
+    margin-right: 3px;
+    opacity: 0;
+
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    border-radius: 20px;
+
+    display: inline-block;
+    line-height: 20px;
+    background-color: transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--react-autoql-background-color-primary, #ececec);
+    }
+  }
+
+  .react-autoql-notification-alert-icon {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    color: var(--react-autoql-accent-color, #26a7df);
+    line-height: 10px;
+    background: var(--react-autoql-background-color-secondary, #fff);
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .react-autoql-notification-alert-strip {
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    left: 0px;
+    top: 0;
+    width: 4px;
+
+    background: var(--react-autoql-accent-color, #26a7df);
+    color: var(--react-autoql-text-color-accent);
+
+    transition-property: opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+  }
+
+  .react-autoql-notification-viz-switcher {
+    flex: 0 0 50px;
+    padding: 10px;
+    border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.05));
+  }
+
+  .react-autoql-notification-img-container {
+    flex: 0 0 60px;
+
+    .react-autoql-notification-img {
+      border-radius: 50px;
+      height: 45px;
+      width: 45px;
+      line-height: 45px;
+      font-size: 22px;
+      color: var(--react-autoql-text-color-accent);
+      background-color: var(--react-autoql-accent-color, #26a7df);
+      text-align: center;
+      margin-top: 13px;
+      margin-right: 17px;
+    }
+  }
+
+  .react-autoql-notification-display-name-container {
+    flex: 1;
+    line-height: 23px;
+    padding: 13px 0px;
+    transition: color 0.2s ease;
+
+    .react-autoql-notification-display-name {
+      font-size: 18px;
+      color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
+    }
+    .react-autoql-notification-timestamp {
+      font-size: 12px;
+      opacity: 0.5;
+
+      span.react-autoql-icon svg {
+        margin-bottom: -1px;
+      }
+    }
+  }
+}
