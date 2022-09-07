@@ -25,7 +25,8 @@
     "dev": "npm run watch devscript",
     "devscript": "export NODE_ENV=dev && npm run build",
     "packexample": "cd example/package && npm pack ../..",
-    "test": "NODE_ENV=test && jest --silent=false",
+    "test": "jest --silent=false",
+    "test:changed": "jest --onlyChanged",
     "test:watch": "jest --watch",
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
@@ -185,8 +186,8 @@
     "semantic-release": "^19.0.3"
   },
   "peerDependencies": {
-    "react": ">=16.9.0",
-    "react-dom": ">=16.9.0"
+    "react": ">=16.8.1",
+    "react-dom": ">=16.8.1"
   },
   "engines": {
     "node": "14.17.3",

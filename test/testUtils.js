@@ -1,5 +1,9 @@
 import checkPropTypes from 'check-prop-types'
 
+export const currentEventLoopEnd = () => {
+  return new Promise((resolve) => process.nextTick(resolve))
+}
+
 export const findByTestAttr = (wrapper, val) =>
   wrapper.find(`[data-test='${val}']`)
 
@@ -13,7 +17,7 @@ export const checkProps = (component, conformingProps) => {
   expect(propError).toBeUndefined()
 }
 
-export const ignoreConsoleErrors = callback => {
+export const ignoreConsoleErrors = (callback) => {
   const originalError = console.error
   console.error = jest.fn()
   callback()
