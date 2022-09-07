@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Popover from 'react-tiny-popover'
+import ReactTooltip from 'react-tooltip'
 
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -30,7 +31,6 @@ export default class FilterLockPopover extends React.Component {
     isOpen: false,
     position: 'bottom',
     align: 'center',
-    rebuildTooltips: () => {},
     onClose: () => {},
     onChange: () => {},
   }
