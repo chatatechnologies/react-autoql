@@ -85,7 +85,6 @@
     margin-top: 3px;
     margin-bottom: 5px;
     color: var(--react-autoql-text-color-primary);
-    display: inline-flex;
   }
 
   .react-autoql-filter-lock-list-loading-container,
@@ -151,6 +150,7 @@
         padding-top: 1px;
         max-width: 195px;
         overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .filter-name-column {
