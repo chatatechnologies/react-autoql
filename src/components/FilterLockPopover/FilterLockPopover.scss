@@ -178,7 +178,7 @@
     }
 
     .react-autoql-filter-list-item-container {
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       padding-right: 15px;
 
       .react-autoql-filter-list-item {
@@ -186,6 +186,7 @@
         flex-direction: row;
         justify-content: space-between;
         flex-wrap: nowrap;
+        padding-bottom: 4px;
 
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
