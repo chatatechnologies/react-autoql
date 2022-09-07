@@ -79,13 +79,14 @@ export default class Checkbox extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-checkbox-container ${this.props.className}`}
-          data-test="react-autoql-checkbox"
+          data-test="react-autoql-checkbox-container"
           style={this.props.style}
         >
           <div className={checkboxClassname}>
             <input
               {...nativeProps}
               type="checkbox"
+              data-test="react-autoql-checkbox"
               className={inputClassname}
               ref={(el) => (this.selector = el)}
               id={this.ID}
