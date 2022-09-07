@@ -64,7 +64,6 @@ export default class FilterLockPopover extends React.Component {
     themeConfig: themeConfigDefault,
 
     isOpen: false,
-    rebuildTooltips: () => {},
     onClose: () => {},
     onChange: () => {},
   }
@@ -77,7 +76,7 @@ export default class FilterLockPopover extends React.Component {
   componentDidUpdate = (prevProps, prevState) => {
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
-      this.props.rebuildTooltips()
+      this.rebuildTooltips()
     }
 
     if (!this.props.isOpen && prevProps.isOpen) {
@@ -92,6 +91,19 @@ export default class FilterLockPopover extends React.Component {
     clearTimeout(this.highlightFilterEndTimeout)
     clearTimeout(this.highlightFilterStartTimeout)
     clearTimeout(this.savingIndicatorTimeout)
+  }
+
+  rebuildTooltips = (delay = 500) => {
+    if (this.props.rebuildTooltips) {
+      this.props.rebuildTooltips(delay)
+    } else {
+      if (this.rebuildTooltipsTimer) {
+        clearTimeout(this.rebuildTooltipsTimer)
+      }
+      this.rebuildTooltipsTimer = setTimeout(() => {
+        ReactTooltip.rebuild()
+      }, delay)
+    }
   }
 
   showSavingIndicator = () => {
@@ -187,7 +199,6 @@ export default class FilterLockPopover extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    console.log('suggestions fetch requested')
     clearTimeout(this.autoCompleteTimer)
     this.autoCompleteTimer = setTimeout(() => {
       fetchVLAutocomplete({
@@ -375,7 +386,6 @@ export default class FilterLockPopover extends React.Component {
       ?.filter_type?.toUpperCase()
 
     if (value === currentCategoryType) {
-      console.log('value didnt change')
       return
     }
 
@@ -424,7 +434,6 @@ export default class FilterLockPopover extends React.Component {
   }
 
   onInputChange = (e, { newValue, method }) => {
-    console.log('INPUT CHANGED', { newValue, method })
     if (method === 'up' || method === 'down') {
       return
     }
@@ -566,8 +575,8 @@ export default class FilterLockPopover extends React.Component {
             options={['INCLUDE', 'EXCLUDE']}
             data-test="include-exclude-toggle-group"
             tooltips={[
-              'Only show results with these values',
-              'Show results without these values',
+              'Only show results <strong>with</strong> these values',
+              'Show results <strong>without</strong> these values',
             ]}
             tooltipId="filter-locking-tooltip"
             value={toggleButtonValue}
@@ -575,24 +584,24 @@ export default class FilterLockPopover extends React.Component {
             onChange={(value) => this.handleExcludeToggle(category, value)}
           />
         </div>
-        {/* {i === 0 ? ( */}
-        <div className="persist-toggle-column">
-          <h4>
-            <span>Persist </span>
-          </h4>
+        {i === 0 ? (
+          <div className="persist-toggle-column">
+            <h4>
+              <span>Persist </span>
+            </h4>
 
-          <Icon
-            type="info"
-            data-place="left"
-            data-for="filter-locking-tooltip"
-            data-tip="
+            <Icon
+              type="info"
+              data-place="left"
+              data-for="filter-locking-tooltip"
+              data-tip="
                 Persistent filters remain locked at all<br />
                 times, unless the filter is removed. If<br />
                 unchecked, the filter will be locked<br />
                 until you end your browser session."
-          />
-        </div>
-        {/* ) : null} */}
+            />
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -683,6 +692,13 @@ export default class FilterLockPopover extends React.Component {
           limit={1}
           theme={getThemeConfig(this.props.themeConfig).theme}
         />
+        <ReactTooltip
+          className="react-autoql-drawer-tooltip"
+          id="filter-locking-tooltip"
+          effect="solid"
+          place="top"
+          html
+        />
         <div
           className="filter-lock-menu-content"
           onClick={(e) => e.stopPropagation()}
@@ -690,13 +706,6 @@ export default class FilterLockPopover extends React.Component {
           {this.renderHeader()}
           {this.renderVLInput()}
           {this.renderFilterList()}
-          <ReactTooltip
-            className="react-autoql-drawer-tooltip"
-            id="filter-locking-tooltip"
-            effect="solid"
-            place="top"
-            html
-          />
         </div>
       </ErrorBoundary>
     )
