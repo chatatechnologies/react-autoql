@@ -569,7 +569,14 @@ export default class FilterLockPopover extends React.Component {
     return (
       <div className="react-autoql-filter-list-title">
         <div className="filter-name-column">
-          <h4 className="filter-lock-category-title">{category}</h4>
+          <h4
+            className="filter-lock-category-title"
+            data-for="filter-locking-tooltip"
+            data-delay-show={800}
+            data-tip={category}
+          >
+            {category}
+          </h4>
           <Radio
             className="include-exclude-toggle-group"
             options={['INCLUDE', 'EXCLUDE']}
