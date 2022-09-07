@@ -23,13 +23,8 @@ import {
   fetchFilters,
 } from '../../js/queryService'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-  getThemeConfig,
-  themeConfigDefault,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import { lang } from '../../js/Localization'
 
@@ -51,7 +46,6 @@ export default class FilterLockPopover extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
@@ -61,7 +55,6 @@ export default class FilterLockPopover extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     isOpen: false,
     onClose: () => {},
@@ -697,7 +690,7 @@ export default class FilterLockPopover extends React.Component {
           pauseOnHover={false}
           closeButton={false}
           limit={1}
-          theme={getThemeConfig(this.props.themeConfig).theme}
+          //   theme={getTheme()}
         />
         <ReactTooltip
           className="react-autoql-drawer-tooltip"
