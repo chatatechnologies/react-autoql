@@ -54,6 +54,8 @@ export default class CustomScrollbars extends React.Component {
         renderView={this.renderView}
         autoHide={this.props.autoHide}
         autoHeight={this.props.autoHeight}
+        autoHeightMin={100}
+        autoHeightMax="100%"
         renderThumbVertical={this.renderThumbVertical}
         renderThumbHorizontal={this.renderThumbHorizontal}
       >
