@@ -372,21 +372,22 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
 
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
-    if (maxValue === minValue) {
-      if (minValue > 0) {
-        minValue = 0
-      } else if (maxValue < 0) {
-        maxValue = 0
-      }
-    }
+    // Use this if block below is commented out
+    // if (maxValue === minValue) {
+    //   if (minValue > 0) {
+    //     minValue = 0
+    //   } else if (maxValue < 0) {
+    //     maxValue = 0
+    //   }
+    // }
 
     // Always show 0 on the y axis
     // Keep this for future use
-    // if (maxValue > 0 && minValue > 0) {
-    //   minValue = 0
-    // } else if (maxValue < 0 && minValue < 0) {
-    //   maxValue = 0
-    // }
+    if (maxValue > 0 && minValue > 0) {
+      minValue = 0
+    } else if (maxValue < 0 && minValue < 0) {
+      maxValue = 0
+    }
 
     return {
       minValue,
