@@ -755,14 +755,14 @@ export default class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = (
+  onChartClick = ({
     row,
     columnIndex,
     columns,
     stringColumnIndex,
     legendColumn,
-    activeKey
-  ) => {
+    activeKey,
+  }) => {
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1873,7 +1873,6 @@ export default class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
-          isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
