@@ -90,7 +90,7 @@ export default class Button extends React.Component {
           {this.props.children}
         </button>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id={this.COMPONENT_KEY}
           effect="solid"
           delayShow={500}

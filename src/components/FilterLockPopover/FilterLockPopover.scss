@@ -6,12 +6,12 @@
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   opacity: 1;
   min-width: 450px;
-  max-width: 70vw;
-  min-height: 350px;
-  max-height: 90vh;
+  max-width: 95vw;
+  min-height: 0px;
+  max-height: 95vh;
+  height: 350px;
   background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
-  overflow-y: auto !important;
 
   .filter-lock-toast-container {
     top: 0;
@@ -69,10 +69,6 @@
   width: 100%;
   box-sizing: border-box;
 
-  & > div {
-    padding-right: 15px;
-  }
-
   &.closed {
     opacity: 0;
   }
@@ -90,9 +86,19 @@
   }
 
   .react-autoql-filter-lock-list-loading-container,
+  .react-autoql-empty-filter-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    padding-right: 20px;
+    padding-bottom: 45px;
+  }
+
+  .react-autoql-filter-lock-list-loading-container,
   .react-autoql-empty-filter-list,
   .react-autoql-filter-list-container {
-    flex: 1 0 245px;
+    flex: 1;
   }
 
   .filter-lock-menu-header {
@@ -104,6 +110,7 @@
     justify-content: space-between;
     padding-bottom: 15px;
     box-sizing: border-box;
+    padding-right: 15px;
 
     .filter-locking-close-btn {
       border: none;
@@ -126,16 +133,9 @@
     justify-content: flex-end;
   }
 
-  .react-autoql-empty-filter-list {
-    opacity: 0.8;
-    width: 100%;
-    text-align: center;
-    padding-top: 70px;
-  }
-
   .react-autoql-filter-list-container {
-    padding-top: 15px;
-    padding-right: 0;
+    margin-top: 15px;
+    margin-right: 0;
     overflow: hidden;
 
     .react-autoql-filter-list-title {
@@ -171,8 +171,8 @@
         align-items: center;
         justify-content: flex-end;
         flex: 0 0 auto;
+        margin-right: 40px;
 
-        margin-right: 25px;
         .react-autoql-icon {
           margin-left: 3px;
         }
@@ -181,14 +181,21 @@
 
     .react-autoql-filter-list-item-container {
       margin-bottom: 10px;
-      padding-right: 15px;
+      margin-right: 0px;
 
       .react-autoql-filter-list-item {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         flex-wrap: nowrap;
-        padding-bottom: 4px;
+
+        padding-right: 10px;
+        margin-bottom: 1px;
+        margin-top: 1px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+        padding-left: 5px;
+        margin-right: 10px;
 
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
@@ -251,6 +258,9 @@
   }
 
   // ------------------- Autocomplete styles -------------------
+  .react-autosuggest__container {
+    margin-right: 20px;
+  }
   .react-autosuggest__container--open {
     position: relative;
 
@@ -268,20 +278,23 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
       text-align: left;
       border-radius: 4px;
-      height: auto;
       width: 100%;
-      // overflow-y: scroll !important;
+      height: auto;
+      max-height: calc(90vh - 180px);
+      box-sizing: border-box;
+      overflow: hidden;
 
-      ul.filter-lock-suggestion-item {
+      .filter-lock-suggestion-item {
         cursor: pointer;
         width: 100%;
-        columns: 2;
-        -webkit-columns: 2;
-        list-style: none;
-        -moz-columns: 2;
         letter-spacing: 0.05em;
         line-height: 22.5px;
         padding: 0px 20px 3px 20px;
+        box-sizing: border-box;
+        line-height: inherit;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .react-autosuggest__suggestion {
@@ -319,9 +332,11 @@
   100% {
     background-color: var(--react-autoql-accent-color);
     color: var(--react-autoql-accent-text-color);
+    opacity: 0.8;
   }
   0% {
     background-color: var(--react-autoql-background-color-primary);
     color: var(--react-autoql-text-color-primary);
+    opacity: 1;
   }
 }

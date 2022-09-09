@@ -2183,7 +2183,7 @@ export default class QueryOutput extends React.Component {
           {this.renderFooter()}
         </div>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           place="left"
