@@ -82,13 +82,11 @@ export default class ChataChart extends Component {
   componentDidMount = () => {
     // The first render is to determine the chart size based on its parent container
     this.firstRender = false
-    if (!this.props.isResizing && !this.props.isAnimatingContainer) {
+    if (!this.props.isResizing) {
       this.forceUpdate()
     }
 
-    if (this.props.isAnimatingContainer) {
-      this.rebuildTooltips(1000)
-    } else {
+    if (!this.props.isResizing) {
       this.rebuildTooltips()
     }
   }
@@ -135,6 +133,7 @@ export default class ChataChart extends Component {
         this.chartContainerRef.style.flexBasis = '100vh'
         shouldForceUpdate = true
       }
+      this.rebuildTooltips()
     }
 
     if (this.props.type !== prevProps.type) {
@@ -642,17 +641,13 @@ export default class ChataChart extends Component {
           ref={(r) => (this.chartContainerRef = r)}
           data-test="react-autoql-chart"
           className={`react-autoql-chart-container ${
-            this.state.isLoading ||
-            this.props.isAnimatingContainer ||
-            this.props.isResizing
-              ? 'loading'
-              : ''
+            this.state.isLoading || this.props.isResizing ? 'loading' : ''
           }`}
           style={{
             flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
           }}
         >
-          {!this.firstRender && !this.props.isAnimatingContainer && (
+          {!this.firstRender && !this.props.isResizing && (
             <Fragment>
               <svg
                 ref={(r) => (this.chartRef = r)}

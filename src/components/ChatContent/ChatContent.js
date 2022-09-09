@@ -358,6 +358,7 @@ export default class ChatContent extends React.Component {
                   originalQueryID={message.originalQueryID}
                   scrollRef={this.messengerScrollComponent?.ref}
                   isDataMessengerOpen={this.props.isDataMessengerOpen}
+                  isVisibleInDOM={this.props.shouldRender}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
                   onDrilldownStart={this.onDrilldownStart}
