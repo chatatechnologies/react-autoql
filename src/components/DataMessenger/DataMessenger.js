@@ -824,6 +824,10 @@ export default class DataMessenger extends React.Component {
   }
 
   renderDPRContent = () => {
+    if (!this.props.enableDPRTab) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <ChatContent
@@ -858,71 +862,88 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderDataExplorerContent = () => (
-    <ErrorBoundary>
-      <DataExplorer
-        ref={(r) => (this.dataExplorerRef = r)}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
-        dataFormatting={this.props.dataFormatting}
-        rebuildTooltips={this.rebuildTooltips}
-        shouldRender={
-          this.state.activePage === 'data-explorer' && this.isOpen()
-        }
-        executeQuery={(query) => {
-          this.setState({ activePage: 'data-messenger' })
-          clearTimeout(this.executeQueryTimeout)
-          this.executeQueryTimeout = setTimeout(() => {
-            this.dataMessengerContentRef?.animateInputTextAndSubmit({
-              query,
-              source: ['data_explorer'],
-            })
-          }, 500)
-        }}
-      />
-    </ErrorBoundary>
-  )
+  renderDataExplorerContent = () => {
+    if (!this.props.enableDataExplorerTab) {
+      return null
+    }
 
-  renderExploreQueriesContent = () => (
-    <ErrorBoundary>
-      <ExploreQueries
-        ref={(r) => (this.exploreQueriesRef = r)}
-        authentication={this.props.authentication}
-        shouldRender={
-          this.state.activePage === 'explore-queries' && this.isOpen()
-        }
-        executeQuery={(query) => {
-          this.setState({ activePage: 'data-messenger' })
-          clearTimeout(this.executeQueryTimeout)
-          this.executeQueryTimeout = setTimeout(() => {
-            this.dataMessengerContentRef?.animateInputTextAndSubmit({
-              query,
-              source: ['explore_queries'],
-            })
-          }, 500)
-        }}
-      />
-    </ErrorBoundary>
-  )
+    return (
+      <ErrorBoundary>
+        <DataExplorer
+          ref={(r) => (this.dataExplorerRef = r)}
+          authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
+          dataFormatting={this.props.dataFormatting}
+          rebuildTooltips={this.rebuildTooltips}
+          shouldRender={
+            this.state.activePage === 'data-explorer' && this.isOpen()
+          }
+          executeQuery={(query) => {
+            this.setState({ activePage: 'data-messenger' })
+            clearTimeout(this.executeQueryTimeout)
+            this.executeQueryTimeout = setTimeout(() => {
+              this.dataMessengerContentRef?.animateInputTextAndSubmit({
+                query,
+                source: ['data_explorer'],
+              })
+            }, 500)
+          }}
+        />
+      </ErrorBoundary>
+    )
+  }
 
-  renderNotificationsContent = () => (
-    <ErrorBoundary>
-      <NotificationFeed
-        ref={(ref) => (this.notificationListRef = ref)}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
-        onExpandCallback={this.props.onNotificationExpandCallback}
-        onCollapseCallback={this.props.onNotificationCollapseCallback}
-        activeNotificationData={this.props.activeNotificationData}
-        onErrorCallback={this.props.onErrorCallback}
-        onSuccessCallback={this.props.onSuccessCallback}
-        showNotificationDetails={false}
-        shouldRender={
-          this.isOpen() && this.state.activePage === 'notifications'
-        }
-      />
-    </ErrorBoundary>
-  )
+  renderExploreQueriesContent = () => {
+    if (!this.props.enableExploreQueriesTab) {
+      return null
+    }
+    return (
+      <ErrorBoundary>
+        <ExploreQueries
+          ref={(r) => (this.exploreQueriesRef = r)}
+          authentication={this.props.authentication}
+          shouldRender={
+            this.state.activePage === 'explore-queries' && this.isOpen()
+          }
+          executeQuery={(query) => {
+            this.setState({ activePage: 'data-messenger' })
+            clearTimeout(this.executeQueryTimeout)
+            this.executeQueryTimeout = setTimeout(() => {
+              this.dataMessengerContentRef?.animateInputTextAndSubmit({
+                query,
+                source: ['explore_queries'],
+              })
+            }, 500)
+          }}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  renderNotificationsContent = () => {
+    if (!this.props.enableNotificationsTab) {
+      return null
+    }
+
+    return (
+      <ErrorBoundary>
+        <NotificationFeed
+          ref={(ref) => (this.notificationListRef = ref)}
+          authentication={this.props.authentication}
+          themeConfig={this.props.themeConfig}
+          onExpandCallback={this.props.onNotificationExpandCallback}
+          onCollapseCallback={this.props.onNotificationCollapseCallback}
+          activeNotificationData={this.props.activeNotificationData}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessCallback={this.props.onSuccessCallback}
+          showNotificationDetails={false}
+          shouldRender={
+            this.isOpen() && this.state.activePage === 'notifications'
+          }
+        />
+      </ErrorBoundary>
+    )
+  }
 
   resizeDrawer = (e) => {
     const { placement } = this.state

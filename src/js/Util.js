@@ -1129,11 +1129,9 @@ export const handleTooltipBoundaryCollision = (e, self) => {
   const { tooltipRef } = self.reactTooltipRef
 
   if (!tooltipRef) {
-    console.log('there was no ref, returning')
     return
   }
 
-  const targetRect = target.getBoundingClientRect()
   const rect = tooltipRef.getBoundingClientRect()
 
   const overflownLeft = rect.left < 0
