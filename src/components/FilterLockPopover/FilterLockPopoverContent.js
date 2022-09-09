@@ -31,6 +31,7 @@ import {
 } from '../../props/defaults'
 
 import { lang } from '../../js/Localization'
+import { handleTooltipBoundaryCollision } from '../../js/Util'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -745,6 +746,8 @@ export default class FilterLockPopover extends React.Component {
           theme={getThemeConfig(this.props.themeConfig).theme}
         />
         <ReactTooltip
+          afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
+          ref={(r) => (this.reactTooltipRef = r)}
           className="react-autoql-tooltip"
           id="filter-locking-tooltip"
           effect="solid"
