@@ -79,6 +79,7 @@ export default class QueryInput extends React.Component {
     clearQueryOnSubmit: PropTypes.bool,
     sessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -98,13 +99,13 @@ export default class QueryInput extends React.Component {
     queryFilters: undefined,
     clearQueryOnSubmit: true,
     dataPageSize: undefined,
+    shouldRender: true,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    this.focus()
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -306,9 +307,6 @@ export default class QueryInput extends React.Component {
   }
 
   focus = () => {
-    // if (this.queryValidationInputRef) {
-    //   this.queryValidationInputRef.focus()
-    // }
     if (this.inputRef) {
       this.inputRef.focus()
     } else {

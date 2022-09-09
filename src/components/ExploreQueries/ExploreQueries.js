@@ -41,15 +41,25 @@ export default class ExploreQueries extends React.Component {
     inputPlaceholder: 'Search relevant queries by topic',
   }
 
+  componentDidMount = () => {
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.shouldRender && !prevProps.shouldRender) {
-      this.inputRef?.focus()
+      this.focusInput()
     }
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.animateTextDelay)
     clearTimeout(this.animateTextTimeout)
+  }
+
+  focusInput = () => {
+    this.inputRef?.focus()
   }
 
   loadMore = (page, skipQueryValidation) => {
@@ -174,7 +184,7 @@ export default class ExploreQueries extends React.Component {
         validationResponse: undefined,
       },
       () => {
-        this.inputRef?.focus()
+        this.focusInput()
       }
     )
   }

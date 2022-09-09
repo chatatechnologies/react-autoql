@@ -69,7 +69,6 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -103,7 +102,6 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigDefault,
 
     enableAjaxTableData: false,
-    isDataMessengerOpen: false,
     isIntroMessage: false,
     source: [],
     displayType: undefined,
@@ -146,10 +144,7 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      (this.props.isDataMessengerOpen && !prevProps.isDataMessengerOpen) ||
-      (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM)
-    ) {
+    if (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM) {
       this.setIsAnimating()
     }
     ReactTooltip.hide()

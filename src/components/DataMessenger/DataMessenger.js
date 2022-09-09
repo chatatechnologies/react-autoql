@@ -699,6 +699,10 @@ export default class DataMessenger extends React.Component {
     return !!this.dmRef?.state?.open
   }
 
+  shouldRenderPage = (page) => {
+    return this.state.activePage === page && this.isOpen()
+  }
+
   renderFilterLockPopover = () => {
     return (
       <FilterLockPopover
@@ -801,7 +805,7 @@ export default class DataMessenger extends React.Component {
         <ChatContent
           {...this.props}
           data-test="data-messenger-chat-content"
-          shouldRender={this.state.activePage === 'data-messenger'}
+          shouldRender={this.shouldRenderPage('data-messenger')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dataMessengerContentRef = r)}
           authentication={this.props.authentication}
@@ -812,7 +816,6 @@ export default class DataMessenger extends React.Component {
           rebuildTooltips={this.rebuildTooltips}
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
-          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
@@ -832,7 +835,7 @@ export default class DataMessenger extends React.Component {
       <ErrorBoundary>
         <ChatContent
           {...this.props}
-          shouldRender={this.state.activePage === 'dpr'}
+          shouldRender={this.shouldRenderPage('dpr')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
           authentication={{
@@ -843,7 +846,6 @@ export default class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder="Type your questions here"
@@ -875,9 +877,7 @@ export default class DataMessenger extends React.Component {
           themeConfig={this.props.themeConfig}
           dataFormatting={this.props.dataFormatting}
           rebuildTooltips={this.rebuildTooltips}
-          shouldRender={
-            this.state.activePage === 'data-explorer' && this.isOpen()
-          }
+          shouldRender={this.shouldRenderPage('data-explorer')}
           executeQuery={(query) => {
             this.setState({ activePage: 'data-messenger' })
             clearTimeout(this.executeQueryTimeout)
@@ -902,9 +902,7 @@ export default class DataMessenger extends React.Component {
         <ExploreQueries
           ref={(r) => (this.exploreQueriesRef = r)}
           authentication={this.props.authentication}
-          shouldRender={
-            this.state.activePage === 'explore-queries' && this.isOpen()
-          }
+          shouldRender={this.shouldRenderPage('explore-queries')}
           executeQuery={(query) => {
             this.setState({ activePage: 'data-messenger' })
             clearTimeout(this.executeQueryTimeout)
@@ -937,9 +935,7 @@ export default class DataMessenger extends React.Component {
           onErrorCallback={this.props.onErrorCallback}
           onSuccessCallback={this.props.onSuccessCallback}
           showNotificationDetails={false}
-          shouldRender={
-            this.isOpen() && this.state.activePage === 'notifications'
-          }
+          shouldRender={this.shouldRenderPage('notifications')}
         />
       </ErrorBoundary>
     )

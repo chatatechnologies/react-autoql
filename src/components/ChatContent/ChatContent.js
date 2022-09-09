@@ -55,7 +55,6 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -65,7 +64,6 @@ export default class ChatContent extends React.Component {
   static defaultProps = {
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
-    isDataMessengerOpen: true,
     isResizing: false,
     dataPageSize: undefined,
     source: [],
@@ -77,11 +75,27 @@ export default class ChatContent extends React.Component {
     if (!!this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      console.log('focusing input now!')
+      this.focusInput()
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
+  }
+
+  focusInput = () => {
+    if (this.queryInputRef?._isMounted) {
+      this.queryInputRef.focus()
+    }
   }
 
   escFunction = (event) => {
@@ -280,9 +294,7 @@ export default class ChatContent extends React.Component {
       }
 
       this.setState({ isChataThinking: false })
-      if (this.queryInputRef?._isMounted) {
-        this.queryInputRef.focus()
-      }
+      this.focusInput()
     }
   }
 
@@ -357,7 +369,6 @@ export default class ChatContent extends React.Component {
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
                   scrollRef={this.messengerScrollComponent?.ref}
-                  isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isVisibleInDOM={this.props.shouldRender}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
