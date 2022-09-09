@@ -235,7 +235,7 @@
 }
 
 /* Tooltips */
-.react-autoql-drawer-tooltip {
+.react-autoql-tooltip {
   font-family: var(--react-autoql-font-family), sans-serif;
   letter-spacing: 0.04em;
   line-height: 1.5em;
@@ -244,6 +244,8 @@
   text-align: left;
   opacity: 1 !important;
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+  max-width: 300px;
+  word-break: break-word;
 }
 .interpretation-tooltip {
   font-family: var(--react-autoql-font-family), sans-serif;

@@ -88,7 +88,10 @@ describe('props', () => {
 
 describe('saving indicator renders when', () => {
   const setupSavingIndicatorTest = () => {
-    const wrapper = setup({ isOpen: true })
+    const wrapper = setup({
+      isOpen: true,
+      initialFilters: filterResponse.data.data.data,
+    })
     const instance = wrapper.instance()
     jest.spyOn(instance, 'showSavingIndicator')
     return { wrapper, instance }
@@ -113,7 +116,9 @@ describe('saving indicator renders when', () => {
   describe('filter added', () => {
     const { wrapper, instance } = setupSavingIndicatorTest()
 
-    test('saving indicator rendered', () => {
+    test('saving indicator rendered', async () => {
+      await currentEventLoopEnd()
+      wrapper.update()
       instance.setFilter({
         key: 'VENDOR_0_DISPLAYNAME_VALUE_LABEL',
         value: 'Organization of Outstanding Events',

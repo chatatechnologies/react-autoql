@@ -473,7 +473,7 @@ export default class SendToTeamsModal extends React.Component {
       >
         {this.renderActivePage()}
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id="connect-to-slack-tooltips"
           effect="solid"
           place="top"

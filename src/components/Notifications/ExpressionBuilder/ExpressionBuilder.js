@@ -300,7 +300,7 @@ export default class ExpressionBuilder extends React.Component {
       <ErrorBoundary>
         {this.props.readOnly ? this.renderReadOnlyRules() : this.renderRules()}
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id="notification-expression-tooltip"
           effect="solid"
           delayShow={500}

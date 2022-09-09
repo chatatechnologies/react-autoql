@@ -1123,3 +1123,27 @@ export const sortDataByDate = (data, tableColumns, displayType) => {
     return data
   }
 }
+
+export const handleTooltipBoundaryCollision = (e, self) => {
+  const { target } = e
+  const { tooltipRef } = self.reactTooltipRef
+
+  if (!tooltipRef) {
+    console.log('there was no ref, returning')
+    return
+  }
+
+  const targetRect = target.getBoundingClientRect()
+  const rect = tooltipRef.getBoundingClientRect()
+
+  const overflownLeft = rect.left < 0
+  const overflownRight = rect.right > window.innerWidth
+
+  if (overflownLeft) {
+    tooltipRef.style.setProperty('left', '10px')
+    tooltipRef.style.setProperty('right', 'auto')
+  } else if (overflownRight) {
+    tooltipRef.style.setProperty('left', 'auto')
+    tooltipRef.style.setProperty('right', '10px')
+  }
+}
