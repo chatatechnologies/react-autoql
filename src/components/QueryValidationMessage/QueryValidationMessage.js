@@ -253,11 +253,20 @@ export default class QueryValidationMessage extends React.Component {
 
       // The last word is the original suggestion, append "original word" to the list label
       if (i === wordList.length - 1) {
-        option.listLabel = `${option.label} (Original term)`
+        option.listLabel = (
+          <span>
+            {option.label} <em>(Original term)</em>
+          </span>
+        )
       } else {
-        option.listLabel = `${suggestionItem.text}${
-          suggestionItem.value_label ? ` (${suggestionItem.value_label})` : ''
-        }`
+        option.listLabel = (
+          <span>
+            {suggestionItem.text}
+            {suggestionItem.value_label ? (
+              <em> ({suggestionItem.value_label})</em>
+            ) : null}
+          </span>
+        )
       }
 
       options.push(option)

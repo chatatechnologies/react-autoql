@@ -427,7 +427,7 @@ export default class DataAlerts extends React.Component {
           {this.renderNotificationlist('custom', customAlertsList)}
           {this.renderNotificationEditModal()}
           <ReactTooltip
-            className="react-autoql-drawer-tooltip"
+            className="react-autoql-tooltip"
             id="react-autoql-notification-settings-tooltip"
             effect="solid"
             delayShow={500}

@@ -20,7 +20,6 @@ import {
   fetchVLAutocomplete,
   setFilters,
   unsetFilterFromAPI,
-  fetchFilters,
 } from '../../js/queryService'
 
 import { authenticationType, themeConfigType } from '../../props/types'
@@ -43,7 +42,7 @@ export default class FilterLockPopover extends React.Component {
     this.autoCompleteArray = []
 
     this.state = {
-      filters: [],
+      filters: this.props.initialFilters || [],
       suggestions: [],
       inputValue: '',
     }
@@ -56,6 +55,7 @@ export default class FilterLockPopover extends React.Component {
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
     onChange: PropTypes.func,
+    insertedFilter: PropTypes.string,
     rebuildTooltips: PropTypes.func,
   }
 
@@ -63,6 +63,7 @@ export default class FilterLockPopover extends React.Component {
     authentication: authenticationDefault,
     themeConfig: themeConfigDefault,
 
+    insertedFilter: null,
     isOpen: false,
     onClose: () => {},
     onChange: () => {},
@@ -70,10 +71,22 @@ export default class FilterLockPopover extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.initialize()
+
+    if (this.state.filters) {
+      this.props.onChange(this.state.filters)
+    }
+
+    if (this.props.isOpen && this.props.insertedFilter) {
+      this.insertFilter(this.props.insertedFilter)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // Set initial filters from FilterLockPopover fetch on mount
+    if (this.props.initialFilters && !prevProps.initialFilters) {
+      this.setState({ filters: this.props.initialFilters })
+    }
+
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
       this.rebuildTooltips()
@@ -81,6 +94,13 @@ export default class FilterLockPopover extends React.Component {
 
     if (!this.props.isOpen && prevProps.isOpen) {
       this.setState({ inputValue: '' })
+    }
+
+    if (
+      (this.props.isOpen && !prevProps.isOpen && this.props.insertedFilter) ||
+      (this.props.insertedFilter && !prevProps.insertedFilter)
+    ) {
+      this.insertFilter(this.props.insertedFilter)
     }
   }
 
@@ -97,9 +117,7 @@ export default class FilterLockPopover extends React.Component {
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {
-      if (this.rebuildTooltipsTimer) {
-        clearTimeout(this.rebuildTooltipsTimer)
-      }
+      clearTimeout(this.rebuildTooltipsTimer)
       this.rebuildTooltipsTimer = setTimeout(() => {
         ReactTooltip.rebuild()
       }, delay)
@@ -114,23 +132,6 @@ export default class FilterLockPopover extends React.Component {
     this.savingIndicatorTimeout = setTimeout(() => {
       this.setState({ isSaving: false })
     }, 1500)
-  }
-
-  initialize = () => {
-    this.setState({ isFetchingFilters: true })
-    fetchFilters(getAuthentication(this.props.authentication))
-      .then((response) => {
-        const filters = response?.data?.data?.data || []
-        if (this._isMounted) {
-          this.setState({ filters, isFetchingFilters: false })
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-        if (this._isMounted) {
-          this.setState({ isFetchingFilters: false })
-        }
-      })
   }
 
   handleHighlightFilterRow(filterKey) {
@@ -152,15 +153,17 @@ export default class FilterLockPopover extends React.Component {
       const totalTime = 2000
       const timePerChar = totalTime / text.length
       for (let i = 1; i <= text.length; i++) {
-        this.animateTextTimeout = setTimeout(() => {
-          this.setState({ inputValue: text.slice(0, i) })
-          if (i === text.length) {
-            this.focusInputTimeout = setTimeout(() => {
-              this.inputElement = document.querySelector(
-                '#react-autoql-filter-menu-input'
-              )
-              this.inputElement?.focus()
-            }, 300)
+        setTimeout(() => {
+          if (this._isMounted) {
+            this.setState({ inputValue: text.slice(0, i) })
+            if (i === text.length) {
+              this.focusInputTimeout = setTimeout(() => {
+                this.inputElement = document.querySelector(
+                  '#react-autoql-filter-menu-input'
+                )
+                this.inputElement?.focus()
+              }, 300)
+            }
           }
         }, timePerChar)
       }
@@ -343,7 +346,8 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getSuggestionValue = (sugg) => {
-    const selectedFilter = this.createNewFilterFromSuggestion(sugg)
+    const name = sugg.name
+    const selectedFilter = this.createNewFilterFromSuggestion(name)
     return selectedFilter
   }
 
@@ -481,11 +485,7 @@ export default class FilterLockPopover extends React.Component {
             type="info"
             data-place="right"
             data-for="filter-locking-tooltip"
-            data-tip="
-            Filters can be applied to narrow down<br />
-            your query results. Locking a filter<br />
-            ensures that only the specific data<br />
-            you wish to see is returned."
+            data-tip="Filters can be applied to narrow down your query results. Locking a filter ensures that only the specific data you wish to see is returned."
           />
         </h3>
       </div>
@@ -518,25 +518,63 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  renderSuggestion = ({ name }) => {
+    this.rebuildTooltips()
+
+    return (
+      <ul
+        className="filter-lock-suggestion-item"
+        data-for="filter-locking-tooltip"
+        data-delay-show={800}
+        data-tip={`${name.keyword} <em>(${name.show_message})</em>`}
+      >
+        <span>
+          {name.keyword} <em>({name.show_message})</em>
+        </span>
+      </ul>
+    )
+  }
+
+  renderSuggestionsContainer = ({ containerProps, children, query }) => {
+    let maxHeight = 150
+    const padding = 20
+    const listContainerHeight = this.filterListContainerRef?.clientHeight
+
+    if (!isNaN(listContainerHeight)) {
+      maxHeight = listContainerHeight - padding
+    }
+
+    return (
+      <div {...containerProps}>
+        <div className="react-autoql-filter-suggestion-container">
+          <CustomScrollbars
+            autoHeight
+            autoHeightMin={0}
+            autoHeightMax={maxHeight}
+          >
+            {children}
+          </CustomScrollbars>
+        </div>
+      </div>
+    )
+  }
+
   renderVLInput = () => {
     return (
       <Autosuggest
         id="react-autoql-filter-menu-input"
         highlightFirstSuggestion
         suggestions={this.state.suggestions}
+        renderSuggestion={this.renderSuggestion}
+        getSuggestionValue={this.getSuggestionValue}
         onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
         onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-        getSuggestionValue={(sugg) => this.getSuggestionValue(sugg.name)}
-        renderSuggestion={(suggestion) => (
-          <ul className="filter-lock-suggestion-item">
-            <li>{suggestion.name.keyword}</li>
-            <li>{suggestion.name.show_message}</li>
-          </ul>
-        )}
+        renderSuggestionsContainer={this.renderSuggestionsContainer}
         inputProps={{
           onChange: this.onInputChange,
           value: this.state.inputValue,
-          disabled: this.state.isFetchingFilters,
+          disabled:
+            this.props.isFetchingFilters || this.state.isFetchingFilters,
           placeholder: 'Search & select a filter',
           ['data-test']: 'react-autoql-filter-locking-input',
           className: 'react-autoql-filter-locking-input',
@@ -652,7 +690,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderFilterList = () => {
-    if (this.state.isFetchingFilters) {
+    if (this.props.isFetchingFilters || this.state.isFetchingFilters) {
       return (
         <div className="react-autoql-filter-lock-list-loading-container">
           <LoadingDots />
@@ -673,8 +711,11 @@ export default class FilterLockPopover extends React.Component {
     ]
 
     return (
-      <div className="react-autoql-filter-list-container">
-        <CustomScrollbars autoHide={false}>
+      <div
+        ref={(r) => (this.filterListContainerRef = r)}
+        className="react-autoql-filter-list-container"
+      >
+        <CustomScrollbars>
           {uniqueCategories.map((category, i) => {
             return this.renderFilterListCategory(category, i)
           })}
@@ -684,6 +725,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   render = () => {
+    if (!this.props.isOpen) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <ToastContainer
@@ -700,7 +745,7 @@ export default class FilterLockPopover extends React.Component {
           theme={getThemeConfig(this.props.themeConfig).theme}
         />
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id="filter-locking-tooltip"
           effect="solid"
           place="top"

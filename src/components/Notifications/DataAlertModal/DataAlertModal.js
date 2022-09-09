@@ -490,7 +490,7 @@ export default class DataAlertModal extends React.Component {
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-drawer-tooltip"
+              className="react-autoql-tooltip"
               id="react-autoql-data-alert-query-name-tooltip"
               effect="solid"
               delayShow={500}
@@ -524,7 +524,7 @@ export default class DataAlertModal extends React.Component {
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-drawer-tooltip"
+              className="react-autoql-tooltip"
               id="react-autoql-data-alert-query-name-tooltip"
               effect="solid"
               delayShow={500}
@@ -665,7 +665,7 @@ export default class DataAlertModal extends React.Component {
     return (
       <ErrorBoundary>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id="react-autoql-data-alert-modal-tooltip"
           effect="solid"
           delayShow={500}

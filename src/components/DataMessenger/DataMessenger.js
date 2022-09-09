@@ -1025,7 +1025,7 @@ export default class DataMessenger extends React.Component {
     return (
       <Fragment>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id="react-autoql-header-tooltip"
           effect="solid"
           delayShow={800}
@@ -1084,7 +1084,10 @@ export default class DataMessenger extends React.Component {
         >
           {this.props.resizable && this.renderResizeHandle()}
           {this.renderTabs()}
-          <div className="react-autoql-drawer-content-container">
+          <div
+            ref={(r) => (this.messengerDrawerRef = r)}
+            className="react-autoql-drawer-content-container"
+          >
             <div className="chat-header-container">
               {this.renderHeaderContent()}
             </div>
