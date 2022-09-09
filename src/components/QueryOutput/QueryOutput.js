@@ -491,17 +491,20 @@ export class QueryOutput extends React.Component {
     return _get(this.queryResponse, 'data.data.rows.length')
   }
 
-  generateTableData = () => {
-    const columns = this.getColumns()
-    this.tableID = uuid()
-    this.tableColumns = this.formatColumnsForTable(columns)
-    this.tableData = sortDataByDate(
-      this.queryResponse?.data?.data?.rows,
-      columns,
-      'table'
-    )
+  generateTableData = (columns, newTableData) => {
+    if (newTableData) {
+      this.tableData = newTableData
+    } else {
+      this.tableID = uuid()
+      this.tableColumns = this.formatColumnsForTable(columns)
+      this.tableData = sortDataByDate(
+        this.queryResponse?.data?.data?.rows,
+        this.tableColumns,
+        'table'
+      )
 
-    this.setTableConfig()
+      this.setTableConfig()
+    }
   }
 
   generatePivotData = ({ isFirstGeneration } = {}) => {
