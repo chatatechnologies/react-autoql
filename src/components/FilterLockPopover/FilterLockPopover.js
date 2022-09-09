@@ -78,6 +78,11 @@ export default class FilterLockPopover extends React.Component {
       })
   }
 
+  onChange = (filters) => {
+    this.props.onChange(filters)
+    this.setState({ initialFilters: filters })
+  }
+
   insertFilter = (text) => {
     this.setState({ insertedFilter: text })
   }
@@ -100,7 +105,7 @@ export default class FilterLockPopover extends React.Component {
           themeConfig={this.props.themeConfig}
           isOpen={this.props.isOpen}
           onClose={this.props.onClose}
-          onChange={this.props.onChange}
+          onChange={this.onChange}
           rebuildTooltips={this.props.rebuildTooltips}
           containerRef={this.containerRef}
           insertedFilter={this.state.insertedFilter}
