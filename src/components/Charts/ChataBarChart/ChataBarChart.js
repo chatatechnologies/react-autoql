@@ -43,10 +43,7 @@ export default class ChataBarChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const tickWidth =
-      (props.width - props.leftMargin - props.rightMargin) /
-      this.xScale.ticks().length
-
+    const tickWidth = props.innerWidth / this.xScale.ticks().length
     const rotateLabels = shouldLabelsRotate(tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
@@ -71,9 +68,15 @@ export default class ChataBarChart extends Component {
       numberColumnIndices
     )
 
+    const rangeStart = props.leftMargin
+    let rangeEnd = props.width - props.rightMargin
+    if (rangeEnd < rangeStart) {
+      rangeEnd = rangeStart
+    }
+
     this.xScale = scaleLinear()
       .domain([minValue, maxValue])
-      .range([props.leftMargin, props.width - props.rightMargin])
+      .range([rangeStart, rangeEnd])
       .nice()
 
     this.yScale = scaleBand()
@@ -82,17 +85,20 @@ export default class ChataBarChart extends Component {
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
 
-    this.yLabelArray = props.data.map(
-      (element) => element[props.stringColumnIndex]
+    this.yLabelArray = props.data.map((el) => el[props.stringColumnIndex])
+    this.barHeight = props.innerHeight / props.data.length
+    this.yTickValues = getTickValues(
+      this.barHeight,
+      props.innerHeight,
+      this.yLabelArray
     )
 
     this.xLabelArray = this.xScale.ticks()
-
-    this.barHeight = props.height / props.data.length
-    this.yTickValues = getTickValues(
-      this.barHeight,
-      props.height,
-      this.yLabelArray
+    this.tickWidth = props.innerWidth / this.xLabelArray?.length
+    this.xTickValues = getTickValues(
+      this.tickWidth,
+      props.innerWidth,
+      this.xLabelArray
     )
   }
 
@@ -109,6 +115,7 @@ export default class ChataBarChart extends Component {
           xCol={this.props.columns[this.props.numberColumnIndex]}
           yCol={this.props.columns[this.props.stringColumnIndex]}
           yTicks={this.yTickValues}
+          xTicks={this.xTickValues}
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

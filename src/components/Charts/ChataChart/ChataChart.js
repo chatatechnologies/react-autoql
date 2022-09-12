@@ -107,7 +107,7 @@ export default class ChataChart extends Component {
     let shouldForceUpdate = false
     let shouldUpdateMargins = false
 
-    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
+    const { chartHeight, chartWidth } = this.getChartDimensions()
 
     if (
       !this.state.isLoading &&
@@ -175,17 +175,30 @@ export default class ChataChart extends Component {
     this.axes = undefined
   }
 
-  getChartHeightAndWidth = () => {
-    const chartWidth =
-      this.chartContainerRef?.offsetWidth >= 0
-        ? this.chartContainerRef?.offsetWidth
-        : 0
-    const chartHeight =
-      this.chartContainerRef?.offsetHeight >= 0
-        ? this.chartContainerRef?.offsetHeight
-        : 0
+  getChartDimensions = () => {
+    const { topMargin, bottomMargin, rightMargin, leftMargin } = this.state
 
-    return { chartHeight, chartWidth }
+    let chartWidth = this.chartContainerRef?.offsetWidth
+    if (chartWidth < 0) {
+      chartWidth = 0
+    }
+
+    let chartHeight = this.chartContainerRef?.offsetHeight
+    if (chartHeight < 0) {
+      chartHeight = 0
+    }
+
+    let innerHeight = chartHeight - bottomMargin - topMargin
+    if (innerHeight < 0) {
+      innerHeight = 0
+    }
+
+    let innerWidth = chartWidth - leftMargin - rightMargin
+    if (innerWidth < 0) {
+      innerWidth = 0
+    }
+
+    return { chartHeight, chartWidth, innerHeight, innerWidth }
   }
 
   aggregateRowData = (props) => {
@@ -534,7 +547,8 @@ export default class ChataChart extends Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden
     )
 
-    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
+    const { chartHeight, chartWidth, innerHeight, innerWidth } =
+      this.getChartDimensions()
 
     return {
       ...this.props,
@@ -547,6 +561,8 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       height: chartHeight,
       width: chartWidth,
+      innerHeight,
+      innerWidth,
       topMargin,
       bottomMargin,
       rightMargin,
@@ -644,7 +660,8 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { chartHeight, chartWidth } = this.getChartHeightAndWidth()
+    const { chartHeight, chartWidth, innerHeight, innerWidth } =
+      this.getChartDimensions()
 
     return (
       <ErrorBoundary>
