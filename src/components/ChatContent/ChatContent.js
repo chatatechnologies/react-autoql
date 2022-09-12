@@ -82,7 +82,6 @@ export default class ChatContent extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (this.props.shouldRender && !prevProps.shouldRender) {
-      console.log('focusing input now!')
       this.focusInput()
     }
   }

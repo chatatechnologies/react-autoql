@@ -22,7 +22,7 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { getThemeConfig } from '../../../props/defaults'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
-import { svgToPng, sortDataByDate } from '../../../js/Util.js'
+import { svgToPng, sortDataByDate, formatChartLabel } from '../../../js/Util.js'
 import {
   chartContainerDefaultProps,
   chartContainerPropTypes,
@@ -37,9 +37,6 @@ import {
 } from '../../QueryOutput/columnHelpers'
 
 export default class ChataChart extends Component {
-  INNER_PADDING = 0.25
-  OUTER_PADDING = 0.5
-
   constructor(props) {
     super(props)
     const { chartColors } = getThemeConfig(props.themeConfig)
@@ -48,6 +45,8 @@ export default class ChataChart extends Component {
     this.Y_AXIS_LABEL_WIDTH = 15
     this.X_AXIS_LABEL_HEIGHT = 15
     this.PADDING = 20
+    this.INNER_PADDING = 0.25
+    this.OUTER_PADDING = 0.5
 
     this.firstRender = true
     this.recursiveUpdateCount = 0
@@ -206,11 +205,22 @@ export default class ChataChart extends Component {
 
     let rowSum = _cloneDeep(sortedData[0])
     sortedData.forEach((currentRow, i) => {
+      const currentCategory =
+        formatChartLabel({
+          d: currentRow?.[stringColumnIndex],
+          col: stringColumn,
+          config: this.props.dataFormatting,
+        })?.fullWidthLabel ?? currentRow?.[stringColumnIndex]
+      const prevCategory =
+        formatChartLabel({
+          d: rowSum?.[stringColumnIndex],
+          col: stringColumn,
+          config: this.props.dataFormatting,
+        })?.fullWidthLabel ?? rowSum?.[stringColumnIndex]
+
       if (i === 0 && i < sortedData.length - 1) {
         return
-      } else if (
-        currentRow?.[stringColumnIndex] !== rowSum?.[stringColumnIndex]
-      ) {
+      } else if (currentCategory !== prevCategory) {
         aggregatedData.push(rowSum)
         rowSum = _cloneDeep(currentRow)
       } else {
@@ -533,6 +543,7 @@ export default class ChataChart extends Component {
       colorScale: this.colorScale,
       innerPadding,
       outerPadding: this.OUTER_PADDING,
+      chartContainerPadding: this.PADDING,
       colorScale: this.colorScale,
       height: chartHeight,
       width: chartWidth,
@@ -553,6 +564,7 @@ export default class ChataChart extends Component {
       onStringColumnSelect: this.onStringColumnSelect,
       onLabelChange: this.updateMargins,
       tooltipID: this.props.tooltipID,
+      chartContainerRef: this.chartContainerRef,
     }
   }
 
