@@ -551,6 +551,7 @@ class Dashboard extends React.Component {
             onRecommendedDisplayType={(drilldownDisplayType) => {
               this.setState({ drilldownDisplayType })
             }}
+            shouldRender={this.state.isAnimatingModal}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             themeConfig={this.props.themeConfig}
@@ -558,7 +559,6 @@ class Dashboard extends React.Component {
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
             onUpdate={this.rebuildTooltips}
-            isAnimatingContainer={this.state.isAnimatingModal}
             backgroundColor={document.documentElement.style.getPropertyValue(
               '--react-autoql-background-color-primary'
             )}
@@ -691,11 +691,11 @@ class Dashboard extends React.Component {
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
+                          isResizing={this.state.isAnimatingModal}
                           queryResponse={_cloneDeep(queryResponse)}
                           displayType={displayType}
                           tableConfigs={_cloneDeep(dataConfig)}
                           onUpdate={this.rebuildTooltips}
-                          isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }
