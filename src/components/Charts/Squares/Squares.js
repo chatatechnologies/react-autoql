@@ -26,9 +26,7 @@ export default class Squares extends Component {
       )
     )
 
-    this.opacityScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([0, 1])
+    this.opacityScale = scaleLinear().domain([minValue, maxValue]).range([0, 1])
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
@@ -41,15 +39,14 @@ export default class Squares extends Component {
   onSquareClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }

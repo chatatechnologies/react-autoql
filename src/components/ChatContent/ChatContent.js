@@ -55,7 +55,6 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -65,7 +64,6 @@ export default class ChatContent extends React.Component {
   static defaultProps = {
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
-    isDataMessengerOpen: true,
     isResizing: false,
     dataPageSize: undefined,
     source: [],
@@ -77,11 +75,26 @@ export default class ChatContent extends React.Component {
     if (!!this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      this.focusInput()
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
+  }
+
+  focusInput = () => {
+    if (this.queryInputRef?._isMounted) {
+      this.queryInputRef.focus()
+    }
   }
 
   escFunction = (event) => {
@@ -280,9 +293,7 @@ export default class ChatContent extends React.Component {
       }
 
       this.setState({ isChataThinking: false })
-      if (this.queryInputRef?._isMounted) {
-        this.queryInputRef.focus()
-      }
+      this.focusInput()
     }
   }
 
@@ -331,13 +342,14 @@ export default class ChatContent extends React.Component {
   }
 
   render = () => {
-    if (!this.props.shouldRender || !this.props.isDataMessengerOpen) {
-      return null
+    let display
+    if (!this.props.shouldRender) {
+      display = 'none'
     }
 
     return (
       <ErrorBoundary>
-        <div className="chat-content-scroll-container">
+        <div style={{ display }} className="chat-content-scroll-container">
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
@@ -356,7 +368,7 @@ export default class ChatContent extends React.Component {
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
                   scrollRef={this.messengerScrollComponent?.ref}
-                  isDataMessengerOpen={this.props.isDataMessengerOpen}
+                  isVisibleInDOM={this.props.shouldRender}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
                   onDrilldownStart={this.onDrilldownStart}
@@ -389,12 +401,12 @@ export default class ChatContent extends React.Component {
             })}
           </CustomScrollbars>
         </div>
-        {this.state.isChataThinking && (
-          <div className="response-loading-container">
-            <LoadingDots />
-          </div>
-        )}
-        <div className="chat-bar-container">
+        <div style={{ display }} className="chat-bar-container">
+          {this.state.isChataThinking && (
+            <div className="response-loading-container">
+              <LoadingDots />
+            </div>
+          )}
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}

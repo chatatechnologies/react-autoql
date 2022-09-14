@@ -82,16 +82,30 @@ export default class ChataStackedColumnChart extends Component {
       .paddingInner(props.innerPadding)
       .paddingOuter(props.outerPadding)
 
+    const rangeEnd = props.topMargin
+    let rangeStart = props.height - props.bottomMargin
+    if (rangeStart < rangeEnd) {
+      rangeStart = rangeEnd
+    }
+
     this.yScale = scaleLinear()
       .domain([minValue, maxValue])
-      .range([props.height - props.bottomMargin, props.topMargin])
+      .range([rangeStart, rangeEnd])
       .nice()
 
     this.tickWidth = getTickWidth(this.xScale, props.innerPadding)
     this.xTickValues = getTickValues(
       this.tickWidth,
-      props.width,
+      props.innerWidth,
       this.xScale.domain()
+    )
+
+    this.yLabelArray = this.yScale.ticks()
+    this.tickHeight = props.innerHeight / this.yLabelArray?.length
+    this.yTickValues = getTickValues(
+      this.tickHeight,
+      props.innerHeight,
+      this.yLabelArray
     )
   }
 
@@ -108,6 +122,7 @@ export default class ChataStackedColumnChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.columns[this.props.numberColumnIndex]}
           xTicks={this.xTickValues}
+          yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}

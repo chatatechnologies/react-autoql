@@ -69,7 +69,6 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -93,6 +92,7 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     source: PropTypes.arrayOf(PropTypes.string),
+    isVisibleInDOM: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -102,7 +102,6 @@ export default class ChatMessage extends React.Component {
     themeConfig: themeConfigDefault,
 
     enableAjaxTableData: false,
-    isDataMessengerOpen: false,
     isIntroMessage: false,
     source: [],
     displayType: undefined,
@@ -117,6 +116,7 @@ export default class ChatMessage extends React.Component {
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
     onRTValueLabelClick: undefined,
+    isVisibleInDOM: true,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -132,11 +132,7 @@ export default class ChatMessage extends React.Component {
     }, 100)
 
     // Wait until message bubble animation finishes to show query output content
-    clearTimeout(this.animationTimeout)
-    this.animationTimeout = setTimeout(() => {
-      this.setState({ isAnimatingMessageBubble: false })
-      this.props.scrollToBottom()
-    }, 500)
+    this.setIsAnimating()
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -148,6 +144,9 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM) {
+      this.setIsAnimating()
+    }
     ReactTooltip.hide()
   }
 
@@ -156,6 +155,18 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
+  }
+
+  setIsAnimating = () => {
+    if (!this.state.isAnimatingMessageBubble) {
+      this.setState({ isAnimatingMessageBubble: true })
+    }
+
+    clearTimeout(this.animationTimeout)
+    this.animationTimeout = setTimeout(() => {
+      this.setState({ isAnimatingMessageBubble: false })
+      this.props.scrollToBottom()
+    }, 500)
   }
 
   onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
@@ -278,8 +289,9 @@ export default class ChatMessage extends React.Component {
           )}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
-          isResizing={this.props.isResizing}
-          isAnimatingContainer={this.state.isAnimatingMessageBubble}
+          isResizing={
+            this.props.isResizing || this.state.isAnimatingMessageBubble
+          }
           enableDynamicCharting={this.props.enableDynamicCharting}
           optionsToolbarRef={this.optionsToolbarRef}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}

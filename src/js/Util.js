@@ -971,35 +971,6 @@ export const hasData = (response) => {
   return hasData
 }
 
-export class AwaitTimeout {
-  constructor(delay, callback = () => {}) {
-    this.delay = delay
-    this.callback = callback
-  }
-
-  start = () => {
-    this.timeoutPromise = new Promise((resolve) => {
-      clearTimeout(this.timeout)
-      this.timeout = setTimeout(() => {
-        this.callback()
-        resolve()
-      }, this.delay)
-      return this.timeout
-    })
-    return this.timeoutPromise
-  }
-
-  cancel = () => {
-    if (this.timeoutPromise) {
-      this.timeoutPromise.reject
-    }
-    if (this.timeout) {
-      clearTimeout(this.timeout)
-    }
-    return
-  }
-}
-
 export const setCaretPosition = (elem, caretPos) => {
   if (elem != null) {
     if (elem.createTextRange) {
@@ -1129,11 +1100,9 @@ export const handleTooltipBoundaryCollision = (e, self) => {
   const { tooltipRef } = self.reactTooltipRef
 
   if (!tooltipRef) {
-    console.log('there was no ref, returning')
     return
   }
 
-  const targetRect = target.getBoundingClientRect()
   const rect = tooltipRef.getBoundingClientRect()
 
   const overflownLeft = rect.left < 0

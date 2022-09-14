@@ -36,9 +36,7 @@ export default class Input extends React.Component {
   }
 
   focus = () => {
-    if (this.inputRef) {
-      this.inputRef.focus()
-    }
+    this.inputRef?.focus()
   }
 
   render = () => {
