@@ -94,8 +94,13 @@ export default class NumberAxisSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        <div className="axis-selector-container">
-          <CustomScrollbars autoHide={false}>
+        <CustomScrollbars
+          autoHide={false}
+          autoHeight
+          autoHeightMin={0}
+          autoHeightMax={this.props.chartContainerRef?.clientHeight}
+        >
+          <div className="axis-selector-container">
             {!!currencySelectorState.length && (
               <Fragment>
                 <div className="number-selector-header">
@@ -211,8 +216,9 @@ export default class NumberAxisSelector extends React.Component {
                 />
               </Fragment>
             )}
-          </CustomScrollbars>
-        </div>
+          </div>
+        </CustomScrollbars>
+
         <div className="axis-selector-apply-btn">
           <Button
             style={{ width: 'calc(100% - 10px)' }}
@@ -253,11 +259,15 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <Popover
         isOpen={this.state.isOpen}
-        content={this.renderSelectorContent()}
+        ref={(r) => (this.popoverRef = r)}
+        content={this.renderSelectorContent}
         onClickOutside={this.closeSelector}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        ref={(r) => (this.popoverRef = r)}
+        reposition={true}
+        padding={10}
       >
         <rect
           {...this.props.childProps}

@@ -132,6 +132,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
+    popoverParentElement: PropTypes.element,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -179,6 +180,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,
+    popoverParentElement: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -822,6 +824,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          popoverParentElement={this.messengerDrawerRef}
           dataPageSize={dataPageSize}
         />
       </ErrorBoundary>

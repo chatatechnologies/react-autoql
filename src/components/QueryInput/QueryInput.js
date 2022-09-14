@@ -132,13 +132,9 @@ export default class QueryInput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    if (this.autoCompleteTimer) {
-      clearTimeout(this.autoCompleteTimer)
-    }
-
-    if (this.queryValidationTimer) {
-      clearTimeout(this.queryValidationTimer)
-    }
+    clearTimeout(this.autoCompleteTimer)
+    clearTimeout(this.queryValidationTimer)
+    clearTimeout(this.caretMoveTimeout)
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source }) => {
@@ -281,7 +277,7 @@ export default class QueryInput extends React.Component {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
       const lastQuery = localStorage.getItem('inputValue')
       if (lastQuery) {
-        this.setState({ inputValue: lastQuery })
+        this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd(e))
       }
     }
   }
@@ -430,9 +426,12 @@ export default class QueryInput extends React.Component {
   }
 
   moveCaretAtEnd = (e) => {
-    var temp_value = e.target.value
-    e.target.value = ''
-    e.target.value = temp_value
+    clearTimeout(this.caretMoveTimeout)
+    this.caretMoveTimeout = setTimeout(() => {
+      var temp_value = e.target.value
+      e.target.value = ''
+      e.target.value = temp_value
+    }, 0)
   }
 
   render = () => {

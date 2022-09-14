@@ -91,8 +91,8 @@ export default class Axes extends React.Component {
           <AxisSelector
             {...this.props}
             column={this.props.xCol}
-            positions={['top']}
-            align="end"
+            positions={['top', 'bottom']}
+            align="center"
             childProps={{
               x: xLabelX - xLabelWidth / 2 - 10,
               y: xLabelY - 16,

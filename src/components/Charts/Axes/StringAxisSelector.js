@@ -26,16 +26,21 @@ export default class StringAxisSelector extends React.Component {
     this.setState({ isOpen: false })
   }
 
-  renderSelectorContent = () => {
+  renderSelectorContent = ({ position, childRect, popoverRect }) => {
     return (
-      <div
-        className="axis-selector-container"
-        id="string-column-selector-content"
-        onClick={(e) => {
-          e.stopPropagation()
-        }}
+      <CustomScrollbars
+        autoHide={false}
+        autoHeight
+        autoHeightMin={0}
+        autoHeightMax={this.props.chartContainerRef?.clientHeight}
       >
-        <CustomScrollbars autoHide={false}>
+        <div
+          className="axis-selector-container"
+          id="string-column-selector-content"
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+        >
           <ul className="axis-selector-content">
             {this.props.stringColumnIndices.map((colIndex, i) => {
               return (
@@ -54,8 +59,8 @@ export default class StringAxisSelector extends React.Component {
               )
             })}
           </ul>
-        </CustomScrollbars>
-      </div>
+        </div>
+      </CustomScrollbars>
     )
   }
 
@@ -63,15 +68,18 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         isOpen={this.state.isOpen}
-        content={this.renderSelectorContent()}
+        ref={(r) => (this.popoverRef = r)}
+        content={this.renderSelectorContent}
         onClickOutside={this.closeSelector}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
         positions={this.props.positions}
         align={this.props.align}
-        ref={(r) => (this.popoverRef = r)}
+        reposition={true}
+        padding={10}
       >
         <rect
           {...this.props.childProps}
-          ref={null}
           className="axis-label-border"
           data-test="axis-label-border"
           onClick={this.openSelector}

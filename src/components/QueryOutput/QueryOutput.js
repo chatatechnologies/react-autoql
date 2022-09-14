@@ -1855,6 +1855,7 @@ export default class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={displayType || this.props.displayType}
+          popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
           data={
             usePivotData
