@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
@@ -206,6 +206,8 @@ export default class DataMessenger extends React.Component {
       if (this.props.enableQueryQuickStartTopics) {
         this.setQueryTopics()
       }
+
+      // this.onRTValueLabelClick('test')
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
@@ -585,7 +587,7 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() => {
             this.setState({ isOptionsDropdownOpen: false })
           }}
-          position="bottom" // preferred position
+          positions={['bottom']} // preferred position
           content={
             <div>
               <div className="clear-messages-confirm-popover">
@@ -713,7 +715,7 @@ export default class DataMessenger extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
-        position="bottom"
+        positions={['bottom']}
         align="end"
       >
         <button

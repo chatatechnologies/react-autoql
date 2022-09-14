@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import ContentEditable from 'react-contenteditable'
 import sanitizeHtml from 'sanitize-html'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
@@ -479,9 +479,8 @@ export default class QueryValidationMessage extends React.Component {
   appendNewTextToPlainTextList = (newQuery, oldQuery) => {
     const appendedText = newQuery.substr(oldQuery.length)
     if (_get(this.plainTextList, 'length')) {
-      this.plainTextList[this.plainTextList.length - 1] = this.plainTextList[
-        this.plainTextList.length - 1
-      ].concat(appendedText)
+      this.plainTextList[this.plainTextList.length - 1] =
+        this.plainTextList[this.plainTextList.length - 1].concat(appendedText)
     }
     // else {
     //   this.plainTextList = [appendedText]
@@ -607,7 +606,7 @@ export default class QueryValidationMessage extends React.Component {
 
         <Popover
           isOpen={this.state.isValidationSelectorOpen}
-          position="top"
+          positions={['top']}
           padding={20}
           onClickOutside={(e) => {
             if (

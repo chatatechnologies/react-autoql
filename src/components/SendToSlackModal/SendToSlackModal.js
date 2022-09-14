@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 
 import { Modal } from '../Modal'
 import { Button } from '../Button'
@@ -168,7 +168,7 @@ export default class SendToSlackModal extends React.Component {
         onClickOutside={() =>
           this.setState({ isRemoveChannelConfirmOpen: false })
         }
-        position="bottom"
+        positions={['bottom']}
         content={
           <div className="remove-channel-popover">
             <div className="react-autoql-confirm-text">
@@ -339,7 +339,7 @@ export default class SendToSlackModal extends React.Component {
               onClickOutside={() =>
                 this.setState({ isSlackEmailInstructionVisible: false })
               }
-              position="top"
+              positions={['top']}
               content={
                 <div className="slack-email-instructions-popover">
                   Instructions go here.

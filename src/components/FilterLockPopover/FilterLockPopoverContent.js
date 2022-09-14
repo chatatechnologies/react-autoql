@@ -716,7 +716,7 @@ export default class FilterLockPopover extends React.Component {
         ref={(r) => (this.filterListContainerRef = r)}
         className="react-autoql-filter-list-container"
       >
-        <CustomScrollbars>
+        <CustomScrollbars autoHide={false}>
           {uniqueCategories.map((category, i) => {
             return this.renderFilterListCategory(category, i)
           })}
