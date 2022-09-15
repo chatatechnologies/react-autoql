@@ -208,8 +208,6 @@ export default class DataMessenger extends React.Component {
       if (this.props.enableQueryQuickStartTopics) {
         this.setQueryTopics()
       }
-
-      // this.onRTValueLabelClick('test')
     } catch (error) {
       console.error(error)
       this.setState({ hasError: true })
