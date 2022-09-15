@@ -587,7 +587,9 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() => {
             this.setState({ isOptionsDropdownOpen: false })
           }}
-          positions={['bottom']} // preferred position
+          parentElement={this.messengerDrawerRef}
+          boundaryElement={this.messengerDrawerRef}
+          positions={['bottom']}
           content={
             <div>
               <div className="clear-messages-confirm-popover">

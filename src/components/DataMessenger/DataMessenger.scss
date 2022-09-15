@@ -259,12 +259,6 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
-// .react-autoql-condition-lock-menu {
-//   color: var(--react-autoql-text-color-primary);
-//   background: var(--react-autoql-background-color-primary);
-//   min-height: 300px;
-// }
-
 .react-tiny-popover-container {
   z-index: 99999;
   border: 1px solid #ababab52;
@@ -272,6 +266,7 @@
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   transition: opacity 0.2s ease 0s !important;
   opacity: 1 !important;
+  overflow: hidden !important;
 }
 
 .clear-messages-confirm-popover {
