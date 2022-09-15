@@ -817,6 +817,7 @@ class Dashboard extends React.Component {
             innerDivClass={`react-autoql-dashboard-tile ${tile.i}`}
             tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
+            dashboardRef={this.ref}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             themeConfig={this.props.themeConfig}

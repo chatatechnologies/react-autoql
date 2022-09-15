@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
@@ -132,6 +132,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
+    popoverParentElement: PropTypes.element,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -179,6 +180,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,
+    popoverParentElement: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -585,7 +587,7 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() => {
             this.setState({ isOptionsDropdownOpen: false })
           }}
-          position="bottom" // preferred position
+          positions={['bottom']} // preferred position
           content={
             <div>
               <div className="clear-messages-confirm-popover">
@@ -713,7 +715,7 @@ export default class DataMessenger extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
-        position="bottom"
+        positions={['bottom']}
         align="end"
       >
         <button
@@ -820,6 +822,7 @@ export default class DataMessenger extends React.Component {
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          popoverParentElement={this.messengerDrawerRef}
           dataPageSize={dataPageSize}
         />
       </ErrorBoundary>

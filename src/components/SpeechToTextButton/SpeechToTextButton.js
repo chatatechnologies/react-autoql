@@ -9,7 +9,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import PropTypes from 'prop-types'
 import { authenticationDefault, themeConfigDefault } from '../../props/defaults'
 import { authenticationType, themeConfigType } from '../../props/types'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import './SpeechToTextButton.scss'
 
 export default class SpeechToTextBtn extends React.Component {
@@ -66,7 +66,7 @@ export default class SpeechToTextBtn extends React.Component {
 
         this.recordAudio.startRecording()
       },
-      function(error) {
+      function (error) {
         console.error(JSON.stringify(error))
       }
     )
@@ -109,7 +109,7 @@ export default class SpeechToTextBtn extends React.Component {
   getMediaPermissionStatus = () => {
     return navigator.permissions
       .query({ name: 'microphone' })
-      .then(function(permissionStatus) {
+      .then(function (permissionStatus) {
         return permissionStatus.state
       })
   }

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -121,14 +121,14 @@ export default class FilterLockPopover extends React.Component {
       <Popover
         containerClassName="filter-lock-menu"
         onClickOutside={this.props.onClose}
-        position={this.props.position}
+        positions={this.props.positions}
         isOpen={this.props.isOpen}
         align={this.props.align}
         ref={(r) => (this.containerRef = r)}
         padding={0}
         content={this.renderContent}
       >
-        <ErrorBoundary>{this.props.children || null}</ErrorBoundary>
+        {this.props.children || <div style={{ display: 'none' }} />}
       </Popover>
     )
   }

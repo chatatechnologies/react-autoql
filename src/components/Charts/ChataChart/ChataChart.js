@@ -581,6 +581,8 @@ export default class ChataChart extends Component {
       onLabelChange: this.updateMargins,
       tooltipID: this.props.tooltipID,
       chartContainerRef: this.chartContainerRef,
+      popoverParentElement:
+        this.props.popoverParentElement || this.chartContainerRef,
     }
   }
 

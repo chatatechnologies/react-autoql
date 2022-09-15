@@ -1095,6 +1095,7 @@ export class DashboardTile extends React.Component {
             )}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.props.rebuildTooltips}
+            popoverParentElement={this.props.dashboardRef}
             {...queryOutputProps}
           />
         )}
