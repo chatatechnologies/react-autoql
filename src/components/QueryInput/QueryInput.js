@@ -142,7 +142,7 @@ export default class QueryInput extends React.Component {
       return
     }
 
-    const totalAnimationTime = 1000
+    const totalAnimationTime = 3000
     const timePerChar = Math.round(totalAnimationTime / query.length)
     if (typeof query === 'string' && _get(query, 'length')) {
       for (let i = 1; i <= query.length; i++) {

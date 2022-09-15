@@ -142,10 +142,10 @@ export default class ExploreQueries extends React.Component {
 
   onValidationSuggestionClick = (queryValidationObj) => {
     const keywords = queryValidationObj.query
-    this.animateQITextAndSubmit(keywords)
+    this.animateQITextAndSubmit(keywords, true)
   }
 
-  animateQITextAndSubmit = (text) => {
+  animateQITextAndSubmit = (text, skipQueryValidation) => {
     return new Promise((resolve, reject) => {
       try {
         if (typeof text === 'string' && text?.length) {
@@ -159,7 +159,7 @@ export default class ExploreQueries extends React.Component {
                   () => {
                     if (i === text.length) {
                       resolve()
-                      this.loadMore(1)
+                      this.loadMore(1, skipQueryValidation)
                     }
                   }
                 )
