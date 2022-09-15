@@ -184,6 +184,7 @@
         flex-direction: row;
         align-items: center;
         justify-content: flex-start;
+        max-width: calc(100% - 100px);
         flex: 1;
       }
 

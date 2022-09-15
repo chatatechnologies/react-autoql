@@ -734,7 +734,12 @@ export default class DataMessenger extends React.Component {
               : this.openFilterLockMenu
           }
         >
-          <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+          <span className="react-autoql-filter-lock-icon-container">
+            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            {this.state.hasFilters ? (
+              <div className="react-autoql-filter-lock-icon-badge" />
+            ) : null}
+          </span>
         </button>
       </FilterLockPopover>
     )

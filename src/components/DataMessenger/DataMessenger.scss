@@ -83,6 +83,23 @@
     width: 22px;
     height: 22px;
   }
+
+  .react-autoql-filter-lock-icon-container {
+    display: inline-block;
+    position: relative;
+
+    .react-autoql-filter-lock-icon-badge {
+      position: absolute;
+      display: inline-block;
+      border: 2px solid var(--react-autoql-accent-color);
+      background: var(--react-autoql-warning-color);
+      border-radius: 50%;
+      height: 14px;
+      width: 14px;
+      right: -5px;
+      top: -4px;
+    }
+  }
 }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
@@ -90,6 +107,7 @@
 }
 
 .react-autoql-drawer .chat-header-container button {
+  position: relative;
   background: transparent;
   border: none;
   color: var(--react-autoql-accent-text-color);
