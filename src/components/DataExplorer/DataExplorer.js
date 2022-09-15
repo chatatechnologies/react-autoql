@@ -315,19 +315,27 @@ export default class DataExplorer extends React.Component {
     const suggestions = []
 
     if (column.type === 'STRING') {
-      suggestions.push(`Total ${lowerCaseSubject} by ${lowerCaseColumn}`)
-      suggestions.push(`List all ${lowerCaseColumn}s`)
+      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
+      suggestions.push(`List all ${lowerCaseColumn}`)
     }
 
     if (column.type === 'DATE') {
       suggestions.push(`${titleCaseSubject} by month this year`)
-      suggestions.push(`All ${lowerCaseSubject} in the last 2 weeks`)
-      suggestions.push(`Total ${lowerCaseSubject} last year`)
-      suggestions.push(`Number of ${lowerCaseSubject} yesterday`)
+      suggestions.push(`Show ${lowerCaseSubject} in the last 2 weeks`)
+    }
+
+    if (column.type === 'DATE_STRING') {
+      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
     }
 
     if (column.type === 'DOLLAR_AMT') {
-      suggestions.push(`Top 5 ${lowerCaseSubject} ${lowerCaseColumn}`)
+      suggestions.push(`Total ${lowerCaseColumn} ${lowerCaseSubject}`)
+      suggestions.push(`Highest ${lowerCaseColumn} ${lowerCaseSubject}`)
+    }
+
+    if (column.type === 'QUANTITY') {
+      suggestions.push(`Average ${lowerCaseColumn} ${lowerCaseSubject}`)
+      suggestions.push(`Lowest ${lowerCaseColumn} ${lowerCaseSubject}`)
     }
 
     return (

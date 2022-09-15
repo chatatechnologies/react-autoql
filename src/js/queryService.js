@@ -667,7 +667,7 @@ export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
   return runQueryOnly({ query: subject, domain, apiKey, token })
     .then((response) => {
       if (response?.data?.data?.rows?.length) {
-        response.data.data.rows = response.data.data.rows.slice(0, 10)
+        response.data.data.rows = response.data.data.rows.slice(0, 5)
       }
       return Promise.resolve(response)
     })
