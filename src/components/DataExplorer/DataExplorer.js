@@ -1,33 +1,28 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import ReactTooltip from 'react-tooltip'
-import _isEqual from 'lodash.isequal'
+import { v4 as uuid } from 'uuid'
 
+import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import DataExplorerInput from './DataExplorerInput'
 import DataPreview from './DataPreview'
 import DEConstants from './constants'
-import { CustomScrollbars } from '../CustomScrollbars'
-import { authenticationType } from '../../props/types'
-import { QuerySuggestionList } from '../ExploreQueries'
-import { LoadingDots } from '../LoadingDots'
-import { Spinner } from '../Spinner'
-import { Icon } from '../Icon'
-import { TopicName } from './TopicName'
-import { Chip } from '../Chip'
-import { Card } from '../Card'
 
-import {
-  isColumnDateType,
-  isColumnNumberType,
-  isColumnStringType,
-} from '../QueryOutput/columnHelpers'
+import { QuerySuggestionList } from '../ExploreQueries'
+import { authenticationType } from '../../props/types'
+import { CustomScrollbars } from '../CustomScrollbars'
+import { TopicName } from './TopicName'
+import { Icon } from '../Icon'
+import { Card } from '../Card'
 
 import './DataExplorer.scss'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
     super(props)
+
+    this.querySuggestionsKey = uuid()
+
     this.state = {
       activeTopicType: null,
       selectedSubject: null,
@@ -54,13 +49,11 @@ export default class DataExplorer extends React.Component {
     this._isMounted = true
   }
 
-  componentDidUpdate = (prevProps, prevState) => {}
-
   componentWillUnmount = () => {
     this._isMounted = false
   }
 
-  onInputSelection = (listItem) => {
+  onInputSelection = (listItem, skipQueryValidation) => {
     if (listItem?.type === DEConstants.SUBJECT_TYPE) {
       this.setState({
         selectedSubject: listItem,
@@ -79,6 +72,7 @@ export default class DataExplorer extends React.Component {
         selectedVL: null,
         selectedKeywords: listItem,
         activeTopicType: listItem?.type,
+        skipQueryValidation,
       })
     }
 
@@ -121,34 +115,9 @@ export default class DataExplorer extends React.Component {
     )
   }
 
-  onChipDelete = (topic) => {
-    if (topic?.type === DEConstants.SUBJECT_TYPE) {
-      this.setState({ selectedSubject: null })
-    } else if (topic?.type === DEConstants.VL_TYPE) {
-      this.setState({ selectedVL: null })
-    }
-  }
-
-  onChipClick = (topic) => {
-    if (topic?.type !== this.state.activeTopicType) {
-      this.setState({ activeTopicType: topic?.type })
-    }
-  }
-
-  renderTopicChip = (topic) => {
-    if (!topic) {
-      return null
-    }
-
-    return (
-      <Chip
-        onDelete={() => this.onChipDelete(topic)}
-        onClick={() => this.onChipClick(topic)}
-        selected={this.state.activeTopicType === topic.type}
-      >
-        <TopicName topic={topic} />
-      </Chip>
-    )
+  onValidationSuggestionClick = (text) => {
+    this.querySuggestionsKey = uuid()
+    this.inputRef?.animateTextAndSubmit(text)
   }
 
   renderDataPreview = () => {
@@ -168,6 +137,7 @@ export default class DataExplorer extends React.Component {
           subject={this.state.selectedSubject}
           shouldRender={this.props.shouldRender}
           rebuildTooltips={this.props.rebuildTooltips}
+          dataExplorerRef={this.dataExplorerPage}
         />
       </div>
     )
@@ -215,9 +185,15 @@ export default class DataExplorer extends React.Component {
         >
           <div className="data-explorer-query-suggestion-list">
             <QuerySuggestionList
+              key={this.querySuggestionsKey}
               authentication={this.props.authentication}
               topicText={selectedTopic?.name}
               executeQuery={this.props.executeQuery}
+              skipQueryValidation={this.state.skipQueryValidation}
+              onValidationSuggestionClick={this.onValidationSuggestionClick}
+              onSuggestionListResponse={() =>
+                this.setState({ skipQueryValidation: false })
+              }
             />
           </div>
         </Card>
@@ -339,19 +315,27 @@ export default class DataExplorer extends React.Component {
     const suggestions = []
 
     if (column.type === 'STRING') {
-      suggestions.push(`Total ${lowerCaseSubject} by ${lowerCaseColumn}`)
-      suggestions.push(`List all ${lowerCaseColumn}s`)
+      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
+      suggestions.push(`List all ${lowerCaseColumn}`)
     }
 
     if (column.type === 'DATE') {
       suggestions.push(`${titleCaseSubject} by month this year`)
-      suggestions.push(`All ${lowerCaseSubject} in the last 2 weeks`)
-      suggestions.push(`Total ${lowerCaseSubject} last year`)
-      suggestions.push(`Number of ${lowerCaseSubject} yesterday`)
+      suggestions.push(`Show ${lowerCaseSubject} in the last 2 weeks`)
+    }
+
+    if (column.type === 'DATE_STRING') {
+      suggestions.push(`Show ${lowerCaseSubject} by ${lowerCaseColumn}`)
     }
 
     if (column.type === 'DOLLAR_AMT') {
-      suggestions.push(`Top 5 ${lowerCaseSubject} ${lowerCaseColumn}`)
+      suggestions.push(`Total ${lowerCaseColumn} ${lowerCaseSubject}`)
+      suggestions.push(`Highest ${lowerCaseColumn} ${lowerCaseSubject}`)
+    }
+
+    if (column.type === 'QUANTITY') {
+      suggestions.push(`Average ${lowerCaseColumn} ${lowerCaseSubject}`)
+      suggestions.push(`Lowest ${lowerCaseColumn} ${lowerCaseSubject}`)
     }
 
     return (
@@ -397,22 +381,25 @@ export default class DataExplorer extends React.Component {
   }
 
   render = () => {
+    let display
     if (!this.props.shouldRender) {
-      return null
+      display = 'none'
     }
 
     return (
-      <ErrorBoundary>
-        <div
-          ref={(r) => (this.dataExplorerPage = r)}
-          className="data-explorer-page-container"
-          data-test="data-explorer-tab"
-        >
+      <div
+        ref={(r) => (this.dataExplorerPage = r)}
+        className="data-explorer-page-container"
+        data-test="data-explorer-tab"
+        style={{ display }}
+      >
+        <ErrorBoundary>
           <DataExplorerInput
             ref={(r) => (this.inputRef = r)}
             authentication={this.props.authentication}
             inputPlaceholder={this.props.inputPlaceholder}
             onSelection={this.onInputSelection}
+            dataExplorerRef={this.dataExplorerPage}
           />
           {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}
@@ -426,8 +413,8 @@ export default class DataExplorer extends React.Component {
             getContent={this.renderHeaderTooltipContent}
             clickable
           />
-        </div>
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </div>
     )
   }
 }

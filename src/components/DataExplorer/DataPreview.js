@@ -11,7 +11,6 @@ import { Icon } from '../Icon'
 
 import {
   getDataFormatting,
-  getThemeConfig,
   dataFormattingDefault,
   themeConfigDefault,
 } from '../../props/defaults'
@@ -20,6 +19,7 @@ import { formatElement } from '../../js/Util.js'
 
 import './DataPreview.scss'
 import { Card } from '../Card'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -78,7 +78,7 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: false, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.name,
+      subject: this.props.subject?.query,
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
@@ -128,16 +128,17 @@ export default class DataExplorer extends React.Component {
 
     const config = getDataFormatting(this.props.dataFormatting)
 
+    let maxHeight = this.props.dataExplorerRef?.clientHeight * 0.75
+    if (isNaN(maxHeight)) {
+      maxHeight = 500
+    }
+
     return (
       <div className="data-preview">
-        <Scrollbars
+        <CustomScrollbars
           autoHeight
           autoHeightMin={0}
-          autoHeightMax={800}
-          className="data-preview-scroll-component"
-          renderView={(props) => (
-            <div {...props} className="data-preview-scroll-container" />
-          )}
+          autoHeightMax={maxHeight}
         >
           <table>
             <thead>
@@ -168,7 +169,7 @@ export default class DataExplorer extends React.Component {
               })}
             </tbody>
           </table>
-        </Scrollbars>
+        </CustomScrollbars>
       </div>
     )
   }
@@ -184,8 +185,8 @@ export default class DataExplorer extends React.Component {
   renderDataPreviewTitle = () => {
     return (
       <div>
-        <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview - "All{' '}
-        {this.props.subject?.name}"
+        <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview - "
+        {this.props.subject?.query}"
       </div>
     )
   }
@@ -207,41 +208,6 @@ export default class DataExplorer extends React.Component {
             ? this.renderLoadingContainer()
             : this.renderDataPreviewGrid()}
         </Card>
-      </ErrorBoundary>
-    )
-  }
-
-  render2 = () => {
-    if (!this.props.shouldRender) {
-      return null
-    }
-
-    return (
-      <ErrorBoundary>
-        <div
-          ref={(r) => (this.dataExplorerPage = r)}
-          className="data-explorer-data-preview react-autoql-card"
-          data-test="data-explorer-data-preview"
-        >
-          <div className="react-autoql-card-title-container">
-            <div className="react-autoql-card-title">
-              <div>
-                <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview
-                - "All {this.props.subject?.name}"
-              </div>
-              <Icon type="caret-down" />
-            </div>
-            <div className="data-explorer-subtitle">
-              <em>{this.props.subject?.name} data snapshot</em>
-            </div>
-          </div>
-          {/* <div className="data-preview-header">
-            <TopicName topic={this.props.subject} />
-          </div> */}
-          {this.state.loading
-            ? this.renderLoadingContainer()
-            : this.renderDataPreviewGrid()}
-        </div>
       </ErrorBoundary>
     )
   }

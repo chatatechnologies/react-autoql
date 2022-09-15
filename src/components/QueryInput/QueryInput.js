@@ -135,6 +135,7 @@ export default class QueryInput extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
+    clearTimeout(this.inputAnimationTimeout)
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source }) => {
@@ -146,20 +147,22 @@ export default class QueryInput extends React.Component {
     const timePerChar = Math.round(totalAnimationTime / query.length)
     if (typeof query === 'string' && _get(query, 'length')) {
       for (let i = 1; i <= query.length; i++) {
-        setTimeout(() => {
-          if (this._isMounted)
+        this.inputAnimationTimeout = setTimeout(() => {
+          if (this._isMounted) {
             this.setState({
               inputValue: query.slice(0, i),
             })
-          if (i === query.length) {
-            setTimeout(() => {
-              this.submitQuery({
-                queryText: query,
-                userSelection,
-                skipQueryValidation: true,
-                source,
-              })
-            }, 300)
+            if (i === query.length) {
+              setTimeout(() => {
+                this.submitQuery({
+                  inputValue: query,
+                  queryText: query,
+                  userSelection,
+                  skipQueryValidation: true,
+                  source,
+                })
+              }, 300)
+            }
           }
         }, i * timePerChar)
       }

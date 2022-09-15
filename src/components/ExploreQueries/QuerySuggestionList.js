@@ -1,13 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import InfiniteScroll from 'react-infinite-scroller'
-import ReactTooltip from 'react-tooltip'
 import { Scrollbars } from 'react-custom-scrollbars-2'
 
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
-import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
@@ -29,11 +26,15 @@ export default class QuerySuggestionList extends React.Component {
 
   static propTypes = {
     topicText: PropTypes.string,
+    skipQueryValidation: PropTypes.bool,
+    onSuggestionListResponse: PropTypes.func,
     executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
     topicText: null,
+    skipQueryValidation: false,
+    onSuggestionListResponse: () => {},
     executeQuery: () => {},
   }
 
@@ -51,7 +52,7 @@ export default class QuerySuggestionList extends React.Component {
     }
   }
 
-  loadMore = (page, skipQueryValidation) => {
+  loadMore = (page) => {
     if (this.state.loading) {
       return
     }
@@ -75,9 +76,10 @@ export default class QuerySuggestionList extends React.Component {
       keywords: topicText,
       pageSize: this.pageSize,
       pageNumber: page,
-      skipQueryValidation,
+      skipQueryValidation: this.props.skipQueryValidation,
     })
       .then((response) => {
+        this.props.onSuggestionListResponse({ response })
         const finishedState = {
           initialLoading: false,
           loading: false,
@@ -105,14 +107,14 @@ export default class QuerySuggestionList extends React.Component {
         this.setState(finishedState)
       })
       .catch((error) => {
+        this.props.onSuggestionListResponse({ error })
         this.setState({ loading: false, initialLoading: false })
         console.error(error)
       })
   }
 
   onValidationSuggestionClick = (queryValidationObj) => {
-    const keywords = queryValidationObj.query
-    this.animateQITextAndSubmit(keywords)
+    this.props.onValidationSuggestionClick(queryValidationObj.query)
   }
 
   clearQueryList = () => {

@@ -107,7 +107,6 @@ export default class FilterLockPopover extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearTimeout(this.animateTextTimeout)
     clearTimeout(this.focusInputTimeout)
     clearTimeout(this.highlightFilterEndTimeout)
     clearTimeout(this.highlightFilterStartTimeout)
@@ -166,7 +165,7 @@ export default class FilterLockPopover extends React.Component {
               }, 300)
             }
           }
-        }, timePerChar)
+        }, i * timePerChar)
       }
     }
   }

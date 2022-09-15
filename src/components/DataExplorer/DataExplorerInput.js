@@ -13,6 +13,7 @@ import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 
 import './DataExplorerInput.scss'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
@@ -21,6 +22,7 @@ export default class DataExplorerInput extends React.Component {
     this.componentKey = uuid()
     this.userTypedValue = null
     this.userSelectedValue = null
+    this.isDirty = false
 
     this.state = {
       inputValue: '',
@@ -51,11 +53,22 @@ export default class DataExplorerInput extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.autoCompleteTimer)
+    clearTimeout(this.inputAnimationTimeout)
   }
 
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication }).then((response) => {
-      const allSubjects = response?.data?.data?.subjects || []
+      const subjects = response?.data?.data?.subjects || []
+      let allSubjects = []
+      if (subjects.length) {
+        allSubjects = subjects.map((subject) => {
+          return {
+            ...subject,
+            name: subject.display_name,
+            type: DEConstants.SUBJECT_TYPE,
+          }
+        })
+      }
 
       if (this._isMounted) {
         this.setState({
@@ -65,12 +78,22 @@ export default class DataExplorerInput extends React.Component {
     })
   }
 
-  focusInput = () => {
-    this.autoSuggest?.input?.focus()
-  }
-
   blurInput = () => {
     this.autoSuggest?.input?.blur()
+  }
+
+  subjectAutocompleteMatch = (input) => {
+    if (input == '') {
+      return []
+    }
+
+    var reg = new RegExp(`^${input}`)
+    return this.state.allSubjects.filter((subject) => {
+      const term = subject.name
+      if (term.match(reg)) {
+        return subject
+      }
+    })
   }
 
   getNewRecentSuggestions = (subject) => {
@@ -102,6 +125,34 @@ export default class DataExplorerInput extends React.Component {
     }
   }
 
+  submitRawText = (text, skipQueryValidation) => {
+    const subject = {
+      type: 'text',
+      name: text,
+    }
+    this.props.onSelection(subject, skipQueryValidation)
+    this.setState({
+      recentSuggestions: this.getNewRecentSuggestions(subject),
+    })
+  }
+
+  animateTextAndSubmit = (text) => {
+    if (typeof text === 'string' && text?.length) {
+      const totalTime = 1000
+      const timePerChar = totalTime / text.length
+      for (let i = 1; i <= text.length; i++) {
+        this.inputAnimationTimeout = setTimeout(() => {
+          if (this._isMounted) {
+            this.setState({ inputValue: text.slice(0, i) })
+            if (i === text.length) {
+              this.submitRawText(text, true)
+            }
+          }
+        }, i * timePerChar)
+      }
+    }
+  }
+
   onInputChange = (e) => {
     if (this._isMounted) {
       if (
@@ -115,6 +166,7 @@ export default class DataExplorerInput extends React.Component {
       if ((e?.target?.value || e?.target?.value === '') && e.key !== 'Enter') {
         this.userSelectedValue = null
         this.userTypedValue = e.target.value
+        this.isDirty = true
         this.setState({ inputValue: e.target.value })
       } else {
         // User clicked on autosuggest item
@@ -140,14 +192,7 @@ export default class DataExplorerInput extends React.Component {
       if (this.userSelectedValue) {
         this.selectSubject(this.userSelectedValue)
       } else if (!!this.state.inputValue) {
-        const subject = {
-          type: 'text',
-          name: this.state.inputValue,
-        }
-        this.props.onSelection(subject)
-        this.setState({
-          recentSuggestions: this.getNewRecentSuggestions(subject),
-        })
+        this.submitRawText(this.state.inputValue)
       }
       this.blurInput()
     }
@@ -168,8 +213,11 @@ export default class DataExplorerInput extends React.Component {
     }
   }
 
-  requestSuggestions = (value) => {
+  requestSuggestions = () => {
     this.setState({ loadingAutocomplete: true })
+
+    const value = this.userTypedValue
+    const subjectMatches = this.subjectAutocompleteMatch(value) || []
 
     clearTimeout(this.autoCompleteTimer)
     this.autoCompleteTimer = setTimeout(() => {
@@ -177,28 +225,28 @@ export default class DataExplorerInput extends React.Component {
         suggestion: value,
         ...this.props.authentication,
       })
-        .then((oldResponse) => {
+        .then((response) => {
           // ----- remove this once the new endpoint is ready -----
-          const response = _cloneDeep(oldResponse)
-          if (response?.data?.data?.matches) {
-            response.data.data.matches = response.data.data.matches.map(
-              (match) => {
-                return {
-                  ...match,
-                  name: `${match.keyword} (${match.show_message})`,
-                  type: DEConstants.VL_TYPE,
-                }
+          let vlMatches = []
+          if (response?.data?.data?.matches?.length) {
+            vlMatches = response.data.data.matches.map((match) => {
+              return {
+                ...match,
+                name: `${match.keyword} (${match.show_message})`,
+                type: DEConstants.VL_TYPE,
               }
-            )
+            })
           }
-
           // -------------------------------------------------------
-          const sortedMatches = _cloneDeep(response?.data?.data?.matches)?.sort(
-            (a, b) => b.name.length - a.name.length
-          )
+
+          const allMatches = [...subjectMatches, ...vlMatches]
+
+          // const sortedMatches = _cloneDeep(response?.data?.data?.matches)?.sort(
+          //   (a, b) => b.name.length - a.name.length
+          // )
 
           this.setState({
-            suggestions: sortedMatches || [],
+            suggestions: allMatches,
             loadingAutocomplete: false,
           })
         })
@@ -210,7 +258,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    if (!value) {
+    if (!value || !this.isDirty) {
       return
     }
 
@@ -294,6 +342,29 @@ export default class DataExplorerInput extends React.Component {
     return <TopicName topic={suggestion} />
   }
 
+  renderSuggestionsContainer = ({ containerProps, children, query }) => {
+    let maxHeight = 250
+    const dataExplorerHeight = this.props.dataExplorerRef?.clientHeight - 200
+    if (!isNaN(dataExplorerHeight) && dataExplorerHeight > 250) {
+      maxHeight = dataExplorerHeight
+    }
+
+    return (
+      <div {...containerProps}>
+        <div className="react-autoql-data-explorer-suggestion-container">
+          <CustomScrollbars
+            autoHeight
+            autoHeightMin={0}
+            autoHeightMax={maxHeight}
+            autoHide={false}
+          >
+            {children}
+          </CustomScrollbars>
+        </div>
+      </div>
+    )
+  }
+
   renderInputIcon = () => {
     return (
       <div className="chat-bar-input-icon">
@@ -334,9 +405,11 @@ export default class DataExplorerInput extends React.Component {
         >
           <Autosuggest
             id={`data-explorer-autosuggest-${this.componentKey}`}
+            className="react-autoql-data-explorer-autosuggest"
             onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
             onSuggestionsClearRequested={this.onSuggestionsClearRequested}
             getSuggestionValue={this.userSelectedSuggestionHandler}
+            renderSuggestionsContainer={this.renderSuggestionsContainer}
             suggestions={this.getSuggestions()}
             multiSection={true}
             renderSectionTitle={this.renderSectionTitle}
