@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Popover } from 'react-tiny-popover'
+import { Popover, ArrowContainer } from 'react-tiny-popover'
 
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -87,18 +87,16 @@ export default class FilterLockPopover extends React.Component {
     this.setState({ insertedFilter: text })
   }
 
-  renderContent = ({ position, targetRect, popoverRect }) => {
+  renderContent = ({ position, childRect, popoverRect }) => {
     return (
-      <>
-        {/* TODO: Use this component for arrow
-        
-        <ArrowContainer
-          className="filter-lock-menu"
-          position={position}
-          targetRect={targetRect}
-          popoverRect={popoverRect}
-          arrowStyle={{ opacity: 1 }}
-        /> */}
+      <ArrowContainer
+        className="filter-lock-menu-content-container"
+        arrowClassName="filter-lock-menu-popover-arrow"
+        position={position}
+        childRect={childRect}
+        popoverRect={popoverRect}
+        arrowSize={10}
+      >
         <FilterLockPopoverContent
           ref={(r) => (this.popoverContentRef = r)}
           authentication={this.props.authentication}
@@ -112,7 +110,7 @@ export default class FilterLockPopover extends React.Component {
           initialFilters={this.state.initialFilters}
           isFetchingFilters={this.state.isFetchingFilters}
         />
-      </>
+      </ArrowContainer>
     )
   }
 
@@ -125,8 +123,10 @@ export default class FilterLockPopover extends React.Component {
         isOpen={this.props.isOpen}
         align={this.props.align}
         ref={(r) => (this.containerRef = r)}
-        padding={0}
+        parentElement={this.props.parentElement}
+        boundaryElement={this.props.boundaryElement}
         content={this.renderContent}
+        boundaryInset={10}
       >
         {this.props.children || <div style={{ display: 'none' }} />}
       </Popover>
