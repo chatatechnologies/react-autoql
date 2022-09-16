@@ -107,6 +107,9 @@ export default class ChataLineChart extends Component {
 
     return (
       <g data-test="react-autoql-line-chart">
+        {this.props.marginAdjustmentFinished && (
+          <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -130,9 +133,6 @@ export default class ChataLineChart extends Component {
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }
