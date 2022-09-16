@@ -333,9 +333,13 @@
         background-color: rgba(0, 0, 0, 0.1) !important;
       }
       .react-autosuggest__section-title {
-        padding: 10px 0 0 10px;
+        padding-left: 15px;
         font-size: 12px;
         color: var(--react-autoql-text-color-placeholder);
+      }
+      .filter-locking-no-suggestions-text {
+        padding-left: 8px;
+        font-size: 14px;
       }
     }
   }

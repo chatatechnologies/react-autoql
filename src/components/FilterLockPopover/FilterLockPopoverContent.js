@@ -202,6 +202,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
+    this.setState({ isLoadingAutocomplete: true })
     clearTimeout(this.autoCompleteTimer)
     this.autoCompleteTimer = setTimeout(() => {
       fetchVLAutocomplete({
@@ -231,9 +232,15 @@ export default class FilterLockPopover extends React.Component {
             }
             this.autoCompleteArray.push(anObject)
           }
-          this.setState({ suggestions: this.autoCompleteArray })
+          this.setState({
+            suggestions: this.autoCompleteArray,
+            isLoadingAutocomplete: false,
+          })
         })
-        .catch((error) => console.error(error))
+        .catch((error) => {
+          console.error(error)
+          this.setState({ isLoadingAutocomplete: false })
+        })
     }, 300)
   }
 
@@ -294,6 +301,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   setFilter = (newFilter) => {
+    if (!newFilter?.value) {
+      return
+    }
+
     const auth = getAuthentication(this.props.authentication)
 
     this.showSavingIndicator()
@@ -521,6 +532,10 @@ export default class FilterLockPopover extends React.Component {
   renderSuggestion = ({ name }) => {
     this.rebuildTooltips()
 
+    if (!name.keyword) {
+      return null
+    }
+
     return (
       <ul
         className="filter-lock-suggestion-item"
@@ -551,6 +566,7 @@ export default class FilterLockPopover extends React.Component {
             autoHeight
             autoHeightMin={0}
             autoHeightMax={maxHeight}
+            autoHide={false}
           >
             {children}
           </CustomScrollbars>
@@ -559,17 +575,57 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  getSuggestions = () => {
+    const sections = []
+    const doneLoading = !this.state.isLoadingAutocomplete
+    const hasSuggestions = !!this.state.suggestions?.length && doneLoading
+    const noSuggestions = !this.state.suggestions?.length && doneLoading
+
+    if (hasSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: this.state.suggestions,
+      })
+    } else if (noSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: [{ name: '' }],
+        emptyState: true,
+      })
+    }
+
+    return sections
+  }
+
+  renderSectionTitle = (section) => {
+    return (
+      <>
+        <strong>{section.title}</strong>
+        {section.emptyState ? (
+          <div className="filter-locking-no-suggestions-text">
+            <em>No results</em>
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
   renderVLInput = () => {
     return (
       <Autosuggest
         id="react-autoql-filter-menu-input"
         highlightFirstSuggestion
-        suggestions={this.state.suggestions}
+        suggestions={this.getSuggestions()}
         renderSuggestion={this.renderSuggestion}
         getSuggestionValue={this.getSuggestionValue}
         onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
         onSuggestionsClearRequested={this.onSuggestionsClearRequested}
         renderSuggestionsContainer={this.renderSuggestionsContainer}
+        getSectionSuggestions={(section) => {
+          return section.suggestions
+        }}
+        renderSectionTitle={this.renderSectionTitle}
+        multiSection={true}
         inputProps={{
           onChange: this.onInputChange,
           value: this.state.inputValue,
