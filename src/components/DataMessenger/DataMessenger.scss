@@ -83,6 +83,23 @@
     width: 22px;
     height: 22px;
   }
+
+  .react-autoql-filter-lock-icon-container {
+    display: inline-block;
+    position: relative;
+
+    .react-autoql-filter-lock-icon-badge {
+      position: absolute;
+      display: inline-block;
+      border: 2px solid var(--react-autoql-accent-color);
+      background: var(--react-autoql-warning-color);
+      border-radius: 50%;
+      height: 14px;
+      width: 14px;
+      right: -5px;
+      top: -4px;
+    }
+  }
 }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
@@ -90,6 +107,7 @@
 }
 
 .react-autoql-drawer .chat-header-container button {
+  position: relative;
   background: transparent;
   border: none;
   color: var(--react-autoql-text-color-accent);
@@ -261,7 +279,7 @@
 }
 
 /* Tooltips */
-.react-autoql-drawer-tooltip {
+.react-autoql-tooltip {
   font-family: var(--react-autoql-font-family), sans-serif;
   letter-spacing: 0.04em;
   line-height: 1.5em;
@@ -270,6 +288,8 @@
   text-align: left;
   opacity: 1 !important;
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
+  max-width: 300px;
+  word-break: break-word;
 }
 .interpretation-tooltip {
   font-family: var(--react-autoql-font-family), sans-serif;
@@ -283,12 +303,6 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
-// .react-autoql-condition-lock-menu {
-//   color: var(--react-autoql-text-color-primary);
-//   background: var(--react-autoql-background-color-secondary);
-//   min-height: 300px;
-// }
-
 .react-tiny-popover-container {
   z-index: 99999;
   border: 1px solid #ababab52;
@@ -296,6 +310,7 @@
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   transition: opacity 0.2s ease 0s !important;
   opacity: 1 !important;
+  overflow: hidden !important;
 }
 
 .clear-messages-confirm-popover {

@@ -532,12 +532,12 @@ class DashboardWithoutTheme extends React.Component {
           <QueryOutput
             ref={(r) => (this.drilldownTableRef = r)}
             initialDisplayType="table"
+            isResizing={this.state.isAnimatingModal}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             dataFormatting={getDataFormatting(this.props.dataFormatting)}
             queryResponse={this.state.activeDrilldownResponse}
             renderTooltips={false}
-            isAnimatingContainer={this.state.isAnimatingModal}
             reportProblemCallback={this.reportProblemCallback}
             enableAjaxTableData={this.props.enableAjaxTableData}
             rebuildTooltips={this.rebuildTooltips}
@@ -664,11 +664,11 @@ class DashboardWithoutTheme extends React.Component {
                           dataFormatting={getDataFormatting(
                             this.props.dataFormatting
                           )}
+                          isResizing={this.state.isAnimatingModal}
                           queryResponse={_cloneDeep(queryResponse)}
                           initialDisplayType={displayType}
                           tableConfigs={_cloneDeep(dataConfig)}
                           rebuildTooltips={this.rebuildTooltips}
-                          isAnimatingContainer={this.state.isAnimatingModal}
                           autoChartAggregations={
                             this.props.autoChartAggregations
                           }
@@ -787,6 +787,7 @@ class DashboardWithoutTheme extends React.Component {
             innerDivClass={`react-autoql-dashboard-tile ${tile.i}`}
             tileRef={(ref) => (this.tileRefs[tile.key] = ref)}
             key={tile.key}
+            dashboardRef={this.ref}
             authentication={getAuthentication(this.props.authentication)}
             autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
             tile={{ ...tile, i: tile.key, maxH: 12, minH: 2, minW: 3 }}

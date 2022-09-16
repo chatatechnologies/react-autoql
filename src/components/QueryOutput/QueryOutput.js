@@ -740,14 +740,14 @@ export class QueryOutput extends React.Component {
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = (
+  onChartClick = ({
     row,
     columnIndex,
     columns,
     stringColumnIndex,
     legendColumn,
-    activeKey
-  ) => {
+    activeKey,
+  }) => {
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1645,6 +1645,7 @@ export class QueryOutput extends React.Component {
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
+          popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
           data={
             usePivotData
@@ -1662,7 +1663,6 @@ export class QueryOutput extends React.Component {
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
-          isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
@@ -1971,7 +1971,7 @@ export class QueryOutput extends React.Component {
           {this.renderFooter()}
         </div>
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          className="react-autoql-tooltip"
           id={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           effect="solid"
           place="left"

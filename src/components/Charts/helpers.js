@@ -42,6 +42,8 @@ export const chartPropTypes = {
   visibleSeriesIndices: PropTypes.arrayOf(PropTypes.number).isRequired,
   height: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
+  innerHeight: PropTypes.number.isRequired,
+  innerWidth: PropTypes.number.isRequired,
   leftMargin: PropTypes.number,
   rightMargin: PropTypes.number,
   topMargin: PropTypes.number,
@@ -370,21 +372,22 @@ export const getMinAndMaxValues = (data, numberColumnIndices) => {
 
     // In order to see the chart elements we need to make sure
     // that the max and min values are different.
-    if (maxValue === minValue) {
-      if (minValue > 0) {
-        minValue = 0
-      } else if (maxValue < 0) {
-        maxValue = 0
-      }
-    }
+    // Use this if block below is commented out
+    // if (maxValue === minValue) {
+    //   if (minValue > 0) {
+    //     minValue = 0
+    //   } else if (maxValue < 0) {
+    //     maxValue = 0
+    //   }
+    // }
 
     // Always show 0 on the y axis
     // Keep this for future use
-    // if (maxValue > 0 && minValue > 0) {
-    //   minValue = 0
-    // } else if (maxValue < 0 && minValue < 0) {
-    //   maxValue = 0
-    // }
+    if (maxValue > 0 && minValue > 0) {
+      minValue = 0
+    } else if (maxValue < 0 && minValue < 0) {
+      maxValue = 0
+    }
 
     return {
       minValue,
@@ -459,18 +462,21 @@ export const doesElementOverflowContainer = (element, container) => {
 
 export const getTickValues = (tickHeight, fullHeight, labelArray) => {
   try {
-    const textHeightInPx = 30
+    const minTextHeightInPx = 16
     const interval = Math.ceil(
-      (labelArray.length * textHeightInPx) / fullHeight
+      (labelArray.length * minTextHeightInPx) / fullHeight
     )
 
-    if (tickHeight < textHeightInPx) {
+    if (tickHeight < minTextHeightInPx) {
       const tickValues = []
+
+      // We want to do this in the reverse direction so the highest value is always included
       labelArray.forEach((label, index) => {
         if (index % interval === 0) {
           tickValues.push(label)
         }
       })
+
       return tickValues
     }
   } catch (error) {

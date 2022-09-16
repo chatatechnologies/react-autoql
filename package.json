@@ -109,7 +109,7 @@
     "react-splitter-layout": "^4.0.0",
     "react-switch": "^6.0.0",
     "react-tabulator": "^0.15.0",
-    "react-tiny-popover": "^3.4.5",
+    "react-tiny-popover": "^7.1.0",
     "react-toastify": "^8.2.0",
     "react-tooltip": "^4.2.21",
     "recordrtc": "^5.6.1",

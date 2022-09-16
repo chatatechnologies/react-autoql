@@ -13,6 +13,9 @@ export default class Axes extends React.Component {
 
     this.xAxisKey = uuid()
     this.yAxisKey = uuid()
+    this.textLineHeight = 16
+    this.axisLabelPaddingTop = 5
+    this.axisLabelPaddingLeft = 10
 
     this.labelInlineStyles = {
       fontSize: 12,
@@ -88,8 +91,8 @@ export default class Axes extends React.Component {
           <AxisSelector
             {...this.props}
             column={this.props.xCol}
-            position="top"
-            align="end"
+            positions={['top', 'bottom']}
+            align="center"
             childProps={{
               x: xLabelX - xLabelWidth / 2 - 10,
               y: xLabelY - 16,
@@ -103,23 +106,67 @@ export default class Axes extends React.Component {
   }
 
   renderYAxisLabel = (yAxisTitle) => {
-    const yLabelY = 20
-    const yLabelX = -((this.props.height - this.props.bottomMargin) / 2)
-    const yLabelBbox = getBBoxFromRef(this.yLabelRef)
-    const yLabelWidth = yLabelBbox ? yLabelBbox.width : 0
-    const yLabelHeight = yLabelBbox ? yLabelBbox.height : 0
+    const chartBoundingRect =
+      this.props.chartContainerRef?.getBoundingClientRect()
+    const yLabelBoundingRect = this.yLabelRef?.getBoundingClientRect()
 
+    const chartContainerHeight = chartBoundingRect?.height ?? 0
+    const yLabelHeight = yLabelBoundingRect?.height ?? 0
+    const yLabelWidth = yLabelBoundingRect?.width ?? 0
+    const yLabelTop = yLabelBoundingRect?.top
+    const chartTop = chartBoundingRect?.top
+
+    // X and Y are switched from the rotation (anchored in the middle)
+    let yLabelY = this.textLineHeight
+    let yLabelX = -((chartContainerHeight - this.props.bottomMargin) / 2)
+
+    if (yAxisTitle !== this.previousYAxisTitle) {
+      // Label changed, reset all svg transforms
+      this.originalYLabelHeight = undefined
+      this.yLabelTransform = undefined
+      this.topDifference = undefined
+      this.justChangedYLabel = true
+    } else if (this.justChangedYLabel) {
+      this.originalYLabelHeight = yLabelHeight
+      this.justChangedYLabel = false
+    }
+    this.previousYAxisTitle = yAxisTitle
+
+    let textLength
+    if (this.originalYLabelHeight > chartContainerHeight) {
+      // Squeeze text to fit in full height
+      this.yLabelTransform = `rotate(-90)`
+      this.topDifference = undefined
+      yLabelX = -(chartContainerHeight / 2)
+      textLength = Math.floor(
+        chartContainerHeight - this.props.chartContainerPadding
+      )
+    } else if (yLabelTop < chartTop) {
+      // Y Label can fit, it is just outside of container. Shift it down
+      const prevTopDifference = this.topDifference ?? 0
+      const topDifference = Math.floor(
+        yLabelTop - chartTop - this.axisLabelPaddingLeft
+      )
+
+      this.topDifference = topDifference + prevTopDifference
+      this.yLabelTransform = `rotate(-90) translate(${this.topDifference}, 0)`
+    }
+
+    const transform = this.yLabelTransform || `rotate(-90)`
     return (
       <g>
         <text
           ref={(r) => (this.yLabelRef = r)}
+          id={`y-axis-label-${this.yAxisKey}`}
           className="y-axis-label"
           data-test="y-axis-label"
           textAnchor="middle"
-          transform="rotate(-90)"
           fontWeight="bold"
+          transform={transform}
           x={yLabelX}
           y={yLabelY}
+          textLength={textLength}
+          lengthAdjust="spacingAndGlyphs"
           style={this.labelInlineStyles}
         >
           {this.renderAxisLabel(yAxisTitle, this.props.hasYDropdown)}
@@ -128,14 +175,14 @@ export default class Axes extends React.Component {
           <AxisSelector
             {...this.props}
             column={this.props.yCol}
-            position="right"
+            positions={['right']}
             align="center"
             childProps={{
-              x: yLabelX - yLabelWidth / 2 - 10,
-              y: yLabelY - 16,
-              width: yLabelWidth + 20,
-              height: yLabelHeight + 10,
-              transform: 'rotate(-90)',
+              transform,
+              width: yLabelHeight + this.axisLabelPaddingLeft * 2,
+              height: yLabelWidth + this.axisLabelPaddingTop * 2,
+              x: yLabelX - yLabelHeight / 2 - this.axisLabelPaddingLeft,
+              y: 0,
             }}
           />
         )}
@@ -150,8 +197,9 @@ export default class Axes extends React.Component {
         key={this.xAxisKey}
         orient="Bottom"
         scale={this.props.xScale}
-        translate={`translate(0, ${this.props.height -
-          this.props.bottomMargin})`}
+        translate={`translate(0, ${
+          this.props.height - this.props.bottomMargin
+        })`}
         tickSizeInner={
           -this.props.height + this.props.topMargin + this.props.bottomMargin
         }

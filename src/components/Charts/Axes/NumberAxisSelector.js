@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
 import {
@@ -9,6 +9,7 @@ import {
   axesPropTypes,
   dataStructureChanged,
 } from '../helpers'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class NumberAxisSelector extends React.Component {
   constructor(props) {
@@ -83,11 +84,8 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   renderSelectorContent = (selectedColumn) => {
-    const {
-      currencySelectorState,
-      quantitySelectorState,
-      ratioSelectorState,
-    } = this.state
+    const { currencySelectorState, quantitySelectorState, ratioSelectorState } =
+      this.state
 
     return (
       <div
@@ -96,119 +94,131 @@ export default class NumberAxisSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        <div className="axis-selector-container">
-          {!!currencySelectorState.length && (
-            <Fragment>
-              <div className="number-selector-header">
-                {this.props.columns && this.props.legendColumn !== undefined
-                  ? this.props.legendColumn.display_name
-                  : 'Currency'}
-              </div>
-              <SelectableList
-                ref={(r) => (this.currencySelectRef = r)}
-                items={currencySelectorState}
-                onSelect={() => {
-                  this.quantitySelectRef && this.quantitySelectRef.unselectAll()
-                  this.ratioSelectRef && this.ratioSelectRef.unselectAll()
-                }}
-                onChange={(currencySelectorState) => {
-                  const newQuantitySelectorState = quantitySelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
-                  const newRatioSelectorState = ratioSelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
+        <CustomScrollbars
+          autoHide={false}
+          autoHeight
+          autoHeightMin={0}
+          autoHeightMax={this.props.chartContainerRef?.clientHeight}
+        >
+          <div className="axis-selector-container">
+            {!!currencySelectorState.length && (
+              <Fragment>
+                <div className="number-selector-header">
+                  {this.props.columns && this.props.legendColumn !== undefined
+                    ? this.props.legendColumn.display_name
+                    : 'Currency'}
+                </div>
+                <SelectableList
+                  ref={(r) => (this.currencySelectRef = r)}
+                  items={currencySelectorState}
+                  onSelect={() => {
+                    this.quantitySelectRef &&
+                      this.quantitySelectRef.unselectAll()
+                    this.ratioSelectRef && this.ratioSelectRef.unselectAll()
+                  }}
+                  onChange={(currencySelectorState) => {
+                    const newQuantitySelectorState = quantitySelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
+                    const newRatioSelectorState = ratioSelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
 
-                  this.setState({
-                    activeNumberType: 'DOLLAR_AMT',
-                    currencySelectorState,
-                    quantitySelectorState: newQuantitySelectorState,
-                    ratioSelectorState: newRatioSelectorState,
-                  })
-                }}
-              />
-            </Fragment>
-          )}
+                    this.setState({
+                      activeNumberType: 'DOLLAR_AMT',
+                      currencySelectorState,
+                      quantitySelectorState: newQuantitySelectorState,
+                      ratioSelectorState: newRatioSelectorState,
+                    })
+                  }}
+                />
+              </Fragment>
+            )}
 
-          {!!quantitySelectorState.length && (
-            <Fragment>
-              <div className="number-selector-header">
-                {' '}
-                {this.props.columns && this.props.legendColumn !== undefined
-                  ? this.props.legendColumn.display_name
-                  : 'Quantity'}
-              </div>
-              <SelectableList
-                ref={(r) => (this.quantitySelectRef = r)}
-                items={quantitySelectorState}
-                onSelect={() => {
-                  this.currencySelectRef && this.currencySelectRef.unselectAll()
-                  this.ratioSelectRef && this.ratioSelectRef.unselectAll()
-                }}
-                onChange={(quantitySelectorState) => {
-                  const newCurrencySelectorState = currencySelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
-                  const newRatioSelectorState = ratioSelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
-                  this.setState({
-                    activeNumberType: 'QUANTITY',
-                    quantitySelectorState,
-                    currencySelectorState: newCurrencySelectorState,
-                    ratioSelectorState: newRatioSelectorState,
-                  })
-                }}
-              />
-            </Fragment>
-          )}
+            {!!quantitySelectorState.length && (
+              <Fragment>
+                <div className="number-selector-header">
+                  {' '}
+                  {this.props.columns && this.props.legendColumn !== undefined
+                    ? this.props.legendColumn.display_name
+                    : 'Quantity'}
+                </div>
+                <SelectableList
+                  ref={(r) => (this.quantitySelectRef = r)}
+                  items={quantitySelectorState}
+                  onSelect={() => {
+                    this.currencySelectRef &&
+                      this.currencySelectRef.unselectAll()
+                    this.ratioSelectRef && this.ratioSelectRef.unselectAll()
+                  }}
+                  onChange={(quantitySelectorState) => {
+                    const newCurrencySelectorState = currencySelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
+                    const newRatioSelectorState = ratioSelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
+                    this.setState({
+                      activeNumberType: 'QUANTITY',
+                      quantitySelectorState,
+                      currencySelectorState: newCurrencySelectorState,
+                      ratioSelectorState: newRatioSelectorState,
+                    })
+                  }}
+                />
+              </Fragment>
+            )}
 
-          {!!ratioSelectorState.length && (
-            <Fragment>
-              <div className="number-selector-header">
-                {' '}
-                {this.props.columns && this.props.legendColumn !== undefined
-                  ? this.props.legendColumn.display_name
-                  : 'Ratio'}
-              </div>
-              <SelectableList
-                ref={(r) => (this.ratioSelectRef = r)}
-                items={ratioSelectorState}
-                onSelect={() => {
-                  this.currencySelectRef && this.currencySelectRef.unselectAll()
-                  this.quantitySelectRef && this.quantitySelectRef.unselectAll()
-                }}
-                onChange={(ratioSelectorState) => {
-                  const newCurrencySelectorState = currencySelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
-                  const newQuantitySelectorState = quantitySelectorState.map(
-                    (item) => {
-                      return { ...item, checked: false }
-                    }
-                  )
+            {!!ratioSelectorState.length && (
+              <Fragment>
+                <div className="number-selector-header">
+                  {' '}
+                  {this.props.columns && this.props.legendColumn !== undefined
+                    ? this.props.legendColumn.display_name
+                    : 'Ratio'}
+                </div>
+                <SelectableList
+                  ref={(r) => (this.ratioSelectRef = r)}
+                  items={ratioSelectorState}
+                  onSelect={() => {
+                    this.currencySelectRef &&
+                      this.currencySelectRef.unselectAll()
+                    this.quantitySelectRef &&
+                      this.quantitySelectRef.unselectAll()
+                  }}
+                  onChange={(ratioSelectorState) => {
+                    const newCurrencySelectorState = currencySelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
+                    const newQuantitySelectorState = quantitySelectorState.map(
+                      (item) => {
+                        return { ...item, checked: false }
+                      }
+                    )
 
-                  this.setState({
-                    activeNumberType: 'RATIO',
-                    ratioSelectorState,
-                    currencySelectorState: newCurrencySelectorState,
-                    quantitySelectorState: newQuantitySelectorState,
-                  })
-                }}
-              />
-            </Fragment>
-          )}
-        </div>
+                    this.setState({
+                      activeNumberType: 'RATIO',
+                      ratioSelectorState,
+                      currencySelectorState: newCurrencySelectorState,
+                      quantitySelectorState: newQuantitySelectorState,
+                    })
+                  }}
+                />
+              </Fragment>
+            )}
+          </div>
+        </CustomScrollbars>
+
         <div className="axis-selector-apply-btn">
           <Button
             style={{ width: 'calc(100% - 10px)' }}
@@ -249,10 +259,15 @@ export default class NumberAxisSelector extends React.Component {
     return (
       <Popover
         isOpen={this.state.isOpen}
-        content={this.renderSelectorContent()}
+        ref={(r) => (this.popoverRef = r)}
+        content={this.renderSelectorContent}
         onClickOutside={this.closeSelector}
-        position={this.props.position}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
+        positions={this.props.positions}
         align={this.props.align}
+        reposition={true}
+        padding={10}
       >
         <rect
           {...this.props.childProps}

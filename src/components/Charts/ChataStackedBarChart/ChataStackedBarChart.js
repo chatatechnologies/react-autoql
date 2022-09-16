@@ -69,9 +69,15 @@ export default class ChataStackedBarChart extends Component {
       numberColumnIndices
     )
 
+    const rangeStart = props.leftMargin
+    let rangeEnd = props.width - props.rightMargin
+    if (rangeEnd < rangeStart) {
+      rangeEnd = rangeStart
+    }
+
     this.xScale = scaleLinear()
       .domain([minValue, maxValue])
-      .range([props.leftMargin, props.width - props.rightMargin])
+      .range([rangeStart, rangeEnd])
       .nice()
 
     this.yScale = scaleBand()
@@ -89,8 +95,16 @@ export default class ChataStackedBarChart extends Component {
     this.barHeight = props.height / props.data.length
     this.yTickValues = getTickValues(
       this.barHeight,
-      props.height,
+      props.innerHeight,
       this.yLabelArray
+    )
+
+    this.xLabelArray = this.xScale.ticks()
+    this.tickWidth = props.innerWidth / this.xLabelArray?.length
+    this.xTickValues = getTickValues(
+      this.tickWidth,
+      props.innerWidth,
+      this.xLabelArray
     )
   }
 
@@ -106,6 +120,7 @@ export default class ChataStackedBarChart extends Component {
           yScale={this.yScale}
           xCol={this.props.columns[this.props.numberColumnIndex]}
           yCol={this.props.columns[this.props.stringColumnIndex]}
+          xTicks={this.xTickValues}
           yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}

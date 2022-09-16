@@ -53,7 +53,6 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -63,7 +62,6 @@ export default class ChatContent extends React.Component {
   static defaultProps = {
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
-    isDataMessengerOpen: true,
     isResizing: false,
     dataPageSize: undefined,
     source: [],
@@ -75,11 +73,26 @@ export default class ChatContent extends React.Component {
     if (!!this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      this.focusInput()
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
+  }
+
+  focusInput = () => {
+    if (this.queryInputRef?._isMounted) {
+      this.queryInputRef.focus()
+    }
   }
 
   escFunction = (event) => {
@@ -278,9 +291,7 @@ export default class ChatContent extends React.Component {
       }
 
       this.setState({ isChataThinking: false })
-      if (this.queryInputRef?._isMounted) {
-        this.queryInputRef.focus()
-      }
+      this.focusInput()
     }
   }
 
@@ -327,66 +338,74 @@ export default class ChatContent extends React.Component {
   }
 
   render = () => {
-    if (!this.props.shouldRender || !this.props.isDataMessengerOpen) {
-      return null
+    let display
+    if (!this.props.shouldRender) {
+      display = 'none'
     }
 
     return (
       <ErrorBoundary>
-        <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
-          {this.state.messages.map((message) => {
-            return (
-              <ChatMessage
-                key={message.id}
-                id={message.id}
-                ref={(r) => (this.messageRefs[message.id] = r)}
-                isIntroMessage={message.isIntroMessage}
-                authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
-                isCSVProgressMessage={message.isCSVProgressMessage}
-                initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                onCSVDownloadProgress={this.onCSVDownloadProgress}
-                queryId={message.queryId}
-                queryText={message.query}
-                originalQueryID={message.originalQueryID}
-                scrollRef={this.messengerScrollComponent?.ref}
-                isDataMessengerOpen={this.props.isDataMessengerOpen}
-                isActive={this.state.activeMessageId === message.id}
-                addMessageToDM={this.addResponseMessage}
-                onDrilldownStart={this.onDrilldownStart}
-                onDrilldownEnd={this.onDrilldownEnd}
-                isResponse={message.isResponse}
-                isChataThinking={this.state.isChataThinking}
-                onSuggestionClick={this.animateInputTextAndSubmit}
-                content={message.content}
-                scrollToBottom={this.scrollToBottom}
-                dataFormatting={this.props.dataFormatting}
-                response={message.response}
-                type={message.type}
-                onErrorCallback={this.props.onErrorCallback}
-                onSuccessAlert={this.props.onSuccessAlert}
-                deleteMessageCallback={this.deleteMessage}
-                scrollContainerRef={this.messengerScrollComponent?.ref}
-                isResizing={this.props.isResizing}
-                enableDynamicCharting={this.props.enableDynamicCharting}
-                onNoneOfTheseClick={this.onNoneOfTheseClick}
-                autoChartAggregations={this.props.autoChartAggregations}
-                onRTValueLabelClick={this.props.onRTValueLabelClick}
-                appliedFilters={message.appliedFilters}
-                disableMaxHeight={this.props.disableMaxMessageHeight}
-                enableAjaxTableData={this.props.enableAjaxTableData}
-                rebuildTooltips={this.props.rebuildTooltips}
-                queryRequestData={message.queryRequestData}
-                source={this.props.source}
-              />
-            )
-          })}
-        </CustomScrollbars>
-        {this.state.isChataThinking && (
-          <div className="response-loading-container">
-            <LoadingDots />
-          </div>
-        )}
+        <div
+          ref={(r) => (this.chatContentRef = r)}
+          className="chat-content-scroll-container"
+          style={{ display }}
+        >
+          <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
+            {this.state.messages.map((message) => {
+              return (
+                <ChatMessage
+                  key={message.id}
+                  id={message.id}
+                  ref={(r) => (this.messageRefs[message.id] = r)}
+                  isIntroMessage={message.isIntroMessage}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  isCSVProgressMessage={message.isCSVProgressMessage}
+                  initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                  onCSVDownloadProgress={this.onCSVDownloadProgress}
+                  queryId={message.queryId}
+                  queryText={message.query}
+                  originalQueryID={message.originalQueryID}
+                  scrollRef={this.messengerScrollComponent?.ref}
+                  isDataMessengerOpen={this.props.isDataMessengerOpen}
+                  isActive={this.state.activeMessageId === message.id}
+                  addMessageToDM={this.addResponseMessage}
+                  onDrilldownStart={this.onDrilldownStart}
+                  onDrilldownEnd={this.onDrilldownEnd}
+                  isResponse={message.isResponse}
+                  isChataThinking={this.state.isChataThinking}
+                  onSuggestionClick={this.animateInputTextAndSubmit}
+                  content={message.content}
+                  scrollToBottom={this.scrollToBottom}
+                  dataFormatting={this.props.dataFormatting}
+                  response={message.response}
+                  type={message.type}
+                  onErrorCallback={this.props.onErrorCallback}
+                  onSuccessAlert={this.props.onSuccessAlert}
+                  deleteMessageCallback={this.deleteMessage}
+                  scrollContainerRef={this.messengerScrollComponent?.ref}
+                  isResizing={this.props.isResizing}
+                  enableDynamicCharting={this.props.enableDynamicCharting}
+                  onNoneOfTheseClick={this.onNoneOfTheseClick}
+                  autoChartAggregations={this.props.autoChartAggregations}
+                  onRTValueLabelClick={this.props.onRTValueLabelClick}
+                  appliedFilters={message.appliedFilters}
+                  disableMaxHeight={this.props.disableMaxMessageHeight}
+                  enableAjaxTableData={this.props.enableAjaxTableData}
+                  rebuildTooltips={this.props.rebuildTooltips}
+                  queryRequestData={message.queryRequestData}
+                  popoverParentElement={this.chatContentRef}
+                  source={this.props.source}
+                />
+              )
+            })}
+          </CustomScrollbars>
+          {this.state.isChataThinking && (
+            <div className="response-loading-container">
+              <LoadingDots />
+            </div>
+          )}
+        </div>
         <div className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />

@@ -641,31 +641,11 @@ export const reportProblem = ({
 }
 
 export const fetchSubjectList = ({ domain, apiKey, token }) => {
-  const subjectList = [
-    'Online Sales',
-    'Customers',
-    'Shippers',
-    'Promotions',
-    'Warehouses',
-    'Inventory',
-  ]
-
-  const formattedSubjectList = subjectList.map((subject) => ({
-    name: subject,
-    type: 'subject',
-  }))
-
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve({ data: { data: { subjects: formattedSubjectList } } })
-    }, 1000)
-  })
-
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/subjects?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/subjects?key=${apiKey}`
 
   const config = {
     headers: {
@@ -683,6 +663,15 @@ export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
   if (!subject) {
     return Promise.reject(new Error('No subject supplied for data preview'))
   }
+
+  return runQueryOnly({ query: subject, domain, apiKey, token })
+    .then((response) => {
+      if (response?.data?.data?.rows?.length) {
+        response.data.data.rows = response.data.data.rows.slice(0, 5)
+      }
+      return Promise.resolve(response)
+    })
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 
   return new Promise((resolve, reject) => {
     setTimeout(() => {

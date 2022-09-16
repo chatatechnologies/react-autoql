@@ -2,8 +2,9 @@ import React from 'react'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
+import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
@@ -34,6 +35,7 @@ export default class StringAxisSelector extends React.Component {
           e.stopPropagation()
         }}
       >
+        {/* <CustomScrollbars autoHide={false}> */}
         <ul className="axis-selector-content">
           {this.props.stringColumnIndices.map((legendItem, i) => {
             return (
@@ -50,6 +52,7 @@ export default class StringAxisSelector extends React.Component {
             )
           })}
         </ul>
+        {/* </CustomScrollbars> */}
       </div>
     )
   }
@@ -58,10 +61,15 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         isOpen={this.state.isOpen}
-        content={this.renderSelectorContent()}
+        ref={(r) => (this.popoverRef = r)}
+        content={this.renderSelectorContent}
         onClickOutside={this.closeSelector}
-        position={this.props.position}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
+        positions={this.props.positions}
         align={this.props.align}
+        reposition={true}
+        padding={10}
       >
         <rect
           {...this.props.childProps}

@@ -20,13 +20,13 @@ import {
   fetchVLAutocomplete,
   setFilters,
   unsetFilterFromAPI,
-  fetchFilters,
 } from '../../js/queryService'
 
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import { lang } from '../../js/Localization'
+import { handleTooltipBoundaryCollision } from '../../js/Util'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -38,7 +38,7 @@ export default class FilterLockPopover extends React.Component {
     this.autoCompleteArray = []
 
     this.state = {
-      filters: [],
+      filters: this.props.initialFilters || [],
       suggestions: [],
       inputValue: '',
     }
@@ -50,12 +50,14 @@ export default class FilterLockPopover extends React.Component {
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
     onChange: PropTypes.func,
+    insertedFilter: PropTypes.string,
     rebuildTooltips: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
 
+    insertedFilter: null,
     isOpen: false,
     onClose: () => {},
     onChange: () => {},
@@ -63,10 +65,22 @@ export default class FilterLockPopover extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.initialize()
+
+    if (this.state.filters) {
+      this.props.onChange(this.state.filters)
+    }
+
+    if (this.props.isOpen && this.props.insertedFilter) {
+      this.insertFilter(this.props.insertedFilter)
+    }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // Set initial filters from FilterLockPopover fetch on mount
+    if (this.props.initialFilters && !prevProps.initialFilters) {
+      this.setState({ filters: this.props.initialFilters })
+    }
+
     if (!_isEqual(this.state.filters, prevState.filters)) {
       this.props.onChange(this.state.filters)
       this.rebuildTooltips()
@@ -75,11 +89,17 @@ export default class FilterLockPopover extends React.Component {
     if (!this.props.isOpen && prevProps.isOpen) {
       this.setState({ inputValue: '' })
     }
+
+    if (
+      (this.props.isOpen && !prevProps.isOpen && this.props.insertedFilter) ||
+      (this.props.insertedFilter && !prevProps.insertedFilter)
+    ) {
+      this.insertFilter(this.props.insertedFilter)
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearTimeout(this.animateTextTimeout)
     clearTimeout(this.focusInputTimeout)
     clearTimeout(this.highlightFilterEndTimeout)
     clearTimeout(this.highlightFilterStartTimeout)
@@ -90,9 +110,7 @@ export default class FilterLockPopover extends React.Component {
     if (this.props.rebuildTooltips) {
       this.props.rebuildTooltips(delay)
     } else {
-      if (this.rebuildTooltipsTimer) {
-        clearTimeout(this.rebuildTooltipsTimer)
-      }
+      clearTimeout(this.rebuildTooltipsTimer)
       this.rebuildTooltipsTimer = setTimeout(() => {
         ReactTooltip.rebuild()
       }, delay)
@@ -107,23 +125,6 @@ export default class FilterLockPopover extends React.Component {
     this.savingIndicatorTimeout = setTimeout(() => {
       this.setState({ isSaving: false })
     }, 1500)
-  }
-
-  initialize = () => {
-    this.setState({ isFetchingFilters: true })
-    fetchFilters(getAuthentication(this.props.authentication))
-      .then((response) => {
-        const filters = response?.data?.data?.data || []
-        if (this._isMounted) {
-          this.setState({ filters, isFetchingFilters: false })
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-        if (this._isMounted) {
-          this.setState({ isFetchingFilters: false })
-        }
-      })
   }
 
   handleHighlightFilterRow(filterKey) {
@@ -145,17 +146,19 @@ export default class FilterLockPopover extends React.Component {
       const totalTime = 2000
       const timePerChar = totalTime / text.length
       for (let i = 1; i <= text.length; i++) {
-        this.animateTextTimeout = setTimeout(() => {
-          this.setState({ inputValue: text.slice(0, i) })
-          if (i === text.length) {
-            this.focusInputTimeout = setTimeout(() => {
-              this.inputElement = document.querySelector(
-                '#react-autoql-filter-menu-input'
-              )
-              this.inputElement?.focus()
-            }, 300)
+        setTimeout(() => {
+          if (this._isMounted) {
+            this.setState({ inputValue: text.slice(0, i) })
+            if (i === text.length) {
+              this.focusInputTimeout = setTimeout(() => {
+                this.inputElement = document.querySelector(
+                  '#react-autoql-filter-menu-input'
+                )
+                this.inputElement?.focus()
+              }, 300)
+            }
           }
-        }, timePerChar)
+        }, i * timePerChar)
       }
     }
   }
@@ -192,6 +195,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
+    this.setState({ isLoadingAutocomplete: true })
     clearTimeout(this.autoCompleteTimer)
     this.autoCompleteTimer = setTimeout(() => {
       fetchVLAutocomplete({
@@ -221,9 +225,15 @@ export default class FilterLockPopover extends React.Component {
             }
             this.autoCompleteArray.push(anObject)
           }
-          this.setState({ suggestions: this.autoCompleteArray })
+          this.setState({
+            suggestions: this.autoCompleteArray,
+            isLoadingAutocomplete: false,
+          })
         })
-        .catch((error) => console.error(error))
+        .catch((error) => {
+          console.error(error)
+          this.setState({ isLoadingAutocomplete: false })
+        })
     }, 300)
   }
 
@@ -284,6 +294,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   setFilter = (newFilter) => {
+    if (!newFilter?.value) {
+      return
+    }
+
     const auth = getAuthentication(this.props.authentication)
 
     this.showSavingIndicator()
@@ -336,7 +350,8 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getSuggestionValue = (sugg) => {
-    const selectedFilter = this.createNewFilterFromSuggestion(sugg)
+    const name = sugg.name
+    const selectedFilter = this.createNewFilterFromSuggestion(name)
     return selectedFilter
   }
 
@@ -474,11 +489,7 @@ export default class FilterLockPopover extends React.Component {
             type="info"
             data-place="right"
             data-for="filter-locking-tooltip"
-            data-tip="
-            Filters can be applied to narrow down<br />
-            your query results. Locking a filter<br />
-            ensures that only the specific data<br />
-            you wish to see is returned."
+            data-tip="Filters can be applied to narrow down your query results. Locking a filter ensures that only the specific data you wish to see is returned."
           />
         </h3>
       </div>
@@ -511,25 +522,108 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  renderSuggestion = ({ name }) => {
+    this.rebuildTooltips()
+
+    if (!name.keyword) {
+      return null
+    }
+
+    return (
+      <ul
+        className="filter-lock-suggestion-item"
+        data-for="filter-locking-tooltip"
+        data-delay-show={800}
+        data-tip={`${name.keyword} <em>(${name.show_message})</em>`}
+      >
+        <span>
+          {name.keyword} <em>({name.show_message})</em>
+        </span>
+      </ul>
+    )
+  }
+
+  renderSuggestionsContainer = ({ containerProps, children, query }) => {
+    let maxHeight = 150
+    const padding = 20
+    const listContainerHeight = this.filterListContainerRef?.clientHeight
+
+    if (!isNaN(listContainerHeight)) {
+      maxHeight = listContainerHeight - padding
+    }
+
+    return (
+      <div {...containerProps}>
+        <div className="react-autoql-filter-suggestion-container">
+          <CustomScrollbars
+            autoHeight
+            autoHeightMin={0}
+            autoHeightMax={maxHeight}
+            autoHide={false}
+          >
+            {children}
+          </CustomScrollbars>
+        </div>
+      </div>
+    )
+  }
+
+  getSuggestions = () => {
+    const sections = []
+    const doneLoading = !this.state.isLoadingAutocomplete
+    const hasSuggestions = !!this.state.suggestions?.length && doneLoading
+    const noSuggestions = !this.state.suggestions?.length && doneLoading
+
+    if (hasSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: this.state.suggestions,
+      })
+    } else if (noSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: [{ name: '' }],
+        emptyState: true,
+      })
+    }
+
+    return sections
+  }
+
+  renderSectionTitle = (section) => {
+    return (
+      <>
+        <strong>{section.title}</strong>
+        {section.emptyState ? (
+          <div className="filter-locking-no-suggestions-text">
+            <em>No results</em>
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
   renderVLInput = () => {
     return (
       <Autosuggest
         id="react-autoql-filter-menu-input"
         highlightFirstSuggestion
-        suggestions={this.state.suggestions}
+        suggestions={this.getSuggestions()}
+        renderSuggestion={this.renderSuggestion}
+        getSuggestionValue={this.getSuggestionValue}
         onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
         onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-        getSuggestionValue={(sugg) => this.getSuggestionValue(sugg.name)}
-        renderSuggestion={(suggestion) => (
-          <ul className="filter-lock-suggestion-item">
-            <li>{suggestion.name.keyword}</li>
-            <li>{suggestion.name.show_message}</li>
-          </ul>
-        )}
+        renderSuggestionsContainer={this.renderSuggestionsContainer}
+        getSectionSuggestions={(section) => {
+          return section.suggestions
+        }}
+        renderSectionTitle={this.renderSectionTitle}
+        multiSection={true}
         inputProps={{
           onChange: this.onInputChange,
           value: this.state.inputValue,
-          disabled: this.state.isFetchingFilters,
+          disabled:
+            this.props.isFetchingFilters || this.state.isFetchingFilters,
           placeholder: 'Search & select a filter',
           ['data-test']: 'react-autoql-filter-locking-input',
           className: 'react-autoql-filter-locking-input',
@@ -645,7 +739,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   renderFilterList = () => {
-    if (this.state.isFetchingFilters) {
+    if (this.props.isFetchingFilters || this.state.isFetchingFilters) {
       return (
         <div className="react-autoql-filter-lock-list-loading-container">
           <LoadingDots />
@@ -666,7 +760,10 @@ export default class FilterLockPopover extends React.Component {
     ]
 
     return (
-      <div className="react-autoql-filter-list-container">
+      <div
+        ref={(r) => (this.filterListContainerRef = r)}
+        className="react-autoql-filter-list-container"
+      >
         <CustomScrollbars autoHide={false}>
           {uniqueCategories.map((category, i) => {
             return this.renderFilterListCategory(category, i)
@@ -677,6 +774,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   render = () => {
+    if (!this.props.isOpen) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <ToastContainer
@@ -690,10 +791,12 @@ export default class FilterLockPopover extends React.Component {
           pauseOnHover={false}
           closeButton={false}
           limit={1}
-          //   theme={getTheme()}
+          // theme={getTheme()}
         />
         <ReactTooltip
-          className="react-autoql-drawer-tooltip"
+          afterShow={(e) => handleTooltipBoundaryCollision(e, this)}
+          ref={(r) => (this.reactTooltipRef = r)}
+          className="react-autoql-tooltip"
           id="filter-locking-tooltip"
           effect="solid"
           place="top"

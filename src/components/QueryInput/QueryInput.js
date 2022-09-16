@@ -69,6 +69,7 @@ class QueryInput extends React.Component {
     clearQueryOnSubmit: PropTypes.bool,
     sessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
+    shouldRender: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -88,13 +89,13 @@ class QueryInput extends React.Component {
     clearQueryOnSubmit: true,
     placeholder: 'Type your queries here',
     dataPageSize: undefined,
+    shouldRender: true,
     onSubmit: () => {},
     onResponseCallback: () => {},
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    this.focus()
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -113,13 +114,10 @@ class QueryInput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    if (this.autoCompleteTimer) {
-      clearTimeout(this.autoCompleteTimer)
-    }
-
-    if (this.queryValidationTimer) {
-      clearTimeout(this.queryValidationTimer)
-    }
+    clearTimeout(this.autoCompleteTimer)
+    clearTimeout(this.queryValidationTimer)
+    clearTimeout(this.caretMoveTimeout)
+    clearTimeout(this.inputAnimationTimeout)
   }
 
   animateInputTextAndSubmit = ({ query, userSelection, source }) => {
@@ -131,20 +129,22 @@ class QueryInput extends React.Component {
     const timePerChar = Math.round(totalAnimationTime / query.length)
     if (typeof query === 'string' && _get(query, 'length')) {
       for (let i = 1; i <= query.length; i++) {
-        setTimeout(() => {
-          if (this._isMounted)
+        this.inputAnimationTimeout = setTimeout(() => {
+          if (this._isMounted) {
             this.setState({
               inputValue: query.slice(0, i),
             })
-          if (i === query.length) {
-            setTimeout(() => {
-              this.submitQuery({
-                queryText: query,
-                userSelection,
-                skipQueryValidation: true,
-                source,
-              })
-            }, 300)
+            if (i === query.length) {
+              setTimeout(() => {
+                this.submitQuery({
+                  inputValue: query,
+                  queryText: query,
+                  userSelection,
+                  skipQueryValidation: true,
+                  source,
+                })
+              }, 300)
+            }
           }
         }, i * timePerChar)
       }
@@ -262,7 +262,7 @@ class QueryInput extends React.Component {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
       const lastQuery = localStorage.getItem('inputValue')
       if (lastQuery && lastQuery !== 'undefined') {
-        this.setState({ inputValue: lastQuery })
+        this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd(e))
       }
     }
   }
@@ -288,9 +288,6 @@ class QueryInput extends React.Component {
   }
 
   focus = () => {
-    // if (this.queryValidationInputRef) {
-    //   this.queryValidationInputRef.focus()
-    // }
     if (this.inputRef) {
       this.inputRef.focus()
     } else {
@@ -414,9 +411,12 @@ class QueryInput extends React.Component {
   }
 
   moveCaretAtEnd = (e) => {
-    var temp_value = e.target.value
-    e.target.value = ''
-    e.target.value = temp_value
+    clearTimeout(this.caretMoveTimeout)
+    this.caretMoveTimeout = setTimeout(() => {
+      var temp_value = e.target.value
+      e.target.value = ''
+      e.target.value = temp_value
+    }, 0)
   }
 
   render = () => {

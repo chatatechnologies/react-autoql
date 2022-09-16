@@ -35,24 +35,24 @@
   }
   .react-autosuggest__suggestions-container--open {
     position: absolute;
+    display: block;
     margin: 0;
     padding-top: 5px;
     padding-bottom: 5px;
-    display: block;
     width: 100%;
     height: unset;
-    max-height: 250px;
     border-radius: 15px;
     font-family: inherit;
     font-size: 15px;
     font-weight: normal;
     z-index: 2;
-    overflow: auto;
+    overflow: hidden;
     margin-top: 3px;
     border: 1px solid var(--react-autoql-border-color);
     box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
     background-color: var(--react-autoql-background-color-secondary);
     color: var(--react-autoql-text-color-primary);
+    box-sizing: content-box;
   }
   .react-autosuggest__suggestions-list {
     margin: 0;
@@ -77,7 +77,7 @@
     background-color: rgba(0, 0, 0, 0.1) !important;
   }
   .react-autosuggest__section-title {
-    padding: 10px 0 0 10px;
+    padding: 5px 0 0 10px;
     font-size: 12px;
     color: var(--react-autoql-text-color-placeholder);
   }

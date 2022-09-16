@@ -334,7 +334,7 @@ class NotificationFeed extends React.Component {
           data-test="notification-list"
         >
           <ReactTooltip
-            className="react-autoql-drawer-tooltip"
+            className="react-autoql-tooltip"
             id="react-autoql-notification-tooltip"
             effect="solid"
             delayShow={500}

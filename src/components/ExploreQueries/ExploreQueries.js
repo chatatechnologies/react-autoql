@@ -42,15 +42,25 @@ class ExploreQueries extends React.Component {
     inputPlaceholder: 'Search relevant queries by topic',
   }
 
+  componentDidMount = () => {
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.shouldRender && !prevProps.shouldRender) {
-      this.inputRef?.focus()
+      this.focusInput()
     }
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.animateTextDelay)
     clearTimeout(this.animateTextTimeout)
+  }
+
+  focusInput = () => {
+    this.inputRef?.focus()
   }
 
   loadMore = (page, skipQueryValidation) => {
@@ -133,10 +143,10 @@ class ExploreQueries extends React.Component {
 
   onValidationSuggestionClick = (queryValidationObj) => {
     const keywords = queryValidationObj.query
-    this.animateQITextAndSubmit(keywords)
+    this.animateQITextAndSubmit(keywords, true)
   }
 
-  animateQITextAndSubmit = (text) => {
+  animateQITextAndSubmit = (text, skipQueryValidation) => {
     return new Promise((resolve, reject) => {
       try {
         if (typeof text === 'string' && text?.length) {
@@ -150,7 +160,7 @@ class ExploreQueries extends React.Component {
                   () => {
                     if (i === text.length) {
                       resolve()
-                      this.loadMore(1)
+                      this.loadMore(1, skipQueryValidation)
                     }
                   }
                 )
@@ -175,7 +185,7 @@ class ExploreQueries extends React.Component {
         validationResponse: undefined,
       },
       () => {
-        this.inputRef?.focus()
+        this.focusInput()
       }
     )
   }

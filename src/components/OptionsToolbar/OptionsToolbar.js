@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
@@ -586,7 +586,7 @@ export default class OptionsToolbar extends React.Component {
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              position="bottom" // preferred position
+              positions={['bottom']} // preferred position
               content={(props) => this.renderReportProblemMenu(props)}
             >
               <button
@@ -633,7 +633,7 @@ export default class OptionsToolbar extends React.Component {
             <Popover
               key={uuid()}
               isOpen={this.state.activeMenu === 'more-options'}
-              position="bottom"
+              positions={['bottom']}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
