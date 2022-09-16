@@ -104,6 +104,7 @@ export default class ChataBubbleChart extends Component {
         className="react-autoql-bubble-chart"
         data-test="react-autoql-bubble-chart"
       >
+        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -115,7 +116,6 @@ export default class ChataBubbleChart extends Component {
           rotateLabels={this.rotateLabels}
           yGridLines
         />
-        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
       </g>
     )
   }

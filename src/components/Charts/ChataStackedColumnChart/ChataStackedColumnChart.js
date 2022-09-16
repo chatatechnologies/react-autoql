@@ -115,6 +115,13 @@ export default class ChataStackedColumnChart extends Component {
 
     return (
       <g data-test="react-autoql-stacked-column-chart">
+        {this.props.marginAdjustmentFinished && (
+          <StackedColumns
+            {...this.props}
+            xScale={this.xScale}
+            yScale={this.yScale}
+          />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -137,13 +144,6 @@ export default class ChataStackedColumnChart extends Component {
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <StackedColumns
-            {...this.props}
-            xScale={this.xScale}
-            yScale={this.yScale}
-          />
-        )}
       </g>
     )
   }

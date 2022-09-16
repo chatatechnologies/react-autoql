@@ -112,6 +112,9 @@ export default class ChataColumnChart extends Component {
 
     return (
       <g data-test="react-autoql-column-chart">
+        {this.props.marginAdjustmentFinished && (
+          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -135,9 +138,6 @@ export default class ChataColumnChart extends Component {
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }

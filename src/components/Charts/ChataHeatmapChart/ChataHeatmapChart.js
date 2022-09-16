@@ -105,6 +105,9 @@ export default class ChataHeatmapChart extends Component {
         data-test="react-autoql-heatmap-chart"
         className="react-autoql-heatmap-chart"
       >
+        {this.props.marginAdjustmentFinished && (
+          <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -116,9 +119,6 @@ export default class ChataHeatmapChart extends Component {
           rotateLabels={this.rotateLabels}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }

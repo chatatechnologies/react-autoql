@@ -108,6 +108,9 @@ export default class ChataBarChart extends Component {
 
     return (
       <g data-test="react-autoql-bar-chart">
+        {this.props.marginAdjustmentFinished && (
+          <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -131,9 +134,6 @@ export default class ChataBarChart extends Component {
           yAxisTitle={this.props.stringAxisTitle}
           xGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }
