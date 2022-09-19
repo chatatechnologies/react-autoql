@@ -866,7 +866,6 @@ export class DataMessenger extends React.Component {
         <DataExplorer
           ref={(r) => (this.dataExplorerRef = r)}
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           dataFormatting={this.props.dataFormatting}
           rebuildTooltips={this.rebuildTooltips}
           shouldRender={this.shouldRenderPage('data-explorer')}
