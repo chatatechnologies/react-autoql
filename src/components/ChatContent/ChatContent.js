@@ -406,7 +406,7 @@ export default class ChatContent extends React.Component {
             </div>
           )}
         </div>
-        <div className="chat-bar-container">
+        <div style={{ display }} className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
@@ -431,6 +431,7 @@ export default class ChatContent extends React.Component {
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
+            shouldRender={this.props.shouldRender}
           />
         </div>
       </ErrorBoundary>

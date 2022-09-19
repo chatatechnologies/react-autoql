@@ -38,6 +38,7 @@ export default class FilterLockPopover extends React.Component {
 
     this.contentKey = uuid()
     this.autoCompleteArray = []
+    this.autocompleteDelay = 100
 
     this.state = {
       filters: this.props.initialFilters || [],
@@ -106,6 +107,7 @@ export default class FilterLockPopover extends React.Component {
     clearTimeout(this.highlightFilterEndTimeout)
     clearTimeout(this.highlightFilterStartTimeout)
     clearTimeout(this.savingIndicatorTimeout)
+    clearTimeout(this.autocompleteTimer)
   }
 
   rebuildTooltips = (delay = 500) => {
@@ -145,13 +147,13 @@ export default class FilterLockPopover extends React.Component {
 
   animateInputTextAndSubmit = (text) => {
     if (typeof text === 'string' && text?.length) {
-      const totalTime = 2000
+      const totalTime = 500
       const timePerChar = totalTime / text.length
-      for (let i = 1; i <= text.length; i++) {
+      for (let i = 0; i < text.length; i++) {
         setTimeout(() => {
           if (this._isMounted) {
-            this.setState({ inputValue: text.slice(0, i) })
-            if (i === text.length) {
+            this.setState({ inputValue: text.slice(0, i + 1) })
+            if (i === text.length - 1) {
               this.focusInputTimeout = setTimeout(() => {
                 this.inputElement = document.querySelector(
                   '#react-autoql-filter-menu-input'
@@ -196,14 +198,24 @@ export default class FilterLockPopover extends React.Component {
     return undefined
   }
 
-  onSuggestionsFetchRequested = ({ value }) => {
-    this.setState({ isLoadingAutocomplete: true })
+  getTimeLeft = (timeout) => {
+    if (!timeout) {
+      return 0
+    }
 
+    return Math.ceil(
+      (timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000
+    )
+  }
+
+  fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
       this.axiosSource.cancel(responseErrors.CANCELLED)
     }
+
     this.axiosSource = axios.CancelToken.source()
+
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
@@ -244,6 +256,21 @@ export default class FilterLockPopover extends React.Component {
 
         this.setState({ isLoadingAutocomplete: false })
       })
+  }
+
+  onSuggestionsFetchRequested = ({ value }) => {
+    this.setState({ isLoadingAutocomplete: true })
+
+    // Only debounce if a request has already been made
+    if (this.axiosSource) {
+      clearTimeout(this.autocompleteTimer)
+      this.autocompleteStart = Date.now()
+      this.autocompleteTimer = setTimeout(() => {
+        this.fetchSuggestions({ value })
+      }, this.autocompleteDelay)
+    } else {
+      this.fetchSuggestions({ value })
+    }
   }
 
   onSuggestionsClearRequested = () => {

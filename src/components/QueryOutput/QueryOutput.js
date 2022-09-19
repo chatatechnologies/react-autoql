@@ -159,6 +159,7 @@ export class QueryOutput extends React.Component {
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
+    onDisplayTypeChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -194,6 +195,7 @@ export class QueryOutput extends React.Component {
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
+    onDisplayTypeChange: () => {},
   }
 
   componentDidMount = () => {
@@ -302,6 +304,7 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
+    this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
 

@@ -1059,6 +1059,7 @@ export class DashboardTile extends React.Component {
         onQueryValidationSelectOption: this.onQueryValidationSelectOption,
         reportProblemCallback: this.reportProblemCallback,
         queryRequestData: this.topRequestData,
+        onDisplayTypeChange: this.onDisplayTypeChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1124,6 +1125,7 @@ export class DashboardTile extends React.Component {
         onDrilldownEnd: this.props.onDrilldownEnd,
         onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
         queryRequestData,
+        onDisplayTypeChange: this.onSecondDisplayTypeChange,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),
