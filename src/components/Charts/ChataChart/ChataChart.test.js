@@ -1,10 +1,11 @@
 import React from 'react'
-import { shallow } from 'enzyme'
+import { shallow, mount } from 'enzyme'
 import ChataChart from './ChataChart'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import testCases from '../../../../test/responseTestCases'
+import * as chartHelpers from '../helpers'
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -47,8 +48,22 @@ describe('renders correctly', () => {
   })
 })
 
-// describe('tooltip content', () => {
-//   const wrapper = mount(
-//     <QueryOutput queryResponse={testCases[11]} initialDisplayType="text" />
-//   )
-// })
+describe('tooltip content', () => {
+  test('column tooltip renders as expected', () => {
+    const tooltipContentSpy = jest.spyOn(chartHelpers, 'getTooltipContent')
+    const getTooltipContentResult = () => tooltipContentSpy.mock.results
+    const wrapper = mount(
+      <QueryOutput queryResponse={testCases[11]} initialDisplayType="column" />
+    )
+    console.log('query output:', wrapper.debug())
+
+    const columnsComponent = wrapper.find('Columns')
+    // const instance = columnsComponent.instance()
+    expect(columnsComponent.exists()).toBe(true)
+
+    // const tooltipContent = getTooltipContentResult()
+    // console.log('tooltipContent:', tooltipContent)
+
+    // expect(tooltipContentSpy).toHaveBeenCalled()
+  })
+})

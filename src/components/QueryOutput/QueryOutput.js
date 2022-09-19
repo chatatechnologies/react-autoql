@@ -1620,6 +1620,11 @@ export class QueryOutput extends React.Component {
 
   renderChart = () => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
+      console.log('NO DATA SUPPLIED 1', {
+        data: this.tableData,
+        columns: this.state.columns,
+        config: this.tableConfig,
+      })
       console.error('Required table data was missing')
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
@@ -1633,6 +1638,11 @@ export class QueryOutput extends React.Component {
         !this.pivotTableColumns ||
         !this.pivotTableConfig)
     ) {
+      console.log('NO DATA SUPPLIED 2', {
+        data: this.pivotTableData,
+        columns: this.pivotTableColumns,
+        config: this.pivotTableConfig,
+      })
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
       )
