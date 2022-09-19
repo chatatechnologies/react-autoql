@@ -3,6 +3,8 @@ import { shallow } from 'enzyme'
 import ChataChart from './ChataChart'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
+import { QueryOutput } from '../../QueryOutput/QueryOutput'
+import testCases from '../../../../test/responseTestCases'
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -44,3 +46,9 @@ describe('renders correctly', () => {
     })
   })
 })
+
+// describe('tooltip content', () => {
+//   const wrapper = mount(
+//     <QueryOutput queryResponse={testCases[11]} initialDisplayType="text" />
+//   )
+// })
