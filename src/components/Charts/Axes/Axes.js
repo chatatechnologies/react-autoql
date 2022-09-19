@@ -21,7 +21,7 @@ export default class Axes extends React.Component {
       fontSize: 12,
       fontFamily: 'inherit',
       fill: 'currentColor',
-      fillOpacity: 0.7,
+      fillOpacity: 0.9,
       cursor: 'default',
     }
   }

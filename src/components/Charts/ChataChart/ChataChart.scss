@@ -4,6 +4,8 @@
   flex-grow: 1;
   flex-shrink: 1;
   overflow: hidden;
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-primary);
 
   svg {
     // set transparent in css but keep background in inline style for exporting to png
@@ -59,6 +61,7 @@
   g.tick {
     transition: opacity 0.3s ease;
   }
+
   .react-autoql-heatmap-chart g.tick line,
   .react-autoql-bubble-chart g.tick line {
     opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them

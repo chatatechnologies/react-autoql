@@ -81,6 +81,7 @@ export default class Axis extends Component {
       .style('font-weight', 'bold')
       .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
+      .attr('fill-opacity', 0.9)
   }
 
   styleLegendTitleWithBorder = (svg) => {
@@ -160,7 +161,7 @@ export default class Axis extends Component {
         this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
-          .style('fill-opacity', '0.7')
+          .style('fill-opacity', '1')
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
@@ -206,7 +207,7 @@ export default class Axis extends Component {
         this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
-          .style('fill-opacity', '0.7')
+          .style('fill-opacity', '1')
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
@@ -315,7 +316,7 @@ export default class Axis extends Component {
         .style('text-anchor', 'end')
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
-        .attr('fill-opacity', '0.7')
+        .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
     } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
       select(this.axisElement)
@@ -324,14 +325,14 @@ export default class Axis extends Component {
         .style('text-anchor', 'middle')
         .attr('dy', '10px')
         .attr('dx', '0')
-        .attr('fill-opacity', '0.7')
+        .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
     }
 
     select(this.axisElement)
       .selectAll('.axis text')
       .style('fill', 'currentColor')
-      .style('fill-opacity', '0.7')
+      .style('fill-opacity', '1')
       .style('font-family', 'inherit')
       .attr('data-for', this.props.tooltipID)
       .attr('data-tip', function (d) {
@@ -353,7 +354,7 @@ export default class Axis extends Component {
       .selectAll('.axis line')
       .style('stroke-width', '1px')
       .style('stroke', 'currentColor')
-      .style('opacity', '0.15')
+      .style('opacity', '0.08')
       .style('shape-rendering', 'crispedges')
 
     // Make tick line at 0 darker
@@ -361,7 +362,7 @@ export default class Axis extends Component {
       .selectAll('g.tick')
       .filter((d) => d == 0)
       .select('line')
-      .style('opacity', 0.4)
+      .style('opacity', 0.3)
   }
 
   render = () => {

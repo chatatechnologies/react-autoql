@@ -109,6 +109,13 @@ export default class ChataStackedLineChart extends Component {
 
     return (
       <g data-test="react-autoql-stacked-line-chart">
+        {this.props.marginAdjustmentFinished && (
+          <StackedLines
+            {...this.props}
+            xScale={this.xScale}
+            yScale={this.yScale}
+          />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -131,13 +138,6 @@ export default class ChataStackedLineChart extends Component {
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <StackedLines
-            {...this.props}
-            xScale={this.xScale}
-            yScale={this.yScale}
-          />
-        )}
       </g>
     )
   }
