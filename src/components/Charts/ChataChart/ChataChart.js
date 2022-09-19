@@ -178,12 +178,12 @@ export default class ChataChart extends Component {
   getChartDimensions = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin } = this.state
 
-    let chartWidth = this.chartContainerRef?.offsetWidth
+    let chartWidth = this.props.width ?? this.chartContainerRef?.offsetWidth
     if (chartWidth < 0) {
       chartWidth = 0
     }
 
-    let chartHeight = this.chartContainerRef?.offsetHeight
+    let chartHeight = this.props.height ?? this.chartContainerRef?.offsetHeight
     if (chartHeight < 0) {
       chartHeight = 0
     }
@@ -662,8 +662,7 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { chartHeight, chartWidth, innerHeight, innerWidth } =
-      this.getChartDimensions()
+    const { chartHeight, chartWidth } = this.getChartDimensions()
 
     // We need to set these inline in order for them to be applied in the exported PNG
     const chartFontFamily = getThemeValue('font-family')
@@ -679,9 +678,7 @@ export default class ChataChart extends Component {
           className={`react-autoql-chart-container ${
             this.state.isLoading || this.props.isResizing ? 'loading' : ''
           }`}
-          style={{
-            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
-          }}
+          style={{ flexBasis: chartHeight ? `${chartHeight}px` : '100vh' }}
         >
           {!this.firstRender && !this.props.isResizing && (
             <Fragment>

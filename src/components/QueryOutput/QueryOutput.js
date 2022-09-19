@@ -110,10 +110,6 @@ export class QueryOutput extends React.Component {
     const chartColors = getChartColorVars()
     this.colorScale = scaleOrdinal().range(chartColors)
 
-    const columns = this.formatColumnsForTable(
-      props.queryResponse?.data?.data?.columns
-    )
-
     // --------- generate data before mount --------
     this.generateAllData()
     // -------------------------------------------
@@ -124,7 +120,7 @@ export class QueryOutput extends React.Component {
     this.state = {
       displayType: this.getDisplayTypeFromInitial(props),
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
-      columns,
+      columns: this.getColumns(),
       tableFilters: [],
       selectedSuggestion: props.selectedSuggestion,
       visibleRowChangeCount: 0,
@@ -379,7 +375,7 @@ export class QueryOutput extends React.Component {
       return this.state.columns
     }
 
-    return this.queryResponse?.data?.data?.columns
+    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
   }
 
   supportsPivot = () => {
@@ -388,7 +384,7 @@ export class QueryOutput extends React.Component {
   }
 
   supportsDatePivot = () => {
-    return this.supportsPivot() && this.tableColumns?.length === 2
+    return this.supportsPivot() && this.state.columns?.length === 2
   }
 
   usePivotDataForChart = () => {
@@ -491,19 +487,21 @@ export class QueryOutput extends React.Component {
     return _get(this.queryResponse, 'data.data.rows.length')
   }
 
-  generateTableData = (columns, newTableData) => {
+  generateTableData = (cols, newTableData) => {
     if (newTableData) {
       this.tableData = newTableData
     } else {
+      const columns = cols || this.getColumns()
       this.tableID = uuid()
-      this.tableColumns = this.formatColumnsForTable(columns)
       this.tableData = sortDataByDate(
         this.queryResponse?.data?.data?.rows,
-        this.tableColumns,
+        columns,
         'table'
       )
-
       this.setTableConfig()
+      if (this._isMounted) {
+        this.setState({ columns })
+      }
     }
   }
 
@@ -873,7 +871,6 @@ export class QueryOutput extends React.Component {
     if (this.supportsPivot()) {
       this.pivotTableColumns = newColumns
     } else {
-      // this.tableColumns = newColumns
       const formattedColumns = this.formatColumnsForTable(newColumns)
       this.setState({ columns: formattedColumns })
     }
@@ -1221,7 +1218,8 @@ export class QueryOutput extends React.Component {
 
   generateDatePivotData = (newTableData) => {
     try {
-      const dateColumnIndex = getDateColumnIndex(this.tableColumns)
+      const columns = this.getColumns()
+      const dateColumnIndex = getDateColumnIndex(columns)
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
         numberColumnIndex = columns.findIndex(
@@ -1249,7 +1247,7 @@ export class QueryOutput extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...this.tableColumns[dateColumnIndex],
+          ...columns[dateColumnIndex],
           title: 'Month',
           name: 'Month',
           field: '0',
@@ -1268,8 +1266,8 @@ export class QueryOutput extends React.Component {
 
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
-          ...this.tableColumns[numberColumnIndex],
-          origColumn: this.tableColumns[numberColumnIndex],
+          ...columns[numberColumnIndex],
+          origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
           title: year,
@@ -1307,7 +1305,7 @@ export class QueryOutput extends React.Component {
             [month]: row[dateColumnIndex],
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
-            name: this.tableColumns[dateColumnIndex]?.name,
+            name: columns[dateColumnIndex]?.name,
             value: row[dateColumnIndex],
           }
         }
@@ -1400,9 +1398,9 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
         })
         pivotTableColumns.push({
-          ...this.tableColumns[numberColumnIndex],
-          origColumn: this.tableColumns[numberColumnIndex],
-          origPivotColumn: this.tableColumns[newLegendColumnIndex],
+          ...columns[numberColumnIndex],
+          origColumn: columns[numberColumnIndex],
+          origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -1430,7 +1428,7 @@ export class QueryOutput extends React.Component {
         pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
 
         pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
-          name: this.tableColumns[newStringColumnIndex]?.name,
+          name: columns[newStringColumnIndex]?.name,
           value: pivotCategoryValue,
         }
       })
@@ -1611,7 +1609,7 @@ export class QueryOutput extends React.Component {
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
         supportsDrilldowns={
-          isAggregation(this.tableColumns) &&
+          isAggregation(this.state.columns) &&
           getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
       />
@@ -1620,11 +1618,6 @@ export class QueryOutput extends React.Component {
 
   renderChart = () => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
-      console.log('NO DATA SUPPLIED 1', {
-        data: this.tableData,
-        columns: this.state.columns,
-        config: this.tableConfig,
-      })
       console.error('Required table data was missing')
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
@@ -1638,11 +1631,6 @@ export class QueryOutput extends React.Component {
         !this.pivotTableColumns ||
         !this.pivotTableConfig)
     ) {
-      console.log('NO DATA SUPPLIED 2', {
-        data: this.pivotTableData,
-        columns: this.pivotTableColumns,
-        config: this.pivotTableConfig,
-      })
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
       )
@@ -1662,7 +1650,7 @@ export class QueryOutput extends React.Component {
               ? this.state.visiblePivotRows || this.pivotTableData
               : this.state.visibleRows || this.tableData
           }
-          columns={usePivotData ? this.pivotTableColumns : this.tableColumns}
+          columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isPivot={usePivotData}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -1676,6 +1664,8 @@ export class QueryOutput extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
+          height={this.props.height}
+          width={this.props.width}
         />
       </ErrorBoundary>
     )

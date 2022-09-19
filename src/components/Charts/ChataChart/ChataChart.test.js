@@ -48,22 +48,46 @@ describe('renders correctly', () => {
   })
 })
 
-describe('tooltip content', () => {
-  test('column tooltip renders as expected', () => {
+describe('tooltip content renders correctly for pivot table data', () => {
+  const testTooltipForDisplayType = (displayType) => {
     const tooltipContentSpy = jest.spyOn(chartHelpers, 'getTooltipContent')
-    const getTooltipContentResult = () => tooltipContentSpy.mock.results
+    const getTooltipContentResult = () =>
+      tooltipContentSpy.mock.results[0]?.value
     const wrapper = mount(
-      <QueryOutput queryResponse={testCases[11]} initialDisplayType="column" />
+      <QueryOutput
+        queryResponse={testCases[11]}
+        initialDisplayType={displayType}
+        height={100}
+        width={100}
+      />
     )
-    console.log('query output:', wrapper.debug())
+    const tooltipContent = getTooltipContentResult()
+    jest.clearAllMocks()
+    expect(tooltipContent).toMatchSnapshot()
+  }
 
-    const columnsComponent = wrapper.find('Columns')
-    // const instance = columnsComponent.instance()
-    expect(columnsComponent.exists()).toBe(true)
-
-    // const tooltipContent = getTooltipContentResult()
-    // console.log('tooltipContent:', tooltipContent)
-
-    // expect(tooltipContentSpy).toHaveBeenCalled()
+  test('column tooltip renders as expected', () => {
+    testTooltipForDisplayType('column')
+  })
+  test('bar tooltip renders as expected', () => {
+    testTooltipForDisplayType('bar')
+  })
+  test('line tooltip renders as expected', () => {
+    testTooltipForDisplayType('line')
+  })
+  test('stacked column tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_column')
+  })
+  test('stacked bar tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_bar')
+  })
+  test('stacked line tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_line')
+  })
+  test('heatmap tooltip renders as expected', () => {
+    testTooltipForDisplayType('heatmap')
+  })
+  test('bubble tooltip renders as expected', () => {
+    testTooltipForDisplayType('bubble')
   })
 })
