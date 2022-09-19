@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Autosuggest from 'react-autosuggest'
+import axios from 'axios'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { ToastContainer, toast } from 'react-toastify'
@@ -14,6 +15,7 @@ import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
 import { Checkbox } from '../Checkbox'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -196,45 +198,52 @@ export default class FilterLockPopover extends React.Component {
 
   onSuggestionsFetchRequested = ({ value }) => {
     this.setState({ isLoadingAutocomplete: true })
-    clearTimeout(this.autoCompleteTimer)
-    this.autoCompleteTimer = setTimeout(() => {
-      fetchVLAutocomplete({
-        ...getAuthentication(this.props.authentication),
-        suggestion: value,
-      })
-        .then((response) => {
-          const body = response?.data?.data
-          const sortingArray = []
-          let suggestionsMatchArray = []
-          this.autoCompleteArray = []
-          suggestionsMatchArray = body.matches
-          for (let i = 0; i < suggestionsMatchArray.length; i++) {
-            sortingArray.push(suggestionsMatchArray[i])
-          }
 
-          sortingArray.sort((a, b) => {
-            return a.keyword?.toUpperCase() < b.keyword?.toUpperCase()
-              ? -1
-              : a.keyword > b.keyword
-              ? 1
-              : 0
-          })
-          for (let idx = 0; idx < sortingArray.length; idx++) {
-            const anObject = {
-              name: sortingArray[idx],
-            }
-            this.autoCompleteArray.push(anObject)
+    // If already fetching autocomplete, cancel it
+    if (this.axiosSource) {
+      this.axiosSource.cancel(responseErrors.CANCELLED)
+    }
+    this.axiosSource = axios.CancelToken.source()
+    fetchVLAutocomplete({
+      ...getAuthentication(this.props.authentication),
+      suggestion: value,
+      cancelToken: this.axiosSource.token,
+    })
+      .then((response) => {
+        const body = response?.data?.data
+        const sortingArray = []
+        let suggestionsMatchArray = []
+        this.autoCompleteArray = []
+        suggestionsMatchArray = body.matches
+        for (let i = 0; i < suggestionsMatchArray.length; i++) {
+          sortingArray.push(suggestionsMatchArray[i])
+        }
+
+        sortingArray.sort((a, b) => {
+          return a.keyword?.toUpperCase() < b.keyword?.toUpperCase()
+            ? -1
+            : a.keyword > b.keyword
+            ? 1
+            : 0
+        })
+        for (let idx = 0; idx < sortingArray.length; idx++) {
+          const anObject = {
+            name: sortingArray[idx],
           }
-          this.setState({
-            suggestions: this.autoCompleteArray,
-            isLoadingAutocomplete: false,
-          })
+          this.autoCompleteArray.push(anObject)
+        }
+        this.setState({
+          suggestions: this.autoCompleteArray,
+          isLoadingAutocomplete: false,
         })
-        .catch((error) => {
+      })
+      .catch((error) => {
+        if (error?.data?.message !== responseErrors.CANCELLED) {
           console.error(error)
-          this.setState({ isLoadingAutocomplete: false })
-        })
-    }, 300)
+        }
+
+        this.setState({ isLoadingAutocomplete: false })
+      })
   }
 
   onSuggestionsClearRequested = () => {

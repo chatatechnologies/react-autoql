@@ -411,6 +411,7 @@ export const fetchVLAutocomplete = ({
   domain,
   token,
   apiKey,
+  cancelToken,
 } = {}) => {
   if (!suggestion || !suggestion.trim()) {
     return Promise.reject(new Error('No query supplied'))
@@ -428,12 +429,21 @@ export const fetchVLAutocomplete = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const fetchFilters = ({ apiKey, token, domain } = {}) => {
