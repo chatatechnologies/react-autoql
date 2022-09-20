@@ -90,10 +90,21 @@ export class QueryOutput extends React.Component {
 
     this.queryResponse = _cloneDeep(props.queryResponse)
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
+    this.interpretation = _get(
+      this.queryResponse,
+      'data.data.parsed_interpretation'
+    )
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+
+    // Set initial columns if needed
+    let columns = this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns
+    )
+    if (props.initialColumns && this.areColumnsValid(props.initialColumns)) {
+      columns = props.initialColumns
+    }
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
@@ -120,7 +131,7 @@ export class QueryOutput extends React.Component {
     this.state = {
       displayType: this.getDisplayTypeFromInitial(props),
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
-      columns: this.getColumns(),
+      columns,
       tableFilters: [],
       selectedSuggestion: props.defaultSelectedSuggestion,
       visibleRowChangeCount: 0,
@@ -161,6 +172,7 @@ export class QueryOutput extends React.Component {
     mutable: PropTypes.bool,
     showSuggestionPrefix: PropTypes.bool,
     onDisplayTypeChange: PropTypes.func,
+    onColumnChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -197,6 +209,7 @@ export class QueryOutput extends React.Component {
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
     onDisplayTypeChange: () => {},
+    onColumnChange: () => {},
   }
 
   componentDidMount = () => {
@@ -250,6 +263,7 @@ export class QueryOutput extends React.Component {
         this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
       ) {
         this.setTableConfig()
+        this.props.onColumnChange(this.state.columns)
         if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,
@@ -429,8 +443,6 @@ export class QueryOutput extends React.Component {
         return false
       }
 
-      const columns = this.getColumns()
-
       const areNumberColumnsValid = tableConfig.numberColumnIndices.every(
         (index) => {
           return columns[index] && isColumnNumberType(columns[index])
@@ -456,10 +468,13 @@ export class QueryOutput extends React.Component {
   }
 
   updateColumns = (columns) => {
-    if (columns) {
-      const formattedColumns = this.formatColumnsForTable(columns)
+    if (columns && this._isMounted) {
+      // Change table ID so a new ChataTable mounts after column change
+      // An alternative would be to manually set the new columns in tabulator:
+      // this.tableRef.ref.table.setColumns(columns)
+      this.tableID = uuid()
       this.setState({
-        columns: formattedColumns,
+        columns: this.formatColumnsForTable(columns),
         columnChangeCount: this.state.columnChangeCount + 1,
       })
     }
