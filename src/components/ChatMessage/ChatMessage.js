@@ -332,6 +332,7 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
             onFilterClick={this.toggleTableFilter}
+            popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={() =>
               this.props.deleteMessageCallback(this.props.id)
             }

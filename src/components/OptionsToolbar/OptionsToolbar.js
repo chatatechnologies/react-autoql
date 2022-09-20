@@ -586,8 +586,10 @@ export default class OptionsToolbar extends React.Component {
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              positions={['bottom']} // preferred position
+              positions={['bottom', 'top']}
               content={(props) => this.renderReportProblemMenu(props)}
+              parentElement={this.props.popoverParentElement}
+              boundaryElement={this.props.popoverParentElement}
             >
               <button
                 onClick={() => {
@@ -633,7 +635,7 @@ export default class OptionsToolbar extends React.Component {
             <Popover
               key={uuid()}
               isOpen={this.state.activeMenu === 'more-options'}
-              positions={['bottom']}
+              positions={['bottom', 'top']}
               padding={8}
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
@@ -641,6 +643,8 @@ export default class OptionsToolbar extends React.Component {
               content={(props) =>
                 this.renderMoreOptionsMenu(props, shouldShowButton)
               }
+              parentElement={this.props.popoverParentElement}
+              boundaryElement={this.props.popoverParentElement}
             >
               <button
                 onClick={() => {
