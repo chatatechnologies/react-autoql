@@ -199,16 +199,19 @@ export class DashboardTile extends React.Component {
   }
 
   endTopQuery = ({ response }) => {
-    // Update component key after getting new response
-    // so QueryOutput completely resets
-    this.QUERY_RESPONSE_KEY = uuid()
-    this.debouncedSetParamsForTile(
-      {
-        queryResponse: response,
-        defaultSelectedSuggestion: undefined,
-      },
-      this.setTopExecuted
-    )
+    if (response?.data?.message !== responseErrors.CANCELLED) {
+      // Update component key after getting new response
+      // so QueryOutput completely resets
+      this.QUERY_RESPONSE_KEY = uuid()
+      this.FIRST_QUERY_RESPONSE_KEY = uuid()
+      this.debouncedSetParamsForTile(
+        {
+          queryResponse: response,
+          defaultSelectedSuggestion: undefined,
+        },
+        this.setTopExecuted
+      )
+    }
   }
 
   setBottomExecuted = () => {
@@ -221,13 +224,16 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    this.debouncedSetParamsForTile(
-      {
-        secondQueryResponse: response,
-        secondDefaultSelectedSuggestion: undefined,
-      },
-      this.setBottomExecuted
-    )
+    if (response?.data?.message !== responseErrors.CANCELLED) {
+      this.SECOND_QUERY_RESPONSE_KEY = uuid()
+      this.debouncedSetParamsForTile(
+        {
+          secondQueryResponse: response,
+          secondDefaultSelectedSuggestion: undefined,
+        },
+        this.setBottomExecuted
+      )
+    }
   }
 
   processQuery = ({
@@ -364,10 +370,10 @@ export class DashboardTile extends React.Component {
       isSecondHalf: true,
     })
       .then((response) => {
-        if (this._isMounted) this.endBottomQuery({ response })
+        this.endBottomQuery({ response })
       })
       .catch((response) => {
-        if (this._isMounted) this.endBottomQuery({ response })
+        this.endBottomQuery({ response })
       })
   }
 
@@ -389,6 +395,11 @@ export class DashboardTile extends React.Component {
     secondskipQueryValidation,
     source,
   } = {}) => {
+    // If tile is already processing, cancel current process
+    this.secondAxiosSource?.cancel(responseErrors.CANCELLED)
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+
+    // Create new cancel tokens for each query
     this.axiosSource = axios.CancelToken.source()
     this.secondAxiosSource = axios.CancelToken.source()
 
