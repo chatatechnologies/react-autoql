@@ -110,7 +110,9 @@ class VizToolbar extends React.Component {
       return (
         <ErrorBoundary>
           <div
-            className={`${this.props.className || ''} viz-toolbar ${
+            className={`${
+              this.props.className || ''
+            } react-autoql-toolbar viz-toolbar ${
               this.props.vertical ? 'vertical' : ''
             }`}
             data-test="viz-toolbar"

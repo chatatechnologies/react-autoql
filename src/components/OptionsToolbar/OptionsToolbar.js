@@ -544,7 +544,7 @@ export default class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`autoql-options-toolbar
+          className={`react-autoql-toolbar options-toolbar
         ${this.state.activeMenu ? 'active' : ''}
         ${this.props.className || ''}`}
           data-test="autoql-options-toolbar"

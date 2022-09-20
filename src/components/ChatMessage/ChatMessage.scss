@@ -115,24 +115,22 @@
       right: 0;
       z-index: 3;
 
-      pointer-events: none;
-      visibility: hidden;
-      opacity: 0;
-
       .chat-message-toolbar.left {
         margin-left: -5px;
       }
       .chat-message-toolbar.right {
         margin-right: -5px;
       }
-
-      .chat-message-toolbar.right,
-      .chat-message-toolbar.left {
-        pointer-events: auto;
-      }
     }
 
-    &:hover .chat-message-toolbars-container {
+    .react-autoql-toolbar:not(.active) {
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+    }
+    &:hover .react-autoql-toolbar,
+    .react-autoql-toolbar.active {
+      pointer-events: auto;
       visibility: visible;
       opacity: 1;
     }
