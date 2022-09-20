@@ -667,7 +667,7 @@ class DashboardWithoutTheme extends React.Component {
                           isResizing={this.state.isAnimatingModal}
                           queryResponse={_cloneDeep(queryResponse)}
                           initialDisplayType={displayType}
-                          tableConfigs={_cloneDeep(dataConfig)}
+                          initialTableConfigs={_cloneDeep(dataConfig)}
                           rebuildTooltips={this.rebuildTooltips}
                           autoChartAggregations={
                             this.props.autoChartAggregations

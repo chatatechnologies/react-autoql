@@ -297,10 +297,7 @@ export class DashboardTile extends React.Component {
     // New query is running, reset temporary state fields
     this.debouncedSetParamsForTile({
       query,
-      dataConfig:
-        this.props.tile.query === query
-          ? undefined
-          : this.props.tile.dataConfig,
+      dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
       queryResponse: null,
       defaultSelectedSuggestion: undefined,
@@ -350,10 +347,9 @@ export class DashboardTile extends React.Component {
     // New query is running, reset temporary state fields
     this.debouncedSetParamsForTile({
       secondQuery: query,
-      secondDataConfig:
-        this.props.tile.secondQuery === query
-          ? undefined
-          : this.props.tile.secondDataConfig,
+      secondDataConfig: queryChanged
+        ? undefined
+        : this.props.tile.secondDataConfig,
       secondskipQueryValidation: skipValidation,
       secondQueryResponse: null,
       secondDefaultSelectedSuggestion: undefined,
@@ -1044,7 +1040,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-query-top-${this.QUERY_RESPONSE_KEY}`,
         initialDisplayType,
         queryResponse: this.props.queryResponse,
-        tableConfigs: this.props.tile.dataConfig,
+        initialTableConfigs: this.props.tile.dataConfig,
         onTableConfigChange: this.onDataConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
@@ -1111,7 +1107,7 @@ export class DashboardTile extends React.Component {
         initialDisplayType,
         queryResponse:
           this.props.secondQueryResponse || this.props.queryResponse,
-        tableConfigs: this.props.tile.secondDataConfig,
+        initialTableConfigs: this.props.tile.secondDataConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
         queryValidationSelections:
           this.props.tile.secondqueryValidationSelections,

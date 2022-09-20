@@ -98,10 +98,10 @@ export class QueryOutput extends React.Component {
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
     if (
-      props.tableConfigs?.tableConfig &&
-      this.isTableConfigValid(props.tableConfigs?.tableConfig)
+      props.initialTableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns)
     ) {
-      const { tableConfig, pivotTableConfig } = props.tableConfigs
+      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
       this.tableConfig = _cloneDeep(tableConfig)
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
@@ -130,11 +130,12 @@ export class QueryOutput extends React.Component {
   }
 
   static propTypes = {
-    queryResponse: PropTypes.shape({}),
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    tableConfig: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({}),
+
+    queryResponse: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -166,7 +167,7 @@ export class QueryOutput extends React.Component {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    tableConfig: undefined,
+    initialTableConfigs: undefined,
 
     queryResponse: undefined,
     initialDisplayType: null,
@@ -224,16 +225,13 @@ export class QueryOutput extends React.Component {
     try {
       // If data config was changed here, tell the parent
       if (
-        !_isEqual(this.props.tableConfigs, {
+        !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
         }) &&
         this.props.onTableConfigChange
       ) {
-        this.props.onTableConfigChange({
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
-        })
+        this.onTableConfigChange()
       }
 
       if (prevState.displayType !== this.state.displayType) {
@@ -301,6 +299,13 @@ export class QueryOutput extends React.Component {
         ReactTooltip.rebuild()
       }, delay)
     }
+  }
+
+  onTableConfigChange = () => {
+    this.props.onTableConfigChange({
+      tableConfig: this.tableConfig,
+      pivotTableConfig: this.pivotTableConfig,
+    })
   }
 
   changeDisplayType = (displayType) => {
@@ -394,7 +399,18 @@ export class QueryOutput extends React.Component {
     return this.supportsPivot() && !this.supportsDatePivot()
   }
 
-  isTableConfigValid = (tableConfig) => {
+  areColumnsValid = (columns) => {
+    /* Each provided column must exist in the original
+       query response columns for it to be valid */
+    const origColumns = this.queryResponse?.data?.data?.columns
+    return columns.every((column) =>
+      origColumns.find((origColumn) => {
+        column.name === origColumn.name
+      })
+    )
+  }
+
+  isTableConfigValid = (tableConfig, columns) => {
     try {
       if (
         !tableConfig ||
@@ -957,10 +973,7 @@ export class QueryOutput extends React.Component {
     }
 
     if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
-      this.props.onTableConfigChange({
-        tableConfig: this.tableConfig,
-        pivotTableConfig: this.pivotTableConfig,
-      })
+      this.onTableConfigChange()
     }
   }
 
@@ -1006,10 +1019,7 @@ export class QueryOutput extends React.Component {
       this.tableConfig.legendColumnIndex = legendColumnIndex
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
-      this.props.onTableConfigChange({
-        tableConfig: this.tableConfig,
-        pivotTableConfig: this.pivotTableConfig,
-      })
+      this.onTableConfigChange()
     }
   }
 

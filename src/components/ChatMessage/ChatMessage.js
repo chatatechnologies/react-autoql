@@ -272,7 +272,7 @@ export default class ChatMessage extends React.Component {
             this.props.isResizing || this.state.isAnimatingMessageBubble
           }
           enableDynamicCharting={this.props.enableDynamicCharting}
-          tableConfigs={this.state.dataConfig}
+          initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}
