@@ -460,15 +460,59 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
-export const getTickValues = (tickHeight, fullHeight, labelArray) => {
+export const getNiceTickValues = ({ tickValues, scale }) => {
+  const { minValue, maxValue } = scale
+  if (minValue === undefined || maxValue === undefined) {
+    console.warn(
+      'Tried to make nice labels but max/min values were not provided'
+    )
+    return tickValues
+  } else if (tickValues?.length < 2) {
+    console.warn('Could not make nice labels because there was only 1 tick')
+    return tickValues
+  }
+
+  try {
+    const minTickValue = tickValues[0]
+    const maxTickValue = tickValues[tickValues.length - 1]
+    const tickSize = Math.abs(tickValues[1] - tickValues[0])
+    const newTickValues = [...tickValues]
+
+    let newMinTickValue = minTickValue
+    let newMaxTickValue = maxTickValue
+
+    if (minValue < minTickValue) {
+      newMinTickValue = minTickValue - tickSize
+      newTickValues.unshift(newMinTickValue)
+    }
+
+    if (maxValue > maxTickValue) {
+      newMaxTickValue = maxTickValue + tickSize
+      newTickValues.push(newMaxTickValue)
+    }
+
+    scale.domain([newMinTickValue, newMaxTickValue])
+    return newTickValues
+  } catch (error) {
+    return tickValues
+  }
+}
+
+export const getTickValues = ({
+  tickHeight,
+  fullHeight,
+  labelArray,
+  scale,
+}) => {
   try {
     const minTextHeightInPx = 16
     const interval = Math.ceil(
       (labelArray.length * minTextHeightInPx) / fullHeight
     )
 
+    let tickValues = labelArray
     if (tickHeight < minTextHeightInPx) {
-      const tickValues = []
+      tickValues = []
 
       // We want to do this in the reverse direction so the highest value is always included
       labelArray.forEach((label, index) => {
@@ -476,9 +520,16 @@ export const getTickValues = (tickHeight, fullHeight, labelArray) => {
           tickValues.push(label)
         }
       })
-
-      return tickValues
     }
+
+    if (scale?.type === 'LINEAR') {
+      tickValues = getNiceTickValues({
+        tickValues,
+        scale,
+      })
+    }
+
+    return tickValues
   } catch (error) {
     console.error(error)
   }

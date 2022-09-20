@@ -44,7 +44,6 @@ export class DashboardTile extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
-    this.QUERY_RESPONSE_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
     this.SECOND_QUERY_RESPONSE_KEY = uuid()
     this.autoCompleteTimer = undefined
@@ -204,8 +203,7 @@ export class DashboardTile extends React.Component {
     if (response?.data?.message !== responseErrors.CANCELLED) {
       // Update component key after getting new response
       // so QueryOutput completely resets
-      this.QUERY_RESPONSE_KEY = uuid()
-      this.FIRST_QUERY_RESPONSE_KEY = uuid()
+      // this.FIRST_QUERY_RESPONSE_KEY = uuid()
       this.debouncedSetParamsForTile(
         {
           queryResponse: response,
@@ -227,7 +225,7 @@ export class DashboardTile extends React.Component {
 
   endBottomQuery = ({ response }) => {
     if (response?.data?.message !== responseErrors.CANCELLED) {
-      this.SECOND_QUERY_RESPONSE_KEY = uuid()
+      // this.SECOND_QUERY_RESPONSE_KEY = uuid()
       this.debouncedSetParamsForTile(
         {
           secondQueryResponse: response,
@@ -1068,10 +1066,6 @@ export class DashboardTile extends React.Component {
 
     const initialDisplayType = this.props?.displayType
 
-    const key = this.getIsSplitView()
-      ? this.FIRST_QUERY_RESPONSE_KEY
-      : this.QUERY_RESPONSE_KEY
-
     return this.renderResponse({
       renderPlaceholder,
       isExecuting,
@@ -1081,7 +1075,7 @@ export class DashboardTile extends React.Component {
           !this.state.responseRef && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        key: `dashboard-tile-query-top-${key}`,
+        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
         initialDisplayType,
         queryResponse: this.props.queryResponse,
         initialTableConfigs: this.props.tile.dataConfig,

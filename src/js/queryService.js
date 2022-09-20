@@ -369,6 +369,7 @@ export const runDrilldown = ({
     .then((response) => Promise.resolve(response))
     .catch(formatErrorResponse)
 }
+
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))

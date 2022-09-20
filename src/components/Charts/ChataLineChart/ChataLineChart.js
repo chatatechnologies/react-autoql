@@ -83,22 +83,25 @@ export default class ChataLineChart extends Component {
     this.yScale = scaleLinear()
       .domain([minValue, maxValue])
       .range([rangeStart, rangeEnd])
-      .nice()
+    this.yScale.minValue = minValue
+    this.yScale.maxValue = maxValue
+    this.yScale.type = 'LINEAR'
 
     this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
-    this.xTickValues = getTickValues(
-      this.tickWidth,
-      props.innerWidth,
-      this.xScale.domain()
-    )
+    this.xTickValues = getTickValues({
+      tickHeight: this.tickWidth,
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
 
     this.yLabelArray = this.yScale.ticks()
     this.tickHeight = props.innerHeight / this.yLabelArray?.length
-    this.yTickValues = getTickValues(
-      this.tickHeight,
-      props.innerHeight,
-      this.yLabelArray
-    )
+    this.yTickValues = getTickValues({
+      tickHeight: this.tickHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+      scale: this.yScale,
+    })
   }
 
   render = () => {
