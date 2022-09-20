@@ -58,24 +58,19 @@ export default class ChataTable extends React.Component {
       },
       dataFiltered: (filters, rows) => {
         const tableFilters = this.ref?.table?.getHeaderFilters()
+        if (this.firstRender) {
+          return
+        }
 
         if (this.supportsInfiniteScroll) {
-          props.onFilterCallback(tableFilters, rows)
-          return
+          return props.onFilterCallback(tableFilters, rows)
         }
 
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
-        if (
-          !this.supportsInfiniteScroll &&
-          this._isMounted &&
-          this.ref &&
-          !this.firstRender
-        ) {
-          if (!_isEqual(tableFilters, this.headerFilters)) {
-            this.headerFilters = tableFilters
-            props.onFilterCallback(tableFilters, rows)
-          }
+        if (!_isEqual(tableFilters, this.headerFilters)) {
+          this.headerFilters = tableFilters
+          props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,

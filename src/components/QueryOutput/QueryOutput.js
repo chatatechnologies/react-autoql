@@ -446,24 +446,6 @@ export class QueryOutput extends React.Component {
         columns: formattedColumns,
         columnChangeCount: this.state.columnChangeCount + 1,
       })
-      /* ----------- from merge conflict: uncomment this if there is a bug
-      this.tableID = uuid()
-
-      // Reset persisted column config data
-      this.tableConfig = undefined
-
-      // Generate new table data from new columns
-      if (this.shouldGenerateTableData()) {
-        this.generateTableData(columns)
-        if (this.shouldGeneratePivotData()) {
-          this.generatePivotTableData({ isFirstGeneration: true })
-        }
-      }
-
-      // If tabulator is mounted, update columns in there
-      if (_get(this.tableRef, 'ref.table')) {
-        this.tableRef.ref.table.setColumns(this.tableColumns)
-      } ---------- */
     }
   }
 
@@ -836,31 +818,40 @@ export class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
-    if (!filters?.length && !rows?.length) {
+    if (!_isEqual(filters, this.prevFilters)) {
       return
     }
 
-    const { displayType } = this.state
-    if (displayType === 'table' || displayType === 'pivot_table') {
-      const newTableData = []
-      rows.forEach((row) => {
-        newTableData.push(row.getData())
-      })
+    const newTableData = []
+    rows.forEach((row) => {
+      newTableData.push(row.getData())
+    })
 
-      if (displayType === 'table') {
-        this.headerFilters = filters
-        this.setState({
-          visibleRows: newTableData,
-          visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
-        })
-      } else if (displayType === 'pivot_table') {
-        this.pivotHeaderFilters = filters
-        this.setState({
-          visiblePivotRows: newTableData,
-          visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
-        })
-      }
+    this.setState({
+      headerFilters: filters,
+      visibleRows: newTableData,
+      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+    })
+
+    this.prevFilters = _cloneDeep(filters)
+  }
+
+  onPivotTableFilter = async (filters, rows) => {
+    if (!_isEqual(filters, this.prevPivotFilters)) {
+      return
     }
+
+    const newPivotData = []
+    rows.forEach((row) => {
+      newPivotData.push(row.getData())
+    })
+    this.setState({
+      pivotHeaderFilters: filters,
+      visiblePivotRows: newPivotData,
+      visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
+    })
+
+    this.prevPivotFilters = _cloneDeep(filters)
   }
 
   onLegendClick = (d) => {
@@ -1577,8 +1568,8 @@ export class QueryOutput extends React.Component {
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
             onCellClick={this.onTableCellClick}
-            headerFilters={this.pivotHeaderFilters}
-            onFilterCallback={this.onTableFilter}
+            headerFilters={this.state.pivotHeaderFilters}
+            onFilterCallback={this.onPivotTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
@@ -1600,7 +1591,7 @@ export class QueryOutput extends React.Component {
         data={this.tableData}
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
-        headerFilters={this.headerFilters}
+        headerFilters={this.state.headerFilters}
         onFilterCallback={this.onTableFilter}
         onNewPage={this.onNewPage}
         onNewData={this.onNewData}
