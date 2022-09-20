@@ -463,17 +463,17 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getHiddenColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
+export const getHiddenColumns = (columns) => {
+  return _filter(columns, (col) => !col.is_visible)
 }
 
 export const getVisibleColumns = (columns) => {
   return _filter(columns, (col) => col.is_visible)
 }
 
-export const areSomeColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const hiddenColumns = getHiddenColumns(response)
+export const areSomeColumnsHidden = (columns) => {
+  const hasColumns = columns?.length
+  const hiddenColumns = getHiddenColumns(columns)
   return hasColumns && !!hiddenColumns.length
 }
 

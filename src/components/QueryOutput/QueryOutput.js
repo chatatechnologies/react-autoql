@@ -499,6 +499,7 @@ export class QueryOutput extends React.Component {
         columns,
         'table'
       )
+
       this.setTableConfig()
       if (this._isMounted) {
         this.setState({ columns })
@@ -1894,8 +1895,7 @@ export class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.queryResponse?.data?.data?.interpretation &&
-      !areAllColumnsHidden(this.queryResponse)
+      this.queryResponse?.data?.data?.parsed_interpretation
     )
   }
 
@@ -1921,7 +1921,7 @@ export class QueryOutput extends React.Component {
     return (
       !isTableAndAjax &&
       this.isDataLimited() &&
-      !areAllColumnsHidden(this.queryResponse)
+      !areAllColumnsHidden(this.getColumns())
     )
   }
 
@@ -1934,9 +1934,7 @@ export class QueryOutput extends React.Component {
       <div className="dashboard-data-limit-warning-icon">
         <Icon
           type="warning"
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
-            Try querying a smaller time-frame to ensure<br />
-            all your data is displayed.`}
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
           data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />

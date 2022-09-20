@@ -671,13 +671,14 @@ export default class OptionsToolbar extends React.Component {
     let shouldShowButton = {}
     try {
       const displayType = this.props.responseRef?.state?.displayType
+      const columns = this.props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
       const isChart = isChartType(displayType)
       const isPivotTable = displayType === 'pivot_table'
       const response = this.props.responseRef?.queryResponse
       const isDataResponse = response?.data?.data?.display_type === 'data'
-      const allColumnsHidden = areAllColumnsHidden(response)
-      const someColumnsHidden = areSomeColumnsHidden(response)
+      const allColumnsHidden = areAllColumnsHidden(columns)
+      const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
       const hasMoreThanOneRow = numRows > 1
