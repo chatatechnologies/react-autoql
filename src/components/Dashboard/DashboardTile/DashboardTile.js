@@ -94,7 +94,7 @@ export class DashboardTile extends React.Component {
     displayType: 'table',
     dataPageSize: undefined,
     queryValidationSelections: undefined,
-    selectedSuggestion: undefined,
+    defaultSelectedSuggestion: undefined,
     notExecutedText: 'Hit "Execute" to run this dashboard',
     autoChartAggregations: true,
     enableAjaxTableData: false,
@@ -205,7 +205,7 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile(
       {
         queryResponse: response,
-        selectedSuggestion: undefined,
+        defaultSelectedSuggestion: undefined,
       },
       this.setTopExecuted
     )
@@ -224,7 +224,7 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile(
       {
         secondQueryResponse: response,
-        secondSelectedSuggestion: undefined,
+        secondDefaultSelectedSuggestion: undefined,
       },
       this.setBottomExecuted
     )
@@ -303,7 +303,7 @@ export class DashboardTile extends React.Component {
           : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
       queryResponse: null,
-      selectedSuggestion: undefined,
+      defaultSelectedSuggestion: undefined,
       queryValidationSelections,
     })
 
@@ -356,7 +356,7 @@ export class DashboardTile extends React.Component {
           : this.props.tile.secondDataConfig,
       secondskipQueryValidation: skipValidation,
       secondQueryResponse: null,
-      secondSelectedSuggestion: undefined,
+      secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
     })
 
@@ -396,10 +396,11 @@ export class DashboardTile extends React.Component {
     this.axiosSource = axios.CancelToken.source()
     this.secondAxiosSource = axios.CancelToken.source()
 
-    const q1 = query || this.props.tile.selectedSuggestion || this.state.query
+    const q1 =
+      query || this.props.tile.defaultSelectedSuggestion || this.state.query
     const q2 =
       secondQuery ||
-      this.props.tile.secondSelectedSuggestion ||
+      this.props.tile.secondDefaultSelectedSuggestion ||
       this.state.secondQuery
 
     this.processTileTop({ query: q1, skipQueryValidation, source })
@@ -438,7 +439,7 @@ export class DashboardTile extends React.Component {
         source,
       })
     } else {
-      this.debouncedSetParamsForTile({ selectedSuggestion: query })
+      this.debouncedSetParamsForTile({ defaultSelectedSuggestion: query })
     }
   }
 
@@ -1047,7 +1048,10 @@ export class DashboardTile extends React.Component {
         onTableConfigChange: this.onDataConfigChange,
         queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
-        selectedSuggestion: _get(this.props.tile, 'selectedSuggestion'),
+        defaultSelectedSuggestion: _get(
+          this.props.tile,
+          'defaultSelectedSuggestion'
+        ),
         onNoneOfTheseClick: this.onNoneOfTheseClick,
         onDrilldownStart: (activeKey) =>
           this.props.onDrilldownStart({
@@ -1112,7 +1116,10 @@ export class DashboardTile extends React.Component {
         queryValidationSelections:
           this.props.tile.secondqueryValidationSelections,
         onSuggestionClick: this.onSecondSuggestionClick,
-        selectedSuggestion: _get(this.props.tile, 'secondSelectedSuggestion'),
+        defaultSelectedSuggestion: _get(
+          this.props.tile,
+          'secondDefaultSelectedSuggestion'
+        ),
         reportProblemCallback: this.secondReportProblemCallback,
         onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
         onDrilldownStart: (activeKey) => {
