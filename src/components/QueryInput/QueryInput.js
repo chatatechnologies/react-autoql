@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
-import { responseErrors } from '../../js/errorMessages'
+import errorMessages, { responseErrors } from '../../js/errorMessages'
 
 import {
   authenticationType,
@@ -179,7 +179,7 @@ export default class QueryInput extends React.Component {
       .then((response) => this.onResponse(response, query))
       .catch((error) => {
         console.error(error)
-        this.onResponse(error)
+        this.onResponse(error, query)
       })
   }
 
@@ -260,7 +260,12 @@ export default class QueryInput extends React.Component {
       } else if (skipQueryValidation) {
         runQueryOnly(requestData)
           .then((response) => this.onResponse(response, query))
-          .catch((error) => console.error(error))
+          .catch((error) => {
+            const finalError = error || {
+              error: errorMessages.GENERAL_QUERY,
+            }
+            this.onResponse(finalError, query)
+          })
       } else {
         runQuery(requestData)
           .then((response) => this.onResponse(response, query))
@@ -268,9 +273,9 @@ export default class QueryInput extends React.Component {
             // If there is no error it did not make it past options
             // and this is usually due to an authentication error
             const finalError = error || {
-              error: 'Unauthenticated',
+              error: errorMessages.GENERAL_QUERY,
             }
-            this.onResponse(finalError)
+            this.onResponse(finalError, query)
           })
       }
     }
