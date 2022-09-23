@@ -522,8 +522,7 @@ export default class QueryOutput extends React.Component {
       this.tableColumns = this.formatColumnsForTable(columns)
       this.tableData = sortDataByDate(
         this.queryResponse?.data?.data?.rows,
-        this.tableColumns,
-        'table'
+        this.tableColumns
       )
 
       this.setTableConfig()
@@ -1535,11 +1534,7 @@ export default class QueryOutput extends React.Component {
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } =
         this.tableConfig
 
-      let uniqueValues0 = sortDataByDate(
-        tableData,
-        this.tableColumns,
-        'pivot-table'
-      )
+      let uniqueValues0 = sortDataByDate(tableData, this.tableColumns)
         .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1547,11 +1542,7 @@ export default class QueryOutput extends React.Component {
           return map
         }, {})
 
-      let uniqueValues1 = sortDataByDate(
-        tableData,
-        this.tableColumns,
-        'pivot-table'
-      )
+      let uniqueValues1 = sortDataByDate(tableData, this.tableColumns)
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
