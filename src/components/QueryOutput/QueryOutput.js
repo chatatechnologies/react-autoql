@@ -361,20 +361,28 @@ export class QueryOutput extends React.Component {
   }
 
   getDisplayTypeFromInitial = (props) => {
-    const isInitialDisplayTypeValid = isDisplayTypeValid(
-      props.queryResponse,
-      props.initialDisplayType,
-      this.tableData?.length,
-      this.pivotTableData?.length
+    // Set the initial display type based on prop value, response, and supported display types
+    // Start by setting the displayType to the provided initialDisplayType prop value
+    let displayType = props.initialDisplayType
+    const defaultDisplayType = this.getUpdatedDefaultDisplayType(
+      this.props.preferredDisplayType
     )
 
-    // Set the initial display type based on prop value, response, and supported display types
-    const displayType = isInitialDisplayTypeValid
-      ? props.initialDisplayType
-      : this.getUpdatedDefaultDisplayType(props)
-
-    if (!isInitialDisplayTypeValid) {
+    // If prop is not provided, use default display type
+    if (!displayType) {
+      displayType = defaultDisplayType
+    }
+    // If prop is provided, but it isn't supported by the dataset, use default display type
+    else if (
+      !isDisplayTypeValid(
+        props.queryResponse,
+        displayType,
+        this.tableData?.length,
+        this.pivotTableData?.length
+      )
+    ) {
       this.displayTypeInvalidWarning(displayType)
+      displayType = defaultDisplayType
     }
 
     return displayType

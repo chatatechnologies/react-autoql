@@ -282,6 +282,7 @@ export default class ChatMessage extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
+          onDisplayTypeChange={this.scrollIntoView}
           mutable={false}
           showSuggestionPrefix={false}
           popoverParentElement={this.props.popoverParentElement}
