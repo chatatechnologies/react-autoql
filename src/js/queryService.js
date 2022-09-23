@@ -96,10 +96,8 @@ export const fetchSuggestions = ({
 
   return axios
     .get(relatedQueriesUrl, config)
-    .then((response) => {
-      return Promise.resolve(response)
-    })
-    .catch(formatErrorResponse)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runQueryNewPage = ({

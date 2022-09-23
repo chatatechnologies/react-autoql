@@ -2,6 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
 
+import FilterLockPopoverContent from './FilterLockPopoverContent'
+
 import { fetchFilters } from '../../js/queryService'
 import { authenticationType } from '../../props/types'
 import { authenticationDefault, getAuthentication } from '../../props/defaults'
