@@ -21,7 +21,6 @@
   /* These are not inline styles since they do not apply to saved PNG charts */
   .bar,
   .column,
-  .circle,
   .line,
   .slice,
   .stacked-area,
@@ -58,6 +57,16 @@
     }
   }
 
+  .circle {
+    transition: fill-opacity 0.2s ease;
+    fill-opacity: 0.7;
+    outline: none !important;
+    &:hover,
+    &.active {
+      fill-opacity: 1 !important;
+    }
+  }
+
   g.tick {
     transition: opacity 0.3s ease;
   }
@@ -82,9 +91,7 @@
   color: var(--react-autoql-text-color-primary);
   z-index: 9999;
   padding: 5px 0;
-  max-height: 300px;
   min-width: 150px;
-  overflow-y: hidden;
 
   .axis-select-option.active {
     background: var(--react-autoql-hover-color);

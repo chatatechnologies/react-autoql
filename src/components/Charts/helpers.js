@@ -468,7 +468,7 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
     )
     return tickValues
   } else if (tickValues?.length < 2) {
-    console.warn('Could not make nice labels because there was only 1 tick')
+    // Could not make nice labels because there was only 1 tick
     return tickValues
   }
 
