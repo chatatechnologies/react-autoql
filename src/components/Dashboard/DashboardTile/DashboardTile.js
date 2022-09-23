@@ -528,7 +528,8 @@ export class DashboardTile extends React.Component {
   userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
     if (
       userSelectedValueFromSuggestionBox &&
-      userSelectedValueFromSuggestionBox.name
+      userSelectedValueFromSuggestionBox.name &&
+      this._isMounted
     ) {
       const newQuery = userSelectedValueFromSuggestionBox.name
       this.userSelectedValue = newQuery
@@ -539,22 +540,19 @@ export class DashboardTile extends React.Component {
   }
 
   onQueryInputChange = (e) => {
+    // If input change we want to start validating the new queries again
+    this.debouncedSetParamsForTile({ skipQueryValidation: false })
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
     }
 
-    if (_get(e, 'target.value') || _get(e, 'target.value') === '') {
+    if (e?.target?.value || e?.target?.value === '') {
       this.setState({ query: e.target.value })
     } else {
       // User clicked on autosuggest item
       this.processTile({ query: this.userSelectedValue })
     }
-  }
-
-  onQueryInputChange = (e) => {
-    this.setState({ query: e.target.value })
-    this.debouncedSetParamsForTile({ skipQueryValidation: false })
   }
 
   onSecondQueryInputChange = (e) => {
