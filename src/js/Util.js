@@ -7,6 +7,7 @@ import {
   TABLE_TYPES,
   WEEKDAY_NAMES,
   MONTH_NAMES,
+  SEASON_NAMES,
 } from './Constants'
 import { LIGHT_THEME, DARK_THEME } from './Themes'
 
@@ -1006,7 +1007,7 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b, displayType) => {
+export const dateSortFn = (a, b) => {
   try {
     if (!a && !b) {
       return 0
@@ -1033,9 +1034,6 @@ export const dateSortFn = (a, b, displayType) => {
         let aDateYear = a.substring(0, 4)
         let bDateYear = b.substring(0, 4)
         if (aDateYear !== bDateYear) {
-          if (displayType === 'chart') {
-            return aDateYear - bDateYear
-          }
           return bDateYear - aDateYear
         } else {
           let aDateWeek = a.substring(6, 8)
@@ -1064,10 +1062,18 @@ export const dateSortFn = (a, b, displayType) => {
           return bMonthIndex - aMonthIndex
         }
         return b - a
+      } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
+        const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
+        const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
+        const aYear = Number(a.substr(2))
+        const bYear = Number(b.substr(2))
+
+        if (aYear === bYear) {
+          return bSeasonIndex - aSeasonIndex
+        }
+
+        return bYear - aYear
       }
-    }
-    if (displayType === 'chart') {
-      return aDate - bDate
     }
     return bDate - aDate
   } catch (error) {
@@ -1076,16 +1082,23 @@ export const dateSortFn = (a, b, displayType) => {
   }
 }
 
-export const sortDataByDate = (data, tableColumns, displayType) => {
+export const sortDataByDate = (data, tableColumns, isChart) => {
   try {
     if (!data || typeof data !== 'object') {
       return data
     }
     const dateColumnIndex = getDateColumnIndex(tableColumns)
     if (dateColumnIndex >= 0) {
-      let sortedData = [...data].sort((a, b) =>
-        dateSortFn(a[dateColumnIndex], b[dateColumnIndex], displayType)
-      )
+      let sortedData
+      if (!isChart) {
+        sortedData = [...data].sort((a, b) =>
+          dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+        )
+      } else {
+        sortedData = [...data].sort(
+          (a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+        )
+      }
       return sortedData
     }
     return data
