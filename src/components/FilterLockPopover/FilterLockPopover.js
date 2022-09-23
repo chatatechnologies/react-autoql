@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
 
 import FilterLockPopoverContent from './FilterLockPopoverContent'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { fetchFilters } from '../../js/queryService'
 
