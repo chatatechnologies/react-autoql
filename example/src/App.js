@@ -1581,38 +1581,32 @@ export default class App extends Component {
   }
 
   renderNavMenu = () => {
-    return (
-      <Menu
-        onClick={({ key }) => {
-          this.setState({ currentPage: key })
-          this.resetDashboard()
-          if (key === 'notifications' && this.notificationBadgeRef) {
-            this.notificationBadgeRef.resetCount()
-          }
-        }}
-        selectedKeys={[this.state.currentPage]}
-        mode="horizontal"
-      >
-        <Menu.Item key="drawer">
-          <ChataIcon type="react-autoql-bubbles-outlined" />
-          Data Messenger
-        </Menu.Item>
+    const items = [
+      {
+        label: (
+          <span>
+            <ChataIcon type="react-autoql-bubbles-outlined" /> Data Messenger
+          </span>
+        ),
+        key: 'drawer',
+      },
+    ]
 
-        {this.state.isAuthenticated && (
-          <Menu.Item key="dashboard">
+    if (this.state.isAuthenticated) {
+      items.push({
+        label: (
+          <span>
             <ChataIcon type="dashboard" /> Dashboard
-          </Menu.Item>
-        )}
-        {this.state.isAuthenticated && (
-          <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
-        )}
-        <Menu.Item key="reviews">Reviews</Menu.Item>
-        <Menu.Item key="speech">Speech Training</Menu.Item>
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
-        )}
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="notifications">
+          </span>
+        ),
+        key: 'dashboard',
+      })
+      items.push({ label: 'QueryInput / QueryOutput', key: 'chatbar' })
+
+      if (this.state.enableNotifications) {
+        items.push({ label: 'Data Alerts Manager', key: 'settings' })
+        items.push({
+          label: (
             <NotificationIcon
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
@@ -1629,9 +1623,28 @@ export default class App extends Component {
               }}
               onErrorCallback={this.onError}
             />
-          </Menu.Item>
-        )}
-      </Menu>
+          ),
+          key: 'notifications',
+        })
+      }
+    }
+
+    items.push({ label: 'Reviews', key: 'reviews' })
+    items.push({ label: 'Speech Training', key: 'speech' })
+
+    return (
+      <Menu
+        onClick={({ key }) => {
+          this.setState({ currentPage: key })
+          this.resetDashboard()
+          if (key === 'notifications' && this.notificationBadgeRef) {
+            this.notificationBadgeRef.resetCount()
+          }
+        }}
+        selectedKeys={[this.state.currentPage]}
+        mode="horizontal"
+        items={items}
+      />
     )
   }
 
