@@ -640,9 +640,9 @@ export class QueryOutput extends React.Component {
               ? ' with-drilldown'
               : ''
           }`}
-          onClick={() =>
+          onClick={() => {
             this.processDrilldown({ groupBys: [], supportedByAPI: true })
-          }
+          }}
         >
           {formatElement({
             element: _get(this.queryResponse, 'data.data.rows[0][0]'),

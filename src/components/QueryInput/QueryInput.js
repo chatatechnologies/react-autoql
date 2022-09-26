@@ -5,6 +5,7 @@ import axios from 'axios'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
+import ReactTooltip from 'react-tooltip'
 
 import {
   authenticationType,
@@ -24,12 +25,12 @@ import {
   runQuery,
   runQueryOnly,
   fetchAutocomplete,
-  runQueryValidation,
 } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { animateInputText } from '../../js/Util'
 import { dprQuery } from '../../js/dprService'
 import { withTheme } from '../../theme'
 
@@ -48,6 +49,7 @@ class QueryInput extends React.Component {
       lastQuery: '',
       suggestions: [],
       isQueryRunning: false,
+      listeningForTranscript: false,
     }
   }
 
@@ -99,7 +101,7 @@ class QueryInput extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps) => {
-    if (this.props.isResizing || nextProps.isResizing) {
+    if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
@@ -117,38 +119,20 @@ class QueryInput extends React.Component {
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
-    clearTimeout(this.inputAnimationTimeout)
   }
-
   animateInputTextAndSubmit = ({ query, userSelection, source }) => {
-    if (!(query?.length > 0)) {
-      return
-    }
-
-    const totalAnimationTime = 1000
-    const timePerChar = Math.round(totalAnimationTime / query.length)
-    if (typeof query === 'string' && _get(query, 'length')) {
-      for (let i = 1; i <= query.length; i++) {
-        this.inputAnimationTimeout = setTimeout(() => {
-          if (this._isMounted) {
-            this.setState({
-              inputValue: query.slice(0, i),
-            })
-            if (i === query.length) {
-              setTimeout(() => {
-                this.submitQuery({
-                  inputValue: query,
-                  queryText: query,
-                  userSelection,
-                  skipQueryValidation: true,
-                  source,
-                })
-              }, 300)
-            }
-          }
-        }, i * timePerChar)
-      }
-    }
+    animateInputText({
+      text: query,
+      inputRef: this.inputRef,
+      callback: () => {
+        this.submitQuery({
+          queryText: query,
+          userSelection,
+          skipQueryValidation: true,
+          source,
+        })
+      },
+    })
   }
 
   submitDprQuery = (query) => {
@@ -263,13 +247,43 @@ class QueryInput extends React.Component {
     }
   }
 
+  onTranscriptStart = () => {
+    this.setState({ listeningForTranscript: true })
+  }
+
+  onTranscriptChange = (transcript) => {
+    this.setState({ inputValue: transcript })
+  }
+
+  onFinalTranscript = (transcript) => {
+    this.setState(
+      { inputValue: transcript, listeningForTranscript: false },
+      () => {
+        this.focus()
+        ReactTooltip.hide()
+      }
+    )
+  }
+
+  setInputRef = (ref) => {
+    this.inputRef = ref
+  }
+
   onKeyDown = (e) => {
     if (e.key === 'ArrowUp' && !_get(this.state.suggestions, 'length')) {
       const lastQuery = localStorage.getItem('inputValue')
       if (lastQuery && lastQuery !== 'undefined') {
-        this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd(e))
+        this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd)
       }
+    } else if (
+      this.userSelectedSuggestion &&
+      (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+    ) {
+      // keyup or keydown
+      return e // return to let the component handle it...
     }
+
+    return e
   }
 
   onKeyPress = (e) => {
@@ -278,30 +292,9 @@ class QueryInput extends React.Component {
     }
   }
 
-  onTranscriptChange = (newTranscript) => {
-    this.setState({ inputValue: newTranscript })
-  }
-
-  onFinalTranscript = () => {
-    // Disabling auto submit for now
-    // this.submitQuery()
-    this.focus()
-  }
-
-  setInputRef = (ref) => {
-    this.inputRef = ref
-  }
-
   focus = () => {
-    if (this.inputRef) {
+    if (this.inputRef?.focus) {
       this.inputRef.focus()
-    } else {
-      const autoSuggestElement = document.getElementsByClassName(
-        `${this.UNIQUE_ID}`
-      )
-      if (autoSuggestElement && autoSuggestElement[0]) {
-        autoSuggestElement[0].focus()
-      }
     }
   }
 
@@ -315,36 +308,6 @@ class QueryInput extends React.Component {
       this.userSelectedSuggestion = true
       this.setState({ inputValue: userSelectedValueFromSuggestionBox.name })
     }
-  }
-
-  runValidation = ({ text }) => {
-    // Reset validation configuration since text has changed
-    this.setState({
-      queryValidationResponse: undefined,
-      queryValidationComponentId: uuid(),
-    })
-
-    if (this.queryValidationTimer) {
-      clearTimeout(this.queryValidationTimer)
-    }
-
-    this.queryValidationTimer = setTimeout(() => {
-      runQueryValidation({
-        text,
-        ...getAuthentication(this.props.authentication),
-      })
-        .then((response) => {
-          if (this.state.inputValue === _get(response, 'data.data.query')) {
-            this.setState({
-              queryValidationResponse: response,
-              queryValidationComponentId: uuid(),
-            })
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    }, 300)
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
@@ -396,8 +359,18 @@ class QueryInput extends React.Component {
   }
 
   onInputChange = (e) => {
-    //WIP
-    // this.runValidation({ text: e.target.value })
+    if (this.state.listeningForTranscript) {
+      // Speech to text is processing, let it control the input
+      e.stopPropagation()
+      return
+    }
+
+    if (!getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete) {
+      // Component is using native input, just update the inputValue state
+      this.setState({ inputValue: e.target.value })
+      return
+    }
+
     if (this.userSelectedSuggestion && (e.keyCode === 38 || e.keyCode === 40)) {
       // keyup or keydown
       return // return to let the component handle it...
@@ -418,13 +391,29 @@ class QueryInput extends React.Component {
   moveCaretAtEnd = (e) => {
     clearTimeout(this.caretMoveTimeout)
     this.caretMoveTimeout = setTimeout(() => {
-      var temp_value = e.target.value
-      e.target.value = ''
-      e.target.value = temp_value
+      try {
+        const length = this.inputRef?.value?.length
+        this.inputRef?.setSelectionRange(length, length)
+      } catch (error) {}
     }, 0)
   }
 
   render = () => {
+    const inputProps = {
+      ref: this.setInputRef,
+      className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
+        this.props.showChataIcon ? ' left-padding' : ''
+      }`,
+      placeholder: this.props.placeholder,
+      disabled: this.props.isDisabled,
+      onChange: this.onInputChange,
+      onKeyPress: this.onKeyPress,
+      onKeyDown: this.onKeyDown,
+      value: this.state.inputValue,
+      onFocus: this.moveCaretAtEnd,
+      autoFocus: true,
+    }
+
     return (
       <ErrorBoundary>
         <div
@@ -448,54 +437,10 @@ class QueryInput extends React.Component {
                 renderSuggestion={(suggestion) => (
                   <Fragment>{suggestion.name}</Fragment>
                 )}
-                inputProps={{
-                  className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
-                    this.props.showChataIcon ? ' left-padding' : ''
-                  }`,
-                  placeholder: this.props.placeholder,
-                  disabled: this.props.isDisabled,
-                  onChange: this.onInputChange,
-                  onKeyPress: this.onKeyPress,
-                  onKeyDown: this.onKeyDown,
-                  value: this.state.inputValue,
-                  onFocus: this.moveCaretAtEnd,
-                  autoFocus: true,
-                }}
+                inputProps={inputProps}
               />
             ) : (
-              // <QueryInputWithValidation
-              //   authentication={getAuthentication(this.props.authentication)}
-              //   ref={(ref) => (this.queryValidationInputRef = ref)}
-              //   key={this.state.queryValidationComponentId}
-              //   response={this.state.queryValidationResponse}
-              //   placeholder={this.props.placeholder}
-              //   disabled={this.props.isDisabled}
-              //   showChataIcon={this.props.showChataIcon}
-              //   showLoadingDots={this.props.showLoadingDots}
-              //   submitQuery={this.submitQuery}
-              //   onKeyDown={this.onKeyDown}
-              //   onQueryValidationSelectOption={(query) => {
-              //     this.setState({ inputValue: query })
-              //     this.focus()
-              //   }}
-              // />
-              <input
-                className={`react-autoql-chatbar-input${
-                  this.props.showChataIcon ? ' left-padding' : ''
-                }`}
-                placeholder={this.props.placeholder || 'Type your queries here'}
-                value={this.state.inputValue}
-                onChange={(e) => {
-                  this.setState({ inputValue: e.target.value })
-                }}
-                data-test="chat-bar-input"
-                onKeyPress={this.onKeyPress}
-                onKeyDown={this.onKeyDown}
-                disabled={this.props.isDisabled}
-                ref={this.setInputRef}
-                onFocus={this.moveCaretAtEnd}
-                autoFocus
-              />
+              <input {...inputProps} />
             )}
           </div>
           {this.props.showChataIcon && (
@@ -509,13 +454,8 @@ class QueryInput extends React.Component {
             </div>
           )}
           {this.props.enableVoiceRecord && (
-            // KEEP THIS FOR NOW
-            // <SpeechToTextBtn
-            //   onTranscriptChange={this.onTranscriptChange}
-            //   onFinalTranscript={this.onFinalTranscript}
-            //   authentication={getAuthentication(this.props.authentication)}
-            // />
             <SpeechToTextButtonBrowser
+              onTranscriptStart={this.onTranscriptStart}
               onTranscriptChange={this.onTranscriptChange}
               onFinalTranscript={this.onFinalTranscript}
               authentication={this.props.authentication}

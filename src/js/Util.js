@@ -1089,3 +1089,26 @@ export const handleTooltipBoundaryCollision = (e, self) => {
     tooltipRef.style.setProperty('right', '10px')
   }
 }
+
+export const animateInputText = ({
+  text = '',
+  inputRef,
+  callback = () => {},
+  totalAnimationTime = 1000,
+}) => {
+  if (!text.length || !inputRef || typeof text !== 'string') {
+    return
+  }
+
+  const timePerChar = Math.round(totalAnimationTime / text.length)
+  for (let i = 1; i <= text.length; i++) {
+    setTimeout(() => {
+      inputRef.value = text.slice(0, i)
+      if (i === text.length) {
+        setTimeout(() => {
+          callback()
+        }, 300)
+      }
+    }, i * timePerChar)
+  }
+}

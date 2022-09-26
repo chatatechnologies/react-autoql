@@ -95,7 +95,7 @@
     "parse-num": "^1.0.0",
     "prop-types": "^15.7.2",
     "rc-drawer": "^4.4.3",
-    "react-autosuggest": "^9.4.3",
+    "react-autosuggest": "^10.1.0",
     "react-collapse": "^5.1.1",
     "react-contenteditable": "^3.3.5",
     "react-custom-scrollbars": "^4.2.1",

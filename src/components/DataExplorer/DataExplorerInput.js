@@ -11,6 +11,7 @@ import { authenticationType } from '../../props/types'
 import { fetchVLAutocomplete, fetchSubjectList } from '../../js/queryService'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
+import { animateInputText } from '../../js/Util'
 
 import './DataExplorerInput.scss'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -137,20 +138,11 @@ export default class DataExplorerInput extends React.Component {
   }
 
   animateTextAndSubmit = (text) => {
-    if (typeof text === 'string' && text?.length) {
-      const totalTime = 1000
-      const timePerChar = totalTime / text.length
-      for (let i = 1; i <= text.length; i++) {
-        this.inputAnimationTimeout = setTimeout(() => {
-          if (this._isMounted) {
-            this.setState({ inputValue: text.slice(0, i) })
-            if (i === text.length) {
-              this.submitRawText(text, true)
-            }
-          }
-        }, i * timePerChar)
-      }
-    }
+    animateInputText({
+      text,
+      inputRef: this.inputRef,
+      callback: () => this.submitRawText(text, true),
+    })
   }
 
   onInputChange = (e) => {
@@ -419,6 +411,7 @@ export default class DataExplorerInput extends React.Component {
             renderSuggestion={this.renderSuggestion}
             focusInputOnSuggestionClick={false}
             inputProps={{
+              ref: (r) => (this.inputRef = r),
               className: `react-autoql-chatbar-input`,
               placeholder: this.props.inputPlaceholder,
               'data-test': 'data-explorer-input-component',
