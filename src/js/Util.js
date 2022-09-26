@@ -227,7 +227,7 @@ export const formatElement = ({
         }
         case 'DOLLAR_AMT': {
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          if (Number(element) || Number(element) === 0) {
+          if (!isNaN(Number(element))) {
             const currency = currencyCode || 'USD'
             const validatedCurrencyDecimals =
               currencyDecimals || currencyDecimals === 0
@@ -257,7 +257,7 @@ export const formatElement = ({
           const validatedQuantityDecimals =
             quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             const numDecimals =
               Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
 
@@ -278,7 +278,7 @@ export const formatElement = ({
           break
         }
         case 'RATIO': {
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: 4,
               maximumFractionDigits: 4,
@@ -287,7 +287,7 @@ export const formatElement = ({
           break
         }
         case 'PERCENT': {
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             let p = Number(element) / 100
 
             formattedElement = new Intl.NumberFormat(languageCode, {
@@ -297,9 +297,12 @@ export const formatElement = ({
             }).format(p)
 
             if (htmlElement) {
-              htmlElement.classList.add(
-                `comparison-value-${element < 0 ? 'negative' : 'positive'}`
-              )
+              if (element < 0) {
+                htmlElement.classList.add('comparison-value-negative')
+              } else if (element > 0) {
+                htmlElement.classList.add('comparison-value-positive')
+              }
+              // If element is "0" leave as default colour
             }
           }
           break
