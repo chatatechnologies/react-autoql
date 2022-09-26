@@ -107,7 +107,7 @@ export default class App extends Component {
   authTimer = undefined
 
   state = {
-    pagination: false,
+    pagination: true,
     maintenance: false,
     currentPage: 'drawer',
     isNewDashboardModalOpen: false,
