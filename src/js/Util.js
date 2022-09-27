@@ -1097,18 +1097,21 @@ export const animateInputText = ({
   totalAnimationTime = 1000,
 }) => {
   if (!text.length || !inputRef || typeof text !== 'string') {
-    return
+    return Promise.resolve()
   }
 
-  const timePerChar = Math.round(totalAnimationTime / text.length)
-  for (let i = 1; i <= text.length; i++) {
-    setTimeout(() => {
-      inputRef.value = text.slice(0, i)
-      if (i === text.length) {
-        setTimeout(() => {
-          callback()
-        }, 300)
-      }
-    }, i * timePerChar)
-  }
+  return new Promise((resolve, reject) => {
+    const timePerChar = Math.round(totalAnimationTime / text.length)
+    for (let i = 1; i <= text.length; i++) {
+      setTimeout(() => {
+        inputRef.value = text.slice(0, i)
+        if (i === text.length) {
+          setTimeout(() => {
+            callback()
+            resolve()
+          }, 300)
+        }
+      }, i * timePerChar)
+    }
+  })
 }

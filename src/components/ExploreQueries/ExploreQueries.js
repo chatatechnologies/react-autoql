@@ -14,7 +14,7 @@ import { Icon } from '../Icon'
 
 import './ExploreQueries.scss'
 
-class ExploreQueries extends React.Component {
+export class ExploreQueries extends React.Component {
   constructor(props) {
     super(props)
 
@@ -148,7 +148,7 @@ class ExploreQueries extends React.Component {
   }
 
   animateQITextAndSubmit = (text, skipQueryValidation) => {
-    animateInputText({
+    return animateInputText({
       text,
       inputRef: this.inputRef,
       callback: () => {
@@ -157,34 +157,6 @@ class ExploreQueries extends React.Component {
         )
       },
     })
-
-    // return new Promise((resolve, reject) => {
-    //   try {
-    //     if (typeof text === 'string' && text?.length) {
-    //       this.animateTextDelay = setTimeout(() => {
-    //         for (let i = 1; i <= text.length; i++) {
-    //           this.animateTextTimeout = setTimeout(() => {
-    //             this.setState(
-    //               {
-    //                 inputValue: text.slice(0, i),
-    //               },
-    //               () => {
-    //                 if (i === text.length) {
-    //                   resolve()
-
-    //                 }
-    //               }
-    //             )
-    //           }, i * 50)
-    //         }
-    //       }, 500)
-    //     } else {
-    //       reject()
-    //     }
-    //   } catch (error) {
-    //     reject()
-    //   }
-    // })
   }
 
   clearExploreQueries = () => {
