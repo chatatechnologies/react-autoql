@@ -154,6 +154,7 @@ export const runQueryOnly = (params = {}) => {
   const {
     query,
     userSelection,
+    userSelectionFinal,
     debug,
     test,
     domain,
@@ -167,7 +168,8 @@ export const runQueryOnly = (params = {}) => {
     cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
-  const finalUserSelection = transformUserSelection(userSelection)
+  const finalUserSelection =
+    userSelectionFinal || transformUserSelection(userSelection)
 
   const data = {
     text: query,
