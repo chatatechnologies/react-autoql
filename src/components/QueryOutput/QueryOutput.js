@@ -132,8 +132,9 @@ export class QueryOutput extends React.Component {
       displayType: this.getDisplayTypeFromInitial(props),
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
-      tableFilters: [],
+      headerFilters: [],
       selectedSuggestion: props.defaultSelectedSuggestion,
+      visiblerows: this.queryResponse?.data?.data?.rows,
       visibleRowChangeCount: 0,
       visiblePivotRowChangeCount: 0,
       columnChangeCount: 0,
@@ -852,8 +853,13 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onNewData = (rows) => {
-    this.tableData = rows
+  onNewData = (response, params) => {
+    this.queryResponse = response
+    this.tableData = response?.data?.data?.rows || []
+    this.setState({ tableParams: params })
+    setTimeout(() => {
+      this.props.onRowChange()
+    }, 0)
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1612,9 +1618,6 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    const useInfiniteScroll =
-      this.props.enableAjaxTableData && this.isDataLimited()
-
     return (
       <ChataTable
         authentication={this.props.authentication}
@@ -1625,12 +1628,13 @@ export class QueryOutput extends React.Component {
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
         headerFilters={this.state.headerFilters}
+        initialParams={this.state.tableParams}
         onFilterCallback={this.onTableFilter}
         onNewPage={this.onNewPage}
         onNewData={this.onNewData}
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-        useInfiniteScroll={useInfiniteScroll}
+        useInfiniteScroll={this.props.enableAjaxTableData}
         queryRequestData={this.queryResponse?.data?.data?.fe_req}
         queryText={this.queryResponse?.data?.data?.text}
         originalQueryID={this.props.originalQueryID}
