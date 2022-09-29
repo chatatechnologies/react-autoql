@@ -43,7 +43,7 @@ const setup = (props = {}, state = null) => {
     ...DashboardTile.defaultProps,
     ...props,
   }
-  const wrapper = shallow(<DashboardTile {...setupProps} />)
+  const wrapper = mount(<DashboardTile {...setupProps} />)
   if (state) {
     wrapper.setState(state)
   }

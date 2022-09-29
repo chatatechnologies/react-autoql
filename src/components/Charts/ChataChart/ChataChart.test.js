@@ -1,8 +1,11 @@
 import React from 'react'
-import { shallow } from 'enzyme'
+import { shallow, mount } from 'enzyme'
 import ChataChart from './ChataChart'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
+import { QueryOutput } from '../../QueryOutput/QueryOutput'
+import testCases from '../../../../test/responseTestCases'
+import * as chartHelpers from '../helpers'
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -42,5 +45,49 @@ describe('renders correctly', () => {
       const chartComponent = findByTestAttr(wrapper, 'react-autoql-chart')
       expect(chartComponent.exists()).toBe(true)
     })
+  })
+})
+
+describe('tooltip content renders correctly for pivot table data', () => {
+  const testTooltipForDisplayType = (displayType) => {
+    const tooltipContentSpy = jest.spyOn(chartHelpers, 'getTooltipContent')
+    const getTooltipContentResult = () =>
+      tooltipContentSpy.mock.results[0]?.value
+    const wrapper = mount(
+      <QueryOutput
+        queryResponse={testCases[11]}
+        initialDisplayType={displayType}
+        height={100}
+        width={100}
+      />
+    )
+    const tooltipContent = getTooltipContentResult()
+    jest.clearAllMocks()
+    expect(tooltipContent).toMatchSnapshot()
+  }
+
+  test('column tooltip renders as expected', () => {
+    testTooltipForDisplayType('column')
+  })
+  test('bar tooltip renders as expected', () => {
+    testTooltipForDisplayType('bar')
+  })
+  test('line tooltip renders as expected', () => {
+    testTooltipForDisplayType('line')
+  })
+  test('stacked column tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_column')
+  })
+  test('stacked bar tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_bar')
+  })
+  test('stacked line tooltip renders as expected', () => {
+    testTooltipForDisplayType('stacked_line')
+  })
+  test('heatmap tooltip renders as expected', () => {
+    testTooltipForDisplayType('heatmap')
+  })
+  test('bubble tooltip renders as expected', () => {
+    testTooltipForDisplayType('bubble')
   })
 })

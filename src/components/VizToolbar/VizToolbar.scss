@@ -6,7 +6,7 @@
   border: 1px solid #d3d3d352;
   text-align: left;
   display: inline-block;
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
 
   &.vertical .react-autoql-toolbar-btn {
     display: block;
@@ -24,6 +24,10 @@
   color: var(--react-autoql-text-color-primary);
   cursor: pointer;
   outline: none !important;
+
+  &.selected {
+    color: var(--react-autoql-accent-color);
+  }
 }
 .react-autoql-toolbar-btn.green {
   color: #2ecc40;

@@ -16,25 +16,22 @@ import {
   fetchDataAlerts,
   updateDataAlertStatus,
 } from '../../../js/notificationService'
-import { setCSSVars } from '../../../js/Util'
 import { formatResetDate } from '../helpers'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlerts.scss'
+import { withTheme } from '../../../theme'
 
-export default class DataAlerts extends React.Component {
+class DataAlerts extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     onErrorCallback: PropTypes.func,
     showCreateAlertBtn: PropTypes.bool,
     onSuccessAlert: PropTypes.func,
@@ -42,7 +39,6 @@ export default class DataAlerts extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     showCreateAlertBtn: false,
     onErrorCallback: () => {},
     onAlertInitializationCallback: () => {},
@@ -61,18 +57,9 @@ export default class DataAlerts extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     this._isMounted && this.getDataAlerts()
-    setCSSVars(this.props.themeConfig)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
     if (
       !_isEqual(
         getAuthentication(this.props.authentication),
@@ -174,7 +161,6 @@ export default class DataAlerts extends React.Component {
     return (
       <DataAlertModal
         ref={(r) => (this.editModalRef = r)}
-        themeConfig={this.props.themeConfig}
         key={this.COMPONENT_KEY}
         authentication={getAuthentication(this.props.authentication)}
         isVisible={this.state.isEditModalVisible}
@@ -438,3 +424,5 @@ export default class DataAlerts extends React.Component {
     )
   }
 }
+
+export default withTheme(DataAlerts)

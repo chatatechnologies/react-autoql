@@ -1,5 +1,5 @@
 .react-autoql-dashboard .react-autoql-dashboard-tile {
-  background: var(--react-autoql-background-color-primary, #fff);
+  background: var(--react-autoql-background-color-secondary, #fff);
   color: var(--react-autoql-text-color-primary, rgb(64, 64, 64));
   font-family: var(--react-autoql-font-family), sans-serif;
   height: 100%;
@@ -85,7 +85,7 @@
   }
 
   .split-view-btn {
-    background: var(--react-autoql-background-color-primary);
+    background: var(--react-autoql-background-color-secondary);
     display: inline-block;
     margin-right: 7px;
     .react-autoql-icon {
@@ -99,11 +99,6 @@
   visibility: visible;
   opacity: 1;
 }
-
-// For the second query input expand button
-// .split-view-btn {
-//   z-index: 1;
-// }
 
 .split-view-query-btn {
   transition: opacity 0.3s ease, color 0.3s ease;
@@ -161,6 +156,10 @@
     color: var(--react-autoql-text-color-primary);
     opacity: 0.8;
   }
+
+  .react-autoql-toolbar-btn.active {
+    color: var(--react-autoql-accent-color);
+  }
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -176,8 +175,6 @@
 }
 .dashboard-tile-response-wrapper.small
   .react-autoql-query-validation-description,
-.dashboard-tile-response-wrapper.small
-  .react-autoql-suggestion-message-description,
 .dashboard-tile-response-wrapper.small
   .react-autoql-query-validation-execute-btn {
   display: none;
@@ -213,7 +210,7 @@
   flex-grow: 0;
 
   .dashboard-tile-title {
-    color: var(--react-autoql-accent-color, #26a7df);
+    color: var(--react-autoql-dashboard-title-color);
   }
 }
 
@@ -300,7 +297,7 @@
     border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
     outline: none !important;
     color: var(--react-autoql-text-color-primary, #356f90);
-    background: var(--react-autoql-background-color-primary, #fff);
+    background: var(--react-autoql-background-color-secondary, #fff);
   }
 }
 
@@ -345,7 +342,7 @@
   border: 1px solid transparent;
   outline: none !important;
   color: var(--react-autoql-text-color-primary, #356f90);
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   margin: 0px;
   padding: 0px;
   width: 0px;
@@ -398,7 +395,7 @@
 }
 .dashboard-tile-input-container
   .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
 }
@@ -456,36 +453,10 @@
   color: var(--react-autoql-text-color-placeholder);
 }
 
-/* Dragging placeholder styles */
-.react-autoql-db-dragging-placeholder-container {
-  height: 100%;
-  width: 100%;
-  padding: 20px 30px;
-  display: flex;
-  flex-direction: column;
-}
-
-.react-autoql-db-dragging-placeholder-title {
-  width: 100%;
-  height: 35px;
-  background: #f3f3f3;
-  border-top-right-radius: 4px;
-  border-top-left-radius: 4px;
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-
-.react-autoql-db-dragging-placeholder-content {
-  width: 100%;
-  height: 100%;
-  background: #f9f9f9;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 4px;
-}
-
 .dashboard-tile-placeholder-text {
   font-size: 15px;
   color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
+  padding: 0 10px;
 
   .play-icon {
     vertical-align: bottom;

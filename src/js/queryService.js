@@ -3,6 +3,16 @@ import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
 import responseSamples from '../../test/responseTestCases'
 
+const formatErrorResponse = (error) => {
+  if (error?.message === responseErrors.CANCELLED) {
+    return Promise.reject({
+      data: { message: responseErrors.CANCELLED },
+    })
+  }
+
+  return Promise.reject(_get(error, 'response'))
+}
+
 const formatSourceString = (sourceArray) => {
   try {
     const sourceString = sourceArray.join('.')
@@ -59,6 +69,7 @@ export const fetchSuggestions = ({
   domain,
   apiKey,
   token,
+  cancelToken,
 } = {}) => {
   if (!query) {
     return Promise.reject(new Error('No query supplied'))
@@ -80,6 +91,7 @@ export const fetchSuggestions = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -217,7 +229,14 @@ export const runQueryOnly = (params = {}) => {
         isError500Type(referenceId)
       ) {
         const queryId = error?.response?.data?.data?.query_id
-        return fetchSuggestions({ query, queryId, domain, apiKey, token })
+        return fetchSuggestions({
+          query,
+          queryId,
+          domain,
+          apiKey,
+          token,
+          cancelToken,
+        })
       }
       return Promise.reject(_get(error, 'response'))
     })
@@ -346,16 +365,9 @@ export const runDrilldown = ({
   return axios
     .post(url, requestData, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      if (error?.message === responseErrors.CANCELLED) {
-        return Promise.reject({
-          data: { message: responseErrors.CANCELLED },
-        })
-      }
-
-      return Promise.reject(_get(error, 'response'))
-    })
+    .catch(formatErrorResponse)
 }
+
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
@@ -409,6 +421,7 @@ export const fetchVLAutocomplete = ({
   domain,
   token,
   apiKey,
+  cancelToken,
 } = {}) => {
   if (!suggestion || !suggestion.trim()) {
     return Promise.reject(new Error('No query supplied'))
@@ -426,12 +439,21 @@ export const fetchVLAutocomplete = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const fetchFilters = ({ apiKey, token, domain } = {}) => {

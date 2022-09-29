@@ -88,7 +88,7 @@
 .react-autoql-table.tabulator .tabulator-header .tabulator-col,
 .react-autoql-table.tabulator .tabulator-cell {
   border-color: var(--react-autoql-border-color);
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
 }
 .react-autoql-table.tabulator .tabulator-header {
   border-bottom: 2px solid var(--react-autoql-border-color);
@@ -100,7 +100,7 @@
 .react-autoql-table .tabulator-row {
   /* user-select: none; This breaks copy/paste */
   border-bottom: 1px solid var(--react-autoql-border-color);
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
   z-index: 1;
 
   &:last-child {
@@ -160,9 +160,9 @@
     display: none;
   }
   .react-autoql-table .tabulator-tableHolder {
-    min-height: calc(100% - 34px) !important;
-    height: calc(100% - 34px) !important;
-    max-height: calc(100% - 34px) !important;
+    min-height: calc(100% - 40px) !important;
+    height: calc(100% - 40px) !important;
+    max-height: calc(100% - 40px) !important;
   }
 }
 

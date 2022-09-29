@@ -77,7 +77,9 @@ export default class ChataBarChart extends Component {
     this.xScale = scaleLinear()
       .domain([minValue, maxValue])
       .range([rangeStart, rangeEnd])
-      .nice()
+    this.xScale.minValue = minValue
+    this.xScale.maxValue = maxValue
+    this.xScale.type = 'LINEAR'
 
     this.yScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
@@ -87,19 +89,20 @@ export default class ChataBarChart extends Component {
 
     this.yLabelArray = props.data.map((el) => el[props.stringColumnIndex])
     this.barHeight = props.innerHeight / props.data.length
-    this.yTickValues = getTickValues(
-      this.barHeight,
-      props.innerHeight,
-      this.yLabelArray
-    )
+    this.yTickValues = getTickValues({
+      tickHeight: this.barHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+    })
 
     this.xLabelArray = this.xScale.ticks()
     this.tickWidth = props.innerWidth / this.xLabelArray?.length
-    this.xTickValues = getTickValues(
-      this.tickWidth,
-      props.innerWidth,
-      this.xLabelArray
-    )
+    this.xTickValues = getTickValues({
+      tickHeight: this.tickWidth,
+      fullHeight: props.innerWidth,
+      labelArray: this.xLabelArray,
+      scale: this.xScale,
+    })
   }
 
   render = () => {

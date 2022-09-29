@@ -11,13 +11,9 @@ import { debounce } from 'throttle-debounce'
 
 import { Select } from '../Select'
 
-import { setCSSVars, setCaretPosition } from '../../js/Util'
-import {
-  themeConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-} from '../../props/defaults'
-import { themeConfigType, authenticationType } from '../../props/types'
+import { setCaretPosition } from '../../js/Util'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { authenticationType } from '../../props/types'
 
 import { runQueryValidation } from '../../js/queryService'
 
@@ -41,7 +37,6 @@ export default class QueryValidationMessage extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     response: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
@@ -58,7 +53,6 @@ export default class QueryValidationMessage extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     response: undefined,
     autoSelectSuggestion: false,
@@ -74,8 +68,6 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
-
     if (_get(this.props, 'response.data')) {
       this.initializeQueryValidationOptions(this.props.response.data)
     }

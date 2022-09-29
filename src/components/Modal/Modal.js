@@ -8,14 +8,10 @@ import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './Modal.scss'
 
 export default class Modal extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     titleIcon: PropTypes.oneOfType([
       PropTypes.element,
@@ -37,7 +33,6 @@ export default class Modal extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     title: '',
     titleIcon: undefined,
     isVisible: false,

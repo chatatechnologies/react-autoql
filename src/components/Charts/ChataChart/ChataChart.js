@@ -20,7 +20,6 @@ import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
-import { getThemeConfig } from '../../../props/defaults'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { svgToPng, sortDataByDate, formatChartLabel } from '../../../js/Util.js'
 import {
@@ -35,11 +34,12 @@ import {
   getColumnTypeAmounts,
   isColumnDateType,
 } from '../../QueryOutput/columnHelpers'
+import { getChartColorVars, getThemeValue } from '../../../theme/configureTheme'
 
 export default class ChataChart extends Component {
   constructor(props) {
     super(props)
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
 
     this.CHART_ID = uuid()
     this.Y_AXIS_LABEL_WIDTH = 15
@@ -178,12 +178,12 @@ export default class ChataChart extends Component {
   getChartDimensions = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin } = this.state
 
-    let chartWidth = this.chartContainerRef?.offsetWidth
+    let chartWidth = this.props.width ?? this.chartContainerRef?.offsetWidth
     if (chartWidth < 0) {
       chartWidth = 0
     }
 
-    let chartHeight = this.chartContainerRef?.offsetHeight
+    let chartHeight = this.props.height ?? this.chartContainerRef?.offsetHeight
     if (chartHeight < 0) {
       chartHeight = 0
     }
@@ -662,8 +662,12 @@ export default class ChataChart extends Component {
   }
 
   render = () => {
-    const { chartHeight, chartWidth, innerHeight, innerWidth } =
-      this.getChartDimensions()
+    const { chartHeight, chartWidth } = this.getChartDimensions()
+
+    // We need to set these inline in order for them to be applied in the exported PNG
+    const chartFontFamily = getThemeValue('font-family')
+    const chartTextColor = getThemeValue('text-color-primary')
+    const chartBackgroundColor = getThemeValue('background-color')
 
     return (
       <ErrorBoundary>
@@ -674,9 +678,7 @@ export default class ChataChart extends Component {
           className={`react-autoql-chart-container ${
             this.state.isLoading || this.props.isResizing ? 'loading' : ''
           }`}
-          style={{
-            flexBasis: chartHeight ? `${chartHeight}px` : '100vh',
-          }}
+          style={{ flexBasis: chartHeight ? `${chartHeight}px` : '100vh' }}
         >
           {!this.firstRender && !this.props.isResizing && (
             <Fragment>
@@ -686,28 +688,15 @@ export default class ChataChart extends Component {
                 width={chartWidth}
                 height={chartHeight}
                 style={{
-                  fontFamily: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'font-family',
-                    'sans-serif'
-                  ),
-                  color: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'text-color-primary',
-                    'inherit'
-                  ),
-                  background: _get(
-                    getThemeConfig(this.props.themeConfig),
-                    'background-color',
-                    'inherit'
-                  ),
+                  fontFamily: chartFontFamily,
+                  color: chartTextColor,
+                  background: chartBackgroundColor,
                 }}
               >
                 <g className="react-autoql-chart-content-container">
                   {this.renderChart()}
                 </g>
               </svg>
-              {/* {this.renderAxisSelectors()} */}
             </Fragment>
           )}
         </div>

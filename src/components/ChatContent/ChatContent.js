@@ -9,7 +9,6 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 
 import errorMessages from '../../js/errorMessages'
@@ -41,7 +40,6 @@ export default class ChatContent extends React.Component {
     authentication: authenticationType.isRequired,
     autoQLConfig: autoQLConfigType.isRequired,
     dataFormatting: dataFormattingType.isRequired,
-    themeConfig: themeConfigType.isRequired,
     clearOnClose: PropTypes.bool.isRequired,
     enableVoiceRecord: PropTypes.bool.isRequired,
     maxMessages: PropTypes.number.isRequired,
@@ -312,8 +310,6 @@ export default class ChatContent extends React.Component {
 
     return {
       id: uniqueId,
-      displayType:
-        params.displayType || params.response?.data?.data?.display_type,
       type: params.response?.data?.data?.display_type,
       ...params,
     }
@@ -364,7 +360,6 @@ export default class ChatContent extends React.Component {
                   isIntroMessage={message.isIntroMessage}
                   authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                   onCSVDownloadProgress={this.onCSVDownloadProgress}
@@ -372,7 +367,7 @@ export default class ChatContent extends React.Component {
                   queryText={message.query}
                   originalQueryID={message.originalQueryID}
                   scrollRef={this.messengerScrollComponent?.ref}
-                  isVisibleInDOM={this.props.shouldRender}
+                  isDataMessengerOpen={this.props.isDataMessengerOpen}
                   isActive={this.state.activeMessageId === message.id}
                   addMessageToDM={this.addResponseMessage}
                   onDrilldownStart={this.onDrilldownStart}
@@ -383,7 +378,6 @@ export default class ChatContent extends React.Component {
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
                   dataFormatting={this.props.dataFormatting}
-                  displayType={message.displayType}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}
@@ -399,19 +393,20 @@ export default class ChatContent extends React.Component {
                   disableMaxHeight={this.props.disableMaxMessageHeight}
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   rebuildTooltips={this.props.rebuildTooltips}
+                  queryRequestData={message.queryRequestData}
                   popoverParentElement={this.chatContentRef}
                   source={this.props.source}
                 />
               )
             })}
           </CustomScrollbars>
-        </div>
-        <div style={{ display }} className="chat-bar-container">
           {this.state.isChataThinking && (
             <div className="response-loading-container">
               <LoadingDots />
             </div>
           )}
+        </div>
+        <div style={{ display }} className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
@@ -421,7 +416,6 @@ export default class ChatContent extends React.Component {
             className="chat-drawer-chat-bar"
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
@@ -437,6 +431,7 @@ export default class ChatContent extends React.Component {
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
+            shouldRender={this.props.shouldRender}
           />
         </div>
       </ErrorBoundary>

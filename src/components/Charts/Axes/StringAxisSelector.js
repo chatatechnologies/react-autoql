@@ -27,12 +27,23 @@ export default class StringAxisSelector extends React.Component {
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
+    let maxHeight = 300
+    const minHeight = 35
+    const padding = 50
+
+    const chartHeight = this.props.chartContainerRef?.clientHeight
+    if (chartHeight && chartHeight > minHeight + padding) {
+      maxHeight = chartHeight - padding
+    } else if (chartHeight && chartHeight < minHeight + padding) {
+      maxHeight = minHeight
+    }
+
     return (
       <CustomScrollbars
         autoHide={false}
         autoHeight
-        autoHeightMin={0}
-        autoHeightMax={this.props.chartContainerRef?.clientHeight}
+        autoHeightMin={minHeight}
+        autoHeightMax={maxHeight}
       >
         <div
           className="axis-selector-container"
@@ -48,7 +59,7 @@ export default class StringAxisSelector extends React.Component {
                   className={`string-select-list-item ${
                     colIndex === this.props.stringColumnIndex ? 'active' : ''
                   }`}
-                  key={uuid()}
+                  key={`string-column-select-${i}`}
                   onClick={() => {
                     this.closeSelector()
                     this.props.changeStringColumnIndex(colIndex)

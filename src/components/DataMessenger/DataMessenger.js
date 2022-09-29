@@ -11,22 +11,19 @@ import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
 import TopicsCascader from './TopicsCascader'
+import { withTheme } from '../../theme'
 
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 import {
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
-import { setCSSVars } from '../../js/Util'
 import { lang, setLanguage } from '../../js/Localization'
 
 // Components
@@ -44,7 +41,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
-export default class DataMessenger extends React.Component {
+export class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
@@ -55,8 +52,6 @@ export default class DataMessenger extends React.Component {
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
     this.DEFAULT_AJAX_PAGE_SIZE = 50
-
-    setCSSVars(props.themeConfig)
 
     this.dataMessengerIntroMessages = [
       props.introMessage
@@ -107,7 +102,6 @@ export default class DataMessenger extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
 
     // UI
     placement: PropTypes.string,
@@ -152,10 +146,9 @@ export default class DataMessenger extends React.Component {
 
   static defaultProps = {
     // Global
+    authentication: {},
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
-    authentication: {},
 
     // UI
     placement: 'right',
@@ -249,15 +242,6 @@ export default class DataMessenger extends React.Component {
         this.props.clearOnClose
       ) {
         this.setState({ dataMessengerId: uuid() })
-      }
-
-      if (
-        !_isEqual(
-          getThemeConfig(this.props.themeConfig),
-          getThemeConfig(prevProps.themeConfig)
-        )
-      ) {
-        setCSSVars(this.props.themeConfig)
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -544,7 +528,6 @@ export default class DataMessenger extends React.Component {
                     <NotificationIcon
                       ref={(r) => (this.notificationBadgeRef = r)}
                       authentication={this.props.authentication}
-                      themeConfig={this.props.themeConfig}
                       clearCountOnClick={false}
                       style={{ fontSize: '19px' }}
                       overflowCount={9}
@@ -712,7 +695,6 @@ export default class DataMessenger extends React.Component {
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
@@ -821,7 +803,6 @@ export default class DataMessenger extends React.Component {
           ref={(r) => (this.dataMessengerContentRef = r)}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
-          themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
@@ -854,7 +835,6 @@ export default class DataMessenger extends React.Component {
             dprKey: this.props.authentication?.dprKey,
             dprDomain: this.props.authentication?.dprDomain,
           }}
-          themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
@@ -886,7 +866,6 @@ export default class DataMessenger extends React.Component {
         <DataExplorer
           ref={(r) => (this.dataExplorerRef = r)}
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           dataFormatting={this.props.dataFormatting}
           rebuildTooltips={this.rebuildTooltips}
           shouldRender={this.shouldRenderPage('data-explorer')}
@@ -940,14 +919,15 @@ export default class DataMessenger extends React.Component {
         <NotificationFeed
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           onExpandCallback={this.props.onNotificationExpandCallback}
           onCollapseCallback={this.props.onNotificationCollapseCallback}
           activeNotificationData={this.props.activeNotificationData}
           onErrorCallback={this.props.onErrorCallback}
           onSuccessCallback={this.props.onSuccessCallback}
           showNotificationDetails={false}
-          shouldRender={this.shouldRenderPage('notifications')}
+          shouldRender={
+            this.isOpen() && this.state.activePage === 'notifications'
+          }
         />
       </ErrorBoundary>
     )
@@ -1069,7 +1049,6 @@ export default class DataMessenger extends React.Component {
     return (
       <DataAlertModal
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
@@ -1129,3 +1108,5 @@ export default class DataMessenger extends React.Component {
     )
   }
 }
+
+export default withTheme(DataMessenger)

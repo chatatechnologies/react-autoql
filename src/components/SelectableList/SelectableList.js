@@ -7,20 +7,15 @@ import { v4 as uuid } from 'uuid'
 import { Checkbox } from '../Checkbox'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 import './SelectableList.scss'
 
 export default class SelectableList extends React.Component {
   static propTypes = {
-    themeConfig: themeConfigType,
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     items: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     onChange: () => {},
     onSelect: () => {},
     columns: [],
@@ -111,7 +106,7 @@ export default class SelectableList extends React.Component {
                 if (index === this.props.columns.length - 1) {
                   const allItemsChecked = items.every((col) => col.checked)
                   return (
-                    <div key={`list-header-${uuid()}`}>
+                    <div key={`list-header-${index}`}>
                       {col.name}
                       <Checkbox
                         checked={allItemsChecked}
@@ -132,7 +127,7 @@ export default class SelectableList extends React.Component {
                     </div>
                   )
                 }
-                return <div key={`list-header-${uuid()}`}>{col.name}</div>
+                return <div key={`list-header-${index}`}>{col.name}</div>
               })}
             </div>
           )}

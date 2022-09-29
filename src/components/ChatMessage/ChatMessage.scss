@@ -52,7 +52,7 @@
     animation: scale-up-bl 0.5s ease;
 
     .chat-message-bubble {
-      background: var(--react-autoql-background-color-primary);
+      background: var(--react-autoql-background-color-secondary);
       color: var(--react-autoql-text-color-primary);
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
     }
@@ -71,7 +71,7 @@
 
     .chat-message-bubble {
       background: var(--react-autoql-accent-color);
-      color: var(--react-autoql-accent-text-color);
+      color: var(--react-autoql-text-color-accent);
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
     }
   }
@@ -115,24 +115,22 @@
       right: 0;
       z-index: 3;
 
-      pointer-events: none;
-      visibility: hidden;
-      opacity: 0;
-
       .chat-message-toolbar.left {
         margin-left: -5px;
       }
       .chat-message-toolbar.right {
         margin-right: -5px;
       }
-
-      .chat-message-toolbar.right,
-      .chat-message-toolbar.left {
-        pointer-events: auto;
-      }
     }
 
-    &:hover .chat-message-toolbars-container {
+    .react-autoql-toolbar:not(.active) {
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+    }
+    &:hover .react-autoql-toolbar,
+    .react-autoql-toolbar.active {
+      pointer-events: auto;
       visibility: visible;
       opacity: 1;
     }

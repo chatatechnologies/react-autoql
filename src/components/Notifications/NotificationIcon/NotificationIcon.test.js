@@ -11,7 +11,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<NotificationIcon {...setupProps} />)
+  const wrapper = shallow(<NotificationIcon {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

@@ -9,19 +9,14 @@ import _cloneDeep from 'lodash.clonedeep'
 import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
-import { themeConfigType } from '../../props/types'
-import {
-  themeConfigDefault,
-  getAuthentication,
-  getAutoQLConfig,
-} from '../../props/defaults'
+import { getAuthentication } from '../../props/defaults'
+import { getTableConfigState } from './tableHelpers'
+import { Spinner } from '../Spinner'
 import {
   runQueryOnly,
   runQueryNewPage,
   runDrilldown,
 } from '../../js/queryService'
-import { getTableConfigState } from './tableHelpers'
-import { Spinner } from '../Spinner'
 
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
@@ -63,24 +58,19 @@ export default class ChataTable extends React.Component {
       },
       dataFiltered: (filters, rows) => {
         const tableFilters = this.ref?.table?.getHeaderFilters()
+        if (this.firstRender) {
+          return
+        }
 
         if (this.supportsInfiniteScroll) {
-          props.onFilterCallback(tableFilters, rows)
-          return
+          return props.onFilterCallback(tableFilters, rows)
         }
 
         // The filters provided to this function don't include header filters
         // We only use header filters so we have to use the function below
-        if (
-          !this.supportsInfiniteScroll &&
-          this._isMounted &&
-          this.ref &&
-          !this.firstRender
-        ) {
-          if (!_isEqual(tableFilters, this.headerFilters)) {
-            this.headerFilters = tableFilters
-            props.onFilterCallback(tableFilters, rows)
-          }
+        if (!_isEqual(tableFilters, this.headerFilters)) {
+          this.headerFilters = tableFilters
+          props.onFilterCallback(tableFilters, rows)
         }
       },
       downloadReady: (fileContents, blob) => blob,
@@ -118,7 +108,6 @@ export default class ChataTable extends React.Component {
   }
 
   static propTypes = {
-    themeConfig: themeConfigType,
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
@@ -128,7 +117,6 @@ export default class ChataTable extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     queryRequestData: {},
     data: undefined,
     columns: undefined,

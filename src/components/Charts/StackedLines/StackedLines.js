@@ -89,7 +89,7 @@ export default class StackedLines extends Component {
         data-effect="float"
         style={{
           fill: this.props.colorScale(i),
-          fillOpacity: 1,
+          fillOpacity: 0.7,
         }}
       />
     )

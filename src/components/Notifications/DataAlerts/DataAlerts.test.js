@@ -11,7 +11,7 @@ const defaultProps = {
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<DataAlerts {...setupProps} />)
+  const wrapper = shallow(<DataAlerts {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

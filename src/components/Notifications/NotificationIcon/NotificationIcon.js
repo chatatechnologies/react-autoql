@@ -18,8 +18,9 @@ import {
 } from '../../../props/defaults'
 
 import './NotificationIcon.scss'
+import { withTheme } from '../../../theme'
 
-export default class NotificationIcon extends React.Component {
+class NotificationIcon extends React.Component {
   constructor(props) {
     super(props)
 
@@ -230,3 +231,5 @@ export default class NotificationIcon extends React.Component {
     )
   }
 }
+
+export default withTheme(NotificationIcon)

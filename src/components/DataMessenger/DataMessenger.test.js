@@ -1,12 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
-
-import {
-  findByTestAttr,
-  checkProps,
-  currentEventLoopEnd,
-} from '../../../test/testUtils'
-import { DataMessenger } from '../..'
+import { findByTestAttr, checkProps } from '../../../test/testUtils'
+import { DataMessenger } from './DataMessenger'
 import responseTestCases from '../../../test/responseTestCases'
 import * as queryService from '../../js/queryService'
 import sampleTopicsResponse from '../../../test/sampleTopicsResponse.json'
@@ -16,7 +11,7 @@ const defaultProps = DataMessenger.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<DataMessenger {...setupProps} />)
+  const wrapper = shallow(<DataMessenger {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }

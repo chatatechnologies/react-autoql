@@ -22,7 +22,7 @@
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   color: #5d5d5d;
 }
 .react-autoql-chatbar-input.left-padding {
@@ -73,7 +73,7 @@
   box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.1);
 
   /* Default styles outside of data messenger */
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
 }
 
@@ -97,7 +97,7 @@
 
 /* Autocomplete styles */
 .react-autoql-bar-container .react-autosuggest__suggestions-container--open {
-  background-color: var(--react-autoql-background-color-primary);
+  background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
 }

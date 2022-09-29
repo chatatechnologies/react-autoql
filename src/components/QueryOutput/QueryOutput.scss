@@ -57,7 +57,7 @@
 }
 .react-autoql-suggestion-btn:hover {
   border-color: transparent;
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   background: var(--react-autoql-accent-color);
 }
 .react-autoql-help-link-btn {
@@ -87,6 +87,10 @@
   height: 100%;
   width: 100%;
   word-break: break-word;
+
+  .react-autoql-suggestion-message-prefix {
+    margin-bottom: 10px;
+  }
 }
 .react-autoql-suggestions-select {
   position: relative;
@@ -161,7 +165,7 @@
   text-align: center;
 }
 .react-autoql-query-validation-execute-btn {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
   height: 38px;
@@ -252,7 +256,7 @@
 }
 
 .context-menu {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   /* height: 100px; */
   width: 150px;
   padding: 10px 0;
@@ -313,7 +317,7 @@
 .react-autoql-reverse-translation-container {
   .react-autoql-reverse-translation {
     color: var(--react-autoql-text-color-primary);
-    background-color: var(--react-autoql-background-color-secondary);
+    background-color: var(--react-autoql-background-color-primary);
     border-radius: 5px;
     padding: 5px 13px 5px 13px;
     height: 100%;

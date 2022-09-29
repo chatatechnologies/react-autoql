@@ -2,24 +2,19 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
-import { Scrollbars } from 'react-custom-scrollbars-2'
 
+import { Card } from '../Card'
+import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import { authenticationType } from '../../props/types'
 import { fetchDataPreview } from '../../js/queryService'
 import { Icon } from '../Icon'
 
-import {
-  getDataFormatting,
-  dataFormattingDefault,
-  themeConfigDefault,
-} from '../../props/defaults'
-import { dataFormattingType, themeConfigType } from '../../props/types'
+import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
+import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
 
 import './DataPreview.scss'
-import { Card } from '../Card'
-import { CustomScrollbars } from '../CustomScrollbars'
 
 export default class DataExplorer extends React.Component {
   constructor(props) {
@@ -31,7 +26,6 @@ export default class DataExplorer extends React.Component {
 
   static propTypes = {
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
     authentication: authenticationType,
     shouldRender: PropTypes.bool,
     subject: PropTypes.shape({}),
@@ -40,7 +34,6 @@ export default class DataExplorer extends React.Component {
 
   static defaultProps = {
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
     authentication: {},
     shouldRender: true,
     subject: null,

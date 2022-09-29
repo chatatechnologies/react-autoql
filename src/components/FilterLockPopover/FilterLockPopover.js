@@ -2,23 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover, ArrowContainer } from 'react-tiny-popover'
 
-import FilterLockPopoverContent from './FilterLockPopoverContent'
-
 import { fetchFilters } from '../../js/queryService'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { withTheme } from '../../theme'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-  themeConfigDefault,
-} from '../../props/defaults'
+import FilterLockPopoverContent from './FilterLockPopoverContent'
 
 import './FilterLockPopover.scss'
 
-export default class FilterLockPopover extends React.Component {
+export class FilterLockPopover extends React.Component {
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
     position: PropTypes.string,
@@ -30,7 +25,6 @@ export default class FilterLockPopover extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     isOpen: false,
     position: 'bottom',
@@ -99,7 +93,6 @@ export default class FilterLockPopover extends React.Component {
         <FilterLockPopoverContent
           ref={(r) => (this.popoverContentRef = r)}
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           isOpen={this.props.isOpen}
           onClose={this.props.onClose}
           onChange={this.onChange}
@@ -132,3 +125,5 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 }
+
+export default withTheme(FilterLockPopover)

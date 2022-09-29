@@ -12,7 +12,6 @@ import { authenticationDefault, getAuthentication } from '../../props/defaults'
 export default class ReportProblemModal extends React.Component {
   static propTypes = {
     authentication: authenticationType,
-    responseRef: PropTypes.instanceOf(QueryOutput),
     onReportProblem: PropTypes.func,
     isVisible: PropTypes.bool,
   }

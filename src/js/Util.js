@@ -9,9 +9,6 @@ import {
   MONTH_NAMES,
   SEASON_NAMES,
 } from './Constants'
-import { LIGHT_THEME, DARK_THEME } from './Themes'
-
-import { getThemeConfig } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
@@ -470,28 +467,28 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getHiddenColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
+export const getHiddenColumns = (columns) => {
+  return _filter(columns, (col) => !col.is_visible)
 }
 
-export const getVisibleColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+export const getVisibleColumns = (columns) => {
+  return _filter(columns, (col) => col.is_visible)
 }
 
-export const areSomeColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const hiddenColumns = getHiddenColumns(response)
+export const areSomeColumnsHidden = (columns) => {
+  const hasColumns = columns?.length
+  const hiddenColumns = getHiddenColumns(columns)
   return hasColumns && !!hiddenColumns.length
 }
 
-export const areAllColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const visibleColumns = getVisibleColumns(response)
-  return hasColumns && !visibleColumns.length
+export const areAllColumnsHidden = (columns) => {
+  const visibleColumns = getVisibleColumns(columns)
+  return columns?.length && !visibleColumns.length
 }
 
 export const getSupportedDisplayTypes = ({
   response,
+  columns,
   dataLength,
   pivotDataLength,
 } = {}) => {
@@ -511,9 +508,10 @@ export const getSupportedDisplayTypes = ({
     }
 
     const rows = _get(response, 'data.data.rows', [])
-    const columns = getVisibleColumns(response)
+    const allColumns = columns || _get(response, 'data.data.columns')
+    const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+    if (!_get(visibleColumns, 'length') || !_get(rows, 'length')) {
       return ['text']
     }
 
@@ -526,7 +524,7 @@ export const getSupportedDisplayTypes = ({
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
     const isPivotTableEmpty = pivotDataLength === 0
-    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
+    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
 
@@ -552,7 +550,7 @@ export const getSupportedDisplayTypes = ({
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(columns) && !isTableEmpty) {
+    } else if (supports2DCharts(visibleColumns) && !isTableEmpty) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -562,16 +560,16 @@ export const getSupportedDisplayTypes = ({
       }
 
       // create pivot based on month and year
-      const dateColumnIndex = columns.findIndex(
+      const dateColumnIndex = visibleColumns.findIndex(
         (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      const dateColumn = columns[dateColumnIndex]
+      const dateColumn = visibleColumns[dateColumnIndex]
 
       // Check if date pivot should be supported
       if (
         dateColumn &&
         dateColumn?.display_name?.toLowerCase().includes('month') &&
-        columns?.length === 2
+        visibleColumns?.length === 2
       ) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []
@@ -607,10 +605,12 @@ export const isDisplayTypeValid = (
   response,
   displayType,
   dataLength,
-  pivotDataLength
+  pivotDataLength,
+  columns
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
+    columns,
     dataLength,
     pivotDataLength,
   })
@@ -633,9 +633,25 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
 export const getDefaultDisplayType = (
   response,
   defaultToChart,
+  columns,
+  dataLength,
+  pivotDataLength,
   preferredDisplayType
 ) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
+  const supportedDisplayTypes = getSupportedDisplayTypes({
+    response,
+    columns,
+    dataLength,
+    pivotDataLength,
+  })
+
+  if (
+    preferredDisplayType &&
+    supportedDisplayTypes.includes(preferredDisplayType)
+  ) {
+    return preferredDisplayType
+  }
+
   const responseDisplayType = _get(response, 'data.data.display_type')
 
   if (supportedDisplayTypes.includes(preferredDisplayType)) {
@@ -837,65 +853,6 @@ export const getTickWidth = (scale, innerPadding) => {
   } catch (error) {
     console.error(error)
     return 0
-  }
-}
-
-export const setCSSVars = (customThemeConfig) => {
-  const themeConfig = getThemeConfig(customThemeConfig)
-
-  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
-  const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-  if (accentColor) {
-    themeStyles['accent-color'] = accentColor
-  }
-  if (fontFamily) {
-    themeStyles['font-family'] = fontFamily
-  }
-  if (accentTextColor) {
-    themeStyles['accent-text-color'] = accentTextColor
-  } else {
-    let accentTextColor = accentColor
-    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-
-    if (accentTextColor.slice(0, 1) === '#') {
-      accentTextColor = accentTextColor.slice(1)
-    }
-
-    // If a three-character hexcode, make six-character
-    if (accentTextColor.length === 3) {
-      accentTextColor = accentTextColor
-        .split('')
-        .map(function (accentTextColor) {
-          return accentTextColor + accentTextColor
-        })
-        .join('')
-    }
-    // Convert to RGB value
-    let r = parseInt(accentTextColor.substr(0, 2), 16)
-    let g = parseInt(accentTextColor.substr(2, 2), 16)
-    let b = parseInt(accentTextColor.substr(4, 2), 16)
-    // Get YIQ ratio
-    let yiq = (r * 299 + g * 587 + b * 114) / 1000
-    // Check contrast
-
-    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
-  }
-
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `--react-autoql-${property}`,
-      themeStyles[property]
-    )
-  }
-}
-
-export const setStyleVars = ({ themeStyles, prefix }) => {
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `${prefix}${property}`,
-      themeStyles[property]
-    )
   }
 }
 
@@ -1131,4 +1088,30 @@ export const handleTooltipBoundaryCollision = (e, self) => {
     tooltipRef.style.setProperty('left', 'auto')
     tooltipRef.style.setProperty('right', '10px')
   }
+}
+
+export const animateInputText = ({
+  text = '',
+  inputRef,
+  callback = () => {},
+  totalAnimationTime = 1000,
+}) => {
+  if (!text.length || !inputRef || typeof text !== 'string') {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve, reject) => {
+    const timePerChar = Math.round(totalAnimationTime / text.length)
+    for (let i = 1; i <= text.length; i++) {
+      setTimeout(() => {
+        inputRef.value = text.slice(0, i)
+        if (i === text.length) {
+          setTimeout(() => {
+            callback()
+            resolve()
+          }, 300)
+        }
+      }, i * timePerChar)
+    }
+  })
 }

@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import axios from 'axios'
-import _ from 'lodash'
+import { get, sortBy, isEqual, cloneDeep } from 'lodash'
 import {
   DataMessenger,
   QueryOutput,
@@ -12,6 +12,7 @@ import {
   NotificationFeed,
   DataAlerts,
   Icon as ChataIcon,
+  configureTheme,
 } from 'react-autoql'
 
 import { v4 as uuid } from 'uuid'
@@ -132,8 +133,6 @@ export default class App extends Component {
     enableNotifications: true,
     enableColumnVisibilityManager: true,
     enableVoiceRecord: true,
-    enableSlackSharing: !isProd(),
-    enableTeamsSharing: !isProd(),
     enableCSVDownload: true,
     dashboardTitleColor: 'rgb(72, 105, 142)',
     clearOnClose: false,
@@ -183,6 +182,19 @@ export default class App extends Component {
       })
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    if (
+      !isEqual(this.state.chartColors !== prevState.chartColors) ||
+      prevState.lightAccentColor !== this.state.lightAccentColor ||
+      prevState.darkAccentColor !== this.state.darkAccentColor ||
+      prevState.accentTextColor !== this.state.accentTextColor ||
+      prevState.dashboardBackground !== this.state.dashboardBackground ||
+      prevState.dashboardTitleColor !== this.state.dashboardTitleColor
+    ) {
+      this.setTheme()
+    }
+  }
+
   componentWillUnmount = () => {
     if (this.authTimer) {
       clearTimeout(this.authTimer)
@@ -209,8 +221,6 @@ export default class App extends Component {
       enableColumnVisibilityManager: this.state.enableColumnVisibilityManager,
       enableQuerySuggestions: this.state.enableQuerySuggestions,
       enableNotifications: this.state.enableNotifications,
-      enableSlackSharing: this.state.enableSlackSharing,
-      enableTeamsSharing: this.state.enableTeamsSharing,
       debug: this.state.debug,
       test: this.state.test,
       enableCSVDownload: this.state.enableCSVDownload,
@@ -230,7 +240,7 @@ export default class App extends Component {
     }
   }
 
-  getThemeConfigProp = () => {
+  setTheme = () => {
     let lightAccentColor = this.state.lightAccentColor
     let darkAccentColor = this.state.darkAccentColor
     let accentTextColor = this.state.accentTextColor
@@ -238,16 +248,18 @@ export default class App extends Component {
     let dashboardTitleColor = this.state.dashboardTitleColor
     let dashboardBackground = this.state.dashboardBackground
 
-    return {
+    const theme = {
       theme: this.state.theme,
       accentColor:
         this.state.theme === 'light' ? lightAccentColor : darkAccentColor,
       accentTextColor: accentTextColor,
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
-      titleColor: dashboardTitleColor,
-      dashboardBackground: dashboardBackground,
+      dashboardTitleColor,
+      dashboardBackground,
     }
+
+    configureTheme(theme)
   }
 
   fetchNotificationData = (notificationId) => {
@@ -351,15 +363,12 @@ export default class App extends Component {
         let dashboardTiles
         let activeDashboardId
         let dashboardsList = []
-        if (_.get(dashboardResponse, 'data.items.length')) {
-          dashboardsList = _.sortBy(
-            dashboardResponse.data.items,
-            (dashboard) => {
-              return new Date(dashboard.created_at)
-            }
-          )
-          dashboardTiles = _.get(dashboardsList, '[0].data')
-          activeDashboardId = _.get(dashboardsList, '[0].id')
+        if (get(dashboardResponse, 'data.items.length')) {
+          dashboardsList = sortBy(dashboardResponse.data.items, (dashboard) => {
+            return new Date(dashboard.created_at)
+          })
+          dashboardTiles = get(dashboardsList, '[0].data')
+          activeDashboardId = get(dashboardsList, '[0].id')
         }
 
         this.setState({
@@ -671,7 +680,7 @@ export default class App extends Component {
         },
       })
 
-      const newDashboardsList = _.cloneDeep(this.state.dashboardsList)
+      const newDashboardsList = cloneDeep(this.state.dashboardsList)
       newDashboardsList[index].data = this.state.dashboardTiles.map((tile) => {
         return {
           ...tile,
@@ -989,16 +998,6 @@ export default class App extends Component {
           [true, false]
         )}
         {this.createBooleanRadioGroup(
-          'Enable Slack Sharing',
-          'enableSlackSharing',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
-          'Enable MS Teams Sharing',
-          'enableTeamsSharing',
-          [true, false]
-        )}
-        {this.createBooleanRadioGroup(
           'Enable CSV Download',
           'enableCSVDownload',
           [true, false]
@@ -1292,14 +1291,6 @@ export default class App extends Component {
   renderDataMessenger = () => {
     return (
       <DataMessenger
-        // --- Deprecated in v4 ----
-        // isVisible={this.state.isVisible}
-        // onHandleClick={() =>
-        //   this.setState({ isVisible: !this.state.isVisible })
-        // }
-        // onMaskClick={() => {
-        //   this.setState({ isVisible: false })
-        // }}
         ref={(r) => (this.dmRef = r)}
         inputValue={this.state.inputValue}
         className={`${this.state.activeIntegrator}`}
@@ -1307,7 +1298,6 @@ export default class App extends Component {
         authentication={this.getAuthProp()}
         autoQLConfig={this.getAutoQLConfigProp()}
         dataFormatting={this.getDataFormattingProp()}
-        themeConfig={this.getThemeConfigProp()}
         key={this.state.componentKey}
         AutoAEId={this.state.componentKey}
         maskClosable
@@ -1362,7 +1352,6 @@ export default class App extends Component {
           authentication={this.getAuthProp()}
           autoQLConfig={this.getAutoQLConfigProp()}
           dataFormatting={this.getDataFormattingProp()}
-          themeConfig={this.getThemeConfigProp()}
           ref={(r) => (this.queryInputRef = r)}
           autoCompletePlacement="below"
           clearQueryOnSubmit={false}
@@ -1388,7 +1377,6 @@ export default class App extends Component {
           >
             <QueryOutput
               authentication={this.getAuthProp()}
-              themeConfig={this.getThemeConfigProp()}
               queryInputRef={this.queryInputRef}
               queryResponse={this.state.response}
             />
@@ -1562,7 +1550,6 @@ export default class App extends Component {
               authentication={this.getAuthProp()}
               autoQLConfig={this.getAutoQLConfigProp()}
               dataFormatting={this.getDataFormattingProp()}
-              themeConfig={this.getThemeConfigProp()}
               isEditing={this.state.isEditing}
               startEditingCallback={() => this.setState({ isEditing: true })}
               executeOnMount={this.state.runDashboardAutomatically}
@@ -1594,42 +1581,35 @@ export default class App extends Component {
   }
 
   renderNavMenu = () => {
-    return (
-      <Menu
-        onClick={({ key }) => {
-          this.setState({ currentPage: key })
-          this.resetDashboard()
-          if (key === 'notifications' && this.notificationBadgeRef) {
-            this.notificationBadgeRef.resetCount()
-          }
-        }}
-        selectedKeys={[this.state.currentPage]}
-        mode="horizontal"
-      >
-        <Menu.Item key="drawer">
-          <ChataIcon type="react-autoql-bubbles-outlined" />
-          Data Messenger
-        </Menu.Item>
+    const items = [
+      {
+        label: (
+          <span>
+            <ChataIcon type="react-autoql-bubbles-outlined" /> Data Messenger
+          </span>
+        ),
+        key: 'drawer',
+      },
+    ]
 
-        {this.state.isAuthenticated && (
-          <Menu.Item key="dashboard">
+    if (this.state.isAuthenticated) {
+      items.push({
+        label: (
+          <span>
             <ChataIcon type="dashboard" /> Dashboard
-          </Menu.Item>
-        )}
-        {this.state.isAuthenticated && (
-          <Menu.Item key="chatbar">QueryInput / QueryOutput</Menu.Item>
-        )}
-        <Menu.Item key="reviews">Reviews</Menu.Item>
-        <Menu.Item key="speech">Speech Training</Menu.Item>
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="settings">Data Alerts Manager</Menu.Item>
-        )}
-        {this.state.isAuthenticated && this.state.enableNotifications && (
-          <Menu.Item key="notifications">
+          </span>
+        ),
+        key: 'dashboard',
+      })
+      items.push({ label: 'QueryInput / QueryOutput', key: 'chatbar' })
+
+      if (this.state.enableNotifications) {
+        items.push({ label: 'Data Alerts Manager', key: 'settings' })
+        items.push({
+          label: (
             <NotificationIcon
               ref={(r) => (this.notificationBadgeRef = r)}
               authentication={this.getAuthProp()}
-              themeConfig={this.getThemeConfigProp()}
               clearCountOnClick={false}
               style={{ fontSize: '18px' }}
               onNewNotification={() => {
@@ -1643,16 +1623,34 @@ export default class App extends Component {
               }}
               onErrorCallback={this.onError}
             />
-          </Menu.Item>
-        )}
-      </Menu>
+          ),
+          key: 'notifications',
+        })
+      }
+    }
+
+    items.push({ label: 'Reviews', key: 'reviews' })
+    items.push({ label: 'Speech Training', key: 'speech' })
+
+    return (
+      <Menu
+        onClick={({ key }) => {
+          this.setState({ currentPage: key })
+          this.resetDashboard()
+          if (key === 'notifications' && this.notificationBadgeRef) {
+            this.notificationBadgeRef.resetCount()
+          }
+        }}
+        selectedKeys={[this.state.currentPage]}
+        mode="horizontal"
+        items={items}
+      />
     )
   }
 
   renderNewDashboardModal = () => {
     return (
       <Modal
-        themeConfig={this.getThemeConfigProp()}
         visible={this.state.isNewDashboardModalOpen}
         confirmLoading={this.state.isSavingDashboard}
         onOk={this.createDashboard}
@@ -1727,9 +1725,8 @@ export default class App extends Component {
     return (
       <QueryOutput
         authentication={this.getAuthProp()}
-        themeConfig={this.getThemeConfigProp()}
         queryResponse={this.state.activeNotificationContent}
-        displayType="table"
+        initialDisplayType="table"
       />
     )
   }
@@ -1746,7 +1743,6 @@ export default class App extends Component {
         <NotificationFeed
           ref={(ref) => (this.notificationListRef = ref)}
           authentication={this.getAuthProp()}
-          themeConfig={this.getThemeConfigProp()}
           onExpandCallback={this.fetchNotificationContent}
           autoChartAggregations={this.state.autoChartAggregations}
           showCreateAlertBtn={true}
@@ -1772,7 +1768,6 @@ export default class App extends Component {
       >
         <DataAlerts
           authentication={this.getAuthProp()}
-          themeConfig={this.getThemeConfigProp()}
           onErrorCallback={this.onError}
           showCreateAlertBtn
           onSuccessAlert={this.onSuccess}
@@ -1844,7 +1839,6 @@ export default class App extends Component {
         pageToRender = (
           <SpeechToTextPage
             authentication={this.getAuthProp()}
-            themeConfig={this.getThemeConfigProp()}
             userEmail={this.state.displayName}
             projectID={this.state.projectId}
           />

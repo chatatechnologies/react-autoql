@@ -87,6 +87,17 @@ export default class NumberAxisSelector extends React.Component {
     const { currencySelectorState, quantitySelectorState, ratioSelectorState } =
       this.state
 
+    let maxHeight = 300
+    const minHeight = 75
+    const padding = 100
+
+    const chartHeight = this.props.chartContainerRef?.clientHeight
+    if (chartHeight && chartHeight > minHeight + padding) {
+      maxHeight = chartHeight - padding
+    } else if (chartHeight && chartHeight < minHeight + padding) {
+      maxHeight = minHeight
+    }
+
     return (
       <div
         id="chata-chart-popover"
@@ -97,8 +108,8 @@ export default class NumberAxisSelector extends React.Component {
         <CustomScrollbars
           autoHide={false}
           autoHeight
-          autoHeightMin={0}
-          autoHeightMax={this.props.chartContainerRef?.clientHeight}
+          autoHeightMin={minHeight}
+          autoHeightMax={maxHeight}
         >
           <div className="axis-selector-container">
             {!!currencySelectorState.length && (

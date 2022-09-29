@@ -132,7 +132,6 @@ export default class DataExplorer extends React.Component {
       <div className="data-explorer-section data-preview-section">
         <DataPreview
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           dataFormatting={this.props.dataFormatting}
           subject={this.state.selectedSubject}
           shouldRender={this.props.shouldRender}
@@ -371,11 +370,12 @@ export default class DataExplorer extends React.Component {
         {!!formattedType && (
           <div className="data-explorer-tooltip-section">{formattedType}</div>
         )}
+        {/* Disable this until we have a better way to get query suggestions for columns
         <div className="data-explorer-tooltip-section">
           <strong>Query suggestions:</strong>
           <br />
           {this.renderColumnQuerySuggestions(column)}
-        </div>
+        </div> */}
       </div>
     )
   }
