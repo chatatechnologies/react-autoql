@@ -231,7 +231,7 @@
     transition: border-right-color 0.2s ease;
     cursor: ew-resize;
     &:hover {
-      border-right-color: var(--react-autoql-border-color);
+      border-right-color: var(--react-autoql-accent-color);
     }
   }
 
@@ -245,7 +245,7 @@
     border-left-style: solid;
     cursor: ew-resize;
     &:hover {
-      border-left-color: var(--react-autoql-border-color);
+      border-left-color: var(--react-autoql-accent-color);
     }
   }
 
@@ -259,7 +259,7 @@
     border-top-style: solid;
     cursor: ns-resize;
     &:hover {
-      border-top-color: var(--react-autoql-border-color);
+      border-top-color: var(--react-autoql-accent-color);
     }
   }
 
@@ -273,7 +273,7 @@
     border-bottom-style: solid;
     cursor: ns-resize;
     &:hover {
-      border-bottom-color: var(--react-autoql-border-color);
+      border-bottom-color: var(--react-autoql-accent-color);
     }
   }
 }
