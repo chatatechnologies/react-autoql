@@ -859,6 +859,7 @@ export class QueryOutput extends React.Component {
     this.setState({ tableParams: params })
     setTimeout(() => {
       this.props.onRowChange()
+      this.updateToolbars()
     }, 0)
   }
 
