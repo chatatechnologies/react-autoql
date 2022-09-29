@@ -187,8 +187,9 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     try {
+      const prevTableParams = getTableParams(this.previousTableParams, this.ref)
       const tableParams = getTableParams(params, this.ref)
-      if (_isEqual(this.previousTableParams, tableParams)) {
+      if (_isEqual(prevTableParams, tableParams)) {
         return Promise.resolve()
       }
 
@@ -197,7 +198,7 @@ export default class ChataTable extends React.Component {
         return Promise.resolve({ rows: this.props.data, page: 1 })
       }
 
-      this.previousTableParams = tableParams
+      this.previousTableParams = params
 
       if (!props.queryRequestData) {
         console.warn(
@@ -219,7 +220,7 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await this.sortOrFilterData(props, tableParams)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
-        this.props.onNewData(responseWrapper, tableParams)
+        this.props.onNewData(responseWrapper, params)
       }
 
       this.setState({ scrollLoading: false, pageLoading: false })
