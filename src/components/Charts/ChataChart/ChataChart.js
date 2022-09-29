@@ -157,7 +157,10 @@ export default class ChataChart extends Component {
       this.updateMargins()
       return
     }
-
+    if (this.props.data !== prevProps.data) {
+      console.log('hi142')
+      shouldForceUpdate = true
+    }
     if (shouldForceUpdate) {
       this.forceUpdate()
     }
@@ -203,6 +206,7 @@ export default class ChataChart extends Component {
 
   aggregateRowData = (props) => {
     const { stringColumnIndex, numberColumnIndices, data, columns } = props
+    console.log('data', data)
     const stringColumn = columns[stringColumnIndex]
     let sortedData
     if (isColumnDateType(stringColumn)) {

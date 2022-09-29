@@ -818,6 +818,7 @@ export class QueryOutput extends React.Component {
   updateToolbars = () => {
     this.updateVizToolbar()
     this.updateOptionsToolbar()
+    this.updateLoadMoreToolbar()
   }
 
   updateVizToolbar = () => {
@@ -829,6 +830,11 @@ export class QueryOutput extends React.Component {
   updateOptionsToolbar = () => {
     if (this.props.optionsToolbarRef?._isMounted) {
       this.props.optionsToolbarRef.forceUpdate()
+    }
+  }
+  updateLoadMoreToolbar = () => {
+    if (this.props.loadMoreToolbarRef?._isMounted) {
+      this.props.loadMoreToolbarRef.forceUpdate()
     }
   }
 
@@ -846,7 +852,12 @@ export class QueryOutput extends React.Component {
 
   onNewPage = (rows) => {
     try {
+      console.log('hi')
       this.tableData = [...this.tableData, ...rows]
+      this.setState({
+        visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+      })
+      console.log(this.tableData)
     } catch (error) {
       console.error(error)
     }
@@ -1664,6 +1675,7 @@ export class QueryOutput extends React.Component {
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    console.log('usePivotData', usePivotData)
     return (
       <ErrorBoundary>
         <ChataChart

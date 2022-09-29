@@ -30,6 +30,7 @@ import { isChartType } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
+import { LoadMoreToolbar } from '../LoadMoreToolbar'
 
 export default class ChatMessage extends React.Component {
   constructor(props) {
@@ -249,6 +250,7 @@ export default class ChatMessage extends React.Component {
           ref={(ref) => (this.responseRef = ref)}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
+          loadMoreToolbarRef={this.loadMoreToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           queryResponse={this.props.response}
@@ -356,6 +358,20 @@ export default class ChatMessage extends React.Component {
       </div>
     )
   }
+  renderCentreToolbar = () => {
+    return (
+      <div className="chat-message-toolbar center">
+        {this.props.isResponse && this.props.type !== 'text' ? (
+          <LoadMoreToolbar
+            authentication={this.props.authentication}
+            ref={(r) => (this.loadMoreToolbarRef = r)}
+            responseRef={this.responseRef}
+            className="chat-message-toolbar center"
+          />
+        ) : null}
+      </div>
+    )
+  }
 
   render = () => {
     return (
@@ -373,6 +389,7 @@ export default class ChatMessage extends React.Component {
             }
           `}
         >
+          {console.log(isChartType(this.responseRef?.state?.displayType))}
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
@@ -389,6 +406,7 @@ export default class ChatMessage extends React.Component {
             {!this.props.isResizing && (
               <div className="chat-message-toolbars-container">
                 {this.renderLeftToolbar()}
+                {this.renderCentreToolbar()}
                 {this.renderRightToolbar()}
               </div>
             )}
