@@ -10,7 +10,7 @@ import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
 import { getAuthentication } from '../../props/defaults'
-import { getTableConfigState } from './tableHelpers'
+import { getTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import {
   runQueryOnly,
@@ -32,9 +32,10 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
-    this.headerFilters = []
+    this.headerFilters = props.initialParams?.filters || []
     this.queryID = props.queryID
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
+    this.previousTableParams = props.initialParams
 
     this.tableOptions = {
       dataLoadError: (error) => console.error(error),
@@ -133,7 +134,7 @@ export default class ChataTable extends React.Component {
     this._isMounted = true
     this.firstRender = false
     this.setTableHeaderValues = setTimeout(() => {
-      this.setInitialHeaderFilters()
+      this.setInitialParams()
       this.setFilterTags({ isFilteringTable: false })
     }, 100)
   }
@@ -186,17 +187,17 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     try {
-      const tableConfigState = getTableConfigState(params, this.ref)
-      if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+      const tableParams = getTableParams(params, this.ref)
+      if (_isEqual(this.previousTableParams, tableParams)) {
         return Promise.resolve()
       }
-
-      this.previousTableConfigState = tableConfigState
 
       if (!this.hasSetInitialData) {
         this.hasSetInitialData = true
         return Promise.resolve({ rows: this.props.data, page: 1 })
       }
+
+      this.previousTableParams = tableParams
 
       if (!props.queryRequestData) {
         console.warn(
@@ -211,17 +212,14 @@ export default class ChataTable extends React.Component {
       let response
       if (params?.page > 1) {
         this.setState({ scrollLoading: true })
-        response = await this.getNewPage(props, tableConfigState)
+        response = await this.getNewPage(props, tableParams)
         this.props.onNewPage(response?.rows)
       } else {
         this.setState({ pageLoading: true })
-        const responseWrapper = await this.sortOrFilterData(
-          props,
-          tableConfigState
-        )
+        const responseWrapper = await this.sortOrFilterData(props, tableParams)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
-        this.props.onNewData(response?.rows)
+        this.props.onNewData(responseWrapper, tableParams)
       }
 
       this.setState({ scrollLoading: false, pageLoading: false })
@@ -238,34 +236,42 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  getNewPage = (props, tableConfigState) => {
+  getNewPage = (props, tableParams) => {
     return runQueryNewPage({
       ...getAuthentication(props.authentication),
-      ...tableConfigState,
+      ...tableParams,
       queryId: this.queryID,
       cancelToken: this.axiosSource.token,
     })
   }
 
-  sortOrFilterData = (props, tableConfigState) => {
+  sortOrFilterData = (props, tableParams) => {
     if (props.isDrilldown) {
       return runDrilldown({
         ...getAuthentication(props.authentication),
-        ...props.queryRequestData,
+        source: props.queryRequestData?.source,
+        debug: props.queryRequestData?.translation === 'include',
+        formattedUserSelection: props.queryRequestData?.user_selection,
+        filters: props.queryRequestData?.session_filter_locks,
+        test: props.queryRequestData?.test,
         groupBys: props.queryRequestData?.columns,
         queryID: props.originalQueryID, // todo: get original query ID from drillown response
-        orders: tableConfigState?.sorters,
-        tableFilters: tableConfigState?.filters,
+        orders: tableParams?.sorters,
+        tableFilters: tableParams?.filters,
         cancelToken: this.axiosSource.token,
       })
     } else {
       return runQueryOnly({
         ...getAuthentication(props.authentication),
-        ...props.queryRequestData,
-        query: props.queryText,
-        pageSize: props.pageSize,
-        orders: tableConfigState?.sorters,
-        tableFilters: tableConfigState?.filters,
+        query: props.queryRequestData?.text,
+        source: props.queryRequestData?.source,
+        debug: props.queryRequestData?.translation === 'include',
+        formattedUserSelection: props.queryRequestData?.user_selection,
+        filters: props.queryRequestData?.session_filter_locks,
+        test: props.queryRequestData?.test,
+        pageSize: props.queryRequestData?.page_size,
+        orders: tableParams?.sorters,
+        tableFilters: tableParams?.filters,
         cancelToken: this.axiosSource.token,
       })
     }
@@ -295,9 +301,9 @@ export default class ChataTable extends React.Component {
     return modResponse
   }
 
-  setInitialHeaderFilters = () => {
-    if (_get(this.props, 'headerFilters.length') && _get(this.ref, 'table')) {
-      this.props.headerFilters.forEach((filter) => {
+  setInitialParams = () => {
+    if (this.props?.initialParams?.filters?.length && this.ref?.table) {
+      this.props.initialParams.filters.forEach((filter) => {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
     }
