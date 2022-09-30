@@ -27,9 +27,7 @@ export default class ChataTable extends React.Component {
     super(props)
 
     this.TABLE_ID = uuid()
-    this.firstRender = true
     this.hasSetInitialData = false
-    this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
     this.headerFilters = props.initialParams?.filters || []
@@ -51,49 +49,44 @@ export default class ChataTable extends React.Component {
       },
       cellClick: this.cellClick,
       initialSort: props.initialParams?.sorters,
-      dataSorting: (sorters) => {},
-      dataSorted: (sorters, rows) => {
-        if (this.firstRender || !sorters.length || !rows?.length) {
-          return
+      initialFilter: props.initialParams?.filters,
+      dataSorting: (sorters) => {
+        if (!this.supportsInfiniteScroll && this._isMounted) {
+          this.isUpdating = true
+          this.setState({ loading: true })
         }
-
-        props.onSorterCallback(sorters)
-        this.clearLoadingIndicators()
+      },
+      dataSorted: (sorters, rows) => {
+        if (!this.supportsInfiniteScroll && this.ref) {
+          this.clearLoadingIndicators()
+          props.onSorterCallback(sorters)
+        }
       },
       dataFiltering: (filters) => {
-        if (this.firstRender) {
-          return
-        }
+        if (!this.supportsInfiniteScroll && this._isMounted) {
+          this.isUpdating = true
+          this.setState({ loading: true })
 
-        this.isUpdating = true
-        if (!this.supportsInfiniteScroll) {
-          if (this._isMounted) {
-            this.setState({ pageLoading: true })
+          if (this.ref) {
+            const data = this.ref.table?.getData()
+            if (data?.length) {
+              this.data = data
+            }
           }
-        }
-
-        const data = this.ref?.table?.getData()
-        if (data?.length) {
-          this.data = data
         }
       },
       dataFiltered: (filters, rows) => {
-        const tableFilters = this.ref?.table?.getHeaderFilters()
-        if (this.firstRender || (!filters.length && !rows.length)) {
-          return
-        }
+        if (!this.supportsInfiniteScroll) {
+          this.clearLoadingIndicators()
 
-        if (
-          !this.supportsInfiniteScroll &&
-          !_isEqual(tableFilters, this.headerFilters)
-        ) {
-          // The filters provided to this function don't include header filters
-          // We only use header filters so we have to use the function below
-          this.headerFilters = tableFilters
-          props.onFilterCallback(tableFilters, rows)
+          const tableFilters = this.ref?.table?.getHeaderFilters()
+          if (!_isEqual(tableFilters, this.headerFilters)) {
+            // The filters provided to this function don't include header filters
+            // We only use header filters so we have to use the function below
+            this.headerFilters = tableFilters
+            props.onFilterCallback(tableFilters, rows)
+          }
         }
-
-        this.clearLoadingIndicators()
       },
       downloadReady: (fileContents, blob) => blob,
     }
@@ -123,9 +116,11 @@ export default class ChataTable extends React.Component {
 
     this.state = {
       isFilteringTable: false,
+      loading: false,
       pageLoading: false,
       scrollLoading: false,
       isLastPage: false,
+      ref: null,
     }
   }
 
@@ -157,21 +152,37 @@ export default class ChataTable extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.firstRender = false
-    this.setTableHeaderValues = setTimeout(() => {
-      this.setInitialParams()
-      this.setFilterTags({ isFilteringTable: false })
-    }, 100)
+  }
+
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (
+      (this.state.scrollLoading && nextState.scrollLoading) ||
+      (this.state.pageLoading && nextState.pageLoading) ||
+      (this.state.loading && nextState.loading)
+    ) {
+      return false
+    }
+
+    return true
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevProps.isResizing && this.props.isResizing) {
       this.isUpdating = true
-    } else {
+    } else if (
+      !this.state.loading &&
+      !this.state.pageLoading &&
+      !this.state.scrollLoading
+    ) {
       this.isUpdating = false
     }
 
-    if (this.ref) {
+    if (
+      this.ref &&
+      !this.state.loading &&
+      !this.state.pageLoading &&
+      !this.state.scrollLoading
+    ) {
       this.setDimensionsTimeout = setTimeout(() => {
         if (this._isMounted) {
           const tableHeight = _get(this.ref, 'ref.offsetHeight')
@@ -188,7 +199,7 @@ export default class ChataTable extends React.Component {
 
     if (!this.state.isFilteringTable && prevState.isFilteringTable) {
       try {
-        this.setFilterTags({ isFilteringTable: this.state.isFilteringTable })
+        this.setFilterTags()
       } catch (error) {
         console.error(error)
         this.props.onErrorCallback(error)
@@ -204,6 +215,12 @@ export default class ChataTable extends React.Component {
     this.resetFilterTags()
     this.existingFilterTag = undefined
     this.filterTagElements = undefined
+  }
+
+  onTabulatorMount = (tableRef) => {
+    this.ref = tableRef
+    this.setInitialParams(tableRef)
+    this.setFilterTags(tableRef)
   }
 
   cancelCurrentRequest = () => {
@@ -276,7 +293,11 @@ export default class ChataTable extends React.Component {
     the new rows are added */
     setTimeout(() => {
       if (this._isMounted) {
-        this.setState({ scrollLoading: false, pageLoading: false })
+        this.setState({
+          loading: false,
+          scrollLoading: false,
+          pageLoading: false,
+        })
       }
     }, 0)
   }
@@ -346,10 +367,12 @@ export default class ChataTable extends React.Component {
     return modResponse
   }
 
-  setInitialParams = () => {
-    if (this.props.initialParams?.filters?.length && this.ref?.table) {
-      this.props.initialParams.filters.forEach((filter) => {
-        this.ref.table.setHeaderFilterValue(filter.field, filter.value)
+  setInitialParams = (ref) => {
+    const filters = _cloneDeep(this.props.initialParams?.filters)
+
+    if (filters?.length && ref?.table) {
+      filters.forEach((filter) => {
+        ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
     }
   }
@@ -395,12 +418,12 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  setFilterTags = () => {
+  setFilterTags = (ref) => {
     this.resetFilterTags()
 
     let filterValues
-    if (this._isMounted && this.ref?.table) {
-      filterValues = this.ref.table.getHeaderFilters()
+    if (this._isMounted && ref?.table) {
+      filterValues = ref.table.getHeaderFilters()
     }
 
     if (filterValues) {
@@ -437,7 +460,7 @@ export default class ChataTable extends React.Component {
       return `${this.props.style.height}px`
     }
 
-    return undefined
+    return 'auto'
   }
 
   renderPageLoader = () => {
@@ -478,6 +501,7 @@ export default class ChataTable extends React.Component {
               this.props.isResizing ||
               this.state.pageLoading ||
               this.state.scrollLoading ||
+              this.state.loading ||
               this.isUpdating
                 ? height
                 : 'auto',
@@ -485,13 +509,14 @@ export default class ChataTable extends React.Component {
         >
           {this.props.data && this.props.columns && (
             <TableWrapper
-              tableRef={(ref) => (this.ref = ref)}
+              // tableRef={(ref) => this.setState({ ref })}
               tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
               key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test="autoql-tabulator-table"
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
+              onTableMount={this.onTabulatorMount}
               cellClick={this.cellClick}
               options={this.tableOptions}
               data-custom-attr="test-custom-attribute"
