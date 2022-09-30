@@ -50,8 +50,28 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       cellClick: this.cellClick,
+      initialSort: props.initialParams?.sorters,
       dataSorting: (sorters) => {},
-      dataFiltering: () => {
+      dataSorted: (sorters, rows) => {
+        if (this.firstRender || !sorters.length || !rows?.length) {
+          return
+        }
+
+        props.onSorterCallback(sorters)
+        this.clearLoadingIndicators()
+      },
+      dataFiltering: (filters) => {
+        if (this.firstRender) {
+          return
+        }
+
+        this.isUpdating = true
+        if (!this.supportsInfiniteScroll) {
+          if (this._isMounted) {
+            this.setState({ pageLoading: true })
+          }
+        }
+
         const data = this.ref?.table?.getData()
         if (data?.length) {
           this.data = data
@@ -59,20 +79,21 @@ export default class ChataTable extends React.Component {
       },
       dataFiltered: (filters, rows) => {
         const tableFilters = this.ref?.table?.getHeaderFilters()
-        if (this.firstRender) {
+        if (this.firstRender || (!filters.length && !rows.length)) {
           return
         }
 
-        if (this.supportsInfiniteScroll) {
-          return props.onFilterCallback(tableFilters, rows)
-        }
-
-        // The filters provided to this function don't include header filters
-        // We only use header filters so we have to use the function below
-        if (!_isEqual(tableFilters, this.headerFilters)) {
+        if (
+          !this.supportsInfiniteScroll &&
+          !_isEqual(tableFilters, this.headerFilters)
+        ) {
+          // The filters provided to this function don't include header filters
+          // We only use header filters so we have to use the function below
           this.headerFilters = tableFilters
           props.onFilterCallback(tableFilters, rows)
         }
+
+        this.clearLoadingIndicators()
       },
       downloadReady: (fileContents, blob) => blob,
     }
@@ -112,6 +133,8 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
+    onSorterCallback: PropTypes.func,
+    onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
     pageSize: PropTypes.number,
     useInfiniteScroll: PropTypes.bool,
@@ -126,6 +149,8 @@ export default class ChataTable extends React.Component {
     useInfiniteScroll: true,
     source: [],
     onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
   }
@@ -141,9 +166,9 @@ export default class ChataTable extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevProps.isResizing && this.props.isResizing) {
-      this.justResized = true
+      this.isUpdating = true
     } else {
-      this.justResized = false
+      this.isUpdating = false
     }
 
     if (this.ref) {
@@ -207,6 +232,9 @@ export default class ChataTable extends React.Component {
         return Promise.resolve()
       }
 
+      // To avoid scroll jumping, use fixed height until next render
+      this.isUpdating = true
+
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken.source()
 
@@ -220,10 +248,11 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await this.sortOrFilterData(props, tableParams)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
-        this.props.onNewData(responseWrapper, params)
+        this.props.onTableParamsChange(params)
+        this.props.onNewData(responseWrapper)
       }
 
-      this.setState({ scrollLoading: false, pageLoading: false })
+      this.clearLoadingIndicators()
       return response
     } catch (error) {
       if (error?.data?.message === responseErrors.CANCELLED) {
@@ -231,10 +260,25 @@ export default class ChataTable extends React.Component {
       }
 
       console.error(error)
-      this.setState({ scrollLoading: false, pageLoading: false })
+      this.clearLoadingIndicators()
       // Send empty promise so data doesn't change
       return Promise.resolve()
     }
+  }
+
+  clearLoadingIndicators = () => {
+    /* The height of the table temporarily goes to 0 when new rows
+    are added, which causes the scrollbar to jump up in DM.
+    
+    When loading indicators are visible, the height of the table 
+    is fixed to the previous height in px. We need to wait until
+    current event loop finishes so the table doesn't jump after
+    the new rows are added */
+    setTimeout(() => {
+      if (this._isMounted) {
+        this.setState({ scrollLoading: false, pageLoading: false })
+      }
+    }, 0)
   }
 
   getNewPage = (props, tableParams) => {
@@ -303,7 +347,7 @@ export default class ChataTable extends React.Component {
   }
 
   setInitialParams = () => {
-    if (this.props?.initialParams?.filters?.length && this.ref?.table) {
+    if (this.props.initialParams?.filters?.length && this.ref?.table) {
       this.props.initialParams.filters.forEach((filter) => {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
@@ -414,6 +458,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const height = this.getTableHeight()
+
     return (
       <ErrorBoundary>
         <div
@@ -432,7 +477,8 @@ export default class ChataTable extends React.Component {
             flexBasis:
               this.props.isResizing ||
               this.state.pageLoading ||
-              this.justResized
+              this.state.scrollLoading ||
+              this.isUpdating
                 ? height
                 : 'auto',
           }}

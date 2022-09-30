@@ -94,6 +94,7 @@ export class QueryOutput extends React.Component {
       this.queryResponse,
       'data.data.parsed_interpretation'
     )
+    this.tableParams = {}
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -132,7 +133,6 @@ export class QueryOutput extends React.Component {
       displayType: this.getDisplayTypeFromInitial(props),
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
-      headerFilters: [],
       selectedSuggestion: props.defaultSelectedSuggestion,
       visiblerows: this.queryResponse?.data?.data?.rows,
       visibleRowChangeCount: 0,
@@ -846,6 +846,10 @@ export class QueryOutput extends React.Component {
   }
 
   onNewPage = (rows) => {
+    if (!rows?.length) {
+      return
+    }
+
     try {
       this.tableData = [...this.tableData, ...rows]
     } catch (error) {
@@ -853,20 +857,23 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onNewData = (response, params) => {
+  onTableParamsChange = (params) => {
+    this.tableParams = _cloneDeep(params)
+  }
+
+  onNewData = (response) => {
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
-    this.setState({ tableParams: params })
-    setTimeout(() => {
-      this.props.onRowChange()
-      this.updateToolbars()
-    }, 0)
+    this.updateToolbars()
+    this.props.onRowChange()
   }
 
   onTableFilter = async (filters, rows) => {
-    if (!_isEqual(filters, this.prevFilters)) {
+    if (_isEqual(filters, this.tableParams?.filters)) {
       return
     }
+
+    this.tableParams.filters = _cloneDeep(filters)
 
     const newTableData = []
     rows.forEach((row) => {
@@ -874,30 +881,13 @@ export class QueryOutput extends React.Component {
     })
 
     this.setState({
-      headerFilters: filters,
       visibleRows: newTableData,
       visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
     })
-
-    this.prevFilters = _cloneDeep(filters)
   }
 
-  onPivotTableFilter = async (filters, rows) => {
-    if (!_isEqual(filters, this.prevPivotFilters)) {
-      return
-    }
-
-    const newPivotData = []
-    rows.forEach((row) => {
-      newPivotData.push(row.getData())
-    })
-    this.setState({
-      pivotHeaderFilters: filters,
-      visiblePivotRows: newPivotData,
-      visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
-    })
-
-    this.prevPivotFilters = _cloneDeep(filters)
+  onTableSort = (sorters) => {
+    this.tableParams.sorters = _cloneDeep(sorters)
   }
 
   onLegendClick = (d) => {
@@ -1608,8 +1598,6 @@ export class QueryOutput extends React.Component {
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
             onCellClick={this.onTableCellClick}
-            headerFilters={this.state.pivotHeaderFilters}
-            onFilterCallback={this.onPivotTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
@@ -1628,9 +1616,10 @@ export class QueryOutput extends React.Component {
         data={this.tableData}
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
-        headerFilters={this.state.headerFilters}
-        initialParams={this.state.tableParams}
+        initialParams={this.tableParams}
         onFilterCallback={this.onTableFilter}
+        onSorterCallback={this.onTableSort}
+        onTableParamsChange={this.onTableParamsChange}
         onNewPage={this.onNewPage}
         onNewData={this.onNewData}
         isResizing={this.props.isResizing}

@@ -136,7 +136,6 @@ export default class ChatMessage extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
-    clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
   }
 
@@ -198,17 +197,26 @@ export default class ChatMessage extends React.Component {
     return false
   }
 
-  scrollIntoView = () => {
-    clearTimeout(this.scrollIntoViewTimeout)
-    this.scrollIntoViewTimeout = setTimeout(() => {
+  onDisplayTypeChange = (displayType) => {
+    this.setState({ displayType }, () => {
+      this.scrollIntoView()
+    })
+  }
+
+  scrollIntoView = ({
+    block = 'end',
+    inline = 'nearest',
+    behavior = 'smooth',
+  } = {}) => {
+    setTimeout(() => {
       if (
         this.messageContainerRef &&
         !this.isScrolledIntoView(this.messageContainerRef)
       ) {
-        this.scrollIntoViewTimer = this.messageContainerRef.scrollIntoView({
-          block: 'end',
-          inline: 'nearest',
-          behavior: 'smooth',
+        this.messageContainerRef.scrollIntoView({
+          block,
+          inline,
+          behavior,
         })
       }
     }, 0)
@@ -282,7 +290,7 @@ export default class ChatMessage extends React.Component {
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
-          onDisplayTypeChange={this.scrollIntoView}
+          onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
           showSuggestionPrefix={false}
           popoverParentElement={this.props.popoverParentElement}
@@ -317,8 +325,8 @@ export default class ChatMessage extends React.Component {
     return (
       <div className="chat-message-toolbar right">
         {this.props.isResponse &&
-        this.responseRef?.state?.displayType !== 'help' &&
-        this.responseRef?.state?.displayType !== 'suggestion' ? (
+        this.state.displayType !== 'help' &&
+        this.state.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
@@ -376,13 +384,9 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${
-                isChartType(this.responseRef?.state?.displayType)
-                  ? ' full-width'
-                  : ''
-              }
+              ${isChartType(this.state.displayType) ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
-              ${this.responseRef?.state?.displayType}
+              ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}
           >
             {this.renderContent()}
