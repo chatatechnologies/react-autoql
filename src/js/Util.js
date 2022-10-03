@@ -187,8 +187,8 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
         let p = Number(d) / 100
         formattedLabel = new Intl.NumberFormat(languageCode, {
           style: 'percent',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
         }).format(p)
       }
       break
