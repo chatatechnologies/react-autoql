@@ -18,7 +18,7 @@ export default class LoadMoreToolbar extends React.Component {
 
   static defaultProps = {}
 
-  state = { page: 1 }
+  state = { page: 2 }
 
   componentDidMount = () => {
     this._isMounted = true

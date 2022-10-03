@@ -10,7 +10,7 @@ import TableWrapper from './TableWrapper'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { responseErrors } from '../../js/errorMessages'
 import { getAuthentication } from '../../props/defaults'
-import { getTableConfigState } from './tableHelpers'
+import { getTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
 import {
   runQueryOnly,
@@ -32,9 +32,10 @@ export default class ChataTable extends React.Component {
     this.ref = null
     this.currentPage = 1
     this.filterTagElements = []
-    this.headerFilters = []
+    this.headerFilters = props.initialParams?.filters || []
     this.queryID = props.queryID
     this.supportsInfiniteScroll = props.useInfiniteScroll && !!props.pageSize
+    this.previousTableParams = props.initialParams
 
     this.tableOptions = {
       dataLoadError: (error) => console.error(error),
@@ -49,8 +50,28 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       cellClick: this.cellClick,
+      initialSort: props.initialParams?.sorters,
       dataSorting: (sorters) => {},
-      dataFiltering: () => {
+      dataSorted: (sorters, rows) => {
+        if (this.firstRender || !sorters.length || !rows?.length) {
+          return
+        }
+
+        props.onSorterCallback(sorters)
+        this.clearLoadingIndicators()
+      },
+      dataFiltering: (filters) => {
+        if (this.firstRender) {
+          return
+        }
+
+        this.isUpdating = true
+        if (!this.supportsInfiniteScroll) {
+          if (this._isMounted) {
+            this.setState({ pageLoading: true })
+          }
+        }
+
         const data = this.ref?.table?.getData()
         if (data?.length) {
           this.data = data
@@ -58,20 +79,21 @@ export default class ChataTable extends React.Component {
       },
       dataFiltered: (filters, rows) => {
         const tableFilters = this.ref?.table?.getHeaderFilters()
-        if (this.firstRender) {
+        if (this.firstRender || (!filters.length && !rows.length)) {
           return
         }
 
-        if (this.supportsInfiniteScroll) {
-          return props.onFilterCallback(tableFilters, rows)
-        }
-
-        // The filters provided to this function don't include header filters
-        // We only use header filters so we have to use the function below
-        if (!_isEqual(tableFilters, this.headerFilters)) {
+        if (
+          !this.supportsInfiniteScroll &&
+          !_isEqual(tableFilters, this.headerFilters)
+        ) {
+          // The filters provided to this function don't include header filters
+          // We only use header filters so we have to use the function below
           this.headerFilters = tableFilters
           props.onFilterCallback(tableFilters, rows)
         }
+
+        this.clearLoadingIndicators()
       },
       downloadReady: (fileContents, blob) => blob,
     }
@@ -111,6 +133,8 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     onFilterCallback: PropTypes.func,
+    onSorterCallback: PropTypes.func,
+    onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
     pageSize: PropTypes.number,
     useInfiniteScroll: PropTypes.bool,
@@ -125,6 +149,8 @@ export default class ChataTable extends React.Component {
     useInfiniteScroll: true,
     source: [],
     onFilterCallback: () => {},
+    onSorterCallback: () => {},
+    onTableParamsChange: () => {},
     onCellClick: () => {},
     onErrorCallback: () => {},
   }
@@ -133,16 +159,16 @@ export default class ChataTable extends React.Component {
     this._isMounted = true
     this.firstRender = false
     this.setTableHeaderValues = setTimeout(() => {
-      this.setInitialHeaderFilters()
+      this.setInitialParams()
       this.setFilterTags({ isFilteringTable: false })
     }, 100)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (prevProps.isResizing && this.props.isResizing) {
-      this.justResized = true
+      this.isUpdating = true
     } else {
-      this.justResized = false
+      this.isUpdating = false
     }
 
     if (this.ref) {
@@ -186,17 +212,18 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     try {
-      const tableConfigState = getTableConfigState(params, this.ref)
-      if (_isEqual(this.previousTableConfigState, tableConfigState)) {
+      const prevTableParams = getTableParams(this.previousTableParams, this.ref)
+      const tableParams = getTableParams(params, this.ref)
+      if (_isEqual(prevTableParams, tableParams)) {
         return Promise.resolve()
       }
-
-      this.previousTableConfigState = tableConfigState
 
       if (!this.hasSetInitialData) {
         this.hasSetInitialData = true
         return Promise.resolve({ rows: this.props.data, page: 1 })
       }
+
+      this.previousTableParams = params
 
       if (!props.queryRequestData) {
         console.warn(
@@ -205,26 +232,27 @@ export default class ChataTable extends React.Component {
         return Promise.resolve()
       }
 
+      // To avoid scroll jumping, use fixed height until next render
+      this.isUpdating = true
+
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken.source()
 
       let response
       if (params?.page > 1) {
         this.setState({ scrollLoading: true })
-        response = await this.getNewPage(props, tableConfigState)
+        response = await this.getNewPage(props, tableParams)
         this.props.onNewPage(response?.rows)
       } else {
         this.setState({ pageLoading: true })
-        const responseWrapper = await this.sortOrFilterData(
-          props,
-          tableConfigState
-        )
+        const responseWrapper = await this.sortOrFilterData(props, tableParams)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
-        this.props.onNewData(response?.rows)
+        this.props.onTableParamsChange(params)
+        this.props.onNewData(responseWrapper)
       }
 
-      this.setState({ scrollLoading: false, pageLoading: false })
+      this.clearLoadingIndicators()
       return response
     } catch (error) {
       if (error?.data?.message === responseErrors.CANCELLED) {
@@ -232,40 +260,63 @@ export default class ChataTable extends React.Component {
       }
 
       console.error(error)
-      this.setState({ scrollLoading: false, pageLoading: false })
+      this.clearLoadingIndicators()
       // Send empty promise so data doesn't change
       return Promise.resolve()
     }
   }
 
-  getNewPage = (props, tableConfigState) => {
+  clearLoadingIndicators = () => {
+    /* The height of the table temporarily goes to 0 when new rows
+    are added, which causes the scrollbar to jump up in DM.
+    
+    When loading indicators are visible, the height of the table 
+    is fixed to the previous height in px. We need to wait until
+    current event loop finishes so the table doesn't jump after
+    the new rows are added */
+    setTimeout(() => {
+      if (this._isMounted) {
+        this.setState({ scrollLoading: false, pageLoading: false })
+      }
+    }, 0)
+  }
+
+  getNewPage = (props, tableParams) => {
     return runQueryNewPage({
       ...getAuthentication(props.authentication),
-      ...tableConfigState,
+      ...tableParams,
       queryId: this.queryID,
       cancelToken: this.axiosSource.token,
     })
   }
 
-  sortOrFilterData = (props, tableConfigState) => {
+  sortOrFilterData = (props, tableParams) => {
     if (props.isDrilldown) {
       return runDrilldown({
         ...getAuthentication(props.authentication),
-        ...props.queryRequestData,
+        source: props.queryRequestData?.source,
+        debug: props.queryRequestData?.translation === 'include',
+        formattedUserSelection: props.queryRequestData?.user_selection,
+        filters: props.queryRequestData?.session_filter_locks,
+        test: props.queryRequestData?.test,
         groupBys: props.queryRequestData?.columns,
         queryID: props.originalQueryID, // todo: get original query ID from drillown response
-        orders: tableConfigState?.sorters,
-        tableFilters: tableConfigState?.filters,
+        orders: tableParams?.sorters,
+        tableFilters: tableParams?.filters,
         cancelToken: this.axiosSource.token,
       })
     } else {
       return runQueryOnly({
         ...getAuthentication(props.authentication),
-        ...props.queryRequestData,
-        query: props.queryText,
-        pageSize: props.pageSize,
-        orders: tableConfigState?.sorters,
-        tableFilters: tableConfigState?.filters,
+        query: props.queryRequestData?.text,
+        source: props.queryRequestData?.source,
+        debug: props.queryRequestData?.translation === 'include',
+        formattedUserSelection: props.queryRequestData?.user_selection,
+        filters: props.queryRequestData?.session_filter_locks,
+        test: props.queryRequestData?.test,
+        pageSize: props.queryRequestData?.page_size,
+        orders: tableParams?.sorters,
+        tableFilters: tableParams?.filters,
         cancelToken: this.axiosSource.token,
       })
     }
@@ -295,9 +346,9 @@ export default class ChataTable extends React.Component {
     return modResponse
   }
 
-  setInitialHeaderFilters = () => {
-    if (_get(this.props, 'headerFilters.length') && _get(this.ref, 'table')) {
-      this.props.headerFilters.forEach((filter) => {
+  setInitialParams = () => {
+    if (this.props.initialParams?.filters?.length && this.ref?.table) {
+      this.props.initialParams.filters.forEach((filter) => {
         this.ref.table.setHeaderFilterValue(filter.field, filter.value)
       })
     }
@@ -407,6 +458,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const height = this.getTableHeight()
+
     return (
       <ErrorBoundary>
         <div
@@ -425,7 +477,8 @@ export default class ChataTable extends React.Component {
             flexBasis:
               this.props.isResizing ||
               this.state.pageLoading ||
-              this.justResized
+              this.state.scrollLoading ||
+              this.isUpdating
                 ? height
                 : 'auto',
           }}
