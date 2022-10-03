@@ -305,12 +305,6 @@ export default class ChatMessage extends React.Component {
     return errorMessages.GENERAL_QUERY
   }
 
-  toggleTableFilter = ({ isFilteringTable }) => {
-    if (this.responseRef) {
-      this.responseRef.toggleTableFilter({ isFilteringTable })
-    }
-  }
-
   onCSVDownloadStart = ({ id, queryId, query }) => {
     this.props.addMessageToDM({
       id,
@@ -340,7 +334,6 @@ export default class ChatMessage extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
-            onFilterClick={this.toggleTableFilter}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={() =>
               this.props.deleteMessageCallback(this.props.id)

@@ -111,13 +111,6 @@ export default class OptionsToolbar extends React.Component {
     }
   }
 
-  toggleTableFilter = () => {
-    this.filtering = !this.filtering
-    this.props.responseRef?.toggleTableFilter({
-      isFilteringTable: this.filtering,
-    })
-  }
-
   setTemporaryState = (key, value, duration) => {
     this.setState({ [key]: value })
     this.temporaryStateTimeout = setTimeout(() => {
@@ -551,7 +544,7 @@ export default class OptionsToolbar extends React.Component {
         >
           {shouldShowButton.showFilterButton && (
             <button
-              onClick={this.toggleTableFilter}
+              onClick={this.props.responseRef?.toggleTableFilter}
               className={this.getMenuItemClass(
                 shouldShowButton.showFilterButton
               )}

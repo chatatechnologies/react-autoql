@@ -1,6 +1,6 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
 
-export const getTableParams = (params, tableRef) => {
+export const formatTableParams = (params, tableRef) => {
   const formattedSorters = formatSortersForAPI(params, tableRef)
   const formattedFilters = formatFiltersForAPI(params, tableRef)
 

@@ -98,6 +98,7 @@ export class QueryOutput extends React.Component {
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    this.isOriginalData = true
 
     // Set initial columns if needed
     let columns = this.formatColumnsForTable(
@@ -835,15 +836,13 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  toggleTableFilter = ({ isFilteringTable }) => {
+  toggleTableFilter = () => {
     if (this.state.displayType === 'table') {
-      this.tableRef?._isMounted &&
-        this.tableRef.toggleTableFilter({ isFilteringTable })
+      this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
     }
 
     if (this.state.displayType === 'pivot_table') {
-      this.pivotTableRef?._isMounted &&
-        this.pivotTableRef.toggleTableFilter({ isFilteringTable })
+      this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
     }
   }
 
@@ -864,10 +863,13 @@ export class QueryOutput extends React.Component {
   }
 
   onNewData = (response) => {
+    this.isOriginalData = false
     this.queryResponse = response
     this.tableData = response?.data?.data?.rows || []
-    this.updateToolbars()
-    this.props.onRowChange()
+    this.setState({
+      visibleRows: response.data.data.rows,
+      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+    })
   }
 
   onTableFilter = async (filters, rows) => {
@@ -1631,6 +1633,7 @@ export class QueryOutput extends React.Component {
         queryText={this.queryResponse?.data?.data?.text}
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
+        isQueryOutputMounted={this._isMounted}
         supportsDrilldowns={
           isAggregation(this.state.columns) &&
           getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
@@ -1754,7 +1757,9 @@ export class QueryOutput extends React.Component {
   }
 
   noDataFound = () => {
-    return this.queryResponse?.data?.data?.rows?.length === 0
+    return (
+      this.queryResponse?.data?.data?.rows?.length === 0 && this.isOriginalData
+    )
   }
 
   renderMessage = (error) => {
