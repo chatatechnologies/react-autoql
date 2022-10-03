@@ -1,9 +1,5 @@
 import checkPropTypes from 'check-prop-types'
 
-export const currentEventLoopEnd = () => {
-  return new Promise((resolve) => process.nextTick(resolve))
-}
-
 export const findByTestAttr = (wrapper, val) =>
   wrapper.find(`[data-test='${val}']`)
 

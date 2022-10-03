@@ -18,6 +18,8 @@ import {
   runDrilldown,
 } from '../../js/queryService'
 
+import { currentEventLoopEnd } from '../../js/Util'
+
 import 'react-tabulator/lib/styles.css' // default theme
 import 'react-tabulator/css/bootstrap/tabulator_bootstrap.min.css' // use Theme(s)
 import './ChataTable.scss'
@@ -52,7 +54,6 @@ export default class ChataTable extends React.Component {
       initialFilter: props.initialParams?.filters,
       dataSorting: (sorters) => {
         if (!this.supportsInfiniteScroll && this._isMounted) {
-          this.isUpdating = true
           this.setState({ loading: true })
         }
       },
@@ -64,7 +65,6 @@ export default class ChataTable extends React.Component {
       },
       dataFiltering: (filters) => {
         if (!this.supportsInfiniteScroll && this._isMounted) {
-          this.isUpdating = true
           this.setState({ loading: true })
 
           if (this.ref) {
@@ -167,22 +167,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (prevProps.isResizing && this.props.isResizing) {
-      this.isUpdating = true
-    } else if (
-      !this.state.loading &&
-      !this.state.pageLoading &&
-      !this.state.scrollLoading
-    ) {
-      this.isUpdating = false
-    }
-
-    if (
-      this.ref &&
-      !this.state.loading &&
-      !this.state.pageLoading &&
-      !this.state.scrollLoading
-    ) {
+    if (this.ref && !this.isLoading()) {
       this.setDimensionsTimeout = setTimeout(() => {
         if (this._isMounted) {
           const tableHeight = _get(this.ref, 'ref.offsetHeight')
@@ -217,6 +202,12 @@ export default class ChataTable extends React.Component {
     this.filterTagElements = undefined
   }
 
+  isLoading = () => {
+    return (
+      this.state.loading || this.state.pageLoading || this.state.scrollLoading
+    )
+  }
+
   onTabulatorMount = (tableRef) => {
     this.ref = tableRef
     this.setInitialParams(tableRef)
@@ -249,9 +240,6 @@ export default class ChataTable extends React.Component {
         return Promise.resolve()
       }
 
-      // To avoid scroll jumping, use fixed height until next render
-      this.isUpdating = true
-
       this.cancelCurrentRequest()
       this.axiosSource = axios.CancelToken.source()
 
@@ -265,6 +253,11 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await this.sortOrFilterData(props, tableParams)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
+
+        /* wait for current event loop to end so table is updated 
+        before callbacks are invoked */
+        await currentEventLoopEnd()
+
         this.props.onTableParamsChange(params)
         this.props.onNewData(responseWrapper)
       }
@@ -283,7 +276,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  clearLoadingIndicators = () => {
+  clearLoadingIndicators = async () => {
     /* The height of the table temporarily goes to 0 when new rows
     are added, which causes the scrollbar to jump up in DM.
     
@@ -291,15 +284,15 @@ export default class ChataTable extends React.Component {
     is fixed to the previous height in px. We need to wait until
     current event loop finishes so the table doesn't jump after
     the new rows are added */
-    setTimeout(() => {
-      if (this._isMounted) {
-        this.setState({
-          loading: false,
-          scrollLoading: false,
-          pageLoading: false,
-        })
-      }
-    }, 0)
+    await currentEventLoopEnd()
+
+    if (this._isMounted) {
+      this.setState({
+        loading: false,
+        scrollLoading: false,
+        pageLoading: false,
+      })
+    }
   }
 
   getNewPage = (props, tableParams) => {
@@ -498,13 +491,7 @@ export default class ChataTable extends React.Component {
           style={{
             ...this.props.style,
             flexBasis:
-              this.props.isResizing ||
-              this.state.pageLoading ||
-              this.state.scrollLoading ||
-              this.state.loading ||
-              this.isUpdating
-                ? height
-                : 'auto',
+              this.props.isResizing || this.isLoading() ? height : 'auto',
           }}
         >
           {this.props.data && this.props.columns && (

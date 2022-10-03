@@ -1115,3 +1115,7 @@ export const animateInputText = ({
     }
   })
 }
+
+export const currentEventLoopEnd = () => {
+  return new Promise((resolve) => process.nextTick(resolve))
+}
