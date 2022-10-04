@@ -29,8 +29,10 @@ export default class ChataTable extends React.Component {
     super(props)
 
     this.TABLE_ID = uuid()
+    this.hasSetInitialData = false
     this.hasSetInitialParams = false
     this.currentPage = 1
+    this.lastPage = props.data?.length < props.pageSize ? 1 : 2
     this.filterTagElements = []
     this.headerFilters = _cloneDeep(props.initialParams?.filters) || []
     this.queryID = props.queryID
@@ -225,6 +227,7 @@ export default class ChataTable extends React.Component {
     this.setFilterInputs(tableRef)
     this.setTableHeight()
     this.hasSetInitialParams = true
+    this.forceUpdate()
   }
 
   cancelCurrentRequest = () => {
@@ -233,7 +236,7 @@ export default class ChataTable extends React.Component {
 
   ajaxRequestFunc = async (props, params) => {
     try {
-      if (this.settingFilterInputs) {
+      if (this.settingFilterInputs || !this.hasSetInitialData) {
         return Promise.resolve()
       }
 
@@ -354,7 +357,8 @@ export default class ChataTable extends React.Component {
   }
 
   ajaxResponseFunc = (props, response) => {
-    if (!response) {
+    if (!response || !this.hasSetInitialData) {
+      this.hasSetInitialData = true
       return {
         data: props.data,
         last_page: this.lastPage,
@@ -531,7 +535,7 @@ export default class ChataTable extends React.Component {
               key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test="autoql-tabulator-table"
               columns={this.props.columns}
-              data={this.props.data}
+              data={this.supportsInfiniteScroll ? [] : this.props.data}
               onTableMount={this.onTabulatorMount}
               cellClick={this.cellClick}
               options={this.tableOptions}
