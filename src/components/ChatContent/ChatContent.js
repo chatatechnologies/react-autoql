@@ -395,6 +395,7 @@ export default class ChatContent extends React.Component {
                   rebuildTooltips={this.props.rebuildTooltips}
                   queryRequestData={message.queryRequestData}
                   popoverParentElement={this.chatContentRef}
+                  isVisibleInDOM={this.props.shouldRender}
                   source={this.props.source}
                 />
               )

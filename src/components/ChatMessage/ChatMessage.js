@@ -359,6 +359,9 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
+    const isChart =
+      this.state.displayType && isChartType(this.state.displayType)
+
     return (
       <ErrorBoundary>
         <div
@@ -377,7 +380,7 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${isChartType(this.state.displayType) ? ' full-width' : ''}
+              ${isChart ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
               ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}

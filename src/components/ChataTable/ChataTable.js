@@ -504,6 +504,7 @@ export default class ChataTable extends React.Component {
           ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,
+            width: 'auto',
             flexBasis:
               this.props.isResizing || this.isLoading() ? height : 'auto',
           }}
