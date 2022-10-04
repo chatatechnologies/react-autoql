@@ -674,8 +674,7 @@ export default class OptionsToolbar extends React.Component {
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      const isFiltered =
-        !!this.props.responseRef?.state?.tableParams?.filters?.length
+      const isFiltered = !!this.props.responseRef?.tableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
