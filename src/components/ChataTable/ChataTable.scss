@@ -1,7 +1,6 @@
 .react-autoql-table-container {
   flex: 1;
-  max-width: 100%;
-  width: 100%;
+  width: 100% !important;
   background-color: inherit;
   position: relative;
   display: flex;

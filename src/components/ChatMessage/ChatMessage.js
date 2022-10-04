@@ -141,10 +141,14 @@ export default class ChatMessage extends React.Component {
 
   setIsAnimating = () => {
     if (!this.state.isAnimatingMessageBubble) {
-      this.setState({ isAnimatingMessageBubble: true })
+      return this.setState({ isAnimatingMessageBubble: true }, () => {
+        this.clearIsAnimatingIn500ms()
+      })
     }
+    this.clearIsAnimatingIn500ms()
+  }
 
-    clearTimeout(this.animationTimeout)
+  clearIsAnimatingIn500ms = () => {
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()

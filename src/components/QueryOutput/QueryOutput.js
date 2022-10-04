@@ -130,8 +130,11 @@ export class QueryOutput extends React.Component {
     // Supported display types may have changed after initial data generation
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
+    const displayType = this.getDisplayTypeFromInitial(props)
+    props.onDisplayTypeChange(displayType)
+
     this.state = {
-      displayType: this.getDisplayTypeFromInitial(props),
+      displayType,
       supportedDisplayTypes: this.initialSupportedDisplayTypes,
       columns,
       selectedSuggestion: props.defaultSelectedSuggestion,

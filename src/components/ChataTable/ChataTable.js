@@ -50,32 +50,43 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       cellClick: this.cellClick,
-      // initialSort: !this.supportsInfiniteScroll
-      //   ? _cloneDeep(props.initialParams?.sorters)
-      //   : [],
+      initialSort: !this.supportsInfiniteScroll
+        ? _cloneDeep(props.initialParams?.sorters)
+        : [],
       initialFilter: !this.supportsInfiniteScroll
         ? _cloneDeep(props.initialParams?.filters)
         : [],
       dataSorting: (sorters) => {
-        if (!this.supportsInfiniteScroll && this._isMounted) {
+        if (
+          this.tableParams?.sorters &&
+          !_isEqual(sorters, this.tableParams?.sorters) &&
+          this._isMounted
+        ) {
+          this.isSorting = true
           this.setState({ loading: true })
         }
       },
       dataFiltering: (filters) => {
+        // if (
+        //   this.tableParams?.filters &&
+        //   !_isEqual(filters, this.tableParams?.filters)
+        // ) {
+        // }
         if (!this.supportsInfiniteScroll && this._isMounted) {
           this.setState({ loading: true })
         }
       },
       dataSorted: (sorters, rows) => {
-        if (!this.supportsInfiniteScroll && this.ref) {
-          this.clearLoadingIndicators()
-          props.onSorterCallback(sorters)
+        if (this.isSorting) {
+          this.isSorting = false
+          if (!this.supportsInfiniteScroll && this.ref) {
+            props.onSorterCallback(sorters)
+          }
+          this.setState({ loading: false })
         }
       },
       dataFiltered: (filters, rows) => {
         if (!this.supportsInfiniteScroll) {
-          this.clearLoadingIndicators()
-
           const tableFilters = this.ref?.table?.getHeaderFilters()
 
           if (!_isEqual(tableFilters, this.headerFilters)) {
@@ -84,6 +95,8 @@ export default class ChataTable extends React.Component {
             this.headerFilters = tableFilters
             props.onFilterCallback(tableFilters, rows)
           }
+
+          this.setState({ loading: false })
         }
       },
       downloadReady: (fileContents, blob) => blob,
@@ -165,20 +178,7 @@ export default class ChataTable extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.ref && !this.isLoading()) {
-      this.setDimensionsTimeout = setTimeout(() => {
-        if (this._isMounted) {
-          const tableHeight = _get(this.ref, 'ref.offsetHeight')
-          if (tableHeight) {
-            this.tableHeight = tableHeight
-          }
-        }
-      }, 0)
-    }
-
-    if (this.props.isResizing) {
-      this.isResizing = true
-    }
+    this.setTableHeight()
 
     if (!this.state.isFiltering && prevState.isFiltering) {
       try {
@@ -200,6 +200,18 @@ export default class ChataTable extends React.Component {
     this.filterTagElements = undefined
   }
 
+  setTableHeight = () => {
+    this.setDimensionsTimeout = setTimeout(() => {
+      if (this.ref && !this.props.isResizing) {
+        const tableHeight = this.ref?.ref.offsetHeight
+        if (tableHeight) {
+          this.tableHeight = tableHeight
+        }
+      }
+      this.isUpdating = false
+    }, 0)
+  }
+
   isLoading = () => {
     return (
       this.state.loading || this.state.pageLoading || this.state.scrollLoading
@@ -211,6 +223,7 @@ export default class ChataTable extends React.Component {
     this.ref = tableRef
     this.setFilterTags()
     this.setFilterInputs(tableRef)
+    this.setTableHeight()
     this.hasSetInitialParams = true
   }
 
@@ -289,6 +302,7 @@ export default class ChataTable extends React.Component {
     the new rows are added */
     await currentEventLoopEnd()
 
+    this.isUpdating = false
     if (this._isMounted) {
       this.setState({
         loading: false,
@@ -467,7 +481,7 @@ export default class ChataTable extends React.Component {
       return `${this.props.style.height}px`
     }
 
-    return 'auto'
+    return undefined
   }
 
   renderPageLoader = () => {
@@ -504,20 +518,19 @@ export default class ChataTable extends React.Component {
           ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,
-            width: 'auto',
             flexBasis:
-              this.props.isResizing || this.isLoading() ? height : 'auto',
+              this.props.isResizing || this.isLoading() || this.isUpdating
+                ? height
+                : 'auto',
           }}
         >
           {this.props.data && this.props.columns && (
             <TableWrapper
-              // tableRef={(ref) => this.setState({ ref })}
               tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
               key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
               data-test="autoql-tabulator-table"
               columns={this.props.columns}
-              // data={this.supportsInfiniteScroll ? [] : this.props.data}
               data={this.props.data}
               onTableMount={this.onTabulatorMount}
               cellClick={this.cellClick}
