@@ -328,8 +328,10 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType) => {
-    // this.tableID = uuid()
-    // this.pivotTableID = uuid()
+    if (displayType !== 'table') {
+      this.tableID = uuid()
+    }
+
     this.props.onDisplayTypeChange(displayType)
     this.setState({ displayType })
   }
@@ -876,7 +878,7 @@ export class QueryOutput extends React.Component {
   }
 
   onTableFilter = async (filters, rows) => {
-    if (_isEqual(filters, this.tableParams?.filters)) {
+    if (!filters || _isEqual(filters, this.tableParams?.filters)) {
       return
     }
 
