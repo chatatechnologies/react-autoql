@@ -258,7 +258,11 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) => (this.responseRef = ref)}
+          ref={(ref) =>
+            ref &&
+            ref !== this.state.responseRef &&
+            this.setState({ responseRef: ref })
+          }
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
@@ -327,7 +331,7 @@ export default class ChatMessage extends React.Component {
         this.state.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
-            responseRef={this.responseRef}
+            responseRef={this.state.responseRef}
             className={`chat-message-toolbar right`}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
@@ -354,7 +358,7 @@ export default class ChatMessage extends React.Component {
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
-            responseRef={this.responseRef}
+            responseRef={this.state.responseRef}
             className="chat-message-toolbar left"
           />
         ) : null}
