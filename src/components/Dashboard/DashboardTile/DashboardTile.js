@@ -827,7 +827,7 @@ export class DashboardTile extends React.Component {
               percentString.substring(0, percentString.length - 1)
             )
 
-            if (!Number.isNaN(percentNumber)) {
+            if (!isNaN(percentNumber)) {
               this.debouncedSetParamsForTile({
                 secondDisplayPercentage: percentNumber,
               })

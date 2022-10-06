@@ -32,7 +32,7 @@ export default class Steps extends React.Component {
       console.error(new Error('No steps were provided'))
     } else if (
       this.props.initialActiveStep != null &&
-      !Number.isNaN(this.props.initialActiveStep) &&
+      !isNaN(this.props.initialActiveStep) &&
       !_get(this.props.steps, `${this.props.initialActiveStep}`)
     ) {
       console.error(new Error('Initial active step provided is invalid'))
@@ -49,7 +49,7 @@ export default class Steps extends React.Component {
   }
 
   nextStep = () => {
-    const nextStep = Number.isNaN(this.state.activeStep)
+    const nextStep = isNaN(this.state.activeStep)
       ? 0
       : this.state.activeStep + 1
     this.onStepTitleClick(nextStep)
@@ -109,9 +109,10 @@ export default class Steps extends React.Component {
           // be dynamically adjusted when the content changes
           clearTimeout(this.autoHideTimeout)
           this.autoHideTimeout = setTimeout(() => {
-            const activeContentContainerAfterTransition = document.querySelector(
-              `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
-            )
+            const activeContentContainerAfterTransition =
+              document.querySelector(
+                `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
+              )
             if (activeContentContainerAfterTransition) {
               activeContentContainerAfterTransition.style.height = 'auto'
             }

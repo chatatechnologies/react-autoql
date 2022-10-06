@@ -335,7 +335,7 @@ export const getMaxValueFromKeyValueObj = (obj) => {
     maxValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
     const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
+      return !isNaN(Number(value))
     })
     maxValue = Math.max(...numberValues)
   }
@@ -350,7 +350,7 @@ export const getMinValueFromKeyValueObj = (obj) => {
     minValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
     const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
+      return !isNaN(Number(value))
     })
     minValue = Math.min(...numberValues)
   }

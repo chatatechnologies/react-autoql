@@ -447,8 +447,8 @@ export class QueryOutput extends React.Component {
         !tableConfig ||
         !tableConfig.numberColumnIndices ||
         !tableConfig.stringColumnIndices ||
-        Number.isNaN(Number(tableConfig.numberColumnIndex)) ||
-        Number.isNaN(Number(tableConfig.stringColumnIndex))
+        isNaN(Number(tableConfig.numberColumnIndex)) ||
+        isNaN(Number(tableConfig.stringColumnIndex))
       ) {
         return false
       }

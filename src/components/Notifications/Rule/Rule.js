@@ -165,7 +165,7 @@ export default class Rule extends React.Component {
   }
 
   isNumerical = (num) => {
-    return !Number.isNaN(Number(num))
+    return !isNaN(Number(num))
   }
 
   isComplete = () => {
@@ -232,7 +232,7 @@ export default class Rule extends React.Component {
       })
     } else if (
       !this.state.input2Value ||
-      !Number.isNaN(Number(this.state.input2Value))
+      !isNaN(Number(this.state.input2Value))
     ) {
       this.setState({
         isSecondTermValid: true,

@@ -56,7 +56,7 @@ export default class StackedColumns extends Component {
         if (!columns[colIndex].isSeriesHidden) {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
-          const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+          const value = !isNaN(valueNumber) ? valueNumber : 0
 
           if (!value) {
             return null

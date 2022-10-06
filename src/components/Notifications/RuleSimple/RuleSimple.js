@@ -172,7 +172,7 @@ export default class RuleSimple extends React.Component {
 
     // If just one word, strip everything but numbers
     const strippedSymbolsStr = parseNum(num)
-    return !Number.isNaN(Number(strippedSymbolsStr))
+    return !isNaN(Number(strippedSymbolsStr))
   }
 
   isComplete = () => {

@@ -64,7 +64,7 @@ export default class Bars extends Component {
             }
 
             let width = Math.abs(xScale(value) - scaleZero(xScale))
-            if (Number.isNaN(width)) {
+            if (isNaN(width)) {
               width = 0
             }
 
