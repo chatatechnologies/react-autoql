@@ -3,6 +3,7 @@ import { shallow, render, mount, html } from 'enzyme'
 
 import { findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
 import Steps from './Steps'
+import { currentEventLoopEnd } from '../../js/Util'
 
 const defaultProps = {
   steps: [{}, {}],
@@ -41,8 +42,10 @@ describe('renders correctly', () => {
   })
 
   test('does not use activeStep prop if its invalid', () => {
-    ignoreConsoleErrors(() => {
+    ignoreConsoleErrors(async () => {
       const wrapper = setup({ initialActiveStep: 'invalidStep' })
+      wrapper.update()
+      await currentEventLoopEnd()
       expect(wrapper.state(['activeStep'])).toBe(0)
     })
   })
