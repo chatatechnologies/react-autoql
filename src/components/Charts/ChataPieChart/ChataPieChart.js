@@ -9,7 +9,7 @@ import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
 import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import { legendColor } from 'd3-svg-legend'
+import legendColor from '../Legend/Legend'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
 import {
