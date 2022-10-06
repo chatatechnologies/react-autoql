@@ -79,7 +79,7 @@ export default class Squares extends Component {
         if (!columns[colIndex].isSeriesHidden) {
           const rawValue = row[colIndex]
           const valueNumber = Number(rawValue)
-          const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+          const value = !isNaN(valueNumber) ? valueNumber : 0
 
           const xLabel = row[stringColumnIndex]
           const yLabel = legendLabels[i].label
