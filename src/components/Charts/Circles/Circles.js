@@ -16,13 +16,21 @@ export default class Circles extends Component {
 
     const maxValue = max(
       props.data.map((row) =>
-        max(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+        max(
+          row.filter(
+            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
+          )
+        )
       )
     )
 
     const minValue = min(
       props.data.map((row) =>
-        min(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+        min(
+          row.filter(
+            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
+          )
+        )
       )
     )
 

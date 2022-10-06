@@ -1457,7 +1457,7 @@ export class QueryOutput extends React.Component {
 
         // Populate remaining columns
         const pivotColumnIndex = uniqueValues1[row[newLegendColumnIndex]] + 1
-        const pivotValue = row[numberColumnIndex]
+        const pivotValue = Number(row[numberColumnIndex])
         pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
 
         pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
