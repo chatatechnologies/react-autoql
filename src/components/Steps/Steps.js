@@ -33,7 +33,7 @@ export default class Steps extends React.Component {
     } else if (
       this.props.initialActiveStep != null &&
       !isNaN(this.props.initialActiveStep) &&
-      !_get(this.props.steps, `${this.props.initialActiveStep}`)
+      !this.props.steps?.[this.props.initialActiveStep]
     ) {
       console.error(new Error('Initial active step provided is invalid'))
       this.setState({
