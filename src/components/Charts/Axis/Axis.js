@@ -6,10 +6,10 @@ import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
-import { legendColor } from 'd3-svg-legend'
-import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
+
 import LegendSelector from './LegendSelector'
+import legendColor from '../Legend/Legend'
 
 import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes } from '../helpers.js'
@@ -166,7 +166,6 @@ export default class Axis extends Component {
           .style('font-size', '10px')
 
         var legendOrdinal = legendColor()
-          .shape('path', symbol().type(symbolCircle).size(75)())
           .orient('vertical')
           .shapePadding(5)
           .labelWrap(100)
@@ -212,7 +211,6 @@ export default class Axis extends Component {
           .style('font-size', '10px')
 
         var legendOrdinal = legendColor()
-          .shape('path', symbol().type(symbolCircle).size(75)())
           .orient('horizontal')
           .shapePadding(self.LEGEND_PADDING)
           .labelWrap(120)
