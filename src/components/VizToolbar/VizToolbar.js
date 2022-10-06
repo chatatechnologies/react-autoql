@@ -56,8 +56,9 @@ class VizToolbar extends React.Component {
   }
 
   onDisplayTypeChange = (displayType) => {
-    this.props.onDisplayTypeChange(displayType)
-    this.props.responseRef?.changeDisplayType(displayType)
+    if (this.props.responseRef?._isMounted) {
+      this.props.responseRef?.changeDisplayType(displayType)
+    }
   }
 
   getCurrentDisplayType = () => {

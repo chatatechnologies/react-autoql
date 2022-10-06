@@ -5,8 +5,8 @@ import {
   checkProps,
   findByTestAttr,
   ignoreConsoleErrors,
-  currentEventLoopEnd,
 } from '../../../test/testUtils'
+import { currentEventLoopEnd } from '../../js/Util'
 import FilterLockPopover from './FilterLockPopover'
 import FilterLockPopoverContent from './FilterLockPopoverContent'
 

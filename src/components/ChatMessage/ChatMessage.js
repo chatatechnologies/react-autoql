@@ -141,10 +141,14 @@ export default class ChatMessage extends React.Component {
 
   setIsAnimating = () => {
     if (!this.state.isAnimatingMessageBubble) {
-      this.setState({ isAnimatingMessageBubble: true })
+      return this.setState({ isAnimatingMessageBubble: true }, () => {
+        this.clearIsAnimatingIn500ms()
+      })
     }
+    this.clearIsAnimatingIn500ms()
+  }
 
-    clearTimeout(this.animationTimeout)
+  clearIsAnimatingIn500ms = () => {
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
       this.props.scrollToBottom()
@@ -254,7 +258,11 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) => (this.responseRef = ref)}
+          ref={(ref) =>
+            ref &&
+            ref !== this.state.responseRef &&
+            this.setState({ responseRef: ref })
+          }
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
@@ -305,12 +313,6 @@ export default class ChatMessage extends React.Component {
     return errorMessages.GENERAL_QUERY
   }
 
-  toggleTableFilter = ({ isFilteringTable }) => {
-    if (this.responseRef) {
-      this.responseRef.toggleTableFilter({ isFilteringTable })
-    }
-  }
-
   onCSVDownloadStart = ({ id, queryId, query }) => {
     this.props.addMessageToDM({
       id,
@@ -329,7 +331,7 @@ export default class ChatMessage extends React.Component {
         this.state.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
-            responseRef={this.responseRef}
+            responseRef={this.state.responseRef}
             className={`chat-message-toolbar right`}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
@@ -340,7 +342,6 @@ export default class ChatMessage extends React.Component {
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
-            onFilterClick={this.toggleTableFilter}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={() =>
               this.props.deleteMessageCallback(this.props.id)
@@ -357,7 +358,7 @@ export default class ChatMessage extends React.Component {
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
-            responseRef={this.responseRef}
+            responseRef={this.state.responseRef}
             className="chat-message-toolbar left"
           />
         ) : null}
@@ -366,6 +367,9 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
+    const isChart =
+      this.state.displayType && isChartType(this.state.displayType)
+
     return (
       <ErrorBoundary>
         <div
@@ -384,7 +388,7 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${isChartType(this.state.displayType) ? ' full-width' : ''}
+              ${isChart ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
               ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}

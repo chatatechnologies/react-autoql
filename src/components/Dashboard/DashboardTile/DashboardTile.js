@@ -811,9 +811,15 @@ export class DashboardTile extends React.Component {
 
     return (
       <SplitterLayout
+        key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
         vertical={true}
         percentage={true}
+        primaryMinSize={30}
+        secondaryMinSize={30}
         secondaryInitialSize={this.props.secondDisplayPercentage || 50}
+        onDragStart={() => {
+          this.setState({ isDraggingSplitter: true })
+        }}
         onDragEnd={() => {
           this.dragEndTimeout = setTimeout(() => {
             const percentString = _get(this.tileInnerDiv, 'style.height', '')
@@ -826,6 +832,8 @@ export class DashboardTile extends React.Component {
                 secondDisplayPercentage: percentNumber,
               })
             }
+
+            this.setState({ isDraggingSplitter: false })
           }, 1000)
         }}
       >
@@ -1013,7 +1021,7 @@ export class DashboardTile extends React.Component {
         renderTooltips={false}
         autoSelectQueryValidationSuggestion={false}
         autoChartAggregations={this.props.autoChartAggregations}
-        isResizing={this.props.isDragging}
+        isResizing={this.props.isDragging || this.state.isDraggingSplitter}
         renderSuggestionsAsDropdown={this.props.tile.h < 4}
         enableDynamicCharting={this.props.enableDynamicCharting}
         backgroundColor={document.documentElement.style.getPropertyValue(
@@ -1070,7 +1078,9 @@ export class DashboardTile extends React.Component {
       isExecuted,
       queryOutputProps: {
         ref: (ref) =>
-          !this.state.responseRef && this.setState({ responseRef: ref }),
+          ref &&
+          ref !== this.state.responseRef &&
+          this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}`,
@@ -1151,7 +1161,8 @@ export class DashboardTile extends React.Component {
       queryOutputProps: {
         key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
         ref: (ref) =>
-          !this.state.secondResponseRef &&
+          ref &&
+          ref !== this.state.secondResponseRef &&
           this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
         vizToolbarRef: this.secondVizToolbarRef,

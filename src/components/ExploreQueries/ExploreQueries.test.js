@@ -2,7 +2,7 @@ import React from 'react'
 import axios from 'axios'
 import { shallow, mount } from 'enzyme'
 
-import { currentEventLoopEnd, findByTestAttr } from '../../../test/testUtils'
+import { findByTestAttr } from '../../../test/testUtils'
 import { ExploreQueries } from './ExploreQueries'
 
 jest.mock('axios')

@@ -142,7 +142,6 @@ export default class App extends Component {
     accentTextColor: '#ffffff',
     lightAccentColor: '#26a7df',
     darkAccentColor: '#26a7df',
-    dashboardBackground: '#fafafa',
     maxMessages: 20,
     isEditing: false,
     debug: true,
@@ -188,7 +187,6 @@ export default class App extends Component {
       prevState.lightAccentColor !== this.state.lightAccentColor ||
       prevState.darkAccentColor !== this.state.darkAccentColor ||
       prevState.accentTextColor !== this.state.accentTextColor ||
-      prevState.dashboardBackground !== this.state.dashboardBackground ||
       prevState.dashboardTitleColor !== this.state.dashboardTitleColor
     ) {
       this.setTheme()
@@ -246,7 +244,6 @@ export default class App extends Component {
     let accentTextColor = this.state.accentTextColor
     let chartColors = [...this.state.chartColors]
     let dashboardTitleColor = this.state.dashboardTitleColor
-    let dashboardBackground = this.state.dashboardBackground
 
     const theme = {
       theme: this.state.theme,
@@ -256,7 +253,6 @@ export default class App extends Component {
       fontFamily: this.state.fontFamily,
       chartColors: chartColors,
       dashboardTitleColor,
-      dashboardBackground,
     }
 
     configureTheme(theme)
@@ -1214,14 +1210,6 @@ export default class App extends Component {
           }}
           value={this.state.dashboardTitleColor}
         />
-        <h4>Dashboard Background Color</h4>
-        <Input
-          type="text"
-          onChange={(e) => {
-            this.setState({ dashboardBackground: e.target.value })
-          }}
-          value={this.state.dashboardBackground}
-        />
         <h4>Text/Icon Color</h4>
         <Input
           type="color"
@@ -1436,7 +1424,6 @@ export default class App extends Component {
               className="dashboard-toolbar-container"
               style={{
                 textAlign: 'center',
-                background: this.state.dashboardBackground,
                 padding: '10px',
               }}
             >
