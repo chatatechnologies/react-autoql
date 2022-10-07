@@ -7,10 +7,9 @@ import { v4 as uuid } from 'uuid'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import { pie, arc, symbol, symbolCircle } from 'd3-shape'
+import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import { legendColor } from 'd3-svg-legend'
-import 'd3-transition'
+import legendColor from '../Legend/Legend'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
 import {
@@ -20,6 +19,8 @@ import {
 } from '../helpers'
 import ReactTooltip from 'react-tooltip'
 import { getChartColorVars } from '../../../theme/configureTheme'
+
+import 'd3-transition'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -278,8 +279,8 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .style('font-size', '10px')
       .style('stroke-width', '2px')
+
     var legendOrdinal = legendColor()
-      .shape('path', symbol().type(symbolCircle).size(75)())
       .orient('vertical')
       .shapePadding(5)
       .labels(self.state.legendLabels.map((labelObj) => labelObj.label))
