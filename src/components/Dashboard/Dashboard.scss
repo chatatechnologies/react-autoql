@@ -1,5 +1,5 @@
 .react-autoql-dashboard-container {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -37,7 +37,6 @@
     }
 
     .react-autoql-table {
-      opacity: 0.9;
       font-size: 11px;
     }
 

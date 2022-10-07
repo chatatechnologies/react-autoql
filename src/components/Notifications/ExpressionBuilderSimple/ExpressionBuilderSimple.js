@@ -10,10 +10,9 @@ import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { RuleSimple } from '../RuleSimple'
 import { Icon } from '../../Icon'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
 } from '../../../props/defaults'
 
@@ -62,7 +61,6 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     expression: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]), // This is the expression of the existing notification if you are editing one. I should change the name of this at some point
     readOnly: PropTypes.bool, // Set this to true if you want a summary of the expression without needing to interact with it
     onChange: PropTypes.func, // this returns 2 params (isSectionComplete, expressionJSON)
@@ -70,7 +68,6 @@ export default class ExpressionBuilderSimple extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     expression: undefined,
     readOnly: false,
     onChange: () => {},
@@ -176,7 +173,6 @@ export default class ExpressionBuilderSimple extends React.Component {
           this.renderExpressionErrorMessage()
         ) : (
           <RuleSimple
-            themeConfig={this.props.themeConfig}
             ref={(r) => (this.ruleRef = r)}
             ruleId={_get(this.state.expression, 'id', uuid())}
             onUpdate={this.onRuleUpdate}
@@ -204,7 +200,6 @@ export default class ExpressionBuilderSimple extends React.Component {
           ) : (
             <RuleSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={this.props.themeConfig}
               ref={(r) => (this.ruleRef = r)}
               ruleId={_get(this.state.expression, 'id', uuid())}
               onUpdate={this.onRuleUpdate}

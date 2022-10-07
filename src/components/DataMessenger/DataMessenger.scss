@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   display: flex;
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   overflow: hidden;
   border-radius: 4px;
   flex-direction: column;
@@ -23,7 +23,7 @@
   width: 100%;
   height: 60px;
   background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.1);
   flex: 0 0 auto;
   z-index: 1;
@@ -42,7 +42,7 @@
 }
 .react-autoql-drawer .react-autoql-header-center-container {
   position: relative;
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   line-height: 60px;
   font-size: 18px;
   letter-spacing: 0.05em;
@@ -83,6 +83,23 @@
     width: 22px;
     height: 22px;
   }
+
+  .react-autoql-filter-lock-icon-container {
+    display: inline-block;
+    position: relative;
+
+    .react-autoql-filter-lock-icon-badge {
+      position: absolute;
+      display: inline-block;
+      border: 2px solid var(--react-autoql-accent-color);
+      background: var(--react-autoql-warning-color);
+      border-radius: 50%;
+      height: 14px;
+      width: 14px;
+      right: -5px;
+      top: -4px;
+    }
+  }
 }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
@@ -90,9 +107,10 @@
 }
 
 .react-autoql-drawer .chat-header-container button {
+  position: relative;
   background: transparent;
   border: none;
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   margin: 10px 0px 10px 0px;
   margin-right: 0;
   font-size: 20px;
@@ -141,7 +159,7 @@
 
     &.default-logo {
       background-color: var(--react-autoql-accent-color, #26a7df);
-      color: var(--react-autoql-accent-text-color);
+      color: var(--react-autoql-text-color-accent);
 
       .react-autoql-bubbles-outlined {
         position: absolute;
@@ -200,37 +218,63 @@
 .react-autoql-drawer-resize-handle {
   position: absolute;
   background: transparent;
+  z-index: 2;
 
   &.right {
     top: 0;
-    left: -5px;
+    left: -2px;
     width: 5px;
     height: 100vh;
+    border-right-color: transparent;
+    border-right-width: 3px;
+    border-right-style: solid;
+    transition: border-right-color 0.2s ease;
     cursor: ew-resize;
+    &:hover {
+      border-right-color: var(--react-autoql-accent-color);
+    }
   }
 
   &.left {
     top: 0;
-    right: -5px;
+    right: -2px;
     width: 5px;
     height: 100vh;
+    border-left-color: transparent;
+    border-left-width: 3px;
+    border-left-style: solid;
     cursor: ew-resize;
+    &:hover {
+      border-left-color: var(--react-autoql-accent-color);
+    }
   }
 
   &.top {
-    bottom: -5px;
+    bottom: -2px;
     left: 0;
     height: 5px;
     width: 100vw;
+    border-top-color: transparent;
+    border-top-width: 3px;
+    border-top-style: solid;
     cursor: ns-resize;
+    &:hover {
+      border-top-color: var(--react-autoql-accent-color);
+    }
   }
 
   &.bottom {
-    top: -5px;
+    top: -2px;
     left: 0;
     height: 5px;
     width: 100vw;
+    border-bottom-color: transparent;
+    border-bottom-width: 3px;
+    border-bottom-style: solid;
     cursor: ns-resize;
+    &:hover {
+      border-bottom-color: var(--react-autoql-accent-color);
+    }
   }
 }
 
@@ -259,12 +303,6 @@
   z-index: 99999 !important; /* necessary to show up on top of rc drawer */
 }
 
-// .react-autoql-condition-lock-menu {
-//   color: var(--react-autoql-text-color-primary);
-//   background: var(--react-autoql-background-color-primary);
-//   min-height: 300px;
-// }
-
 .react-tiny-popover-container {
   z-index: 99999;
   border: 1px solid #ababab52;
@@ -272,11 +310,12 @@
   box-shadow: 0px 0 8px rgba(0, 0, 0, 0.15);
   transition: opacity 0.2s ease 0s !important;
   opacity: 1 !important;
+  overflow: hidden !important;
 }
 
 .clear-messages-confirm-popover {
   color: var(--react-autoql-text-color-primary);
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   text-align: right;
   padding: 18px;
   width: 266px;
@@ -362,7 +401,7 @@
     z-index: 1;
 
     background: var(--react-autoql-accent-color);
-    color: var(--react-autoql-accent-text-color);
+    color: var(--react-autoql-text-color-accent);
     opacity: 1;
 
     font-size: 22px;
@@ -465,16 +504,16 @@
 }
 
 .page-switcher-container.bottom .tab {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-text-color-primary);
 
   .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-secondary);
+    stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;
   }
 }
 .page-switcher-container .tab.active {
-  background: var(--react-autoql-background-color-secondary);
+  background: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
   box-shadow: -2px 0px 8px 2px rgba(0, 0, 0, 0.2);
   font-weight: bold;
@@ -482,13 +521,13 @@
   z-index: 2;
 
   .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-secondary);
+    stroke: var(--react-autoql-background-color-primary);
     stroke-width: 0.3px;
   }
 }
 .page-switcher-container.bottom .tab.active {
   background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-accent-text-color);
+  color: var(--react-autoql-text-color-accent);
   font-weight: bold;
 
   .react-autoql-icon.data-search svg {

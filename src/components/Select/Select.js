@@ -1,13 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Select.scss'
@@ -16,7 +14,6 @@ export default class Select extends React.Component {
   ID = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     onChange: PropTypes.func,
     options: PropTypes.arrayOf(PropTypes.shape({})),
     popupClassname: PropTypes.string,
@@ -26,7 +23,6 @@ export default class Select extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     onChange: () => {},
     options: [],
     popupClassname: undefined,
@@ -49,7 +45,7 @@ export default class Select extends React.Component {
       <ErrorBoundary>
         <Popover
           isOpen={this.state.isOpen}
-          position="bottom" // if you'd like, supply an array of preferred positions ordered by priority
+          positions={['bottom']} // if you'd like, supply an array of preferred positions ordered by priority
           padding={0}
           onClickOutside={() => this.setState({ isOpen: false })}
           content={({

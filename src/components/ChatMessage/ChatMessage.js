@@ -9,14 +9,12 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 
 import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
@@ -28,11 +26,7 @@ import { OptionsToolbar } from '../OptionsToolbar'
 import { Spinner } from '../Spinner'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  getDefaultDisplayType,
-  isChartType,
-  getSupportedDisplayTypes,
-} from '../../js/Util'
+import { isChartType } from '../../js/Util'
 import errorMessages from '../../js/errorMessages'
 
 import './ChatMessage.scss'
@@ -41,24 +35,17 @@ export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
 
-    const displayType = getDefaultDisplayType(
-      props.response,
-      props.autoChartAggregations
-    )
+    this.filtering = false
+    this.PIE_CHART_HEIGHT = 330
+    this.MESSAGE_HEIGHT_MARGINS = 40
+    this.MESSAGE_WIDTH_MARGINS = 40
+    this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
-      displayType: getDefaultDisplayType(
-        props.response,
-        props.autoChartAggregations
-      ),
-      supportedDisplayTypes: getSupportedDisplayTypes({
-        response: props.response,
-      }),
       isAnimatingMessageBubble: true,
       isSettingColumnVisibility: false,
       activeMenu: undefined,
-      displayType,
     }
   }
 
@@ -66,15 +53,12 @@ export default class ChatMessage extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
-    displayType: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
@@ -93,19 +77,17 @@ export default class ChatMessage extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
     source: PropTypes.arrayOf(PropTypes.string),
+    isVisibleInDOM: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
 
     enableAjaxTableData: false,
-    isDataMessengerOpen: false,
     isIntroMessage: false,
     source: [],
-    displayType: undefined,
     response: undefined,
     content: undefined,
     isActive: false,
@@ -117,6 +99,7 @@ export default class ChatMessage extends React.Component {
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
     onRTValueLabelClick: undefined,
+    isVisibleInDOM: true,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
@@ -132,11 +115,7 @@ export default class ChatMessage extends React.Component {
     }, 100)
 
     // Wait until message bubble animation finishes to show query output content
-    clearTimeout(this.animationTimeout)
-    this.animationTimeout = setTimeout(() => {
-      this.setState({ isAnimatingMessageBubble: false })
-      this.props.scrollToBottom()
-    }, 500)
+    this.setIsAnimating()
   }
 
   shouldComponentUpdate = (nextProps) => {
@@ -148,14 +127,32 @@ export default class ChatMessage extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.props.isVisibleInDOM && !prevProps.isVisibleInDOM) {
+      this.setIsAnimating()
+    }
     ReactTooltip.hide()
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
-    clearTimeout(this.scrollIntoViewTimeout)
     clearTimeout(this.animationTimeout)
+  }
+
+  setIsAnimating = () => {
+    if (!this.state.isAnimatingMessageBubble) {
+      return this.setState({ isAnimatingMessageBubble: true }, () => {
+        this.clearIsAnimatingIn500ms()
+      })
+    }
+    this.clearIsAnimatingIn500ms()
+  }
+
+  clearIsAnimatingIn500ms = () => {
+    this.animationTimeout = setTimeout(() => {
+      this.setState({ isAnimatingMessageBubble: false })
+      this.props.scrollToBottom()
+    }, 500)
   }
 
   onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
@@ -204,28 +201,33 @@ export default class ChatMessage extends React.Component {
     return false
   }
 
-  scrollIntoView = () => {
-    clearTimeout(this.scrollIntoViewTimeout)
-    this.scrollIntoViewTimeout = setTimeout(() => {
+  onDisplayTypeChange = (displayType) => {
+    this.setState({ displayType }, () => {
+      this.scrollIntoView()
+    })
+  }
+
+  scrollIntoView = ({
+    block = 'end',
+    inline = 'nearest',
+    behavior = 'smooth',
+  } = {}) => {
+    setTimeout(() => {
       if (
         this.messageContainerRef &&
         !this.isScrolledIntoView(this.messageContainerRef)
       ) {
-        this.scrollIntoViewTimer = this.messageContainerRef.scrollIntoView({
-          block: 'end',
-          inline: 'nearest',
-          behavior: 'smooth',
+        this.messageContainerRef.scrollIntoView({
+          block,
+          inline,
+          behavior,
         })
       }
     }, 0)
   }
 
-  switchView = (displayType) => {
-    this.setState({ displayType }, this.scrollIntoView)
-  }
-
-  onSupportedDisplayTypesChange = (supportedDisplayTypes) => {
-    this.setState({ supportedDisplayTypes })
+  updateDataConfig = (config) => {
+    this.setState({ dataConfig: config })
   }
 
   renderFetchingFileMessage = () => {
@@ -256,15 +258,20 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) => (this.responseRef = ref)}
+          ref={(ref) =>
+            ref &&
+            ref !== this.state.responseRef &&
+            this.setState({ responseRef: ref })
+          }
+          optionsToolbarRef={this.optionsToolbarRef}
+          vizToolbarRef={this.vizToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
           autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
           queryResponse={this.props.response}
-          displayType={this.state.displayType}
           onSuggestionClick={this.props.onSuggestionClick}
           isQueryRunning={this.props.isChataThinking}
-          themeConfig={this.props.themeConfig}
           copyToClipboard={this.copyToClipboard}
+          tableOptions={this.props.tableOptions}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
           appliedFilters={this.props.appliedFilters}
           onDrilldownStart={this.props.onDrilldownStart}
@@ -272,26 +279,29 @@ export default class ChatMessage extends React.Component {
           demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
           originalQueryID={this.props.originalQueryID}
-          onSupportedDisplayTypesChange={this.onSupportedDisplayTypesChange}
           backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-background-color-primary'
+            '--react-autoql-background-color-secondary'
           )}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
-          isResizing={this.props.isResizing}
-          isAnimatingContainer={this.state.isAnimatingMessageBubble}
+          isResizing={
+            this.props.isResizing || this.state.isAnimatingMessageBubble
+          }
           enableDynamicCharting={this.props.enableDynamicCharting}
-          optionsToolbarRef={this.optionsToolbarRef}
+          initialTableConfigs={this.state.dataConfig}
+          onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation
-          onRecommendedDisplayType={this.switchView}
           enableFilterLocking={this.props.enableFilterLocking}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           rebuildTooltips={this.props.rebuildTooltips}
           source={this.props.source}
           onRowChange={this.scrollIntoView}
+          onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
+          showSuggestionPrefix={false}
+          popoverParentElement={this.props.popoverParentElement}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
               this.optionsToolbarRef.setState({ activeMenu: 'other-problem' })
@@ -301,12 +311,6 @@ export default class ChatMessage extends React.Component {
       )
     }
     return errorMessages.GENERAL_QUERY
-  }
-
-  toggleTableFilter = ({ isFilteringTable }) => {
-    if (this.responseRef) {
-      this.responseRef.toggleTableFilter({ isFilteringTable })
-    }
   }
 
   onCSVDownloadStart = ({ id, queryId, query }) => {
@@ -319,17 +323,6 @@ export default class ChatMessage extends React.Component {
     })
   }
 
-  onDisplayTypeChange = (displayType) => {
-    // Reset table filters when display type is changed
-    this.toggleTableFilter({ isFilteringTable: false })
-    if (this.optionsToolbarRef?._isMounted) {
-      this.optionsToolbarRef.filtering = false
-    }
-
-    // Then switch to the appropriate view
-    this.switchView(displayType)
-  }
-
   renderRightToolbar = () => {
     return (
       <div className="chat-message-toolbar right">
@@ -338,22 +331,21 @@ export default class ChatMessage extends React.Component {
         this.state.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
+            responseRef={this.state.responseRef}
+            className={`chat-message-toolbar right`}
             authentication={this.props.authentication}
-            autoQLConfig={getAutoQLConfig(this.props.autoQLConfig)}
-            themeConfig={this.props.themeConfig}
-            responseRef={this.responseRef}
-            displayType={this.state.displayType}
+            autoQLConfig={this.props.autoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
+            rebuildTooltips={this.props.rebuildTooltips}
+            popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={() =>
               this.props.deleteMessageCallback(this.props.id)
             }
-            rebuildTooltips={this.props.rebuildTooltips}
-            onFilterClick={this.toggleTableFilter}
           />
         ) : null}
       </div>
@@ -361,24 +353,13 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
-    let displayType = this.state.displayType
-
-    if (
-      this.state.supportedDisplayTypes &&
-      !this.state.supportedDisplayTypes.includes(this.state.displayType)
-    ) {
-      displayType = 'table'
-    }
-
     return (
       <div className="chat-message-toolbar left">
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
-            themeConfig={this.props.themeConfig}
-            supportedDisplayTypes={this.state.supportedDisplayTypes || []}
-            displayType={displayType}
-            onDisplayTypeChange={this.onDisplayTypeChange}
-            disableCharts={this.state.disableChartingOptions}
+            ref={(r) => (this.vizToolbarRef = r)}
+            responseRef={this.state.responseRef}
+            className="chat-message-toolbar left"
           />
         ) : null}
       </div>
@@ -386,6 +367,9 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
+    const isChart =
+      this.state.displayType && isChartType(this.state.displayType)
+
     return (
       <ErrorBoundary>
         <div
@@ -404,7 +388,7 @@ export default class ChatMessage extends React.Component {
           <div
             ref={(r) => (this.ref = r)}
             className={`chat-message-bubble
-              ${isChartType(this.state.displayType) ? ' full-width' : ''}
+              ${isChart ? ' full-width' : ''}
               ${this.props.type === 'text' ? ' text' : ''}
               ${this.state.displayType}
               ${this.props.isActive ? ' active' : ''}`}

@@ -46,3 +46,5 @@ export const WEEKDAY_NAMES = [
   'Tuesday',
   'Monday',
 ]
+
+export const SEASON_NAMES = ['SP', 'SU', 'FA', 'HO']

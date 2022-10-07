@@ -16,13 +16,21 @@ export default class Circles extends Component {
 
     const maxValue = max(
       props.data.map((row) =>
-        max(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+        max(
+          row.filter(
+            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
+          )
+        )
       )
     )
 
     const minValue = min(
       props.data.map((row) =>
-        min(row.filter((value, i) => props.numberColumnIndices.includes(i)))
+        min(
+          row.filter(
+            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
+          )
+        )
       )
     )
 
@@ -40,15 +48,14 @@ export default class Circles extends Component {
   onCircleClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -81,7 +88,7 @@ export default class Circles extends Component {
         if (!columns[colIndex].isSeriesHidden) {
           const rawValue = row[colIndex]
           const valueNumber = Number(rawValue)
-          const value = !Number.isNaN(valueNumber) ? valueNumber : 0
+          const value = !isNaN(valueNumber) ? valueNumber : 0
 
           const xLabel = row[stringColumnIndex]
           const yLabel = legendLabels[i].label

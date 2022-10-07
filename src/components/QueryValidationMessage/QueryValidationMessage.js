@@ -8,15 +8,11 @@ import { Icon } from '../Icon'
 import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
-
 export default class QueryValidationMessage extends React.Component {
   originalReplaceWords = []
   suggestionLists = []
 
   static propTypes = {
-    themeConfig: themeConfigType,
     response: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
     autoSelectSuggestion: PropTypes.bool,
@@ -27,7 +23,6 @@ export default class QueryValidationMessage extends React.Component {
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     response: undefined,
     autoSelectSuggestion: true,
     initialSelections: undefined,
@@ -287,7 +282,6 @@ export default class QueryValidationMessage extends React.Component {
         key={`query-element-${suggestion.id}`}
       >
         <Select
-          themeConfig={this.props.themeConfig}
           options={options}
           key={uuid()}
           value={suggestion.id}

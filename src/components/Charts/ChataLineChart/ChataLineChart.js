@@ -74,17 +74,34 @@ export default class ChataLineChart extends Component {
       .paddingInner(1)
       .paddingOuter(0)
 
+    const rangeEnd = props.topMargin
+    let rangeStart = props.height - props.bottomMargin
+    if (rangeStart < rangeEnd) {
+      rangeStart = rangeEnd
+    }
+
     this.yScale = scaleLinear()
       .domain([minValue, maxValue])
-      .range([props.height - props.bottomMargin, props.topMargin])
-      .nice()
+      .range([rangeStart, rangeEnd])
+    this.yScale.minValue = minValue
+    this.yScale.maxValue = maxValue
+    this.yScale.type = 'LINEAR'
 
-    this.tickWidth = props.width / (this.xScale?.domain()?.length || 1)
-    this.xTickValues = getTickValues(
-      this.tickWidth,
-      props.width,
-      this.xScale.domain()
-    )
+    this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
+    this.xTickValues = getTickValues({
+      tickHeight: this.tickWidth,
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
+
+    this.yLabelArray = this.yScale.ticks()
+    this.tickHeight = props.innerHeight / this.yLabelArray?.length
+    this.yTickValues = getTickValues({
+      tickHeight: this.tickHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+      scale: this.yScale,
+    })
   }
 
   render = () => {
@@ -93,6 +110,9 @@ export default class ChataLineChart extends Component {
 
     return (
       <g data-test="react-autoql-line-chart">
+        {this.props.marginAdjustmentFinished && (
+          <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
+        )}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -100,6 +120,7 @@ export default class ChataLineChart extends Component {
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={this.props.columns[this.props.numberColumnIndex]}
           xTicks={this.xTickValues}
+          yTicks={this.yTickValues}
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
@@ -115,9 +136,6 @@ export default class ChataLineChart extends Component {
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />
-        {this.props.marginAdjustmentFinished && (
-          <Line {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
       </g>
     )
   }

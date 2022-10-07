@@ -7,19 +7,20 @@ import { v4 as uuid } from 'uuid'
 
 import { select } from 'd3-selection'
 import { scaleOrdinal } from 'd3-scale'
-import { pie, arc, symbol, symbolCircle } from 'd3-shape'
+import { pie, arc } from 'd3-shape'
 import { entries } from 'd3-collection'
-import { legendColor } from 'd3-svg-legend'
-import 'd3-transition'
+import legendColor from '../Legend/Legend'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
-import { getDataFormatting, getThemeConfig } from '../../../props/defaults'
 import {
   chartDefaultProps,
   chartPropTypes,
   getTooltipContent,
 } from '../helpers'
 import ReactTooltip from 'react-tooltip'
+import { getChartColorVars } from '../../../theme/configureTheme'
+
+import 'd3-transition'
 
 export default class Axis extends Component {
   constructor(props) {
@@ -36,7 +37,7 @@ export default class Axis extends Component {
         return parseFloat(b) - parseFloat(a)
       })
 
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
     this.colorScale = scaleOrdinal()
       .domain(
         this.sortedData.map((d) => {
@@ -150,15 +151,14 @@ export default class Axis extends Component {
       // Put it back if it is expanded
       this.setState({ activeKey: null })
     } else {
-      this.props.onChartClick(
-        d.data.value,
-        this.props.numberColumnIndex,
-        this.props.columns,
-        this.props.stringColumnIndex,
-        this.props.legendColumn,
-        this.props.numberColumnIndex,
-        newActiveKey
-      )
+      this.props.onChartClick({
+        row: d.data.value,
+        columnIndex: this.props.numberColumnIndex,
+        columns: this.props.columns,
+        stringColumnIndex: this.props.stringColumnIndex,
+        legendColumn: this.props.legendColumn,
+        activeKey: newActiveKey,
+      })
       this.setState({ activeKey: newActiveKey })
     }
   }
@@ -175,15 +175,13 @@ export default class Axis extends Component {
       .attr('class', 'slice')
       .attr(
         'd',
-        arc()
-          .innerRadius(self.innerRadius)
-          .outerRadius(self.outerRadius)
+        arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius)
       )
       .attr('fill', (d) => {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
       .attr('data-for', this.props.tooltipID)
-      .attr('data-tip', function(d) {
+      .attr('data-tip', function (d) {
         return getTooltipContent({
           row: d.data.value,
           columns: self.props.columns,
@@ -196,20 +194,20 @@ export default class Axis extends Component {
       .style('fill-opacity', 0.85)
       .attr('stroke-width', '0.5px')
       .attr('stroke', this.props.backgroundColor)
-      .on('mouseover', function(d) {
+      .on('mouseover', function (d) {
         select(this).style('fill-opacity', 1)
       })
-      .on('mouseout', function(d) {
+      .on('mouseout', function (d) {
         select(this).style('fill-opacity', 0.85)
       })
       .on('click', this.onSliceClick)
 
     // render active pie slice if there is one
-    self.pieChartContainer.selectAll('path.slice').each(function(slice) {
+    self.pieChartContainer.selectAll('path.slice').each(function (slice) {
       select(this)
         .transition()
         .duration(500)
-        .attr('transform', function(d) {
+        .attr('transform', function (d) {
           if (d.data.key === self.state.activeKey) {
             const a =
               d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2
@@ -257,7 +255,7 @@ export default class Axis extends Component {
   renderLegend = () => {
     const self = this
     const { height } = this.props
-    const { chartColors } = getThemeConfig(this.props.themeConfig)
+    const chartColors = getChartColorVars()
 
     let legendScale
     if (this.state.legendLabels) {
@@ -281,13 +279,8 @@ export default class Axis extends Component {
       .style('font-family', 'inherit')
       .style('font-size', '10px')
       .style('stroke-width', '2px')
+
     var legendOrdinal = legendColor()
-      .shape(
-        'path',
-        symbol()
-          .type(symbolCircle)
-          .size(75)()
-      )
       .orient('vertical')
       .shapePadding(5)
       .labels(self.state.legendLabels.map((labelObj) => labelObj.label))
@@ -327,9 +320,8 @@ export default class Axis extends Component {
 
     if (this.legendSwatchElements) {
       this.legendSwatchElements.forEach((el) => {
-        const swatchElement = el.parentElement.parentElement.querySelector(
-          '.swatch'
-        )
+        const swatchElement =
+          el.parentElement.parentElement.querySelector('.swatch')
         swatchElement.style.strokeWidth = '2px'
 
         if (legendLabelTexts.includes(el.textContent)) {

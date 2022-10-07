@@ -85,9 +85,6 @@ import {
   gradCapIcon,
 } from '../../svgIcons.js'
 
-import slackLogo from '../../images/slack-logo.png'
-import teamsLogo from '../../images/ms-teams-logo.png'
-
 import './Icon.scss'
 
 export default class Icon extends React.Component {
@@ -109,14 +106,8 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const {
-      type,
-      size,
-      showBadge,
-      warning,
-      danger,
-      ...nativeProps
-    } = this.props
+    const { type, size, showBadge, warning, danger, ...nativeProps } =
+      this.props
 
     let icon = null
 
@@ -293,18 +284,6 @@ export default class Icon extends React.Component {
         icon = stackedLineIcon
         break
       }
-      case 'teams': {
-        icon = (
-          <img
-            className="slack-logo"
-            src={teamsLogo}
-            alt="Slack"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
-        break
-      }
       case 'menu': {
         icon = <AiOutlineMenu />
         break
@@ -387,18 +366,6 @@ export default class Icon extends React.Component {
       }
       case 'settings': {
         icon = <FiSettings />
-        break
-      }
-      case 'slack': {
-        icon = (
-          <img
-            className="slack-logo"
-            src={slackLogo}
-            alt="Slack"
-            style={{ ...this.props.style, height: '1em', width: '1em' }}
-            draggable="false"
-          />
-        )
         break
       }
       case 'split-view': {

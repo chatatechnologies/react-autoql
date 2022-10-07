@@ -9,7 +9,6 @@ import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 
 import errorMessages from '../../js/errorMessages'
@@ -41,7 +40,6 @@ export default class ChatContent extends React.Component {
     authentication: authenticationType.isRequired,
     autoQLConfig: autoQLConfigType.isRequired,
     dataFormatting: dataFormattingType.isRequired,
-    themeConfig: themeConfigType.isRequired,
     clearOnClose: PropTypes.bool.isRequired,
     enableVoiceRecord: PropTypes.bool.isRequired,
     maxMessages: PropTypes.number.isRequired,
@@ -55,7 +53,6 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,
     enableAjaxTableData: PropTypes.bool,
-    isDataMessengerOpen: PropTypes.bool,
     dataPageSize: PropTypes.number,
     sessionId: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -65,7 +62,6 @@ export default class ChatContent extends React.Component {
   static defaultProps = {
     disableMaxMessageHeight: false,
     enableAjaxTableData: false,
-    isDataMessengerOpen: true,
     isResizing: false,
     dataPageSize: undefined,
     source: [],
@@ -77,11 +73,26 @@ export default class ChatContent extends React.Component {
     if (!!this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      this.focusInput()
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
+  }
+
+  focusInput = () => {
+    if (this.queryInputRef?._isMounted) {
+      this.queryInputRef.focus()
+    }
   }
 
   escFunction = (event) => {
@@ -280,9 +291,7 @@ export default class ChatContent extends React.Component {
       }
 
       this.setState({ isChataThinking: false })
-      if (this.queryInputRef?._isMounted) {
-        this.queryInputRef.focus()
-      }
+      this.focusInput()
     }
   }
 
@@ -301,8 +310,6 @@ export default class ChatContent extends React.Component {
 
     return {
       id: uniqueId,
-      displayType:
-        params.displayType || params.response?.data?.data?.display_type,
       type: params.response?.data?.data?.display_type,
       ...params,
     }
@@ -331,13 +338,18 @@ export default class ChatContent extends React.Component {
   }
 
   render = () => {
-    if (!this.props.shouldRender || !this.props.isDataMessengerOpen) {
-      return null
+    let display
+    if (!this.props.shouldRender) {
+      display = 'none'
     }
 
     return (
       <ErrorBoundary>
-        <div className="chat-content-scroll-container">
+        <div
+          ref={(r) => (this.chatContentRef = r)}
+          className="chat-content-scroll-container"
+          style={{ display }}
+        >
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
@@ -348,7 +360,6 @@ export default class ChatContent extends React.Component {
                   isIntroMessage={message.isIntroMessage}
                   authentication={this.props.authentication}
                   autoQLConfig={this.props.autoQLConfig}
-                  themeConfig={this.props.themeConfig}
                   isCSVProgressMessage={message.isCSVProgressMessage}
                   initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                   onCSVDownloadProgress={this.onCSVDownloadProgress}
@@ -367,7 +378,6 @@ export default class ChatContent extends React.Component {
                   content={message.content}
                   scrollToBottom={this.scrollToBottom}
                   dataFormatting={this.props.dataFormatting}
-                  displayType={message.displayType}
                   response={message.response}
                   type={message.type}
                   onErrorCallback={this.props.onErrorCallback}
@@ -383,18 +393,21 @@ export default class ChatContent extends React.Component {
                   disableMaxHeight={this.props.disableMaxMessageHeight}
                   enableAjaxTableData={this.props.enableAjaxTableData}
                   rebuildTooltips={this.props.rebuildTooltips}
+                  queryRequestData={message.queryRequestData}
+                  popoverParentElement={this.chatContentRef}
+                  isVisibleInDOM={this.props.shouldRender}
                   source={this.props.source}
                 />
               )
             })}
           </CustomScrollbars>
+          {this.state.isChataThinking && (
+            <div className="response-loading-container">
+              <LoadingDots />
+            </div>
+          )}
         </div>
-        {this.state.isChataThinking && (
-          <div className="response-loading-container">
-            <LoadingDots />
-          </div>
-        )}
-        <div className="chat-bar-container">
+        <div style={{ display }} className="chat-bar-container">
           <div className="watermark">
             <Icon type="react-autoql-bubbles-outlined" />
             {lang.run}
@@ -404,7 +417,6 @@ export default class ChatContent extends React.Component {
             className="chat-drawer-chat-bar"
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
-            themeConfig={this.props.themeConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
@@ -420,6 +432,7 @@ export default class ChatContent extends React.Component {
             sessionId={this.props.sessionId}
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
+            shouldRender={this.props.shouldRender}
           />
         </div>
       </ErrorBoundary>

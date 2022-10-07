@@ -2,7 +2,6 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
-import disableScroll from 'disable-scroll'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
@@ -13,24 +12,20 @@ import { scaleOrdinal } from 'd3-scale'
 
 import {
   dataFormattingType,
-  themeConfigType,
   autoQLConfigType,
   authenticationType,
 } from '../../props/types'
 import {
   dataFormattingDefault,
-  themeConfigDefault,
   autoQLConfigDefault,
   authenticationDefault,
   getAuthentication,
   getDataFormatting,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
 import { ChataTable } from '../ChataTable'
 import { ChataChart } from '../Charts/ChataChart'
-import { QueryInput } from '../QueryInput'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { Icon } from '../Icon'
 
@@ -48,8 +43,6 @@ import {
   getGroupBysFromTable,
   isTableType,
   isChartType,
-  setCSSVars,
-  getNumberOfGroupables,
   areAllColumnsHidden,
   sortDataByDate,
   dateSortFn,
@@ -59,7 +52,6 @@ import {
   isColumnNumberType,
   isColumnStringType,
   getNumberColumnIndices,
-  getMultiSeriesColumnIndex,
   getDateColumnIndex,
   getStringColumnIndices,
   isColumnDateType,
@@ -71,6 +63,10 @@ import { sendSuggestion, runDrilldown } from '../../js/queryService'
 import './QueryOutput.scss'
 import { MONTH_NAMES } from '../../js/Constants'
 import { ReverseTranslation } from '../ReverseTranslation'
+import { getChartColorVars } from '../../theme/configureTheme'
+import { withTheme } from '../../theme'
+
+import './QueryOutput.scss'
 
 String.prototype.isUpperCase = function () {
   return this.valueOf().toUpperCase() === this.valueOf()
@@ -85,7 +81,7 @@ String.prototype.toProperCase = function () {
   })
 }
 
-export default class QueryOutput extends React.Component {
+export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
 
@@ -93,67 +89,76 @@ export default class QueryOutput extends React.Component {
     this.QUERY_VALIDATION_KEY = uuid()
 
     this.queryResponse = _cloneDeep(props.queryResponse)
-    this.supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
+    this.interpretation = _get(
+      this.queryResponse,
+      'data.data.parsed_interpretation'
+    )
+    this.tableParams = {}
     this.tableID = uuid()
     this.pivotTableID = uuid()
+    this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+    this.isOriginalData = true
+
+    // Set initial columns if needed
+    let columns = this.formatColumnsForTable(
+      this.queryResponse?.data?.data?.columns
+    )
+    if (props.initialColumns && this.areColumnsValid(props.initialColumns)) {
+      columns = props.initialColumns
+    }
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
     if (
-      props.tableConfigs?.tableConfig &&
-      this.isTableConfigValid(props.tableConfigs?.tableConfig)
+      props.initialTableConfigs?.tableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.tableConfig, columns)
     ) {
-      const { tableConfig, pivotTableConfig } = props.tableConfigs
+      const { tableConfig, pivotTableConfig } = props.initialTableConfigs
       this.tableConfig = _cloneDeep(tableConfig)
       this.pivotTableConfig = _cloneDeep(pivotTableConfig)
     }
 
-    const isProvidedDisplayTypeValid = this.isCurrentDisplayTypeValid(props)
-
-    // Set the initial display type based on prop value, response, and supported display types
-    let displayType = props.displayType
-    if (!isProvidedDisplayTypeValid) {
-      displayType = getDefaultDisplayType(
-        this.queryResponse,
-        props.autoChartAggregations,
-        this.props.preferredDisplayType
-      )
-      this.onRecommendedDisplayType(displayType)
-    }
-
     // Set theme colors
-    const { chartColors } = getThemeConfig(props.themeConfig)
+    const chartColors = getChartColorVars()
     this.colorScale = scaleOrdinal().range(chartColors)
-    setCSSVars(props.themeConfig)
 
     // --------- generate data before mount --------
-    this.generateAllData(this.queryResponse, displayType)
+    this.generateAllData()
     // -------------------------------------------
+
+    // Supported display types may have changed after initial data generation
+    this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+
+    const displayType = this.getDisplayTypeFromInitial(props)
+    props.onDisplayTypeChange(displayType)
 
     this.state = {
       displayType,
-      tableFilters: [],
-      selectedSuggestion: props.selectedSuggestion,
+      supportedDisplayTypes: this.initialSupportedDisplayTypes,
+      columns,
+      selectedSuggestion: props.defaultSelectedSuggestion,
+      visiblerows: this.queryResponse?.data?.data?.rows,
+      visibleRowChangeCount: 0,
+      visiblePivotRowChangeCount: 0,
+      columnChangeCount: 0,
     }
   }
 
   static propTypes = {
-    queryResponse: PropTypes.shape({}),
-    queryInputRef: PropTypes.instanceOf(QueryInput),
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    tableConfig: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({}),
+
+    queryResponse: PropTypes.shape({}),
     onSuggestionClick: PropTypes.func,
-    displayType: PropTypes.string,
+    initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
     autoSelectQueryValidationSuggestion: PropTypes.bool,
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
     renderSuggestionsAsDropdown: PropTypes.bool,
-    selectedSuggestion: PropTypes.string,
+    defaultSelectedSuggestion: PropTypes.string,
     activeChartElementKey: PropTypes.string,
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -161,10 +166,8 @@ export default class QueryOutput extends React.Component {
     onTableConfigChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
-    onSupportedDisplayTypesChange: PropTypes.func,
     onRTValueLabelClick: PropTypes.func,
     isTaskModule: PropTypes.bool,
-    onUpdate: PropTypes.func,
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
     enableAjaxTableData: PropTypes.bool,
@@ -172,23 +175,24 @@ export default class QueryOutput extends React.Component {
     rebuildTooltips: PropTypes.func,
     onRowChange: PropTypes.func,
     mutable: PropTypes.bool,
+    showSuggestionPrefix: PropTypes.bool,
+    onDisplayTypeChange: PropTypes.func,
+    onColumnChange: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    tableConfig: undefined,
+    initialTableConfigs: undefined,
 
     queryResponse: undefined,
-    displayType: undefined,
-    queryInputRef: undefined,
+    initialDisplayType: null,
     onSuggestionClick: undefined,
     autoSelectQueryValidationSuggestion: true,
     queryValidationSelections: undefined,
     renderSuggestionsAsDropdown: false,
-    selectedSuggestion: undefined,
+    defaultSelectedSuggestion: undefined,
     activeChartElementKey: undefined,
     isResizing: false,
     enableDynamicCharting: true,
@@ -202,36 +206,21 @@ export default class QueryOutput extends React.Component {
     preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
     mutable: true,
+    showSuggestionPrefix: true,
     onRowChange: () => {},
     onTableConfigChange: () => {},
     onQueryValidationSelectOption: () => {},
-    onSupportedDisplayTypesChange: () => {},
     onErrorCallback: () => {},
-    onRecommendedDisplayType: () => {},
-    onUpdate: () => {},
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
+    onDisplayTypeChange: () => {},
+    onColumnChange: () => {},
   }
 
   componentDidMount = () => {
-    this._isMounted = true
-    this.props.onUpdate()
     try {
-      if (this.props.optionsToolbarRef?._isMounted) {
-        this.props.optionsToolbarRef.forceUpdate()
-      }
-
-      if (!this.isCurrentDisplayTypeValid(this.props)) {
-        this.onRecommendedDisplayType(
-          getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations,
-            this.props.preferredDisplayType
-          )
-        )
-      }
-
-      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
+      this._isMounted = true
+      this.updateToolbars()
     } catch (error) {
       console.error(error)
       this.props.onErrorCallback(error)
@@ -243,6 +232,10 @@ export default class QueryOutput extends React.Component {
       return false
     }
 
+    if (!this.props.queryResponse && !this.queryResponse) {
+      return false
+    }
+
     return true
   }
 
@@ -250,107 +243,61 @@ export default class QueryOutput extends React.Component {
     try {
       // If data config was changed here, tell the parent
       if (
-        !_isEqual(this.props.tableConfigs, {
+        !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
         }) &&
         this.props.onTableConfigChange
       ) {
-        this.props.onTableConfigChange({
-          tableConfig: this.tableConfig,
-          pivotTableConfig: this.pivotTableConfig,
-        })
+        this.onTableConfigChange()
       }
 
-      if (
-        prevProps.themeConfig &&
-        this.props.themeConfig &&
-        !_isEqual(
-          getThemeConfig(this.props.themeConfig),
-          getThemeConfig(prevProps.themeConfig)
-        )
-      ) {
-        setCSSVars(this.props.themeConfig)
-      }
-
-      if (this.props.queryResponse && !this.queryResponse) {
-        this.queryResponse = _cloneDeep(this.props.queryResponse)
-        if (!this.isCurrentDisplayTypeValid(this.props)) {
-          const recommendedDisplayType = getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations,
-            this.props.preferredDisplayType
-          )
-          this.onRecommendedDisplayType(recommendedDisplayType)
-        } else {
-          this.setResponseData()
-          this.forceUpdate()
-        }
-      }
-
-      // Initial display type has been determined, set the table and chart data now
-      if (!prevProps.displayType && this.props.displayType) {
+      if (prevState.displayType !== this.state.displayType) {
         ReactTooltip.hide()
-
-        if (!this.isCurrentDisplayTypeValid(this.props)) {
-          const recommendedDisplayType = getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations,
-            this.props.preferredDisplayType
-          )
-          this.onRecommendedDisplayType(recommendedDisplayType)
-        } else if (!this.tableData) {
-          this.setResponseData()
-          this.forceUpdate()
-        }
-      }
-
-      // Detected a display type change from props. We must make sure
-      // the display type is valid before updating the state
-      if (
-        this.props.displayType !== prevProps.displayType &&
-        !this.isCurrentDisplayTypeValid(this.props)
-      ) {
-        const recommendedDisplayType = getDefaultDisplayType(
-          this.queryResponse,
-          this.props.autoChartAggregations,
-          this.props.preferredDisplayType
-        )
-        this.onRecommendedDisplayType(recommendedDisplayType)
-      }
-
-      // Do not allow scrolling while the context menu is open
-      if (!prevState.isContextMenuOpen && this.state.isContextMenuOpen) {
-        disableScroll.on()
-      } else if (prevState.isContextMenuOpen && !this.state.isContextMenuOpen) {
-        disableScroll.off()
       }
 
       if (this.state.visibleRows?.length !== prevState.visibleRows?.length) {
         this.props.onRowChange()
       }
 
-      if (!_isEqual(this.state.visibleRows, prevState.visibleRows)) {
-        if (this.shouldGeneratePivotData(this.state.visibleRows)) {
+      // If columns changed, regenerate data if necessary
+      // If table filtered or columns changed, regenerate pivot data and supported display types
+      // Using a count variable so it doesn't have to deep compare on every udpate
+      if (
+        this.state.columnChangeCount !== prevState.columnChangeCount ||
+        this.state.visibleRowChangeCount !== prevState.visibleRowChangeCount
+      ) {
+        this.setTableConfig()
+        this.props.onColumnChange(this.state.columns)
+        if (this.shouldGeneratePivotData()) {
           this.generatePivotData({
             isFirstGeneration: true,
             newTableData: this.state.visibleRows,
           })
+          this.forceUpdate()
         }
 
-        this.setSupportedDisplayTypes(this.getCurrentSupportedDisplayTypes())
-      } else if (
-        this.usePivotDataForChart() &&
-        this.state.visiblePivotRows !== prevState.visiblePivotRows
+        const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+        if (
+          !_isEqual(newSupportedDisplayTypes, this.state.supportedDisplayTypes)
+        ) {
+          this.setState({ supportedDisplayTypes: newSupportedDisplayTypes })
+        }
+      }
+
+      if (
+        !_isEqual(
+          this.state.supportedDisplayTypes,
+          prevState.supportedDisplayTypes
+        ) &&
+        !this.isCurrentDisplayTypeValid()
       ) {
-        this.setSupportedDisplayTypes(this.getCurrentSupportedDisplayTypes())
+        this.setState({
+          displayType: this.getUpdatedDefaultDisplayType('table'),
+        })
       }
 
-      if (this.props.optionsToolbarRef?._isMounted) {
-        this.props.optionsToolbarRef.forceUpdate()
-      }
-
-      this.props.onUpdate()
+      this.updateToolbars()
     } catch (error) {
       console.error(error)
     }
@@ -373,6 +320,83 @@ export default class QueryOutput extends React.Component {
     }
   }
 
+  onTableConfigChange = () => {
+    this.props.onTableConfigChange({
+      tableConfig: this.tableConfig,
+      pivotTableConfig: this.pivotTableConfig,
+    })
+  }
+
+  changeDisplayType = (displayType) => {
+    if (displayType !== 'table') {
+      this.tableID = uuid()
+    }
+
+    this.props.onDisplayTypeChange(displayType)
+    this.setState({ displayType })
+  }
+
+  displayTypeInvalidWarning = (displayType) => {
+    console.warn(
+      `Initial display type "${
+        this.props.initialDisplayType
+      }" provided is not valid for this dataset. Using ${
+        displayType || this.state.displayType
+      } instead.`
+    )
+  }
+
+  getDataLength = () => {
+    return this.state?.visibleRows
+      ? this.state?.visibleRows?.length
+      : this.tableData?.length
+  }
+
+  getPivotDataLength = () => {
+    return this.state?.visiblePivotRows
+      ? this.state?.visiblePivotRows?.length
+      : this.pivotTableData?.length
+  }
+
+  getUpdatedDefaultDisplayType = (preferredDisplayType) => {
+    return getDefaultDisplayType(
+      this.props.queryResponse,
+      this.props.autoChartAggregations,
+      this.getColumns(),
+      this.getDataLength(),
+      this.getPivotDataLength(),
+      preferredDisplayType
+    )
+  }
+
+  getDisplayTypeFromInitial = (props) => {
+    // Set the initial display type based on prop value, response, and supported display types
+    // Start by setting the displayType to the provided initialDisplayType prop value
+    let displayType = props.initialDisplayType
+    const defaultDisplayType = this.getUpdatedDefaultDisplayType(
+      this.props.preferredDisplayType
+    )
+
+    // If prop is not provided, use default display type
+    if (!displayType) {
+      displayType = defaultDisplayType
+    }
+    // If prop is provided, but it isn't supported by the dataset, use default display type
+    else if (
+      !isDisplayTypeValid(
+        props.queryResponse,
+        displayType,
+        this.tableData?.length,
+        this.pivotTableData?.length
+      )
+    ) {
+      this.displayTypeInvalidWarning(displayType)
+      displayType = defaultDisplayType
+    }
+
+    return displayType
+  }
+
   hasError = (response) => {
     try {
       const referenceIdNumber = Number(response.data.reference_id.split('.')[2])
@@ -385,33 +409,46 @@ export default class QueryOutput extends React.Component {
     return true
   }
 
+  getColumns = () => {
+    if (this._isMounted) {
+      return this.state.columns
+    }
+
+    return this.formatColumnsForTable(this.queryResponse?.data?.data?.columns)
+  }
+
   supportsPivot = () => {
-    return this.supportedDisplayTypes.includes('pivot_table')
+    const potentialDisplayTypes = this.getPotentialDisplayTypes()
+    return potentialDisplayTypes?.includes('pivot_table')
   }
 
   supportsDatePivot = () => {
-    return this.supportsPivot() && this.tableColumns.length === 2
+    return this.supportsPivot() && this.state.columns?.length === 2
   }
 
   usePivotDataForChart = () => {
     return this.supportsPivot() && !this.supportsDatePivot()
   }
 
-  onRecommendedDisplayType = (recommendedDisplayType) => {
-    this.props.onRecommendedDisplayType(
-      recommendedDisplayType,
-      this.supportedDisplayTypes
+  areColumnsValid = (columns) => {
+    /* Each provided column must exist in the original
+       query response columns for it to be valid */
+    const origColumns = this.queryResponse?.data?.data?.columns
+    return columns.every((column) =>
+      origColumns.find((origColumn) => {
+        column.name === origColumn.name
+      })
     )
   }
 
-  isTableConfigValid = (tableConfig) => {
+  isTableConfigValid = (tableConfig, columns) => {
     try {
       if (
         !tableConfig ||
         !tableConfig.numberColumnIndices ||
         !tableConfig.stringColumnIndices ||
-        Number.isNaN(Number(tableConfig.numberColumnIndex)) ||
-        Number.isNaN(Number(tableConfig.stringColumnIndex))
+        isNaN(Number(tableConfig.numberColumnIndex)) ||
+        isNaN(Number(tableConfig.stringColumnIndex))
       ) {
         return false
       }
@@ -422,8 +459,6 @@ export default class QueryOutput extends React.Component {
       ) {
         return false
       }
-
-      const columns = _get(this.queryResponse, 'data.data.columns')
 
       const areNumberColumnsValid = tableConfig.numberColumnIndices.every(
         (index) => {
@@ -450,94 +485,70 @@ export default class QueryOutput extends React.Component {
   }
 
   updateColumns = (columns) => {
-    // Update columns in query response
-    if (_get(this.queryResponse, 'data.data.columns')) {
-      this.queryResponse.data.data.columns = columns
-    }
-
-    this.tableID = uuid()
-
-    // Get new supported display types after column change
-    const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
-    this.setSupportedDisplayTypes(newSupportedDisplayTypes, undefined, 'table')
-
-    // Reset persisted column config data
-    this.tableConfig = undefined
-    // Generate new table data from new columns
-    if (this.shouldGenerateTableData()) {
-      this.generateTableData(columns)
-      if (this.shouldGeneratePivotData()) {
-        this.generatePivotTableData({ isFirstGeneration: true })
-      }
-    }
-
-    // If tabulator is mounted, update columns in there
-    if (_get(this.tableRef, 'ref.table')) {
-      this.tableRef.ref.table.setColumns(this.tableColumns)
-    }
-
-    // Call update on options toolbar to show appropriate tools
-    if (this.props.optionsToolbarRef?._isMounted) {
-      this.props.optionsToolbarRef.forceUpdate()
-    }
-
-    if (this.props.displayType === 'text') {
-      this.onRecommendedDisplayType('table')
-    } else {
-      this.forceUpdate()
+    if (columns && this._isMounted) {
+      // Change table ID so a new ChataTable mounts after column change
+      // An alternative would be to manually set the new columns in tabulator:
+      // this.tableRef.ref.table.setColumns(columns)
+      this.tableID = uuid()
+      this.setState({
+        columns: this.formatColumnsForTable(columns),
+        columnChangeCount: this.state.columnChangeCount + 1,
+      })
     }
   }
 
-  generateAllData = (queryResponse, displayType) => {
-    if (_get(queryResponse, 'data.data') && displayType) {
+  generateAllData = () => {
+    if (this.queryResponse?.data?.data) {
+      // Generate new table data from new columns
+      // todo: do we really need this or can we just not display the hidden columns
       if (this.shouldGenerateTableData()) {
         this.generateTableData()
-
         if (this.shouldGeneratePivotData()) {
-          this.generatePivotData({ isFirstGeneration: true })
+          this.generatePivotTableData({
+            isFirstGeneration: true,
+          })
         }
       }
     }
   }
 
-  setResponseData = () => {
-    this.queryID = _get(this.queryResponse, 'data.data.query_id')
-    this.interpretation = _get(this.queryResponse, 'data.data.interpretation')
-    this.generateAllData(this.queryResponse, this.props.displayType)
-  }
-
-  shouldGeneratePivotData = (newTableData) => {
-    return (newTableData || this.tableData) && this.supportsPivot()
+  shouldGeneratePivotData = () => {
+    return (this.state?.visibleRows || this.tableData) && this.supportsPivot()
   }
 
   shouldGenerateTableData = () => {
     return _get(this.queryResponse, 'data.data.rows.length')
   }
 
-  generateTableData = (columns, newTableData) => {
+  generateTableData = (cols, newTableData) => {
     if (newTableData) {
       this.tableData = newTableData
     } else {
+      const columns = cols || this.getColumns()
       this.tableID = uuid()
-      this.tableColumns = this.formatColumnsForTable(columns)
       this.tableData = sortDataByDate(
         this.queryResponse?.data?.data?.rows,
-        this.tableColumns,
-        'table'
+        columns
       )
 
       this.setTableConfig()
+      if (this._isMounted) {
+        this.setState({ columns })
+      }
     }
   }
 
-  generatePivotData = ({ isFirstGeneration, newTableData } = {}) => {
+  generatePivotData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableID = uuid()
-      const tableData = newTableData || this.tableData
-      if (this.tableColumns.length === 2) {
+      const tableData = this.state?.visibleRows || this.tableData
+      const columns = this.getColumns()
+      if (columns.length === 2) {
         this.generateDatePivotData(tableData)
       } else {
-        this.generatePivotTableData({ isFirstGeneration, newTableData })
+        this.generatePivotTableData({
+          isFirstGeneration,
+        })
       }
     } catch (error) {
       console.error(error)
@@ -556,6 +567,11 @@ export default class QueryOutput extends React.Component {
           data-test="suggestion-message-container"
         >
           <div className="react-autoql-suggestions-container">
+            {this.props.showSuggestionPrefix && (
+              <div className="react-autoql-suggestion-message-prefix">
+                I want to make sure I understood your query. Did you mean:
+              </div>
+            )}
             {this.props.renderSuggestionsAsDropdown ? (
               <select
                 key={uuid()}
@@ -633,13 +649,13 @@ export default class QueryOutput extends React.Component {
               ? ' with-drilldown'
               : ''
           }`}
-          onClick={() =>
+          onClick={() => {
             this.processDrilldown({ groupBys: [], supportedByAPI: true })
-          }
+          }}
         >
           {formatElement({
             element: _get(this.queryResponse, 'data.data.rows[0][0]'),
-            column: _get(this.queryResponse, 'data.data.columns[0]'),
+            column: this.state.columns?.[0],
             config: getDataFormatting(this.props.dataFormatting),
           })}
         </a>
@@ -648,10 +664,10 @@ export default class QueryOutput extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.props.displayType === 'table' && this.tableRef?._isMounted) {
+    if (this.state.displayType === 'table' && this.tableRef?._isMounted) {
       this.tableRef.copyToClipboard()
     } else if (
-      this.props.displayType === 'pivot_table' &&
+      this.state.displayType === 'pivot_table' &&
       this.pivotTableRef?._isMounted
     ) {
       this.pivotTableRef.copyToClipboard()
@@ -659,20 +675,20 @@ export default class QueryOutput extends React.Component {
   }
 
   getBase64Data = () => {
-    if (this.chartRef && isChartType(this.props.displayType)) {
+    if (this.chartRef && isChartType(this.state.displayType)) {
       return this.chartRef.getBase64Data().then((data) => {
         const trimmedData = data.split(',')[1]
         return Promise.resolve(trimmedData)
       })
     } else if (
       this.tableRef?._isMounted &&
-      this.props.displayType === 'table'
+      this.state.displayType === 'table'
     ) {
       const data = this.tableRef.getBase64Data()
       return Promise.resolve(data)
     } else if (
       this.pivotTableRef?._isMounted &&
-      this.props.displayType === 'pivot_table'
+      this.state.displayType === 'pivot_table'
     ) {
       const data = this.pivotTableRef.getBase64Data()
       return Promise.resolve(data)
@@ -746,23 +762,23 @@ export default class QueryOutput extends React.Component {
     }
 
     let groupBys = {}
-    if (this.pivotTableColumns && this.props.displayType === 'pivot_table') {
+    if (this.pivotTableColumns && this.state.displayType === 'pivot_table') {
       groupBys = getGroupBysFromPivotTable(cell)
     } else {
-      groupBys = getGroupBysFromTable(cell, this.tableColumns)
+      groupBys = getGroupBysFromTable(cell, this.state.columns)
     }
 
     this.processDrilldown({ groupBys, supportedByAPI: !!groupBys })
   }
 
-  onChartClick = (
+  onChartClick = ({
     row,
     columnIndex,
     columns,
     stringColumnIndex,
     legendColumn,
-    activeKey
-  ) => {
+    activeKey,
+  }) => {
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -808,19 +824,38 @@ export default class QueryOutput extends React.Component {
     })
   }
 
-  toggleTableFilter = ({ isFilteringTable }) => {
-    if (this.props.displayType === 'table') {
-      this.tableRef?._isMounted &&
-        this.tableRef.toggleTableFilter({ isFilteringTable })
+  updateToolbars = () => {
+    this.updateVizToolbar()
+    this.updateOptionsToolbar()
+  }
+
+  updateVizToolbar = () => {
+    if (this.props.vizToolbarRef?._isMounted) {
+      this.props.vizToolbarRef.forceUpdate()
+    }
+  }
+
+  updateOptionsToolbar = () => {
+    if (this.props.optionsToolbarRef?._isMounted) {
+      this.props.optionsToolbarRef.forceUpdate()
+    }
+  }
+
+  toggleTableFilter = () => {
+    if (this.state.displayType === 'table') {
+      this.tableRef?._isMounted && this.tableRef.toggleIsFiltering()
     }
 
-    if (this.props.displayType === 'pivot_table') {
-      this.pivotTableRef?._isMounted &&
-        this.pivotTableRef.toggleTableFilter({ isFilteringTable })
+    if (this.state.displayType === 'pivot_table') {
+      this.pivotTableRef?._isMounted && this.pivotTableRef.toggleIsFiltering()
     }
   }
 
   onNewPage = (rows) => {
+    if (!rows?.length) {
+      return
+    }
+
     try {
       this.tableData = [...this.tableData, ...rows]
     } catch (error) {
@@ -828,64 +863,58 @@ export default class QueryOutput extends React.Component {
     }
   }
 
-  onNewData = (rows) => {
-    this.tableData = rows
+  onTableParamsChange = (params) => {
+    this.tableParams = _cloneDeep(params)
+  }
+
+  onNewData = (response) => {
+    this.isOriginalData = false
+    this.queryResponse = response
+    this.tableData = response?.data?.data?.rows || []
+    this.setState({
+      visibleRows: response.data.data.rows,
+      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+    })
   }
 
   onTableFilter = async (filters, rows) => {
-    if (!filters?.length && !rows?.length) {
+    if (!filters || _isEqual(filters, this.tableParams?.filters)) {
       return
     }
 
-    const { displayType } = this.props
-    if (displayType === 'table' || displayType === 'pivot_table') {
-      const newTableData = []
-      rows.forEach((row) => {
-        newTableData.push(row.getData())
-      })
+    this.tableParams.filters = _cloneDeep(filters)
 
-      if (displayType === 'table') {
-        this.headerFilters = filters
-        this.setState({ visibleRows: newTableData })
-      } else if (displayType === 'pivot_table') {
-        this.pivotHeaderFilters = filters
-        this.setState({ visiblePivotRows: newTableData })
-      }
-    }
+    const newTableData = []
+    rows.forEach((row) => {
+      newTableData.push(row.getData())
+    })
+
+    this.setState({
+      visibleRows: newTableData,
+      visibleRowChangeCount: this.state.visibleRowChangeCount + 1,
+    })
+  }
+
+  onTableSort = (sorters) => {
+    this.tableParams.sorters = _cloneDeep(sorters)
   }
 
   onLegendClick = (d) => {
     const columnIndex = d?.columnIndex
-    if (this.props.displayType === 'pie') {
-      this.onPieChartLegendClick(d)
-    } else {
-      const newColumns = this.supportsPivot()
-        ? [...this.pivotTableColumns]
-        : [...this.tableColumns]
-      newColumns[columnIndex].isSeriesHidden =
-        !newColumns[columnIndex].isSeriesHidden
+    const newColumns = this.supportsPivot()
+      ? [...this.pivotTableColumns]
+      : [...this.state.columns]
+    newColumns[columnIndex].isSeriesHidden =
+      !newColumns[columnIndex].isSeriesHidden
 
-      if (this.supportsPivot()) {
-        this.pivotTableColumns = newColumns
-      } else {
-        this.tableColumns = newColumns
-      }
+    if (this.supportsPivot()) {
+      this.pivotTableColumns = newColumns
+    } else {
+      const formattedColumns = this.formatColumnsForTable(newColumns)
+      this.setState({ columns: formattedColumns })
     }
 
     this.forceUpdate()
-  }
-
-  onPieChartLegendClick = (d) => {
-    // const newChartData = this.chartData.map((data) => {
-    //   if (data.label === d.label) {
-    //     return {
-    //       ...data,
-    //       hidden: !_get(data, 'hidden', false),
-    //     }
-    //   }
-    //   return data
-    // })
-    // this.chartData = newChartData
   }
 
   onChangeStringColumnIndex = (index) => {
@@ -945,6 +974,8 @@ export default class QueryOutput extends React.Component {
       return
     }
 
+    const prevPivotTableConfig = _cloneDeep(this.pivotTableConfig)
+
     if (!this.pivotTableConfig) {
       this.pivotTableConfig = {}
     }
@@ -969,14 +1000,19 @@ export default class QueryOutput extends React.Component {
       this.pivotTableConfig.numberColumnIndices = numberColumnIndices
       this.pivotTableConfig.numberColumnIndex = numberColumnIndex
     }
+
+    if (!_isEqual(prevPivotTableConfig, this.pivotTableConfig)) {
+      this.onTableConfigChange()
+    }
   }
 
   setTableConfig = () => {
-    const columns = this.tableColumns
-
+    const columns = this.getColumns()
     if (!columns) {
       return
     }
+
+    const prevTableConfig = _cloneDeep(this.tableConfig)
 
     if (!this.tableConfig) {
       this.tableConfig = {}
@@ -1005,241 +1041,45 @@ export default class QueryOutput extends React.Component {
     }
 
     // Set legend index if there should be one
-    let legendColumnIndex = this.tableColumns.findIndex(
+    let legendColumnIndex = columns.findIndex(
       (col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex
     )
     if (legendColumnIndex >= 0)
       this.tableConfig.legendColumnIndex = legendColumnIndex
 
-    this.props.onTableConfigChange({
-      tableConfig: this.tableConfig,
-      pivotTableConfig: this.pivotTableConfig,
+    if (!_isEqual(prevTableConfig, this.tableConfig)) {
+      this.onTableConfigChange()
+    }
+  }
+
+  getPotentialDisplayTypes = () => {
+    return getSupportedDisplayTypes({
+      response: this.queryResponse,
+      columns: this.queryResponse?.data?.data?.columns?.map((col) => ({
+        ...col,
+        is_visible: true,
+        visible: true,
+      })),
     })
   }
 
-  isCurrentDisplayTypeValid = (props, displayType) => {
-    const dataLength = this.state?.visibleRows
-      ? this.state?.visibleRows?.length
-      : this.tableData?.length
-
-    const pivotDataLength = this.state?.visiblePivotRows
-      ? this.state?.visiblePivotRows?.length
-      : this.pivotTableData?.length
-
+  isCurrentDisplayTypeValid = () => {
     return isDisplayTypeValid(
       this.queryResponse,
-      props.displayType,
-      dataLength,
-      pivotDataLength
+      this.state.displayType,
+      this.getDataLength(),
+      this.getPivotDataLength(),
+      this.getColumns()
     )
   }
 
   getCurrentSupportedDisplayTypes = () => {
-    const dataLength = this.state?.visibleRows
-      ? this.state?.visibleRows?.length
-      : this.tableData?.length
-
-    const pivotDataLength = this.state?.visiblePivotRows
-      ? this.state?.visiblePivotRows?.length
-      : this.pivotTableData?.length
-
     return getSupportedDisplayTypes({
       response: this.queryResponse,
-      dataLength,
-      pivotDataLength,
+      columns: this.getColumns(),
+      dataLength: this.getDataLength(),
+      pivotDataLength: this.getPivotDataLength(),
     })
-  }
-
-  setSupportedDisplayTypes = (
-    supportedDisplayTypes,
-    justMounted,
-    preferredDisplayType
-  ) => {
-    if (
-      supportedDisplayTypes &&
-      (justMounted ||
-        !_isEqual(supportedDisplayTypes, this.supportedDisplayTypes))
-    ) {
-      this.supportedDisplayTypes = supportedDisplayTypes
-      if (
-        preferredDisplayType &&
-        preferredDisplayType !== this.props.displayType &&
-        this.supportedDisplayTypes.includes(preferredDisplayType)
-      ) {
-        this.onRecommendedDisplayType(preferredDisplayType)
-      } else if (!this.supportedDisplayTypes.includes(this.props.displayType)) {
-        this.onRecommendedDisplayType(
-          getDefaultDisplayType(
-            this.queryResponse,
-            this.props.autoChartAggregations,
-            this.props.preferredDisplayType
-          )
-        )
-      }
-
-      this.props.onSupportedDisplayTypesChange(this.supportedDisplayTypes)
-    }
-  }
-
-  getTooltipDataForCell = (row, columnIndex, numberValue) => {
-    let tooltipElement = null
-    try {
-      if (this.supportsPivot()) {
-        const stringColumn =
-          this.tableColumns[this.tableConfig.stringColumnIndex]
-        const numberColumn =
-          this.tableColumns[this.tableConfig.numberColumnIndex]
-        const legendColumn =
-          this.tableColumns[this.tableConfig.legendColumnIndex]
-
-        const tooltipLine1 = `<div>
-          <strong>${this.pivotTableColumns[0].title}:</strong>${formatElement({
-          element: row[0],
-          column: this.pivotTableColumns[0],
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-        </div>`
-
-        let tooltipLine2 = `<span></span>`
-        if (legendColumn) {
-          tooltipLine2 = `<div><strong>${legendColumn.title}:</strong> ${this.pivotTableColumns[columnIndex].title}</div>`
-        } else if (stringColumn) {
-          tooltipLine2 = `<div><strong>${stringColumn.title}:</strong> ${this.pivotTableColumns[columnIndex].title}</div>`
-        }
-
-        const tooltipLine3 = `<div>
-          <strong>${numberColumn.title}:</strong> ${formatElement({
-          element: row[columnIndex] || 0,
-          column: numberColumn,
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-        </div>`
-
-        tooltipElement = `<div>
-          ${tooltipLine1}
-          ${tooltipLine2}
-          ${tooltipLine3}
-        </div>`
-      } else {
-        const stringColumn =
-          this.tableColumns[this.tableConfig.stringColumnIndex]
-        const numberColumn = this.tableColumns[columnIndex]
-
-        tooltipElement = `<div>
-            <div>
-              <strong>${stringColumn.title}:</strong> ${formatElement({
-          element: row[this.tableConfig.stringColumnIndex],
-          column: stringColumn,
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-            </div>
-            <div>
-            <div>
-              <strong>${numberColumn.title}:</strong> ${formatElement({
-          element: numberValue || row[columnIndex] || 0,
-          column: numberColumn,
-          config: getDataFormatting(this.props.dataFormatting),
-        })}
-            </div>
-          </div>`
-      }
-      return tooltipElement
-    } catch (error) {
-      console.error(error)
-      return null
-    }
-  }
-
-  getDrilldownDataForCell = (row, columnIndex) => {
-    const supportedByAPI = getNumberOfGroupables(this.tableColumns) > 0
-
-    if (this.supportsPivot()) {
-      return {
-        supportedByAPI,
-        data: [
-          {
-            name: _get(this.pivotTableColumns, '[0].name'),
-            value: `${row[0]}`,
-          },
-          {
-            name: _get(
-              this.tableColumns,
-              `[${this.tableConfig.legendColumnIndex}].name`
-            ),
-            value: `${_get(this.pivotTableColumns, `[${columnIndex}].name`)}`,
-          },
-        ],
-      }
-    } else {
-      return {
-        supportedByAPI,
-        data: [
-          {
-            name: _get(
-              this.tableColumns,
-              `[${this.tableConfig.stringColumnIndex}].name`
-            ),
-            value: `${_get(row, `[${this.tableConfig.stringColumnIndex}]`)}`,
-          },
-        ],
-      }
-    }
-  }
-
-  isStringColumnDateType = () => {
-    const stringColumn = this.tableColumns[this.tableConfig.stringColumnIndex]
-    return isColumnDateType(stringColumn)
-  }
-
-  getMultiSeriesData = (columns, tableData) => {
-    const { stringColumnIndex } = getStringColumnIndices(columns)
-    const multiSeriesIndex = getMultiSeriesColumnIndex(columns)
-    const { numberColumnIndex } = getNumberColumnIndices(columns)
-
-    // Sort data so like values are grouped together
-    const sortedData = _cloneDeep(tableData).sort((a, b) => {
-      const aVal = a[stringColumnIndex]
-      const bVal = b[stringColumnIndex]
-
-      if (!aVal || !bVal) {
-        return b - a
-      }
-      return bVal - aVal
-    })
-
-    // make column index map for adding new data in next step
-    const addedColumnIndexes = {}
-    this.tableColumns.forEach((col, index) => {
-      if (col.seriesCategory) {
-        addedColumnIndexes[col.seriesCategory] = index
-      }
-    })
-
-    let prevRow
-    const newTableData = []
-    sortedData.forEach((row, index) => {
-      const category = row[stringColumnIndex]
-      const prevCategory = _get(prevRow, `[${stringColumnIndex}]`)
-      const seriesValue = row[multiSeriesIndex]
-
-      if (prevCategory !== category) {
-        // make new row with original values
-        const cells = makeEmptyArray(this.tableColumns.length, 1, 0)
-        cells[0] = category
-        newTableData.push(cells)
-      }
-
-      // add (or aggregate) the number column for this category
-      const currentNumberColumnValue =
-        newTableData[newTableData.length - 1][
-          addedColumnIndexes[seriesValue]
-        ] || 0
-      newTableData[newTableData.length - 1][addedColumnIndexes[seriesValue]] =
-        row[numberColumnIndex] + currentNumberColumnValue
-      prevRow = row
-    })
-
-    return newTableData
   }
 
   setFilterFunction = (col) => {
@@ -1319,11 +1159,12 @@ export default class QueryOutput extends React.Component {
     return undefined
   }
 
-  formatColumnsForTable = (cols) => {
-    const columns = cols || this.queryResponse?.data?.data?.columns
+  formatColumnsForTable = (columns) => {
+    // todo: do this inside of chatatable
     if (!columns) {
       return null
     }
+
     const formattedColumns = columns.map((col, i) => {
       /**
        * EDIT:
@@ -1393,14 +1234,16 @@ export default class QueryOutput extends React.Component {
   }
 
   formatDatePivotYear = (data, dateColumnIndex) => {
-    if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+    const columns = this.getColumns()
+    if (columns[dateColumnIndex].type === 'DATE') {
       return dayjs.unix(data[dateColumnIndex]).utc().format('YYYY')
     }
     return dayjs(data[dateColumnIndex]).format('YYYY')
   }
 
   formatDatePivotMonth = (data, dateColumnIndex) => {
-    if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+    const columns = this.getColumns()
+    if (columns[dateColumnIndex].type === 'DATE') {
       return dayjs.unix(data[dateColumnIndex]).format('MMMM')
     }
     return dayjs(data[dateColumnIndex]).format('MMMM')
@@ -1408,10 +1251,11 @@ export default class QueryOutput extends React.Component {
 
   generateDatePivotData = (newTableData) => {
     try {
-      const dateColumnIndex = getDateColumnIndex(this.tableColumns)
+      const columns = this.getColumns()
+      const dateColumnIndex = getDateColumnIndex(columns)
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
-        numberColumnIndex = this.tableColumns.findIndex(
+        numberColumnIndex = columns.findIndex(
           (col, index) => index !== dateColumnIndex && isColumnNumberType(col)
         )
       }
@@ -1419,7 +1263,7 @@ export default class QueryOutput extends React.Component {
         newTableData || _get(this.queryResponse, 'data.data.rows')
 
       const allYears = tableData.map((d) => {
-        if (this.tableColumns[dateColumnIndex].type === 'DATE') {
+        if (columns[dateColumnIndex].type === 'DATE') {
           return Number(dayjs.unix(d[dateColumnIndex]).utc().format('YYYY'))
         }
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
@@ -1436,8 +1280,7 @@ export default class QueryOutput extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...this.tableColumns[dateColumnIndex],
-          origColumn: this.tableColumns[dateColumnIndex],
+          ...columns[dateColumnIndex],
           title: 'Month',
           name: 'Month',
           field: '0',
@@ -1446,6 +1289,7 @@ export default class QueryOutput extends React.Component {
           is_visible: true,
           type: 'DATE_STRING',
           datePivot: true,
+          origColumn: columns[dateColumnIndex],
           pivot: true,
           cssClass: 'pivot-category',
           sorter: dateSortFn,
@@ -1455,8 +1299,8 @@ export default class QueryOutput extends React.Component {
 
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
-          ...this.tableColumns[numberColumnIndex],
-          origColumn: this.tableColumns[numberColumnIndex],
+          ...columns[numberColumnIndex],
+          origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
           title: year,
@@ -1494,7 +1338,7 @@ export default class QueryOutput extends React.Component {
             [month]: row[dateColumnIndex],
           }
           pivotTableColumns[pivotColumnIndex].origValues[month] = {
-            name: this.tableColumns[dateColumnIndex]?.name,
+            name: columns[dateColumnIndex]?.name,
             value: row[dateColumnIndex],
           }
         }
@@ -1507,39 +1351,30 @@ export default class QueryOutput extends React.Component {
       this.setPivotTableConfig()
     } catch (error) {
       console.error(error)
-      this.setSupportedDisplayTypes(
-        this.supportedDisplayTypes.filter(
+      const supportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
+      this.setState({
+        displayType: 'table',
+        supportedDisplayTypes: supportedDisplayTypes.filter(
           (displayType) => displayType !== 'pivot_table'
-        )
-      )
-
-      this.onRecommendedDisplayType('table')
+        ),
+      })
     }
   }
 
-  getColumnFromIndexString = (colIndexString) => {
-    return _get(
-      this.tableColumns,
-      `[${_get(this.tableConfig, `[${colIndexString}]`)}]`
-    )
-  }
-
-  generatePivotTableData = ({ isFirstGeneration, newTableData } = {}) => {
+  generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       let tableData =
-        newTableData ||
+        this.state?.visibleRows ||
         this.tableData ||
         _get(this.queryResponse, 'data.data.rows')
       tableData = tableData.filter((row) => row[0] !== null)
 
+      const columns = this.getColumns()
+
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } =
         this.tableConfig
 
-      let uniqueValues0 = sortDataByDate(
-        tableData,
-        this.tableColumns,
-        'pivot-table'
-      )
+      let uniqueValues0 = sortDataByDate(tableData, columns)
         .map((d) => d[stringColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1547,11 +1382,7 @@ export default class QueryOutput extends React.Component {
           return map
         }, {})
 
-      let uniqueValues1 = sortDataByDate(
-        tableData,
-        this.tableColumns,
-        'pivot-table'
-      )
+      let uniqueValues1 = sortDataByDate(tableData, columns)
         .map((d) => d[legendColumnIndex])
         .filter(onlyUnique)
         .reduce((map, title, i) => {
@@ -1566,7 +1397,7 @@ export default class QueryOutput extends React.Component {
       if (
         isFirstGeneration &&
         Object.keys(uniqueValues1).length > Object.keys(uniqueValues0).length &&
-        !isColumnDateType(this.getColumnFromIndexString('stringColumnIndex'))
+        !isColumnDateType(columns[stringColumnIndex])
       ) {
         newStringColumnIndex = legendColumnIndex
         newLegendColumnIndex = stringColumnIndex
@@ -1582,7 +1413,7 @@ export default class QueryOutput extends React.Component {
       // Generate new column array
       const pivotTableColumns = [
         {
-          ...this.tableColumns[newStringColumnIndex],
+          ...columns[newStringColumnIndex],
           frozen: true,
           visible: true,
           is_visible: true,
@@ -1596,13 +1427,13 @@ export default class QueryOutput extends React.Component {
       Object.keys(uniqueValues1).forEach((columnName, i) => {
         const formattedColumnName = formatElement({
           element: columnName,
-          column: this.tableColumns[newLegendColumnIndex],
+          column: columns[newLegendColumnIndex],
           config: getDataFormatting(this.props.dataFormatting),
         })
         pivotTableColumns.push({
-          ...this.tableColumns[numberColumnIndex],
-          origColumn: this.tableColumns[numberColumnIndex],
-          origPivotColumn: this.tableColumns[newLegendColumnIndex],
+          ...columns[numberColumnIndex],
+          origColumn: columns[numberColumnIndex],
+          origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
           name: columnName,
           title: formattedColumnName,
@@ -1626,20 +1457,14 @@ export default class QueryOutput extends React.Component {
 
         // Populate remaining columns
         const pivotColumnIndex = uniqueValues1[row[newLegendColumnIndex]] + 1
-        const pivotValue = row[numberColumnIndex]
+        const pivotValue = Number(row[numberColumnIndex])
         pivotTableData[pivotCategoryIndex][pivotColumnIndex] = pivotValue
 
         pivotTableColumns[pivotColumnIndex].origValues[pivotCategoryValue] = {
-          name: this.tableColumns[newStringColumnIndex]?.name,
+          name: columns[newStringColumnIndex]?.name,
           value: pivotCategoryValue,
         }
       })
-
-      // Pie charts might be available if dataset is small enough
-      const newSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
-      if (!_isEqual(newSupportedDisplayTypes, this.supportedDisplayTypes)) {
-        this.setSupportedDisplayTypes(newSupportedDisplayTypes)
-      }
 
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
@@ -1694,8 +1519,8 @@ export default class QueryOutput extends React.Component {
           source,
         })
       }
-      if (this.props.queryInputRef) {
-        this.props.queryInputRef.submitQuery({
+      if (this.props.queryInputRef?._isMounted) {
+        this.props.queryInputRef?.submitQuery({
           queryText: query,
           userSelection,
           skipQueryValidation: true,
@@ -1760,31 +1585,28 @@ export default class QueryOutput extends React.Component {
   }
 
   renderTable = () => {
-    if (areAllColumnsHidden(this.queryResponse)) {
+    if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
     if (
       !this.tableData ||
-      (this.props.displayType === 'pivot_table' && !this.pivotTableData)
+      (this.state.displayType === 'pivot_table' && !this.pivotTableData)
     ) {
       return this.renderMessage(
         'Error: There was no data supplied for this table'
       )
     }
 
-    if (this.props.displayType === 'pivot_table') {
+    if (this.state.displayType === 'pivot_table') {
       return (
         <ErrorBoundary>
           <ChataTable
-            themeConfig={this.props.themeConfig}
             key={this.pivotTableID}
             ref={(ref) => (this.pivotTableRef = ref)}
             columns={this.pivotTableColumns}
             data={this.pivotTableData}
             onCellClick={this.onTableCellClick}
-            headerFilters={this.pivotHeaderFilters}
-            onFilterCallback={this.onTableFilter}
             isResizing={this.props.isResizing}
             useInfiniteScroll={false}
             supportsDrilldowns={true}
@@ -1794,40 +1616,39 @@ export default class QueryOutput extends React.Component {
       )
     }
 
-    const useInfiniteScroll =
-      this.props.enableAjaxTableData && this.isDataLimited()
-
     return (
       <ChataTable
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         key={this.tableID}
         ref={(ref) => (this.tableRef = ref)}
-        columns={this.tableColumns}
+        columns={this.state.columns}
         data={this.tableData}
         onCellClick={this.onTableCellClick}
         queryID={this.queryID}
-        headerFilters={this.headerFilters}
+        initialParams={this.tableParams}
         onFilterCallback={this.onTableFilter}
+        onSorterCallback={this.onTableSort}
+        onTableParamsChange={this.onTableParamsChange}
         onNewPage={this.onNewPage}
         onNewData={this.onNewData}
         isResizing={this.props.isResizing}
         pageSize={_get(this.queryResponse, 'data.data.row_limit')}
-        useInfiniteScroll={useInfiniteScroll}
+        useInfiniteScroll={this.props.enableAjaxTableData}
         queryRequestData={this.queryResponse?.data?.data?.fe_req}
         queryText={this.queryResponse?.data?.data?.text}
         originalQueryID={this.props.originalQueryID}
         isDrilldown={this.isDrilldown()}
+        isQueryOutputMounted={this._isMounted}
         supportsDrilldowns={
-          isAggregation(this.tableColumns) &&
+          isAggregation(this.state.columns) &&
           getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
         }
       />
     )
   }
 
-  renderChart = (displayType) => {
-    if (!this.tableData || !this.tableColumns || !this.tableConfig) {
+  renderChart = () => {
+    if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing')
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
@@ -1841,7 +1662,6 @@ export default class QueryOutput extends React.Component {
         !this.pivotTableColumns ||
         !this.pivotTableConfig)
     ) {
-      console.error('Required pivot table data was missing')
       return this.renderMessage(
         'Error: There was no data supplied for this chart'
       )
@@ -1851,32 +1671,32 @@ export default class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
-          themeConfig={this.props.themeConfig}
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
-          type={displayType || this.props.displayType}
+          type={this.state.displayType}
+          popoverParentElement={this.props.popoverParentElement}
           {...tableConfig}
           data={
             usePivotData
               ? this.state.visiblePivotRows || this.pivotTableData
               : this.state.visibleRows || this.tableData
           }
-          columns={usePivotData ? this.pivotTableColumns : this.tableColumns}
+          columns={usePivotData ? this.pivotTableColumns : this.state.columns}
           isPivot={usePivotData}
           dataFormatting={getDataFormatting(this.props.dataFormatting)}
-          backgroundColor={this.props.backgroundColor}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
-          legendColumn={this.tableColumns[this.tableConfig?.legendColumnIndex]}
+          legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
           onChartClick={this.onChartClick}
           isResizing={this.props.isResizing}
-          isAnimatingContainer={this.props.isAnimatingContainer}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={`react-autoql-chart-tooltip-${this.COMPONENT_KEY}`}
           rebuildTooltips={this.rebuildTooltips}
+          height={this.props.height}
+          width={this.props.width}
         />
       </ErrorBoundary>
     )
@@ -1942,7 +1762,9 @@ export default class QueryOutput extends React.Component {
   }
 
   noDataFound = () => {
-    return this.queryResponse?.data?.data?.rows?.length === 0
+    return (
+      this.queryResponse?.data?.data?.rows?.length === 0 && this.isOriginalData
+    )
   }
 
   renderMessage = (error) => {
@@ -2012,7 +1834,7 @@ export default class QueryOutput extends React.Component {
   }
 
   renderTextResponse = () => {
-    if (areAllColumnsHidden(this.queryResponse)) {
+    if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
@@ -2020,7 +1842,7 @@ export default class QueryOutput extends React.Component {
   }
 
   renderResponse = () => {
-    const { displayType } = this.props
+    const { displayType } = this.state
 
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
@@ -2047,7 +1869,6 @@ export default class QueryOutput extends React.Component {
     if (_get(this.queryResponse, 'data.data.replacements')) {
       return (
         <QueryValidationMessage
-          themeConfig={this.props.themeConfig}
           key={this.QUERY_VALIDATION_KEY}
           response={this.queryResponse}
           onSuggestionClick={({ query, userSelection }) =>
@@ -2087,11 +1908,11 @@ export default class QueryOutput extends React.Component {
       }
 
       console.warn(
-        `display type not recognized: ${this.props.displayType} - rendering as plain text`
+        `display type not recognized: ${this.state.displayType} - rendering as plain text`
       )
 
       return this.renderMessage(
-        `display type not recognized: ${this.props.displayType}`
+        `display type not recognized: ${this.state.displayType}`
       )
     }
 
@@ -2102,8 +1923,7 @@ export default class QueryOutput extends React.Component {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
       this.props.showQueryInterpretation &&
-      this.queryResponse?.data?.data?.interpretation &&
-      !areAllColumnsHidden(this.queryResponse)
+      this.queryResponse?.data?.data?.parsed_interpretation
     )
   }
 
@@ -2124,12 +1944,12 @@ export default class QueryOutput extends React.Component {
 
   shouldRenderDataLimitWarning = () => {
     const isTableAndAjax =
-      this.props.enableAjaxTableData && this.props.displayType === 'table'
+      this.props.enableAjaxTableData && this.state.displayType === 'table'
 
     return (
       !isTableAndAjax &&
       this.isDataLimited() &&
-      !areAllColumnsHidden(this.queryResponse)
+      !areAllColumnsHidden(this.getColumns())
     )
   }
 
@@ -2142,9 +1962,7 @@ export default class QueryOutput extends React.Component {
       <div className="dashboard-data-limit-warning-icon">
         <Icon
           type="warning"
-          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached.<br />
-            Try querying a smaller time-frame to ensure<br />
-            all your data is displayed.`}
+          data-tip={`The display limit of ${this.queryResponse?.data?.data?.row_limit} rows has been reached. Try querying a smaller time-frame to ensure all your data is displayed.`}
           data-for={`react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`}
           data-place={isReverseTranslationRendered ? 'left' : 'right'}
         />
@@ -2177,7 +1995,7 @@ export default class QueryOutput extends React.Component {
           id={`react-autoql-response-content-container-${this.COMPONENT_KEY}`}
           data-test="query-response-wrapper"
           className={`react-autoql-response-content-container
-          ${isTableType(this.props.displayType) ? 'table' : ''}`}
+          ${isTableType(this.state.displayType) ? 'table' : ''}`}
         >
           {this.renderResponse()}
           {this.renderFooter()}
@@ -2199,3 +2017,5 @@ export default class QueryOutput extends React.Component {
     )
   }
 }
+
+export default withTheme(QueryOutput)

@@ -4,6 +4,8 @@
   flex-grow: 1;
   flex-shrink: 1;
   overflow: hidden;
+  color: var(--react-autoql-text-color-primary);
+  background: var(--react-autoql-background-color-secondary);
 
   svg {
     // set transparent in css but keep background in inline style for exporting to png
@@ -19,7 +21,6 @@
   /* These are not inline styles since they do not apply to saved PNG charts */
   .bar,
   .column,
-  .circle,
   .line,
   .slice,
   .stacked-area,
@@ -56,9 +57,20 @@
     }
   }
 
+  .circle {
+    transition: fill-opacity 0.2s ease;
+    fill-opacity: 0.7;
+    outline: none !important;
+    &:hover,
+    &.active {
+      fill-opacity: 1 !important;
+    }
+  }
+
   g.tick {
     transition: opacity 0.3s ease;
   }
+
   .react-autoql-heatmap-chart g.tick line,
   .react-autoql-bubble-chart g.tick line {
     opacity: 0 !important; // we need to render the tick lines so the bounding box calcs are correct. But we dont want to see them
@@ -75,13 +87,11 @@
 }
 
 .axis-selector-container {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   z-index: 9999;
   padding: 5px 0;
-  max-height: 300px;
   min-width: 150px;
-  overflow-y: auto;
 
   .axis-select-option.active {
     background: var(--react-autoql-hover-color);
@@ -141,6 +151,6 @@
 }
 
 .axis-selector-apply-btn {
-  background: var(--react-autoql-background-color-primary);
+  background: var(--react-autoql-background-color-secondary);
   padding: 5px;
 }

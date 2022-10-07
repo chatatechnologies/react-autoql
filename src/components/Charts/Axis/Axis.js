@@ -6,10 +6,10 @@ import _isEqual from 'lodash.isequal'
 
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom } from 'd3-axis'
-import { legendColor } from 'd3-svg-legend'
-import { symbol, symbolCircle } from 'd3-shape'
 import { scaleOrdinal } from 'd3-scale'
+
 import LegendSelector from './LegendSelector'
+import legendColor from '../Legend/Legend'
 
 import { formatChartLabel, removeFromDOM } from '../../../js/Util.js'
 import { axesDefaultProps, axesPropTypes } from '../helpers.js'
@@ -81,6 +81,7 @@ export default class Axis extends Component {
       .style('font-weight', 'bold')
       .style('transform', 'translate(0, -5px)')
       .attr('data-test', 'legend-title')
+      .attr('fill-opacity', 0.9)
   }
 
   styleLegendTitleWithBorder = (svg) => {
@@ -98,10 +99,7 @@ export default class Axis extends Component {
     // Add border that shows on hover
     this.titleBBox = {}
     try {
-      this.titleBBox = svg
-        .select('.legendTitle')
-        .node()
-        .getBBox()
+      this.titleBBox = svg.select('.legendTitle').node().getBBox()
     } catch (error) {
       console.error(error)
     }
@@ -163,22 +161,16 @@ export default class Axis extends Component {
         this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
-          .style('fill-opacity', '0.7')
+          .style('fill-opacity', '1')
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
         var legendOrdinal = legendColor()
-          .shape(
-            'path',
-            symbol()
-              .type(symbolCircle)
-              .size(75)()
-          )
           .orient('vertical')
           .shapePadding(5)
           .labelWrap(100)
           .scale(legendScale)
-          .on('cellclick', function(d) {
+          .on('cellclick', function (d) {
             self.props.onLabelChange({ setLoading: false })
             self.props.onLegendClick(
               legendLabels.find((label) => label.label === d)
@@ -214,23 +206,17 @@ export default class Axis extends Component {
         this.legendSVG
           .attr('class', 'legendOrdinal')
           .style('fill', 'currentColor')
-          .style('fill-opacity', '0.7')
+          .style('fill-opacity', '1')
           .style('font-family', 'inherit')
           .style('font-size', '10px')
 
         var legendOrdinal = legendColor()
-          .shape(
-            'path',
-            symbol()
-              .type(symbolCircle)
-              .size(75)()
-          )
           .orient('horizontal')
           .shapePadding(self.LEGEND_PADDING)
           .labelWrap(120)
           .labelAlign('left')
           .scale(legendScale)
-          .on('cellclick', function(d) {
+          .on('cellclick', function (d) {
             self.props.onLegendClick(d)
           })
 
@@ -300,7 +286,7 @@ export default class Axis extends Component {
     axis
       .scale(this.props.scale)
       .tickSizeOuter(0)
-      .tickFormat(function(d) {
+      .tickFormat(function (d) {
         return formatChartLabel({
           d,
           col: self.props.col,
@@ -328,7 +314,7 @@ export default class Axis extends Component {
         .style('text-anchor', 'end')
         .attr('dy', '0.5em')
         .attr('dx', '-0.5em')
-        .attr('fill-opacity', '0.7')
+        .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
     } else if (this.props.orient === 'Bottom' && !this.props.rotateLabels) {
       select(this.axisElement)
@@ -337,17 +323,17 @@ export default class Axis extends Component {
         .style('text-anchor', 'middle')
         .attr('dy', '10px')
         .attr('dx', '0')
-        .attr('fill-opacity', '0.7')
+        .attr('fill-opacity', '1')
         .style('font-family', 'inherit')
     }
 
     select(this.axisElement)
       .selectAll('.axis text')
       .style('fill', 'currentColor')
-      .style('fill-opacity', '0.7')
+      .style('fill-opacity', '1')
       .style('font-family', 'inherit')
       .attr('data-for', this.props.tooltipID)
-      .attr('data-tip', function(d) {
+      .attr('data-tip', function (d) {
         const { fullWidthLabel, isTruncated } = formatChartLabel({
           d,
           col: self.props.col,
@@ -360,15 +346,13 @@ export default class Axis extends Component {
       })
       .attr('data-effect', 'float')
 
-    select(this.axisElement)
-      .selectAll('.axis path')
-      .style('display', 'none')
+    select(this.axisElement).selectAll('.axis path').style('display', 'none')
 
     select(this.axisElement)
       .selectAll('.axis line')
       .style('stroke-width', '1px')
       .style('stroke', 'currentColor')
-      .style('opacity', '0.15')
+      .style('opacity', '0.08')
       .style('shape-rendering', 'crispedges')
 
     // Make tick line at 0 darker
@@ -376,7 +360,7 @@ export default class Axis extends Component {
       .selectAll('g.tick')
       .filter((d) => d == 0)
       .select('line')
-      .style('opacity', 0.4)
+      .style('opacity', 0.3)
   }
 
   render = () => {
@@ -430,7 +414,7 @@ export default class Axis extends Component {
               <LegendSelector
                 {...this.props}
                 column={this.props.legendColumn}
-                position="bottom"
+                positions={['bottom']}
                 align="end"
                 childProps={{
                   ref: (r) => (this.legendBorder = r),
@@ -451,9 +435,9 @@ export default class Axis extends Component {
             data-test="bottom-legend"
             id={this.LEGEND_ID}
             className="legendOrdinal"
-            transform={`translate(${(this.props.width - marginLeft) / 2 +
-              marginLeft -
-              legendDx},${this.props.height - 30})`}
+            transform={`translate(${
+              (this.props.width - marginLeft) / 2 + marginLeft - legendDx
+            },${this.props.height - 30})`}
           />
         )}
       </g>

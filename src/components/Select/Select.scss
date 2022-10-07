@@ -1,7 +1,7 @@
 .react-autoql-select {
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
   border-radius: 4px;
-  background: var(--react-autoql-background-color-primary, white);
+  background: var(--react-autoql-background-color-secondary, white);
   display: inline-block;
   font-size: 13px;
   line-height: 32px;
@@ -18,7 +18,7 @@
 }
 
 .react-autoql-select-popup-container {
-  background: var(--react-autoql-background-color-primary, white);
+  background: var(--react-autoql-background-color-secondary, white);
   padding: 10px 0;
   max-height: 300px;
   overflow-y: auto;

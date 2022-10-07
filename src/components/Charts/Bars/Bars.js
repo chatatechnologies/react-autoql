@@ -19,15 +19,14 @@ export default class Bars extends Component {
   onBarClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -65,7 +64,7 @@ export default class Bars extends Component {
             }
 
             let width = Math.abs(xScale(value) - scaleZero(xScale))
-            if (Number.isNaN(width)) {
+            if (isNaN(width)) {
               width = 0
             }
 

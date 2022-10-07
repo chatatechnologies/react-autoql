@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import Drawer from 'rc-drawer'
 import ReactTooltip from 'react-tooltip'
-import Popover from 'react-tiny-popover'
+import { Popover } from 'react-tiny-popover'
 import _get from 'lodash.get'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
@@ -11,22 +11,19 @@ import _isEqual from 'lodash.isequal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ChatContent } from '../ChatContent'
 import TopicsCascader from './TopicsCascader'
+import { withTheme } from '../../theme'
 
 import {
   authenticationType,
   autoQLConfigType,
   dataFormattingType,
-  themeConfigType,
 } from '../../props/types'
 import {
   autoQLConfigDefault,
   dataFormattingDefault,
-  themeConfigDefault,
   getAutoQLConfig,
-  getThemeConfig,
 } from '../../props/defaults'
 
-import { setCSSVars } from '../../js/Util'
 import { lang, setLanguage } from '../../js/Localization'
 
 // Components
@@ -44,7 +41,7 @@ import { FilterLockPopover } from '../FilterLockPopover'
 import 'rc-drawer/assets/index.css'
 import './DataMessenger.scss'
 
-export default class DataMessenger extends React.Component {
+export class DataMessenger extends React.Component {
   constructor(props) {
     super(props)
 
@@ -55,8 +52,6 @@ export default class DataMessenger extends React.Component {
     this.HEADER_THICKNESS = 70
     this.TAB_THICKNESS = 45
     this.DEFAULT_AJAX_PAGE_SIZE = 50
-
-    setCSSVars(props.themeConfig)
 
     this.dataMessengerIntroMessages = [
       props.introMessage
@@ -107,7 +102,6 @@ export default class DataMessenger extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    themeConfig: themeConfigType,
 
     // UI
     placement: PropTypes.string,
@@ -132,6 +126,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
+    popoverParentElement: PropTypes.element,
 
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
@@ -151,10 +146,9 @@ export default class DataMessenger extends React.Component {
 
   static defaultProps = {
     // Global
+    authentication: {},
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
-    themeConfig: themeConfigDefault,
-    authentication: {},
 
     // UI
     placement: 'right',
@@ -179,6 +173,7 @@ export default class DataMessenger extends React.Component {
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,
+    popoverParentElement: undefined,
 
     enableDynamicCharting: true,
     defaultTab: 'data-messenger',
@@ -247,15 +242,6 @@ export default class DataMessenger extends React.Component {
         this.props.clearOnClose
       ) {
         this.setState({ dataMessengerId: uuid() })
-      }
-
-      if (
-        !_isEqual(
-          getThemeConfig(this.props.themeConfig),
-          getThemeConfig(prevProps.themeConfig)
-        )
-      ) {
-        setCSSVars(this.props.themeConfig)
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -542,7 +528,6 @@ export default class DataMessenger extends React.Component {
                     <NotificationIcon
                       ref={(r) => (this.notificationBadgeRef = r)}
                       authentication={this.props.authentication}
-                      themeConfig={this.props.themeConfig}
                       clearCountOnClick={false}
                       style={{ fontSize: '19px' }}
                       overflowCount={9}
@@ -585,7 +570,9 @@ export default class DataMessenger extends React.Component {
           onClickOutside={() => {
             this.setState({ isOptionsDropdownOpen: false })
           }}
-          position="bottom" // preferred position
+          parentElement={this.messengerDrawerRef}
+          boundaryElement={this.messengerDrawerRef}
+          positions={['bottom']}
           content={
             <div>
               <div className="clear-messages-confirm-popover">
@@ -699,18 +686,23 @@ export default class DataMessenger extends React.Component {
     return !!this.dmRef?.state?.open
   }
 
+  shouldRenderPage = (page) => {
+    return this.state.activePage === page && this.isOpen()
+  }
+
   renderFilterLockPopover = () => {
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         rebuildTooltips={this.rebuildTooltips}
-        position="bottom"
-        align="end"
+        parentElement={this.messengerDrawerRef}
+        boundaryElement={this.messengerDrawerRef}
+        positions={['bottom']}
+        align="center"
       >
         <button
           className={`react-autoql-drawer-header-btn filter-locking ${
@@ -724,7 +716,12 @@ export default class DataMessenger extends React.Component {
               : this.openFilterLockMenu
           }
         >
-          <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+          <span className="react-autoql-filter-lock-icon-container">
+            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            {this.state.hasFilters ? (
+              <div className="react-autoql-filter-lock-icon-badge" />
+            ) : null}
+          </span>
         </button>
       </FilterLockPopover>
     )
@@ -801,22 +798,21 @@ export default class DataMessenger extends React.Component {
         <ChatContent
           {...this.props}
           data-test="data-messenger-chat-content"
-          shouldRender={this.state.activePage === 'data-messenger'}
+          shouldRender={this.shouldRenderPage('data-messenger')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dataMessengerContentRef = r)}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
-          themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
-          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           enableAjaxTableData={this.props.enableAjaxTableData}
           autoChartAggregations={this.props.autoChartAggregations}
+          popoverParentElement={this.messengerDrawerRef}
           dataPageSize={dataPageSize}
         />
       </ErrorBoundary>
@@ -824,22 +820,24 @@ export default class DataMessenger extends React.Component {
   }
 
   renderDPRContent = () => {
+    if (!this.props.enableDPRTab) {
+      return null
+    }
+
     return (
       <ErrorBoundary>
         <ChatContent
           {...this.props}
-          shouldRender={this.state.activePage === 'dpr'}
+          shouldRender={this.shouldRenderPage('dpr')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
           authentication={{
             dprKey: this.props.authentication?.dprKey,
             dprDomain: this.props.authentication?.dprDomain,
           }}
-          themeConfig={this.props.themeConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={['data_messenger']}
           rebuildTooltips={this.rebuildTooltips}
-          isDataMessengerOpen={this.isOpen()}
           introMessages={this.dprMessengerIntroMessages}
           disableMaxMessageHeight={true}
           inputPlaceholder="Type your questions here"
@@ -858,71 +856,82 @@ export default class DataMessenger extends React.Component {
     )
   }
 
-  renderDataExplorerContent = () => (
-    <ErrorBoundary>
-      <DataExplorer
-        ref={(r) => (this.dataExplorerRef = r)}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
-        dataFormatting={this.props.dataFormatting}
-        rebuildTooltips={this.rebuildTooltips}
-        shouldRender={
-          this.state.activePage === 'data-explorer' && this.isOpen()
-        }
-        executeQuery={(query) => {
-          this.setState({ activePage: 'data-messenger' })
-          clearTimeout(this.executeQueryTimeout)
-          this.executeQueryTimeout = setTimeout(() => {
-            this.dataMessengerContentRef?.animateInputTextAndSubmit({
-              query,
-              source: ['data_explorer'],
-            })
-          }, 500)
-        }}
-      />
-    </ErrorBoundary>
-  )
+  renderDataExplorerContent = () => {
+    if (!this.props.enableDataExplorerTab) {
+      return null
+    }
 
-  renderExploreQueriesContent = () => (
-    <ErrorBoundary>
-      <ExploreQueries
-        ref={(r) => (this.exploreQueriesRef = r)}
-        authentication={this.props.authentication}
-        shouldRender={
-          this.state.activePage === 'explore-queries' && this.isOpen()
-        }
-        executeQuery={(query) => {
-          this.setState({ activePage: 'data-messenger' })
-          clearTimeout(this.executeQueryTimeout)
-          this.executeQueryTimeout = setTimeout(() => {
-            this.dataMessengerContentRef?.animateInputTextAndSubmit({
-              query,
-              source: ['explore_queries'],
-            })
-          }, 500)
-        }}
-      />
-    </ErrorBoundary>
-  )
+    return (
+      <ErrorBoundary>
+        <DataExplorer
+          ref={(r) => (this.dataExplorerRef = r)}
+          authentication={this.props.authentication}
+          dataFormatting={this.props.dataFormatting}
+          rebuildTooltips={this.rebuildTooltips}
+          shouldRender={this.shouldRenderPage('data-explorer')}
+          executeQuery={(query) => {
+            this.setState({ activePage: 'data-messenger' })
+            clearTimeout(this.executeQueryTimeout)
+            this.executeQueryTimeout = setTimeout(() => {
+              this.dataMessengerContentRef?.animateInputTextAndSubmit({
+                query,
+                source: ['data_explorer'],
+              })
+            }, 500)
+          }}
+        />
+      </ErrorBoundary>
+    )
+  }
 
-  renderNotificationsContent = () => (
-    <ErrorBoundary>
-      <NotificationFeed
-        ref={(ref) => (this.notificationListRef = ref)}
-        authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
-        onExpandCallback={this.props.onNotificationExpandCallback}
-        onCollapseCallback={this.props.onNotificationCollapseCallback}
-        activeNotificationData={this.props.activeNotificationData}
-        onErrorCallback={this.props.onErrorCallback}
-        onSuccessCallback={this.props.onSuccessCallback}
-        showNotificationDetails={false}
-        shouldRender={
-          this.isOpen() && this.state.activePage === 'notifications'
-        }
-      />
-    </ErrorBoundary>
-  )
+  renderExploreQueriesContent = () => {
+    if (!this.props.enableExploreQueriesTab) {
+      return null
+    }
+    return (
+      <ErrorBoundary>
+        <ExploreQueries
+          ref={(r) => (this.exploreQueriesRef = r)}
+          authentication={this.props.authentication}
+          shouldRender={this.shouldRenderPage('explore-queries')}
+          executeQuery={(query) => {
+            this.setState({ activePage: 'data-messenger' })
+            clearTimeout(this.executeQueryTimeout)
+            this.executeQueryTimeout = setTimeout(() => {
+              this.dataMessengerContentRef?.animateInputTextAndSubmit({
+                query,
+                source: ['explore_queries'],
+              })
+            }, 500)
+          }}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  renderNotificationsContent = () => {
+    if (!this.props.enableNotificationsTab) {
+      return null
+    }
+
+    return (
+      <ErrorBoundary>
+        <NotificationFeed
+          ref={(ref) => (this.notificationListRef = ref)}
+          authentication={this.props.authentication}
+          onExpandCallback={this.props.onNotificationExpandCallback}
+          onCollapseCallback={this.props.onNotificationCollapseCallback}
+          activeNotificationData={this.props.activeNotificationData}
+          onErrorCallback={this.props.onErrorCallback}
+          onSuccessCallback={this.props.onSuccessCallback}
+          showNotificationDetails={false}
+          shouldRender={
+            this.isOpen() && this.state.activePage === 'notifications'
+          }
+        />
+      </ErrorBoundary>
+    )
+  }
 
   resizeDrawer = (e) => {
     const { placement } = this.state
@@ -1040,7 +1049,6 @@ export default class DataMessenger extends React.Component {
     return (
       <DataAlertModal
         authentication={this.props.authentication}
-        themeConfig={this.props.themeConfig}
         isVisible={this.state.isDataAlertModalVisible}
         onClose={() => this.setState({ isDataAlertModalVisible: false })}
         onSave={() => {
@@ -1100,3 +1108,5 @@ export default class DataMessenger extends React.Component {
     )
   }
 }
+
+export default withTheme(DataMessenger)

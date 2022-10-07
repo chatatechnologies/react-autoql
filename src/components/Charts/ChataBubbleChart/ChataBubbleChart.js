@@ -59,28 +59,40 @@ export default class ChataBubbleChart extends Component {
 
   setChartData = (props) => {
     this.yLabelArray = props.legendLabels.map((d) => d.label)
-    this.circleHeight = props.height / this.yLabelArray.length
+    this.circleHeight = props.innerHeight / this.yLabelArray.length
+
+    const xRangeStart = props.leftMargin
+    let xRangeEnd = props.width - props.rightMargin
+    if (xRangeEnd < xRangeStart) {
+      xRangeEnd = xRangeStart
+    }
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
-      .range([props.leftMargin, props.width - props.rightMargin])
+      .range([xRangeStart, xRangeEnd])
       .paddingOuter(0.5)
+
+    const yRangeEnd = props.topMargin
+    let yRangeStart = props.height - props.bottomMargin
+    if (yRangeStart < yRangeEnd) {
+      yRangeStart = yRangeEnd
+    }
 
     this.yScale = scaleBand()
       .domain(this.yLabelArray)
-      .range([props.height - props.bottomMargin, props.topMargin])
+      .range([yRangeStart, yRangeEnd])
 
-    this.xTickValues = getTickValues(
-      this.xScale.bandwidth(),
-      props.width,
-      this.xScale.domain()
-    )
+    this.xTickValues = getTickValues({
+      tickHeight: this.xScale.bandwidth(),
+      fullHeight: props.innerWidth,
+      labelArray: this.xScale.domain(),
+    })
 
-    this.yTickValues = getTickValues(
-      this.circleHeight,
-      props.height,
-      this.yLabelArray
-    )
+    this.yTickValues = getTickValues({
+      tickHeight: this.circleHeight,
+      fullHeight: props.innerHeight,
+      labelArray: this.yLabelArray,
+    })
   }
 
   render = () => {
@@ -92,6 +104,7 @@ export default class ChataBubbleChart extends Component {
         className="react-autoql-bubble-chart"
         data-test="react-autoql-bubble-chart"
       >
+        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -103,7 +116,6 @@ export default class ChataBubbleChart extends Component {
           rotateLabels={this.rotateLabels}
           yGridLines
         />
-        <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
       </g>
     )
   }

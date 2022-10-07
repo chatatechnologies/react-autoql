@@ -1,25 +1,19 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Popover from 'react-tiny-popover'
-
-import FilterLockPopoverContent from './FilterLockPopoverContent'
-import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Popover, ArrowContainer } from 'react-tiny-popover'
 
 import { fetchFilters } from '../../js/queryService'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
+import { withTheme } from '../../theme'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-  themeConfigDefault,
-} from '../../props/defaults'
+import FilterLockPopoverContent from './FilterLockPopoverContent'
 
 import './FilterLockPopover.scss'
 
-export default class FilterLockPopover extends React.Component {
+export class FilterLockPopover extends React.Component {
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
     position: PropTypes.string,
@@ -31,7 +25,6 @@ export default class FilterLockPopover extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     isOpen: false,
     position: 'bottom',
@@ -87,22 +80,19 @@ export default class FilterLockPopover extends React.Component {
     this.setState({ insertedFilter: text })
   }
 
-  renderContent = ({ position, targetRect, popoverRect }) => {
+  renderContent = ({ position, childRect, popoverRect }) => {
     return (
-      <>
-        {/* TODO: Use this component for arrow
-        
-        <ArrowContainer
-          className="filter-lock-menu"
-          position={position}
-          targetRect={targetRect}
-          popoverRect={popoverRect}
-          arrowStyle={{ opacity: 1 }}
-        /> */}
+      <ArrowContainer
+        className="filter-lock-menu-content-container"
+        arrowClassName="filter-lock-menu-popover-arrow"
+        position={position}
+        childRect={childRect}
+        popoverRect={popoverRect}
+        arrowSize={10}
+      >
         <FilterLockPopoverContent
           ref={(r) => (this.popoverContentRef = r)}
           authentication={this.props.authentication}
-          themeConfig={this.props.themeConfig}
           isOpen={this.props.isOpen}
           onClose={this.props.onClose}
           onChange={this.onChange}
@@ -112,7 +102,7 @@ export default class FilterLockPopover extends React.Component {
           initialFilters={this.state.initialFilters}
           isFetchingFilters={this.state.isFetchingFilters}
         />
-      </>
+      </ArrowContainer>
     )
   }
 
@@ -121,15 +111,19 @@ export default class FilterLockPopover extends React.Component {
       <Popover
         containerClassName="filter-lock-menu"
         onClickOutside={this.props.onClose}
-        position={this.props.position}
+        positions={this.props.positions}
         isOpen={this.props.isOpen}
         align={this.props.align}
         ref={(r) => (this.containerRef = r)}
-        padding={0}
+        parentElement={this.props.parentElement}
+        boundaryElement={this.props.boundaryElement}
         content={this.renderContent}
+        boundaryInset={10}
       >
-        <ErrorBoundary>{this.props.children || null}</ErrorBoundary>
+        {this.props.children || <div style={{ display: 'none' }} />}
       </Popover>
     )
   }
 }
+
+export default withTheme(FilterLockPopover)

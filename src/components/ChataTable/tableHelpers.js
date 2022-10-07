@@ -1,6 +1,6 @@
 import { isColumnNumberType } from '../QueryOutput/columnHelpers'
 
-export const getTableConfigState = (params, tableRef) => {
+export const formatTableParams = (params, tableRef) => {
   const formattedSorters = formatSortersForAPI(params, tableRef)
   const formattedFilters = formatFiltersForAPI(params, tableRef)
 
@@ -15,7 +15,7 @@ export const getTableConfigState = (params, tableRef) => {
 
 export const formatSortersForAPI = (params, tableRef) => {
   let sorters = []
-  if (params?.sorters?.length > 0) {
+  if (params?.sorters?.length > 0 && tableRef) {
     params.sorters.forEach((sorter) => {
       try {
         const column = tableRef.table.getColumn(sorter.field).getDefinition()
@@ -60,7 +60,7 @@ export const formatFiltersForAPI = (params, tableRef) => {
   let filters = []
 
   // test to see if there is an error, if it continues for loop
-  if (params?.filters?.length > 0) {
+  if (params?.filters?.length > 0 && tableRef) {
     params.filters.forEach((filter) => {
       try {
         const column = tableRef.table.getColumn(filter.field).getDefinition()

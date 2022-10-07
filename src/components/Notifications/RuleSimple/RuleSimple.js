@@ -11,10 +11,9 @@ import { Icon } from '../../Icon'
 import { Button } from '../../Button'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
 } from '../../../props/defaults'
 import { fetchAutocomplete } from '../../../js/queryService'
@@ -69,7 +68,6 @@ export default class RuleSimple extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
     ruleId: PropTypes.string,
     onUpdate: PropTypes.func,
     initialData: PropTypes.arrayOf(PropTypes.shape({})),
@@ -78,7 +76,6 @@ export default class RuleSimple extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
     ruleId: undefined,
     onUpdate: () => {},
     initialData: undefined,
@@ -175,7 +172,7 @@ export default class RuleSimple extends React.Component {
 
     // If just one word, strip everything but numbers
     const strippedSymbolsStr = parseNum(num)
-    return !Number.isNaN(Number(strippedSymbolsStr))
+    return !isNaN(Number(strippedSymbolsStr))
   }
 
   isComplete = () => {
@@ -321,7 +318,6 @@ export default class RuleSimple extends React.Component {
   renderConditionSelector = () => {
     return (
       <Select
-        themeConfig={this.props.themeConfig}
         options={[
           { value: 'GREATER_THAN', label: '>', tooltip: 'Greater Than' },
           { value: 'LESS_THAN', label: '<', tooltip: 'Less Than' },

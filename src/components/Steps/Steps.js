@@ -4,8 +4,6 @@ import { v4 as uuid } from 'uuid'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
-import { themeConfigType } from '../../props/types'
-import { themeConfigDefault } from '../../props/defaults'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Steps.scss'
@@ -14,14 +12,12 @@ export default class Steps extends React.Component {
   COMPONENT_KEY = uuid()
 
   static propTypes = {
-    themeConfig: themeConfigType,
     steps: PropTypes.arrayOf(PropTypes.shape({})),
     initialActiveStep: PropTypes.number,
     collapsible: PropTypes.bool,
   }
 
   static defaultProps = {
-    themeConfig: themeConfigDefault,
     steps: undefined,
     initialActiveStep: undefined,
     collapsible: true,
@@ -36,8 +32,8 @@ export default class Steps extends React.Component {
       console.error(new Error('No steps were provided'))
     } else if (
       this.props.initialActiveStep != null &&
-      !Number.isNaN(this.props.initialActiveStep) &&
-      !_get(this.props.steps, `${this.props.initialActiveStep}`)
+      !isNaN(this.props.initialActiveStep) &&
+      !this.props.steps?.[this.props.initialActiveStep]
     ) {
       console.error(new Error('Initial active step provided is invalid'))
       this.setState({
@@ -53,7 +49,7 @@ export default class Steps extends React.Component {
   }
 
   nextStep = () => {
-    const nextStep = Number.isNaN(this.state.activeStep)
+    const nextStep = isNaN(this.state.activeStep)
       ? 0
       : this.state.activeStep + 1
     this.onStepTitleClick(nextStep)
@@ -113,9 +109,10 @@ export default class Steps extends React.Component {
           // be dynamically adjusted when the content changes
           clearTimeout(this.autoHideTimeout)
           this.autoHideTimeout = setTimeout(() => {
-            const activeContentContainerAfterTransition = document.querySelector(
-              `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
-            )
+            const activeContentContainerAfterTransition =
+              document.querySelector(
+                `#react-autoql-step-content-${this.COMPONENT_KEY}-${i}`
+              )
             if (activeContentContainerAfterTransition) {
               activeContentContainerAfterTransition.style.height = 'auto'
             }

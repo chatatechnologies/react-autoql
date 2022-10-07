@@ -18,15 +18,14 @@ export default class StackedLines extends Component {
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
 
-    this.props.onChartClick(
+    this.props.onChartClick({
       row,
-      colIndex,
-      this.props.columns,
-      this.props.stringColumnIndex,
-      this.props.legendColumn,
-      this.props.numberColumnIndex,
-      newActiveKey
-    )
+      columnIndex: colIndex,
+      columns: this.props.columns,
+      stringColumnIndex: this.props.stringColumnIndex,
+      legendColumn: this.props.legendColumn,
+      activeKey: newActiveKey,
+    })
 
     this.setState({ activeKey: newActiveKey })
   }
@@ -90,20 +89,15 @@ export default class StackedLines extends Component {
         data-effect="float"
         style={{
           fill: this.props.colorScale(i),
-          fillOpacity: 1,
+          fillOpacity: 0.7,
         }}
       />
     )
   }
 
   render = () => {
-    const {
-      columns,
-      numberColumnIndices,
-      stringColumnIndex,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } =
+      this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden

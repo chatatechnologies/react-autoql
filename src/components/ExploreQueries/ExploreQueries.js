@@ -6,13 +6,15 @@ import ReactTooltip from 'react-tooltip'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { fetchExploreQueries } from '../../js/queryService'
 import { InfiniteScrollAutoQL } from '../InfiniteScroll'
+import { animateInputText } from '../../js/Util'
 import { LoadingDots } from '../LoadingDots'
+import { withTheme } from '../../theme'
 import { Spinner } from '../Spinner'
 import { Icon } from '../Icon'
 
 import './ExploreQueries.scss'
 
-export default class ExploreQueries extends React.Component {
+export class ExploreQueries extends React.Component {
   constructor(props) {
     super(props)
 
@@ -41,15 +43,25 @@ export default class ExploreQueries extends React.Component {
     inputPlaceholder: 'Search relevant queries by topic',
   }
 
+  componentDidMount = () => {
+    if (this.props.shouldRender) {
+      this.focusInput()
+    }
+  }
+
   componentDidUpdate = (prevProps) => {
     if (this.props.shouldRender && !prevProps.shouldRender) {
-      this.inputRef?.focus()
+      this.focusInput()
     }
   }
 
   componentWillUnmount = () => {
     clearTimeout(this.animateTextDelay)
     clearTimeout(this.animateTextTimeout)
+  }
+
+  focusInput = () => {
+    this.inputRef?.focus()
   }
 
   loadMore = (page, skipQueryValidation) => {
@@ -132,36 +144,18 @@ export default class ExploreQueries extends React.Component {
 
   onValidationSuggestionClick = (queryValidationObj) => {
     const keywords = queryValidationObj.query
-    this.animateQITextAndSubmit(keywords)
+    this.animateQITextAndSubmit(keywords, true)
   }
 
-  animateQITextAndSubmit = (text) => {
-    return new Promise((resolve, reject) => {
-      try {
-        if (typeof text === 'string' && text?.length) {
-          this.animateTextDelay = setTimeout(() => {
-            for (let i = 1; i <= text.length; i++) {
-              this.animateTextTimeout = setTimeout(() => {
-                this.setState(
-                  {
-                    inputValue: text.slice(0, i),
-                  },
-                  () => {
-                    if (i === text.length) {
-                      resolve()
-                      this.loadMore(1)
-                    }
-                  }
-                )
-              }, i * 50)
-            }
-          }, 500)
-        } else {
-          reject()
-        }
-      } catch (error) {
-        reject()
-      }
+  animateQITextAndSubmit = (text, skipQueryValidation) => {
+    return animateInputText({
+      text,
+      inputRef: this.inputRef,
+      callback: () => {
+        this.setState({ inputValue: text }, () =>
+          this.loadMore(1, skipQueryValidation)
+        )
+      },
     })
   }
 
@@ -174,7 +168,7 @@ export default class ExploreQueries extends React.Component {
         validationResponse: undefined,
       },
       () => {
-        this.inputRef?.focus()
+        this.focusInput()
       }
     )
   }
@@ -331,3 +325,5 @@ export default class ExploreQueries extends React.Component {
     )
   }
 }
+
+export default withTheme(ExploreQueries)

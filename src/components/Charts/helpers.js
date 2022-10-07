@@ -3,12 +3,11 @@ import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 import _isEqual from 'lodash.isequal'
 
-import { formatElement, onlyUnique } from '../../js/Util'
-import { themeConfigType, dataFormattingType } from '../../props/types'
-import { themeConfigDefault, dataFormattingDefault } from '../../props/defaults'
+import { formatElement } from '../../js/Util'
+import { dataFormattingType } from '../../props/types'
+import { dataFormattingDefault } from '../../props/defaults'
 
 export const chartContainerPropTypes = {
-  themeConfig: themeConfigType,
   dataFormatting: dataFormattingType,
 
   data: PropTypes.arrayOf(PropTypes.array).isRequired,
@@ -27,7 +26,6 @@ export const chartContainerPropTypes = {
 }
 
 export const chartContainerDefaultProps = {
-  themeConfig: themeConfigDefault,
   dataFormatting: dataFormattingDefault,
 
   enableDynamicCharting: true,
@@ -44,6 +42,8 @@ export const chartPropTypes = {
   visibleSeriesIndices: PropTypes.arrayOf(PropTypes.number).isRequired,
   height: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
+  innerHeight: PropTypes.number.isRequired,
+  innerWidth: PropTypes.number.isRequired,
   leftMargin: PropTypes.number,
   rightMargin: PropTypes.number,
   topMargin: PropTypes.number,
@@ -335,7 +335,7 @@ export const getMaxValueFromKeyValueObj = (obj) => {
     maxValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
     const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
+      return !isNaN(Number(value))
     })
     maxValue = Math.max(...numberValues)
   }
@@ -350,7 +350,7 @@ export const getMinValueFromKeyValueObj = (obj) => {
     minValue = obj[Object.keys(obj)[0]]
   } else if (size > 1) {
     const numberValues = [...Object.values(obj)].filter((value) => {
-      return !Number.isNaN(Number(value))
+      return !isNaN(Number(value))
     })
     minValue = Math.min(...numberValues)
   }
@@ -460,22 +460,76 @@ export const doesElementOverflowContainer = (element, container) => {
   return false
 }
 
-export const getTickValues = (tickHeight, fullHeight, labelArray) => {
+export const getNiceTickValues = ({ tickValues, scale }) => {
+  const { minValue, maxValue } = scale
+  if (minValue === undefined || maxValue === undefined) {
+    console.warn(
+      'Tried to make nice labels but max/min values were not provided'
+    )
+    return tickValues
+  } else if (tickValues?.length < 2) {
+    // Could not make nice labels because there was only 1 tick
+    return tickValues
+  }
+
   try {
-    const textHeightInPx = 30
+    const minTickValue = tickValues[0]
+    const maxTickValue = tickValues[tickValues.length - 1]
+    const tickSize = Math.abs(tickValues[1] - tickValues[0])
+    const newTickValues = [...tickValues]
+
+    let newMinTickValue = minTickValue
+    let newMaxTickValue = maxTickValue
+
+    if (minValue < minTickValue) {
+      newMinTickValue = minTickValue - tickSize
+      newTickValues.unshift(newMinTickValue)
+    }
+
+    if (maxValue > maxTickValue) {
+      newMaxTickValue = maxTickValue + tickSize
+      newTickValues.push(newMaxTickValue)
+    }
+
+    scale.domain([newMinTickValue, newMaxTickValue])
+    return newTickValues
+  } catch (error) {
+    return tickValues
+  }
+}
+
+export const getTickValues = ({
+  tickHeight,
+  fullHeight,
+  labelArray,
+  scale,
+}) => {
+  try {
+    const minTextHeightInPx = 16
     const interval = Math.ceil(
-      (labelArray.length * textHeightInPx) / fullHeight
+      (labelArray.length * minTextHeightInPx) / fullHeight
     )
 
-    if (tickHeight < textHeightInPx) {
-      const tickValues = []
+    let tickValues = labelArray
+    if (tickHeight < minTextHeightInPx) {
+      tickValues = []
+
+      // We want to do this in the reverse direction so the highest value is always included
       labelArray.forEach((label, index) => {
         if (index % interval === 0) {
           tickValues.push(label)
         }
       })
-      return tickValues
     }
+
+    if (scale?.type === 'LINEAR') {
+      tickValues = getNiceTickValues({
+        tickValues,
+        scale,
+      })
+    }
+
+    return tickValues
   } catch (error) {
     console.error(error)
   }

@@ -7,10 +7,8 @@ import {
   TABLE_TYPES,
   WEEKDAY_NAMES,
   MONTH_NAMES,
+  SEASON_NAMES,
 } from './Constants'
-import { LIGHT_THEME, DARK_THEME } from './Themes'
-
-import { getThemeConfig } from '../props/defaults'
 
 import {
   getColumnTypeAmounts,
@@ -55,7 +53,7 @@ export const formatEpochDate = (value, col = {}, config = {}) => {
     const title = col.title
     let date = dayjs.unix(value).utc().format(dayMonthYear)
 
-    if (Number.isNaN(Number(value))) {
+    if (isNaN(Number(value))) {
       // Not an epoch time. Try converting using dayjs
       if (title && title.toLowerCase().includes('year')) {
         date = dayjs(value).format(year)
@@ -189,8 +187,8 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
         let p = Number(d) / 100
         formattedLabel = new Intl.NumberFormat(languageCode, {
           style: 'percent',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
         }).format(p)
       }
       break
@@ -229,7 +227,7 @@ export const formatElement = ({
         }
         case 'DOLLAR_AMT': {
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
-          if (Number(element) || Number(element) === 0) {
+          if (!isNaN(Number(element))) {
             const currency = currencyCode || 'USD'
             const validatedCurrencyDecimals =
               currencyDecimals || currencyDecimals === 0
@@ -259,7 +257,7 @@ export const formatElement = ({
           const validatedQuantityDecimals =
             quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             const numDecimals =
               Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
 
@@ -280,7 +278,7 @@ export const formatElement = ({
           break
         }
         case 'RATIO': {
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: 4,
               maximumFractionDigits: 4,
@@ -289,7 +287,7 @@ export const formatElement = ({
           break
         }
         case 'PERCENT': {
-          if (Number(element)) {
+          if (!isNaN(Number(element))) {
             let p = Number(element) / 100
 
             formattedElement = new Intl.NumberFormat(languageCode, {
@@ -299,9 +297,12 @@ export const formatElement = ({
             }).format(p)
 
             if (htmlElement) {
-              htmlElement.classList.add(
-                `comparison-value-${element < 0 ? 'negative' : 'positive'}`
-              )
+              if (element < 0) {
+                htmlElement.classList.add('comparison-value-negative')
+              } else if (element > 0) {
+                htmlElement.classList.add('comparison-value-positive')
+              }
+              // If element is "0" leave as default colour
             }
           }
           break
@@ -466,28 +467,28 @@ export const supportsPieChart = (columns, chartData) => {
   return true
 }
 
-export const getHiddenColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => !col.is_visible)
+export const getHiddenColumns = (columns) => {
+  return _filter(columns, (col) => !col.is_visible)
 }
 
-export const getVisibleColumns = (response) => {
-  return _filter(_get(response, 'data.data.columns'), (col) => col.is_visible)
+export const getVisibleColumns = (columns) => {
+  return _filter(columns, (col) => col.is_visible)
 }
 
-export const areSomeColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const hiddenColumns = getHiddenColumns(response)
+export const areSomeColumnsHidden = (columns) => {
+  const hasColumns = columns?.length
+  const hiddenColumns = getHiddenColumns(columns)
   return hasColumns && !!hiddenColumns.length
 }
 
-export const areAllColumnsHidden = (response) => {
-  const hasColumns = _get(response, 'data.data.columns.length')
-  const visibleColumns = getVisibleColumns(response)
-  return hasColumns && !visibleColumns.length
+export const areAllColumnsHidden = (columns) => {
+  const visibleColumns = getVisibleColumns(columns)
+  return columns?.length && !visibleColumns.length
 }
 
 export const getSupportedDisplayTypes = ({
   response,
+  columns,
   dataLength,
   pivotDataLength,
 } = {}) => {
@@ -507,9 +508,10 @@ export const getSupportedDisplayTypes = ({
     }
 
     const rows = _get(response, 'data.data.rows', [])
-    const columns = getVisibleColumns(response)
+    const allColumns = columns || _get(response, 'data.data.columns')
+    const visibleColumns = getVisibleColumns(allColumns)
 
-    if (!_get(columns, 'length') || !_get(rows, 'length')) {
+    if (!_get(visibleColumns, 'length') || !_get(rows, 'length')) {
       return ['text']
     }
 
@@ -522,7 +524,7 @@ export const getSupportedDisplayTypes = ({
     const numRows = dataLength || rows.length
     const isTableEmpty = dataLength === 0
     const isPivotTableEmpty = pivotDataLength === 0
-    if (supportsRegularPivotTable(columns) && !isTableEmpty) {
+    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       let supportedDisplayTypes = ['table']
 
@@ -548,7 +550,7 @@ export const getSupportedDisplayTypes = ({
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(columns) && !isTableEmpty) {
+    } else if (supports2DCharts(visibleColumns) && !isTableEmpty) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -558,16 +560,16 @@ export const getSupportedDisplayTypes = ({
       }
 
       // create pivot based on month and year
-      const dateColumnIndex = columns.findIndex(
+      const dateColumnIndex = visibleColumns.findIndex(
         (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
       )
-      const dateColumn = columns[dateColumnIndex]
+      const dateColumn = visibleColumns[dateColumnIndex]
 
       // Check if date pivot should be supported
       if (
         dateColumn &&
         dateColumn?.display_name?.toLowerCase().includes('month') &&
-        columns?.length === 2
+        visibleColumns?.length === 2
       ) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []
@@ -603,10 +605,12 @@ export const isDisplayTypeValid = (
   response,
   displayType,
   dataLength,
-  pivotDataLength
+  pivotDataLength,
+  columns
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
+    columns,
     dataLength,
     pivotDataLength,
   })
@@ -629,9 +633,25 @@ export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
 export const getDefaultDisplayType = (
   response,
   defaultToChart,
+  columns,
+  dataLength,
+  pivotDataLength,
   preferredDisplayType
 ) => {
-  const supportedDisplayTypes = getSupportedDisplayTypes({ response })
+  const supportedDisplayTypes = getSupportedDisplayTypes({
+    response,
+    columns,
+    dataLength,
+    pivotDataLength,
+  })
+
+  if (
+    preferredDisplayType &&
+    supportedDisplayTypes.includes(preferredDisplayType)
+  ) {
+    return preferredDisplayType
+  }
+
   const responseDisplayType = _get(response, 'data.data.display_type')
 
   if (supportedDisplayTypes.includes(preferredDisplayType)) {
@@ -836,65 +856,6 @@ export const getTickWidth = (scale, innerPadding) => {
   }
 }
 
-export const setCSSVars = (customThemeConfig) => {
-  const themeConfig = getThemeConfig(customThemeConfig)
-
-  const { theme, accentColor, fontFamily, accentTextColor } = themeConfig
-  const themeStyles = theme === 'light' ? LIGHT_THEME : DARK_THEME
-  if (accentColor) {
-    themeStyles['accent-color'] = accentColor
-  }
-  if (fontFamily) {
-    themeStyles['font-family'] = fontFamily
-  }
-  if (accentTextColor) {
-    themeStyles['accent-text-color'] = accentTextColor
-  } else {
-    let accentTextColor = accentColor
-    //Learnt below from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-
-    if (accentTextColor.slice(0, 1) === '#') {
-      accentTextColor = accentTextColor.slice(1)
-    }
-
-    // If a three-character hexcode, make six-character
-    if (accentTextColor.length === 3) {
-      accentTextColor = accentTextColor
-        .split('')
-        .map(function (accentTextColor) {
-          return accentTextColor + accentTextColor
-        })
-        .join('')
-    }
-    // Convert to RGB value
-    let r = parseInt(accentTextColor.substr(0, 2), 16)
-    let g = parseInt(accentTextColor.substr(2, 2), 16)
-    let b = parseInt(accentTextColor.substr(4, 2), 16)
-    // Get YIQ ratio
-    let yiq = (r * 299 + g * 587 + b * 114) / 1000
-    // Check contrast
-
-    //Learnt above from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
-    themeStyles['accent-text-color'] = yiq >= 140 ? 'black' : 'white'
-  }
-
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `--react-autoql-${property}`,
-      themeStyles[property]
-    )
-  }
-}
-
-export const setStyleVars = ({ themeStyles, prefix }) => {
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `${prefix}${property}`,
-      themeStyles[property]
-    )
-  }
-}
-
 export const getQueryParams = (url) => {
   try {
     let queryParams = {}
@@ -971,35 +932,6 @@ export const hasData = (response) => {
   return hasData
 }
 
-export class AwaitTimeout {
-  constructor(delay, callback = () => {}) {
-    this.delay = delay
-    this.callback = callback
-  }
-
-  start = () => {
-    this.timeoutPromise = new Promise((resolve) => {
-      clearTimeout(this.timeout)
-      this.timeout = setTimeout(() => {
-        this.callback()
-        resolve()
-      }, this.delay)
-      return this.timeout
-    })
-    return this.timeoutPromise
-  }
-
-  cancel = () => {
-    if (this.timeoutPromise) {
-      this.timeoutPromise.reject
-    }
-    if (this.timeout) {
-      clearTimeout(this.timeout)
-    }
-    return
-  }
-}
-
 export const setCaretPosition = (elem, caretPos) => {
   if (elem != null) {
     if (elem.createTextRange) {
@@ -1035,7 +967,7 @@ export const removeFromDOM = (elem) => {
   }
 }
 
-export const dateSortFn = (a, b, displayType) => {
+export const dateSortFn = (a, b) => {
   try {
     if (!a && !b) {
       return 0
@@ -1050,7 +982,7 @@ export const dateSortFn = (a, b, displayType) => {
     let bDate = Number(b)
 
     // If one is not a number, use dayjs to format
-    if (Number.isNaN(aDate) || Number.isNaN(bDate)) {
+    if (isNaN(aDate) || isNaN(bDate)) {
       aDate = dayjs(a).unix()
       bDate = dayjs(b).unix()
     }
@@ -1062,9 +994,6 @@ export const dateSortFn = (a, b, displayType) => {
         let aDateYear = a.substring(0, 4)
         let bDateYear = b.substring(0, 4)
         if (aDateYear !== bDateYear) {
-          if (displayType === 'chart') {
-            return aDateYear - bDateYear
-          }
           return bDateYear - aDateYear
         } else {
           let aDateWeek = a.substring(6, 8)
@@ -1093,10 +1022,18 @@ export const dateSortFn = (a, b, displayType) => {
           return bMonthIndex - aMonthIndex
         }
         return b - a
+      } else if (SEASON_NAMES.includes(a.substr(0, 2))) {
+        const aSeasonIndex = SEASON_NAMES.findIndex((s) => s === a.substr(0, 2))
+        const bSeasonIndex = SEASON_NAMES.findIndex((s) => s === b.substr(0, 2))
+        const aYear = Number(a.substr(2))
+        const bYear = Number(b.substr(2))
+
+        if (aYear === bYear) {
+          return bSeasonIndex - aSeasonIndex
+        }
+
+        return bYear - aYear
       }
-    }
-    if (displayType === 'chart') {
-      return aDate - bDate
     }
     return bDate - aDate
   } catch (error) {
@@ -1105,16 +1042,23 @@ export const dateSortFn = (a, b, displayType) => {
   }
 }
 
-export const sortDataByDate = (data, tableColumns, displayType) => {
+export const sortDataByDate = (data, tableColumns, isChart) => {
   try {
     if (!data || typeof data !== 'object') {
       return data
     }
     const dateColumnIndex = getDateColumnIndex(tableColumns)
     if (dateColumnIndex >= 0) {
-      let sortedData = [...data].sort((a, b) =>
-        dateSortFn(a[dateColumnIndex], b[dateColumnIndex], displayType)
-      )
+      let sortedData
+      if (!isChart) {
+        sortedData = [...data].sort((a, b) =>
+          dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+        )
+      } else {
+        sortedData = [...data].sort(
+          (a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
+        )
+      }
       return sortedData
     }
     return data
@@ -1129,11 +1073,9 @@ export const handleTooltipBoundaryCollision = (e, self) => {
   const { tooltipRef } = self.reactTooltipRef
 
   if (!tooltipRef) {
-    console.log('there was no ref, returning')
     return
   }
 
-  const targetRect = target.getBoundingClientRect()
   const rect = tooltipRef.getBoundingClientRect()
 
   const overflownLeft = rect.left < 0
@@ -1146,4 +1088,34 @@ export const handleTooltipBoundaryCollision = (e, self) => {
     tooltipRef.style.setProperty('left', 'auto')
     tooltipRef.style.setProperty('right', '10px')
   }
+}
+
+export const animateInputText = ({
+  text = '',
+  inputRef,
+  callback = () => {},
+  totalAnimationTime = 1000,
+}) => {
+  if (!text.length || !inputRef || typeof text !== 'string') {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve, reject) => {
+    const timePerChar = Math.round(totalAnimationTime / text.length)
+    for (let i = 1; i <= text.length; i++) {
+      setTimeout(() => {
+        inputRef.value = text.slice(0, i)
+        if (i === text.length) {
+          setTimeout(() => {
+            callback()
+            resolve()
+          }, 300)
+        }
+      }, i * timePerChar)
+    }
+  })
+}
+
+export const currentEventLoopEnd = () => {
+  return new Promise((resolve) => process.nextTick(resolve))
 }

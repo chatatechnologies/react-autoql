@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import _get from 'lodash.get'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEmpty from 'lodash.isempty'
-import _isEqual from 'lodash.isequal'
 import { v4 as uuid } from 'uuid'
 import ReactTooltip from 'react-tooltip'
 
@@ -15,7 +14,6 @@ import { Button } from '../../Button'
 import { Icon } from '../../Icon'
 import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
-import { setCSSVars } from '../../../js/Util'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -25,17 +23,16 @@ import {
   validateExpression,
 } from '../../../js/notificationService'
 
-import { authenticationType, themeConfigType } from '../../../props/types'
+import { authenticationType } from '../../../props/types'
 import {
   authenticationDefault,
-  themeConfigDefault,
   getAuthentication,
-  getThemeConfig,
 } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
+import { withTheme } from '../../../theme'
 
-export default class DataAlertModal extends React.Component {
+class DataAlertModal extends React.Component {
   NEW_NOTIFICATION_MODAL_ID = uuid()
 
   static propTypes = {
@@ -47,7 +44,6 @@ export default class DataAlertModal extends React.Component {
     isVisible: PropTypes.bool,
     allowDelete: PropTypes.bool,
     onClose: PropTypes.func,
-    themeConfig: themeConfigType,
     isManagement: PropTypes.bool,
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
@@ -69,7 +65,6 @@ export default class DataAlertModal extends React.Component {
     isVisible: false,
     allowDelete: true,
     onClose: () => {},
-    themeConfig: themeConfigDefault,
     isManagement: false,
     onManagementCreateDataAlert: () => {},
     onManagementDeleteDataAlert: () => {},
@@ -91,21 +86,10 @@ export default class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
-    setCSSVars(this.props.themeConfig)
-
     this.initializeFields()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      !_isEqual(
-        getThemeConfig(this.props.themeConfig),
-        getThemeConfig(prevProps.themeConfig)
-      )
-    ) {
-      setCSSVars(this.props.themeConfig)
-    }
-
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.resetFields, 500)
     }
@@ -411,7 +395,6 @@ export default class DataAlertModal extends React.Component {
             </div>
           )}
         <Button
-          type="default"
           onClick={this.validateExpression}
           loading={this.state.isValidating}
           type="primary"
@@ -497,11 +480,11 @@ export default class DataAlertModal extends React.Component {
               place="top"
             />
             <Icon
+              className="react-autoql-data-alert-query-name-tooltip-icon"
               data-for="react-autoql-data-alert-query-name-tooltip"
               data-tip="This will be visible to anyone who gets notified when this Alert is triggered."
               type="info"
               size={24}
-              color="#26A7Df"
             />
           </div>
         </div>
@@ -510,7 +493,6 @@ export default class DataAlertModal extends React.Component {
             <p>Notify me when:</p>
             <ExpressionBuilderSimple
               authentication={getAuthentication(this.props.authentication)}
-              themeConfig={this.props.themeConfig}
               ref={(r) => (this.expressionRef = r)}
               key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
               onChange={this.onExpressionChange}
@@ -557,7 +539,6 @@ export default class DataAlertModal extends React.Component {
     return (
       <div>
         <ScheduleBuilder
-          themeConfig={this.props.themeConfig}
           ref={(r) => (this.scheduleBuilderRef = r)}
           key={`schedule-${this.NEW_NOTIFICATION_MODAL_ID}`}
           dataAlert={this.props.currentDataAlert}
@@ -672,7 +653,6 @@ export default class DataAlertModal extends React.Component {
           html
         />
         <Modal
-          themeConfig={this.props.themeConfig}
           title={this.props.title}
           titleIcon={
             !_isEmpty(this.props.currentDataAlert) ? (
@@ -726,11 +706,7 @@ export default class DataAlertModal extends React.Component {
         >
           {this.props.isVisible && (
             <div className="notification-modal-content">
-              <Steps
-                themeConfig={this.props.themeConfig}
-                ref={(r) => (this.stepsRef = r)}
-                steps={steps}
-              />
+              <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
             </div>
           )}
         </Modal>
@@ -753,3 +729,5 @@ export default class DataAlertModal extends React.Component {
     )
   }
 }
+
+export default withTheme(DataAlertModal)

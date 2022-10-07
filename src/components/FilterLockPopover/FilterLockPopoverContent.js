@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Autosuggest from 'react-autosuggest'
+import axios from 'axios'
 import ReactTooltip from 'react-tooltip'
 import { v4 as uuid } from 'uuid'
 import { ToastContainer, toast } from 'react-toastify'
@@ -14,6 +15,7 @@ import { Button } from '../Button'
 import { LoadingDots } from '../LoadingDots'
 import { Checkbox } from '../Checkbox'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { responseErrors } from '../../js/errorMessages'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import {
@@ -22,13 +24,8 @@ import {
   unsetFilterFromAPI,
 } from '../../js/queryService'
 
-import { authenticationType, themeConfigType } from '../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-  getThemeConfig,
-  themeConfigDefault,
-} from '../../props/defaults'
+import { authenticationType } from '../../props/types'
+import { authenticationDefault, getAuthentication } from '../../props/defaults'
 
 import { lang } from '../../js/Localization'
 import { handleTooltipBoundaryCollision } from '../../js/Util'
@@ -41,6 +38,7 @@ export default class FilterLockPopover extends React.Component {
 
     this.contentKey = uuid()
     this.autoCompleteArray = []
+    this.autocompleteDelay = 100
 
     this.state = {
       filters: this.props.initialFilters || [],
@@ -51,7 +49,6 @@ export default class FilterLockPopover extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    themeConfig: themeConfigType,
 
     isOpen: PropTypes.bool,
     onClose: PropTypes.func,
@@ -62,7 +59,6 @@ export default class FilterLockPopover extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    themeConfig: themeConfigDefault,
 
     insertedFilter: null,
     isOpen: false,
@@ -107,11 +103,11 @@ export default class FilterLockPopover extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    clearTimeout(this.animateTextTimeout)
     clearTimeout(this.focusInputTimeout)
     clearTimeout(this.highlightFilterEndTimeout)
     clearTimeout(this.highlightFilterStartTimeout)
     clearTimeout(this.savingIndicatorTimeout)
+    clearTimeout(this.autocompleteTimer)
   }
 
   rebuildTooltips = (delay = 500) => {
@@ -151,13 +147,13 @@ export default class FilterLockPopover extends React.Component {
 
   animateInputTextAndSubmit = (text) => {
     if (typeof text === 'string' && text?.length) {
-      const totalTime = 2000
+      const totalTime = 500
       const timePerChar = totalTime / text.length
-      for (let i = 1; i <= text.length; i++) {
+      for (let i = 0; i < text.length; i++) {
         setTimeout(() => {
           if (this._isMounted) {
-            this.setState({ inputValue: text.slice(0, i) })
-            if (i === text.length) {
+            this.setState({ inputValue: text.slice(0, i + 1) })
+            if (i === text.length - 1) {
               this.focusInputTimeout = setTimeout(() => {
                 this.inputElement = document.querySelector(
                   '#react-autoql-filter-menu-input'
@@ -166,7 +162,7 @@ export default class FilterLockPopover extends React.Component {
               }, 300)
             }
           }
-        }, timePerChar)
+        }, i * timePerChar)
       }
     }
   }
@@ -202,40 +198,79 @@ export default class FilterLockPopover extends React.Component {
     return undefined
   }
 
-  onSuggestionsFetchRequested = ({ value }) => {
-    clearTimeout(this.autoCompleteTimer)
-    this.autoCompleteTimer = setTimeout(() => {
-      fetchVLAutocomplete({
-        ...getAuthentication(this.props.authentication),
-        suggestion: value,
-      })
-        .then((response) => {
-          const body = response?.data?.data
-          const sortingArray = []
-          let suggestionsMatchArray = []
-          this.autoCompleteArray = []
-          suggestionsMatchArray = body.matches
-          for (let i = 0; i < suggestionsMatchArray.length; i++) {
-            sortingArray.push(suggestionsMatchArray[i])
-          }
+  getTimeLeft = (timeout) => {
+    if (!timeout) {
+      return 0
+    }
 
-          sortingArray.sort((a, b) => {
-            return a.keyword?.toUpperCase() < b.keyword?.toUpperCase()
-              ? -1
-              : a.keyword > b.keyword
-              ? 1
-              : 0
-          })
-          for (let idx = 0; idx < sortingArray.length; idx++) {
-            const anObject = {
-              name: sortingArray[idx],
-            }
-            this.autoCompleteArray.push(anObject)
-          }
-          this.setState({ suggestions: this.autoCompleteArray })
+    return Math.ceil(
+      (timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000
+    )
+  }
+
+  fetchSuggestions = ({ value }) => {
+    // If already fetching autocomplete, cancel it
+    if (this.axiosSource) {
+      this.axiosSource.cancel(responseErrors.CANCELLED)
+    }
+
+    this.axiosSource = axios.CancelToken.source()
+
+    fetchVLAutocomplete({
+      ...getAuthentication(this.props.authentication),
+      suggestion: value,
+      cancelToken: this.axiosSource.token,
+    })
+      .then((response) => {
+        const body = response?.data?.data
+        const sortingArray = []
+        let suggestionsMatchArray = []
+        this.autoCompleteArray = []
+        suggestionsMatchArray = body.matches
+        for (let i = 0; i < suggestionsMatchArray.length; i++) {
+          sortingArray.push(suggestionsMatchArray[i])
+        }
+
+        sortingArray.sort((a, b) => {
+          return a.keyword?.toUpperCase() < b.keyword?.toUpperCase()
+            ? -1
+            : a.keyword > b.keyword
+            ? 1
+            : 0
         })
-        .catch((error) => console.error(error))
-    }, 300)
+        for (let idx = 0; idx < sortingArray.length; idx++) {
+          const anObject = {
+            name: sortingArray[idx],
+          }
+          this.autoCompleteArray.push(anObject)
+        }
+        this.setState({
+          suggestions: this.autoCompleteArray,
+          isLoadingAutocomplete: false,
+        })
+      })
+      .catch((error) => {
+        if (error?.data?.message !== responseErrors.CANCELLED) {
+          console.error(error)
+        }
+
+        this.setState({ isLoadingAutocomplete: false })
+      })
+  }
+
+  onSuggestionsFetchRequested = ({ value }) => {
+    this.setState({ isLoadingAutocomplete: true })
+
+    // Only debounce if a request has already been made
+    if (this.axiosSource) {
+      clearTimeout(this.autocompleteTimer)
+      this.autocompleteStart = Date.now()
+      this.autocompleteTimer = setTimeout(() => {
+        this.fetchSuggestions({ value })
+      }, this.autocompleteDelay)
+    } else {
+      this.fetchSuggestions({ value })
+    }
   }
 
   onSuggestionsClearRequested = () => {
@@ -295,6 +330,10 @@ export default class FilterLockPopover extends React.Component {
   }
 
   setFilter = (newFilter) => {
+    if (!newFilter?.value) {
+      return
+    }
+
     const auth = getAuthentication(this.props.authentication)
 
     this.showSavingIndicator()
@@ -522,6 +561,10 @@ export default class FilterLockPopover extends React.Component {
   renderSuggestion = ({ name }) => {
     this.rebuildTooltips()
 
+    if (!name.keyword) {
+      return null
+    }
+
     return (
       <ul
         className="filter-lock-suggestion-item"
@@ -552,6 +595,7 @@ export default class FilterLockPopover extends React.Component {
             autoHeight
             autoHeightMin={0}
             autoHeightMax={maxHeight}
+            autoHide={false}
           >
             {children}
           </CustomScrollbars>
@@ -560,17 +604,57 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  getSuggestions = () => {
+    const sections = []
+    const doneLoading = !this.state.isLoadingAutocomplete
+    const hasSuggestions = !!this.state.suggestions?.length && doneLoading
+    const noSuggestions = !this.state.suggestions?.length && doneLoading
+
+    if (hasSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: this.state.suggestions,
+      })
+    } else if (noSuggestions) {
+      sections.push({
+        title: `Related to "${this.state.inputValue}"`,
+        suggestions: [{ name: '' }],
+        emptyState: true,
+      })
+    }
+
+    return sections
+  }
+
+  renderSectionTitle = (section) => {
+    return (
+      <>
+        <strong>{section.title}</strong>
+        {section.emptyState ? (
+          <div className="filter-locking-no-suggestions-text">
+            <em>No results</em>
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
   renderVLInput = () => {
     return (
       <Autosuggest
         id="react-autoql-filter-menu-input"
         highlightFirstSuggestion
-        suggestions={this.state.suggestions}
+        suggestions={this.getSuggestions()}
         renderSuggestion={this.renderSuggestion}
         getSuggestionValue={this.getSuggestionValue}
         onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
         onSuggestionsClearRequested={this.onSuggestionsClearRequested}
         renderSuggestionsContainer={this.renderSuggestionsContainer}
+        getSectionSuggestions={(section) => {
+          return section.suggestions
+        }}
+        renderSectionTitle={this.renderSectionTitle}
+        multiSection={true}
         inputProps={{
           onChange: this.onInputChange,
           value: this.state.inputValue,
@@ -716,7 +800,7 @@ export default class FilterLockPopover extends React.Component {
         ref={(r) => (this.filterListContainerRef = r)}
         className="react-autoql-filter-list-container"
       >
-        <CustomScrollbars>
+        <CustomScrollbars autoHide={false}>
           {uniqueCategories.map((category, i) => {
             return this.renderFilterListCategory(category, i)
           })}
@@ -743,7 +827,7 @@ export default class FilterLockPopover extends React.Component {
           pauseOnHover={false}
           closeButton={false}
           limit={1}
-          theme={getThemeConfig(this.props.themeConfig).theme}
+          // theme={getTheme()}
         />
         <ReactTooltip
           afterShow={(e) => handleTooltipBoundaryCollision(e, this)}

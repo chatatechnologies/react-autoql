@@ -11,8 +11,8 @@ jobs:
       - checkout
       - restore_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
-      - run: npm i
-      - run: npm i react@16.9.0 react-dom@16.9.0
+      - run: npm ci
+      - run: npm i react@16.14.0 react-dom@16.14.0
       - save_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
           paths:
@@ -30,8 +30,8 @@ jobs:
       - checkout
       - restore_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
-      - run: npm i
-      - run: npm i react@16.9.0 react-dom@16.9.0
+      - run: npm ci
+      - run: npm i react@16.14.0 react-dom@16.14.0
       - save_cache:
           key: v1-deps-{{ checksum "package-lock.json" }}
           paths:

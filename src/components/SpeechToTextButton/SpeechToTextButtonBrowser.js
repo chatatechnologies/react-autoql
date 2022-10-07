@@ -26,9 +26,14 @@ class Dictaphone extends React.Component {
     listening: PropTypes.bool,
     onTranscriptChange: PropTypes.func,
     onFinalTranscript: PropTypes.func,
+    onTranscriptStart: PropTypes.func,
   }
 
-  static defaultProps = {}
+  static defaultProps = {
+    onTranscriptStart: () => {},
+    onTranscriptChange: () => {},
+    onFinalTranscript: () => {},
+  }
 
   componentDidUpdate = (prevProps) => {
     if (this.props.finalTranscript !== prevProps.finalTranscript) {
@@ -42,6 +47,7 @@ class Dictaphone extends React.Component {
 
   onMouseDown = () => {
     ReactTooltip.hide()
+    this.props.onTranscriptStart()
     this.props.startListening()
   }
 

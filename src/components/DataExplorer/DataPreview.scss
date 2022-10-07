@@ -16,7 +16,6 @@
 
   .data-preview-scroll-container,
   .custom-scrollbar-view {
-    scroll-behavior: smooth !important;
     width: 100%;
     height: 100%;
     white-space: nowrap;
@@ -56,6 +55,7 @@
     }
 
     table {
+      min-width: 100%;
       table-layout: fixed;
       border-collapse: collapse;
     }
@@ -65,7 +65,7 @@
         padding: 0 6px;
         height: 35px;
         position: sticky;
-        background: var(--react-autoql-background-color-primary);
+        background: var(--react-autoql-background-color-secondary);
         box-shadow: inset 0 -2px 0 var(--react-autoql-border-color);
         transition: color 0.2s ease;
         cursor: pointer;
@@ -100,7 +100,7 @@
 
 .data-explorer-page-container .data-preview-tooltip {
   --border-color: var(--react-autoql-border-color);
-  --bg-color: var(--react-autoql-background-color-primary);
+  --bg-color: var(--react-autoql-background-color-secondary);
 
   opacity: 1 !important;
   padding: 15px 25px !important;

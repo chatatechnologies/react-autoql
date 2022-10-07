@@ -5,7 +5,7 @@
 
   position: relative;
   overflow: hidden;
-  background: var(--react-autoql-background-color-primary, #fff);
+  background: var(--react-autoql-background-color-secondary, #fff);
   border-radius: 4px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
 
@@ -171,7 +171,6 @@
       padding: 0 10px;
     }
     .react-autoql-table {
-      opacity: 0.9;
       color: currentColor;
       font-size: 11px;
     }
@@ -206,7 +205,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--react-autoql-background-color-secondary, #ececec);
+      background-color: var(--react-autoql-background-color-primary, #ececec);
     }
   }
 
@@ -228,7 +227,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--react-autoql-background-color-secondary, #ececec);
+      background-color: var(--react-autoql-background-color-primary, #ececec);
     }
   }
 
@@ -238,7 +237,7 @@
     left: -7px;
     color: var(--react-autoql-accent-color, #26a7df);
     line-height: 10px;
-    background: var(--react-autoql-background-color-primary, #fff);
+    background: var(--react-autoql-background-color-secondary, #fff);
     border-radius: 10px;
     font-size: 17px;
   }
@@ -252,7 +251,7 @@
     width: 4px;
 
     background: var(--react-autoql-accent-color, #26a7df);
-    color: var(--react-autoql-accent-text-color);
+    color: var(--react-autoql-text-color-accent);
 
     transition-property: opacity;
     transition-duration: 0.2s;
@@ -274,7 +273,7 @@
       width: 45px;
       line-height: 45px;
       font-size: 22px;
-      color: var(--react-autoql-accent-text-color);
+      color: var(--react-autoql-text-color-accent);
       background-color: var(--react-autoql-accent-color, #26a7df);
       text-align: center;
       margin-top: 13px;

@@ -3,6 +3,16 @@ import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
 import responseSamples from '../../test/responseTestCases'
 
+const formatErrorResponse = (error) => {
+  if (error?.message === responseErrors.CANCELLED) {
+    return Promise.reject({
+      data: { message: responseErrors.CANCELLED },
+    })
+  }
+
+  return Promise.reject(_get(error, 'response'))
+}
+
 const formatSourceString = (sourceArray) => {
   try {
     const sourceString = sourceArray.join('.')
@@ -59,6 +69,7 @@ export const fetchSuggestions = ({
   domain,
   apiKey,
   token,
+  cancelToken,
 } = {}) => {
   if (!query) {
     return Promise.reject(new Error('No query supplied'))
@@ -80,6 +91,7 @@ export const fetchSuggestions = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
@@ -142,6 +154,7 @@ export const runQueryOnly = (params = {}) => {
   const {
     query,
     userSelection,
+    userSelectionFinal,
     debug,
     test,
     domain,
@@ -155,7 +168,8 @@ export const runQueryOnly = (params = {}) => {
     cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
-  const finalUserSelection = transformUserSelection(userSelection)
+  const finalUserSelection =
+    userSelectionFinal || transformUserSelection(userSelection)
 
   const data = {
     text: query,
@@ -217,7 +231,14 @@ export const runQueryOnly = (params = {}) => {
         isError500Type(referenceId)
       ) {
         const queryId = error?.response?.data?.data?.query_id
-        return fetchSuggestions({ query, queryId, domain, apiKey, token })
+        return fetchSuggestions({
+          query,
+          queryId,
+          domain,
+          apiKey,
+          token,
+          cancelToken,
+        })
       }
       return Promise.reject(_get(error, 'response'))
     })
@@ -346,16 +367,9 @@ export const runDrilldown = ({
   return axios
     .post(url, requestData, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => {
-      if (error?.message === responseErrors.CANCELLED) {
-        return Promise.reject({
-          data: { message: responseErrors.CANCELLED },
-        })
-      }
-
-      return Promise.reject(_get(error, 'response'))
-    })
+    .catch(formatErrorResponse)
 }
+
 export const fetchTopics = ({ domain, token, apiKey } = {}) => {
   if (!domain || !apiKey || !token) {
     return Promise.reject(new Error('Unauthenticated'))
@@ -409,6 +423,7 @@ export const fetchVLAutocomplete = ({
   domain,
   token,
   apiKey,
+  cancelToken,
 } = {}) => {
   if (!suggestion || !suggestion.trim()) {
     return Promise.reject(new Error('No query supplied'))
@@ -426,12 +441,21 @@ export const fetchVLAutocomplete = ({
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cancelToken,
   }
 
   return axios
     .get(url, config)
     .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
+    .catch((error) => {
+      if (error?.message === responseErrors.CANCELLED) {
+        return Promise.reject({
+          data: { message: responseErrors.CANCELLED },
+        })
+      }
+
+      return Promise.reject(_get(error, 'response.data'))
+    })
 }
 
 export const fetchFilters = ({ apiKey, token, domain } = {}) => {
@@ -639,31 +663,11 @@ export const reportProblem = ({
 }
 
 export const fetchSubjectList = ({ domain, apiKey, token }) => {
-  const subjectList = [
-    'Online Sales',
-    'Customers',
-    'Shippers',
-    'Promotions',
-    'Warehouses',
-    'Inventory',
-  ]
-
-  const formattedSubjectList = subjectList.map((subject) => ({
-    name: subject,
-    type: 'subject',
-  }))
-
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve({ data: { data: { subjects: formattedSubjectList } } })
-    }, 1000)
-  })
-
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/subjects?key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/subjects?key=${apiKey}`
 
   const config = {
     headers: {
@@ -681,6 +685,15 @@ export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
   if (!subject) {
     return Promise.reject(new Error('No subject supplied for data preview'))
   }
+
+  return runQueryOnly({ query: subject, domain, apiKey, token })
+    .then((response) => {
+      if (response?.data?.data?.rows?.length) {
+        response.data.data.rows = response.data.data.rows.slice(0, 5)
+      }
+      return Promise.resolve(response)
+    })
+    .catch((error) => Promise.reject(_get(error, 'response.data')))
 
   return new Promise((resolve, reject) => {
     setTimeout(() => {

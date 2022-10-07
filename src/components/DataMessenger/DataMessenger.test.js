@@ -1,8 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
-
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
-import { DataMessenger } from '../..'
+import { DataMessenger } from './DataMessenger'
 import responseTestCases from '../../../test/responseTestCases'
 import * as queryService from '../../js/queryService'
 import sampleTopicsResponse from '../../../test/sampleTopicsResponse.json'
@@ -12,7 +11,7 @@ const defaultProps = DataMessenger.defaultProps
 
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(<DataMessenger {...setupProps} />)
+  const wrapper = shallow(<DataMessenger {...setupProps} />).dive()
   if (state) {
     wrapper.setState(state)
   }
@@ -158,13 +157,11 @@ describe('Suggestion query response flow', () => {
         noneOfTheseButton.simulate('click')
         expect(chatContentInstance.addRequestMessage).toHaveBeenCalledTimes(1)
       })
-      test('"None of these" click added request message', async () => {
+      test('"None of these" click added request message', () => {
         const lastChatMessage = messengerComponent.find('ChatMessage').last()
         const lastChatMessageProps = lastChatMessage.instance().props
-        const isNoneOfTheseRequestMessage =
-          lastChatMessageProps.isResponse === false &&
-          lastChatMessageProps.content === 'None of these'
-        expect(isNoneOfTheseRequestMessage).toBe(true)
+        expect(lastChatMessageProps.isResponse).toBe(false)
+        expect(lastChatMessageProps.content).toBe('None of these')
       })
       test('"None of these" click did not change original QueryOutput content', () => {
         messengerComponent.update()
