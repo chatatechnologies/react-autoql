@@ -20,7 +20,7 @@ export default class DataExplorer extends React.Component {
   constructor(props) {
     super(props)
 
-    this.DATA_PREVIEW_ROWS = 10
+    this.DATA_PREVIEW_ROWS = 5
 
     this.state = {
       dataPreview: null,
