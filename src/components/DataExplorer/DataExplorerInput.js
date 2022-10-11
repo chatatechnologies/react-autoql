@@ -12,9 +12,23 @@ import { fetchVLAutocomplete, fetchSubjectList } from '../../js/queryService'
 import { Icon } from '../Icon'
 import { TopicName } from './TopicName'
 import { animateInputText } from '../../js/Util'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 import './DataExplorerInput.scss'
-import { CustomScrollbars } from '../CustomScrollbars'
+
+const toSentenceCase = (str) => {
+  return str.toLowerCase().charAt(0).toUpperCase() + str.slice(1)
+}
+
+export const formatSubjectName = (query) => {
+  if (query.toLowerCase().startsWith('all ')) {
+    query = query.substring(4)
+  } else if (query.toLowerCase().startsWith('show ')) {
+    query = query.substring(5)
+  }
+
+  return toSentenceCase(query)
+}
 
 export default class DataExplorerInput extends React.Component {
   constructor(props) {
@@ -65,7 +79,7 @@ export default class DataExplorerInput extends React.Component {
         allSubjects = subjects.map((subject) => {
           return {
             ...subject,
-            name: subject.display_name,
+            name: formatSubjectName(subject.query),
             type: DEConstants.SUBJECT_TYPE,
           }
         })
@@ -233,10 +247,6 @@ export default class DataExplorerInput extends React.Component {
 
           const allMatches = [...subjectMatches, ...vlMatches]
 
-          // const sortedMatches = _cloneDeep(response?.data?.data?.matches)?.sort(
-          //   (a, b) => b.name.length - a.name.length
-          // )
-
           this.setState({
             suggestions: allMatches,
             loadingAutocomplete: false,
@@ -334,7 +344,7 @@ export default class DataExplorerInput extends React.Component {
     return <TopicName topic={suggestion} />
   }
 
-  renderSuggestionsContainer = ({ containerProps, children, query }) => {
+  renderSuggestionsContainer = ({ containerProps, children }) => {
     let maxHeight = 250
     const dataExplorerHeight = this.props.dataExplorerRef?.clientHeight - 200
     if (!isNaN(dataExplorerHeight) && dataExplorerHeight > 250) {
