@@ -19,6 +19,9 @@ import './DataPreview.scss'
 export default class DataExplorer extends React.Component {
   constructor(props) {
     super(props)
+
+    this.DATA_PREVIEW_ROWS = 10
+
     this.state = {
       dataPreview: null,
     }
@@ -71,7 +74,8 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: false, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.query,
+      subject: this.props.subject?.display_name,
+      numRows: this.DATA_PREVIEW_ROWS,
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
