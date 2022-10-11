@@ -686,6 +686,7 @@ export const fetchDataPreview = ({
   domain,
   apiKey,
   token,
+  source = 'data_explorer.user',
   numRows = 10,
 } = {}) => {
   if (!subject) {
@@ -707,7 +708,7 @@ export const fetchDataPreview = ({
   const data = {
     subject,
     page_size: numRows,
-    source: 'data-explorer',
+    source,
   }
 
   return axios
