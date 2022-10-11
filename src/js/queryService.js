@@ -681,31 +681,22 @@ export const fetchSubjectList = ({ domain, apiKey, token }) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
+export const fetchDataPreview = ({
+  subject,
+  domain,
+  apiKey,
+  token,
+  numRows = 10,
+} = {}) => {
   if (!subject) {
     return Promise.reject(new Error('No subject supplied for data preview'))
   }
-
-  return runQueryOnly({ query: subject, domain, apiKey, token })
-    .then((response) => {
-      if (response?.data?.data?.rows?.length) {
-        response.data.data.rows = response.data.data.rows.slice(0, 5)
-      }
-      return Promise.resolve(response)
-    })
-    .catch((error) => Promise.reject(_get(error, 'response.data')))
-
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve(responseSamples[9])
-    }, 500)
-  })
 
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/data-preview`
+  const url = `${domain}/autoql/api/v1/query/preview?key=${apiKey}`
 
   const config = {
     headers: {
@@ -715,6 +706,8 @@ export const fetchDataPreview = ({ subject, domain, apiKey, token } = {}) => {
 
   const data = {
     subject,
+    page_size: numRows,
+    source: 'data-explorer',
   }
 
   return axios
