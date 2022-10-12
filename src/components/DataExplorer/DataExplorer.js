@@ -222,7 +222,6 @@ export default class DataExplorer extends React.Component {
       selectedVL: null,
       selectedKeywords: null,
     })
-    this.inputRef?.clearInput()
   }
 
   renderSelectionTitle = () => {
@@ -235,9 +234,6 @@ export default class DataExplorer extends React.Component {
       <div className="data-explorer-title exploring-title">
         <div>
           Exploring "<TopicName topic={selectedTopic} />"
-        </div>
-        <div className="clear-explorer-content-btn" onClick={this.clearContent}>
-          <Icon type="close" /> <u>Clear</u>
         </div>
       </div>
     )
@@ -400,6 +396,7 @@ export default class DataExplorer extends React.Component {
             inputPlaceholder={this.props.inputPlaceholder}
             onSelection={this.onInputSelection}
             dataExplorerRef={this.dataExplorerPage}
+            onClearInputClick={this.clearContent}
           />
           {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}

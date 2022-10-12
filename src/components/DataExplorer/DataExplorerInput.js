@@ -51,12 +51,14 @@ export default class DataExplorerInput extends React.Component {
   static propTypes = {
     authentication: authenticationType,
     inputPlaceholder: PropTypes.string,
+    onClearInputClick: PropTypes.func,
     onSelection: PropTypes.func,
   }
 
   static defaultProps = {
     authentication: {},
     inputPlaceholder: 'Search subjects',
+    onClearInputClick: () => {},
     onSelection: () => {},
   }
 
@@ -209,6 +211,7 @@ export default class DataExplorerInput extends React.Component {
       this.setState({ inputValue: '' })
       this.userTypedValue = null
       this.userSelectedValue = null
+      this.props.onClearInputClick()
     }
   }
 
