@@ -285,6 +285,7 @@ export class ExploreQueries extends React.Component {
               value={this.state.inputValue}
               onChange={this.onInputChange}
               onKeyPress={this.onKeyPress}
+              spellCheck={false}
               ref={(ref) => (this.inputRef = ref)}
               data-test="explore-queries-input-bar"
               autoFocus

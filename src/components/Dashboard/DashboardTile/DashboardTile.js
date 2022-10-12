@@ -655,6 +655,7 @@ export class DashboardTile extends React.Component {
                   data-tip="Query"
                   data-for="react-autoql-dashboard-toolbar-btn-tooltip"
                   data-place="bottom"
+                  spellCheck={false}
                   onChange={this.onQueryInputChange}
                   onKeyDown={this.onQueryTextKeyDown}
                   onFocus={() => this.setState({ isQueryInputFocused: true })}
@@ -877,6 +878,7 @@ export class DashboardTile extends React.Component {
                   this.state.isSecondQueryInputOpen ? 'open' : ''
                 }`}
                 value={this.state.secondQuery}
+                spellCheck={false}
                 onChange={this.onSecondQueryInputChange}
                 onKeyDown={this.onSecondQueryTextKeyDown}
                 onBlur={(e) => {

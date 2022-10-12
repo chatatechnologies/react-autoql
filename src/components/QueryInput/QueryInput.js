@@ -411,6 +411,7 @@ class QueryInput extends React.Component {
       onKeyDown: this.onKeyDown,
       value: this.state.inputValue,
       onFocus: this.moveCaretAtEnd,
+      spellCheck: false,
       autoFocus: true,
     }
 
