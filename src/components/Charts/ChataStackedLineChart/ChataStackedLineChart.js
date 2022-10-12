@@ -89,7 +89,7 @@ export default class ChataStackedLineChart extends Component {
     this.yScale.maxValue = maxValue
     this.yScale.type = 'LINEAR'
 
-    this.tickWidth = props.width / (this.xScale?.domain()?.length || 1)
+    this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
     this.xTickValues = getTickValues({
       tickHeight: this.tickWidth,
       fullHeight: props.innerWidth,
