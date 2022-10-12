@@ -316,7 +316,7 @@ export default class DataExplorerInput extends React.Component {
     // Recently used
     if (hasRecentSuggestions) {
       sections.push({
-        title: 'Recently used',
+        title: 'Recent',
         suggestions: this.state.recentSuggestions,
       })
     }
