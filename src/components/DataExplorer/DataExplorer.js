@@ -59,12 +59,14 @@ export default class DataExplorer extends React.Component {
         selectedSubject: listItem,
         selectedKeywords: null,
         activeTopicType: listItem?.type,
+        skipQueryValidation: true,
       })
     } else if (listItem?.type === DEConstants.VL_TYPE) {
       this.setState({
         selectedVL: listItem,
         selectedKeywords: null,
         activeTopicType: listItem?.type,
+        skipQueryValidation: true,
       })
     } else if (listItem?.type === 'text') {
       this.setState({
