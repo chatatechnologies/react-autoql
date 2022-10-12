@@ -78,13 +78,15 @@ export default class DataExplorerInput extends React.Component {
       const subjects = response?.data?.data?.subjects || []
       let allSubjects = []
       if (subjects.length) {
-        allSubjects = subjects.map((subject) => {
-          return {
-            ...subject,
-            name: formatSubjectName(subject.query),
-            type: DEConstants.SUBJECT_TYPE,
-          }
-        })
+        allSubjects = subjects
+          .map((subject) => {
+            return {
+              ...subject,
+              name: formatSubjectName(subject.query),
+              type: DEConstants.SUBJECT_TYPE,
+            }
+          })
+          .sort((a, b) => a.name.localeCompare(b.name))
       }
 
       if (this._isMounted) {
