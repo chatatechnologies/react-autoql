@@ -106,9 +106,9 @@ export default class DataExplorerInput extends React.Component {
       return []
     }
 
-    var reg = new RegExp(`^${input}`)
+    var reg = new RegExp(`^${input.toLowerCase()}`)
     return this.state.allSubjects.filter((subject) => {
-      const term = subject.name
+      const term = subject.name.toLowerCase()
       if (term.match(reg)) {
         return subject
       }
