@@ -56,7 +56,7 @@ export default class DataExplorerInput extends React.Component {
 
   static defaultProps = {
     authentication: {},
-    inputPlaceholder: 'Search subjects...',
+    inputPlaceholder: 'Search subjects',
     onSelection: () => {},
   }
 
