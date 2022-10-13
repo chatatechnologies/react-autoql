@@ -159,7 +159,6 @@ export default class ChataChart extends Component {
       return
     }
     if (this.props.data !== prevProps.data) {
-      console.log('hi142')
       shouldForceUpdate = true
     }
     if (shouldForceUpdate) {
@@ -207,7 +206,6 @@ export default class ChataChart extends Component {
 
   aggregateRowData = (props) => {
     const { stringColumnIndex, numberColumnIndices, data, columns } = props
-    console.log('data', data)
     const stringColumn = columns[stringColumnIndex]
     let sortedData
     if (isColumnDateType(stringColumn)) {
@@ -322,8 +320,6 @@ export default class ChataChart extends Component {
       bottomMargin = bottomMargin - innerTickSize
     }
 
-    console.log(bottomMargin)
-
     return bottomMargin || this.state.bottomMargin
   }
 
@@ -337,7 +333,6 @@ export default class ChataChart extends Component {
   //     this.X_AXIS_LABEL_HEIGHT
   //   let bottomMargin = this.state.bottomMargin
   //   bottomMargin += axesBottom - containerBottom
-
   //   return bottomMargin
   // }
 
@@ -659,8 +654,6 @@ export default class ChataChart extends Component {
             pointerEvents: this.state.isLoadingMoreRows ? 'none' : 'unset',
           }}
         >
-          {console.log('this.state.isLoadingMoreRows', this.state.isLoadingMoreRows)}
-
           {!this.firstRender && !this.props.isResizing && (
             <Fragment>
               {this.state.isLoadingMoreRows && this.renderChartLoader()}
