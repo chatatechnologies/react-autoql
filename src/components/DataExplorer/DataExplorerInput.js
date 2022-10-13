@@ -73,8 +73,8 @@ export default class DataExplorerInput extends React.Component {
     clearTimeout(this.inputAnimationTimeout)
   }
 
-  isNotAggSeed(subject) {
-    return !(
+  isAggSeed(subject) {
+    return (
       subject.name.toLowerCase().startsWith('monthly change in') ||
       subject.name.toLowerCase().startsWith('yearly change in') ||
       subject.name.toLowerCase().startsWith('weekly change in') ||
@@ -98,7 +98,7 @@ export default class DataExplorerInput extends React.Component {
               type: DEConstants.SUBJECT_TYPE,
             }
           })
-          .filter(this.isNotAggSeed)
+          .filter((subject) => !this.isAggSeed(subject))
           .sort((a, b) => a.name.localeCompare(b.name))
       }
 
