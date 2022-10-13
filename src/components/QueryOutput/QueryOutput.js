@@ -1408,7 +1408,7 @@ export class QueryOutput extends React.Component {
         })
       }
       if (this.props.queryInputRef?._isMounted) {
-        this.props.queryInputRef?.submitQuery({
+        this.props.queryInputRef?.animateInputTextAndSubmit({
           queryText: query,
           userSelection,
           skipQueryValidation: true,
