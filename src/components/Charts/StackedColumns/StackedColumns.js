@@ -1,11 +1,6 @@
 import React, { Component } from 'react'
 import _get from 'lodash.get'
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
 export default class StackedColumns extends Component {
   static propTypes = chartElementPropTypes
@@ -31,15 +26,7 @@ export default class StackedColumns extends Component {
   }
 
   render = () => {
-    const {
-      columns,
-      legendColumn,
-      numberColumnIndices,
-      stringColumnIndex,
-      dataFormatting,
-      yScale,
-      xScale,
-    } = this.props
+    const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -93,11 +80,7 @@ export default class StackedColumns extends Component {
           return (
             <rect
               key={getKey(colIndex, index)}
-              className={`bar${
-                this.state.activeKey === getKey(colIndex, index)
-                  ? ' active'
-                  : ''
-              }`}
+              className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               x={xScale(d[stringColumnIndex])}
               y={y}
               width={xScale.bandwidth()}
@@ -112,6 +95,6 @@ export default class StackedColumns extends Component {
       })
       return bars
     })
-    return <g data-test="stacked-columns">{stackedColumns}</g>
+    return <g data-test='stacked-columns'>{stackedColumns}</g>
   }
 }

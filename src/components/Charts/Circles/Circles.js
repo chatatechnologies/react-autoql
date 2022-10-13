@@ -3,35 +3,18 @@ import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
 export default class Circles extends Component {
   constructor(props) {
     super(props)
 
     const maxValue = max(
-      props.data.map((row) =>
-        max(
-          row.filter(
-            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
-          )
-        )
-      )
+      props.data.map((row) => max(row.filter((value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)))),
     )
 
     const minValue = min(
-      props.data.map((row) =>
-        min(
-          row.filter(
-            (value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)
-          )
-        )
-      )
+      props.data.map((row) => min(row.filter((value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)))),
     )
 
     this.radiusScale = scaleLinear()
@@ -105,12 +88,8 @@ export default class Circles extends Component {
           circles.push(
             <circle
               key={getKey(colIndex, index)}
-              data-test="circles"
-              className={`circle${
-                this.state.activeKey === getKey(colIndex, index)
-                  ? ' active'
-                  : ''
-              }`}
+              data-test='circles'
+              className={`circle${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               cx={xScale(xLabel) + xScale.bandwidth() / 2}
               cy={yScale(yLabel) + yScale.bandwidth() / 2}
               r={value < 0 ? 0 : this.radiusScale(value) / 2}
@@ -120,13 +99,10 @@ export default class Circles extends Component {
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,
-                fill:
-                  this.state.activeKey === getKey(colIndex, index)
-                    ? colorScale(1)
-                    : colorScale(0),
+                fill: this.state.activeKey === getKey(colIndex, index) ? colorScale(1) : colorScale(0),
                 fillOpacity: 0.7,
               }}
-            />
+            />,
           )
         }
       })

@@ -71,9 +71,7 @@ export default class SelectableList extends React.Component {
   }
 
   handleMultipleCheck = (items) => {
-    const allItemsChecked = this.state.selected.every(
-      (index) => items[index].checked
-    )
+    const allItemsChecked = this.state.selected.every((index) => items[index].checked)
 
     if (allItemsChecked) {
       this.state.selected.forEach((index) => {
@@ -94,14 +92,14 @@ export default class SelectableList extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className="react-autoql-selectable-list"
-          data-test="selectable-list"
+          className='react-autoql-selectable-list'
+          data-test='selectable-list'
           onClick={(e) => {
             e.stopPropagation()
           }}
         >
           {!!_get(this.props.columns, 'length') && (
-            <div className="col-visibility-header">
+            <div className='col-visibility-header'>
               {this.props.columns.map((col, index) => {
                 if (index === this.props.columns.length - 1) {
                   const allItemsChecked = items.every((col) => col.checked)
@@ -135,9 +133,7 @@ export default class SelectableList extends React.Component {
             return (
               <div
                 key={`list-item-${uuid()}`}
-                className={`react-autoql-list-item${
-                  this.state.selected.includes(index) ? ' selected' : ''
-                }`}
+                className={`react-autoql-list-item${this.state.selected.includes(index) ? ' selected' : ''}`}
                 onClick={(e) => {
                   if (e.shiftKey) {
                     this.handleShiftSelect(index)
@@ -154,10 +150,7 @@ export default class SelectableList extends React.Component {
                   <Checkbox
                     checked={item.checked}
                     onChange={() => {
-                      if (
-                        this.state.selected.length > 1 &&
-                        this.state.selected.includes(index)
-                      ) {
+                      if (this.state.selected.length > 1 && this.state.selected.includes(index)) {
                         this.handleMultipleCheck(items)
                       } else {
                         item.checked = !item.checked

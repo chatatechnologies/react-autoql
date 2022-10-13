@@ -126,10 +126,10 @@ export const scaleZero = (scale) => {
     return scale?.(0) || 0
   }
 
-  let min = domain[0]
-  let max = domain[domain?.length - 1]
-  if (min > 0 && max > 0) return scale(min)
-  if (min < 0 && max < 0) return scale(max)
+  const min = domain[0]
+  const max = domain[domain?.length - 1]
+  if (min > 0 && max > 0) {return scale(min)}
+  if (min < 0 && max < 0) {return scale(max)}
   return scale(0)
 }
 
@@ -147,23 +147,14 @@ export const shouldRecalculateLongestLabel = (prevProps, props) => {
   )
 }
 
-export const getTooltipContent = ({
-  row,
-  columns,
-  colIndex,
-  stringColumnIndex,
-  legendColumn,
-  dataFormatting,
-}) => {
+export const getTooltipContent = ({ row, columns, colIndex, stringColumnIndex, legendColumn, dataFormatting }) => {
   let tooltipElement = null
   try {
     const stringColumn = columns[stringColumnIndex]
     const numberColumn = columns[colIndex]
 
     const stringTitle = stringColumn.title
-    const numberTitle = numberColumn.origColumn
-      ? numberColumn.origColumn.title
-      : numberColumn.title
+    const numberTitle = numberColumn.origColumn ? numberColumn.origColumn.title : numberColumn.title
 
     const stringValue = formatElement({
       element: row[stringColumnIndex],
@@ -179,9 +170,7 @@ export const getTooltipContent = ({
 
     const column = columns[colIndex]
     const tooltipLine1 =
-      !!legendColumn && !!column?.origColumn
-        ? `<div><strong>${legendColumn.title}:</strong> ${column.title}</div>`
-        : ''
+      !!legendColumn && !!column?.origColumn ? `<div><strong>${legendColumn.title}:</strong> ${column.title}</div>` : ''
     const tooltipLine2 = `<div><strong>${stringTitle}:</strong> ${stringValue}</div>`
     const tooltipLine3 = `<div><strong>${numberTitle}:</strong> ${numberValue}</div>`
 
@@ -225,11 +214,7 @@ export const getTooltipContent = ({
 //   }
 // }
 
-export const getLegendLabelsForMultiSeries = (
-  columns,
-  colorScale,
-  numberColumnIndices = []
-) => {
+export const getLegendLabelsForMultiSeries = (columns, colorScale, numberColumnIndices = []) => {
   try {
     if (numberColumnIndices.length < 1) {
       return []
@@ -264,7 +249,7 @@ export const getNumberOfSeries = (data) => {
 
 export const convertToNumber = (value) => {
   try {
-    let number = Number(value)
+    const number = Number(value)
     if (isNaN(number)) {
       return 0
     }
@@ -274,11 +259,7 @@ export const convertToNumber = (value) => {
   }
 }
 
-export const calculateMinAndMaxSums = (
-  data,
-  stringColumnIndex,
-  numberColumnIndices
-) => {
+export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndices) => {
   const positiveSumsObject = {}
   const negativeSumsObject = {}
 
@@ -289,7 +270,7 @@ export const calculateMinAndMaxSums = (
     numberColumnIndices.forEach((colIndex) => {
       const rawValue = row[colIndex]
       let value = Number(rawValue)
-      if (isNaN(value)) value = 0
+      if (isNaN(value)) {value = 0}
 
       if (value >= 0) {
         // Calculate positive sum
@@ -404,17 +385,9 @@ export const getLegendLocation = (seriesArray, displayType) => {
     return undefined
   }
 
-  if (
-    displayType === 'pie' ||
-    displayType === 'heatmap' ||
-    displayType === 'bubble'
-  ) {
+  if (displayType === 'pie' || displayType === 'heatmap' || displayType === 'bubble') {
     return undefined
-  } else if (
-    displayType === 'stacked_column' ||
-    displayType === 'stacked_bar' ||
-    displayType === 'stacked_line'
-  ) {
+  } else if (displayType === 'stacked_column' || displayType === 'stacked_bar' || displayType === 'stacked_line') {
     return 'right'
   } else if (_get(seriesArray, 'length') > 2) {
     return 'right'
@@ -437,10 +410,7 @@ export const doesElementOverflowContainer = (element, container) => {
   }
 
   // intersects bottom
-  if (
-    elementBBox.y + elementBBox.height <
-    containerBBox.y + containerBBox.height
-  ) {
+  if (elementBBox.y + elementBBox.height < containerBBox.y + containerBBox.height) {
     return true
   }
 
@@ -450,10 +420,7 @@ export const doesElementOverflowContainer = (element, container) => {
   }
 
   // intersects right
-  if (
-    elementBBox.x + elementBBox.width <
-    containerBBox.x + containerBBox.width
-  ) {
+  if (elementBBox.x + elementBBox.width < containerBBox.x + containerBBox.width) {
     return true
   }
 
@@ -463,9 +430,7 @@ export const doesElementOverflowContainer = (element, container) => {
 export const getNiceTickValues = ({ tickValues, scale }) => {
   const { minValue, maxValue } = scale
   if (minValue === undefined || maxValue === undefined) {
-    console.warn(
-      'Tried to make nice labels but max/min values were not provided'
-    )
+    console.warn('Tried to make nice labels but max/min values were not provided')
     return tickValues
   } else if (tickValues?.length < 2) {
     // Could not make nice labels because there was only 1 tick
@@ -498,17 +463,10 @@ export const getNiceTickValues = ({ tickValues, scale }) => {
   }
 }
 
-export const getTickValues = ({
-  tickHeight,
-  fullHeight,
-  labelArray,
-  scale,
-}) => {
+export const getTickValues = ({ tickHeight, fullHeight, labelArray, scale }) => {
   try {
     const minTextHeightInPx = 16
-    const interval = Math.ceil(
-      (labelArray.length * minTextHeightInPx) / fullHeight
-    )
+    const interval = Math.ceil((labelArray.length * minTextHeightInPx) / fullHeight)
 
     let tickValues = labelArray
     if (tickHeight < minTextHeightInPx) {

@@ -42,11 +42,11 @@ export default class DataAlertModal extends React.Component {
 
     return (
       <SelectWithArrow
-        className="react-autoql-timezone-select"
+        className='react-autoql-timezone-select'
         options={options}
         selectedOption={selectedOption}
         onChange={this.props.onChange}
-        menuPlacement="top"
+        menuPlacement='top'
         maxMenuHeight={180}
         isSearchable
       />

@@ -51,15 +51,9 @@ describe('renders correctly', () => {
 describe('tooltip content renders correctly for pivot table data', () => {
   const testTooltipForDisplayType = (displayType) => {
     const tooltipContentSpy = jest.spyOn(chartHelpers, 'getTooltipContent')
-    const getTooltipContentResult = () =>
-      tooltipContentSpy.mock.results[0]?.value
+    const getTooltipContentResult = () => tooltipContentSpy.mock.results[0]?.value
     const wrapper = mount(
-      <QueryOutput
-        queryResponse={testCases[11]}
-        initialDisplayType={displayType}
-        height={100}
-        width={100}
-      />
+      <QueryOutput queryResponse={testCases[11]} initialDisplayType={displayType} height={100} width={100} />,
     )
     const tooltipContent = getTooltipContentResult()
     jest.clearAllMocks()

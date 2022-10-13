@@ -46,16 +46,14 @@ export default class Input extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-input-container${
-            this.state.focused ? ' focus' : ''
-          } ${className} `}
-          data-test="react-autoql-input"
+          className={`react-autoql-input-container${this.state.focused ? ' focus' : ''} ${className} `}
+          data-test='react-autoql-input'
         >
           {this.props.type === 'multi' ? (
             <textarea
               {...nativeProps}
               ref={(r) => (this.inputRef = r)}
-              className="react-autoql-input area"
+              className='react-autoql-input area'
               onFocus={this.onFocus}
               onBlur={this.onBlur}
             />
@@ -68,14 +66,7 @@ export default class Input extends React.Component {
                 onFocus={this.onFocus}
                 onBlur={this.onBlur}
               />
-              {icon && (
-                <Icon
-                  className={`react-autoql-input-icon ${
-                    this.state.focused ? ' focus' : ''
-                  }`}
-                  type={icon}
-                />
-              )}
+              {icon && <Icon className={`react-autoql-input-icon ${this.state.focused ? ' focus' : ''}`} type={icon} />}
             </Fragment>
           )}
         </div>

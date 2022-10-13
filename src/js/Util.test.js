@@ -26,11 +26,7 @@ import {
   isColumnNumberType,
 } from '../components/QueryOutput/columnHelpers'
 
-import {
-  getObjSize,
-  getMaxValueFromKeyValueObj,
-  getMinValueFromKeyValueObj,
-} from '../components/Charts/helpers'
+import { getObjSize, getMaxValueFromKeyValueObj, getMinValueFromKeyValueObj } from '../components/Charts/helpers'
 
 import responseTestCases from '../../test/responseTestCases'
 
@@ -277,8 +273,7 @@ describe('formatChartLabel', () => {
   })
 
   describe('long labels get truncated', () => {
-    const d =
-      'This is a really long label that should get cut off at around 35 characters'
+    const d = 'This is a really long label that should get cut off at around 35 characters'
     const col = { type: 'STRING' }
     const label = formatChartLabel({ d, col })
     test('isTruncated is true', () => {
@@ -321,9 +316,9 @@ describe('formatElement', () => {
     })
 
     test('renders 1 decimal orig has decimals', () => {
-      const element = 15000.23098230593278
+      const element = (22 / 7) * 5000
       const column = { type: 'QUANTITY' }
-      expect(formatElement({ element, column })).toEqual('15,000.2')
+      expect(formatElement({ element, column })).toEqual('15,714.3')
     })
 
     test('renders no decimals if config is 0', () => {})
@@ -346,9 +341,7 @@ describe('formatElement', () => {
   })
 
   test('unknown type returns original value', () => {
-    expect(
-      formatElement({ element: 'se83n', column: { type: 'unknown' } })
-    ).toEqual('se83n')
+    expect(formatElement({ element: 'se83n', column: { type: 'unknown' } })).toEqual('se83n')
   })
 
   test('thrown error is caught (title is not a string)', () => {
@@ -438,11 +431,7 @@ describe('isTableType', () => {
 
 describe('supportsRegularPivotTable', () => {
   test('true case', () => {
-    const columns = [
-      { groupable: true },
-      { groupable: true },
-      { groupable: false },
-    ]
+    const columns = [{ groupable: true }, { groupable: true }, { groupable: false }]
     expect(supportsRegularPivotTable(columns)).toBeTruthy()
   })
 
@@ -512,19 +501,11 @@ describe('getSupportedDisplayTypes', () => {
       },
     }
 
-    expect(getSupportedDisplayTypes({ response })).toEqual([
-      'table',
-      'column',
-      'bar',
-      'line',
-      'pie',
-    ])
+    expect(getSupportedDisplayTypes({ response })).toEqual(['table', 'column', 'bar', 'line', 'pie'])
   })
 
   test('supports 3d charts', () => {
-    expect(
-      getSupportedDisplayTypes({ response: sampleDoubleGroupableResponse })
-    ).toEqual([
+    expect(getSupportedDisplayTypes({ response: sampleDoubleGroupableResponse })).toEqual([
       'table',
       'pivot_table',
       'stacked_column',
@@ -541,9 +522,7 @@ describe('getSupportedDisplayTypes', () => {
 
 describe('isDisplayTypeValid', () => {
   test('returns true for valid display type', () => {
-    expect(
-      isDisplayTypeValid(sampleDoubleGroupableResponse, 'stacked_bar')
-    ).toBe(true)
+    expect(isDisplayTypeValid(sampleDoubleGroupableResponse, 'stacked_bar')).toBe(true)
   })
 
   test('returns false for invalid display type', () => {
@@ -557,21 +536,15 @@ describe('getDefaultDisplayType', () => {
   })
 
   test('returns "single-value" for single value response', () => {
-    expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual(
-      'single-value'
-    )
+    expect(getDefaultDisplayType(sampleSingleValueResponse, true)).toEqual('single-value')
   })
 
   test('returns "stacked_column" if available and charts are preferred', () => {
-    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, true)).toEqual(
-      'stacked_column'
-    )
+    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, true)).toEqual('stacked_column')
   })
 
   test('returns "pivot_table" if available and tables are preferred', () => {
-    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, false)).toEqual(
-      'pivot_table'
-    )
+    expect(getDefaultDisplayType(sampleDoubleGroupableResponse, false)).toEqual('pivot_table')
   })
 
   test('returns "suggestion" for suggestion response', () => {
@@ -595,19 +568,13 @@ describe('nameValueObject', () => {
 
 describe('isAggregation', () => {
   test('single groupable', () => {
-    expect(isAggregation(sampleSingleGroupableResponse.data.data.columns)).toBe(
-      true
-    )
+    expect(isAggregation(sampleSingleGroupableResponse.data.data.columns)).toBe(true)
   })
   test('double groupable', () => {
-    expect(isAggregation(sampleDoubleGroupableResponse.data.data.columns)).toBe(
-      true
-    )
+    expect(isAggregation(sampleDoubleGroupableResponse.data.data.columns)).toBe(true)
   })
   test('single value', () => {
-    expect(isAggregation(sampleSingleValueResponse.data.data.columns)).toBe(
-      false
-    )
+    expect(isAggregation(sampleSingleValueResponse.data.data.columns)).toBe(false)
   })
   test('list', () => {
     expect(isAggregation(sampleListResponse.data.data.columns)).toBe(false)

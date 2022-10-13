@@ -15,16 +15,10 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { Spinner } from '../../Spinner'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  fetchNotificationFeed,
-  dismissAllNotifications,
-} from '../../../js/notificationService'
+import { fetchNotificationFeed, dismissAllNotifications } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import './NotificationFeed.scss'
@@ -110,9 +104,7 @@ class NotificationFeed extends React.Component {
           pagination = data.pagination
         }
 
-        const hasMore =
-          !data?.items?.length ||
-          notificationList?.length === data?.pagination?.total_items
+        const hasMore = !data?.items?.length || notificationList?.length === data?.pagination?.total_items
 
         if (this._isMounted) {
           this.setState({
@@ -244,9 +236,7 @@ class NotificationFeed extends React.Component {
   }
 
   onDeleteClick = (notification) => {
-    const newList = this.state.notificationList.filter(
-      (n) => n.id !== notification.id
-    )
+    const newList = this.state.notificationList.filter((n) => n.id !== notification.id)
     this.setState(
       {
         notificationList: newList,
@@ -254,7 +244,7 @@ class NotificationFeed extends React.Component {
       },
       () => {
         this.props.onDeleteCallback(newList)
-      }
+      },
     )
   }
 
@@ -265,13 +255,9 @@ class NotificationFeed extends React.Component {
   }
 
   renderDismissAllButton = () => (
-    <div
-      key="dismiss-all-btn"
-      className="react-autoql-notification-dismiss-all"
-    >
+    <div key='dismiss-all-btn' className='react-autoql-notification-dismiss-all'>
       <span onClick={this.onDismissAllClick}>
-        <Icon type="notification-off" style={{ verticalAlign: 'middle' }} />{' '}
-        Dismiss All
+        <Icon type='notification-off' style={{ verticalAlign: 'middle' }} /> Dismiss All
       </span>
     </div>
   )
@@ -291,10 +277,8 @@ class NotificationFeed extends React.Component {
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         allowDelete={false}
-        title={
-          this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'
-        }
-        titleIcon={this.state.activeDataAlert ? <Icon type="edit" /> : <span />}
+        title={this.state.activeDataAlert ? 'Edit Data Alert' : 'Create Data Alert'}
+        titleIcon={this.state.activeDataAlert ? <Icon type='edit' /> : <span />}
       />
     )
   }
@@ -306,19 +290,13 @@ class NotificationFeed extends React.Component {
 
     if (this.state.isFetchingFirstNotifications) {
       return (
-        <div
-          className="notification-list-loading-container"
-          data-test="notification-list"
-        >
+        <div className='notification-list-loading-container' data-test='notification-list'>
           Loading...
         </div>
       )
     } else if (this.state.fetchNotificationsError) {
       return (
-        <div
-          className="notification-list-loading-container"
-          data-test="notification-list"
-        >
+        <div className='notification-list-loading-container' data-test='notification-list'>
           Oh no! Something went wrong while accessing your notifications.
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <Button onClick={this.getInitialNotifications}>Try Again</Button>
@@ -329,14 +307,11 @@ class NotificationFeed extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          className="react-autoql-notification-list-container"
-          data-test="notification-list"
-        >
+        <div className='react-autoql-notification-list-container' data-test='notification-list'>
           <ReactTooltip
-            className="react-autoql-tooltip"
-            id="react-autoql-notification-tooltip"
-            effect="solid"
+            className='react-autoql-tooltip'
+            id='react-autoql-notification-tooltip'
+            effect='solid'
             delayShow={500}
             html
           />
@@ -348,25 +323,20 @@ class NotificationFeed extends React.Component {
                   initialLoad={false}
                   pageStart={0}
                   loadMore={this.getNotifications}
-                  hasMore={
-                    this.state.pagination.total_items >
-                    this.state.notificationList.length
-                  }
+                  hasMore={this.state.pagination.total_items > this.state.notificationList.length}
                   loader={
-                    <div className="react-autoql-spinner-centered" key={0}>
+                    <div className='react-autoql-spinner-centered' key={0}>
                       <Spinner />
                     </div>
                   }
                   useWindow={false}
                 >
-                  <div className="notification-feed-list">
+                  <div className='notification-feed-list'>
                     {this.state.notificationList.map((notification, i) => {
                       return (
                         <NotificationItem
                           key={`notification-item-${i}`}
-                          authentication={getAuthentication(
-                            this.props.authentication
-                          )}
+                          authentication={getAuthentication(this.props.authentication)}
                           notification={notification}
                           onClick={this.onItemClick}
                           onDismissCallback={this.onDismissClick}
@@ -385,15 +355,9 @@ class NotificationFeed extends React.Component {
                             })
                           }}
                           onCollapseCallback={this.props.onCollapseCallback}
-                          activeNotificationData={
-                            this.props.activeNotificationData
-                          }
-                          autoChartAggregations={
-                            this.props.autoChartAggregations
-                          }
-                          showNotificationDetails={
-                            this.props.showNotificationDetails
-                          }
+                          activeNotificationData={this.props.activeNotificationData}
+                          autoChartAggregations={this.props.autoChartAggregations}
+                          showNotificationDetails={this.props.showNotificationDetails}
                           onErrorCallback={this.props.onErrorCallback}
                           onEditClick={(dataAlert) => {
                             this.setState({ activeDataAlert: dataAlert })
@@ -408,19 +372,13 @@ class NotificationFeed extends React.Component {
               </CustomScrollbars>
             </Fragment>
           ) : (
-            <div className="empty-notifications-message">
-              <img className="empty-notifications-img" src={emptyStateImg} />
-              <div className="empty-notifications-title">
-                No notifications yet.
-              </div>
+            <div className='empty-notifications-message'>
+              <img className='empty-notifications-img' src={emptyStateImg} />
+              <div className='empty-notifications-title'>No notifications yet.</div>
               <div>Stay tuned!</div>
               <br />
               {this.props.showCreateAlertBtn && (
-                <Button
-                  style={{ marginTop: '10px' }}
-                  type="primary"
-                  onClick={this.showEditDataAlertModal}
-                >
+                <Button style={{ marginTop: '10px' }} type='primary' onClick={this.showEditDataAlertModal}>
                   Create Data Alert
                 </Button>
               )}

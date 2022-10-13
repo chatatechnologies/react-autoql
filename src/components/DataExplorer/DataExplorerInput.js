@@ -165,10 +165,7 @@ export default class DataExplorerInput extends React.Component {
 
   onInputChange = (e) => {
     if (this._isMounted) {
-      if (
-        !!this.userSelectedValue &&
-        (e.key === 'ArrowDown' || e.key === 'ArrowUp')
-      ) {
+      if (!!this.userSelectedValue && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         // keyup or keydown
         return // return to let the component handle it...
       }
@@ -201,7 +198,7 @@ export default class DataExplorerInput extends React.Component {
     if (e.key == 'Enter') {
       if (this.userSelectedValue) {
         this.selectSubject(this.userSelectedValue)
-      } else if (!!this.state.inputValue) {
+      } else if (this.state.inputValue) {
         this.submitRawText(this.state.inputValue)
       }
       this.blurInput()
@@ -287,7 +284,7 @@ export default class DataExplorerInput extends React.Component {
       <>
         <strong>{section.title}</strong>
         {section.emptyState ? (
-          <div className="data-explorer-no-suggestions">
+          <div className='data-explorer-no-suggestions'>
             <em>No results</em>
           </div>
         ) : null}
@@ -300,11 +297,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   hasNoSuggestions = () => {
-    return (
-      !this.state.suggestions?.length &&
-      !this.state.loadingAutocomplete &&
-      !!this.userTypedValue
-    )
+    return !this.state.suggestions?.length && !this.state.loadingAutocomplete && !!this.userTypedValue
   }
 
   getSuggestions = () => {
@@ -358,13 +351,8 @@ export default class DataExplorerInput extends React.Component {
 
     return (
       <div {...containerProps}>
-        <div className="react-autoql-data-explorer-suggestion-container">
-          <CustomScrollbars
-            autoHeight
-            autoHeightMin={0}
-            autoHeightMax={maxHeight}
-            autoHide={false}
-          >
+        <div className='react-autoql-data-explorer-suggestion-container'>
+          <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight} autoHide={false}>
             {children}
           </CustomScrollbars>
         </div>
@@ -374,9 +362,9 @@ export default class DataExplorerInput extends React.Component {
 
   renderInputIcon = () => {
     return (
-      <div className="chat-bar-input-icon">
+      <div className='chat-bar-input-icon'>
         <Icon
-          type="search"
+          type='search'
           style={{
             width: '19px',
             height: '20px',
@@ -390,13 +378,11 @@ export default class DataExplorerInput extends React.Component {
   renderClearInputBtn = () => {
     return (
       <div
-        className={`chat-bar-clear-btn ${
-          this.state.inputValue ? 'visible' : ''
-        }`}
-        data-for="explore-queries-tooltips"
-        data-tip="Clear Search"
+        className={`chat-bar-clear-btn ${this.state.inputValue ? 'visible' : ''}`}
+        data-for='explore-queries-tooltips'
+        data-tip='Clear Search'
       >
-        <Icon type="close" onClick={this.clearInput} />
+        <Icon type='close' onClick={this.clearInput} />
       </div>
     )
   }
@@ -408,11 +394,11 @@ export default class DataExplorerInput extends React.Component {
           className={`react-autoql-chatbar-input-container data-explorer ${
             this.hasNoSuggestions() ? 'no-suggestions' : ''
           }`}
-          data-test="data-explorer-autocomplete"
+          data-test='data-explorer-autocomplete'
         >
           <Autosuggest
             id={`data-explorer-autosuggest-${this.componentKey}`}
-            className="react-autoql-data-explorer-autosuggest"
+            className='react-autoql-data-explorer-autosuggest'
             onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
             onSuggestionsClearRequested={this.onSuggestionsClearRequested}
             getSuggestionValue={this.userSelectedSuggestionHandler}
@@ -427,7 +413,7 @@ export default class DataExplorerInput extends React.Component {
             focusInputOnSuggestionClick={false}
             inputProps={{
               ref: (r) => (this.inputRef = r),
-              className: `react-autoql-chatbar-input`,
+              className: 'react-autoql-chatbar-input',
               placeholder: this.props.inputPlaceholder,
               'data-test': 'data-explorer-input-component',
               value: this.state.inputValue,

@@ -27,13 +27,7 @@ export default class Chip extends React.Component {
   }
 
   renderDeleteButton = () => {
-    return (
-      <Icon
-        className="react-autoql-chip-delete-btn"
-        type="close"
-        onClick={this.props.onDelete}
-      />
-    )
+    return <Icon className='react-autoql-chip-delete-btn' type='close' onClick={this.props.onDelete} />
   }
 
   render = () => {
@@ -46,7 +40,7 @@ export default class Chip extends React.Component {
           ${this.props.className || ''}
           ${isDisabled ? ' disabled' : ''}
           ${this.props.selected ? ' selected' : ''}`}
-          data-test="react-autoql-chip"
+          data-test='react-autoql-chip'
           data-multiline={this.props.multiline}
           style={{ ...this.props.style }}
           onClick={this.props.onClick}

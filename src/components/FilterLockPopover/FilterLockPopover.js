@@ -83,8 +83,8 @@ export class FilterLockPopover extends React.Component {
   renderContent = ({ position, childRect, popoverRect }) => {
     return (
       <ArrowContainer
-        className="filter-lock-menu-content-container"
-        arrowClassName="filter-lock-menu-popover-arrow"
+        className='filter-lock-menu-content-container'
+        arrowClassName='filter-lock-menu-popover-arrow'
         position={position}
         childRect={childRect}
         popoverRect={popoverRect}
@@ -109,7 +109,7 @@ export class FilterLockPopover extends React.Component {
   render = () => {
     return (
       <Popover
-        containerClassName="filter-lock-menu"
+        containerClassName='filter-lock-menu'
         onClickOutside={this.props.onClose}
         positions={this.props.positions}
         isOpen={this.props.isOpen}

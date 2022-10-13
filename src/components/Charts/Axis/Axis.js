@@ -172,9 +172,7 @@ export default class Axis extends Component {
           .scale(legendScale)
           .on('cellclick', function (d) {
             self.props.onLabelChange({ setLoading: false })
-            self.props.onLegendClick(
-              legendLabels.find((label) => label.label === d)
-            )
+            self.props.onLegendClick(legendLabels.find((label) => label.label === d))
           })
 
         if (this.props.legendTitle) {
@@ -193,14 +191,9 @@ export default class Axis extends Component {
 
         // adjust container width to exact width of legend
         // this is so the updateMargins function works properly
-        const legendWidth = select(this.rightLegendElement)
-          .node()
-          .getBBox().width
+        const legendWidth = select(this.rightLegendElement).node().getBBox().width
         select(this.legendClippingContainer).attr('width', legendWidth + 30)
-        this.legendSVG.attr(
-          'clip-path',
-          `url(#legend-clip-area-${this.LEGEND_ID})`
-        )
+        this.legendSVG.attr('clip-path', `url(#legend-clip-area-${this.LEGEND_ID})`)
       } else if (this.props.hasBottomLegend) {
         this.legendSVG = select(this.bottomLegendElement)
         this.legendSVG
@@ -239,13 +232,11 @@ export default class Axis extends Component {
         })
         .map((l) => l.label)
 
-      this.legendSwatchElements = document.querySelectorAll(
-        `#${this.LEGEND_ID} .label`
-      )
+      this.legendSwatchElements = document.querySelectorAll(`#${this.LEGEND_ID} .label`)
 
       if (this.legendSwatchElements) {
         this.legendSwatchElements.forEach((el, i) => {
-          let textStrings = []
+          const textStrings = []
           el.querySelectorAll('tspan').forEach((tspan) => {
             textStrings.push(tspan.textContent)
           })
@@ -274,7 +265,7 @@ export default class Axis extends Component {
       .domain(
         legendLabels.map((obj) => {
           return obj.label
-        })
+        }),
       )
       .range(colorRange)
   }
@@ -375,10 +366,10 @@ export default class Axis extends Component {
       // because they might overlap the legend
       (!this.props.rotateLabels ? this.props.bottomMargin : 44) + // distance to bottom of axis labels
       20
-    if (legendClippingHeight < 0) legendClippingHeight = 0
+    if (legendClippingHeight < 0) {legendClippingHeight = 0}
 
     return (
-      <g data-test="axis">
+      <g data-test='axis'>
         <g
           className={`axis axis-${this.props.orient}
         ${this.props.rotateLabels ? ' rotated' : ''}`}
@@ -393,11 +384,9 @@ export default class Axis extends Component {
               this.rightLegendElement = el
             }}
             id={this.LEGEND_ID}
-            data-test="right-legend"
-            className="legendOrdinal right-legend"
-            transform={`translate(${this.props.width + 15}, ${
-              this.props.legendTitle ? '30' : '25'
-            })`}
+            data-test='right-legend'
+            className='legendOrdinal right-legend'
+            transform={`translate(${this.props.width + 15}, ${this.props.legendTitle ? '30' : '25'})`}
           >
             <clipPath id={`legend-clip-area-${this.LEGEND_ID}`}>
               <rect
@@ -415,7 +404,7 @@ export default class Axis extends Component {
                 {...this.props}
                 column={this.props.legendColumn}
                 positions={['bottom']}
-                align="end"
+                align='end'
                 childProps={{
                   ref: (r) => (this.legendBorder = r),
                   x: _get(this.titleBBox, 'x', 0) - 10,
@@ -432,12 +421,12 @@ export default class Axis extends Component {
             ref={(el) => {
               this.bottomLegendElement = el
             }}
-            data-test="bottom-legend"
+            data-test='bottom-legend'
             id={this.LEGEND_ID}
-            className="legendOrdinal"
-            transform={`translate(${
-              (this.props.width - marginLeft) / 2 + marginLeft - legendDx
-            },${this.props.height - 30})`}
+            className='legendOrdinal'
+            transform={`translate(${(this.props.width - marginLeft) / 2 + marginLeft - legendDx},${
+              this.props.height - 30
+            })`}
           />
         )}
       </g>

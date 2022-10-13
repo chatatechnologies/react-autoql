@@ -1,11 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
 
-import {
-  checkProps,
-  findByTestAttr,
-  ignoreConsoleErrors,
-} from '../../../test/testUtils'
+import { checkProps, findByTestAttr, ignoreConsoleErrors } from '../../../test/testUtils'
 import { currentEventLoopEnd } from '../../js/Util'
 import FilterLockPopover from './FilterLockPopover'
 import FilterLockPopoverContent from './FilterLockPopoverContent'
@@ -38,9 +34,7 @@ const setup = (props = {}, state = null) => {
 describe('popover container renders correctly', () => {
   test('renders correctly with only token prop', () => {
     ignoreConsoleErrors(async () => {
-      const wrapper = await shallow(
-        <FilterLockPopover authentication={{ token: 'token' }} />
-      )
+      const wrapper = await shallow(<FilterLockPopover authentication={{ token: 'token' }} />)
       expect(wrapper.exists()).toBe(true)
     })
   })
@@ -50,9 +44,7 @@ describe('popover container renders correctly', () => {
     expect(wrapper.exists()).toBe(true)
   })
   test('renders correctly when no children provided', () => {
-    const mounted = mount(
-      <FilterLockPopover {...defaultProps} authentication={sampleAuth} />
-    )
+    const mounted = mount(<FilterLockPopover {...defaultProps} authentication={sampleAuth} />)
     expect(mounted.exists()).toBe(true)
     mounted.unmount()
   })
@@ -60,7 +52,7 @@ describe('popover container renders correctly', () => {
     const mounted = mount(
       <FilterLockPopover {...defaultProps} authentication={sampleAuth}>
         <button>button!</button>
-      </FilterLockPopover>
+      </FilterLockPopover>,
     )
     expect(mounted.exists()).toBe(true)
     mounted.unmount()
@@ -98,18 +90,9 @@ describe('saving indicator renders when', () => {
   }
 
   const getFirstPersistToggle = (wrapper) => {
-    const firstFilterInList = findByTestAttr(
-      wrapper,
-      'react-autoql-filter-list-item'
-    ).first()
-    const persistToggleWrapper = findByTestAttr(
-      firstFilterInList,
-      'react-autoql-filter-lock-persist-toggle'
-    )
-    const persistToggle = findByTestAttr(
-      persistToggleWrapper,
-      'react-autoql-checkbox'
-    )
+    const firstFilterInList = findByTestAttr(wrapper, 'react-autoql-filter-list-item').first()
+    const persistToggleWrapper = findByTestAttr(firstFilterInList, 'react-autoql-filter-lock-persist-toggle')
+    const persistToggle = findByTestAttr(persistToggleWrapper, 'react-autoql-checkbox')
     return persistToggle
   }
 
@@ -127,10 +110,7 @@ describe('saving indicator renders when', () => {
         lock_flag: 1,
       })
       wrapper.update()
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(true)
       wrapper.unmount()
     })
@@ -140,15 +120,9 @@ describe('saving indicator renders when', () => {
     await currentEventLoopEnd() // Wait for componentDidMount to fetch filters
     wrapper.update()
 
-    const deleteBtn = findByTestAttr(
-      wrapper,
-      'react-autoql-remove-filter-icon'
-    ).first()
+    const deleteBtn = findByTestAttr(wrapper, 'react-autoql-remove-filter-icon').first()
     deleteBtn.simulate('click')
-    const savingIndicator = findByTestAttr(
-      wrapper,
-      'filter-locking-saving-indicator'
-    )
+    const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
     expect(savingIndicator.exists()).toBe(true)
     wrapper.unmount()
   })
@@ -163,10 +137,7 @@ describe('saving indicator renders when', () => {
       expect(instance.showSavingIndicator).toHaveBeenCalledTimes(1)
     })
     test('saving indicator rendered when persist toggled on', () => {
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(true)
       wrapper.setState({ isSaving: false })
     })
@@ -176,69 +147,42 @@ describe('saving indicator renders when', () => {
       expect(instance.showSavingIndicator).toHaveBeenCalledTimes(2) // 2 times in total now
     })
     test('saving indicator rendered when persist toggled off', () => {
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(true)
       wrapper.setState({ isSaving: false })
     })
     test('do not show saving indicator if toggle didnt change on click', () => {
-      const includeExcludeToggle = findByTestAttr(
-        wrapper,
-        'include-exclude-toggle-group'
-      ).first()
+      const includeExcludeToggle = findByTestAttr(wrapper, 'include-exclude-toggle-group').first()
 
       const excludeBtn = includeExcludeToggle.findWhere((node) => {
-        return (
-          node.hasClass('react-autoql-radio-btn') && node.text() === 'INCLUDE'
-        )
+        return node.hasClass('react-autoql-radio-btn') && node.text() === 'INCLUDE'
       })
 
       excludeBtn.simulate('click')
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(false)
     })
     test('show saving indicator when exclude toggled', () => {
-      const includeExcludeToggle = findByTestAttr(
-        wrapper,
-        'include-exclude-toggle-group'
-      ).first()
+      const includeExcludeToggle = findByTestAttr(wrapper, 'include-exclude-toggle-group').first()
 
       const excludeBtn = includeExcludeToggle.findWhere((node) => {
-        return (
-          node.hasClass('react-autoql-radio-btn') && node.text() === 'EXCLUDE'
-        )
+        return node.hasClass('react-autoql-radio-btn') && node.text() === 'EXCLUDE'
       })
 
       excludeBtn.simulate('click')
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(true)
       wrapper.setState({ isSaving: false })
     })
     test('include toggled', async () => {
-      const includeExcludeToggle = findByTestAttr(
-        wrapper,
-        'include-exclude-toggle-group'
-      ).first()
+      const includeExcludeToggle = findByTestAttr(wrapper, 'include-exclude-toggle-group').first()
 
       const excludeBtn = includeExcludeToggle.findWhere((node) => {
-        return (
-          node.hasClass('react-autoql-radio-btn') && node.text() === 'INCLUDE'
-        )
+        return node.hasClass('react-autoql-radio-btn') && node.text() === 'INCLUDE'
       })
 
       excludeBtn.simulate('click')
-      const savingIndicator = findByTestAttr(
-        wrapper,
-        'filter-locking-saving-indicator'
-      )
+      const savingIndicator = findByTestAttr(wrapper, 'filter-locking-saving-indicator')
       expect(savingIndicator.exists()).toBe(true)
       wrapper.unmount()
     })

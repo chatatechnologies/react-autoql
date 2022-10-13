@@ -7,11 +7,7 @@ import _isEqual from 'lodash.isequal'
 import errorMessages, { responseErrors } from '../../js/errorMessages'
 import ReactTooltip from 'react-tooltip'
 
-import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
-} from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import {
   authenticationDefault,
   autoQLConfigDefault,
@@ -21,11 +17,7 @@ import {
 } from '../../props/defaults'
 
 import { Icon } from '../Icon'
-import {
-  runQuery,
-  runQueryOnly,
-  fetchAutocomplete,
-} from '../../js/queryService'
+import { runQuery, runQueryOnly, fetchAutocomplete } from '../../js/queryService'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
@@ -166,12 +158,7 @@ class QueryInput extends React.Component {
     this.axiosSource.cancel(responseErrors.CANCELLED)
   }
 
-  submitQuery = ({
-    queryText,
-    userSelection,
-    skipQueryValidation,
-    source,
-  } = {}) => {
+  submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
     const query = queryText || this.state.inputValue
     if (!query) {
       return
@@ -193,7 +180,7 @@ class QueryInput extends React.Component {
       newState.inputValue = ''
     }
 
-    if (this._isMounted) this.setState(newState)
+    if (this._isMounted) {this.setState(newState)}
 
     let newSource = this.props.source
     if (source?.length) {
@@ -218,10 +205,7 @@ class QueryInput extends React.Component {
     if (query.trim()) {
       this.props.onSubmit(query)
       localStorage.setItem('inputValue', query)
-      if (
-        !this.props.authentication?.token &&
-        !!this.props.authentication?.dprKey
-      ) {
+      if (!this.props.authentication?.token && !!this.props.authentication?.dprKey) {
         this.submitDprQuery(query)
       } else if (skipQueryValidation) {
         runQueryOnly(requestData)
@@ -256,13 +240,10 @@ class QueryInput extends React.Component {
   }
 
   onFinalTranscript = (transcript) => {
-    this.setState(
-      { inputValue: transcript, listeningForTranscript: false },
-      () => {
-        this.focus()
-        ReactTooltip.hide()
-      }
-    )
+    this.setState({ inputValue: transcript, listeningForTranscript: false }, () => {
+      this.focus()
+      ReactTooltip.hide()
+    })
   }
 
   setInputRef = (ref) => {
@@ -275,10 +256,7 @@ class QueryInput extends React.Component {
       if (lastQuery && lastQuery !== 'undefined') {
         this.setState({ inputValue: lastQuery }, this.moveCaretAtEnd)
       }
-    } else if (
-      this.userSelectedSuggestion &&
-      (e.key === 'ArrowUp' || e.key === 'ArrowDown')
-    ) {
+    } else if (this.userSelectedSuggestion && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       // keyup or keydown
       return e // return to let the component handle it...
     }
@@ -299,11 +277,7 @@ class QueryInput extends React.Component {
   }
 
   userSelectedSuggestionHandler = (userSelectedValueFromSuggestionBox) => {
-    if (
-      userSelectedValueFromSuggestionBox &&
-      userSelectedValueFromSuggestionBox.name &&
-      this._isMounted
-    ) {
+    if (userSelectedValueFromSuggestionBox && userSelectedValueFromSuggestionBox.name && this._isMounted) {
       this.userSelectedValue = userSelectedValueFromSuggestionBox.name
       this.userSelectedSuggestion = true
       this.setState({ inputValue: userSelectedValueFromSuggestionBox.name })
@@ -401,9 +375,7 @@ class QueryInput extends React.Component {
   render = () => {
     const inputProps = {
       ref: this.setInputRef,
-      className: `${this.UNIQUE_ID} react-autoql-chatbar-input${
-        this.props.showChataIcon ? ' left-padding' : ''
-      }`,
+      className: `${this.UNIQUE_ID} react-autoql-chatbar-input${this.props.showChataIcon ? ' left-padding' : ''}`,
       placeholder: this.props.placeholder,
       disabled: this.props.isDisabled,
       onChange: this.onInputChange,
@@ -419,13 +391,11 @@ class QueryInput extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-bar-container ${this.props.className} ${
-            this.props.autoCompletePlacement === 'below'
-              ? 'autosuggest-bottom'
-              : 'autosuggest-top'
+            this.props.autoCompletePlacement === 'below' ? 'autosuggest-bottom' : 'autosuggest-top'
           }`}
-          data-test="chat-bar"
+          data-test='chat-bar'
         >
-          <div className="react-autoql-chatbar-input-container">
+          <div className='react-autoql-chatbar-input-container'>
             {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
               <Autosuggest
                 onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -435,9 +405,7 @@ class QueryInput extends React.Component {
                 ref={(ref) => {
                   this.autoSuggest = ref
                 }}
-                renderSuggestion={(suggestion) => (
-                  <Fragment>{suggestion.name}</Fragment>
-                )}
+                renderSuggestion={(suggestion) => <Fragment>{suggestion.name}</Fragment>}
                 inputProps={inputProps}
               />
             ) : (
@@ -445,12 +413,12 @@ class QueryInput extends React.Component {
             )}
           </div>
           {this.props.showChataIcon && (
-            <div className="chat-bar-input-icon">
-              <Icon type="react-autoql-bubbles-outlined" />
+            <div className='chat-bar-input-icon'>
+              <Icon type='react-autoql-bubbles-outlined' />
             </div>
           )}
           {this.props.showLoadingDots && this.state.isQueryRunning && (
-            <div className="input-response-loading-container">
+            <div className='input-response-loading-container'>
               <LoadingDots />
             </div>
           )}

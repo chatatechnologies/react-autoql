@@ -18,10 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('does not render with default props only', () => {
     const wrapper = setup()
-    const reverseTranslationComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-reverse-translation-container'
-    )
+    const reverseTranslationComponent = findByTestAttr(wrapper, 'react-autoql-reverse-translation-container')
     expect(reverseTranslationComponent.exists()).toBe(false)
   })
 
@@ -29,37 +26,24 @@ describe('renders correctly', () => {
     const wrapper = setup({
       reverseTranslation: [{ c_type: 'TEXT', eng: 'This is a test' }],
     })
-    const reverseTranslationComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-reverse-translation-container'
-    )
+    const reverseTranslationComponent = findByTestAttr(wrapper, 'react-autoql-reverse-translation-container')
     expect(reverseTranslationComponent.exists()).toBe(true)
   })
 
   test('renders VALIDATED_VALUE_LABEL as anchor tag', () => {
     const wrapper = setup({
-      reverseTranslation: [
-        { c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' },
-      ],
+      reverseTranslation: [{ c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' }],
       onValueLabelClick: () => {},
     })
-    const reverseTranslationLink = findByTestAttr(
-      wrapper,
-      'react-autoql-condition-link'
-    )
+    const reverseTranslationLink = findByTestAttr(wrapper, 'react-autoql-condition-link')
     expect(reverseTranslationLink.exists()).toBe(true)
   })
 
   test('does not render VALIDATED_VALUE_LABEL if callback is not provided', () => {
     const wrapper = setup({
-      reverseTranslation: [
-        { c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' },
-      ],
+      reverseTranslation: [{ c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' }],
     })
-    const reverseTranslationLink = findByTestAttr(
-      wrapper,
-      'react-autoql-condition-link'
-    )
+    const reverseTranslationLink = findByTestAttr(wrapper, 'react-autoql-condition-link')
     expect(reverseTranslationLink.exists()).toBe(false)
   })
 
@@ -71,12 +55,7 @@ describe('renders correctly', () => {
         { c_type: 'TEXT', eng: 'more text.' },
       ],
     })
-    const reverseTranslationComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-reverse-translation-container'
-    )
-    expect(reverseTranslationComponent.text()).toBe(
-      '<Icon /> Interpreted as:  This is a test Value Label more text.'
-    )
+    const reverseTranslationComponent = findByTestAttr(wrapper, 'react-autoql-reverse-translation-container')
+    expect(reverseTranslationComponent.text()).toBe('<Icon /> Interpreted as:  This is a test Value Label more text.')
   })
 })

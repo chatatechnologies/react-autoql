@@ -19,10 +19,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup(pivotSampleProps)
-    const heatmapChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-heatmap-chart'
-    )
+    const heatmapChartComponent = findByTestAttr(wrapper, 'react-autoql-heatmap-chart')
     expect(heatmapChartComponent.exists()).toBe(true)
   })
 })

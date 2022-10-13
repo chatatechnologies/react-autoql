@@ -19,13 +19,11 @@ const setup = (props = {}, queryOutputProps = {}, state = null) => {
       }}
       queryResponse={responseTestCases[7]}
       {...queryOutputProps}
-    />
+    />,
   )
 
   const setupProps = { ...defaultProps, ...props }
-  const wrapper = shallow(
-    <OptionsToolbar {...setupProps} responseRef={responseRef} />
-  )
+  const wrapper = shallow(<OptionsToolbar {...setupProps} responseRef={responseRef} />)
 
   return { wrapper, queryOutputComponent }
 }
@@ -86,7 +84,7 @@ describe('column visibility manager', () => {
         ...propsWithColVisEnabled,
         response,
       },
-      { initialDisplayType: 'table' }
+      { initialDisplayType: 'table' },
     )
     const colVisibilityBtn = findByTestAttr(wrapper, 'options-toolbar-col-vis')
     expect(colVisibilityBtn.exists()).toBe(true)
@@ -109,10 +107,7 @@ describe('more options button', () => {
       initialDisplayType: 'table',
     })
     queryOutputComponent.update()
-    const moreOptionsBtn = findByTestAttr(
-      wrapper,
-      'react-autoql-toolbar-more-options-btn'
-    )
+    const moreOptionsBtn = findByTestAttr(wrapper, 'react-autoql-toolbar-more-options-btn')
     expect(moreOptionsBtn.exists()).toBe(true)
     queryOutputComponent.unmount()
   })

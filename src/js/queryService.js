@@ -1,7 +1,6 @@
 import axios from 'axios'
 import _get from 'lodash.get'
 import { responseErrors } from './errorMessages'
-import responseSamples from '../../test/responseTestCases'
 
 const formatErrorResponse = (error) => {
   if (error?.message === responseErrors.CANCELLED) {
@@ -63,14 +62,7 @@ const failedValidation = (response) => {
   return _get(response, 'data.data.replacements.length') > 0
 }
 
-export const fetchSuggestions = ({
-  query,
-  queryId,
-  domain,
-  apiKey,
-  token,
-  cancelToken,
-} = {}) => {
+export const fetchSuggestions = ({ query, queryId, domain, apiKey, token, cancelToken } = {}) => {
   if (!query) {
     return Promise.reject(new Error('No query supplied'))
   }
@@ -80,7 +72,7 @@ export const fetchSuggestions = ({
   }
 
   let relatedQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
-    query
+    query,
   )}&scope=narrow`
 
   if (queryId) {
@@ -100,14 +92,7 @@ export const fetchSuggestions = ({
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
-export const runQueryNewPage = ({
-  queryId,
-  domain,
-  apiKey,
-  token,
-  page,
-  cancelToken,
-} = {}) => {
+export const runQueryNewPage = ({ queryId, domain, apiKey, token, page, cancelToken } = {}) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/page?key=${apiKey}&page=${page}`
 
   if (!queryId) {
@@ -168,8 +153,7 @@ export const runQueryOnly = (params = {}) => {
     cancelToken,
   } = params
   const url = `${domain}/autoql/api/v1/query?key=${apiKey}`
-  const finalUserSelection =
-    userSelectionFinal || transformUserSelection(userSelection)
+  const finalUserSelection = userSelectionFinal || transformUserSelection(userSelection)
 
   const data = {
     text: query,
@@ -225,11 +209,7 @@ export const runQueryOnly = (params = {}) => {
         return Promise.reject({ error: 'Unauthenticated' })
       }
       const referenceId = error?.response?.data?.reference_id
-      if (
-        referenceId === '1.1.430' ||
-        referenceId === '1.1.431' ||
-        isError500Type(referenceId)
-      ) {
+      if (referenceId === '1.1.430' || referenceId === '1.1.431' || isError500Type(referenceId)) {
         const queryId = error?.response?.data?.data?.query_id
         return fetchSuggestions({
           query,
@@ -242,6 +222,29 @@ export const runQueryOnly = (params = {}) => {
       }
       return Promise.reject(_get(error, 'response'))
     })
+}
+
+export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
+  if (!text) {
+    return Promise.reject(new Error('No text supplied'))
+  }
+
+  if (!token || !domain || !apiKey) {
+    return Promise.reject(new Error('Unauthenticated'))
+  }
+
+  const url = `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(text)}&key=${apiKey}`
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+
+  return axios
+    .get(url, config)
+    .then((response) => Promise.resolve(response))
+    .catch((error) => Promise.reject(_get(error, 'response')))
 }
 
 export const runQuery = (params) => {
@@ -267,13 +270,7 @@ export const runQuery = (params) => {
   return runQueryOnly(params)
 }
 
-export const exportCSV = ({
-  queryId,
-  domain,
-  apiKey,
-  token,
-  csvProgressCallback,
-} = {}) => {
+export const exportCSV = ({ queryId, domain, apiKey, token, csvProgressCallback } = {}) => {
   if (!token || !domain || !apiKey) {
     return Promise.reject(new Error('Unauthenticated'))
   }
@@ -286,9 +283,7 @@ export const exportCSV = ({
     responseType: 'blob',
     onDownloadProgress: (progressEvent) => {
       if (csvProgressCallback) {
-        let percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total
-        )
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
         csvProgressCallback(percentCompleted)
       }
     },
@@ -296,31 +291,6 @@ export const exportCSV = ({
 
   return axios
     .post(url, {}, config)
-    .then((response) => Promise.resolve(response))
-    .catch((error) => Promise.reject(_get(error, 'response')))
-}
-
-export const runQueryValidation = ({ text, domain, apiKey, token } = {}) => {
-  if (!text) {
-    return Promise.reject(new Error('No text supplied'))
-  }
-
-  if (!token || !domain || !apiKey) {
-    return Promise.reject(new Error('Unauthenticated'))
-  }
-
-  const url = `${domain}/autoql/api/v1/query/validate?text=${encodeURIComponent(
-    text
-  )}&key=${apiKey}`
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-
-  return axios
-    .get(url, config)
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response')))
 }
@@ -388,12 +358,7 @@ export const fetchTopics = ({ domain, token, apiKey } = {}) => {
     .then((response) => Promise.resolve(response))
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
-export const fetchAutocomplete = ({
-  suggestion,
-  domain,
-  apiKey,
-  token,
-} = {}) => {
+export const fetchAutocomplete = ({ suggestion, domain, apiKey, token } = {}) => {
   if (!suggestion || !suggestion.trim()) {
     return Promise.reject(new Error('No query supplied'))
   }
@@ -402,9 +367,7 @@ export const fetchAutocomplete = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(
-    suggestion
-  )}&key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/autocomplete?text=${encodeURIComponent(suggestion)}&key=${apiKey}`
 
   const config = {
     headers: {
@@ -418,13 +381,7 @@ export const fetchAutocomplete = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const fetchVLAutocomplete = ({
-  suggestion,
-  domain,
-  token,
-  apiKey,
-  cancelToken,
-} = {}) => {
+export const fetchVLAutocomplete = ({ suggestion, domain, token, apiKey, cancelToken } = {}) => {
   if (!suggestion || !suggestion.trim()) {
     return Promise.reject(new Error('No query supplied'))
   }
@@ -433,9 +390,7 @@ export const fetchVLAutocomplete = ({
     return Promise.reject(new Error('Unauthenticated'))
   }
 
-  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(
-    suggestion
-  )}&key=${apiKey}`
+  const url = `${domain}/autoql/api/v1/query/vlautocomplete?text=${encodeURIComponent(suggestion)}&key=${apiKey}`
 
   const config = {
     headers: {
@@ -521,12 +476,7 @@ export const unsetFilterFromAPI = ({ apiKey, token, domain, filter } = {}) => {
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const setColumnVisibility = ({
-  apiKey,
-  token,
-  domain,
-  columns,
-} = {}) => {
+export const setColumnVisibility = ({ apiKey, token, domain, columns } = {}) => {
   const url = `${domain}/autoql/api/v1/query/column-visibility?key=${apiKey}`
   const data = { columns }
 
@@ -546,13 +496,7 @@ export const setColumnVisibility = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const sendSuggestion = ({
-  queryId,
-  suggestion,
-  apiKey,
-  domain,
-  token,
-}) => {
+export const sendSuggestion = ({ queryId, suggestion, apiKey, domain, token }) => {
   const url = `${domain}/autoql/api/v1/query/${queryId}/suggestions?key=${apiKey}`
   const data = { suggestion }
 
@@ -583,7 +527,7 @@ export const fetchExploreQueries = ({
 } = {}) => {
   const commaSeparatedKeywords = keywords ? keywords.split(' ') : []
   const exploreQueriesUrl = `${domain}/autoql/api/v1/query/related-queries?key=${apiKey}&search=${encodeURIComponent(
-    commaSeparatedKeywords
+    commaSeparatedKeywords,
   )}&page_size=${pageSize}&page=${pageNumber}`
 
   if (!token || !domain || !apiKey) {
@@ -604,9 +548,7 @@ export const fetchExploreQueries = ({
       token,
     })
       .then((queryValidationResponse) => {
-        if (
-          _get(queryValidationResponse, 'data.data.replacements.length') > 0
-        ) {
+        if (_get(queryValidationResponse, 'data.data.replacements.length') > 0) {
           return Promise.resolve(queryValidationResponse)
         }
         return axios
@@ -628,13 +570,7 @@ export const fetchExploreQueries = ({
     .catch((error) => Promise.reject(_get(error, 'response.data')))
 }
 
-export const reportProblem = ({
-  message,
-  queryId,
-  domain,
-  apiKey,
-  token,
-} = {}) => {
+export const reportProblem = ({ message, queryId, domain, apiKey, token } = {}) => {
   if (!queryId) {
     return Promise.reject(new Error('No query ID supplied'))
   }

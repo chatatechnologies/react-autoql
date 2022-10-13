@@ -15,7 +15,7 @@ const setup = (props = {}, state = null) => {
   const wrapper = mount(
     <svg>
       <Axis {...setupProps} />
-    </svg>
+    </svg>,
   )
   return wrapper
 }

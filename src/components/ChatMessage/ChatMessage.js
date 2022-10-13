@@ -5,11 +5,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import ReactTooltip from 'react-tooltip'
 
-import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
-} from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import {
   authenticationDefault,
@@ -176,8 +172,7 @@ export default class ChatMessage extends React.Component {
               <p>
                 <br />
                 WARNING: The file you’ve requested is larger than {exportLimit}
-                MB. This exceeds the maximum download size and you will only
-                receive partial data.
+                MB. This exceeds the maximum download size and you will only receive partial data.
               </p>
             </>
           ) : null}
@@ -189,8 +184,7 @@ export default class ChatMessage extends React.Component {
   isScrolledIntoView = (elem) => {
     if (this.props.scrollContainerRef) {
       const scrollTop = this.props.scrollContainerRef.getScrollTop()
-      const scrollBottom =
-        scrollTop + this.props.scrollContainerRef.getClientHeight()
+      const scrollBottom = scrollTop + this.props.scrollContainerRef.getClientHeight()
 
       const elemTop = elem.offsetTop
       const elemBottom = elemTop + elem.offsetHeight
@@ -207,16 +201,9 @@ export default class ChatMessage extends React.Component {
     })
   }
 
-  scrollIntoView = ({
-    block = 'end',
-    inline = 'nearest',
-    behavior = 'smooth',
-  } = {}) => {
+  scrollIntoView = ({ block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
     setTimeout(() => {
-      if (
-        this.messageContainerRef &&
-        !this.isScrolledIntoView(this.messageContainerRef)
-      ) {
+      if (this.messageContainerRef && !this.isScrolledIntoView(this.messageContainerRef)) {
         this.messageContainerRef.scrollIntoView({
           block,
           inline,
@@ -246,10 +233,7 @@ export default class ChatMessage extends React.Component {
   }
 
   renderContent = () => {
-    if (
-      this.props.isCSVProgressMessage ||
-      typeof this.state.csvDownloadProgress !== 'undefined'
-    ) {
+    if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return this.renderCSVProgressMessage()
     } else if (this.props.content) {
       return this.props.content
@@ -258,11 +242,7 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response) {
       return (
         <QueryOutput
-          ref={(ref) =>
-            ref &&
-            ref !== this.state.responseRef &&
-            this.setState({ responseRef: ref })
-          }
+          ref={(ref) => ref && ref !== this.state.responseRef && this.setState({ responseRef: ref })}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
           authentication={getAuthentication(this.props.authentication)}
@@ -279,14 +259,10 @@ export default class ChatMessage extends React.Component {
           demo={getAuthentication(this.props.authentication).demo}
           enableAjaxTableData={this.props.enableAjaxTableData}
           originalQueryID={this.props.originalQueryID}
-          backgroundColor={document.documentElement.style.getPropertyValue(
-            '--react-autoql-background-color-secondary'
-          )}
+          backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
           onErrorCallback={this.props.onErrorCallback}
           enableColumnHeaderContextMenu={true}
-          isResizing={
-            this.props.isResizing || this.state.isAnimatingMessageBubble
-          }
+          isResizing={this.props.isResizing || this.state.isAnimatingMessageBubble}
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.state.dataConfig}
           onTableConfigChange={this.updateDataConfig}
@@ -325,14 +301,12 @@ export default class ChatMessage extends React.Component {
 
   renderRightToolbar = () => {
     return (
-      <div className="chat-message-toolbar right">
-        {this.props.isResponse &&
-        this.state.displayType !== 'help' &&
-        this.state.displayType !== 'suggestion' ? (
+      <div className='chat-message-toolbar right'>
+        {this.props.isResponse && this.state.displayType !== 'help' && this.state.displayType !== 'suggestion' ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.state.responseRef}
-            className={`chat-message-toolbar right`}
+            className={'chat-message-toolbar right'}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
@@ -343,9 +317,7 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             rebuildTooltips={this.props.rebuildTooltips}
             popoverParentElement={this.props.popoverParentElement}
-            deleteMessageCallback={() =>
-              this.props.deleteMessageCallback(this.props.id)
-            }
+            deleteMessageCallback={() => this.props.deleteMessageCallback(this.props.id)}
           />
         ) : null}
       </div>
@@ -354,12 +326,12 @@ export default class ChatMessage extends React.Component {
 
   renderLeftToolbar = () => {
     return (
-      <div className="chat-message-toolbar left">
+      <div className='chat-message-toolbar left'>
         {this.props.isResponse && this.props.type !== 'text' ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
             responseRef={this.state.responseRef}
-            className="chat-message-toolbar left"
+            className='chat-message-toolbar left'
           />
         ) : null}
       </div>
@@ -367,22 +339,17 @@ export default class ChatMessage extends React.Component {
   }
 
   render = () => {
-    const isChart =
-      this.state.displayType && isChartType(this.state.displayType)
+    const isChart = this.state.displayType && isChartType(this.state.displayType)
 
     return (
       <ErrorBoundary>
         <div
           id={`message-${this.props.id}`}
           ref={(r) => (this.messageContainerRef = r)}
-          data-test="chat-message"
+          data-test='chat-message'
           className={`chat-single-message-container
             ${this.props.isResponse ? ' response' : ' request'}
-            ${
-              this.props.disableMaxHeight || this.props.isIntroMessage
-                ? ' no-max-height'
-                : ''
-            }
+            ${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
           `}
         >
           <div
@@ -395,7 +362,7 @@ export default class ChatMessage extends React.Component {
           >
             {this.renderContent()}
             {!this.props.isResizing && (
-              <div className="chat-message-toolbars-container">
+              <div className='chat-message-toolbars-container'>
                 {this.renderLeftToolbar()}
                 {this.renderRightToolbar()}
               </div>

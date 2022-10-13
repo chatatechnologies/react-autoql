@@ -36,10 +36,7 @@ export default class ReportProblemModal extends React.Component {
   }
 
   reportQueryProblem = (reason) => {
-    const queryId = _get(
-      this.props.responseRef,
-      'queryResponse.data.data.query_id'
-    )
+    const queryId = _get(this.props.responseRef, 'queryResponse.data.data.query_id')
     this.setState({ isReportingProblem: true })
     reportProblem({
       message: reason,
@@ -48,8 +45,7 @@ export default class ReportProblemModal extends React.Component {
     })
       .then(() => {
         this.props.onReportProblem({
-          successMessage:
-            'Thank you for your feedback! To continue, try asking another query.',
+          successMessage: 'Thank you for your feedback! To continue, try asking another query.',
         })
         if (this._isMounted) {
           this.setState({ isReportingProblem: false })
@@ -83,15 +79,15 @@ export default class ReportProblemModal extends React.Component {
             })
           }}
           confirmLoading={this.state.isReportingProblem}
-          title="Report a Problem"
+          title='Report a Problem'
           enableBodyScroll={true}
-          width="600px"
-          confirmText="Report"
+          width='600px'
+          confirmText='Report'
           confirmDisabled={this.state.reportProblemMessage ? false : true}
         >
           Please tell us more about the problem you are experiencing:
           <textarea
-            className="report-problem-text-area"
+            className='report-problem-text-area'
             onChange={(e) =>
               this.setState({
                 reportProblemMessage: e.target.value,

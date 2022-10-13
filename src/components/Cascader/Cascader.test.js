@@ -42,10 +42,7 @@ describe('renders correctly with 1 set of children', () => {
     expect(firstChild.exists()).toBe(true)
   })
 
-  const firstOptionText = findByTestAttr(
-    cascaderComponent,
-    'options-item-0-0-text'
-  )
+  const firstOptionText = findByTestAttr(cascaderComponent, 'options-item-0-0-text')
   test('renders first item correctly', () => {
     expect(firstOptionText.text()).toEqual('test label')
   })

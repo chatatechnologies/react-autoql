@@ -2,7 +2,7 @@ import React from 'react'
 
 class MessengerTab extends React.Component {
   render = () => {
-    return <div data-test="messenger-tab"></div>
+    return <div data-test='messenger-tab'></div>
   }
 }
 

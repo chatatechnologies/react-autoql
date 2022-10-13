@@ -53,10 +53,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup({ tile: sampleTile })
-    const dashboardTileComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-dashboard-tile'
-    )
+    const dashboardTileComponent = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(dashboardTileComponent.exists()).toBe(true)
   })
 
@@ -66,7 +63,7 @@ describe('renders correctly', () => {
       {
         isTopExecuted: true,
         isTopExecuting: false,
-      }
+      },
     )
 
     const queryOutput = dashboardTile.find('QueryOutput')

@@ -19,10 +19,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup(pivotSampleProps)
-    const stackedBarChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-stacked-bar-chart'
-    )
+    const stackedBarChartComponent = findByTestAttr(wrapper, 'react-autoql-stacked-bar-chart')
     expect(stackedBarChartComponent.exists()).toBe(true)
   })
 })

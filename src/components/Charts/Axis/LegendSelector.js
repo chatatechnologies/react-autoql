@@ -29,18 +29,18 @@ export default class StringAxisSelector extends React.Component {
   renderSelectorContent = () => {
     return (
       <div
-        className="axis-selector-container"
-        id="legend-selector-content"
+        className='axis-selector-container'
+        id='legend-selector-content'
         onClick={(e) => {
           e.stopPropagation()
         }}
       >
         {/* <CustomScrollbars autoHide={false}> */}
-        <ul className="axis-selector-content">
+        <ul className='axis-selector-content'>
           {this.props.stringColumnIndices.map((legendItem, i) => {
             return (
               <li
-                className={`string-select-list-item`}
+                className={'string-select-list-item'}
                 key={uuid()}
                 onClick={() => {
                   this.props.onChangeLegendColumnIndex(i)
@@ -73,13 +73,13 @@ export default class StringAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className="legend-title-border"
-          data-test="legend-title-border"
+          className='legend-title-border'
+          data-test='legend-title-border'
           onClick={this.openSelector}
-          fill="transparent"
-          stroke="transparent"
-          strokeWidth="1px"
-          rx="4"
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
         />
       </Popover>
     )

@@ -13,11 +13,7 @@ import {
   shouldRecalculateLongestLabel,
 } from '../helpers.js'
 
-import {
-  shouldLabelsRotate,
-  getTickWidth,
-  getLongestLabelInPx,
-} from '../../../js/Util'
+import { shouldLabelsRotate, getTickWidth, getLongestLabelInPx } from '../../../js/Util'
 
 import { getDataFormatting } from '../../../props/defaults'
 
@@ -48,10 +44,7 @@ export default class ChataStackedColumnChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -62,19 +55,14 @@ export default class ChataStackedColumnChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length)
-      numberColumnIndices = props.visibleSeriesIndices
-    const { maxValue, minValue } = calculateMinAndMaxSums(
-      props.data,
-      props.stringColumnIndex,
-      numberColumnIndices
-    )
+    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    const { maxValue, minValue } = calculateMinAndMaxSums(props.data, props.stringColumnIndex, numberColumnIndices)
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
@@ -88,9 +76,7 @@ export default class ChataStackedColumnChart extends Component {
       rangeStart = rangeEnd
     }
 
-    this.yScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([rangeStart, rangeEnd])
+    this.yScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
     this.yScale.minValue = minValue
     this.yScale.maxValue = maxValue
     this.yScale.type = 'LINEAR'
@@ -117,13 +103,9 @@ export default class ChataStackedColumnChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g data-test="react-autoql-stacked-column-chart">
+      <g data-test='react-autoql-stacked-column-chart'>
         {this.props.marginAdjustmentFinished && (
-          <StackedColumns
-            {...this.props}
-            xScale={this.xScale}
-            yScale={this.yScale}
-          />
+          <StackedColumns {...this.props} xScale={this.xScale} yScale={this.yScale} />
         )}
         <Axes
           {...this.props}
@@ -136,14 +118,8 @@ export default class ChataStackedColumnChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleStringColumns
-          }
-          hasYDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleNumberColumns
-          }
+          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
+          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />

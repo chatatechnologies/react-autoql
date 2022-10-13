@@ -115,10 +115,7 @@ export default class ScheduleBuilder extends React.Component {
     return (
       <div>
         <span>Time zone: </span>
-        <TimezoneSelector
-          onChange={this.onTimezoneChange}
-          defaultSelection={this.state.timezone}
-        />
+        <TimezoneSelector onChange={this.onTimezoneChange} defaultSelection={this.state.timezone} />
       </div>
     )
   }
@@ -126,34 +123,19 @@ export default class ScheduleBuilder extends React.Component {
   render = () => {
     return (
       <ErrorBoundary>
-        <div
-          className="notification-frequency-step"
-          data-test="schedule-builder"
-        >
-          <div className="frequency-settings-container">
-            <p>
-              When the conditions of this Data Alert are met, how often do you
-              want to be notified?
-            </p>
+        <div className='notification-frequency-step' data-test='schedule-builder'>
+          <div className='frequency-settings-container'>
+            <p>When the conditions of this Data Alert are met, how often do you want to be notified?</p>
             <Radio
-              options={[
-                'Every time this happens',
-                'Only once per day',
-                'Only once per week',
-                'Only once per month',
-              ]}
-              selectionPlaceholder="Select a frequency"
+              options={['Every time this happens', 'Only once per day', 'Only once per week', 'Only once per month']}
+              selectionPlaceholder='Select a frequency'
               value={this.state.frequencySelectValue}
-              type="original"
-              onChange={(option) =>
-                this.setState({ frequencySelectValue: option })
-              }
+              type='original'
+              onChange={(option) => this.setState({ frequencySelectValue: option })}
             />
           </div>
         </div>
-        <div className="schedule-builder-timezone-section">
-          {this.renderTimezoneComponent()}
-        </div>
+        <div className='schedule-builder-timezone-section'>{this.renderTimezoneComponent()}</div>
       </ErrorBoundary>
     )
   }

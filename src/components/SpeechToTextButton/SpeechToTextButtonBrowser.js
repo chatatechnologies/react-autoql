@@ -69,22 +69,22 @@ class Dictaphone extends React.Component {
     return (
       <ErrorBoundary>
         <button
-          id="react-autoql-voice-record-button"
-          data-test="speech-to-text-btn"
+          id='react-autoql-voice-record-button'
+          data-test='speech-to-text-btn'
           className={`chat-voice-record-button${listening ? ' listening' : ''}`}
           onMouseDown={this.onMouseDown}
           onMouseUp={stopListening}
           onMouseLeave={this.props.listening ? stopListening : undefined}
-          data-tip="Hold for voice-to-text"
-          data-for="react-autoql-speech-to-text-tooltip"
+          data-tip='Hold for voice-to-text'
+          data-for='react-autoql-speech-to-text-tooltip'
           data-tip-disable={this.props.listening}
         >
-          <Icon type="microphone" />
+          <Icon type='microphone' />
         </button>
         <ReactTooltip
-          className="react-autoql-tooltip"
-          id="react-autoql-speech-to-text-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='react-autoql-speech-to-text-tooltip'
+          effect='solid'
           delayShow={800}
         />
       </ErrorBoundary>

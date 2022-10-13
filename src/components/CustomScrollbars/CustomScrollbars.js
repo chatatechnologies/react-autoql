@@ -34,16 +34,13 @@ export default class CustomScrollbars extends React.Component {
     return this.ref?.view
   }
 
-  getClassName = () =>
-    `react-autoql-custom-scrollbars ${this.props.className || ''}`
+  getClassName = () => `react-autoql-custom-scrollbars ${this.props.className || ''}`
 
-  renderThumbHorizontal = (props) => (
-    <div {...props} className="thumb-horizontal" />
-  )
+  renderThumbHorizontal = (props) => <div {...props} className='thumb-horizontal' />
 
-  renderThumbVertical = (props) => <div {...props} className="thumb-vertical" />
+  renderThumbVertical = (props) => <div {...props} className='thumb-vertical' />
 
-  renderView = (props) => <div {...props} className="custom-scrollbar-view" />
+  renderView = (props) => <div {...props} className='custom-scrollbar-view' />
 
   render = () => {
     return (

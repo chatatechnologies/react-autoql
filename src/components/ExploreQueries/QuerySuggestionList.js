@@ -89,10 +89,7 @@ export default class QuerySuggestionList extends React.Component {
         } else {
           const currentPage = response?.data?.data?.pagination?.current_page
           const totalPages = response?.data?.data?.pagination?.total_pages
-          if (
-            currentPage >= totalPages ||
-            !response?.data?.data?.items?.length
-          ) {
+          if (currentPage >= totalPages || !response?.data?.data?.items?.length) {
             finishedState.hasMore = false
           }
           const newQueries = response?.data?.data?.items || []
@@ -127,7 +124,7 @@ export default class QuerySuggestionList extends React.Component {
   render = () => {
     if (this.state.initialLoading) {
       return (
-        <div className="data-explorer-card-placeholder">
+        <div className='data-explorer-card-placeholder'>
           <LoadingDots />
         </div>
       )
@@ -135,13 +132,13 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.validationResponse) {
       return (
-        <div className="data-explorer-card-placeholder">
+        <div className='data-explorer-card-placeholder'>
           <QueryValidationMessage
             response={this.state.validationResponse}
             onSuggestionClick={this.onValidationSuggestionClick}
             autoSelectSuggestion={true}
-            submitText="Search"
-            submitIcon="search"
+            submitText='Search'
+            submitIcon='search'
           />
         </div>
       )
@@ -153,10 +150,9 @@ export default class QuerySuggestionList extends React.Component {
 
     if (this.state.queryList?.length === 0) {
       return (
-        <div className="data-explorer-card-placeholder">
+        <div className='data-explorer-card-placeholder'>
           <p>
-            Sorry, I couldn’t find any queries matching your input. Try entering
-            a different topic or keyword instead.
+            Sorry, I couldn’t find any queries matching your input. Try entering a different topic or keyword instead.
           </p>
         </div>
       )
@@ -167,13 +163,9 @@ export default class QuerySuggestionList extends React.Component {
         autoHeight
         autoHeightMin={0}
         autoHeightMax={800}
-        className="query-suggestion-list-scroll-component"
+        className='query-suggestion-list-scroll-component'
         renderView={(props) => (
-          <div
-            {...props}
-            ref={(r) => (this.scrollbarRef = r)}
-            className="data-preview-scroll-container"
-          />
+          <div {...props} ref={(r) => (this.scrollbarRef = r)} className='data-preview-scroll-container' />
         )}
       >
         <InfiniteScroll
@@ -184,23 +176,21 @@ export default class QuerySuggestionList extends React.Component {
           initialLoad={false}
           threshold={100}
           loader={
-            <div className="react-autoql-spinner-centered" key={0}>
-              <Spinner
-                style={{ width: '19px', height: '20px', color: '#999' }}
-              />
+            <div className='react-autoql-spinner-centered' key={0}>
+              <Spinner style={{ width: '19px', height: '20px', color: '#999' }} />
             </div>
           }
         >
-          <div className="query-suggestion-list">
+          <div className='query-suggestion-list'>
             {this.state.queryList.map((query, i) => {
               return (
                 <div
-                  className="query-tip-item animated-item"
+                  className='query-tip-item animated-item'
                   onClick={() => this.props.executeQuery(query)}
                   key={`query-tip-${i}`}
                 >
-                  <div className="query-suggestion-text">
-                    <Icon type="react-autoql-bubbles-outlined" /> {query}
+                  <div className='query-suggestion-text'>
+                    <Icon type='react-autoql-bubbles-outlined' /> {query}
                   </div>
                 </div>
               )

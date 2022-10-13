@@ -4,11 +4,7 @@ import _isEqual from 'lodash.isequal'
 import { Popover } from 'react-tiny-popover'
 import { SelectableList } from '../../SelectableList'
 import { Button } from '../../Button'
-import {
-  axesDefaultProps,
-  axesPropTypes,
-  dataStructureChanged,
-} from '../helpers'
+import { axesDefaultProps, axesPropTypes, dataStructureChanged } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class NumberAxisSelector extends React.Component {
@@ -84,8 +80,7 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   renderSelectorContent = (selectedColumn) => {
-    const { currencySelectorState, quantitySelectorState, ratioSelectorState } =
-      this.state
+    const { currencySelectorState, quantitySelectorState, ratioSelectorState } = this.state
 
     let maxHeight = 300
     const minHeight = 75
@@ -100,21 +95,16 @@ export default class NumberAxisSelector extends React.Component {
 
     return (
       <div
-        id="chata-chart-popover"
+        id='chata-chart-popover'
         onClick={(e) => {
           e.stopPropagation()
         }}
       >
-        <CustomScrollbars
-          autoHide={false}
-          autoHeight
-          autoHeightMin={minHeight}
-          autoHeightMax={maxHeight}
-        >
-          <div className="axis-selector-container">
+        <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
+          <div className='axis-selector-container'>
             {!!currencySelectorState.length && (
               <Fragment>
-                <div className="number-selector-header">
+                <div className='number-selector-header'>
                   {this.props.columns && this.props.legendColumn !== undefined
                     ? this.props.legendColumn.display_name
                     : 'Currency'}
@@ -123,21 +113,16 @@ export default class NumberAxisSelector extends React.Component {
                   ref={(r) => (this.currencySelectRef = r)}
                   items={currencySelectorState}
                   onSelect={() => {
-                    this.quantitySelectRef &&
-                      this.quantitySelectRef.unselectAll()
+                    this.quantitySelectRef && this.quantitySelectRef.unselectAll()
                     this.ratioSelectRef && this.ratioSelectRef.unselectAll()
                   }}
                   onChange={(currencySelectorState) => {
-                    const newQuantitySelectorState = quantitySelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
-                    const newRatioSelectorState = ratioSelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
+                    const newQuantitySelectorState = quantitySelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
+                    const newRatioSelectorState = ratioSelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
 
                     this.setState({
                       activeNumberType: 'DOLLAR_AMT',
@@ -152,7 +137,7 @@ export default class NumberAxisSelector extends React.Component {
 
             {!!quantitySelectorState.length && (
               <Fragment>
-                <div className="number-selector-header">
+                <div className='number-selector-header'>
                   {' '}
                   {this.props.columns && this.props.legendColumn !== undefined
                     ? this.props.legendColumn.display_name
@@ -162,21 +147,16 @@ export default class NumberAxisSelector extends React.Component {
                   ref={(r) => (this.quantitySelectRef = r)}
                   items={quantitySelectorState}
                   onSelect={() => {
-                    this.currencySelectRef &&
-                      this.currencySelectRef.unselectAll()
+                    this.currencySelectRef && this.currencySelectRef.unselectAll()
                     this.ratioSelectRef && this.ratioSelectRef.unselectAll()
                   }}
                   onChange={(quantitySelectorState) => {
-                    const newCurrencySelectorState = currencySelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
-                    const newRatioSelectorState = ratioSelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
+                    const newCurrencySelectorState = currencySelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
+                    const newRatioSelectorState = ratioSelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
                     this.setState({
                       activeNumberType: 'QUANTITY',
                       quantitySelectorState,
@@ -190,7 +170,7 @@ export default class NumberAxisSelector extends React.Component {
 
             {!!ratioSelectorState.length && (
               <Fragment>
-                <div className="number-selector-header">
+                <div className='number-selector-header'>
                   {' '}
                   {this.props.columns && this.props.legendColumn !== undefined
                     ? this.props.legendColumn.display_name
@@ -200,22 +180,16 @@ export default class NumberAxisSelector extends React.Component {
                   ref={(r) => (this.ratioSelectRef = r)}
                   items={ratioSelectorState}
                   onSelect={() => {
-                    this.currencySelectRef &&
-                      this.currencySelectRef.unselectAll()
-                    this.quantitySelectRef &&
-                      this.quantitySelectRef.unselectAll()
+                    this.currencySelectRef && this.currencySelectRef.unselectAll()
+                    this.quantitySelectRef && this.quantitySelectRef.unselectAll()
                   }}
                   onChange={(ratioSelectorState) => {
-                    const newCurrencySelectorState = currencySelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
-                    const newQuantitySelectorState = quantitySelectorState.map(
-                      (item) => {
-                        return { ...item, checked: false }
-                      }
-                    )
+                    const newCurrencySelectorState = currencySelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
+                    const newQuantitySelectorState = quantitySelectorState.map((item) => {
+                      return { ...item, checked: false }
+                    })
 
                     this.setState({
                       activeNumberType: 'RATIO',
@@ -230,10 +204,10 @@ export default class NumberAxisSelector extends React.Component {
           </div>
         </CustomScrollbars>
 
-        <div className="axis-selector-apply-btn">
+        <div className='axis-selector-apply-btn'>
           <Button
             style={{ width: 'calc(100% - 10px)' }}
-            type="primary"
+            type='primary'
             disabled={
               this.state.ratioSelectorState.every((item) => !item.checked) &&
               this.state.currencySelectorState.every((item) => !item.checked) &&
@@ -282,13 +256,13 @@ export default class NumberAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className="axis-label-border"
-          data-test="axis-label-border"
+          className='axis-label-border'
+          data-test='axis-label-border'
           onClick={this.openSelector}
-          fill="transparent"
-          stroke="transparent"
-          strokeWidth="1px"
-          rx="4"
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
         />
       </Popover>
     )

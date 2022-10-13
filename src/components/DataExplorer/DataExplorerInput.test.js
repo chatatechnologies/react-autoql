@@ -4,9 +4,7 @@ import { mount, shallow } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import DataExplorerInput from './DataExplorerInput'
 
-jest.mock('axios', () =>
-  jest.fn(() => Promise.resolve({ data: { matches: ['test'] } }))
-)
+jest.mock('axios', () => jest.fn(() => Promise.resolve({ data: { matches: ['test'] } })))
 
 let wrapper = null
 let inputComponent = null
@@ -25,10 +23,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders autocomplete wrapper correctly with required props', () => {
     const wrapper = setup()
-    const autocompleteComponent = findByTestAttr(
-      wrapper,
-      'data-explorer-autocomplete'
-    )
+    const autocompleteComponent = findByTestAttr(wrapper, 'data-explorer-autocomplete')
     expect(autocompleteComponent.exists()).toBe(true)
   })
 })

@@ -20,7 +20,7 @@ export default class InfiniteScrollAutoQL extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div className="react-autoql-infinite-scroll-container">
+        <div className='react-autoql-infinite-scroll-container'>
           <CustomScrollbars {...scrollbarProps} ref={this.scrollComponent}>
             <InfiniteScroll
               {...props}

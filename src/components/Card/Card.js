@@ -86,25 +86,13 @@ export default class Cascader extends React.Component {
           ${this.props.className ? this.props.className : ''}`}
           style={this.props.style}
         >
-          <div
-            className="react-autoql-card-title"
-            onClick={this.toggleCollapse}
-          >
+          <div className='react-autoql-card-title' onClick={this.toggleCollapse}>
             <div>{this.props.title}</div>
             <Icon type={this.state.isCollapsed ? 'caret-left' : 'caret-down'} />
           </div>
-          <div
-            ref={(r) => (this.contentRef = r)}
-            className="react-autoql-card-content"
-          >
-            {!!this.props.subtitle && (
-              <div className="react-autoql-card-subtitle">
-                {this.props.subtitle}
-              </div>
-            )}
-            <div className="react-autoql-card-user-content">
-              {this.props.children}
-            </div>
+          <div ref={(r) => (this.contentRef = r)} className='react-autoql-card-content'>
+            {!!this.props.subtitle && <div className='react-autoql-card-subtitle'>{this.props.subtitle}</div>}
+            <div className='react-autoql-card-user-content'>{this.props.children}</div>
           </div>
         </div>
       </ErrorBoundary>
