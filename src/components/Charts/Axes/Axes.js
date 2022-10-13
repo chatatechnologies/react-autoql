@@ -13,7 +13,6 @@ export default class Axes extends React.Component {
 
     this.xAxisKey = uuid()
     this.yAxisKey = uuid()
-    this.textLineHeight = 16
     this.axisLabelPaddingTop = 5
     this.axisLabelPaddingLeft = 10
 
@@ -31,6 +30,11 @@ export default class Axes extends React.Component {
 
   componentDidMount = () => {
     this.props.onLabelChange()
+  }
+
+  getLabelTextHeight = (ref) => {
+    const fontSize = parseInt(ref?.style?.fontSize, 10)
+    return isNaN(fontSize) ? 0 : fontSize
   }
 
   renderAxisLabel = (title = '', hasDropdown) => {
@@ -61,11 +65,24 @@ export default class Axes extends React.Component {
   }
 
   renderXAxisLabel = (xAxisTitle) => {
-    const xLabelX = (this.props.width - this.props.leftMargin) / 2 + this.props.leftMargin
-    const xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - 15
+    const xCenter =
+      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
+      this.props.leftMargin -
+      this.props.rightMargin
+
     const xLabelBbox = getBBoxFromRef(this.xLabelRef)
-    const xLabelWidth = xLabelBbox ? xLabelBbox.width : 0
-    const xLabelHeight = xLabelBbox ? xLabelBbox.height : 0
+    const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
+    const xLabelTextHeight = this.getLabelTextHeight(this.xLabelRef)
+    const halfTextHeight = xLabelTextHeight / 2
+
+    /* <text> element's y coordinate is anchored on the middle baseline,
+    so we need to shift the element up by half of it's height */
+    const xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
+
+    const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
+    const xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    const xBorderWidth = xLabelTextWidth + 2 * this.axisLabelPaddingLeft
+    const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
 
     return (
       <g>
@@ -73,10 +90,11 @@ export default class Axes extends React.Component {
           ref={(r) => (this.xLabelRef = r)}
           className='x-axis-label'
           data-test='x-axis-label'
+          dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
           y={xLabelY}
-          x={xLabelX}
+          x={xCenter}
           style={this.labelInlineStyles}
         >
           {this.renderAxisLabel(xAxisTitle, this.props.hasXDropdown)}
@@ -88,10 +106,10 @@ export default class Axes extends React.Component {
             positions={['top', 'bottom']}
             align='center'
             childProps={{
-              x: xLabelX - xLabelWidth / 2 - 10,
-              y: xLabelY - 16,
-              width: xLabelWidth + 20,
-              height: xLabelHeight + 10,
+              x: xBorderX,
+              y: xBorderY,
+              width: xBorderWidth,
+              height: xBorderHeight,
             }}
           />
         )}
@@ -105,12 +123,14 @@ export default class Axes extends React.Component {
 
     const chartContainerHeight = chartBoundingRect?.height ?? 0
     const yLabelHeight = yLabelBoundingRect?.height ?? 0
-    const yLabelWidth = yLabelBoundingRect?.width ?? 0
+
+    const yLabelTextHeight = this.getLabelTextHeight(this.yLabelRef)
+
     const yLabelTop = yLabelBoundingRect?.top
     const chartTop = chartBoundingRect?.top
 
     // X and Y are switched from the rotation (anchored in the middle)
-    const yLabelY = this.textLineHeight
+    const yLabelY = yLabelTextHeight
     let yLabelX = -((chartContainerHeight - this.props.bottomMargin) / 2)
 
     if (yAxisTitle !== this.previousYAxisTitle) {
@@ -130,7 +150,7 @@ export default class Axes extends React.Component {
       // Squeeze text to fit in full height
       this.yLabelTransform = 'rotate(-90)'
       this.topDifference = undefined
-      yLabelX = -(chartContainerHeight / 2)
+      yLabelX = -((chartContainerHeight - this.props.bottomMargin) / 2)
       textLength = Math.floor(chartContainerHeight - this.props.chartContainerPadding)
     } else if (yLabelTop < chartTop) {
       // Y Label can fit, it is just outside of container. Shift it down
@@ -139,7 +159,14 @@ export default class Axes extends React.Component {
 
       this.topDifference = topDifference + prevTopDifference
       this.yLabelTransform = `rotate(-90) translate(${this.topDifference}, 0)`
+    } else if (this.originalYLabelHeight < chartContainerHeight) {
+      this.yLabelTransform = undefined
+      this.topDifference = undefined
     }
+
+    const yBorderWidth = yLabelHeight + 2 * this.axisLabelPaddingLeft
+    const yBorderHeight = yLabelTextHeight + 2 * this.axisLabelPaddingTop
+    const yBorderX = yLabelX - yLabelHeight / 2 - this.axisLabelPaddingLeft
 
     const transform = this.yLabelTransform || 'rotate(-90)'
     return (
@@ -149,6 +176,7 @@ export default class Axes extends React.Component {
           id={`y-axis-label-${this.yAxisKey}`}
           className='y-axis-label'
           data-test='y-axis-label'
+          dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
           transform={transform}
@@ -168,9 +196,9 @@ export default class Axes extends React.Component {
             align='center'
             childProps={{
               transform,
-              width: yLabelHeight + this.axisLabelPaddingLeft * 2,
-              height: yLabelWidth + this.axisLabelPaddingTop * 2,
-              x: yLabelX - yLabelHeight / 2 - this.axisLabelPaddingLeft,
+              width: yBorderWidth,
+              height: yBorderHeight,
+              x: yBorderX,
               y: 0,
             }}
           />

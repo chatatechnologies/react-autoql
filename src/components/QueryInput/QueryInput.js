@@ -112,7 +112,8 @@ class QueryInput extends React.Component {
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
   }
-  animateInputTextAndSubmit = ({ query, userSelection, source }) => {
+
+  animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation }) => {
     animateInputText({
       text: query,
       inputRef: this.inputRef,
@@ -120,7 +121,7 @@ class QueryInput extends React.Component {
         this.submitQuery({
           queryText: query,
           userSelection,
-          skipQueryValidation: true,
+          skipQueryValidation: skipQueryValidation ?? true,
           source,
         })
       },
