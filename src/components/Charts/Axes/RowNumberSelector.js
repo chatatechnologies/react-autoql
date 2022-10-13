@@ -30,9 +30,7 @@ export default class RowNumberSelector extends React.Component {
 
   axiosSource = axios.CancelToken.source()
   getNewChartData = (pageSize) => {
-    console.log('props', this.props)
     this.props.setIsLoadingMoreRows(true)
-    console.log('this.formattedTableParams', this.formattedTableParams)
     if (this.props.isDrilldown) {
       console.warn('This is drilldown')
       return runDrilldown({
@@ -77,7 +75,6 @@ export default class RowNumberSelector extends React.Component {
       this.props.setCurrentRowNumber(pageSize)
       response = await this.getNewChartData(pageSize)
       this.props.setIsLoadingMoreRows(false)
-      console.log(response)
       this.props.onNewData(response)
       //   this.props.responseRef?.onNewPage(response?.rows)
     } catch (error) {
@@ -115,7 +112,6 @@ export default class RowNumberSelector extends React.Component {
 
     return (
       <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
-        {console.log('49', this.props.dataLength)}
         <div
           className='axis-selector-container'
           id='string-column-selector-content'
@@ -123,7 +119,6 @@ export default class RowNumberSelector extends React.Component {
             e.stopPropagation()
           }}
         >
-          {console.log('this.props.devTotalRowNumber', this.props.totalRowNumber)}
           <ul className='axis-selector-content'>
             {this.rowNumberListConstructor(this.props.totalRowNumber).map((rowNumber, i) => {
               return (
