@@ -192,7 +192,7 @@ class QueryInput extends React.Component {
     }
 
     this.axiosSource = axios.CancelToken.source()
-    this.props.setAxiosSource(this.axiosSource)
+
     const requestData = {
       query,
       userSelection,

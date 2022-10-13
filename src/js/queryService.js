@@ -262,7 +262,7 @@ export const runQuery = (params) => {
         return runQueryOnly(params)
       })
       .catch((error) => {
-        if (_get(error?.data, 'message') !== 'Request cancelled') {
+        if (error?.data?.message !== responseErrors.CANCELLED) {
           console.error(error)
         }
         return Promise.reject(error)
