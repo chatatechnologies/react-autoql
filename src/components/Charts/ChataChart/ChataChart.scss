@@ -154,3 +154,25 @@
   background: var(--react-autoql-background-color-secondary);
   padding: 5px;
 }
+
+.chart-loader {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  // opacity:0.5;
+  background-color:white;
+  color: var(--react-autoql-accent-color);
+
+  &.chart-page-loader {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 30px;
+    width:  calc(100% - margin);
+    height: 90%; //this need to be fixed on dashboard tiles. It works on the Data Messenger, but not on dashboard tiles
+  }
+
+ 
+}

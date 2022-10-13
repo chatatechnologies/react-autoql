@@ -88,6 +88,7 @@ export class QueryOutput extends React.Component {
     this.queryID = _get(this.queryResponse, 'data.data.query_id')
     this.interpretation = _get(this.queryResponse, 'data.data.parsed_interpretation')
     this.tableParams = {}
+    this.formattedTableParams = {}
     this.tableID = uuid()
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
@@ -798,8 +799,9 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableParamsChange = (params) => {
+  onTableParamsChange = (params, formattedTableParams) => {
     this.tableParams = _cloneDeep(params)
+    this.formattedTableParams = formattedTableParams
   }
 
   onNewData = (response) => {
@@ -1539,6 +1541,10 @@ export class QueryOutput extends React.Component {
     return (
       <ErrorBoundary>
         <ChataChart
+          formattedTableParams={this.formattedTableParams}
+          authentication={this.props.authentication}
+          queryRequestData={this.queryResponse?.data?.data?.fe_req}
+          pageSize={_get(this.queryResponse, 'data.data.row_limit')}
           dataLength={this.tableData.length}
           ref={(ref) => (this.chartRef = ref)}
           type={this.state.displayType}
@@ -1563,6 +1569,8 @@ export class QueryOutput extends React.Component {
           rebuildTooltips={this.rebuildTooltips}
           height={this.props.height}
           width={this.props.width}
+          onNewData={this.onNewData}
+          isDrilldown={this.isDrilldown()}
         />
       </ErrorBoundary>
     )
@@ -1810,7 +1818,7 @@ export class QueryOutput extends React.Component {
     return (
       <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
         {shouldRenderRT && this.renderReverseTranslation()}
-        {shouldRenderDLW && this.renderDataLimitWarning()}
+        {/* {shouldRenderDLW && this.renderDataLimitWarning()} */}
       </div>
     )
   }

@@ -308,6 +308,7 @@ export const runDrilldown = ({
   orders,
   tableFilters,
   cancelToken,
+  pageSize,
 } = {}) => {
   if (!queryID) {
     console.error('No query ID supplied to drilldown function')
@@ -325,6 +326,7 @@ export const runDrilldown = ({
     filters: tableFilters,
     orders,
     test,
+    page_size: pageSize,
   }
 
   const config = {
