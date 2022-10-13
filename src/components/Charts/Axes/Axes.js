@@ -85,9 +85,7 @@ export default class Axes extends React.Component {
     const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
 
     return (
-      <g
-      // transform='translate(0, -2)'
-      >
+      <g>
         <text
           ref={(r) => (this.xLabelRef = r)}
           className='x-axis-label'

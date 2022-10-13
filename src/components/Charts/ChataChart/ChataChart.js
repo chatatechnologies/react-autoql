@@ -366,7 +366,6 @@ export default class ChataChart extends Component {
         return
       }
 
-      // const chartElementWithoutLabels = document.querySelector(`#${} .react-autoql-axes`)
       const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
       const axesBbox = this.axes.getBBox()
 
