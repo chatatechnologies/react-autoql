@@ -73,6 +73,18 @@ export default class DataExplorerInput extends React.Component {
     clearTimeout(this.inputAnimationTimeout)
   }
 
+  isAggSeed(subject) {
+    return (
+      subject.name.toLowerCase().startsWith('monthly change in') ||
+      subject.name.toLowerCase().startsWith('yearly change in') ||
+      subject.name.toLowerCase().startsWith('weekly change in') ||
+      subject.name.toLowerCase().startsWith('daily change in') ||
+      subject.name.toLowerCase().endsWith('by day') ||
+      subject.name.toLowerCase().endsWith('by week') ||
+      subject.name.toLowerCase().endsWith('by month') ||
+      subject.name.toLowerCase().endsWith('by year')
+    )
+  }
   fetchAllSubjects = () => {
     fetchSubjectList({ ...this.props.authentication }).then((response) => {
       const subjects = response?.data?.data?.subjects || []
@@ -86,6 +98,7 @@ export default class DataExplorerInput extends React.Component {
               type: DEConstants.SUBJECT_TYPE,
             }
           })
+          .filter((subject) => !this.isAggSeed(subject))
           .sort((a, b) => a.name.localeCompare(b.name))
       }
 

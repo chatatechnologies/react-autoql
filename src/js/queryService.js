@@ -262,7 +262,9 @@ export const runQuery = (params) => {
         return runQueryOnly(params)
       })
       .catch((error) => {
-        console.error(error)
+        if (error?.data?.message !== responseErrors.CANCELLED) {
+          console.error(error)
+        }
         return Promise.reject(error)
       })
   }

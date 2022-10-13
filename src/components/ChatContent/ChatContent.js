@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
+import { responseErrors } from '../../js/errorMessages'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import errorMessages from '../../js/errorMessages'
@@ -112,6 +112,7 @@ export default class ChatContent extends React.Component {
   }
 
   clearMessages = () => {
+    this.queryInputRef?.cancelQuery()
     this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
   }
 
@@ -271,13 +272,13 @@ export default class ChatContent extends React.Component {
           content: (
             <span>
               Looks like you’re trying to query a Microsoft Dynamics data source.
-              <a href={response.data.data.authorization_url} target='_blank' rel="noreferrer">
+              <a href={response.data.data.authorization_url} target='_blank' rel='noreferrer'>
                 Click here to authorize access then try querying again.
               </a>
             </span>
           ),
         })
-      } else {
+      } else if (response?.data?.message !== responseErrors.CANCELLED) {
         this.addResponseMessage({ response, query })
       }
 
@@ -319,8 +320,12 @@ export default class ChatContent extends React.Component {
       let persistedFilters = response?.data?.data?.persistent_locked_conditions
       let sessionFilters = response?.data?.data?.session_locked_conditions
 
-      if (!Array.isArray(persistedFilters)) {persistedFilters = []}
-      if (!Array.isArray(sessionFilters)) {sessionFilters = []}
+      if (!Array.isArray(persistedFilters)) {
+        persistedFilters = []
+      }
+      if (!Array.isArray(sessionFilters)) {
+        sessionFilters = []
+      }
 
       return [...persistedFilters, ...sessionFilters]
     } catch (error) {
