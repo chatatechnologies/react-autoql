@@ -39,11 +39,11 @@ export default class ChataChart extends Component {
     const chartColors = getChartColorVars()
 
     this.CHART_ID = uuid()
-    this.Y_AXIS_LABEL_WIDTH = 15
-    this.X_AXIS_LABEL_HEIGHT = 15
     this.PADDING = 20
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
+    this.AXIS_LABEL_PADDING = 30
+    this.DEFAULT_BOTTOM_MARGIN = 100
 
     this.firstRender = true
     this.recursiveUpdateCount = 0
@@ -147,7 +147,9 @@ export default class ChataChart extends Component {
     if (!_isEmpty(newState)) {
       shouldForceUpdate = false
       this.setState(newState, () => {
-        if (shouldUpdateMargins) {this.updateMargins()}
+        if (shouldUpdateMargins) {
+          this.updateMargins()
+        }
       })
       return
     } else if (shouldUpdateMargins) {
@@ -175,12 +177,12 @@ export default class ChataChart extends Component {
   getChartDimensions = () => {
     const { topMargin, bottomMargin, rightMargin, leftMargin } = this.state
 
-    let chartWidth = this.props.width ?? this.chartContainerRef?.offsetWidth
+    let chartWidth = this.props.width ?? this.chartContainerRef?.clientWidth
     if (chartWidth < 0) {
       chartWidth = 0
     }
 
-    let chartHeight = this.props.height ?? this.chartContainerRef?.offsetHeight
+    let chartHeight = this.props.height ?? this.chartContainerRef?.clientHeight
     if (chartHeight < 0) {
       chartHeight = 0
     }
@@ -238,8 +240,12 @@ export default class ChataChart extends Component {
         numberColumnIndices.forEach((columnIndex) => {
           let currentValue = Number(newRow[columnIndex])
           let sumValue = Number(rowSum[columnIndex])
-          if (isNaN(currentValue)) {currentValue = 0}
-          if (isNaN(sumValue)) {sumValue = 0}
+          if (isNaN(currentValue)) {
+            currentValue = 0
+          }
+          if (isNaN(sumValue)) {
+            sumValue = 0
+          }
           newRow[columnIndex] = currentValue + sumValue
         })
 
@@ -258,7 +264,7 @@ export default class ChataChart extends Component {
     const axesLeft = axesBbox.x + containerLeft
     let leftMargin = this.state.leftMargin
 
-    leftMargin += containerLeft - axesLeft + this.Y_AXIS_LABEL_WIDTH + this.PADDING
+    leftMargin += containerLeft - axesLeft + this.AXIS_LABEL_PADDING
     return leftMargin
   }
 
@@ -286,7 +292,7 @@ export default class ChataChart extends Component {
     return getLegendLabelsForMultiSeries(this.props.columns, this.colorScale, this.props.numberColumnIndices)
   }
 
-  getNewBottomMargin = (chartContainerBbox) => {
+  getNewBottomMargin = (chartContainerBbox, axesBbox) => {
     let legendBBox
     this.legend = select(this.chartRef).select('.legendOrdinal').node()
     legendBBox = this.legend ? this.legend.getBBox() : undefined
@@ -300,32 +306,27 @@ export default class ChataChart extends Component {
     this.xAxis = select(this.chartRef).select('.axis-Bottom').node()
 
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
-    let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + 40 // margin to include axis label
+    let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.AXIS_LABEL_PADDING // margin to include axis label
     if (xAxisBBox.height === 0) {
-      bottomMargin = 463 // if no xAxisBBox available, set bottomMarigin to default as 463
+      bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default as 463
     }
     // only for bar charts (vertical grid lines mess with the axis size)
     if (this.props.type === 'bar' || this.props.type === 'stacked_bar') {
       const innerTickSize = chartContainerBbox.height - this.state.topMargin - this.state.bottomMargin
-      bottomMargin = bottomMargin - innerTickSize + 10
+      bottomMargin = bottomMargin - innerTickSize
     }
 
     return bottomMargin || this.state.bottomMargin
+
+    // If we can find a way to clip the legend, this will work
+    // const axesTop = axesBbox.y + chartContainerBbox.y // axes bbox Y is relative to chart container bbox Y
+    // const axesBottom = axesTop + axesBbox.height
+    // const containerBottom = chartContainerBbox.y + chartContainerBbox.height - this.AXIS_LABEL_PADDING
+    // let bottomMargin = this.state.bottomMargin
+    // bottomMargin += axesBottom - containerBottom
+
+    // return bottomMargin
   }
-
-  // If we can find a way to clip the legend, this will work
-  // getNewBottomMargin = (chartContainerBbox, axesBbox) => {
-  //   const axesTop = axesBbox.y + chartContainerBbox.y
-  //   const axesBottom = axesTop + axesBbox.height
-  //   const containerBottom =
-  //     chartContainerBbox.y +
-  //     chartContainerBbox.height -
-  //     this.X_AXIS_LABEL_HEIGHT
-  //   let bottomMargin = this.state.bottomMargin
-  //   bottomMargin += axesBottom - containerBottom
-
-  //   return bottomMargin
-  // }
 
   // Keep this in case we need it later
   getNewTopMargin = () => {
@@ -365,6 +366,7 @@ export default class ChataChart extends Component {
         return
       }
 
+      // const chartElementWithoutLabels = document.querySelector(`#${} .react-autoql-axes`)
       const chartContainerBbox = this.chartContainerRef.getBoundingClientRect()
       const axesBbox = this.axes.getBBox()
 

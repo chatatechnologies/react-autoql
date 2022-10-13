@@ -964,7 +964,9 @@ export class QueryOutput extends React.Component {
 
     // Set legend index if there should be one
     const legendColumnIndex = columns.findIndex((col, i) => col.groupable && i !== this.tableConfig.stringColumnIndex)
-    if (legendColumnIndex >= 0) {this.tableConfig.legendColumnIndex = legendColumnIndex}
+    if (legendColumnIndex >= 0) {
+      this.tableConfig.legendColumnIndex = legendColumnIndex
+    }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
       this.onTableConfigChange()
@@ -1806,7 +1808,7 @@ export class QueryOutput extends React.Component {
     const shouldRenderDLW = this.shouldRenderDataLimitWarning()
 
     return (
-      <div className={`query-output-footer${!shouldRenderRT && !shouldRenderDLW ? ' no-margin' : ''}`}>
+      <div className={`query-output-footer${!shouldRenderRT ? ' no-margin' : ''}`}>
         {shouldRenderRT && this.renderReverseTranslation()}
         {shouldRenderDLW && this.renderDataLimitWarning()}
       </div>
