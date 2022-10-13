@@ -180,7 +180,9 @@ class QueryInput extends React.Component {
       newState.inputValue = ''
     }
 
-    if (this._isMounted) {this.setState(newState)}
+    if (this._isMounted) {
+      this.setState(newState)
+    }
 
     let newSource = this.props.source
     if (source?.length) {
@@ -190,6 +192,7 @@ class QueryInput extends React.Component {
     }
 
     this.axiosSource = axios.CancelToken.source()
+    this.props.setAxiosSource(this.axiosSource)
     const requestData = {
       query,
       userSelection,
