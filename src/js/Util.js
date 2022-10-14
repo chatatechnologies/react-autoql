@@ -510,8 +510,15 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
 
     const maxRowsForPivot = 1000
     const maxRowsForPieChart = 10
-    const numRows = dataLength || rows.length
-    if (supportsRegularPivotTable(visibleColumns, dataLength)) {
+    const numRows = dataLength ?? rows.length
+
+    let pivotDataHasLength = true
+    const pivotDataLengthProvided = pivotDataLength !== undefined && pivotDataLength !== null
+    if (pivotDataLengthProvided) {
+      pivotDataHasLength = !!pivotDataLength
+    }
+
+    if (supportsRegularPivotTable(visibleColumns, numRows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
@@ -519,7 +526,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
         supportedDisplayTypes.push('pivot_table')
       }
 
-      if (numRows <= maxRowsForPivot && pivotDataLength > 0) {
+      if (numRows <= maxRowsForPivot && pivotDataHasLength) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -535,7 +542,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(visibleColumns, dataLength)) {
+    } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
