@@ -426,12 +426,20 @@ export const getGroupableColumns = (columns) => {
 export const isChartType = (type) => CHART_TYPES.includes(type)
 export const isTableType = (type) => TABLE_TYPES.includes(type)
 
-export const supportsRegularPivotTable = (columns) => {
+export const supportsRegularPivotTable = (columns, dataLength) => {
+  if (dataLength <= 1) {
+    return false
+  }
+
   const hasTwoGroupables = getNumberOfGroupables(columns) === 2
   return hasTwoGroupables && columns.length === 3
 }
 
-export const supports2DCharts = (columns) => {
+export const supports2DCharts = (columns, dataLength) => {
+  if (dataLength <= 1) {
+    return false
+  }
+
   const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
 
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
@@ -503,9 +511,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
     const maxRowsForPivot = 1000
     const maxRowsForPieChart = 10
     const numRows = dataLength || rows.length
-    const isTableEmpty = dataLength === 0
-    const isPivotTableEmpty = pivotDataLength === 0
-    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
+    if (supportsRegularPivotTable(visibleColumns, dataLength)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
       const supportedDisplayTypes = ['table']
 
@@ -513,7 +519,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
         supportedDisplayTypes.push('pivot_table')
       }
 
-      if (numRows <= maxRowsForPivot && !isPivotTableEmpty) {
+      if (numRows <= maxRowsForPivot && pivotDataLength > 0) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -529,7 +535,7 @@ export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotD
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(visibleColumns) && !isTableEmpty) {
+    } else if (supports2DCharts(visibleColumns, dataLength)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
