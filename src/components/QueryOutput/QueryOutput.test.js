@@ -45,6 +45,17 @@ describe('test each response case', () => {
   }
 })
 
+describe('supported display types', () => {
+  test('only support "table" for 1 row of data', async () => {
+    const queryResponse = _cloneDeep(testCases[8])
+    queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
+    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
+    expect(supportedDisplayTypes).toEqual(['table'])
+    queryOutput.unmount()
+  })
+})
+
 describe('test table edge cases', () => {
   describe('all columns initially hidden then visibility changed', () => {
     const testCaseHiddenColumns = _cloneDeep(testCases[8])
