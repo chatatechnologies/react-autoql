@@ -1,7 +1,6 @@
 import React from 'react'
 import _get from 'lodash.get'
 import { v4 as uuid } from 'uuid'
-
 import { Axis } from '../Axis'
 import AxisSelector from './AxisSelector'
 import RowNumberSelector from './RowNumberSelector'
@@ -18,8 +17,7 @@ export default class Axes extends React.Component {
     this.axisLabelPaddingLeft = 10
     this.maxRows = 5000
     this.initialRowNumber = 50
-    this.devTotalRowNumber = 6000 // to be change to a real totalRowNumber till Backend finished the work
-    this.visualizingSpan = document.getElementById('visualizing-span') // select the tspan of the string "visualizing " to be used to calculate the dropdown selecter's x location
+    this.visualizingSpan = document.getElementById('visualizing-span')
     this.labelInlineStyles = {
       fontSize: 12,
       fontFamily: 'inherit',
@@ -89,10 +87,6 @@ export default class Axes extends React.Component {
   }
 
   renderXAxisLoadMoreDropdown = (rowNumber, totalRowNumber) => {
-    const xCenter =
-      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
-      this.props.leftMargin -
-      this.props.rightMargin
     let rowNumberSpan = document.getElementById(`row-number-span-${this.COMPONENT_ID}`)
     let visualizingSpan = document.getElementById(`visualizing-span-${this.COMPONENT_ID}`)
     let loadMoreDropDownSpan = document.getElementById(`load-more-drop-down-span-${this.COMPONENT_ID}`)
@@ -108,6 +102,10 @@ export default class Axes extends React.Component {
     if (loadMoreDropDownSpan) {
       loadMoreDropDownSpanWidth = loadMoreDropDownSpan.getBoundingClientRect().width
     }
+    const xCenter =
+      (this.props.width - this.props.leftMargin + this.props.rightMargin) / 2 +
+      this.props.leftMargin -
+      this.props.rightMargin
     const xLabelBbox = getBBoxFromRef(this.LoadMoreDropdownRef)
     const xLabelTextWidth = xLabelBbox ? xLabelBbox.width : 0
     const xLabelTextHeight = this.getLabelTextHeight(this.LoadMoreDropdownRef)
@@ -123,7 +121,7 @@ export default class Axes extends React.Component {
           data-test='x-axis-label'
           textAnchor='middle'
           fontWeight='bold'
-          y={xLabelY}
+          y={xLabelY + 4}
           x={xCenter}
           style={this.labelInlineStyles}
         >
@@ -140,30 +138,31 @@ export default class Axes extends React.Component {
             width='1.4em'
             xmlns='http://www.w3.org/2000/svg'
             x={xBorderX + loadMoreDropDownSpanWidth + 15}
-            y={xLabelY - 15}
+            y={xLabelY - 11}
             data-tip='Row limit (5000) reached. Try applying a filter or narrowing your search to return full results.'
             data-for={this.props.tooltipID}
           >
             <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'></path>
           </svg>
         ) : null}
-
-        <RowNumberSelector
-          {...this.props}
-          column={this.props.xCol}
-          positions={['top', 'bottom']}
-          align='center'
-          childProps={{
-            x: xBorderX + visualizingSpanWidth + 7, //you may find another way to do so
-            y: xLabelY - 16, //you may find another way to do so
-            width: spanWidth,
-            height: xBorderHeight,
-          }}
-          totalRowNumber={this.devTotalRowNumber}
-          setCurrentRowNumber={(rowNumber) => {
-            this.setState({ currentRowNumber: rowNumber })
-          }}
-        />
+        {typeof visualizingSpanWidth == 'number' ? (
+          <RowNumberSelector
+            {...this.props}
+            column={this.props.xCol}
+            positions={['top', 'bottom']}
+            align='center'
+            childProps={{
+              x: xBorderX + visualizingSpanWidth + 7,
+              y: xLabelY - 12,
+              width: spanWidth,
+              height: xBorderHeight,
+            }}
+            totalRowNumber={this.props.devTotalRowNumber}
+            setCurrentRowNumber={(rowNumber) => {
+              this.setState({ currentRowNumber: rowNumber })
+            }}
+          />
+        ) : null}
       </g>
     )
   }
@@ -180,10 +179,13 @@ export default class Axes extends React.Component {
 
     /* <text> element's y coordinate is anchored on the middle baseline,
     so we need to shift the element up by half of it's height */
-    const xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
-
+    let xLabelY = this.props.height - (this.props.bottomLegendMargin || 0) - this.axisLabelPaddingTop - halfTextHeight
     const xBorderX = xCenter - xLabelTextWidth / 2 - this.axisLabelPaddingLeft
-    const xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    let xBorderY = xLabelY - halfTextHeight - this.axisLabelPaddingTop
+    if (this.props.devTotalRowNumber >= this.initialRowNumber) {
+      xBorderY = xBorderY - 20
+      xLabelY = xLabelY - 20
+    }
     const xBorderWidth = xLabelTextWidth + 2 * this.axisLabelPaddingLeft
     const xBorderHeight = xLabelTextHeight + 2 * this.axisLabelPaddingTop
 
@@ -196,7 +198,7 @@ export default class Axes extends React.Component {
           dominantBaseline='middle'
           textAnchor='middle'
           fontWeight='bold'
-          y={xLabelY - 20}
+          y={xLabelY}
           x={xCenter}
           style={this.labelInlineStyles}
         >
@@ -210,7 +212,7 @@ export default class Axes extends React.Component {
             align='center'
             childProps={{
               x: xBorderX,
-              y: xBorderY - 20,
+              y: xBorderY,
               width: xBorderWidth,
               height: xBorderHeight,
             }}
@@ -366,8 +368,8 @@ export default class Axes extends React.Component {
       <g>
         {this.renderYAxisLabel(yAxisTitle)}
         {this.renderXAxisLabel(xAxisTitle)}
-        {this.devTotalRowNumber > this.initialRowNumber &&
-          this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.devTotalRowNumber)}
+        {this.props.devTotalRowNumber > this.initialRowNumber &&
+          this.renderXAxisLoadMoreDropdown(this.state.currentRowNumber, this.props.devTotalRowNumber)}
 
         <g className='react-autoql-axes' data-test='react-autoql-axes'>
           {this.renderXAxis(xAxisTitle)}

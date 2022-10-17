@@ -43,9 +43,10 @@ export default class ChataChart extends Component {
     this.PADDING = 20
     this.INNER_PADDING = 0.25
     this.OUTER_PADDING = 0.5
-    this.AXIS_LABEL_PADDING = 50
+    this.AXIS_LABEL_PADDING = 30
+    this.TWO_AXIS_LABEL_PADDING = 60
     this.DEFAULT_BOTTOM_MARGIN = 100
-
+    this.devTotalRowNumber = 500
     this.firstRender = true
     this.recursiveUpdateCount = 0
 
@@ -311,6 +312,9 @@ export default class ChataChart extends Component {
 
     const xAxisBBox = this.xAxis ? this.xAxis.getBBox() : {}
     let bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.AXIS_LABEL_PADDING // margin to include axis label
+    if (this.devTotalRowNumber >= 50) {
+      bottomMargin = Math.ceil(xAxisBBox.height) + bottomLegendMargin + this.TWO_AXIS_LABEL_PADDING // margin to include 2 axis label
+    }
     if (xAxisBBox.height === 0) {
       bottomMargin = this.DEFAULT_BOTTOM_MARGIN // if no xAxisBBox available, set bottomMargin to default as 463
     }
@@ -564,6 +568,7 @@ export default class ChataChart extends Component {
       tooltipID: this.props.tooltipID,
       chartContainerRef: this.chartContainerRef,
       popoverParentElement: this.props.popoverParentElement || this.chartContainerRef,
+      devTotalRowNumber: this.devTotalRowNumber,
     }
   }
 

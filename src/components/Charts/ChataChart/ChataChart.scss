@@ -161,17 +161,18 @@
   justify-content: center;
   align-items: center;
   pointer-events: none;
-  // opacity:0.5;
-  background-color:white;
+  opacity:0.6;
+  background-color: var(--react-autoql-background-color-primary);
   color: var(--react-autoql-accent-color);
+  border-radius: 10%;
 
   &.chart-page-loader {
-    top: 0;
+    top: 25%;
     bottom: 0;
     right: 0;
-    left: 30px;
-    width:  calc(100% - margin);
-    height: 90%; //this need to be fixed on dashboard tiles. It works on the Data Messenger, but not on dashboard tiles
+    left: 50%;
+    width:  40px;
+    height:  40px;
   }
 
  

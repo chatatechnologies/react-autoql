@@ -8,6 +8,7 @@ import { axesDefaultProps, axesPropTypes } from '../helpers'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { getAuthentication } from '../../../props/defaults'
 import { runQueryOnly, runDrilldown } from '../../../js/queryService'
+import { responseErrors } from '../../../js/errorMessages'
 export default class RowNumberSelector extends React.Component {
   constructor(props) {
     super(props)
@@ -32,7 +33,6 @@ export default class RowNumberSelector extends React.Component {
   getNewChartData = (pageSize) => {
     this.props.setIsLoadingMoreRows(true)
     if (this.props.isDrilldown) {
-      console.warn('This is drilldown')
       return runDrilldown({
         ...getAuthentication(this.props.authentication),
         source: this.props.queryRequestData?.source,
@@ -67,7 +67,7 @@ export default class RowNumberSelector extends React.Component {
     try {
       let response
       if (pageSize === 'Maximum') {
-        pageSize = this.props.totalRowNumber //totalRows
+        pageSize = this.props.totalRowNumber
         if (this.props.totalRowNumber > 5000) {
           pageSize = 5000
         }
@@ -76,11 +76,10 @@ export default class RowNumberSelector extends React.Component {
       response = await this.getNewChartData(pageSize)
       this.props.setIsLoadingMoreRows(false)
       this.props.onNewData(response)
-      //   this.props.responseRef?.onNewPage(response?.rows)
     } catch (error) {
-      //   if (error?.data?.message === responseErrors.CANCELLED) {
-      //     return Promise.resolve()
-      //   }
+      if (error?.data?.message === responseErrors.CANCELLED) {
+        return Promise.resolve()
+      }
       console.error(error)
 
       // Send empty promise so data doesn't change
@@ -98,7 +97,7 @@ export default class RowNumberSelector extends React.Component {
     rowNumberList.push('Maximum')
     return rowNumberList
   }
-  renderSelectorContent = ({ position, childRect, popoverRect }) => {
+  renderSelectorContent = () => {
     let maxHeight = 300
     const minHeight = 35
     const padding = 50
