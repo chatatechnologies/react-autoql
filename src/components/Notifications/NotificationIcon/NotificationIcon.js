@@ -6,16 +6,10 @@ import { v4 as uuid } from 'uuid'
 import { Icon } from '../../Icon'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  fetchNotificationCount,
-  resetNotificationCount,
-} from '../../../js/notificationService'
+import { fetchNotificationCount, resetNotificationCount } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './NotificationIcon.scss'
 import { withTheme } from '../../../theme'
@@ -123,8 +117,7 @@ class NotificationIcon extends React.Component {
 
   subscribeToNotificationCount = (count) => {
     const pollingComponent = this.getPollingComponent()
-    const shouldPoll =
-      !pollingComponent || pollingComponent === this.COMPONENT_KEY
+    const shouldPoll = !pollingComponent || pollingComponent === this.COMPONENT_KEY
 
     if (this._isMounted && shouldPoll) {
       /**
@@ -143,7 +136,7 @@ class NotificationIcon extends React.Component {
           .catch((error) => {
             if (this.FAILED_POLL_ATTEMPTS === 5) {
               const error = new Error(
-                'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.'
+                'There were 5 failed attempts to poll for notifications. Unsubscribing from notification count.',
               )
               console.error(error)
               this.props.onErrorCallback(error)
@@ -193,7 +186,7 @@ class NotificationIcon extends React.Component {
     }
 
     if (this.props.useDot) {
-      return <div className="react-autoql-notifications-badge-dot" />
+      return <div className='react-autoql-notifications-badge-dot' />
     }
 
     let finalCount = count
@@ -201,19 +194,17 @@ class NotificationIcon extends React.Component {
       finalCount = `${overflowCount}+`
     }
 
-    return <div className="react-autoql-notifications-badge">{finalCount}</div>
+    return <div className='react-autoql-notifications-badge'>{finalCount}</div>
   }
 
   render = () => {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-notifications-button-container ${
-            this.props.useDot ? 'dot' : ''
-          }
+          className={`react-autoql-notifications-button-container ${this.props.useDot ? 'dot' : ''}
           ${this.props.className || ''}
         ${!this.state.count && !this.props.count ? 'no-badge' : ''}`}
-          data-test="notification-button"
+          data-test='notification-button'
           style={{ ...this.props.style }}
           onClick={() => {
             if (this.props.clearCountOnClick) {
@@ -221,10 +212,7 @@ class NotificationIcon extends React.Component {
             }
           }}
         >
-          <Icon
-            type="notification"
-            className="react-autoql-notifications-button"
-          />
+          <Icon type='notification' className='react-autoql-notifications-button' />
           {this.renderBadge()}
         </div>
       </ErrorBoundary>

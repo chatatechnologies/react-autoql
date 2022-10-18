@@ -46,7 +46,7 @@ export default class Cascader extends React.Component {
         {!isFirstGroup && (
           <Fragment>
             <div
-              className="cascader-back-arrow"
+              className='cascader-back-arrow'
               data-test={`cascader-back-arrow-${index}`}
               onClick={() => {
                 const newArray = [...this.state.optionsArray]
@@ -56,9 +56,9 @@ export default class Cascader extends React.Component {
                 })
               }}
             >
-              <Icon type="caret-left" />
+              <Icon type='caret-left' />
             </div>
-            <div className="options-title" data-test="options-title">
+            <div className='options-title' data-test='options-title'>
               {mostRecentOptionLabel}
             </div>
           </Fragment>
@@ -72,34 +72,25 @@ export default class Cascader extends React.Component {
               onClick={() => this.onOptionClick(option, index)}
               data-test={`options-item-${index}-${i}`}
             >
-              <span data-test={`options-item-${index}-${i}-text`}>
-                {option.label}
-              </span>
-              {!_get(option, 'children.length') && (
-                <Icon className="option-execute-icon" type="play" />
-              )}
-              {!!_get(option, 'children.length') && (
-                <Icon className="option-arrow" type="caret-right" />
-              )}
+              <span data-test={`options-item-${index}-${i}-text`}>{option.label}</span>
+              {!_get(option, 'children.length') && <Icon className='option-execute-icon' type='play' />}
+              {!!_get(option, 'children.length') && <Icon className='option-arrow' type='caret-right' />}
             </div>
           )
         })}
-        {this.props.showSeeMoreButton &&
-          hasNoChildren &&
-          mostRecentOptionLabel &&
-          this.props.onSeeMoreClick && (
-            <div
-              className="option"
-              data-test="see-more-option"
-              onClick={() => {
-                this.props.onSeeMoreClick(mostRecentOptionLabel)
-              }}
-            >
-              <span>
-                <Icon type="light-bulb" /> See more...
-              </span>
-            </div>
-          )}
+        {this.props.showSeeMoreButton && hasNoChildren && mostRecentOptionLabel && this.props.onSeeMoreClick && (
+          <div
+            className='option'
+            data-test='see-more-option'
+            onClick={() => {
+              this.props.onSeeMoreClick(mostRecentOptionLabel)
+            }}
+          >
+            <span>
+              <Icon type='light-bulb' /> See more...
+            </span>
+          </div>
+        )}
       </div>
     )
   }
@@ -126,8 +117,8 @@ export default class Cascader extends React.Component {
       <ErrorBoundary>
         <div
           id={`react-autoql-cascader-${this.COMPONENT_ID}`}
-          className="react-autoql-cascader"
-          data-test="react-autoql-cascader"
+          className='react-autoql-cascader'
+          data-test='react-autoql-cascader'
         >
           {this.state.optionsArray.map((optionsObject, index) => {
             return this.renderOptionsList({

@@ -18,10 +18,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup({ browserSupportsSpeechRecognition: true })
-    const speechToTextButtonComponent = findByTestAttr(
-      wrapper,
-      'speech-to-text-btn'
-    )
+    const speechToTextButtonComponent = findByTestAttr(wrapper, 'speech-to-text-btn')
     expect(speechToTextButtonComponent.exists()).toBe(true)
   })
 })

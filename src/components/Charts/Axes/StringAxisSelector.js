@@ -39,26 +39,19 @@ export default class StringAxisSelector extends React.Component {
     }
 
     return (
-      <CustomScrollbars
-        autoHide={false}
-        autoHeight
-        autoHeightMin={minHeight}
-        autoHeightMax={maxHeight}
-      >
+      <CustomScrollbars autoHide={false} autoHeight autoHeightMin={minHeight} autoHeightMax={maxHeight}>
         <div
-          className="axis-selector-container"
-          id="string-column-selector-content"
+          className='axis-selector-container'
+          id='string-column-selector-content'
           onClick={(e) => {
             e.stopPropagation()
           }}
         >
-          <ul className="axis-selector-content">
+          <ul className='axis-selector-content'>
             {this.props.stringColumnIndices.map((colIndex, i) => {
               return (
                 <li
-                  className={`string-select-list-item ${
-                    colIndex === this.props.stringColumnIndex ? 'active' : ''
-                  }`}
+                  className={`string-select-list-item ${colIndex === this.props.stringColumnIndex ? 'active' : ''}`}
                   key={`string-column-select-${i}`}
                   onClick={() => {
                     this.closeSelector()
@@ -91,13 +84,13 @@ export default class StringAxisSelector extends React.Component {
       >
         <rect
           {...this.props.childProps}
-          className="axis-label-border"
-          data-test="axis-label-border"
+          className='axis-label-border'
+          data-test='axis-label-border'
           onClick={this.openSelector}
-          fill="transparent"
-          stroke="transparent"
-          strokeWidth="1px"
-          rx="4"
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
         />
       </Popover>
     )

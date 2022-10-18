@@ -38,9 +38,9 @@ const defaultProps = Axes.defaultProps
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = mount(
-    <svg width="300px" height="300px">
+    <svg width='300px' height='300px'>
       <Axes {...setupProps} />
-    </svg>
+    </svg>,
   )
   return wrapper
 }
@@ -72,18 +72,12 @@ describe('after mount', () => {
       test('renders x axis label', () => {
         const xLabel = findByTestAttr(wrapper, 'x-axis-label')
         const xLabelText = findByTestAttr(xLabel, 'axis-label')
-        expect(xLabelText.text()).toEqual(
-          pivotSampleProps.columns[pivotSampleProps.numberColumnIndex]
-            .display_name
-        )
+        expect(xLabelText.text()).toEqual(pivotSampleProps.columns[pivotSampleProps.numberColumnIndex].display_name)
       })
       test('renders y axis label', () => {
         const yLabel = findByTestAttr(wrapper, 'y-axis-label')
         const yLabelText = findByTestAttr(yLabel, 'axis-label')
-        expect(yLabelText.text()).toEqual(
-          pivotSampleProps.columns[pivotSampleProps.stringColumnIndex]
-            .display_name
-        )
+        expect(yLabelText.text()).toEqual(pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name)
       })
       test('does not render dropdowns by default', () => {
         const xLabelArrow = findByTestAttr(wrapper, 'dropdown-arrow')
@@ -96,29 +90,23 @@ describe('after mount', () => {
         ...datePivotSampleProps,
         xCol: {
           ...datePivotSampleProps.xCol,
-          display_name:
-            'x title test loooong title to test a very very very very very very very long title',
+          display_name: 'x title test loooong title to test a very very very very very very very long title',
         },
         yCol: {
           ...datePivotSampleProps.yCol,
-          display_name:
-            'y title test loooong title to test a very very very very very very very long title',
+          display_name: 'y title test loooong title to test a very very very very very very very long title',
         },
       })
 
       test('renders long x axis label with ellipsis', () => {
         const xLabel = findByTestAttr(wrapper, 'x-axis-label')
         const xLabelText = findByTestAttr(xLabel, 'axis-label')
-        expect(xLabelText.text()).toEqual(
-          'x title test loooong title to test ...'
-        )
+        expect(xLabelText.text()).toEqual('x title test loooong title to test ...')
       })
       test('renders long y axis label with ellipsis', () => {
         const yLabel = findByTestAttr(wrapper, 'y-axis-label')
         const yLabelText = findByTestAttr(yLabel, 'axis-label')
-        expect(yLabelText.text()).toEqual(
-          'y title test loooong title to test ...'
-        )
+        expect(yLabelText.text()).toEqual('y title test loooong title to test ...')
       })
     })
   })

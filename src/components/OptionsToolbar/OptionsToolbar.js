@@ -15,20 +15,10 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { setColumnVisibility, exportCSV } from '../../js/queryService'
 
-import {
-  isTableType,
-  areAllColumnsHidden,
-  areSomeColumnsHidden,
-  isChartType,
-} from '../../js/Util'
+import { isTableType, areAllColumnsHidden, areSomeColumnsHidden, isChartType } from '../../js/Util'
 
 import { autoQLConfigType, authenticationType } from '../../props/types'
-import {
-  autoQLConfigDefault,
-  authenticationDefault,
-  getAuthentication,
-  getAutoQLConfig,
-} from '../../props/defaults'
+import { autoQLConfigDefault, authenticationDefault, getAuthentication, getAutoQLConfig } from '../../props/defaults'
 
 import './OptionsToolbar.scss'
 
@@ -153,10 +143,7 @@ export default class OptionsToolbar extends React.Component {
         link.click()
 
         const exportLimit = parseInt(response?.headers?.export_limit)
-        const limitReached =
-          response?.headers?.limit_reached?.toLowerCase() == 'true'
-            ? true
-            : false
+        const limitReached = response?.headers?.limit_reached?.toLowerCase() == 'true' ? true : false
 
         this.props.onCSVDownloadFinish({
           id: uniqueId,
@@ -212,9 +199,7 @@ export default class OptionsToolbar extends React.Component {
     el.select()
     document.execCommand('copy')
     this.setTemporaryState('copiedSQL', true, 1000)
-    this.props.onSuccessAlert(
-      'Successfully copied generated query to clipboard!'
-    )
+    this.props.onSuccessAlert('Successfully copied generated query to clipboard!')
 
     this.setState({ sqlCopySuccess: true })
     ReactTooltip.hide()
@@ -347,8 +332,8 @@ export default class OptionsToolbar extends React.Component {
 
   renderReportProblemMenu = () => {
     return (
-      <div className="report-problem-menu">
-        <ul className="context-menu-list">
+      <div className='report-problem-menu'>
+        <ul className='context-menu-list'>
           <li
             onClick={() => {
               this.setState({ activeMenu: undefined })
@@ -365,9 +350,7 @@ export default class OptionsToolbar extends React.Component {
           >
             The data is incomplete
           </li>
-          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>
-            Other...
-          </li>
+          <li onClick={() => this.setState({ activeMenu: 'other-problem' })}>Other...</li>
         </ul>
       </div>
     )
@@ -384,32 +367,27 @@ export default class OptionsToolbar extends React.Component {
 
   renderMoreOptionsMenu = (props, shouldShowButton) => {
     return (
-      <div
-        className="more-options-menu"
-        data-test="react-autoql-toolbar-more-options"
-      >
-        <ul className="context-menu-list">
+      <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
+        <ul className='context-menu-list'>
           {shouldShowButton.showSaveAsCSVButton && (
             <li
               onClick={this.onCSVMenuButtonClick}
               style={
                 this.state.isCSVDownloading
                   ? {
-                      pointerEvents: 'none', //This makes it not clickable
-                      opacity: 0.6, //This grays it out to look disabled
-                    }
+                    pointerEvents: 'none', // This makes it not clickable
+                    opacity: 0.6, // This grays it out to look disabled
+                  }
                   : null
               }
             >
               <Icon
-                type="download"
+                type='download'
                 style={{
                   marginRight: '7px',
                 }}
               />
-              {this.state.isCSVDownloading
-                ? 'CSV file downloading...'
-                : 'Download as CSV'}
+              {this.state.isCSVDownloading ? 'CSV file downloading...' : 'Download as CSV'}
             </li>
           )}
           {shouldShowButton.showSaveAsPNGButton && (
@@ -420,7 +398,7 @@ export default class OptionsToolbar extends React.Component {
               }}
             >
               <Icon
-                type="download"
+                type='download'
                 style={{
                   marginRight: '7px',
                 }}
@@ -436,7 +414,7 @@ export default class OptionsToolbar extends React.Component {
               }}
             >
               <Icon
-                type="copy"
+                type='copy'
                 style={{
                   marginRight: '7px',
                 }}
@@ -450,7 +428,7 @@ export default class OptionsToolbar extends React.Component {
                 this.setState({ activeMenu: 'sql' })
               }}
             >
-              <Icon type="database" /> View generated SQL
+              <Icon type='database' /> View generated SQL
             </li>
           )}
           {shouldShowButton.showCreateNotificationIcon && (
@@ -459,10 +437,7 @@ export default class OptionsToolbar extends React.Component {
                 this.setState({ activeMenu: 'notification' })
               }}
             >
-              <Icon
-                style={{ verticalAlign: 'middle', marginRight: '7px' }}
-                type="notification"
-              />
+              <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type='notification' />
               Create a Data Alert...
             </li>
           )}
@@ -496,36 +471,25 @@ export default class OptionsToolbar extends React.Component {
           isVisible={this.state.activeMenu === 'sql'}
           footer={
             <div>
-              <Button
-                type="primary"
-                onClick={() => this.setState({ activeMenu: undefined })}
-              >
+              <Button type='primary' onClick={() => this.setState({ activeMenu: undefined })}>
                 Ok
               </Button>
             </div>
           }
           onClose={() => this.setState({ activeMenu: undefined })}
-          title="Generated SQL"
+          title='Generated SQL'
           enableBodyScroll={false}
-          width="600px"
+          width='600px'
         >
-          <div className="copy-sql-modal-content">
-            <textarea
-              className="copy-sql-formatted-text"
-              value={`${format(sql)}`}
-              disabled
-            />
+          <div className='copy-sql-modal-content'>
+            <textarea className='copy-sql-formatted-text' value={`${format(sql)}`} disabled />
             <Button
-              className={`copy-sql-btn ${
-                this.state.sqlCopySuccess ? 'sql-copied' : ''
-              }`}
+              className={`copy-sql-btn ${this.state.sqlCopySuccess ? 'sql-copied' : ''}`}
               onClick={this.copySQL}
-              tooltip="Copy to Clipboard"
+              tooltip='Copy to Clipboard'
             >
-              <Icon type="copy" />
-              {this.state.sqlCopySuccess && (
-                <Icon type="check" className="sql-copied" />
-              )}
+              <Icon type='copy' />
+              {this.state.sqlCopySuccess && <Icon type='check' className='sql-copied' />}
             </Button>
           </div>
         </Modal>
@@ -540,35 +504,28 @@ export default class OptionsToolbar extends React.Component {
           className={`react-autoql-toolbar options-toolbar
         ${this.state.activeMenu ? 'active' : ''}
         ${this.props.className || ''}`}
-          data-test="autoql-options-toolbar"
+          data-test='autoql-options-toolbar'
         >
           {shouldShowButton.showFilterButton && (
             <button
               onClick={this.props.responseRef?.toggleTableFilter}
-              className={this.getMenuItemClass(
-                shouldShowButton.showFilterButton
-              )}
-              data-tip="Filter table"
+              className={this.getMenuItemClass(shouldShowButton.showFilterButton)}
+              data-tip='Filter table'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="react-autoql-filter-button"
+              data-test='react-autoql-filter-button'
             >
-              <Icon type="filter" />
+              <Icon type='filter' />
             </button>
           )}
           {shouldShowButton.showHideColumnsButton && (
             <button
               onClick={this.showHideColumnsModal}
-              className={this.getMenuItemClass(
-                shouldShowButton.showHideColumnsButton
-              )}
-              data-tip="Show/hide columns"
+              className={this.getMenuItemClass(shouldShowButton.showHideColumnsButton)}
+              data-tip='Show/hide columns'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-col-vis"
+              data-test='options-toolbar-col-vis'
             >
-              <Icon
-                type="eye"
-                showBadge={shouldShowButton.showHiddenColsBadge}
-              />
+              <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
             </button>
           )}
           {shouldShowButton.showReportProblemButton && (
@@ -588,40 +545,34 @@ export default class OptionsToolbar extends React.Component {
                 onClick={() => {
                   this.setState({ activeMenu: 'report-problem' })
                 }}
-                className={this.getMenuItemClass(
-                  shouldShowButton.showReportProblemButton
-                )}
-                data-tip="Report a problem"
+                className={this.getMenuItemClass(shouldShowButton.showReportProblemButton)}
+                data-tip='Report a problem'
                 data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
               >
-                <Icon type="warning-triangle" />
+                <Icon type='warning-triangle' />
               </button>
             </Popover>
           )}
           {shouldShowButton.showRefreshDataButton && (
             <button
               onClick={this.refreshData}
-              className={this.getMenuItemClass(
-                shouldShowButton.showRefreshDataButton
-              )}
-              data-tip="Re-run query"
+              className={this.getMenuItemClass(shouldShowButton.showRefreshDataButton)}
+              data-tip='Re-run query'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-trash-btn"
+              data-test='options-toolbar-trash-btn'
             >
-              <Icon type="refresh" />
+              <Icon type='refresh' />
             </button>
           )}
           {shouldShowButton.showDeleteButton && (
             <button
               onClick={this.deleteMessage}
-              className={this.getMenuItemClass(
-                shouldShowButton.showDeleteButton
-              )}
-              data-tip="Delete data response"
+              className={this.getMenuItemClass(shouldShowButton.showDeleteButton)}
+              data-tip='Delete data response'
               data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-              data-test="options-toolbar-trash-btn"
+              data-test='options-toolbar-trash-btn'
             >
-              <Icon type="trash" />
+              <Icon type='trash' />
             </button>
           )}
           {shouldShowButton.showMoreOptionsButton && (
@@ -633,9 +584,7 @@ export default class OptionsToolbar extends React.Component {
               onClickOutside={() => {
                 this.setState({ activeMenu: undefined })
               }}
-              content={(props) =>
-                this.renderMoreOptionsMenu(props, shouldShowButton)
-              }
+              content={(props) => this.renderMoreOptionsMenu(props, shouldShowButton)}
               parentElement={this.props.popoverParentElement}
               boundaryElement={this.props.popoverParentElement}
             >
@@ -644,14 +593,12 @@ export default class OptionsToolbar extends React.Component {
                   ReactTooltip.hide()
                   this.setState({ activeMenu: 'more-options' })
                 }}
-                className={this.getMenuItemClass(
-                  shouldShowButton.showMoreOptionsButton
-                )}
-                data-tip="More options"
+                className={this.getMenuItemClass(shouldShowButton.showMoreOptionsButton)}
+                data-tip='More options'
                 data-for={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-                data-test="react-autoql-toolbar-more-options-btn"
+                data-test='react-autoql-toolbar-more-options-btn'
               >
-                <Icon type="more-vertical" />
+                <Icon type='more-vertical' />
               </button>
             </Popover>
           )}
@@ -679,26 +626,19 @@ export default class OptionsToolbar extends React.Component {
       const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
 
       shouldShowButton = {
-        showFilterButton:
-          isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
+        showFilterButton: isTable && !isPivotTable && !allColumnsHidden && hasMoreThanOneRow,
         showCopyButton: isTable && !allColumnsHidden,
         showSaveAsPNGButton: isChart,
         showHideColumnsButton:
           autoQLConfig.enableColumnVisibilityManager &&
           hasData &&
-          (displayType === 'table' ||
-            (displayType === 'text' && allColumnsHidden)),
+          (displayType === 'table' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: someColumnsHidden,
         showSQLButton: isDataResponse && autoQLConfig.debug,
-        showSaveAsCSVButton:
-          isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: this.props.enableDeleteBtn,
-        showReportProblemButton:
-          autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
-        showCreateNotificationIcon:
-          isDataResponse &&
-          autoQLConfig.enableNotifications &&
-          !this.isDrilldownResponse(),
+        showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+        showCreateNotificationIcon: isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(),
         showRefreshDataButton: false,
       }
 
@@ -719,25 +659,21 @@ export default class OptionsToolbar extends React.Component {
     const shouldShowButton = this.getShouldShowButtonObj()
 
     // If there is nothing to put in the toolbar, don't render it
-    if (
-      !Object.values(shouldShowButton).find((showButton) => showButton === true)
-    ) {
+    if (!Object.values(shouldShowButton).find((showButton) => showButton === true)) {
       return null
     }
 
     return (
       <ErrorBoundary>
         {this.renderToolbar(shouldShowButton)}
-        {shouldShowButton.showHideColumnsButton &&
-          this.renderHideColumnsModal()}
-        {shouldShowButton.showReportProblemButton &&
-          this.renderReportProblemModal()}
+        {shouldShowButton.showHideColumnsButton && this.renderHideColumnsModal()}
+        {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showMoreOptionsButton && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         <ReactTooltip
-          className="react-autoql-tooltip"
+          className='react-autoql-tooltip'
           id={`react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`}
-          effect="solid"
+          effect='solid'
           delayShow={800}
         />
       </ErrorBoundary>

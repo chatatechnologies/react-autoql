@@ -2,13 +2,7 @@ import _get from 'lodash.get'
 import _filter from 'lodash.filter'
 import dayjs from './dayjsWithPlugins'
 
-import {
-  CHART_TYPES,
-  TABLE_TYPES,
-  WEEKDAY_NAMES,
-  MONTH_NAMES,
-  SEASON_NAMES,
-} from './Constants'
+import { CHART_TYPES, TABLE_TYPES, WEEKDAY_NAMES, MONTH_NAMES, SEASON_NAMES } from './Constants'
 
 import {
   getColumnTypeAmounts,
@@ -123,7 +117,7 @@ export const formatStringDate = (value, config) => {
 }
 
 export const formatChartLabel = ({ d, col = {}, config = {} }) => {
-  if (d == null) {
+  if (d === null) {
     return {
       fullWidthLabel: 'Untitled Category',
       formattedLabel: 'Untitled Category',
@@ -184,7 +178,7 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
     }
     case 'PERCENT': {
       if (Number(d)) {
-        let p = Number(d) / 100
+        const p = Number(d) / 100
         formattedLabel = new Intl.NumberFormat(languageCode, {
           style: 'percent',
           minimumFractionDigits: 1,
@@ -208,16 +202,10 @@ export const formatChartLabel = ({ d, col = {}, config = {} }) => {
   return { fullWidthLabel, formattedLabel, isTruncated }
 }
 
-export const formatElement = ({
-  element,
-  column,
-  config = {},
-  htmlElement,
-}) => {
+export const formatElement = ({ element, column, config = {}, htmlElement }) => {
   try {
     let formattedElement = element
-    const { currencyCode, languageCode, currencyDecimals, quantityDecimals } =
-      config
+    const { currencyCode, languageCode, currencyDecimals, quantityDecimals } = config
 
     if (column) {
       switch (column.type) {
@@ -229,10 +217,7 @@ export const formatElement = ({
           // We will need to grab the actual currency symbol here. Will that be returned in the query response?
           if (!isNaN(Number(element))) {
             const currency = currencyCode || 'USD'
-            const validatedCurrencyDecimals =
-              currencyDecimals || currencyDecimals === 0
-                ? currencyDecimals
-                : undefined
+            const validatedCurrencyDecimals = currencyDecimals || currencyDecimals === 0 ? currencyDecimals : undefined
 
             try {
               formattedElement = new Intl.NumberFormat(languageCode, {
@@ -254,12 +239,10 @@ export const formatElement = ({
           break
         }
         case 'QUANTITY': {
-          const validatedQuantityDecimals =
-            quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
+          const validatedQuantityDecimals = quantityDecimals || quantityDecimals === 0 ? quantityDecimals : 1
 
           if (!isNaN(Number(element))) {
-            const numDecimals =
-              Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
+            const numDecimals = Number(element) % 1 !== 0 ? validatedQuantityDecimals : 0
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               minimumFractionDigits: numDecimals,
@@ -288,7 +271,7 @@ export const formatElement = ({
         }
         case 'PERCENT': {
           if (!isNaN(Number(element))) {
-            let p = Number(element) / 100
+            const p = Number(element) / 100
 
             formattedElement = new Intl.NumberFormat(languageCode, {
               style: 'percent',
@@ -403,8 +386,8 @@ export const svgToPng = (svgElement, margin = 0, fill) => {
         }
         resolve(canvas.toDataURL('image/png', 1))
       }
-      img.onerror = function (error) {
-        reject('failed to load image with that url' + url)
+      img.onerror = function () {
+        reject('failed to load image')
       }
 
       // load image
@@ -443,14 +426,21 @@ export const getGroupableColumns = (columns) => {
 export const isChartType = (type) => CHART_TYPES.includes(type)
 export const isTableType = (type) => TABLE_TYPES.includes(type)
 
-export const supportsRegularPivotTable = (columns) => {
+export const supportsRegularPivotTable = (columns, dataLength) => {
+  if (dataLength <= 1) {
+    return false
+  }
+
   const hasTwoGroupables = getNumberOfGroupables(columns) === 2
   return hasTwoGroupables && columns.length === 3
 }
 
-export const supports2DCharts = (columns) => {
-  const { amountOfNumberColumns, amountOfStringColumns } =
-    getColumnTypeAmounts(columns)
+export const supports2DCharts = (columns, dataLength) => {
+  if (dataLength <= 1) {
+    return false
+  }
+
+  const { amountOfNumberColumns, amountOfStringColumns } = getColumnTypeAmounts(columns)
 
   return amountOfNumberColumns > 0 && amountOfStringColumns > 0
 }
@@ -486,12 +476,15 @@ export const areAllColumnsHidden = (columns) => {
   return columns?.length && !visibleColumns.length
 }
 
-export const getSupportedDisplayTypes = ({
-  response,
-  columns,
-  dataLength,
-  pivotDataLength,
-} = {}) => {
+export const isSingleValueResponse = (response) => {
+  if (!response) {
+    return false
+  }
+
+  return _get(response, 'data.data.rows.length') === 1 && _get(response, 'data.data.rows[0].length') === 1
+}
+
+export const getSupportedDisplayTypes = ({ response, columns, dataLength, pivotDataLength } = {}) => {
   try {
     if (!_get(response, 'data.data.display_type')) {
       return []
@@ -499,11 +492,7 @@ export const getSupportedDisplayTypes = ({
     // There should be 3 types: data, suggestion, help
     const displayType = response.data.data.display_type
 
-    if (
-      displayType === 'suggestion' ||
-      displayType === 'help' ||
-      displayType === 'html'
-    ) {
+    if (displayType === 'suggestion' || displayType === 'help' || displayType === 'html') {
       return [displayType]
     }
 
@@ -521,18 +510,23 @@ export const getSupportedDisplayTypes = ({
 
     const maxRowsForPivot = 1000
     const maxRowsForPieChart = 10
-    const numRows = dataLength || rows.length
-    const isTableEmpty = dataLength === 0
-    const isPivotTableEmpty = pivotDataLength === 0
-    if (supportsRegularPivotTable(visibleColumns) && !isTableEmpty) {
+    const numRows = dataLength ?? rows.length
+
+    let pivotDataHasLength = true
+    const pivotDataLengthProvided = pivotDataLength !== undefined && pivotDataLength !== null
+    if (pivotDataLengthProvided) {
+      pivotDataHasLength = !!pivotDataLength
+    }
+
+    if (supportsRegularPivotTable(visibleColumns, numRows)) {
       // The only case where 3D charts are supported (ie. heatmap, bubble, etc.)
-      let supportedDisplayTypes = ['table']
+      const supportedDisplayTypes = ['table']
 
       if (numRows <= maxRowsForPivot) {
         supportedDisplayTypes.push('pivot_table')
       }
 
-      if (numRows <= maxRowsForPivot && !isPivotTableEmpty) {
+      if (numRows <= maxRowsForPivot && pivotDataHasLength) {
         supportedDisplayTypes.push(
           'stacked_column',
           'stacked_bar',
@@ -541,16 +535,14 @@ export const getSupportedDisplayTypes = ({
           'bar',
           'line',
           'bubble',
-          'heatmap'
+          'heatmap',
         )
       } else if (numRows > maxRowsForPivot) {
-        console.warn(
-          'Supported Display Types: Rows exceeded 1000, only allowing regular table display type'
-        )
+        console.warn('Supported Display Types: Rows exceeded 1000, only allowing regular table display type')
       }
 
       return supportedDisplayTypes
-    } else if (supports2DCharts(visibleColumns) && !isTableEmpty) {
+    } else if (supports2DCharts(visibleColumns, numRows)) {
       // If there is at least one string column and one number
       // column, we should be able to chart anything
       const supportedDisplayTypes = ['table', 'column', 'bar', 'line']
@@ -560,17 +552,11 @@ export const getSupportedDisplayTypes = ({
       }
 
       // create pivot based on month and year
-      const dateColumnIndex = visibleColumns.findIndex(
-        (col) => col.type === 'DATE' || col.type === 'DATE_STRING'
-      )
+      const dateColumnIndex = visibleColumns.findIndex((col) => col.type === 'DATE' || col.type === 'DATE_STRING')
       const dateColumn = visibleColumns[dateColumnIndex]
 
       // Check if date pivot should be supported
-      if (
-        dateColumn &&
-        dateColumn?.display_name?.toLowerCase().includes('month') &&
-        visibleColumns?.length === 2
-      ) {
+      if (dateColumn && dateColumn?.display_name?.toLowerCase().includes('month') && visibleColumns?.length === 2) {
         const data = _get(response, 'data.data.rows')
         const uniqueYears = []
         data.forEach((row) => {
@@ -601,13 +587,7 @@ export const getSupportedDisplayTypes = ({
   }
 }
 
-export const isDisplayTypeValid = (
-  response,
-  displayType,
-  dataLength,
-  pivotDataLength,
-  columns
-) => {
+export const isDisplayTypeValid = (response, displayType, dataLength, pivotDataLength, columns) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
     columns,
@@ -620,14 +600,20 @@ export const isDisplayTypeValid = (
 }
 
 export const getFirstChartDisplayType = (supportedDisplayTypes, fallback) => {
-  const chartType = supportedDisplayTypes.find((displayType) =>
-    isChartType(displayType)
-  )
+  const chartType = supportedDisplayTypes.find((displayType) => isChartType(displayType))
   if (chartType) {
     return chartType
   }
 
   return fallback
+}
+
+export const hasData = (response) => {
+  if (!response) {
+    return false
+  }
+
+  return _get(response, 'data.data.rows.length') && _get(response, 'data.data.rows.length')
 }
 
 export const getDefaultDisplayType = (
@@ -636,7 +622,7 @@ export const getDefaultDisplayType = (
   columns,
   dataLength,
   pivotDataLength,
-  preferredDisplayType
+  preferredDisplayType,
 ) => {
   const supportedDisplayTypes = getSupportedDisplayTypes({
     response,
@@ -645,10 +631,7 @@ export const getDefaultDisplayType = (
     pivotDataLength,
   })
 
-  if (
-    preferredDisplayType &&
-    supportedDisplayTypes.includes(preferredDisplayType)
-  ) {
+  if (preferredDisplayType && supportedDisplayTypes.includes(preferredDisplayType)) {
     return preferredDisplayType
   }
 
@@ -659,11 +642,7 @@ export const getDefaultDisplayType = (
   }
 
   // If the display type is a recognized non-chart or non-table type
-  if (
-    responseDisplayType === 'suggestion' ||
-    responseDisplayType === 'help' ||
-    responseDisplayType === 'html'
-  ) {
+  if (responseDisplayType === 'suggestion' || responseDisplayType === 'help' || responseDisplayType === 'html') {
     return responseDisplayType
   }
 
@@ -685,10 +664,7 @@ export const getDefaultDisplayType = (
   }
 
   // If there is no display type in the response, but there is tabular data, default to regular table
-  if (
-    (!responseDisplayType && hasData(response)) ||
-    responseDisplayType === 'data'
-  ) {
+  if ((!responseDisplayType && hasData(response)) || responseDisplayType === 'data') {
     let displayType = 'table'
 
     if (defaultToChart) {
@@ -779,8 +755,7 @@ export const getGroupBysFromTable = (cell, tableColumns) => {
   const groupByArray = []
   groupableColumns.forEach((colIndex) => {
     const groupByName = tableColumns[colIndex].name
-    const groupByValue =
-      rowData[colIndex] === null ? '' : `${rowData[colIndex]}`
+    const groupByValue = rowData[colIndex] === null ? '' : `${rowData[colIndex]}`
 
     groupByArray.push(nameValueObject(groupByName, groupByValue))
   })
@@ -812,9 +787,7 @@ export const getLongestLabelInPx = (labels, col, config) => {
     return 0
   }
 
-  let max = getChartLabelTextWidthInPx(
-    formatChartLabel({ d: labels[0], col, config })
-  )
+  let max = getChartLabelTextWidthInPx(formatChartLabel({ d: labels[0], col, config }))
 
   labels.forEach((label) => {
     const formattedLabel = formatChartLabel({
@@ -858,14 +831,14 @@ export const getTickWidth = (scale, innerPadding) => {
 
 export const getQueryParams = (url) => {
   try {
-    let queryParams = {}
+    const queryParams = {}
     // create an anchor tag to use the property called search
-    let anchor = document.createElement('a')
+    const anchor = document.createElement('a')
     // assigning url to href of anchor tag
     anchor.href = url
     // search property returns the query string of url
-    let queryStrings = anchor.search.substring(1)
-    let params = queryStrings.split('&')
+    const queryStrings = anchor.search.substring(1)
+    const params = queryStrings.split('&')
 
     for (var i = 0; i < params.length; i++) {
       var pair = params[i].split('=')
@@ -880,13 +853,10 @@ export const getQueryParams = (url) => {
 export const getPadding = (element) => {
   const padding = { left: 0, right: 0, top: 0, bottom: 0 }
   try {
-    let left = parseInt(window.getComputedStyle(element)['padding-left'], 10)
-    let right = parseInt(window.getComputedStyle(element)['padding-right'], 10)
-    let top = parseInt(window.getComputedStyle(element)['padding-top'], 10)
-    let bottom = parseInt(
-      window.getComputedStyle(element)['padding-bottom'],
-      10
-    )
+    const left = parseInt(window.getComputedStyle(element)['padding-left'], 10)
+    const right = parseInt(window.getComputedStyle(element)['padding-right'], 10)
+    const top = parseInt(window.getComputedStyle(element)['padding-top'], 10)
+    const bottom = parseInt(window.getComputedStyle(element)['padding-bottom'], 10)
 
     padding.left = left
     padding.right = right
@@ -910,30 +880,8 @@ export const capitalizeFirstChar = (string) => {
   return capitalized
 }
 
-export const isSingleValueResponse = (response) => {
-  if (!response) {
-    return false
-  }
-
-  return (
-    _get(response, 'data.data.rows.length') === 1 &&
-    _get(response, 'data.data.rows[0].length') === 1
-  )
-}
-
-export const hasData = (response) => {
-  if (!response) {
-    return false
-  }
-
-  const hasData =
-    _get(response, 'data.data.rows.length') &&
-    _get(response, 'data.data.rows.length')
-  return hasData
-}
-
 export const setCaretPosition = (elem, caretPos) => {
-  if (elem != null) {
+  if (elem !== null) {
     if (elem.createTextRange) {
       const range = elem.createTextRange()
       range.move('character', caretPos)
@@ -942,7 +890,9 @@ export const setCaretPosition = (elem, caretPos) => {
       if (elem.selectionStart) {
         elem.focus()
         elem.setSelectionRange(caretPos, caretPos)
-      } else elem.focus()
+      } else {
+        elem.focus()
+      }
     }
   }
 }
@@ -991,16 +941,13 @@ export const dateSortFn = (a, b) => {
     if (!aDate || !bDate) {
       // If one is a YYYY-WW
       if (a.includes('-W')) {
-        let aDateYear = a.substring(0, 4)
-        let bDateYear = b.substring(0, 4)
+        const aDateYear = a.substring(0, 4)
+        const bDateYear = b.substring(0, 4)
         if (aDateYear !== bDateYear) {
           return bDateYear - aDateYear
         } else {
-          let aDateWeek = a.substring(6, 8)
-          let bDateWeek = b.substring(6, 8)
-          if (isChart) {
-            return aDateWeek - bDateWeek
-          }
+          const aDateWeek = a.substring(6, 8)
+          const bDateWeek = b.substring(6, 8)
           return bDateWeek - aDateWeek
         }
       }
@@ -1051,13 +998,9 @@ export const sortDataByDate = (data, tableColumns, isChart) => {
     if (dateColumnIndex >= 0) {
       let sortedData
       if (!isChart) {
-        sortedData = [...data].sort((a, b) =>
-          dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
-        )
+        sortedData = [...data].sort((a, b) => dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
       } else {
-        sortedData = [...data].sort(
-          (a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex])
-        )
+        sortedData = [...data].sort((a, b) => -1 * dateSortFn(a[dateColumnIndex], b[dateColumnIndex]))
       }
       return sortedData
     }
@@ -1069,7 +1012,6 @@ export const sortDataByDate = (data, tableColumns, isChart) => {
 }
 
 export const handleTooltipBoundaryCollision = (e, self) => {
-  const { target } = e
   const { tooltipRef } = self.reactTooltipRef
 
   if (!tooltipRef) {
@@ -1090,17 +1032,12 @@ export const handleTooltipBoundaryCollision = (e, self) => {
   }
 }
 
-export const animateInputText = ({
-  text = '',
-  inputRef,
-  callback = () => {},
-  totalAnimationTime = 1000,
-}) => {
+export const animateInputText = ({ text = '', inputRef, callback = () => {}, totalAnimationTime = 1000 }) => {
   if (!text.length || !inputRef || typeof text !== 'string') {
     return Promise.resolve()
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const timePerChar = Math.round(totalAnimationTime / text.length)
     for (let i = 1; i <= text.length; i++) {
       setTimeout(() => {
@@ -1117,5 +1054,8 @@ export const animateInputText = ({
 }
 
 export const currentEventLoopEnd = () => {
+  if (!process) {
+    return
+  }
   return new Promise((resolve) => process.nextTick(resolve))
 }

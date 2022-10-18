@@ -42,10 +42,7 @@ export default class ChataStackedLineChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.tickWidth,
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.tickWidth, this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -56,19 +53,14 @@ export default class ChataStackedLineChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length)
-      numberColumnIndices = props.visibleSeriesIndices
-    const { maxValue, minValue } = calculateMinAndMaxSums(
-      props.data,
-      props.stringColumnIndex,
-      numberColumnIndices
-    )
+    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    const { maxValue, minValue } = calculateMinAndMaxSums(props.data, props.stringColumnIndex, numberColumnIndices)
 
     this.xScale = scaleBand()
       .domain(props.data.map((d) => d[props.stringColumnIndex]))
@@ -82,14 +74,12 @@ export default class ChataStackedLineChart extends Component {
       rangeStart = rangeEnd
     }
 
-    this.yScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([rangeStart, rangeEnd])
+    this.yScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
     this.yScale.minValue = minValue
     this.yScale.maxValue = maxValue
     this.yScale.type = 'LINEAR'
 
-    this.tickWidth = props.width / (this.xScale?.domain()?.length || 1)
+    this.tickWidth = props.innerWidth / (this.xScale?.domain()?.length || 1)
     this.xTickValues = getTickValues({
       tickHeight: this.tickWidth,
       fullHeight: props.innerWidth,
@@ -111,13 +101,9 @@ export default class ChataStackedLineChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g data-test="react-autoql-stacked-line-chart">
+      <g data-test='react-autoql-stacked-line-chart'>
         {this.props.marginAdjustmentFinished && (
-          <StackedLines
-            {...this.props}
-            xScale={this.xScale}
-            yScale={this.yScale}
-          />
+          <StackedLines {...this.props} xScale={this.xScale} yScale={this.yScale} />
         )}
         <Axes
           {...this.props}
@@ -130,14 +116,8 @@ export default class ChataStackedLineChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleStringColumns
-          }
-          hasYDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleNumberColumns
-          }
+          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
+          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
           yAxisTitle={this.props.numberAxisTitle}
           yGridLines
         />

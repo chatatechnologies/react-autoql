@@ -3,28 +3,15 @@ import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
 import _get from 'lodash.get'
 
-import {
-  chartElementDefaultProps,
-  chartElementPropTypes,
-  getTooltipContent,
-  getKey,
-} from '../helpers'
+import { chartElementDefaultProps, chartElementPropTypes, getTooltipContent, getKey } from '../helpers'
 
 export default class Squares extends Component {
   constructor(props) {
     super(props)
 
-    const maxValue = max(
-      props.data.map((row) =>
-        max(row.filter((value, i) => props.numberColumnIndices.includes(i)))
-      )
-    )
+    const maxValue = max(props.data.map((row) => max(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
 
-    const minValue = min(
-      props.data.map((row) =>
-        min(row.filter((value, i) => props.numberColumnIndices.includes(i)))
-      )
-    )
+    const minValue = min(props.data.map((row) => min(row.filter((value, i) => props.numberColumnIndices.includes(i)))))
 
     this.opacityScale = scaleLinear().domain([minValue, maxValue]).range([0, 1])
 
@@ -99,12 +86,8 @@ export default class Squares extends Component {
           squares.push(
             <rect
               key={getKey(colIndex, index)}
-              data-test="squares"
-              className={`square${
-                this.state.activeKey === getKey(colIndex, index)
-                  ? ' active'
-                  : ''
-              }`}
+              data-test='squares'
+              className={`square${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               x={xScale(xLabel)}
               y={yScale(yLabel)}
               width={xScale.bandwidth()}
@@ -115,7 +98,7 @@ export default class Squares extends Component {
               style={{ color: activeFillColor }}
               fill={fillColor}
               fillOpacity={this.opacityScale(Math.abs(value))}
-            />
+            />,
           )
         }
       })

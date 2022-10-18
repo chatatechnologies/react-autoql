@@ -16,18 +16,10 @@ import { ExpressionBuilderSimple } from '../ExpressionBuilderSimple'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 
-import {
-  createDataAlert,
-  updateDataAlert,
-  deleteDataAlert,
-  validateExpression,
-} from '../../../js/notificationService'
+import { createDataAlert, updateDataAlert, deleteDataAlert, validateExpression } from '../../../js/notificationService'
 
 import { authenticationType } from '../../../props/types'
-import {
-  authenticationDefault,
-  getAuthentication,
-} from '../../../props/defaults'
+import { authenticationDefault, getAuthentication } from '../../../props/defaults'
 
 import './DataAlertModal.scss'
 import { withTheme } from '../../../theme'
@@ -48,10 +40,7 @@ class DataAlertModal extends React.Component {
     onManagementCreateDataAlert: PropTypes.func,
     onManagementDeleteDataAlert: PropTypes.func,
     title: PropTypes.string,
-    titleIcon: PropTypes.oneOfType([
-      PropTypes.element,
-      PropTypes.instanceOf(Icon),
-    ]),
+    titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
     enableQueryValidation: PropTypes.bool,
     onValidate: PropTypes.func,
   }
@@ -97,24 +86,16 @@ class DataAlertModal extends React.Component {
       this.initializeFields()
     }
 
-    if (
-      this.props.initialQuery &&
-      this.props.initialQuery !== prevProps.initialQuery
-    ) {
+    if (this.props.initialQuery && this.props.initialQuery !== prevProps.initialQuery) {
       this.resetFields()
-      const expressionJSON = this.createExpressionJSONFromQuery(
-        this.props.initialQuery
-      )
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
       })
     }
 
-    if (
-      this.state.frequencyCategorySelectValue !==
-      prevState.frequencyCategorySelectValue
-    ) {
+    if (this.state.frequencyCategorySelectValue !== prevState.frequencyCategorySelectValue) {
       // Reset checkbox and frequency select values
       this.setState({
         everyCheckboxValue: false,
@@ -149,13 +130,8 @@ class DataAlertModal extends React.Component {
         isDataReturnDirty: true,
         expressionJSON: _get(this.props.currentDataAlert, 'expression'),
       })
-    } else if (
-      this.props.initialQuery &&
-      typeof this.props.initialQuery === 'string'
-    ) {
-      const expressionJSON = this.createExpressionJSONFromQuery(
-        this.props.initialQuery
-      )
+    } else if (this.props.initialQuery && typeof this.props.initialQuery === 'string') {
+      const expressionJSON = this.createExpressionJSONFromQuery(this.props.initialQuery)
       this.setState({
         isExpressionSectionComplete: true,
         expressionJSON,
@@ -372,35 +348,29 @@ class DataAlertModal extends React.Component {
             }}
           >
             <Icon
-              className="expression-valid-checkmark"
-              type="check"
-              data-for="react-autoql-data-alert-modal-tooltip"
-              data-tip="Expression is valid"
+              className='expression-valid-checkmark'
+              type='check'
+              data-for='react-autoql-data-alert-modal-tooltip'
+              data-tip='Expression is valid'
             />
           </span>
         )}
-        {this.state.isExpressionValidated &&
-          !this.state.isExpressionValid &&
-          !!this.state.expressionError && (
-            <div className="expression-invalid-message-container">
-              <span className="expression-invalid-message">
-                <Icon type="warning-triangle" />
-              </span>{' '}
-              <p
-                className="expression-invalid-message"
-                style={{ maxWidth: '80%', marginTop: 0, marginRight: 0 }}
-              >
-                {this.state.expressionError}
-              </p>
-            </div>
-          )}
+        {this.state.isExpressionValidated && !this.state.isExpressionValid && !!this.state.expressionError && (
+          <div className='expression-invalid-message-container'>
+            <span className='expression-invalid-message'>
+              <Icon type='warning-triangle' />
+            </span>{' '}
+            <p className='expression-invalid-message' style={{ maxWidth: '80%', marginTop: 0, marginRight: 0 }}>
+              {this.state.expressionError}
+            </p>
+          </div>
+        )}
         <Button
           onClick={this.validateExpression}
           loading={this.state.isValidating}
-          type="primary"
+          type='primary'
           disabled={
-            !this.state.titleInput ||
-            !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
+            !this.state.titleInput || !_get(this.expressionRef, 'state.expression[0].term_value') // only checking for empty state of the first input value
           }
           style={{ position: 'absolute', right: 0 }}
         >
@@ -427,7 +397,7 @@ class DataAlertModal extends React.Component {
           }
         }}
         disabled={disabled}
-        type="primary"
+        type='primary'
       >
         {text || 'Continue'}
       </Button>
@@ -456,14 +426,13 @@ class DataAlertModal extends React.Component {
           <div style={{ width: '80%' }}>
             <p>Name your Data Alert:</p>
             <Input
-              className="react-autoql-notification-display-name-input"
-              placeholder="Add an Alert Name"
-              icon="title"
-              maxLength="50"
+              className='react-autoql-notification-display-name-input'
+              placeholder='Add an Alert Name'
+              icon='title'
+              maxLength='50'
               value={this.state.titleInput}
               onChange={(e) => {
-                const isFirstSectionComplete =
-                  this.state.isExpressionSectionComplete && !!e.target.value
+                const isFirstSectionComplete = this.state.isExpressionSectionComplete && !!e.target.value
                 this.setState({
                   titleInput: e.target.value,
                   isFirstSectionComplete,
@@ -473,17 +442,17 @@ class DataAlertModal extends React.Component {
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-tooltip"
-              id="react-autoql-data-alert-query-name-tooltip"
-              effect="solid"
+              className='react-autoql-tooltip'
+              id='react-autoql-data-alert-query-name-tooltip'
+              effect='solid'
               delayShow={500}
-              place="top"
+              place='top'
             />
             <Icon
-              className="react-autoql-data-alert-query-name-tooltip-icon"
-              data-for="react-autoql-data-alert-query-name-tooltip"
-              data-tip="This will be visible to anyone who gets notified when this Alert is triggered."
-              type="info"
+              className='react-autoql-data-alert-query-name-tooltip-icon'
+              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-tip='This will be visible to anyone who gets notified when this Alert is triggered.'
+              type='info'
               size={24}
             />
           </div>
@@ -497,39 +466,34 @@ class DataAlertModal extends React.Component {
               key={`expression-${this.NEW_NOTIFICATION_MODAL_ID}`}
               onChange={this.onExpressionChange}
               enableQueryValidation={this.props.enableQueryValidation}
-              expression={_get(
-                this.props.currentDataAlert,
-                'expression',
-                this.state.expressionJSON
-              )}
+              expression={_get(this.props.currentDataAlert, 'expression', this.state.expressionJSON)}
             />
           </div>
           <div style={{ width: '20%', marginLeft: 10, marginTop: 35 }}>
             <ReactTooltip
-              className="react-autoql-tooltip"
-              id="react-autoql-data-alert-query-name-tooltip"
-              effect="solid"
+              className='react-autoql-tooltip'
+              id='react-autoql-data-alert-query-name-tooltip'
+              effect='solid'
               delayShow={500}
-              place="top"
+              place='top'
             />
             <Icon
-              data-for="react-autoql-data-alert-query-name-tooltip"
-              data-tip="Your query should describe the result you wish to be alerted about."
-              type="info"
+              data-for='react-autoql-data-alert-query-name-tooltip'
+              data-tip='Your query should describe the result you wish to be alerted about.'
+              type='info'
               size={24}
-              color="#26A7Df"
+              color='#26A7Df'
             />
           </div>
         </div>
-        <div className="step-btn-container">
+        <div className='step-btn-container'>
           {this.props.enableQueryValidation
             ? this.renderValidateBtn()
             : this.renderNextBtn(
-                'first-step-next-btn',
-                this.props.enableQueryValidation &&
-                  (!this.state.isExpressionValidated ||
-                    !this.state.isExpressionValid)
-              )}
+              'first-step-next-btn',
+              this.props.enableQueryValidation &&
+                  (!this.state.isExpressionValidated || !this.state.isExpressionValid),
+            )}
         </div>
       </div>
     )
@@ -547,12 +511,10 @@ class DataAlertModal extends React.Component {
           }}
           onErrorCallback={this.props.onErrorCallback}
         />
-        <div className="step-btn-container">
+        <div className='step-btn-container'>
           {this.renderBackBtn('second-step-back-btn')}
-          {this.renderNextBtn(
-            'second-step-next-btn',
-            !this.state.isScheduleSectionComplete,
-            () => this.setState({ isThirdSectionDirty: true })
+          {this.renderNextBtn('second-step-next-btn', !this.state.isScheduleSectionComplete, () =>
+            this.setState({ isThirdSectionDirty: true }),
           )}
         </div>
       </div>
@@ -564,16 +526,14 @@ class DataAlertModal extends React.Component {
       <div>
         <p>Optional:</p>
         <Input
-          className="react-autoql-notification-message-input"
-          placeholder="This message will be visible when a notification is sent."
-          type="multi"
-          maxLength="200"
+          className='react-autoql-notification-message-input'
+          placeholder='This message will be visible when a notification is sent.'
+          type='multi'
+          maxLength='200'
           value={this.state.messageInput}
           onChange={(e) => this.setState({ messageInput: e.target.value })}
         />
-        <div className="step-btn-container">
-          {this.renderBackBtn('second-step-back-btn')}
-        </div>
+        <div className='step-btn-container'>{this.renderBackBtn('second-step-back-btn')}</div>
       </div>
     )
   }
@@ -613,10 +573,7 @@ class DataAlertModal extends React.Component {
         title: 'Set Up Your Alert',
         content: this.renderSetUpDataAlertStep(),
         complete: this.isFirstSectionComplete(),
-        error:
-          this.props.enableQueryValidation &&
-          this.state.isExpressionValidated &&
-          !this.state.isExpressionValid,
+        error: this.props.enableQueryValidation && this.state.isExpressionValidated && !this.state.isExpressionValid,
       },
       {
         title: 'Set Notification Preferences',
@@ -626,8 +583,7 @@ class DataAlertModal extends React.Component {
       {
         title: 'Compose Notification Message',
         content: this.renderAlertPreferencesStep(),
-        complete:
-          this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
+        complete: this.state.isThirdSectionDirty || !!this.props.currentDataAlert,
         onClick: () => {
           this.setState({ isThirdSectionDirty: true })
         },
@@ -646,21 +602,15 @@ class DataAlertModal extends React.Component {
     return (
       <ErrorBoundary>
         <ReactTooltip
-          className="react-autoql-tooltip"
-          id="react-autoql-data-alert-modal-tooltip"
-          effect="solid"
+          className='react-autoql-tooltip'
+          id='react-autoql-data-alert-modal-tooltip'
+          effect='solid'
           delayShow={500}
           html
         />
         <Modal
           title={this.props.title}
-          titleIcon={
-            !_isEmpty(this.props.currentDataAlert) ? (
-              <Icon type="edit" />
-            ) : (
-              <span />
-            )
-          }
+          titleIcon={!_isEmpty(this.props.currentDataAlert) ? <Icon type='edit' /> : <span />}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
@@ -671,7 +621,7 @@ class DataAlertModal extends React.Component {
               <div>
                 {this.props.currentDataAlert && this.props.allowDelete && (
                   <Button
-                    type="danger"
+                    type='danger'
                     onClick={() => {
                       this.setState({ isConfirmDeleteModalVisible: true })
                     }}
@@ -693,7 +643,7 @@ class DataAlertModal extends React.Component {
                   Cancel
                 </Button>
                 <Button
-                  type="primary"
+                  type='primary'
                   loading={this.state.isSavingDataAlert}
                   onClick={this.onDataAlertSave}
                   disabled={this.isSaveButtonDisabled(steps)}
@@ -705,7 +655,7 @@ class DataAlertModal extends React.Component {
           }
         >
           {this.props.isVisible && (
-            <div className="notification-modal-content">
+            <div className='notification-modal-content'>
               <Steps ref={(r) => (this.stepsRef = r)} steps={steps} />
             </div>
           )}
@@ -717,13 +667,11 @@ class DataAlertModal extends React.Component {
           onClose={() => {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}
-          confirmText="Delete"
-          width="450px"
+          confirmText='Delete'
+          width='450px'
         >
           <h3>Are you sure you want to delete this Data Alert?</h3>
-          <p>
-            You will no longer be notified about these changes in your data.
-          </p>
+          <p>You will no longer be notified about these changes in your data.</p>
         </ConfirmModal>
       </ErrorBoundary>
     )

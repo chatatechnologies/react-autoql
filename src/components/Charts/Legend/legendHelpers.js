@@ -1,6 +1,6 @@
 /* This code is copied from the d3-svg-legend package
 (https://github.com/susielu/d3-legend) which appears to
-not be supported anymore. 
+not be supported anymore.
 
 In order to address new security vulnerabilities, this
 legend file has been copied into our repo instead. */
@@ -18,7 +18,7 @@ const d3_reverse = (arr) => {
   return mirror
 }
 
-//Text wrapping code adapted from Mike Bostock
+// Text wrapping code adapted from Mike Bostock
 const d3_textWrapping = (text, width) => {
   text.each(function () {
     var text = select(this),
@@ -26,7 +26,7 @@ const d3_textWrapping = (text, width) => {
       word,
       line = [],
       lineNumber = 0,
-      lineHeight = 1.2, //ems
+      lineHeight = 1.2, // ems
       y = text.attr('y'),
       dy = parseFloat(text.attr('dy')) || 0,
       tspan = text
@@ -54,7 +54,7 @@ const d3_textWrapping = (text, width) => {
 
 const d3_mergeLabels = (gen = [], labels, domain, range, labelDelimiter) => {
   if (typeof labels === 'object') {
-    if (labels.length === 0) return gen
+    if (labels.length === 0) {return gen}
 
     let i = labels.length
     for (; i < gen.length; i++) {
@@ -73,7 +73,7 @@ const d3_mergeLabels = (gen = [], labels, domain, range, labelDelimiter) => {
           domain,
           range,
           labelDelimiter,
-        })
+        }),
       )
     }
     return customLabels
@@ -108,13 +108,7 @@ const d3_linearLegend = (scale, cells, labelFormat) => {
 const d3_quantLegend = (scale, labelFormat, labelDelimiter) => {
   const labels = scale.range().map((d) => {
     const invert = scale.invertExtent(d)
-    return (
-      labelFormat(invert[0]) +
-      ' ' +
-      labelDelimiter +
-      ' ' +
-      labelFormat(invert[1])
-    )
+    return labelFormat(invert[0]) + ' ' + labelDelimiter + ' ' + labelFormat(invert[1])
   })
 
   return {
@@ -143,14 +137,7 @@ const d3_cellClick = (cellDispatcher, d, obj) => {
 }
 
 export default {
-  d3_drawShapes: (
-    shape,
-    shapes,
-    shapeHeight,
-    shapeWidth,
-    shapeRadius,
-    path
-  ) => {
+  d3_drawShapes: (shape, shapes, shapeHeight, shapeWidth, shapeRadius, path) => {
     if (shape === 'rect') {
       shapes.attr('height', shapeHeight).attr('width', shapeWidth)
     } else if (shape === 'circle') {
@@ -164,43 +151,25 @@ export default {
 
   d3_addText: function (svg, enter, labels, classPrefix, labelWidth) {
     enter.append('text').attr('class', classPrefix + 'label')
-    const text = svg
-      .selectAll(`g.${classPrefix}cell text.${classPrefix}label`)
-      .data(labels)
-      .text(d3_identity)
+    const text = svg.selectAll(`g.${classPrefix}cell text.${classPrefix}label`).data(labels).text(d3_identity)
 
     if (labelWidth) {
-      svg
-        .selectAll(`g.${classPrefix}cell text.${classPrefix}label`)
-        .call(d3_textWrapping, labelWidth)
+      svg.selectAll(`g.${classPrefix}cell text.${classPrefix}label`).call(d3_textWrapping, labelWidth)
     }
 
     return text
   },
 
-  d3_calcType: function (
-    scale,
-    ascending,
-    cells,
-    labels,
-    labelFormat,
-    labelDelimiter
-  ) {
+  d3_calcType: function (scale, ascending, cells, labels, labelFormat, labelDelimiter) {
     const type = scale.invertExtent
       ? d3_quantLegend(scale, labelFormat, labelDelimiter)
       : scale.ticks
-      ? d3_linearLegend(scale, cells, labelFormat)
-      : d3_ordinalLegend(scale)
+        ? d3_linearLegend(scale, cells, labelFormat)
+        : d3_ordinalLegend(scale)
 
-    //for d3.scaleSequential that doesn't have a range function
+    // for d3.scaleSequential that doesn't have a range function
     const range = (scale.range && scale.range()) || scale.domain()
-    type.labels = d3_mergeLabels(
-      type.labels,
-      labels,
-      scale.domain(),
-      range,
-      labelDelimiter
-    )
+    type.labels = d3_mergeLabels(type.labels, labels, scale.domain(), range, labelDelimiter)
 
     if (ascending) {
       type.labels = d3_reverse(type.labels)
@@ -211,9 +180,7 @@ export default {
   },
 
   d3_filterCells: (type, cellFilter) => {
-    let filterCells = type.data
-      .map((d, i) => ({ data: d, label: type.labels[i] }))
-      .filter(cellFilter)
+    const filterCells = type.data.map((d, i) => ({ data: d, label: type.labels[i] })).filter(cellFilter)
     const dataValues = filterCells.map((d) => d.data)
     const labelValues = filterCells.map((d) => d.label)
     type.data = type.data.filter((d) => dataValues.indexOf(d) !== -1)
@@ -255,9 +222,7 @@ export default {
       svg.selectAll('text.' + classPrefix + 'legendTitle').text(title)
 
       if (titleWidth) {
-        svg
-          .selectAll('text.' + classPrefix + 'legendTitle')
-          .call(d3_textWrapping, titleWidth)
+        svg.selectAll('text.' + classPrefix + 'legendTitle').call(d3_textWrapping, titleWidth)
       }
 
       const cellsSvg = svg.select('.' + classPrefix + 'legendCells')

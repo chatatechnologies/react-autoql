@@ -10,7 +10,7 @@ const defaultProps = QueryInput.defaultProps
 beforeAll(() => {
   global.localStorage = {
     lastQuery: 'sales per customer',
-    getItem: function() {
+    getItem: function () {
       return 'sales per customer'
     },
   }

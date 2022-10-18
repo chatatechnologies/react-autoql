@@ -10,9 +10,9 @@ const defaultProps = StringAxisSelector.defaultProps
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = mount(
-    <svg width="300px" height="300px">
+    <svg width='300px' height='300px'>
       <StringAxisSelector {...setupProps} />
-    </svg>
+    </svg>,
   )
   return wrapper
 }

@@ -4,10 +4,7 @@ import _isEqual from 'lodash.isequal'
 import NumberAxisSelector from './NumberAxisSelector'
 import StringAxisSelector from './StringAxisSelector'
 
-import {
-  isColumnNumberType,
-  isColumnStringType,
-} from '../../QueryOutput/columnHelpers'
+import { isColumnNumberType, isColumnStringType } from '../../QueryOutput/columnHelpers'
 import { axesDefaultProps, axesPropTypes } from '../helpers'
 
 export default class AxisSelector extends React.Component {
@@ -16,13 +13,9 @@ export default class AxisSelector extends React.Component {
 
   render = () => {
     if (isColumnNumberType(this.props.column)) {
-      return (
-        <NumberAxisSelector data-test="number-axis-selector" {...this.props} />
-      )
+      return <NumberAxisSelector data-test='number-axis-selector' {...this.props} />
     } else if (isColumnStringType(this.props.column)) {
-      return (
-        <StringAxisSelector data-test="string-axis-selector" {...this.props} />
-      )
+      return <StringAxisSelector data-test='string-axis-selector' {...this.props} />
     }
 
     return null

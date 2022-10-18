@@ -118,50 +118,10 @@ const datePivotColumns = [
 ]
 
 const listData = [
-  [
-    1648684800,
-    'ZS230721P00195000',
-    'ZS 07/21/23 195P',
-    'ZS',
-    1689897600,
-    'PUTS',
-    195,
-    100,
-    431,
-  ],
-  [
-    1648684800,
-    'WFC240119P00047500',
-    'WFC 01/19/24 47.5P',
-    'WFC',
-    1705622400,
-    'PUTS',
-    47.5,
-    650,
-    613,
-  ],
-  [
-    1648684800,
-    'TSLA220520C00840000',
-    'TSLA 05/20/22 840C',
-    'TSLA',
-    1653004800,
-    'CALLS',
-    840,
-    50,
-    4,
-  ],
-  [
-    1648684800,
-    'CF221118P00095000',
-    'CF 11/18/22 95P',
-    'CF',
-    1668729600,
-    'PUTS',
-    95,
-    88,
-    186,
-  ],
+  [1648684800, 'ZS230721P00195000', 'ZS 07/21/23 195P', 'ZS', 1689897600, 'PUTS', 195, 100, 431],
+  [1648684800, 'WFC240119P00047500', 'WFC 01/19/24 47.5P', 'WFC', 1705622400, 'PUTS', 47.5, 650, 613],
+  [1648684800, 'TSLA220520C00840000', 'TSLA 05/20/22 840C', 'TSLA', 1653004800, 'CALLS', 840, 50, 4],
+  [1648684800, 'CF221118P00095000', 'CF 11/18/22 95P', 'CF', 1668729600, 'PUTS', 95, 88, 186],
 ]
 
 const pivotData = [
@@ -197,10 +157,7 @@ export default {
       .range([0, 500])
       .paddingInner(1)
       .paddingOuter(0),
-    numberScale: scaleLinear()
-      .domain([5000000, 20000000])
-      .range([0, 500])
-      .nice(),
+    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },
@@ -217,10 +174,7 @@ export default {
       .range([0, 500])
       .paddingInner(1)
       .paddingOuter(0),
-    numberScale: scaleLinear()
-      .domain([5000000, 20000000])
-      .range([0, 500])
-      .nice(),
+    numberScale: scaleLinear().domain([5000000, 20000000]).range([0, 500]).nice(),
     legendLabels: [
       {
         color: '#26A7E9',
@@ -290,10 +244,7 @@ export default {
       .range([0, 500])
       .paddingInner(1)
       .paddingOuter(0),
-    numberScale: scaleLinear()
-      .domain([0, 1000])
-      .range([0, 500])
-      .nice(),
+    numberScale: scaleLinear().domain([0, 1000]).range([0, 500]).nice(),
     colorScale: scaleOrdinal().range(['red', 'blue']),
     onLabelChange: () => {},
   },

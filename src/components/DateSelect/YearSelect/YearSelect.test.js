@@ -20,10 +20,7 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders correctly with required props', () => {
     const wrapper = setup()
-    const yearSelectComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-year-select'
-    )
+    const yearSelectComponent = findByTestAttr(wrapper, 'react-autoql-year-select')
     expect(yearSelectComponent.exists()).toBe(true)
   })
 })

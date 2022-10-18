@@ -22,28 +22,19 @@ const setup = (props = {}, state = null) => {
 describe('renders correctly', () => {
   test('renders list data chart correctly', () => {
     const wrapper = setup(listSampleProps)
-    const columnChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-column-chart'
-    )
+    const columnChartComponent = findByTestAttr(wrapper, 'react-autoql-column-chart')
     expect(columnChartComponent.exists()).toBe(true)
   })
 
   test('renders pivot data chart correctly', () => {
     const wrapper = setup(pivotSampleProps)
-    const columnChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-column-chart'
-    )
+    const columnChartComponent = findByTestAttr(wrapper, 'react-autoql-column-chart')
     expect(columnChartComponent.exists()).toBe(true)
   })
 
   test('renders date pivot data chart correctly', () => {
     const wrapper = setup(datePivotSampleProps)
-    const columnChartComponent = findByTestAttr(
-      wrapper,
-      'react-autoql-column-chart'
-    )
+    const columnChartComponent = findByTestAttr(wrapper, 'react-autoql-column-chart')
     expect(columnChartComponent.exists()).toBe(true)
   })
 })

@@ -12,11 +12,7 @@ import { entries } from 'd3-collection'
 import legendColor from '../Legend/Legend'
 
 import { formatElement, removeFromDOM } from '../../../js/Util'
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getTooltipContent,
-} from '../helpers'
+import { chartDefaultProps, chartPropTypes, getTooltipContent } from '../helpers'
 import ReactTooltip from 'react-tooltip'
 import { getChartColorVars } from '../../../theme/configureTheme'
 
@@ -42,7 +38,7 @@ export default class Axis extends Component {
       .domain(
         this.sortedData.map((d) => {
           return d[props.stringColumnIndex]
-        })
+        }),
       )
       .range(chartColors)
 
@@ -116,11 +112,7 @@ export default class Axis extends Component {
       return d.value[self.props.numberColumnIndex]
     })
 
-    this.dataReady = pieChart(
-      entries(
-        self.sortedData.filter((d, i) => !this.state.legendLabels?.[i]?.hidden)
-      )
-    )
+    this.dataReady = pieChart(entries(self.sortedData.filter((d, i) => !this.state.legendLabels?.[i]?.hidden)))
 
     this.renderPieContainer()
     this.renderPieSlices()
@@ -139,10 +131,7 @@ export default class Axis extends Component {
       .attr('height', height)
       .append('g')
       .attr('class', 'slices')
-      .attr(
-        'transform',
-        `translate(${width / 2 + this.outerRadius},${height / 2})`
-      )
+      .attr('transform', `translate(${width / 2 + this.outerRadius},${height / 2})`)
   }
 
   onSliceClick = (d) => {
@@ -173,10 +162,7 @@ export default class Axis extends Component {
       .enter()
       .append('path')
       .attr('class', 'slice')
-      .attr(
-        'd',
-        arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius)
-      )
+      .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius))
       .attr('fill', (d) => {
         return self.colorScale(d.data.value[self.props.stringColumnIndex])
       })
@@ -209,8 +195,7 @@ export default class Axis extends Component {
         .duration(500)
         .attr('transform', function (d) {
           if (d.data.key === self.state.activeKey) {
-            const a =
-              d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2
+            const a = d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2
             const x = Math.cos(a) * 10
             const y = Math.sin(a) * 10
             // move it away from the circle center
@@ -221,9 +206,7 @@ export default class Axis extends Component {
   }
 
   centerVisualization = () => {
-    const containerElement = select(
-      `#pie-chart-container-${this.CHART_ID}`
-    ).node()
+    const containerElement = select(`#pie-chart-container-${this.CHART_ID}`).node()
 
     let containerBBox
     if (containerElement) {
@@ -235,16 +218,13 @@ export default class Axis extends Component {
     const finalXPosition = (this.props.width - containerWidth) / 2
     const xDelta = finalXPosition - currentXPosition
 
-    select(`#pie-chart-container-${this.CHART_ID}`).attr(
-      'transform',
-      `translate(${xDelta},0)`
-    )
+    select(`#pie-chart-container-${this.CHART_ID}`).attr('transform', `translate(${xDelta},0)`)
   }
 
   onLegendClick = (legendObjStr) => {
     const legendObj = JSON.parse(legendObjStr)
     const index = legendObj?.dataIndex
-    if (!!this.state.legendLabels?.[index]) {
+    if (this.state.legendLabels?.[index]) {
       const newLegendLabels = _cloneDeep(this.state.legendLabels)
       newLegendLabels[index].hidden = !this.state.legendLabels[index].hidden
       this.setState({ legendLabels: newLegendLabels })
@@ -299,29 +279,21 @@ export default class Axis extends Component {
     const legendHeight = _get(legendBBox, 'height', 0)
     const legendWidth = _get(legendBBox, 'width', 0)
     const legendXPosition = this.props.width / 2 - legendWidth - 20
-    const legendYPosition =
-      legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
+    const legendYPosition = legendHeight < height - 20 ? (height - legendHeight) / 2 : 15
 
-    this.legend
-      .select('.legendOrdinal')
-      .attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
+    this.legend.select('.legendOrdinal').attr('transform', `translate(${legendXPosition}, ${legendYPosition})`)
 
     this.applyStylesForHiddenSeries()
   }
 
   applyStylesForHiddenSeries = () => {
-    const legendLabelTexts = this.state.legendLabels
-      .filter((l) => l.hidden)
-      .map((l) => l.label)
+    const legendLabelTexts = this.state.legendLabels.filter((l) => l.hidden).map((l) => l.label)
 
-    this.legendSwatchElements = document.querySelectorAll(
-      `#${this.LEGEND_ID} .label tspan`
-    )
+    this.legendSwatchElements = document.querySelectorAll(`#${this.LEGEND_ID} .label tspan`)
 
     if (this.legendSwatchElements) {
       this.legendSwatchElements.forEach((el) => {
-        const swatchElement =
-          el.parentElement.parentElement.querySelector('.swatch')
+        const swatchElement = el.parentElement.parentElement.querySelector('.swatch')
         swatchElement.style.strokeWidth = '2px'
 
         if (legendLabelTexts.includes(el.textContent)) {
@@ -351,12 +323,9 @@ export default class Axis extends Component {
 
   render = () => {
     return (
-      <g
-        id={`pie-chart-container-${this.CHART_ID}`}
-        data-test="react-autoql-pie-chart"
-      >
+      <g id={`pie-chart-container-${this.CHART_ID}`} data-test='react-autoql-pie-chart'>
         <svg
-          className="pie-chart"
+          className='pie-chart'
           ref={(el) => {
             this.chartElement = el
           }}
@@ -368,7 +337,7 @@ export default class Axis extends Component {
             this.legendElement = el
           }}
           id={this.LEGEND_ID}
-          className="legendOrdinal"
+          className='legendOrdinal'
         />
       </g>
     )

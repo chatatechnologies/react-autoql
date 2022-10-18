@@ -12,11 +12,7 @@ import { responseErrors } from '../../js/errorMessages'
 import { getAuthentication } from '../../props/defaults'
 import { formatTableParams } from './tableHelpers'
 import { Spinner } from '../Spinner'
-import {
-  runQueryOnly,
-  runQueryNewPage,
-  runDrilldown,
-} from '../../js/queryService'
+import { runQueryOnly, runQueryNewPage, runDrilldown } from '../../js/queryService'
 
 import { currentEventLoopEnd } from '../../js/Util'
 
@@ -51,12 +47,8 @@ export default class ChataTable extends React.Component {
         columnCalcs: false,
       },
       cellClick: this.cellClick,
-      initialSort: !this.supportsInfiniteScroll
-        ? _cloneDeep(props.initialParams?.sorters)
-        : [],
-      initialFilter: !this.supportsInfiniteScroll
-        ? _cloneDeep(props.initialParams?.filters)
-        : [],
+      initialSort: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.sorters) : [],
+      initialFilter: !this.supportsInfiniteScroll ? _cloneDeep(props.initialParams?.filters) : [],
       dataSorting: (sorters) => {
         const formattedSorters = sorters.map((sorter) => {
           return {
@@ -64,11 +56,7 @@ export default class ChataTable extends React.Component {
             field: sorter.field,
           }
         })
-        if (
-          this.tableParams?.sorters &&
-          !_isEqual(formattedSorters, this.tableParams?.sorters) &&
-          this._isMounted
-        ) {
+        if (this.tableParams?.sorters && !_isEqual(formattedSorters, this.tableParams?.sorters) && this._isMounted) {
           this.isSorting = true
           this.setState({ loading: true })
         }
@@ -76,11 +64,7 @@ export default class ChataTable extends React.Component {
       dataFiltering: (filters) => {
         const headerFilters = this.ref?.table?.getHeaderFilters()
 
-        if (
-          headerFilters &&
-          !_isEqual(headerFilters, this.tableParams?.filters) &&
-          this._isMounted
-        ) {
+        if (headerFilters && !_isEqual(headerFilters, this.tableParams?.filters) && this._isMounted) {
           this.isFiltering = true
           this.setState({ loading: true })
         }
@@ -114,9 +98,7 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.supportsInfiniteScroll) {
-      this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll
-        ? 'scroll'
-        : undefined
+      this.tableOptions.ajaxProgressiveLoad = this.supportsInfiniteScroll ? 'scroll' : undefined
       this.tableOptions.ajaxProgressiveLoadScrollMargin = 800 // Trigger next ajax load when scroll bar is 800px or less from the bottom of the table.
       this.tableOptions.ajaxURL = 'https://required-placeholder-url.com'
       this.tableOptions.ajaxSorting = true
@@ -127,10 +109,8 @@ export default class ChataTable extends React.Component {
       this.tableOptions.ajaxLoader = true
       this.tableOptions.ajaxLoaderLoading = ''
       this.tableOptions.ajaxLoaderError = ''
-      this.tableOptions.ajaxRequestFunc = (url, config, params) =>
-        this.ajaxRequestFunc(props, params)
-      this.tableOptions.ajaxResponse = (url, params, response) =>
-        this.ajaxResponseFunc(props, response)
+      this.tableOptions.ajaxRequestFunc = (url, config, params) => this.ajaxRequestFunc(props, params)
+      this.tableOptions.ajaxResponse = (url, params, response) => this.ajaxResponseFunc(props, response)
       this.tableOptions.ajaxError = (error) => {
         console.error(error)
       }
@@ -224,9 +204,7 @@ export default class ChataTable extends React.Component {
   }
 
   isLoading = () => {
-    return (
-      this.state.loading || this.state.pageLoading || this.state.scrollLoading
-    )
+    return this.state.loading || this.state.pageLoading || this.state.scrollLoading
   }
 
   onTabulatorMount = async (tableRef) => {
@@ -262,9 +240,7 @@ export default class ChataTable extends React.Component {
       this.tableParams = params
 
       if (!props.queryRequestData) {
-        console.warn(
-          'Original request data was not provided to ChataTable, unable to filter or sort table'
-        )
+        console.warn('Original request data was not provided to ChataTable, unable to filter or sort table')
         return Promise.resolve()
       }
 
@@ -278,14 +254,11 @@ export default class ChataTable extends React.Component {
         this.props.onNewPage(response?.rows)
       } else {
         this.setState({ pageLoading: true })
-        const responseWrapper = await this.sortOrFilterData(
-          props,
-          nextTableParamsFormatted
-        )
+        const responseWrapper = await this.sortOrFilterData(props, nextTableParamsFormatted)
         this.queryID = responseWrapper?.data?.data?.query_id
         response = { ..._get(responseWrapper, 'data.data', {}), page: 1 }
 
-        /* wait for current event loop to end so table is updated 
+        /* wait for current event loop to end so table is updated
         before callbacks are invoked */
         await currentEventLoopEnd()
 
@@ -310,8 +283,8 @@ export default class ChataTable extends React.Component {
   clearLoadingIndicators = async () => {
     /* The height of the table temporarily goes to 0 when new rows
     are added, which causes the scrollbar to jump up in DM.
-    
-    When loading indicators are visible, the height of the table 
+
+    When loading indicators are visible, the height of the table
     is fixed to the previous height in px. We need to wait until
     current event loop finishes so the table doesn't jump after
     the new rows are added */
@@ -387,7 +360,7 @@ export default class ChataTable extends React.Component {
       this.setState({ isLastPage: false })
     }
 
-    let modResponse = {}
+    const modResponse = {}
     modResponse.data = response.rows
     modResponse.last_page = this.lastPage
     return modResponse
@@ -424,15 +397,12 @@ export default class ChataTable extends React.Component {
   }
 
   resetFilterTags = () => {
-    const filterTagElements = document.querySelectorAll(
-      `#react-autoql-table-container-${this.TABLE_ID} .filter-tag`
-    )
+    const filterTagElements = document.querySelectorAll(`#react-autoql-table-container-${this.TABLE_ID} .filter-tag`)
 
     if (filterTagElements?.length) {
       filterTagElements.forEach((filterTag) => {
         try {
-          if (filterTag.parentNode && this._isMounted)
-            filterTag.parentNode.removeChild(filterTag)
+          if (filterTag.parentNode && this._isMounted) {filterTag.parentNode.removeChild(filterTag)}
         } catch (error) {}
       })
     }
@@ -451,7 +421,7 @@ export default class ChataTable extends React.Component {
           filterTagEl.setAttribute('class', 'filter-tag')
 
           const columnTitleEl = document.querySelector(
-            `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`
+            `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-title`,
           )
           columnTitleEl.insertBefore(filterTagEl, columnTitleEl.firstChild)
         } catch (error) {
@@ -517,7 +487,7 @@ export default class ChataTable extends React.Component {
 
   renderPageLoader = () => {
     return (
-      <div className="table-loader table-page-loader">
+      <div className='table-loader table-page-loader'>
         <Spinner />
       </div>
     )
@@ -525,7 +495,7 @@ export default class ChataTable extends React.Component {
 
   renderScrollLoader = () => {
     return (
-      <div className="table-loader table-scroll-loader">
+      <div className='table-loader table-scroll-loader'>
         <Spinner />
       </div>
     )
@@ -539,7 +509,7 @@ export default class ChataTable extends React.Component {
         <div
           id={`react-autoql-table-container-${this.TABLE_ID}`}
           ref={(ref) => (this.tableContainer = ref)}
-          data-test="react-autoql-table"
+          data-test='react-autoql-table'
           className={`react-autoql-table-container 
           ${this.props.supportsDrilldowns ? 'supports-drilldown' : ''}
           ${this.state.isFiltering ? 'filtering' : ''}
@@ -549,10 +519,7 @@ export default class ChataTable extends React.Component {
           ${this.props.pivot ? 'pivot' : ''}`}
           style={{
             ...this.props.style,
-            flexBasis:
-              this.props.isResizing || this.isLoading() || this.isUpdating
-                ? height
-                : 'auto',
+            flexBasis: this.props.isResizing || this.isLoading() || this.isUpdating ? height : 'auto',
           }}
         >
           {this.props.data && this.props.columns && (
@@ -560,14 +527,14 @@ export default class ChataTable extends React.Component {
               tableKey={`react-autoql-table-${this.TABLE_ID}`}
               id={`react-autoql-table-${this.TABLE_ID}`}
               key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
-              data-test="autoql-tabulator-table"
+              data-test='autoql-tabulator-table'
               columns={this.props.columns}
               data={this.supportsInfiniteScroll ? [] : this.props.data}
               onTableMount={this.onTabulatorMount}
               cellClick={this.cellClick}
               options={this.tableOptions}
-              data-custom-attr="test-custom-attribute"
-              className="react-autoql-table"
+              data-custom-attr='test-custom-attribute'
+              className='react-autoql-table'
               clipboard
               download
             />

@@ -56,9 +56,7 @@ export default class MonthSelect extends React.Component {
           // Do not allow to deselect last value if allowNullValue is false
           return this.props.value
         }
-        finalOption = this.props.value.filter(
-          (value) => value !== selectedValue
-        )
+        finalOption = this.props.value.filter((value) => value !== selectedValue)
       } else {
         // Select it
         finalOption = [...this.props.value, selectedValue]
@@ -106,10 +104,7 @@ export default class MonthSelect extends React.Component {
 
   render = () => {
     return (
-      <div
-        className="react-autoql-radio-btn-container month-select"
-        data-test="react-autoql-month-select"
-      >
+      <div className='react-autoql-radio-btn-container month-select' data-test='react-autoql-month-select'>
         {days.map((option, i) => {
           return (
             <Fragment key={`react-autoql-radio-${this.COMPONENT_KEY}-${i}`}>
@@ -120,9 +115,10 @@ export default class MonthSelect extends React.Component {
               >
                 {option}
               </div>
-              {i !== 0 && // not the first row
-              i !== days.length - 1 && // not the last row
-                (i + 1) % 7 === 0 && <br /> // every 7th day
+              {
+                i !== 0 && // not the first row
+                  i !== days.length - 1 && // not the last row
+                  (i + 1) % 7 === 0 && <br /> // every 7th day
               }
             </Fragment>
           )

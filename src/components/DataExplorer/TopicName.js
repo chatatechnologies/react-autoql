@@ -18,7 +18,7 @@ export const TopicName = ({ topic } = {}) => {
   return (
     <ErrorBoundary>
       <span>
-        <Icon className="data-explorer-topic-icon" type={iconType} />
+        <Icon className='data-explorer-topic-icon' type={iconType} />
         {topic.name}
       </span>
     </ErrorBoundary>

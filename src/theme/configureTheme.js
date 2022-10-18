@@ -19,7 +19,7 @@ const getThemeConfig = (customThemeConfig = {}) => {
 }
 
 const getYIQFromHex = (hex) => {
-  //Learned from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
+  // Learned from https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/
   let color = hex
   if (color.slice(0, 1) === '#') {
     color = color.slice(1)
@@ -29,7 +29,7 @@ const getYIQFromHex = (hex) => {
   if (color.length === 3) {
     color = color
       .split('')
-      .map((color) => color + color)
+      .map((col) => col + col)
       .join('')
   }
 
@@ -44,9 +44,7 @@ const getYIQFromHex = (hex) => {
 }
 
 export const getThemeValue = (property) => {
-  return document.documentElement.style.getPropertyValue(
-    `--react-autoql-${property}`
-  )
+  return document.documentElement.style.getPropertyValue(`--react-autoql-${property}`)
 }
 
 export const getThemeType = () => {
@@ -74,14 +72,14 @@ export const getChartColorVars = () => {
         } else {
           return chartColors
         }
-      } catch (error) {}
+      } catch (error) {
+        // do nothing
+      }
       counter += 1
     }
     return chartColors
   } catch (error) {
-    console.error(
-      'Could not get chart color css vars. See below for error details'
-    )
+    console.error('Could not get chart color css vars. See below for error details')
     console.error(error)
     return []
   }
@@ -99,7 +97,7 @@ const setChartColors = (providedChartColors, themeStyles) => {
     return
   } else if (!chartColors.length) {
     console.error(
-      'configureTheme chartColors option must not be empty. If you meant to use the default colors, do not supply a chart colors array'
+      'configureTheme chartColors option must not be empty. If you meant to use the default colors, do not supply a chart colors array',
     )
     return
   }
@@ -142,8 +140,7 @@ export const configureTheme = (customThemeConfig = {}) => {
     themeStyles['accent-color'] = accentColor
   }
 
-  themeStyles['dashboard-title-color'] =
-    dashboardTitleColor || themeStyles['accent-color']
+  themeStyles['dashboard-title-color'] = dashboardTitleColor || themeStyles['accent-color']
 
   if (backgroundColorPrimary) {
     themeStyles['background-color-primary'] = backgroundColorPrimary
@@ -156,10 +153,7 @@ export const configureTheme = (customThemeConfig = {}) => {
   setChartColors(chartColors, themeStyles)
 
   // Apply values to css variables with --react-autoql prefix
-  for (let property in themeStyles) {
-    document.documentElement.style.setProperty(
-      `--react-autoql-${property}`,
-      themeStyles[property]
-    )
+  for (const property in themeStyles) {
+    document.documentElement.style.setProperty(`--react-autoql-${property}`, themeStyles[property])
   }
 }

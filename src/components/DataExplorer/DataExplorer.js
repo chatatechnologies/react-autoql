@@ -59,12 +59,14 @@ export default class DataExplorer extends React.Component {
         selectedSubject: listItem,
         selectedKeywords: null,
         activeTopicType: listItem?.type,
+        skipQueryValidation: true,
       })
     } else if (listItem?.type === DEConstants.VL_TYPE) {
       this.setState({
         selectedVL: listItem,
         selectedKeywords: null,
         activeTopicType: listItem?.type,
+        skipQueryValidation: true,
       })
     } else if (listItem?.type === 'text') {
       this.setState({
@@ -81,9 +83,9 @@ export default class DataExplorer extends React.Component {
 
   renderIntroMessage = () => {
     return (
-      <div className="data-explorer-intro-message">
+      <div className='data-explorer-intro-message'>
         <h2>
-          Welcome to <Icon type="data-search" />
+          Welcome to <Icon type='data-search' />
           Data Explorer
         </h2>
         {this.props.introMessage ? (
@@ -91,20 +93,18 @@ export default class DataExplorer extends React.Component {
         ) : (
           <div>
             <p>
-              Explore your data and discover what you can ask AutoQL. Simply
-              enter a topic in the search bar above and:
+              Explore your data and discover what you can ask AutoQL. Simply enter a topic in the search bar above and:
             </p>
-            <div className="intro-message-list-container">
+            <div className='intro-message-list-container'>
               <div>
                 <p>
-                  <Icon type="table" /> Preview available data in a snapshot
+                  <Icon type='table' /> Preview available data in a snapshot
                 </p>
                 <p>
-                  <Icon type="abacus" /> Explore data structure and column types
+                  <Icon type='abacus' /> Explore data structure and column types
                 </p>
                 <p>
-                  <Icon type="react-autoql-bubbles-outlined" /> View a variety
-                  of query suggestions
+                  <Icon type='react-autoql-bubbles-outlined' /> View a variety of query suggestions
                 </p>
                 {/* <p><Icon /> Explore value label categories</p> */}
               </div>
@@ -121,15 +121,12 @@ export default class DataExplorer extends React.Component {
   }
 
   renderDataPreview = () => {
-    if (
-      !this.state.selectedSubject ||
-      this.state.activeTopicType !== DEConstants.SUBJECT_TYPE
-    ) {
+    if (!this.state.selectedSubject || this.state.activeTopicType !== DEConstants.SUBJECT_TYPE) {
       return null
     }
 
     return (
-      <div className="data-explorer-section data-preview-section">
+      <div className='data-explorer-section data-preview-section'>
         <DataPreview
           authentication={this.props.authentication}
           dataFormatting={this.props.dataFormatting}
@@ -143,10 +140,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderVLSubjectList = () => {
-    if (
-      !this.state.selectedVL ||
-      this.activeTopicType !== DEConstants.VL_TYPE
-    ) {
+    if (!this.state.selectedVL || this.activeTopicType !== DEConstants.VL_TYPE) {
       return null
     }
 
@@ -161,11 +155,8 @@ export default class DataExplorer extends React.Component {
   renderQuerySuggestionCardTitle = (selectedTopic) => {
     return (
       <div>
-        <Icon
-          style={{ fontSize: '20px' }}
-          type="react-autoql-bubbles-outlined"
-        />{' '}
-        Query Suggestions for "{selectedTopic?.name}"
+        <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
+        {selectedTopic?.name}"
       </div>
     )
   }
@@ -177,12 +168,12 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-explorer-section query-suggestions">
+      <div className='data-explorer-section query-suggestions'>
         <Card
           title={this.renderQuerySuggestionCardTitle(selectedTopic)}
           subtitle={<em>Click on a query to run it in Data Messenger</em>}
         >
-          <div className="data-explorer-query-suggestion-list">
+          <div className='data-explorer-query-suggestion-list'>
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
@@ -190,9 +181,7 @@ export default class DataExplorer extends React.Component {
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
-              onSuggestionListResponse={() =>
-                this.setState({ skipQueryValidation: false })
-              }
+              onSuggestionListResponse={() => this.setState({ skipQueryValidation: false })}
             />
           </div>
         </Card>
@@ -222,7 +211,6 @@ export default class DataExplorer extends React.Component {
       selectedVL: null,
       selectedKeywords: null,
     })
-    this.inputRef?.clearInput()
   }
 
   renderSelectionTitle = () => {
@@ -232,12 +220,9 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-explorer-title exploring-title">
+      <div className='data-explorer-title exploring-title'>
         <div>
           Exploring "<TopicName topic={selectedTopic} />"
-        </div>
-        <div className="clear-explorer-content-btn" onClick={this.clearContent}>
-          <Icon type="close" /> <u>Clear</u>
         </div>
       </div>
     )
@@ -249,9 +234,9 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-explorer-result-container">
+      <div className='data-explorer-result-container'>
         <CustomScrollbars autoHide={false}>
-          <div className="data-explorer-sections-container">
+          <div className='data-explorer-sections-container'>
             {this.renderDataPreview()}
             {/* {this.renderVLSubjectList()} */}
             {this.renderQuerySuggestions()}
@@ -266,35 +251,35 @@ export default class DataExplorer extends React.Component {
       case 'DATE': {
         return (
           <span>
-            <Icon type="calendar" /> Date
+            <Icon type='calendar' /> Date
           </span>
         )
       }
       case 'DATE_STRING': {
         return (
           <span>
-            <Icon type="calendar" /> Date
+            <Icon type='calendar' /> Date
           </span>
         )
       }
       case 'STRING': {
         return (
           <span>
-            <Icon type="note" /> Description
+            <Icon type='note' /> Description
           </span>
         )
       }
       case 'DOLLAR_AMT': {
         return (
           <span>
-            <Icon type="money" /> Currency
+            <Icon type='money' /> Currency
           </span>
         )
       }
       case 'QUANTITY': {
         return (
           <span>
-            <Icon type="abacus" /> Quantity
+            <Icon type='abacus' /> Quantity
           </span>
         )
       }
@@ -308,8 +293,7 @@ export default class DataExplorer extends React.Component {
     }
 
     const lowerCaseSubject = subject.toLowerCase()
-    const titleCaseSubject =
-      lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
+    const titleCaseSubject = lowerCaseSubject[0].toUpperCase() + lowerCaseSubject.substring(1)
     const lowerCaseColumn = column?.display_name?.toLowerCase()
     const suggestions = []
 
@@ -341,12 +325,8 @@ export default class DataExplorer extends React.Component {
       <>
         {suggestions.map((query, i) => {
           return (
-            <div
-              key={i}
-              onClick={() => this.props.executeQuery(query)}
-              className="data-explorer-tooltip-query"
-            >
-              <Icon type="react-autoql-bubbles-outlined" /> {query}
+            <div key={i} onClick={() => this.props.executeQuery(query)} className='data-explorer-tooltip-query'>
+              <Icon type='react-autoql-bubbles-outlined' /> {query}
             </div>
           )
         })}
@@ -364,12 +344,8 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div>
-        <div className="data-explorer-tooltip-title">
-          {column?.display_name}
-        </div>
-        {!!formattedType && (
-          <div className="data-explorer-tooltip-section">{formattedType}</div>
-        )}
+        <div className='data-explorer-tooltip-title'>{column?.display_name}</div>
+        {!!formattedType && <div className='data-explorer-tooltip-section'>{formattedType}</div>}
         {/* Disable this until we have a better way to get query suggestions for columns
         <div className="data-explorer-tooltip-section">
           <strong>Query suggestions:</strong>
@@ -389,8 +365,8 @@ export default class DataExplorer extends React.Component {
     return (
       <div
         ref={(r) => (this.dataExplorerPage = r)}
-        className="data-explorer-page-container"
-        data-test="data-explorer-tab"
+        className='data-explorer-page-container'
+        data-test='data-explorer-tab'
         style={{ display }}
       >
         <ErrorBoundary>
@@ -400,16 +376,17 @@ export default class DataExplorer extends React.Component {
             inputPlaceholder={this.props.inputPlaceholder}
             onSelection={this.onInputSelection}
             dataExplorerRef={this.dataExplorerPage}
+            onClearInputClick={this.clearContent}
           />
           {this.renderSelectionTitle()}
           {this.renderDataExplorerContent()}
           <ReactTooltip
-            className="data-preview-tooltip"
-            id="data-preview-tooltip"
-            place="right"
+            className='data-preview-tooltip'
+            id='data-preview-tooltip'
+            place='right'
             delayHide={200}
             delayUpdate={200}
-            effect="solid"
+            effect='solid'
             getContent={this.renderHeaderTooltipContent}
             clickable
           />

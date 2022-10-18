@@ -51,17 +51,11 @@ export default class DataExplorer extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (
-      this.props.subject &&
-      !_isEqual(this.props.subject, prevProps.subject)
-    ) {
+    if (this.props.subject && !_isEqual(this.props.subject, prevProps.subject)) {
       this.getDataPreview()
     }
 
-    if (
-      this.state.dataPreview &&
-      !_isEqual(this.state.dataPreview, prevState.dataPreview)
-    ) {
+    if (this.state.dataPreview && !_isEqual(this.state.dataPreview, prevState.dataPreview)) {
       this.props.rebuildTooltips()
     }
   }
@@ -88,11 +82,7 @@ export default class DataExplorer extends React.Component {
 
   formatColumnHeader = (column) => {
     return (
-      <div
-        className="data-preview-col-header"
-        data-for="data-preview-tooltip"
-        data-tip={JSON.stringify(column)}
-      >
+      <div className='data-preview-col-header' data-for='data-preview-tooltip' data-tip={JSON.stringify(column)}>
         {column?.display_name}
       </div>
     )
@@ -101,7 +91,7 @@ export default class DataExplorer extends React.Component {
   formatCell = ({ cell, column, config }) => {
     return (
       <div
-        className="data-preview-cell"
+        className='data-preview-cell'
         style={{
           textAlign: column.type === 'DOLLAR_AMT' ? 'right' : 'center',
         }}
@@ -131,35 +121,23 @@ export default class DataExplorer extends React.Component {
     }
 
     return (
-      <div className="data-preview">
-        <CustomScrollbars
-          autoHeight
-          autoHeightMin={0}
-          autoHeightMax={maxHeight}
-        >
+      <div className='data-preview'>
+        <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
           <table>
             <thead>
               <tr>
                 {columns.map((col, i) => {
-                  return (
-                    <th key={`col-header-${i}`}>
-                      {this.formatColumnHeader(col)}
-                    </th>
-                  )
+                  return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
                 })}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, i) => {
                 return (
-                  <tr key={`row-${i}`} className="data-preview-row">
+                  <tr key={`row-${i}`} className='data-preview-row'>
                     {row.map((cell, j) => {
                       const column = columns[j]
-                      return (
-                        <td key={`cell-${j}`}>
-                          {this.formatCell({ cell, column, config })}
-                        </td>
-                      )
+                      return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
                     })}
                   </tr>
                 )
@@ -173,7 +151,7 @@ export default class DataExplorer extends React.Component {
 
   renderLoadingContainer = () => {
     return (
-      <div className="data-explorer-card-placeholder">
+      <div className='data-explorer-card-placeholder'>
         <LoadingDots />
       </div>
     )
@@ -182,8 +160,7 @@ export default class DataExplorer extends React.Component {
   renderDataPreviewTitle = () => {
     return (
       <div>
-        <Icon style={{ fontSize: '20px' }} type="table" /> Data Preview - "
-        {this.props.subject?.query}"
+        <Icon style={{ fontSize: '20px' }} type='table' /> Data Preview - "{this.props.subject?.query}"
       </div>
     )
   }
@@ -196,14 +173,12 @@ export default class DataExplorer extends React.Component {
     return (
       <ErrorBoundary>
         <Card
-          className="data-explorer-data-preview"
-          data-test="data-explorer-data-preview"
+          className='data-explorer-data-preview'
+          data-test='data-explorer-data-preview'
           title={this.renderDataPreviewTitle()}
           subtitle={<em>{this.props.subject?.name} data snapshot</em>}
         >
-          {this.state.loading
-            ? this.renderLoadingContainer()
-            : this.renderDataPreviewGrid()}
+          {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>
       </ErrorBoundary>
     )

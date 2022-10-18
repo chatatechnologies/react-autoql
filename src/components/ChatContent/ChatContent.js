@@ -4,12 +4,8 @@ import { v4 as uuid } from 'uuid'
 import _has from 'lodash.has'
 import _isEmpty from 'lodash.isempty'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-
-import {
-  authenticationType,
-  autoQLConfigType,
-  dataFormattingType,
-} from '../../props/types'
+import { responseErrors } from '../../js/errorMessages'
+import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import errorMessages from '../../js/errorMessages'
 import { lang } from '../../js/Localization'
@@ -70,7 +66,7 @@ export default class ChatContent extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    if (!!this.props.introMessages?.length) {
+    if (this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
     if (this.props.shouldRender) {
@@ -116,6 +112,7 @@ export default class ChatContent extends React.Component {
   }
 
   clearMessages = () => {
+    this.queryInputRef?.cancelQuery()
     this.setState({ messages: this.getIntroMessages(this.props.introMessages) })
   }
 
@@ -135,7 +132,7 @@ export default class ChatContent extends React.Component {
         this.setState({ isChataThinking: false })
         this.addResponseMessage({
           content: (
-            <div className="feedback-message">
+            <div className='feedback-message'>
               Thank you for your feedback!
               <br />
               To continue, try asking another query.
@@ -170,9 +167,7 @@ export default class ChatContent extends React.Component {
 
   deleteMessage = (id) => {
     const messagesToDelete = [id]
-    const messageIndex = this.state.messages.findIndex(
-      (message) => id === message.id
-    )
+    const messageIndex = this.state.messages.findIndex((message) => id === message.id)
 
     // If there is a query message right above it (not a drilldown), delete the query message also
     const messageAbove = this.state.messages[messageIndex - 1]
@@ -184,9 +179,7 @@ export default class ChatContent extends React.Component {
       }
     }
 
-    const newMessages = this.state.messages.filter(
-      (message) => !messagesToDelete.includes(message.id)
-    )
+    const newMessages = this.state.messages.filter((message) => !messagesToDelete.includes(message.id))
 
     this.setState({
       messages: newMessages,
@@ -199,7 +192,7 @@ export default class ChatContent extends React.Component {
         isResponse: true,
         content: content || '',
         isIntroMessage: true,
-      })
+      }),
     )
   }
 
@@ -233,7 +226,7 @@ export default class ChatContent extends React.Component {
       this.createMessage({
         content: text,
         isResponse: false,
-      })
+      }),
     )
   }
 
@@ -278,15 +271,14 @@ export default class ChatContent extends React.Component {
         this.addResponseMessage({
           content: (
             <span>
-              Looks like you’re trying to query a Microsoft Dynamics data
-              source.
-              <a href={response.data.data.authorization_url} target="_blank">
+              Looks like you’re trying to query a Microsoft Dynamics data source.
+              <a href={response.data.data.authorization_url} target='_blank' rel='noreferrer'>
                 Click here to authorize access then try querying again.
               </a>
             </span>
           ),
         })
-      } else {
+      } else if (response?.data?.message !== responseErrors.CANCELLED) {
         this.addResponseMessage({ response, query })
       }
 
@@ -328,8 +320,12 @@ export default class ChatContent extends React.Component {
       let persistedFilters = response?.data?.data?.persistent_locked_conditions
       let sessionFilters = response?.data?.data?.session_locked_conditions
 
-      if (!Array.isArray(persistedFilters)) persistedFilters = []
-      if (!Array.isArray(sessionFilters)) sessionFilters = []
+      if (!Array.isArray(persistedFilters)) {
+        persistedFilters = []
+      }
+      if (!Array.isArray(sessionFilters)) {
+        sessionFilters = []
+      }
 
       return [...persistedFilters, ...sessionFilters]
     } catch (error) {
@@ -345,11 +341,7 @@ export default class ChatContent extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          ref={(r) => (this.chatContentRef = r)}
-          className="chat-content-scroll-container"
-          style={{ display }}
-        >
+        <div ref={(r) => (this.chatContentRef = r)} className='chat-content-scroll-container' style={{ display }}>
           <CustomScrollbars ref={(r) => (this.messengerScrollComponent = r)}>
             {this.state.messages.map((message) => {
               return (
@@ -402,26 +394,26 @@ export default class ChatContent extends React.Component {
             })}
           </CustomScrollbars>
           {this.state.isChataThinking && (
-            <div className="response-loading-container">
+            <div className='response-loading-container'>
               <LoadingDots />
             </div>
           )}
         </div>
-        <div style={{ display }} className="chat-bar-container">
-          <div className="watermark">
-            <Icon type="react-autoql-bubbles-outlined" />
+        <div style={{ display }} className='chat-bar-container'>
+          <div className='watermark'>
+            <Icon type='react-autoql-bubbles-outlined' />
             {lang.run}
           </div>
           <QueryInput
             ref={(r) => (this.queryInputRef = r)}
-            className="chat-drawer-chat-bar"
+            className='chat-drawer-chat-bar'
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
             isDisabled={this.state.isChataThinking}
             enableVoiceRecord={this.props.enableVoiceRecord}
-            autoCompletePlacement="above"
+            autoCompletePlacement='above'
             showChataIcon={false}
             showLoadingDots={false}
             placeholder={this.props.inputPlaceholder}

@@ -1,6 +1,6 @@
 /* This code is copied from the d3-svg-legend package
 (https://github.com/susielu/d3-legend) which appears to
-not be supported anymore. 
+not be supported anymore.
 
 In order to address new security vulnerabilities, this
 legend file has been copied into our repo instead. */
@@ -39,14 +39,7 @@ export default function color() {
     legendDispatcher = dispatch('cellover', 'cellout', 'cellclick')
 
   function legend(svg) {
-    const type = helper.d3_calcType(
-        scale,
-        ascending,
-        cells,
-        labels,
-        locale.format(specifier),
-        labelDelimiter
-      ),
+    const type = helper.d3_calcType(scale, ascending, cells, labels, locale.format(specifier), labelDelimiter),
       legendG = svg.selectAll('g').data([scale])
 
     legendG
@@ -69,13 +62,9 @@ export default function color() {
       .attr('class', classPrefix + 'cell')
     cellEnter.append(shape).attr('class', classPrefix + 'swatch')
 
-    let shapes = svg
-      .selectAll(
-        'g.' + classPrefix + 'cell ' + shape + '.' + classPrefix + 'swatch'
-      )
-      .data(type.data)
+    let shapes = svg.selectAll('g.' + classPrefix + 'cell ' + shape + '.' + classPrefix + 'swatch').data(type.data)
 
-    //add event handlers
+    // add event handlers
     helper.d3_addEvents(cellEnter, legendDispatcher)
 
     cell.exit().transition().style('opacity', 0).remove()
@@ -83,21 +72,8 @@ export default function color() {
 
     shapes = shapes.merge(shapes)
 
-    helper.d3_drawShapes(
-      shape,
-      shapes,
-      shapeHeight,
-      shapeWidth,
-      shapeRadius,
-      path
-    )
-    const text = helper.d3_addText(
-      svg,
-      cellEnter,
-      type.labels,
-      classPrefix,
-      labelWrap
-    )
+    helper.d3_drawShapes(shape, shapes, shapeHeight, shapeWidth, shapeRadius, path)
+    const text = helper.d3_addText(svg, cellEnter, type.labels, classPrefix, labelWrap)
 
     // we need to merge the selection, otherwise changes in the legend (e.g. change of orientation) are applied only to the new cells and not the existing ones.
     cell = cellEnter.merge(cell)
@@ -105,8 +81,8 @@ export default function color() {
     // sets placement
     const textSize = text.nodes().map((d) => d.getBBox()),
       shapeSize = shapes.nodes().map((d) => d.getBBox())
-    //sets scale
-    //everything is fill except for line which is stroke,
+    // sets scale
+    // everything is fill except for line which is stroke,
     if (!useClass) {
       if (shape == 'line') {
         shapes.style('stroke', type.feature)
@@ -121,11 +97,9 @@ export default function color() {
       textTrans,
       textAlign = labelAlign == 'start' ? 0 : labelAlign == 'middle' ? 0.5 : 1
 
-    //positions cells and text
+    // positions cells and text
     if (orient === 'vertical') {
-      const cellSize = textSize.map((d, i) =>
-        Math.max(d.height, shapeSize[i].height)
-      )
+      const cellSize = textSize.map((d, i) => Math.max(d.height, shapeSize[i].height))
 
       cellTrans = (d, i) => {
         const height = sum(cellSize.slice(0, i))
@@ -137,11 +111,8 @@ export default function color() {
           shapeSize[i].y + shapeSize[i].height / 2 + 5
         })`
     } else if (orient === 'horizontal') {
-      cellTrans = (d, i) =>
-        `translate(${i * (shapeSize[i].width + shapePadding)},0)`
-      textTrans = (d, i) => `translate(${
-        shapeSize[i].width * textAlign + shapeSize[i].x
-      },
+      cellTrans = (d, i) => `translate(${i * (shapeSize[i].width + shapePadding)},0)`
+      textTrans = (d, i) => `translate(${shapeSize[i].width * textAlign + shapeSize[i].x},
           ${shapeSize[i].height + shapeSize[i].y + labelOffset + 8})`
     }
 
@@ -152,13 +123,13 @@ export default function color() {
   }
 
   legend.scale = function (_) {
-    if (!arguments.length) return scale
+    if (!arguments.length) {return scale}
     scale = _
     return legend
   }
 
   legend.cells = function (_) {
-    if (!arguments.length) return cells
+    if (!arguments.length) {return cells}
     if (_.length > 1 || _ >= 2) {
       cells = _
     }
@@ -166,43 +137,43 @@ export default function color() {
   }
 
   legend.cellFilter = function (_) {
-    if (!arguments.length) return cellFilter
+    if (!arguments.length) {return cellFilter}
     cellFilter = _
     return legend
   }
 
   legend.shapeWidth = function (_) {
-    if (!arguments.length) return shapeWidth
+    if (!arguments.length) {return shapeWidth}
     shapeWidth = +_
     return legend
   }
 
   legend.shapeHeight = function (_) {
-    if (!arguments.length) return shapeHeight
+    if (!arguments.length) {return shapeHeight}
     shapeHeight = +_
     return legend
   }
 
   legend.shapeRadius = function (_) {
-    if (!arguments.length) return shapeRadius
+    if (!arguments.length) {return shapeRadius}
     shapeRadius = +_
     return legend
   }
 
   legend.shapePadding = function (_) {
-    if (!arguments.length) return shapePadding
+    if (!arguments.length) {return shapePadding}
     shapePadding = +_
     return legend
   }
 
   legend.labels = function (_) {
-    if (!arguments.length) return labels
+    if (!arguments.length) {return labels}
     labels = _
     return legend
   }
 
   legend.labelAlign = function (_) {
-    if (!arguments.length) return labelAlign
+    if (!arguments.length) {return labelAlign}
     if (_ == 'start' || _ == 'end' || _ == 'middle') {
       labelAlign = _
     }
@@ -210,37 +181,37 @@ export default function color() {
   }
 
   legend.locale = function (_) {
-    if (!arguments.length) return locale
+    if (!arguments.length) {return locale}
     locale = formatLocale(_)
     return legend
   }
 
   legend.labelFormat = function (_) {
-    if (!arguments.length) return legend.locale().format(specifier)
+    if (!arguments.length) {return legend.locale().format(specifier)}
     specifier = formatSpecifier(_)
     return legend
   }
 
   legend.labelOffset = function (_) {
-    if (!arguments.length) return labelOffset
+    if (!arguments.length) {return labelOffset}
     labelOffset = +_
     return legend
   }
 
   legend.labelDelimiter = function (_) {
-    if (!arguments.length) return labelDelimiter
+    if (!arguments.length) {return labelDelimiter}
     labelDelimiter = _
     return legend
   }
 
   legend.labelWrap = function (_) {
-    if (!arguments.length) return labelWrap
+    if (!arguments.length) {return labelWrap}
     labelWrap = _
     return legend
   }
 
   legend.useClass = function (_) {
-    if (!arguments.length) return useClass
+    if (!arguments.length) {return useClass}
     if (_ === true || _ === false) {
       useClass = _
     }
@@ -248,7 +219,7 @@ export default function color() {
   }
 
   legend.orient = function (_) {
-    if (!arguments.length) return orient
+    if (!arguments.length) {return orient}
     _ = _.toLowerCase()
     if (_ == 'horizontal' || _ == 'vertical') {
       orient = _
@@ -257,31 +228,31 @@ export default function color() {
   }
 
   legend.ascending = function (_) {
-    if (!arguments.length) return ascending
+    if (!arguments.length) {return ascending}
     ascending = !!_
     return legend
   }
 
   legend.classPrefix = function (_) {
-    if (!arguments.length) return classPrefix
+    if (!arguments.length) {return classPrefix}
     classPrefix = _
     return legend
   }
 
   legend.title = function (_) {
-    if (!arguments.length) return title
+    if (!arguments.length) {return title}
     title = _
     return legend
   }
 
   legend.titleWidth = function (_) {
-    if (!arguments.length) return titleWidth
+    if (!arguments.length) {return titleWidth}
     titleWidth = _
     return legend
   }
 
   legend.textWrap = function (_) {
-    if (!arguments.length) return textWrap
+    if (!arguments.length) {return textWrap}
     textWrap = _
     return legend
   }

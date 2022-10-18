@@ -5,12 +5,7 @@ import { Axes } from '../Axes'
 import { Circles } from '../Circles'
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import { getDataFormatting } from '../../../props/defaults'
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getTickValues,
-  shouldRecalculateLongestLabel,
-} from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getTickValues, shouldRecalculateLongestLabel } from '../helpers.js'
 
 export default class ChataBubbleChart extends Component {
   constructor(props) {
@@ -39,10 +34,7 @@ export default class ChataBubbleChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.xScale.bandwidth(),
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.xScale.bandwidth(), this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -53,7 +45,7 @@ export default class ChataBubbleChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
@@ -78,9 +70,7 @@ export default class ChataBubbleChart extends Component {
       yRangeStart = yRangeEnd
     }
 
-    this.yScale = scaleBand()
-      .domain(this.yLabelArray)
-      .range([yRangeStart, yRangeEnd])
+    this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd])
 
     this.xTickValues = getTickValues({
       tickHeight: this.xScale.bandwidth(),
@@ -100,10 +90,7 @@ export default class ChataBubbleChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g
-        className="react-autoql-bubble-chart"
-        data-test="react-autoql-bubble-chart"
-      >
+      <g className='react-autoql-bubble-chart' data-test='react-autoql-bubble-chart'>
         <Circles {...this.props} xScale={this.xScale} yScale={this.yScale} />
         <Axes
           {...this.props}

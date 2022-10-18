@@ -20,9 +20,7 @@ const setup = (props = {}, state = null) => {
 
 describe('renders correctly', () => {
   test('renders correctly with only token prop', () => {
-    const wrapper = shallow(
-      <DataMessenger authentication={{ token: 'token' }} />
-    )
+    const wrapper = shallow(<DataMessenger authentication={{ token: 'token' }} />)
     expect(wrapper.exists()).toBe(true)
   })
   test('renders correctly with default props', () => {
@@ -103,10 +101,7 @@ describe('props', () => {
 
 describe('Suggestion query response flow', () => {
   const messengerComponent = mount(<DataMessenger />)
-  const chatContent = findByTestAttr(
-    messengerComponent,
-    'data-messenger-chat-content'
-  )
+  const chatContent = findByTestAttr(messengerComponent, 'data-messenger-chat-content')
   const dmInstance = messengerComponent.instance()
   const chatContentInstance = chatContent.instance()
   jest.spyOn(chatContentInstance, 'addRequestMessage')
@@ -130,10 +125,7 @@ describe('Suggestion query response flow', () => {
       })
 
       messengerComponent.update()
-      suggestionMessageOriginal = findByTestAttr(
-        messengerComponent,
-        'suggestion-message-container'
-      )
+      suggestionMessageOriginal = findByTestAttr(messengerComponent, 'suggestion-message-container')
 
       expect(suggestionMessageOriginal.length).toBe(1)
     })
@@ -141,15 +133,8 @@ describe('Suggestion query response flow', () => {
       var noneOfTheseButton
 
       test('"None of these" button renders correctly', () => {
-        noneOfTheseButton = findByTestAttr(
-          messengerComponent,
-          'suggestion-list-button'
-        ).findWhere((node) => {
-          return (
-            node.name() &&
-            node.type() === 'button' &&
-            node.text() === 'None of these'
-          )
+        noneOfTheseButton = findByTestAttr(messengerComponent, 'suggestion-list-button').findWhere((node) => {
+          return node.name() && node.type() === 'button' && node.text() === 'None of these'
         })
         expect(noneOfTheseButton.length).toBe(1)
       })
@@ -165,10 +150,7 @@ describe('Suggestion query response flow', () => {
       })
       test('"None of these" click did not change original QueryOutput content', () => {
         messengerComponent.update()
-        const suggestionMessage = findByTestAttr(
-          messengerComponent,
-          'suggestion-message-container'
-        )
+        const suggestionMessage = findByTestAttr(messengerComponent, 'suggestion-message-container')
         expect(suggestionMessage.text()).toBe(suggestionMessageOriginal.text())
         messengerComponent.unmount()
       })
@@ -178,18 +160,13 @@ describe('Suggestion query response flow', () => {
 
 describe('Query topics flow', () => {
   const messengerComponent = mount(<DataMessenger defaultOpen />)
-  const exploreQueriesInstance = messengerComponent
-    .find('ExploreQueries')
-    .instance()
+  const exploreQueriesInstance = messengerComponent.find('ExploreQueries').instance()
   jest.spyOn(exploreQueriesInstance, 'animateQITextAndSubmit')
   var topicsMessage
 
   test('topics render if provided by endpoint', () => {
     messengerComponent.update()
-    topicsMessage = findByTestAttr(
-      messengerComponent,
-      'topics-message-cascader-component'
-    )
+    topicsMessage = findByTestAttr(messengerComponent, 'topics-message-cascader-component')
     expect(topicsMessage.exists()).toBe(true)
   })
   test('default active page is data-messenger', () => {
@@ -205,8 +182,6 @@ describe('Query topics flow', () => {
     expect(messengerComponent.state(['activePage'])).toBe('explore-queries')
   })
   test('explore queries input populates automatically on "see more" click', () => {
-    expect(exploreQueriesInstance.animateQITextAndSubmit).toHaveBeenCalledWith(
-      'Order Flow'
-    )
+    expect(exploreQueriesInstance.animateQITextAndSubmit).toHaveBeenCalledWith('Order Flow')
   })
 })

@@ -106,8 +106,7 @@ export default class Icon extends React.Component {
   }
 
   render = () => {
-    const { type, size, showBadge, warning, danger, ...nativeProps } =
-      this.props
+    const { type, size, showBadge, warning, danger, ...nativeProps } = this.props
 
     let icon = null
 
@@ -413,7 +412,7 @@ export default class Icon extends React.Component {
       <ErrorBoundary>
         <span
           {...nativeProps}
-          data-test="react-autoql-icon"
+          data-test='react-autoql-icon'
           className={`react-autoql-icon
             ${this.props.className || ''}
             ${this.props.type}
@@ -426,7 +425,7 @@ export default class Icon extends React.Component {
           }}
         >
           {icon}
-          {this.props.showBadge && <div className="react-autoql-badge" />}
+          {this.props.showBadge && <div className='react-autoql-badge' />}
         </span>
       </ErrorBoundary>
     )

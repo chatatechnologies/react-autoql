@@ -20,16 +20,10 @@ const setup = ({ props = {}, queryOutputProps = {}, state = null } = {}) => {
         responseRef = r
       }}
       {...queryOutputProps}
-    />
+    />,
   )
   queryOutputWrapper.mount()
-  const wrapper = shallow(
-    <VizToolbar
-      ref={(r) => (toolbarRef = r)}
-      responseRef={responseRef}
-      {...setupProps}
-    />
-  )
+  const wrapper = shallow(<VizToolbar ref={(r) => (toolbarRef = r)} responseRef={responseRef} {...setupProps} />)
   wrapper.setState({})
 
   if (state) {

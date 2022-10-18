@@ -5,12 +5,7 @@ import { Axes } from '../Axes'
 import { Squares } from '../Squares'
 import { shouldLabelsRotate, getLongestLabelInPx } from '../../../js/Util.js'
 import { getDataFormatting } from '../../../props/defaults'
-import {
-  chartDefaultProps,
-  chartPropTypes,
-  getTickValues,
-  shouldRecalculateLongestLabel,
-} from '../helpers.js'
+import { chartDefaultProps, chartPropTypes, getTickValues, shouldRecalculateLongestLabel } from '../helpers.js'
 
 export default class ChataHeatmapChart extends Component {
   constructor(props) {
@@ -39,10 +34,7 @@ export default class ChataHeatmapChart extends Component {
   }
 
   setLabelRotationValue = (props) => {
-    const rotateLabels = shouldLabelsRotate(
-      this.xScale.bandwidth(),
-      this.longestLabelWidth
-    )
+    const rotateLabels = shouldLabelsRotate(this.xScale.bandwidth(), this.longestLabelWidth)
 
     if (typeof rotateLabels !== 'undefined') {
       this.rotateLabels = rotateLabels
@@ -53,7 +45,7 @@ export default class ChataHeatmapChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xTickValues,
       props.columns[props.stringColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
@@ -78,10 +70,7 @@ export default class ChataHeatmapChart extends Component {
       yRangeStart = yRangeEnd
     }
 
-    this.yScale = scaleBand()
-      .domain(this.yLabelArray)
-      .range([yRangeStart, yRangeEnd])
-      .paddingInner(0.01)
+    this.yScale = scaleBand().domain(this.yLabelArray).range([yRangeStart, yRangeEnd]).paddingInner(0.01)
 
     this.xTickValues = getTickValues({
       tickHeight: this.xScale.bandwidth(),
@@ -101,13 +90,8 @@ export default class ChataHeatmapChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g
-        data-test="react-autoql-heatmap-chart"
-        className="react-autoql-heatmap-chart"
-      >
-        {this.props.marginAdjustmentFinished && (
-          <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
+      <g data-test='react-autoql-heatmap-chart' className='react-autoql-heatmap-chart'>
+        {this.props.marginAdjustmentFinished && <Squares {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           xScale={this.xScale}

@@ -43,20 +43,13 @@ export default class Select extends React.Component {
       return null
     }
 
-    const {
-      onChange,
-      options,
-      selectedOption,
-      className,
-      ...restProps
-    } = this.props
+    const { onChange, options, selectedOption, className, ...restProps } = this.props
 
     return (
       <ErrorBoundary>
         <ReactSelect
-          className={`${this.props.className ||
-            ''} react-autoql-select-with-arrow`}
-          classNamePrefix="react-autoql-select-with-arrow"
+          className={`${this.props.className || ''} react-autoql-select-with-arrow`}
+          classNamePrefix='react-autoql-select-with-arrow'
           value={this.state.selected}
           onChange={this.handleChange}
           options={this.props.options}

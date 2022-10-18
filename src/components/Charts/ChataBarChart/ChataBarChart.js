@@ -55,18 +55,14 @@ export default class ChataBarChart extends Component {
     this.longestLabelWidth = getLongestLabelInPx(
       this.xLabelArray,
       props.columns[props.numberColumnIndex],
-      getDataFormatting(props.dataFormatting)
+      getDataFormatting(props.dataFormatting),
     )
   }
 
   setChartData = (props) => {
     let numberColumnIndices = props.numberColumnIndices
-    if (props.visibleSeriesIndices?.length)
-      numberColumnIndices = props.visibleSeriesIndices
-    const { minValue, maxValue } = getMinAndMaxValues(
-      props.data,
-      numberColumnIndices
-    )
+    if (props.visibleSeriesIndices?.length) {numberColumnIndices = props.visibleSeriesIndices}
+    const { minValue, maxValue } = getMinAndMaxValues(props.data, numberColumnIndices)
 
     const rangeStart = props.leftMargin
     let rangeEnd = props.width - props.rightMargin
@@ -74,9 +70,7 @@ export default class ChataBarChart extends Component {
       rangeEnd = rangeStart
     }
 
-    this.xScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([rangeStart, rangeEnd])
+    this.xScale = scaleLinear().domain([minValue, maxValue]).range([rangeStart, rangeEnd])
     this.xScale.minValue = minValue
     this.xScale.maxValue = maxValue
     this.xScale.type = 'LINEAR'
@@ -110,10 +104,8 @@ export default class ChataBarChart extends Component {
     this.setLabelRotationValue(this.props)
 
     return (
-      <g data-test="react-autoql-bar-chart">
-        {this.props.marginAdjustmentFinished && (
-          <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />
-        )}
+      <g data-test='react-autoql-bar-chart'>
+        {this.props.marginAdjustmentFinished && <Bars {...this.props} xScale={this.xScale} yScale={this.yScale} />}
         <Axes
           {...this.props}
           xScale={this.xScale}
@@ -125,14 +117,8 @@ export default class ChataBarChart extends Component {
           rotateLabels={this.rotateLabels}
           hasRightLegend={this.props.legendLocation === 'right'}
           hasBottomLegend={this.props.legendLocation === 'bottom'}
-          hasXDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleNumberColumns
-          }
-          hasYDropdown={
-            this.props.enableDynamicCharting &&
-            this.props.hasMultipleStringColumns
-          }
+          hasXDropdown={this.props.enableDynamicCharting && this.props.hasMultipleNumberColumns}
+          hasYDropdown={this.props.enableDynamicCharting && this.props.hasMultipleStringColumns}
           xAxisTitle={this.props.numberAxisTitle}
           yAxisTitle={this.props.stringAxisTitle}
           xGridLines

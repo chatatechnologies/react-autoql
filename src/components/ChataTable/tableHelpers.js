@@ -14,7 +14,7 @@ export const formatTableParams = (params, tableRef) => {
 }
 
 export const formatSortersForAPI = (params, tableRef) => {
-  let sorters = []
+  const sorters = []
   if (params?.sorters?.length > 0 && tableRef) {
     params.sorters.forEach((sorter) => {
       try {
@@ -35,7 +35,7 @@ export const formatSortersForAPI = (params, tableRef) => {
 
 export const formatNumberFilterValue = (headerValue = '') => {
   const strNumber = headerValue.trim().replace(/[^0-9.]/g, '')
-  let value = Number(strNumber)
+  const value = Number(strNumber)
   if (!strNumber || isNaN(value)) {
     throw new Error('Unable to convert string to number')
   }
@@ -57,7 +57,7 @@ export const formatNumberFilterValue = (headerValue = '') => {
 export const formatFiltersForAPI = (params, tableRef) => {
   // for Number type column =,<,>,<=  >=
   // for String the operator is = or like
-  let filters = []
+  const filters = []
 
   // test to see if there is an error, if it continues for loop
   if (params?.filters?.length > 0 && tableRef) {

@@ -44,10 +44,10 @@ export default class TopicsCascader extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div data-test="topics-message-cascader-component">
+        <div data-test='topics-message-cascader-component'>
           {lang.introPrompt}
           <br />
-          <div className="topics-container">
+          <div className='topics-container'>
             <Cascader
               options={this.topics}
               onFinalOptionClick={(option) => {
@@ -66,12 +66,8 @@ export default class TopicsCascader extends React.Component {
           {this.props.enableExploreQueriesTab && (
             <div>
               {lang.use}{' '}
-              <span
-                className="intro-qi-link"
-                onClick={this.props.onExploreQueriesClick}
-              >
-                <Icon type="light-bulb" style={{ marginRight: '-3px' }} />{' '}
-                {lang.exploreQueries}
+              <span className='intro-qi-link' onClick={this.props.onExploreQueriesClick}>
+                <Icon type='light-bulb' style={{ marginRight: '-3px' }} /> {lang.exploreQueries}
               </span>{' '}
               {lang.explorePrompt}
             </div>

@@ -7,9 +7,7 @@ export const dprQuery = ({ query, dprKey, dprDomain, sessionId }) => {
   const body = { query }
 
   if (!sessionId) {
-    console.warn(
-      'No session ID was supplied to DPR. Using a randomly generated UUID instead'
-    )
+    console.warn('No session ID was supplied to DPR. Using a randomly generated UUID instead')
   }
 
   const config = {

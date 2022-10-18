@@ -1,5 +1,3 @@
-import dayjs from './dayjsWithPlugins'
-
 export const TABLE_TYPES = [
   'pivot_table',
   'pivot_column',
@@ -37,14 +35,6 @@ export const MONTH_NAMES = [
   'December',
 ]
 
-export const WEEKDAY_NAMES = [
-  'Sunday',
-  'Saturday',
-  'Friday',
-  'Thursday',
-  'Wednesday',
-  'Tuesday',
-  'Monday',
-]
+export const WEEKDAY_NAMES = ['Sunday', 'Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday']
 
 export const SEASON_NAMES = ['SP', 'SU', 'FA', 'HO']
