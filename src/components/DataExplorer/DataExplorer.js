@@ -156,7 +156,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div>
         <Icon style={{ fontSize: '20px' }} type='react-autoql-bubbles-outlined' /> Query Suggestions for "
-        {selectedTopic?.name}"
+        {selectedTopic?.display_name}"
       </div>
     )
   }
@@ -177,7 +177,7 @@ export default class DataExplorer extends React.Component {
             <QuerySuggestionList
               key={this.querySuggestionsKey}
               authentication={this.props.authentication}
-              topicText={selectedTopic?.name}
+              topicText={selectedTopic?.display_name}
               executeQuery={this.props.executeQuery}
               skipQueryValidation={this.state.skipQueryValidation}
               onValidationSuggestionClick={this.onValidationSuggestionClick}
@@ -287,7 +287,7 @@ export default class DataExplorer extends React.Component {
   }
 
   renderColumnQuerySuggestions = (column) => {
-    const subject = this.state.selectedSubject?.name || ''
+    const subject = this.state.selectedSubject?.display_name || ''
     if (!subject) {
       return null
     }

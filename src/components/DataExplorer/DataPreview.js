@@ -14,6 +14,7 @@ import { Icon } from '../Icon'
 import { getDataFormatting, dataFormattingDefault } from '../../props/defaults'
 import { dataFormattingType } from '../../props/types'
 import { formatElement } from '../../js/Util.js'
+import { responseErrors } from '../../js/errorMessages'
 
 import './DataPreview.scss'
 
@@ -76,7 +77,7 @@ export default class DataExplorer extends React.Component {
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
-      subject: this.props.subject?.display_name,
+      subject: this.props.subject?.name,
       numRows: this.DATA_PREVIEW_ROWS,
       cancelToken: this.axiosSource.token,
     })
@@ -84,8 +85,10 @@ export default class DataExplorer extends React.Component {
         this.setState({ dataPreview: response, loading: false })
       })
       .catch((error) => {
-        console.error(error)
-        this.setState({ loading: false, error: true })
+        if (error?.message !== responseErrors.CANCELLED) {
+          console.error(error)
+          this.setState({ loading: false, error: error?.response?.data })
+        }
       })
   }
 
@@ -185,7 +188,7 @@ export default class DataExplorer extends React.Component {
           className='data-explorer-data-preview'
           data-test='data-explorer-data-preview'
           title={this.renderDataPreviewTitle()}
-          subtitle={<em>{this.props.subject?.name} data snapshot</em>}
+          subtitle={<em>{this.props.subject?.display_name} data snapshot</em>}
         >
           {this.state.loading ? this.renderLoadingContainer() : this.renderDataPreviewGrid()}
         </Card>

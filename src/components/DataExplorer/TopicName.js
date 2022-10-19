@@ -19,7 +19,7 @@ export const TopicName = ({ topic } = {}) => {
     <ErrorBoundary>
       <span>
         <Icon className='data-explorer-topic-icon' type={iconType} />
-        {topic.name}
+        {topic.display_name}
       </span>
     </ErrorBoundary>
   )
