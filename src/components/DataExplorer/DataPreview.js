@@ -121,7 +121,7 @@ export default class DataExplorer extends React.Component {
     const rows = this.state.dataPreview?.data?.data?.rows
     const columns = this.state.dataPreview?.data?.data?.columns
 
-    if (!columns || !rows) {
+    if (!this.state.error && (!columns || !rows)) {
       return null
     }
 
@@ -135,27 +135,39 @@ export default class DataExplorer extends React.Component {
     return (
       <div className='data-preview'>
         <CustomScrollbars autoHeight autoHeightMin={0} autoHeightMax={maxHeight}>
-          <table>
-            <thead>
-              <tr>
-                {columns.map((col, i) => {
-                  return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
+          {!!this.state.error ? (
+            <div className='data-preview-error-message'>
+              <div>{this.state.error.message}</div>
+              {this.state.error.reference_id && (
+                <>
+                  <br />
+                  <div>Error ID: {this.state.error.reference_id}</div>
+                </>
+              )}
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  {columns.map((col, i) => {
+                    return <th key={`col-header-${i}`}>{this.formatColumnHeader(col)}</th>
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => {
+                  return (
+                    <tr key={`row-${i}`} className='data-preview-row'>
+                      {row.map((cell, j) => {
+                        const column = columns[j]
+                        return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
+                      })}
+                    </tr>
+                  )
                 })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                return (
-                  <tr key={`row-${i}`} className='data-preview-row'>
-                    {row.map((cell, j) => {
-                      const column = columns[j]
-                      return <td key={`cell-${j}`}>{this.formatCell({ cell, column, config })}</td>
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          )}
         </CustomScrollbars>
       </div>
     )
