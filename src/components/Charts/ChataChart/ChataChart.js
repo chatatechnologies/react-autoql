@@ -46,7 +46,7 @@ export default class ChataChart extends Component {
     this.AXIS_LABEL_PADDING = 30
     this.TWO_AXIS_LABEL_PADDING = 60
     this.DEFAULT_BOTTOM_MARGIN = 100
-    this.devTotalRowNumber = 500
+    this.devTotalRowNumber = 600
     this.firstRender = true
     this.recursiveUpdateCount = 0
 

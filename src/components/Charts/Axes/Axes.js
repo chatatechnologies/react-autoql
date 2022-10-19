@@ -48,12 +48,12 @@ export default class Axes extends React.Component {
     }
   }
 
-  renderLoadMoreDropdown = (rowNumber, totalRowNumber) => {
+  renderLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
     return (
       <tspan id={`load-more-drop-down-span-${this.COMPONENT_ID}`}>
         <tspan id={`visualizing-span-${this.COMPONENT_ID}`}>{`Visualizing `}</tspan>
         <tspan style={{ textDecoration: 'underline' }} id={`row-number-span-${this.COMPONENT_ID}`}>
-          {rowNumber}
+          {currentRowNumber}
         </tspan>
         {` / ${totalRowNumber} rows`}
       </tspan>
@@ -86,7 +86,7 @@ export default class Axes extends React.Component {
     )
   }
 
-  renderXAxisLoadMoreDropdown = (rowNumber, totalRowNumber) => {
+  renderXAxisLoadMoreDropdown = (currentRowNumber, totalRowNumber) => {
     let rowNumberSpan = document.getElementById(`row-number-span-${this.COMPONENT_ID}`)
     let visualizingSpan = document.getElementById(`visualizing-span-${this.COMPONENT_ID}`)
     let loadMoreDropDownSpan = document.getElementById(`load-more-drop-down-span-${this.COMPONENT_ID}`)
@@ -125,7 +125,7 @@ export default class Axes extends React.Component {
           x={xCenter}
           style={this.labelInlineStyles}
         >
-          {this.renderLoadMoreDropdown(rowNumber, totalRowNumber)}
+          {this.renderLoadMoreDropdown(currentRowNumber, totalRowNumber)}
         </text>
 
         {totalRowNumber > this.maxRows && loadMoreDropDownSpanWidth !== undefined ? (
@@ -158,8 +158,8 @@ export default class Axes extends React.Component {
               height: xBorderHeight,
             }}
             totalRowNumber={this.props.devTotalRowNumber}
-            setCurrentRowNumber={(rowNumber) => {
-              this.setState({ currentRowNumber: rowNumber })
+            setCurrentRowNumber={(currentRowNumber) => {
+              this.setState({ currentRowNumber })
             }}
           />
         ) : null}

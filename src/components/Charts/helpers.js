@@ -128,8 +128,12 @@ export const scaleZero = (scale) => {
 
   const min = domain[0]
   const max = domain[domain?.length - 1]
-  if (min > 0 && max > 0) {return scale(min)}
-  if (min < 0 && max < 0) {return scale(max)}
+  if (min > 0 && max > 0) {
+    return scale(min)
+  }
+  if (min < 0 && max < 0) {
+    return scale(max)
+  }
   return scale(0)
 }
 
@@ -270,7 +274,9 @@ export const calculateMinAndMaxSums = (data, stringColumnIndex, numberColumnIndi
     numberColumnIndices.forEach((colIndex) => {
       const rawValue = row[colIndex]
       let value = Number(rawValue)
-      if (isNaN(value)) {value = 0}
+      if (isNaN(value)) {
+        value = 0
+      }
 
       if (value >= 0) {
         // Calculate positive sum
