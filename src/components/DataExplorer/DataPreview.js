@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import _isEqual from 'lodash.isequal'
+import axios from 'axios'
 
 import { Card } from '../Card'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -64,12 +65,20 @@ export default class DataExplorer extends React.Component {
     this._isMounted = false
   }
 
+  cancelCurrentRequest = () => {
+    this.axiosSource?.cancel(responseErrors.CANCELLED)
+  }
+
   getDataPreview = () => {
-    this.setState({ loading: true, error: false, dataPreview: undefined })
+    this.cancelCurrentRequest()
+    this.axiosSource = axios.CancelToken.source()
+
+    this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
       ...this.props.authentication,
       subject: this.props.subject?.display_name,
       numRows: this.DATA_PREVIEW_ROWS,
+      cancelToken: this.axiosSource.token,
     })
       .then((response) => {
         this.setState({ dataPreview: response, loading: false })
